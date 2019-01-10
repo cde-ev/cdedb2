@@ -14,7 +14,7 @@
         for (var i=0;i<digits.length;i++) {
             dsum += (i+2)*digits[i];
         }
-        return "ABCDEFGHIJK"[((-dsum % 11) + 11) % 11];
+        return "0123456789X"[((-dsum % 11) + 11) % 11];
     }
 
     /**

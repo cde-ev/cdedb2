@@ -162,7 +162,7 @@ class TestEventFrontend(FrontendTest):
         ## orgas
         self.assertNonPresence("Bertålotta")
         f = self.response.forms['addorgaform']
-        f['orga_id'] = "DB-2-H"
+        f['orga_id'] = "DB-2-7"
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertPresence("Bertålotta")
@@ -517,7 +517,7 @@ etc;anything else""", f['entries_2'].value)
         f['event_end'] = "2345-6-7"
         f['registration_start'] = "2000-01-01 00:00:00+0000"
         f['notes'] = "Die spinnen die Orgas."
-        f['orga_ids'] = "DB-2-H, DB-7-I"
+        f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertPresence("Mit Co und Coco.")
@@ -713,15 +713,15 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/batchfee'})
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] = """01.04.2018;570.99;DB-1-J;Admin;Anton
-01.04.2018;461.49;DB-5-B;Eventis;Emilia
-01.04.2018;570.99;DB-11-G;K;Kalif
-77.04.2018;0.0;DB-666-X;Y;Z;stuff
+        f['fee_data'] = """01.04.2018;570.99;DB-1-9;Admin;Anton
+01.04.2018;461.49;DB-5-1;Eventis;Emilia
+01.04.2018;570.99;DB-11-6;K;Kalif
+77.04.2018;0.0;DB-666-Y;Y;Z;stuff
 """
         self.submit(f, check_notification=False)
         f = self.response.forms['batchfeesform']
-        f['fee_data'] = """01.04.2018;573.99;DB-1-J;Admin;Anton
-04.01.2018;461.49;DB-5-B;Eventis;Emilia
+        f['fee_data'] = """01.04.2018;573.99;DB-1-9;Admin;Anton
+04.01.2018;461.49;DB-5-1;Eventis;Emilia
 """
         self.submit(f, check_notification=False)
         f = self.response.forms['batchfeesform']
@@ -862,7 +862,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/add'})
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms['addregistrationform']
-        f['persona.persona_id'] = "DB-2-H"
+        f['persona.persona_id'] = "DB-2-7"
         f['reg.orga_notes'] = "Du entkommst uns nicht."
         f['reg.mixed_lodging'].checked = False
         f['part1.status'] = 1
@@ -892,7 +892,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/2/registration/query'},
                       {'href': '/event/event/2/registration/add'})
         f = self.response.forms['addregistrationform']
-        f['persona.persona_id'] = "DB-5-B"
+        f['persona.persona_id'] = "DB-5-1"
         f['reg.parental_agreement'].checked = True
         f['part4.status'] = -1
         self.submit(f)
@@ -1483,7 +1483,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence('Partywoche')  # We have only one part, thus it should not be named
         self.assertNonPresence('Chillout')  # We have only one track, thus it should not be named
         f = self.response.forms['addregistrationform']
-        f['persona.persona_id'] = "DB-2-H"
+        f['persona.persona_id'] = "DB-2-7"
         f['part4.status'] = 1
         self.submit(f)
         self.assertNonPresence('Partywoche')

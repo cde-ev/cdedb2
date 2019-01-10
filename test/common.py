@@ -157,7 +157,7 @@ class BackendTest(BackendUsingTest):
 USER_DICT = {
     "anton": {
         'id': 1,
-        'DB-ID': "DB-1-J",
+        'DB-ID': "DB-1-9",
         'username': "anton@example.cde",
         'password': "secret",
         'display_name': "Anton",
@@ -166,7 +166,7 @@ USER_DICT = {
     },
     "berta": {
         'id': 2,
-        'DB-ID': "DB-2-H",
+        'DB-ID': "DB-2-7",
         'username': "berta@example.cde",
         'password': "secret",
         'display_name': "Bertå",
@@ -175,7 +175,7 @@ USER_DICT = {
     },
     "charly": {
         'id': 3,
-        'DB-ID': "DB-3-F",
+        'DB-ID': "DB-3-5",
         'username': "charly@example.cde",
         'password': "secret",
         'display_name': "Charly",
@@ -184,7 +184,7 @@ USER_DICT = {
     },
     "daniel": {
         'id': 4,
-        'DB-ID': "DB-4-D",
+        'DB-ID': "DB-4-3",
         'username': "daniel@example.cde",
         'password': "secret",
         'display_name': "Daniel",
@@ -193,7 +193,7 @@ USER_DICT = {
     },
     "emilia": {
         'id': 5,
-        'DB-ID': "DB-5-B",
+        'DB-ID': "DB-5-1",
         'username': "emilia@example.cde",
         'password': "secret",
         'display_name': "Emilia",
@@ -202,7 +202,7 @@ USER_DICT = {
     },
     "ferdinand": {
         'id': 6,
-        'DB-ID': "DB-6-K",
+        'DB-ID': "DB-6-X",
         'username': "ferdinand@example.cde",
         'password': "secret",
         'display_name': "Ferdinand",
@@ -211,7 +211,7 @@ USER_DICT = {
     },
     "garcia": {
         'id': 7,
-        'DB-ID': "DB-7-I",
+        'DB-ID': "DB-7-8",
         'username': "garcia@example.cde",
         'password': "secret",
         'display_name': "Garcia",
@@ -220,7 +220,7 @@ USER_DICT = {
     },
     "hades": {
         'id': 8,
-        'DB-ID': "DB-8-G",
+        'DB-ID': "DB-8-6",
         'username': None,
         'password': "secret",
         'display_name': None,
@@ -229,7 +229,7 @@ USER_DICT = {
     },
     "inga": {
         'id': 9,
-        'DB-ID': "DB-9-E",
+        'DB-ID': "DB-9-4",
         'username': "inga@example.cde",
         'password': "secret",
         'display_name': "Inga",
@@ -238,7 +238,7 @@ USER_DICT = {
     },
     "janis": {
         'id': 10,
-        'DB-ID': "DB-10-I",
+        'DB-ID': "DB-10-8",
         'username': "janis@example.cde",
         'password': "secret",
         'display_name': "Janis",
@@ -247,7 +247,7 @@ USER_DICT = {
     },
     "kalif": {
         'id': 11,
-        'DB-ID': "DB-11-G",
+        'DB-ID': "DB-11-6",
         'username': "kalif@example.cde",
         'password': "secret",
         'display_name': "Kalif",
@@ -256,7 +256,7 @@ USER_DICT = {
     },
     "lisa": {
         'id': 12,
-        'DB-ID': "DB-12-E",
+        'DB-ID': "DB-12-4",
         'username': None,
         'password': "secret",
         'display_name': "Lisa",

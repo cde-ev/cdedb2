@@ -107,7 +107,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
         self.assertNonPresence("Inga Iota")
         f = self.response.forms['addmoderatorform']
-        f['moderator_id'] = "DB-9-E"
+        f['moderator_id'] = "DB-9-4"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
         self.assertPresence("Inga Iota")
@@ -132,7 +132,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Janis Jalapeño")
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
-        f['subscriber_id'] = "DB-9-E"
+        f['subscriber_id'] = "DB-9-4"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
         self.assertIn("removesubscriberform9", self.response.forms)

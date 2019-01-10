@@ -383,7 +383,7 @@ def name_key(entry):
     """
     return (entry['family_name'] + " " + entry['given_names']).lower()
 
-def compute_checkdigit(value, isbn=False):
+def compute_checkdigit(value):
     """Map an integer to the checksum used for UI purposes.
 
     This checkdigit allows for error detection if somebody messes up a
@@ -392,9 +392,6 @@ def compute_checkdigit(value, isbn=False):
     Most of the time, the integer will be a persona id.
 
     :type value: int
-    :type isbn: bool
-    :param isbn: If True return a check digit according to the ISBN standard,
-      otherwise we map the interval from 0 to 10 to the letters A to K.
     :rtype: str
     """
     digits = []
@@ -403,10 +400,7 @@ def compute_checkdigit(value, isbn=False):
         digits.append(tmp % 10)
         tmp = tmp // 10
     dsum = sum((i+2)*d for i, d in enumerate(digits))
-    if isbn:
-        return "0123456789X"[-dsum % 11]
-    else:
-        return "ABCDEFGHIJK"[-dsum % 11]
+    return "0123456789X"[-dsum % 11]
 
 def lastschrift_reference(persona_id, lastschrift_id):
     """Return an identifier for usage with the bank.
@@ -418,8 +412,8 @@ def lastschrift_reference(persona_id, lastschrift_id):
     :rtype: str
     """
     return "CDE-I25-{}-{}-{}-{}".format(
-        persona_id, compute_checkdigit(persona_id, isbn=True), lastschrift_id,
-        compute_checkdigit(lastschrift_id, isbn=True))
+        persona_id, compute_checkdigit(persona_id), lastschrift_id,
+        compute_checkdigit(lastschrift_id))
 
 def _small_int_to_words(num, lang):
     """Convert a small integer into a written representation.

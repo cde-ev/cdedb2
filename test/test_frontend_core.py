@@ -119,7 +119,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_adminshowuser_advanced(self, user):
-        for phrase, title in (("DB-2-H", "Bertålotta Beispiel"),
+        for phrase, title in (("DB-2-7", "Bertålotta Beispiel"),
                               ("2", "Bertålotta Beispiel"),
                               ("Bertålotta Beispiel", "Bertålotta Beispiel"),
                               ("berta@example.cde", "Bertålotta Beispiel"),

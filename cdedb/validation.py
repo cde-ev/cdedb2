@@ -435,7 +435,7 @@ def _realm(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError(n_("Not a valid realm."))))
     return val, errs
 
-_CDEDBID = re.compile('^DB-([0-9]*)-([A-K])$')
+_CDEDBID = re.compile('^DB-([0-9]*)-([0-9X])$')
 @_addvalidator
 def _cdedbid(val, argname=None, *, _convert=True):
     """

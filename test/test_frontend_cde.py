@@ -1155,7 +1155,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-7-I"
+        f['persona_id'] = "DB-7-8"
         f['is_orga'].checked = True
         f['is_instructor'].checked = True
         self.submit(f)
@@ -1170,7 +1170,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/past/event/list'},
                       {'href': '/past/event/1/show'})
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-7-I"
+        f['persona_id'] = "DB-7-8"
         f['is_orga'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
