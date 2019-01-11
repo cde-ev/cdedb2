@@ -3,17 +3,14 @@
 Eine Veranstaltung Planen - ein Ablaufplan
 ==========================================
 
-Todo: Label und refs einfügen
-Hinweise setzen
+MIT DER DATENBANK KONSISTENTE SPRACHE
 
-Mit der Datenbank konsistente Sprache
-Einheitliche Anredeform
-Reihenfolge umstruckturieren ? (wie in Datenbank)
+REIHENFOLGE UMSTRUCKTURIEREN ? (WIE IN DATENBANK) - AKTUELL ZEITLICHE REIHENFOLGE, ZUDEM IST NAVIGATION ÜBER DIE SEITENLEISTE MÖGLICH
    
 Dieser Guide soll euch durch die Verwaltung einer Veranstaltung mittels der neuen CdE-Datenbank führen- vom Anlegen der Veranstalltung, über die Anmeldephase bis auf die Veranstalltung vor Ort. Die Beschreibung soll so ausführlich erfolgen, das auch neue Orgas, die zum ersten Mal Kontakt mit der neuen Datenbank haben, sich gut zurecht finden und gleichzeitig erfahrenen Orgas als Nachschlagewerk dienen.
 
 
-Zum Aufbau dieses Guides
+Zum Aufbau dieses Guides:
 
 Ich habe versucht diesem Leitfaden eine grobe Zeitliche Struktur zu Grunde zu legen. Das Spiegelt sich vor allem in den großen Über-Kapiteln (Vor der Anmeldeeröffnung, zwischen Anmeldeeröffnung und Anmeldeschluss,...) wieder, aber auch innerhalb dieser habe ich versucht, die einzelnen Aufgaben und Mögichkeiten in eine einigermaßen sinnvolle Reihenfolge zu bringen.
 Die einzelnen Kapitelüberschriften (Veranstaltungs-Teile, Kurse, ...) sind nach dem Menüpunkt in der Datenbank benannt, den sie zum Thema haben.
@@ -28,16 +25,16 @@ Vor dem Anmeldebeginn
 Erste Schritte
 ^^^^^^^^^^^^^^
 
-Juhu, ihr seid ein Orga Team und wollt eine CdE-Veranstalltung organisieren! Doch was ist zu tun?
+Juhu, du bist Teil eines Orga Team und ihr wollt eine CdE-Veranstalltung organisieren! Doch was ist zu tun?
 
 Ihr bekommt vom Verwaltungsteam eine Mail, das eure Veranstaltung jetzt in die Datenbank eingetragen wurde und ihr ab sofort Zugriff auf diese habt. 
 
-Das sind die Dinge, die ihr zuerst erledigen solltet:
+Das sind die Dinge, die du zuerst erledigen solltest:
 
 - Melde dich in der Datenbank an.
-- Navigiert zum Reiter "Veranstaltungen". Dort findet ihr unter "Organisierte Veranstaltungen" eure Veranstaltung angezeigt. Mit einem Klick auf diese öffnet ihr euren Orgateam-Bereich der Veranstaltung, in dem alle weiteren Schritte statt finden werden. Dort gibt es auch Schnelllinks zur Veranstaltungsanmeldung, BLA WEITERE DINGE
-- Überprüft, ob alle Orgas aus eurem Team als Orgas der Veranstaltung eingetragen sind. Falls nicht, könnt ihr die fehlenden über das Eingabefeld hinzufügen.
-- Kontrolliert euren Zeitrahmen - ist dieser nicht korrekt, könnt ihr ihn unter "Veranstaltungs-Teile" korrigieren.
+- Navigiert zum Reiter "Veranstaltungen". Dort findest du unter "Organisierte Veranstaltungen" eure Veranstaltung angezeigt. Hier gibt es Schnelllinks zur Anmeldung zu eurer Veranstaltung, zu Anmeldestatistik und zum Kursbereich. Mit einem Klick auf euren Veranstaltungsnamen öffnest du euren Orgateam-Bereich der Veranstaltung, in dem alle weiteren Schritte statt finden werden.
+- Überprüf, ob alle Orgas aus eurem Team als Orgas der Veranstaltung eingetragen sind. Falls nicht, kannst du die fehlenden über das Eingabefeld hinzufügen.
+- Kontrolliert euren Zeitrahmen - ist dieser nicht korrekt, kannst du ihn unter "Veranstaltungs-Teile" korrigieren.
 
 
 
@@ -59,10 +56,10 @@ welche alle von *euch* organisiert werden.
 Wie viele Veranstaltungs-Teile hat eure Veranstaltung?
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-Die meisten Veranstaltungen haben nur einen Veranstaltungsteil. Überprüft ob der richtig ist, und fügt ggf weitere hinzu.
-Hier müsst ihr für jeden Veranstaltungs-Teil eurer Veranstaltung einen seperaten Eintrag anlegen.
+Die meisten Veranstaltungen haben nur einen Veranstaltungsteil. Überprüft ob dieser richtig ist, und fügt ggf weitere hinzu.
+Hier musst du für jeden Veranstaltungs-Teil eurer Veranstaltung einen seperaten Eintrag anlegen.
 
-Für jeden Veranstaltungsteil könnt ihr unterschiedliche Teilnahmebeiträge eintragen.
+Für jeden Veranstaltungsteil können unterschiedliche Teilnahmebeiträge eintragen.
 
 .. hint:: Teilnahmebeiträge müssen mit einem Punkt, keinem Komma, als Dezimaltrennzeichen eingegeben werden.
 
@@ -75,13 +72,13 @@ Wie viele Kursschienen haben eure Veranstaltungs-Teile?
 
 In den Kursschienen gibt es Kurse, die von den Teilnehmer auf einem Veranstaltungs-Teil *parallel* zueinander besucht werden. Jeder Teilnehmer kann also in jeder Kursschiene maximal einen Kurs belegen. Auf Veranstaltungen mit zwei Kursschienen könnten beispielsweise Teilnehmer vormittags und nachmittags unterschieliche Kurse besuchen.
 
-Mittels "Kurswahlen" könnt ihr einstellen, wie viele präferenzierte Kurse (1. Wahl, (2. Wahl, 3. Wahl, ...)) ein Teilnehemer in dieser Kursschiene bei der Anmeldung wählen *muss*.
+Mittels "Kurswahlen" kannst du einstellen, wie viele präferenzierte Kurse (1. Wahl, (2. Wahl, 3. Wahl, ...)) ein Teilnehemer in dieser Kursschiene bei der Anmeldung wählen *muss*.
 
 Die "Sortierung" gibt die Reihenfolge der Abfragen der Kurswahlen bei der Anmeldung in aufsteigender Zahl an.
 
 Manche Veranstaltungen (etwa das CdE-Segeln) haben keine Kursschienen und damit auch keine Kurse.
 
-.. hint:: Ihr könnt einmal angelegte Veranstaltungs-Teile und Kursschienen nur solange löschen, wie es keine Daten für diese gibt.
+.. hint:: Einmal angelegte Veranstaltungs-Teile und Kursschienen könne nur solange gelöscht werden, wie es keine Daten für diese gibt.
 
 
 
@@ -92,7 +89,9 @@ Kurse
 
 Wenn eure Veranstaltung Kurse hat, könnt ihr diese unter dem Reiter "Kurse" in die Datenbank eintragen.
 
-.. hint:: Es ist empfehlenswert, den Teilnehmern vor eurer Anmeldebeginn die Kursliste zur Verfügung zu stellen, auch wenn diese eventuell noch nicht vollständig sein sollte. Unter "Konfiguration" könnt ihr in der Checkbox "Sichtbarkeit der Kursliste" die Kursliste für alle, die sich für die Veranstaltung anmelden können, sichtbar machen.
+----------------------------------------------------BIS HIER MIT TOBI DURCHGEGANGEN-----------------------------------------
+
+.. hint:: Es ist empfehlenswert, den Teilnehmern vorm Anmeldebeginn die Kursliste zur Verfügung zu stellen, auch wenn diese eventuell noch nicht vollständig sein sollte. Unter "Konfiguration" kannst du in der Checkbox "Sichtbarkeit der Kursliste" die Kursliste für alle, die sich für die Veranstaltung anmelden können, sichtbar machen.
 	  
 
 
@@ -101,9 +100,9 @@ Wenn eure Veranstaltung Kurse hat, könnt ihr diese unter dem Reiter "Kurse" in 
 Einen neuen Kurs anlegen
 ''''''''''''''''''''''''
 
-Über den Button "Kurs hinzufügen" gelangt ihr in einen Reiter, unter dem ihr die Daten des Kurses, den ihr hinzufügen wollt, eintragen könnt. Dafür müsst ihr mindestens die Felder "Kurzname" und "Langer Titel" ausfüllen.
+Über den Button "Kurs hinzufügen" gelangst du in einen Reiter, unter dem du die Daten des Kurses, den du hinzufügen möchtest, eintragen kannst. Dafür müssen mindestens die Felder "Kurzname" und "Langer Titel" ausgefüllt werden.
 
-.. hint:: Unter "Kursangebot" könnt ihr für jeden Kurs einzeln festlegen, auf welchem der Veranstaltungs-Teile er angeboten wird.
+.. hint:: Unter "Kursangebot" kann für jeden Kurs einzeln festgelegt werden, auf welchem der Veranstaltungs-Teile er angeboten wird.
 
 
 
@@ -112,7 +111,7 @@ Einen neuen Kurs anlegen
 Einen bestehenden Kurs bearbeiten
 '''''''''''''''''''''''''''''''''
 
-Wollt ihr einen bereits existenten Kurs bearbeiten, wählt ihr in der Zeile mit dem Kurstitel des Kurses in der äußeren rechten Spalte das Stift-Symbol aus. Damit gelangt ihr zum gleichen Reiter, unter dem ihr auch neue Kurse eintragen könnt, und ihr könnt beliebig Daten verändern und anschließend speichern.
+Willst du einen bereits existenten Kurs bearbeiten, klicke in der Zeile mit dem Kurstitel des Kurses in der äußeren rechten Spalte auf das Stift-Symbol. Damit gelangst du zum gleichen Reiter, unter dem auch neue Kurse eingetragen werden, nur das hier die bereits eingetragenen Daten des zu editierenden Kurses eingefügt sind, und du kannst beliebig Daten verändern und anschließend speichern.
 
 
 
@@ -121,9 +120,9 @@ Wollt ihr einen bereits existenten Kurs bearbeiten, wählt ihr in der Zeile mit 
 weitere Datenfelder
 '''''''''''''''''''
 
-:ref:`Hier <handbuch_ablaufplan_datenfelder_allgemein>` findet ihr, wie Datenfelder allgemein konfiguriert werden.
+:ref:`Hier <handbuch_ablaufplan_datenfelder_allgemein>` findest du, wie Datenfelder allgemein konfiguriert werden.
 
-:ref:`Hier <handbuch_ablaufplan_datenfelder_kurse>` findet ihr, was ihr speziell bei Kursfeldern beachten solltet.
+:ref:`Hier <handbuch_ablaufplan_datenfelder_kurse>` findest du, was speziell bei Kursfeldern zu beachten ist.
 
 
 
@@ -136,7 +135,7 @@ Vor einer Veranstaltung sollte man wissen, wie viele Teilnehmer die Veranstaltun
 
 TODO: LINK O.Ä. ZUR TEILNEHMERBEITRAGSTABELLE HINZUFÜGEN
 
-Dafür können die Unterkünfte (also Plätze pro Zimmer, Zelt, etc.)  - gerade bei neuen Veranstaltungen empfehlenswert - direkt in der Datenbank unter "Unterkunft" angelegt werden, das erleichtert die Berechnung und den Überblick über verfügbare Teilnehmerplätze.
+Dafür können die Unterkünfte (also (Schlaf)plätze pro Zimmer, Zelt, etc.)  - gerade bei neuen Veranstaltungen empfehlenswert - direkt in der Datenbank unter "Unterkunft" angelegt werden, das erleichtert die Berechnung des Teilnahmebeitrags und den Überblick über verfügbare Teilnehmerplätze.
 
 ACHTUNG - FEATURE EXISTIERT NOCH NICHT
 Das Anlegen kann auch nach Anmeldebeginn erfolgen oder - wenn vorhanden - von einer alten Veranstaltung importiert werden. Es wird für Kirchheim eine Unterkunftsvorlage bereitgestellt werden.
@@ -148,7 +147,7 @@ Das Anlegen kann auch nach Anmeldebeginn erfolgen oder - wenn vorhanden - von ei
 Unterkünfte neu anlegen
 '''''''''''''''''''''''
 
-Analog zum :ref:`anlegen von Kursen <handbuch_ablaufplan_vor_kurse_anlegen>`
+Analog zum :ref:`Anlegen von Kursen <handbuch_ablaufplan_vor_kurse_anlegen>`
 
 
 
@@ -157,7 +156,7 @@ Analog zum :ref:`anlegen von Kursen <handbuch_ablaufplan_vor_kurse_anlegen>`
 Eine bestehende Unterkunft bearbeiten
 '''''''''''''''''''''''''''''''''''''
 
-Analog zum :ref:`bearbeiten von Kursen <handbuch_ablaufplan_vor_kurse_bearbeiten>`
+Analog zum :ref:`Bearbeiten von Kursen <handbuch_ablaufplan_vor_kurse_bearbeiten>`
 
 
 
@@ -166,9 +165,9 @@ Analog zum :ref:`bearbeiten von Kursen <handbuch_ablaufplan_vor_kurse_bearbeiten
 weitere Datenfelder
 '''''''''''''''''''
 
-:ref:`Hier <handbuch_ablaufplan_datenfelder_allgemein>` findet ihr, wie Datenfelder allgemein konfiguriert werden.
+:ref:`Hier <handbuch_ablaufplan_datenfelder_allgemein>` findest du, wie Datenfelder allgemein konfiguriert werden.
 
-:ref:`Hier <handbuch_ablaufplan_datenfelder_unterkunft>` findet ihr, was ihr speziell bei Unterkunftsfeldern beachten solltet.
+:ref:`Hier <handbuch_ablaufplan_datenfelder_unterkunft>` findest du, was speziell bei Kursfeldern zu beachten ist.
 
 
 
@@ -177,7 +176,7 @@ weitere Datenfelder
 Konfiguration
 ^^^^^^^^^^^^^
 
-Hier könnt ihr ganz grundlegende Rahmenkonfigurationen für eure Veranstaltungen festlegen.
+Hier können ganz grundlegende Rahmenkonfigurationen für eure Veranstaltungen festgelegt werden.
 
 
 
@@ -188,11 +187,11 @@ Selbsterklärendes
 
 TODO: TITEL ÄNDERN
 
-Titel und Veranstalter sind selbsterklärend. Das Kürzel wird  TODO HINZUFÜGEN
+Titel und Veranstalter sind selbsterklärend. Das Kürzel wird  TODO WOFÜR IST DAS KÜRZEL EIGENTLICH ALLES DA?
 
-Es gibt ab sofort ein CdE-Konto, über das alle Zahlungen für Veranstaltungsanmeldungen abgewickelt werden. Regelt ihr die Zahlungen über ein privates Konto (was ihr vorher mit dem Finanzvorstand absprechen und nur bei kleinen Veranstaltungen überhaupt zur Debatte stehen sollte) lasst ihr das Feld leer.
+Es gibt ab sofort ein CdE-Konto, über das alle Zahlungen für Veranstaltungsanmeldungen abgewickelt werden. Regelt ihr die Zahlungen über ein privates Konto (was ihr vorher mit dem Finanzvorstand absprechen und nur bei kleinen Veranstaltungen überhaupt zur Debatte stehen sollte) lasst das Feld einfach leer.
 
-Im Freitext zur Anmeldebestätigung könnt ihr Text einfügen, der automatisch beim Verschicken der Mails zur Anmeldebestätigung in diese eingefügt wird.
+Im Freitext zur Anmeldebestätigung kann ein Text eingefügt werden, der automatisch beim Verschicken der Mails zur Anmeldebestätigung in diese eingefügt wird.
 
 Die "Admin/Orga-Notizen" sind für euch. Sie sind nur für euch und Datenbankadmins sichtbar.
 
@@ -218,12 +217,13 @@ TODO: WAS GENAU HEIST DAS? WELCHE KONKRETEN FOLGEN?
 Extrafelder und Fragebogen anzeigen
 '''''''''''''''''''''''''''''''''''
 
-Hier könnt ihr auswählen, über welches Datenfeld die Hauswünsche und Isomatteninformationen der Teilnehmer abgefragt werden (diese Felder sind optional). Dafür müsst ihr diese zuerst erstellen.
-Allgemeines zur Konfiguration von Datenfeldern findet ihr :ref:`hier <handbuch_ablaufplan_datenfelder_allgemein>`, spezielles zum Thema Fragebogen :ref:`hier <handbuch_ablaufplan_datenfelder_anmeldung>`.
+Hier kann ausgewählt werdne, über welches Datenfeld die Hauswünsche und Isomatteninformationen der Teilnehmer abgefragt werden (diese Felder sind optional). Dafür musst du diese Datenfelder zuerst erstellen.
 
-Um den Fragebogen für die Teilnehmer sichtbar zu machen, tickt die Checkbox. Der Fragebogen ist nur für diejenigen zu sehen, die sich schon für die Veranstaltung angemeldet haben.
+Allgemeines zur Konfiguration von Datenfeldern findest du :ref:`hier <handbuch_ablaufplan_datenfelder_allgemein>`, spezielles zum Thema Fragebogen :ref:`hier <handbuch_ablaufplan_datenfelder_anmeldung>`.
 
-Wie ihr den Fragebogen vor der Anmeldung sinnvoll konfigurieren könnt, findet ihr :ref:`hier <handbuch_ablaufplan_vor_fragebogen>`, Beispiele zur Änderung der Abfragen nach Anmeldeschluss findet ihr :ref:`hier <handbuch_ablaufplan_nach_fragebogen>`.
+Um den Fragebogen für die Teilnehmer sichtbar zu machen, tick die Checkbox. Der Fragebogen ist nur für diejenigen zu sehen, die sich schon für die Veranstaltung angemeldet haben.
+
+Wie du den Fragebogen vor der Anmeldung sinnvoll konfigurieren könntest, findest du :ref:`hier <handbuch_ablaufplan_vor_fragebogen>`, Beispiele zur Änderung der Abfragen nach Anmeldeschluss findet gibt es :ref:`hier <handbuch_ablaufplan_nach_fragebogen>`.
 
 
 
@@ -232,7 +232,7 @@ Wie ihr den Fragebogen vor der Anmeldung sinnvoll konfigurieren könnt, findet i
 Fragebogen konfigurieren
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Mittels des Fragebogens könnt ihr während der Anmeldung und auch nach Anmeldeschluss Daten von den Teilnehmern abfragen ("zusätzlichen Daten").
+Mittels des Fragebogens kann während der Anmeldung und auch nach Anmeldeschluss Daten von den Teilnehmern abgefragt werden. Darunter fallen auch die Dinge, die als sogn. "zusätzliche Daten" abgefragt werden.
 
 
 
@@ -251,16 +251,16 @@ Mit 1. erhält man eine Überschrift auf dem Fragebogen, 2. erzeugt einen Textbl
 
 Nun lassen sich diese Mögichkeiten auch noch kombinieren, eine Kombination von 1. und 2. führt zum erwarteten Ergebnis, ein Textblock mit Überschrift. Eine Kombination von 1. und 3. erzeugt eine Abfrage mit daneben stehendem, fett gedrucktem **Titel**. Die Kombination von 2. und 3. erzeugt eine **Infobox** unter der Abfrage. Eine Kombination aller Elemente führt dementsprechend zu einer Abfrage mit fett gedrucktem Titel und Infobox.
 
-.. hint:: Tickt ihr die Box "Schreibgeschützt", lässt sich die dazugehörige Abfrage nicht mehr bearbeiten.
+.. hint:: Ist die Box "Schreibgeschützt" getickt, lässt sich die dazugehörige Abfrage im Fragebogen von den Teilnehmern nicht mehr bearbeiten.
 
 
 
 Anordnug ändern
 '''''''''''''''
 
-Klickt ihr diesen Button oben links auf der Seite, erscheint eine graphische Oberfläche des von euch konfigurierten Fragebogens. Hier könnt ihr die Felder per Dragn Drop verschieben und tauschen. Mit einem einfachen Klick auf ein Feld werden euch die Feldgrenzen eingezeichnet.
+Klickst du diesen Button oben links auf der Seite, erscheint eine graphische Oberfläche des von euch konfigurierten Fragebogens. Hier kannst du die Felder per Dragn Drop verschieben und tauschen. Mit einem einfachen Klick auf ein Feld werden die Feldgrenzen eingezeichnet.
 
-.. hint :: Mit diesem Button könnt ihr euch eine Vorschau eures Fragebogens anzeigen lassen, ohne diesen unter :ref:`Konfigurationen <handbuch_ablaufplan_vor_konfiguration_extrafelder>` sichtbar zu machen.
+.. hint :: Mit diesem Button kannst du dir eine Vorschau eures Fragebogens anzeigen lassen, ohne diesen dafür unter :ref:`Konfigurationen <handbuch_ablaufplan_vor_konfiguration_extrafelder>` sichtbar zu machen.
 
 
 
@@ -275,7 +275,7 @@ Einige Beispiele für Abfragen, die während der Anmeldung sinnvoll sein können
 - Bereitschaft auf Isomatten zu schlafen
 - Kursspezifisches, was für die Kurseinteilung entscheidend ist (etwa Tanzpartner oder Schrittart bei Tanzkursen)
 
-.. hint:: Damit die Information, wer auf Isomatten bereit ist zu schlafen, im weiteren Veralauf der Zimmereinteilung eingebunden werden kann, müsst ihr das Feld unter :ref:`Konfigurationen <handbuch_ablaufplan_vor_konfiguration_extrafelder>` angeben.
+.. hint:: Damit die Information, wer bereit ist auf Isomatten zu schlafen, im weiteren Verlauf der Zimmereinteilung eingebunden werden kann, muss das zugehörige Abfragefeld unter :ref:`Konfigurationen <handbuch_ablaufplan_vor_konfiguration_extrafelder>` angeben werden.
 
 
 
@@ -286,11 +286,11 @@ Anmeldung eröffnen
    
 Vor der Anmeldung noch ein paar letze Punkte:
    
-- Minderjährige können sich **erst dann** für eure Veranstaltung anmelden, wenn ihr ein Minderjährigenformular in der DB hochgeladen habt!
-- Habt ihr für **jeden** Veranstaltungsteil einen Teilnehmerbeitrag unter :ref:`Veranstaltungs-Teile <handbuch_ablaufplan_vor_veranstaltungsteile_veranstaltungsteile>` eingetragen?
-- Die Veranstaltung muss **sichtbar** sein. Dafür müsst ihr im Kontrollkästchen des gleichnamigen Feldes unter :ref:`Konfiguration <handbuch_ablaufplan_vor_konfiguration>` setzen.
+- Minderjährige können sich **erst dann** für eure Veranstaltung anmelden, wenn ein Minderjährigenformular in der DB hochgeladen ist!
+- Ist für **jeden** Veranstaltungsteil ein Teilnehmerbeitrag unter :ref:`Veranstaltungs-Teile <handbuch_ablaufplan_vor_veranstaltungsteile_veranstaltungsteile>` eingetragen?
+- Die Veranstaltung muss **sichtbar** sein. Dafür muss die Box des gleichnamigen Feldes unter :ref:`Konfiguration <handbuch_ablaufplan_vor_konfiguration>` getickt sein.
 
-Die Anmeldung eröffnet automatisch zu dem Zeitpunkt, den ihr dafür festgelegt habt, siehe :ref:`Anmeldebeginn und -ende <handbuch_ablaufplan_vor_konfigurationen_beginn>`. 
+Die Anmeldung eröffnet automatisch zu dem Zeitpunkt, der dafür festgelegt wurde, siehe :ref:`Anmeldebeginn und -ende <handbuch_ablaufplan_vor_konfigurationen_beginn>`. 
 
 
 
@@ -299,7 +299,7 @@ Die Anmeldung eröffnet automatisch zu dem Zeitpunkt, den ihr dafür festgelegt 
 Zwischen Anmeldeeröffnung und Anmeldeschluss
 --------------------------------------------
 
-Hier ist Datenbanktechnisch nicht viel zu tun. Ihr könnt - falls noch nicht geschehen, die :ref:`Unterkünfte <handbuch_ablaufplan_vor_unterkunft>` eurer Veranstaltung anlegen und die eingehend Überweisungen eintragen.
+Hier ist Datenbanktechnisch nicht viel zu tun. Falls noch nicht geschehen, können die :ref:`Unterkünfte <handbuch_ablaufplan_vor_unterkunft>` eurer Veranstaltung angelegt und die eingehend Überweisungen eintragen werden.
 
 
 
@@ -308,11 +308,13 @@ Hier ist Datenbanktechnisch nicht viel zu tun. Ihr könnt - falls noch nicht ges
 Überweisungen eintragen
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Während der Anmeldephase bekommt ihr vom Finanzvorstand eine Tabelle mit den Menschen, die den Teilnahmebeitrag (so ihr diesen über das CdE-Konto abwickelt) überwiesen haben. Diese könnt ihr über das Tool "Überweisungen eintragen" in der Datenbank hinterlegen - das ist wichtig, damit ihr später bei der Platzvergabe wisst, wer (und auch wann) den Teilnehmerbeitrag bezahlt hat.
+Während der Anmeldephase bekommt ihr vom Finanzvorstand eine Tabelle mit den Menschen, die den Teilnahmebeitrag (so dieser über das CdE-Konto abgewickelt wird) überwiesen haben. Diese kann über das Tool "Überweisungen eintragen" in der Datenbank hinterlegt werden - das ist wichtig, damit später bei der Platzvergabe klar ist, wer (und auch wann) den Teilnahmebeitrag bezahlt hat.
 
 Im Idealfall bekommt ihr eine .csv Tabelle vom Finanzvorstand, die die Spalten
+
 Datum;Betrag;CdEDB-ID;Nachname;Vorname
-in genau dieser Reihenfolge enthält. Dann könnt ihr diese einfach per Copy+Paste in das Formular übertragen. Sollte dies nicht der Fall sein, müsst ihr das Format dementsprechend anpassen.
+
+in genau dieser Reihenfolge enthält. Dann kann diese einfach per Copy+Paste in das Formular übertragen werden. Sollte dies nicht der Fall sein, muss das Format obigem angepasst werden.
 
 Im Gegensatz zur alten Datenbank wird nun auch das automatische Einlesen von Externen unterstüzt, da diese für die Veranstaltung eine DB-ID erhalten und damit eindeutig vom System identifiziert werden können.
 
@@ -338,7 +340,7 @@ TODO:
 Fragebogen konfigurieren
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Nach Anmeldeschluss ist es oftmals sinnvoll, den Fragebogen zu überarbeiten. Sinnvoll ist es etwa, Abfragen, die ihr während der Anmeldung gestellt habt und jetzt nicht mehr verändert werden sollen, schreibzuschützen (indem ihr bei dem jeweiligen Feld die Checkbox "Schreibgeschützt" tickt) und dafür andere Abfragen zu tätigen, etwa sobald die Teilnehmer feststehen. Beispielhafte Abfragen findet ihr unten.
+Nach Anmeldeschluss ist es oftmals sinnig, den Fragebogen zu überarbeiten. Sinnvoll ist es etwa, Abfragen, die während der Anmeldung gestellt wurden und jetzt nicht mehr verändert werden sollen, auf schreibgeschützt zu stellen (indem bei dem jeweiligen Feld die Checkbox "Schreibgeschützt" getickt wird) und dafür andere Abfragen zu tätigen, etwa sobald die Teilnehmer feststehen. Beispielhafte Abfragen dazu gibt es unten.
 
 
 
@@ -372,7 +374,7 @@ TODO:
 Datenfelder konfigurieren
 -------------------------
 
-Da Datenfelder ein sehr mächtiges Hilfsmittel sind, die ihr vor, während und nach der Anmeldephase unterschiedlich nutzen könnt und eine Änderung im Verlaufe nicht nur möglich, sondern sogar oft gewollt ist, werden diese hier ausgelagert zentral erklärt. In den jeweiligen Punkten im Leitfaden wird immer, wenn Datenfelder konfiguriert werden, auf den entsprechenden Teil hier verwiesen.
+Da Datenfelder ein sehr mächtiges Hilfsmittel sind, die vor, während und nach der Anmeldephase unterschiedlich genutzt werden können und eine Änderung im Verlauf der verschiedenen Organisationsphasen nicht nur möglich, sondern sogar oft gewollt ist, werden diese hier ausgelagert zentral erklärt. In den jeweiligen Punkten im Leitfaden wird immer, wenn Datenfelder konfiguriert werden, auf den entsprechenden Teil hier verwiesen.
 
 
 
@@ -388,7 +390,7 @@ Zur allgemeinen Syntax von Datenfeldern:
 
 .. attention:: Den Datentyp nachträglich zu ändern ist sehr gefährlich! Dabei können bereits von Teilnehmern eingegebene Daten unwiederuflich verloren gehen!
 
-Es gibt zwei wesentlich unterschieliche Konfigurationsarten:
+Es gibt zwei wesentlich unterschiedliche Konfigurationsarten:
 
 - Das Optionenfeld ist **leer**. Diese Option wird einzeln für jeden Datentypen unten geschildert.
 - Das Optionenfeld ist **nicht leer**.
@@ -399,7 +401,7 @@ Ist das Optionenfeld nicht leer, hat die Eingabe folgenden Syntax:
 - Wert2;Beschreibungstext 2
 - …
 
-Dieser Fall ist für alle Datentypen - beim späteren Ausfüllen - gleich: Es wird eine Liste aller wählbaren Möglichkeiten ("Beschreibungstext 1", "Beschreibungstext 2", ...) angezeigt, aus welcher genau eine ausgewählt werden muss(!) - die Default Auswahl ist "Beschreibungstext 1".
+Dieser Fall ist für alle Datentypen beim späteren Ausfüllen gleich: Es wird eine Liste aller wählbaren Möglichkeiten ("Beschreibungstext 1", "Beschreibungstext 2", ...) angezeigt, aus welcher genau eine ausgewählt werden **muss** - die Default Auswahl ist "Beschreibungstext 1".
 
 .. hint:: Gibt es vorgegebene Möglichkeiten, aus denen gewählt werden kann, **muss** eine Auswahl getroffen werde. Erfolgt eine freie Eingabe, **kann** etwas eingegeben werden.
 
@@ -448,7 +450,7 @@ Kommazahl
 
 - Ein Kommazahlenfeld akzeptiert als Werte Kommazahlen mit maximal 17 signifikaten Stellen, die Beschreibung darf auch Buchstaben und Sonderzeichen enthalten.
 - Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in wleches eine Kommazahl eingegeben werden kann.
-.. attention:: Kommas werden nicht akzeptiert, es muss ein Punkt verwendet werden.
+.. attention:: Kommas werden als Dezimaltrennzeichen nicht akzeptiert, es muss ein Punkt verwendet werden.
 
 
 
@@ -467,7 +469,7 @@ Datum
 Datum mit Uhrzeit
 '''''''''''''''''
 
-- Ein Datum mit Uhrzeit Feld akzeptiert Werte im Format YYYY-MM-DDThh:ii:ss (dabei das "T" einfach als solches eingeben) sowie etwaige Browserabhängie Varianen (sihe dazu unter :ref:`Datum <handbuch_ablaufplan_datenfelder_allgemein_datum>`), die Beschreibung darf Buchstaben, Zahlen und Sonderzeichen enthalten.
+- Ein Datum mit Uhrzeit Feld akzeptiert Werte im Format YYYY-MM-DDThh:ii:ss (dabei das "T" einfach als solches eingeben) sowie etwaige Browserabhängie Varianen (siehe dazu unter :ref:`Datum <handbuch_ablaufplan_datenfelder_allgemein_datum>`), die Beschreibung darf Buchstaben, Zahlen und Sonderzeichen enthalten.
 * Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in welches ein Datum mit Uhrzeit in obigem Format eingegeben werden kann.
  
  
@@ -479,7 +481,7 @@ Anmeldungsfelder
 
 Die Anmeldungsfelder sind für die Konfiguration des Fragebogens relevant. Mit diesem können während und nach der Anmeldephase fast beliebige Abfragen getätigt werden, etwa wer bereit ist auf einer Isomatte zu schlafen, wer mit wem auf ein Zimmer möchte oder ob jemand zusätzlich Schokolade mit zur Aka bringen kann.
 
-Die Konfigurationssyntax des Fragebogens findet ihr :ref:`hier <handbuch_ablaufplan_vor_fragebogen>`, beispielhafte Abfragen während der Anmeldephase :ref:`hier <handbuch_ablaufplan_vor_fragebogen_während>` und Beispiele für Abfragen nach Anmeldeschluss :ref:`hier <handbuch_ablaufplan_nach_fragebogen>`.
+Die Konfigurationssyntax des Fragebogens findest du :ref:`hier <handbuch_ablaufplan_vor_fragebogen>`, beispielhafte Abfragen während der Anmeldephase :ref:`hier <handbuch_ablaufplan_vor_fragebogen_während>` und Beispiele für Abfragen nach Anmeldeschluss :ref:`hier <handbuch_ablaufplan_nach_fragebogen>`.
 
 
 
