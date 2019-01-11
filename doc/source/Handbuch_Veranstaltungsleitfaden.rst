@@ -5,32 +5,39 @@ Eine Veranstaltung Planen - ein Ablaufplan
 
 Todo: Label und refs einfügen
 Hinweise setzen
+
+Mit der Datenbank konsistente Sprache
+Einheitliche Anredeform
+Reihenfolge umstruckturieren ? (wie in Datenbank)
    
 Dieser Guide soll euch durch die Verwaltung einer Veranstaltung mittels der neuen CdE-Datenbank führen- vom Anlegen der Veranstalltung, über die Anmeldephase bis auf die Veranstalltung vor Ort. Die Beschreibung soll so ausführlich erfolgen, das auch neue Orgas, die zum ersten Mal Kontakt mit der neuen Datenbank haben, sich gut zurecht finden und gleichzeitig erfahrenen Orgas als Nachschlagewerk dienen.
 
 
 Zum Aufbau dieses Guides
 
-Ich habe versucht diesem Leitfaden eine grobe Zeitliche Strucktur zu Grunde zu legen. Das Spiegelt sich vor allem in den großen Über-Kapiteln (Vor der Anmeldeeröffnung, zwischen Anmeldeeröffnung und Anmeldeschluss,...) wieder, aber auch innerhalb dieser habe ich versucht, die einzelnen Aufgaben und Mögichkeiten in eine einigermaßen sinnvolle Reihenfolge zu bringen.
-Die einzelnen Kapitelüberschrifte (Veranstaltungs-Teile, Kurse, ...) sind nach dem Menüpunkt in der Datenbank benannt, den sie zum Thema haben.
+Ich habe versucht diesem Leitfaden eine grobe Zeitliche Struktur zu Grunde zu legen. Das Spiegelt sich vor allem in den großen Über-Kapiteln (Vor der Anmeldeeröffnung, zwischen Anmeldeeröffnung und Anmeldeschluss,...) wieder, aber auch innerhalb dieser habe ich versucht, die einzelnen Aufgaben und Mögichkeiten in eine einigermaßen sinnvolle Reihenfolge zu bringen.
+Die einzelnen Kapitelüberschriften (Veranstaltungs-Teile, Kurse, ...) sind nach dem Menüpunkt in der Datenbank benannt, den sie zum Thema haben.
 
 
 
 .. _handbuch_ablaufplan_vor:
 
-Vor der Anmeldeeröffnung
+Vor dem Anmeldebeginn
 ------------------------
 
 Erste Schritte
 ^^^^^^^^^^^^^^
 
-Juhu, ihr seit ein Orga Team und wollt eine CdE-Veranstalltung organisieren! Doch was ist zu tun?
+Juhu, ihr seid ein Orga Team und wollt eine CdE-Veranstalltung organisieren! Doch was ist zu tun?
 
-Ihr bekommt vom Verwaltungsteam eine Mail, das eure Veranstaltung jetzt in die Datenbank eingetragen wurde und ihr ab sofort zugriff auf diese habt. Das sind die Dinge, die ihr zuerst erledigen solltet:
+Ihr bekommt vom Verwaltungsteam eine Mail, das eure Veranstaltung jetzt in die Datenbank eingetragen wurde und ihr ab sofort Zugriff auf diese habt. 
 
-- Navigiert zum Reiter "Veranstaltungen". Dort findet ihr unter "Organisierte Veranstaltungen" eure Veranstaltung angezeigt. Mit einem Klick auf diese öffnet ihr euren Orgateam-Bereich der Veranstaltung, in dem alle weiteren Schritte statt finden werden.
-- Überprüft, ob alle Orgas aus eurem Team als Orgas der Veranstaltung eingetragen sind. Falls nicht, fügt die fehlenden über das Eingabefeld hinzu.
-- kontrolliert euren Zeitrahmen - ist dieser nicht korrekt, könnt ihr ihn unter "Veranstaltungs-Teile" korrigieren
+Das sind die Dinge, die ihr zuerst erledigen solltet:
+
+- Melde dich in der Datenbank an.
+- Navigiert zum Reiter "Veranstaltungen". Dort findet ihr unter "Organisierte Veranstaltungen" eure Veranstaltung angezeigt. Mit einem Klick auf diese öffnet ihr euren Orgateam-Bereich der Veranstaltung, in dem alle weiteren Schritte statt finden werden. Dort gibt es auch Schnelllinks zur Veranstaltungsanmeldung, BLA WEITERE DINGE
+- Überprüft, ob alle Orgas aus eurem Team als Orgas der Veranstaltung eingetragen sind. Falls nicht, könnt ihr die fehlenden über das Eingabefeld hinzufügen.
+- Kontrolliert euren Zeitrahmen - ist dieser nicht korrekt, könnt ihr ihn unter "Veranstaltungs-Teile" korrigieren.
 
 
 
@@ -52,11 +59,12 @@ welche alle von *euch* organisiert werden.
 Wie viele Veranstaltungs-Teile hat eure Veranstaltung?
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
+Die meisten Veranstaltungen haben nur einen Veranstaltungsteil. Überprüft ob der richtig ist, und fügt ggf weitere hinzu.
 Hier müsst ihr für jeden Veranstaltungs-Teil eurer Veranstaltung einen seperaten Eintrag anlegen.
 
-Für jede Veranstaltung könnt ihr unterschiedliche Teilnahmebeiträge eintragen.
+Für jeden Veranstaltungsteil könnt ihr unterschiedliche Teilnahmebeiträge eintragen.
 
-.. hint:: Denkt an die Verwendung der Punkt-Notation anstelle der Komma-Notation.
+.. hint:: Teilnahmebeiträge müssen mit einem Punkt, keinem Komma, als Dezimaltrennzeichen eingegeben werden.
 
 
 
@@ -65,13 +73,15 @@ Für jede Veranstaltung könnt ihr unterschiedliche Teilnahmebeiträge eintragen
 Wie viele Kursschienen haben eure Veranstaltungs-Teile?
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-Kursschienen sind Kurse, die *pro* Teilnehmer auf einem Veranstaltungs-Teil *parallel* zueinander besucht werden. Jeder Teilnehmer muss also in jeder Kursschiene einen Kurs belegen. Auf Veranstaltungen mit zwei Kursschienen könnten beispielsweise Teilnehmer vormittags und nachmittags unterschieliche Kurse besuchen.
+In den Kursschienen gibt es Kurse, die von den Teilnehmer auf einem Veranstaltungs-Teil *parallel* zueinander besucht werden. Jeder Teilnehmer kann also in jeder Kursschiene maximal einen Kurs belegen. Auf Veranstaltungen mit zwei Kursschienen könnten beispielsweise Teilnehmer vormittags und nachmittags unterschieliche Kurse besuchen.
 
-Mittels "Kurswahlen" könnt ihr einstellen, wie viele präferenzierten Kurse (1. Wahl, (2. Wahl, 3. Wahl, ...)) ein Teilnehemer pro Hälfte bei der Anmeldung *wählen* muss.
+Mittels "Kurswahlen" könnt ihr einstellen, wie viele präferenzierte Kurse (1. Wahl, (2. Wahl, 3. Wahl, ...)) ein Teilnehemer in dieser Kursschiene bei der Anmeldung wählen *muss*.
 
 Die "Sortierung" gibt die Reihenfolge der Abfragen der Kurswahlen bei der Anmeldung in aufsteigender Zahl an.
 
-.. hint:: Ihr könnt einmal angelegte Veranstaltungs-Teile und Kursschienen nur löschen, wenn für diese keine Daten registriert sind (also es keine Kurse gibt, die währenddessen stattfinden).
+Manche Veranstaltungen (etwa das CdE-Segeln) haben keine Kursschienen und damit auch keine Kurse.
+
+.. hint:: Ihr könnt einmal angelegte Veranstaltungs-Teile und Kursschienen nur solange löschen, wie es keine Daten für diese gibt.
 
 
 
@@ -80,7 +90,7 @@ Die "Sortierung" gibt die Reihenfolge der Abfragen der Kurswahlen bei der Anmeld
 Kurse
 ^^^^^
 
-Hat eure Veranstaltung Kurse? Wenn ja, könnt ihr diese unter dem Reiter "Kurse" in die Datenbank eintragen.
+Wenn eure Veranstaltung Kurse hat, könnt ihr diese unter dem Reiter "Kurse" in die Datenbank eintragen.
 
 .. hint:: Es ist empfehlenswert, den Teilnehmern vor eurer Anmeldebeginn die Kursliste zur Verfügung zu stellen, auch wenn diese eventuell noch nicht vollständig sein sollte. Unter "Konfiguration" könnt ihr in der Checkbox "Sichtbarkeit der Kursliste" die Kursliste für alle, die sich für die Veranstaltung anmelden können, sichtbar machen.
 	  
