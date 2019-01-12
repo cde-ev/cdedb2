@@ -40,7 +40,7 @@
                         {{ util.form_input_text(name="qval_fulltext", label=gettext("Fulltext"), aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_given_names,display_name", label=gettext("Given Names"),
                                 aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_family_name,birth_name", label="Family/Birth Name",
+                        {{ util.form_input_text(name="qval_family_name,birth_name", label=gettext("Family/Birth Name"),
                                 aclass="input-sm") }}
                         {{ util.form_input_text(
                                 name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
@@ -60,12 +60,16 @@
                     </div>
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_username", label=gettext("E-Mail"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_telephone,mobile", label=gettext("Phone"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_telephone,mobile",
+                                                label=gettext("Phone"), aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_address,address_supplement,address2,address_supplement2",
                                                 label=gettext("Address"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_postal_code,postal_code2", label=gettext("ZIP"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_location,location2", label=gettext("City"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_country,country2", label=gettext("Country"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_postal_code,postal_code2", label=gettext("ZIP"),
+                                                aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_location,location2", label=gettext("City"),
+                                                aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_country,country2", label=gettext("Country"),
+                                                aclass="input-sm") }}
                     </div>
                 </div>
             </div>
