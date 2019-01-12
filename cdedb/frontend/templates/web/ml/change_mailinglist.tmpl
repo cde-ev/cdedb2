@@ -55,7 +55,7 @@
         <h4 class="heading-underline">Mails</h4>
         {{ util.form_input_text(name="subject_prefix", label="Präfix (Betreffzeile)") }}
         {{ util.form_input_select(name="attachment_policy", label="Anhänge",
-                entries=enums['PastEventLogCodes']|enum_entries(processing=gettext)) }}
+                entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
         {{ util.form_input_text(name="maxsize", label="max. Nachrichtengröße (in kB)") }}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('ml/show_mailinglist')) }}
     </form>
