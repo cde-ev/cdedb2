@@ -26,7 +26,8 @@
                 {% else %}
                     {% if 'member' in user.roles %}
                         <p>
-                            {% trans pri_pol=util.href(cdedblink("cde/consent_decision_form"), "Privacy Policy") -%}
+                            {% trans pri_pol=util.href(cdedblink("cde/consent_decision_form", {'stay': True}),
+                                     gettext("Privacy Policy")) -%}
                                 To use the Member Search, You need to agree to the {{ pri_pol }}.
                             {%- endtrans %}
                         </p>
@@ -42,7 +43,7 @@
             {% endcall %}
         </div>
         <div class="col-md-6">
-            {% call util.bootstrap_panel(title="Initiative 25+", icon='euro') %}
+            {% call util.bootstrap_panel(title=gettext("Initiative 25+"), icon='euro') %}
                 {% if has_lastschrift %}
                     <p>
                         {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
@@ -58,7 +59,7 @@
                             {%- endtrans %}
                         </strong>.
                         {% trans link=util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
-                                gettext("existing Direct Debit Authorization"), icon='euro')-%}
+                                 gettext("existing Direct Debit Authorization"), icon='euro')-%}
                             View Your {{ link }}.
                         {%- endtrans %}
                     </p>
