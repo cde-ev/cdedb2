@@ -944,9 +944,11 @@ def diacritic_patterns(s):
     This is intended for use with the sql SIMILAR TO clause or a python
     re module.
 
-    :type s: str
-    :rtype: str
+    :type s: str or None
+    :rtype: str or None
     """
+    if s is None:
+        return s
     ## if fragile special chars are present do nothing
     ## all special chars: '_%|*+?{}()[]'
     special_chars = '|*+?{}()[]'
