@@ -74,8 +74,8 @@ echo ""
 echo "Setting up the database..."
 echo "--------------------------------------------"
 
-cp /cdedb2/related/auto-build/files/stage3/postgresql.conf /etc/postgresql/9.6/main/
-cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/9.6/main/
+cp /cdedb2/related/auto-build/files/stage3/postgresql.conf /etc/postgresql/11/main/
+cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/11/main/
 /etc/init.d/postgresql restart
 sleep 3
 
@@ -148,7 +148,7 @@ if [ -e /media/cdrom0/vdi ]; then
     echo "--------------------------------------------"
 
     sed -i -e 's=\bens3\b=enp0s3=g' /etc/network/interfaces
-    
+
 fi
 
 echo ""
