@@ -622,6 +622,723 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("cde_admin")
+    def parse_statement_form(self, rs, data=None, problems=None, csvfields=None):
+        """Render form.
+        
+        The ``data`` parameter contains all extra information assembled
+        furing processing of a POST request.
+        """
+        data = data or {}
+        problems = problems or []
+        csvfields = csvfields or tuple()
+        csv_position = {key: ind for ind, key in enumerate(csvfields)}
+        return self.render(rs, "parse_statement", {'data': data,
+                                                   'problems': problems,
+                                                   'csvfields': csv_position})
+    
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("statement", "str"), ("checksum", "str_or_None"))
+    def parse_statement(self, rs, statement, checksum):
+
+        CSV_FIELDNAMES = ["myBLZ", "myAccNr", "statementNr", "statementDate",
+                          "currency", "valuta", "date", "currency2",
+                          "amount", "textKey", "customerReference",
+                          "instituteReference", "transaction", "posting",
+                          "primanota", "textKey2", "BLZ", "KontoNr", "BIC",
+                          "IBAN", "accHolder", "accHolder2"]
+        CSV_RESTKEY = "reference"
+        DATE_FORMAT = "%d.%m.%y"
+        GIVEN_NAMES_UNKNOWN = "VORNAME"
+        FAMILY_NAME_UNKNOWN = "NACHNAME"
+        POSTING_OTHER = "BUCHUNGSPOSTENGEBUEHREN|KONTOFUEHRUNGSGEBUEHREN"
+        POSTING_REFUND = "SAMMEL-UEBERWEISUNG"
+        REFERENCE_REFUND = "RUECKERSTATTUNG"
+        REFERENCE_MEMBERSHIP = "MITGLIED(SCHAFT)?(SBEITRAG)?|(HALB)?JAHRESBEITRAG"
+        REFERENCE_EXTERNAL = "\d\d\d\d-\d\d-\d\d, ?EXTERN"
+        EVENT_NAMES = {"Nachhaltigkeitsakademie 2019":
+                           "(N(ACHHALTIGKEITS)?[- ]?AKA(DEMIE)?|NAKA)\s*(2019)?",
+                       "WinterAkademie 2018/19":
+                           "(WINTER[- ]?AKA(DEMIE)?)\s*((20)?18/(20)?19)?",
+                       "CdE Skifreizeit 2019":
+                           "(CDE)?\s*SKI(FREIZEIT)?\s*(2019)?",
+                       "NRW Nachtreffen 2018":
+                           "((NRW|NACHTREFFEN|VELBERT)\s*)+(2018)?"}
+        DB_ID_PATTERN = "(DB-[0-9]+-[0-9X])"
+        DB_ID_SIMILAR = "(DB[-. ]*[0-9]+[-. 0-9]*[0-9X])"
+
+        import datetime
+        from enum import Enum, IntEnum
+
+        class CSVDialect(csv.Dialect):
+            delimiter = ";"
+            quotechar = '"'
+            quoting = csv.QUOTE_MINIMAL
+            lineterminator = "\n"
+
+        class ConfidenceLevel(IntEnum):
+            Null = 0
+            Low = 1
+            Medium = 2
+            High = 3
+            Full = 4
+
+        class Confidence:
+            def __init__(self, value=None):
+
+                if value:
+                    try:
+                        self.level = ConfidenceLevel(value)
+                    except ValueError:
+                        try:
+                            self.level = ConfidenceLevel[value]
+                        except ValueError:
+                            self.level = ConfidenceLevel.Full
+                else:
+                    self.level = ConfidenceLevel.Full
+
+            @property
+            def value(self):
+                return self.level.value
+
+            def destroy(self):
+                self.level = ConfidenceLevel.Null
+
+            def decrease(self, amount=1):
+                if self.level.value - amount > ConfidenceLevel.Null.value:
+                    self.level = ConfidenceLevel(self.level.value - amount)
+                else:
+                    self.level = ConfidenceLevel.Null
+
+            def increase(self, amount=1):
+                if self.level.value + amount < ConfidenceLevel.Full.value:
+                    self.level = ConfidenceLevel(self.level.value + amount)
+                else:
+                    self.level = ConfidenceLevel.Full
+
+            def __lt__(self, other):
+                return self.level < other.level
+
+            def __str__(self):
+                return str(self.level)
+
+        class Accounts(Enum):
+            Account0 = 8068900
+            Account1 = 8068901
+            Account2 = 8068902
+            Unknown = 0
+
+            def __str__(self):
+                return str(self.value)
+
+        class TransactionType(Enum):
+            MembershipFee = 1
+            EventFee = 2
+            Other = 3
+            Refund = 4
+            Unknown = 10
+
+            def __str__(self):
+                to_string = {TransactionType.MembershipFee.name: "Mitgliedsbeitrag",
+                             TransactionType.EventFee.name: "Teilnehmerbeitrag",
+                             TransactionType.Other.name: "Sonstiges",
+                             TransactionType.Refund.name: "Rückerstattung",
+                             TransactionType.Unknown.name: "Unbekannt", }
+                if self.name in to_string:
+                    return to_string[self.name]
+
+        class Member:
+            def __init__(self, given_names, family_name, db_id):
+                self.given_names = given_names
+                self.family_name = family_name
+                self.db_id = db_id
+                
+            def __str__(self):
+                return "({}, {}, {})".format(self.given_names,
+                                             self.family_name,
+                                             self.db_id)
+
+        def print_delimiters(number):
+            number = str(number)
+            if len(number) <= 3:
+                return number
+            result = ""
+            for i, x in enumerate(number):
+                if i % 3 == len(number) % 3:
+                    result += "."
+                result += x
+            return result
+
+        def parse_cents(amount):
+            if amount:
+                cents = int(amount.replace(",", "").replace(".", ""))
+                if "," in amount:
+                    if len(amount) >= 3 and amount[-3] == ",":
+                        # Comma seems to be decimal separator with 2 decimal digits
+                        pass
+                    elif len(amount) >= 2 and amount[-2] == ",":
+                        # Comma seems to be decimal separator with only 1 decimal digit
+                        cents *= 10
+                    else:
+                        # Comma seems to be a grouping delimiter
+                        if "." in amount:
+                            if len(amount) >= 3 and amount[-3] == ".":
+                                # Point seems to be decimal separator with 2 decimal digits
+                                pass
+                            elif len(amount) >= 2 and amount[-2] == ".":
+                                # Point seems to be decimal separator with only 1 decimal digit
+                                cents *= 10
+                            else:
+                                # Point seems to also be a grouping delimiter
+                                cents *= 100
+                        else:
+                            # There seems to be no decimal separator
+                            cents *= 100
+
+                elif "." in amount:
+                    if len(amount) >= 3 and amount[-3] == ".":
+                        # Point seems to be decimal separator with 2 decimal digits
+                        pass
+                    elif len(amount) >= 2 and amount[-2] == ".":
+                        # Point seems to be decimal separator with only 1 decimal digit
+                        cents *= 10
+                    else:
+                        # Point seems to also be a grouping delimiter
+                        cents *= 100
+                else:
+                    # There seems to be no decimal separator
+                    cents *= 100
+
+                return cents
+            else:
+                raise ValueError("Could not parse")
+
+        def get_persona(rs, db_id):
+            return self.coreproxy.get_persona(rs, db_id)
+
+        class Transaction:
+            """Class to hold all transaction information,"""
+
+            def __init__(self, raw):
+                self.t_id = raw["id"]
+
+                try:
+                    self.account = Accounts(int(raw["myAccNr"]))
+                except ValueError:
+                    problems.append("Unknown Account {} in Transaction {}"
+                                    .format(raw["myAccNr"], raw["id"]))
+                    self.account = Accounts.Unknown
+
+                try:
+                    self.statement_date = datetime.datetime.strptime(
+                        raw["statementDate"], DATE_FORMAT).date()
+                except ValueError:
+                    problems.append("Incorrect Date Format in Transaction {}"
+                                    .format(raw["id"]))
+                    self.statement_date = datetime.datetime.now().date()
+
+                try:
+                    self.cents = parse_cents(raw["amount"])
+                except ValueError as e:
+                    if e.args == ("Could not parse",):
+                        problems.append("Could not parse Transaction Amount "
+                                        "for Transaction {}".format(raw["id"]))
+                        self.cents = 0
+                    else:
+                        raise
+                else:
+                    if self.amount_simplified != raw["amount"] \
+                        and self.amount != raw["amount"]:
+                        # Check whether the original input can be reconstructed
+                        problems.append(
+                            "Problem in line {}: {} != {}"
+                                .format(raw["id"],
+                                        self.amount_simplified,
+                                        raw["amount"]))
+                    
+                if CSV_RESTKEY in raw:
+                    self.reference = "".join(raw[CSV_RESTKEY])
+                    if "SVWZ+" in self.reference:
+                        # Only use the part after "SVWZ+"
+                        self.reference = self.reference.split("SVWZ+", 1)[-1]
+                    elif "EREF+" in self.reference or "KREF+" in self.reference:
+                        # There seems to be no useful reference
+                        self.reference = ""
+                else:
+                    self.reference = ""
+
+                self.account_holder = "".join([raw["accHolder"],
+                                               raw["accHolder2"]])
+
+                self.posting = str(raw["posting"]).upper()
+                
+                # Guess the transaction type
+                self.type = TransactionType.Unknown
+                self.type_confidence = None
+                self.guess_type()
+
+                # Get all matching members and the best match
+                self.member_matches = []
+                self.best_member_match = None
+                self.best_member_confidence = None
+                self.match_member()
+                
+                #Get all matching events and the best match
+                self.event_matches = []
+                self.best_event_match = None
+                self.best_event_confidence = None
+                self.match_event()
+
+            def guess_type(self):
+                """Assign the best Guess for TransactionType to self.type and return the confidence level."""
+    
+                confidence = Confidence("Full")
+    
+                if self.account == Accounts.Account0:
+                    if re.search(DB_ID_PATTERN, self.reference, flags=re.IGNORECASE):
+                        # Correct ID found, so we assume this is a Membership Fee Transaction
+                        self.type = TransactionType.MembershipFee
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+        
+                    elif re.search(DB_ID_SIMILAR, self.reference, flags=re.IGNORECASE):
+                        # Semi-Correct ID found, so we decrease confidence but still assume this to be a Membership Fee
+                        self.type = TransactionType.MembershipFee
+                        confidence.decrease()
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+        
+                    elif re.search(POSTING_OTHER, self.posting, flags=re.IGNORECASE):
+                        # Posting reserved for administrative fees found
+                        self.type = TransactionType.Other
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+        
+                    elif re.search(POSTING_REFUND, self.posting, flags=re.IGNORECASE):
+                        # Posting used for refunds found
+                        if re.search(REFERENCE_REFUND, self.reference, flags=re.IGNORECASE):
+                            # Reference mentions a refund
+                            self.type = TransactionType.Refund
+                            self.type_confidence = confidence
+                            return (self.type, confidence)
+            
+                        else:
+                            # Reference doesn't mention a refund so this probably is a different kind of payment
+                            self.type = TransactionType.Other
+                            confidence.decrease()
+                            self.type_confidence = confidence
+                            return (self.type, confidence)
+        
+                    elif re.search(REFERENCE_MEMBERSHIP, self.reference, flags=re.IGNORECASE):
+                        # No DB-ID found, but membership mentioned in reference
+                        self.type = TransactionType.MembershipFee
+                        confidence.decrease()
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+        
+                    else:
+                        # No other Options left so we assume this to be something else, but with lower confidence
+                        self.type = TransactionType.Other
+                        confidence.decrease(2)
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+    
+                elif self.account == Accounts.Account1:
+                    if re.search(DB_ID_PATTERN, self.reference, flags=re.IGNORECASE):
+                        # Correct DB-ID found, so we assume this to be an Event Fee
+                        self.type = TransactionType.EventFee
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+        
+                    elif re.search(DB_ID_SIMILAR, self.reference, flags=re.IGNORECASE):
+                        # Semi-Correct DB-ID found, so we decrease confidence but still assume this is an Event Fee
+                        self.type = TransactionType.EventFee
+                        confidence.decrease()
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+        
+                    elif re.search(POSTING_OTHER, self.posting, flags=re.IGNORECASE):
+                        # Reserved Posting for administrative fees
+                        self.type = TransactionType.Other
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+        
+                    elif re.search(POSTING_REFUND, self.posting, flags=re.IGNORECASE):
+                        # Posting used for refunds found
+                        if re.search(REFERENCE_REFUND, self.reference, flags=re.IGNORECASE):
+                            # Refund mentioned in reference
+                            self.type = TransactionType.Refund
+                            self.type_confidence = confidence
+                            return (self.type, confidence)
+                        else:
+                            # Reference doesn't mention refund, so this probably is a different kind of payment
+                            self.type = TransactionType.Other
+                            confidence.decrease()
+                            self.type_confidence = confidence
+                            return (self.type, confidence)
+    
+                    else:
+                        # Iterate through known Event names and Event name variations
+                        for event_name, pattern in EVENT_NAMES.items():
+                            if re.search(event_name.upper(), self.reference, flags=re.IGNORECASE):
+                                self.type = TransactionType.EventFee
+                                confidence.decrease()
+                                self.type_confidence = confidence
+                                return (self.type, confidence)
+                            if re.search(pattern, self.reference, flags=re.IGNORECASE):
+                                self.type = TransactionType.EventFee
+                                confidence.decrease(2)
+                                self.type_confidence = confidence
+                                return (self.type, confidence)
+        
+                        # No other Options left, so we assume this to be something else, but with lower confidence.
+                        self.type = TransactionType.Other
+                        confidence.decrease(2)
+                        self.type_confidence = confidence
+                        return (self.type, confidence)
+
+                elif self.account == Accounts.Account2:
+                    # This account should not be in use
+                    self.type = TransactionType.Other
+                    confidence.decrease(3)
+                    self.type_confidence = confidence
+                    return (self.type, confidence)
+
+                else:
+                    # This Transaction uses an unknown account
+                    self.type = TransactionType.Unknown
+                    confidence.destroy()
+                    self.type_confidence = confidence
+                    return (self.type, confidence)
+
+            def match_member(self):
+                """Add all matching members to self.member_matches."""
+
+                if self.type in {TransactionType.MembershipFee, TransactionType.EventFee}:
+                    members = []
+                    confidence = Confidence("Full")
+
+                    result = re.search(DB_ID_PATTERN, self.reference, flags=re.IGNORECASE)
+                    result2 = re.search(DB_ID_SIMILAR, self.reference, flags=re.IGNORECASE)
+                    if not result and result2:
+                        confidence.decrease()
+                        result = result2
+                        
+                    if result:
+                        if len(result.groups()) > 1:
+                            # Multiple DB-IDs found, where only one is expected.
+                            problems.append("Multiple ({}) DB-IDs found in line {}!".format(len(result.groups()),
+                                                                                            self.t_id))
+                            confidence.decrease()
+
+                        for db_id in result.groups():
+                            # Clone Confidence for every result
+                            temp_confidence = Confidence(confidence.value)
+                            
+                            # Reconstruct DB-ID
+                            value = db_id[:-1].replace("DB", "").replace(" ", "-").replace("-", "")
+                            checkdigit = db_id[-1]
+                            
+                            persona_id, p = validate.check_cdedbid("DB-{}-{}".format(value, checkdigit),
+                                                                          "persona_id")
+                            problems.extend(p)
+                            
+                            if not p:
+                                try:
+                                    persona = get_persona(rs, persona_id)
+                                except KeyError as e:
+                                    if value in e.args:
+                                        problems.append(
+                                            "No Member with DB-ID {} found."
+                                                .format(db_id))
+                                    else:
+                                        problems.append(e)
+                                    temp_confidence.decrease(2)
+                                    members.append((Member(GIVEN_NAMES_UNKNOWN,
+                                                           FAMILY_NAME_UNKNOWN,
+                                                           db_id),
+                                                    temp_confidence))
+                                    continue
+                                else:
+                                    given_names = persona.get('given_names', None)
+                                    gn_pattern = diacritic_patterns(given_names, two_way_replace=True)
+                                    family_name = persona.get('family_name', None)
+                                    fn_pattern = diacritic_patterns(family_name, two_way_replace=True)
+    
+                                    if not re.search(gn_pattern, self.reference,
+                                                     flags=re.IGNORECASE):
+                                        problems.append(gn_pattern
+                                                        + " not found in "
+                                                        + self.reference)
+                                        temp_confidence.decrease()
+                                    if not re.search(fn_pattern, self.reference,
+                                                     flags=re.IGNORECASE):
+                                        problems.append(fn_pattern
+                                                        + " not found in "
+                                                        + self.reference)
+                                        temp_confidence.decrease()
+    
+                                    members.append((Member(given_names, family_name, db_id), temp_confidence))
+
+                            else:
+                                problems.append("Invalid checkdigit: {}".format(db_id))
+                    
+                    elif self.type in {TransactionType.EventFee}:
+                        result = re.search(REFERENCE_EXTERNAL, self.reference, flags=re.IGNORECASE)
+                        if result:
+                            # Reference matches External Event Fee
+                            confidence.decrease()
+                            members.append((Member("Extern", "Extern", "DB-EXTERN"), confidence))
+
+                    if members:
+                        # Save all matched members
+                        self.member_matches = members
+
+                        # Find the member with the best confidence
+                        best_match = None
+                        best_confidence = Confidence("Null")
+
+                        for member in members:
+                            if member[1] > best_confidence:
+                                best_confidence = member[1]
+                                best_match = member[0]
+
+                        if best_confidence.level not in {ConfidenceLevel.Null}:
+                            self.best_member_match = best_match
+                            self.best_member_confidence = best_confidence
+                            return best_match, best_confidence
+
+                        return None, None
+
+                    return None, None
+
+                return None, None
+
+            def match_event(self):
+                """
+                Add all matching Events to self.event_matches.
+
+                Add the best match to self.best_event_match and return the confidence of the best match.
+                """
+
+                if self.type in {TransactionType.EventFee}:
+                    events = []
+                    confidence = Confidence("Full")
+
+                    for event_name, pattern in EVENT_NAMES.items():
+                        # Clone confidence for every event
+                        temp_confidence = Confidence(confidence.value)
+
+                        result = re.search(event_name.upper(), self.reference, flags=re.IGNORECASE)
+                        if result:
+                            # Exact match to Event Name
+                            events.append((event_name, confidence))
+                            continue
+                        else:
+                            result = re.search(pattern, self.reference, flags=re.IGNORECASE)
+                            if result:
+                                # Similar to Event Name
+                                confidence.decrease()
+                                events.append((event_name, temp_confidence))
+
+                    if events:
+                        self.event_matches = events
+
+                        best_match = None
+                        best_confidence = Confidence("Null")
+
+                        for event in events:
+                            if event[1] > best_confidence:
+                                best_confidence = event[1]
+                                best_match = event[0]
+
+                        if best_confidence.level not in {ConfidenceLevel.Null}:
+                            self.best_event_match = best_match
+                            self.best_event_confidence = best_confidence
+                            return best_match, best_confidence
+
+                        return None, None
+
+                return None, None
+
+            @property
+            def abs_cents(self):
+                return abs(self.cents)
+
+            @property
+            def amount(self):
+                return "{}{},{}{}".format("-" if self.cents < 0 else "", print_delimiters(self.abs_cents // 100),
+                                          (self.abs_cents % 100) // 10,
+                                          self.abs_cents % 10)
+
+            @property
+            def amount_export(self):
+                return self.amount.replace(".", "").replace(",", ".")
+
+            @property
+            def amount_simplified(self):
+                if self.cents % 100 == 0:
+                    return "{}{}".format("-" if self.cents < 0 else "", print_delimiters(self.abs_cents // 100))
+                elif self.cents % 10 == 0:
+                    return "{}{},{}".format("-" if self.cents < 0 else "", print_delimiters(self.abs_cents // 100),
+                                            self.abs_cents // 10)
+                else:
+                    return "{}{},{}".format("-" if self.cents < 0 else "", print_delimiters(self.abs_cents // 100),
+                                            self.abs_cents % 100)
+
+            def __str__(self):
+                return "\n\t".join(["Transaction {}:".format(self.t_id),
+                                    "Account:\t\t {}".format(self.account),
+                                    "Statement-Date:\t {}".format(self.statement_date),
+                                    "Amount:\t\t\t {}".format(self.amount),
+                                    "Account Holder:\t {}".format(self.account_holder),
+                                    "Reference:\t\t {}".format(self.reference),
+                                    "Posting:\t\t {}".format(self.posting),
+                                    "Type:\t\t\t {}".format(self.type),
+                                    "Type-Conf.:\t\t {}".format(self.type_confidence),
+                                    "Member:\t\t\t {}".format(str(self.best_member_match)),
+                                    "Member-Conf.:\t {}".format(self.best_member_confidence),
+                                    "Event:\t\t\t {}".format(self.best_event_match),
+                                    "Event-Conf.:\t {}".format(self.best_event_confidence),
+                                    ])
+
+        statementlines = statement.splitlines()
+        reader = csv.DictReader(statementlines, fieldnames=CSV_FIELDNAMES, dialect=CSVDialect,
+                                restkey=CSV_RESTKEY, restval="")
+        
+        problems = []
+        
+        transactions = []
+        event_fees = []
+        membership_fees = []
+        other_transactions = []
+
+        for i, line in enumerate(reader):
+            if not len(line) == 23:
+                continue
+            line["id"] = i
+            t = Transaction(line)
+
+            transactions.append(t)
+            if t.type in {TransactionType.EventFee} and t.best_event_match and t.best_member_match:
+                event_fees.append(t)
+            elif t.type in {TransactionType.MembershipFee} and t.best_member_match:
+                membership_fees.append(t)
+            else:
+                other_transactions.append(t)
+                
+        data = {"event_fees": event_fees,
+                "membership_fees": membership_fees,
+                "other_transactions": other_transactions,
+                "transactions": transactions,
+                "files": {}}
+
+        if membership_fees:
+            rows = []
+            rows.extend(
+                [[t.best_member_match.db_id, t.best_member_match.family_name,
+                  t.best_member_match.given_names,
+                  t.amount_export, ""]
+                 for t in membership_fees if
+                 (t.best_member_match.given_names != GIVEN_NAMES_UNKNOWN or
+                  t.best_member_match.family_name != FAMILY_NAME_UNKNOWN)])
+            rows.extend(
+                [[t.best_member_match.db_id, t.best_member_match.family_name,
+                  t.best_member_match.given_names,
+                  t.amount_export, t.reference]
+                 for t in membership_fees if
+                 (t.best_member_match.given_names == GIVEN_NAMES_UNKNOWN and
+                  t.best_member_match.family_name == FAMILY_NAME_UNKNOWN)])
+            
+            if rows:
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
+                                                 prefix="parser-dl-",
+                                                 encoding="utf8",
+                                                 delete=False) as f:
+                    writer = csv.writer(f, CSVDialect)
+                    writer.writerows(rows)
+                    data["files"]["membership_fees"] = f.name
+
+        for event_name in EVENT_NAMES:
+            rows = []
+            rows.extend(
+                [[t.statement_date, t.amount_export, t.best_member_match.db_id,
+                  t.best_member_match.family_name,
+                  t.best_member_match.given_names]
+                 for t in event_fees if event_name == t.best_event_match
+                    and t.best_member_match.db_id != "DB-EXTERN"])
+            rows.extend(
+                [[t.statement_date, t.amount_export, t.best_member_match.db_id,
+                  t.best_member_match.family_name, t.reference]
+                 for t in event_fees if event_name == t.best_event_match
+                    and t.best_member_match.db_id == "DB-EXTERN"])
+    
+            if rows:
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
+                                                 prefix="parser-dl-",
+                                                 encoding="utf8",
+                                                 delete=False) as f:
+                    writer = csv.writer(f, CSVDialect)
+                    writer.writerows(rows)
+                    name = event_name.replace(" ", "_").replace("/", "-")
+                    data["files"][name] = f.name
+
+        if other_transactions:
+            rows = []
+            for ty in TransactionType:
+                rows.extend(
+                    [[t.account, t.statement_date, t.amount_export, t.reference,
+                      t.account_holder, t.type, t.type_confidence]
+                     for t in other_transactions if t.type == ty])
+            rows.extend(
+                [[t.account, t.statement_date, t.amount_export, t.reference,
+                  t.account_holder, t.type, t.type_confidence]
+                 for t in other_transactions if t.type is None])
+                
+            if rows:
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
+                                                 prefix="parser-dl-",
+                                                 encoding="utf8",
+                                                 delete=False) as f:
+                    writer = csv.writer(f, CSVDialect)
+                    writer.writerows(rows)
+                    data["files"]["other"] = f.name
+                    
+        rows = {}
+        for t in transactions:
+            if t.account not in rows:
+                rows[t.account] = []
+            if t.best_member_match:
+                rows[t.account].append(
+                    [t.statement_date, t.amount_export,
+                     t.best_member_match.db_id, t.best_member_match.family_name,
+                     t.best_member_match.given_names, t.type, t.account])
+            else:
+                rows[t.account].append(
+                    [t.statement_date, t.amount_export, "????",
+                     t.account_holder, t.reference, t.type, t.account])
+        
+        for acc in Accounts:
+            if acc in rows:
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
+                                                 prefix="parser-dl-",
+                                                 encoding="utf8",
+                                                 delete=False) as f:
+                    writer = csv.writer(f, CSVDialect)
+                    writer.writerows(rows[acc])
+                    data["files"]["transactions_{}".format(acc)] = f.name
+                
+        csvfields = None
+        return self.parse_statement_form(rs, data=data, problems=problems, csvfields=csvfields)
+
+
+    @access("cde_admin")
+    def parse_download(self, rs, path=None, filename=None):
+        if not path:
+            raise ValueError(n_("No path given"))
+        filename = filename or "file.csv"
+        return self.send_file(rs, path=path, filename=filename)
+    
+    @access("cde_admin")
     def money_transfers_form(self, rs, data=None, csvfields=None):
         """Render form.
 
