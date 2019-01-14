@@ -495,7 +495,8 @@ class EventBackend(AbstractBackend):
                               if d['part_id'] == part_id}
                     assert('tracks' not in ret[anid]['parts'][part_id])
                     ret[anid]['parts'][part_id]['tracks'] = tracks
-                ret[anid]['tracks'] = {d['id']: d for d in data}
+                ret[anid]['tracks'] = {d['id']: d for d in data
+                                       if d['part_id'] in ret[anid]['parts']}
             data = self.sql_select(
                 rs, "event.orgas", ("persona_id", "event_id"), ids,
                 entity_key="event_id")
