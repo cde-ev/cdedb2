@@ -15,6 +15,7 @@ import json
 import logging
 import logging.handlers
 import pathlib
+import re
 import shutil
 import string
 import sys
@@ -945,7 +946,7 @@ def asciificator(s):
             ret += ' '
     return ret
 
-def diacritic_patterns(s):
+def diacritic_patterns(s, two_way_replace=False):
     """Replace letters with a pattern matching expressions, so that
     ommitting diacritics in the query input is possible.
 
@@ -965,8 +966,8 @@ def diacritic_patterns(s):
             return s
     ## some of the diacritics in use according to wikipedia
     umlaut_map = (
-        ("ae", "(ae|[äæ])"),
-        ("oe", "(oe|[öøœ])"),
+        ("ae", "(ae|ä|æ)"),
+        ("oe", "(oe|ö|ø|œ)"),
         ("ue", "(ue|ü)"),
         ("ss", "(ss|ß)"),
         ("a", "[aàáâãäåą]"),
@@ -979,9 +980,12 @@ def diacritic_patterns(s):
         ("u", "[uùúûüű]"),
         ("y", "[yýÿ]"),
         ("z", "[zźż]"),
-    )
+        )
     for normal, replacement in umlaut_map:
-        s = s.replace(normal, replacement)
+        if not two_way_replace:
+            s = re.sub(normal, replacement, s, flags=re.IGNORECASE)
+        else:
+            s = re.sub(replacement, replacement, s, flags=re.IGNORECASE)
     return s
 
 def extract_roles(session, introspection_only=False):
