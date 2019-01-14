@@ -2755,7 +2755,7 @@ msgid ""
 "                the CdE-Datenbank."
 msgstr ""
 "Verwende die Navigations-Schaltflächen deines Browsers um zurück zur "
-"vorherigen Seite zu gelangen oder öffne die %(frontpage_link)s der %(db)s."
+"vorherigen Seite zu gelangen oder öffne die %(frontpage_link)s der CdE-Datenbank."
 
 #: cdedb/frontend/templates/web/error.tmpl:56
 msgid "First try reloading this page."
