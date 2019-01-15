@@ -1262,10 +1262,10 @@ class EventFrontend(AbstractUserFrontend):
                 fee = sum(event['parts'][part_id]['fee']
                           for part_id, part in registration['parts'].items()
                           if part['status'] in relevant_stati)
-                if amount < fee:
+                if amount and amount < fee:
                     problems.append(('amount',
                                      ValueError(n_("Not enough money."))))
-                if amount > fee:
+                if amount and amount > fee:
                     warnings.append(('amount',
                                      ValueError(n_("Too much money."))))
             else:
