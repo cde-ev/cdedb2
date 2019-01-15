@@ -653,18 +653,33 @@ class CdEFrontend(AbstractUserFrontend):
         POSTING_OTHER = "BUCHUNGSPOSTENGEBUEHREN|KONTOFUEHRUNGSGEBUEHREN"
         POSTING_REFUND = "SAMMEL-UEBERWEISUNG"
         REFERENCE_REFUND = "RUECKERSTATTUNG"
-        REFERENCE_MEMBERSHIP = "MITGLIED(SCHAFT)?(SBEITRAG)?|(HALB)?JAHRESBEITRAG"
+        REFERENCE_MEMBERSHIP = "MITGLIED(SCHAFT)?(SBEITRAG)?|" \
+                               "(HALB)?JAHRESBEITRAG"
         REFERENCE_EXTERNAL = "\d\d\d\d-\d\d-\d\d, ?EXTERN"
-        EVENT_NAMES = {"Nachhaltigkeitsakademie 2019":
-                           "(N(ACHHALTIGKEITS)?[- ]?AKA(DEMIE)?|NAKA)\s*(2019)?",
+        EVENT_NAMES = {"NachhaltigkeitsAkademie 2019":
+                           "(N(ACHHALTIGKEITS)?[- ]?AKA(DEMIE)?|"
+                           "NAKA)\s*(2019)?",
                        "WinterAkademie 2018/19":
                            "(WINTER[- ]?AKA(DEMIE)?)\s*((20)?18/(20)?19)?",
                        "CdE Skifreizeit 2019":
                            "(CDE)?\s*SKI(FREIZEIT)?\s*(2019)?",
                        "NRW Nachtreffen 2018":
-                           "((NRW|NACHTREFFEN|VELBERT)\s*)+(2018)?"}
+                           "((NRW|NACHTREFFEN|VELBERT)\s*)+(2018)?",
+                       "Große TestAkademie 2222":
+                           "(Große\s*Testaka(demie)?\s*(2222)?", }
         DB_ID_PATTERN = "(DB-[0-9]+-[0-9X])"
         DB_ID_SIMILAR = "(DB[-. ]*[0-9]+[-. 0-9]*[0-9X])"
+        DOWNLOAD_PREFIX = "parser-dl-"
+        PATH_PREFIX = "/tmp/{}".format(DOWNLOAD_PREFIX)
+        MEMBERSHIP_FEE_FIELDS = ("db_id", "family_name", "given_names",
+                                 "amount", "comment")
+        EVENT_FEE_FIELDS = ("date", "amount", "db_id", "family_name",
+                            "given_names", "comment")
+        OTHER_TRANSACTIONS_FIELDS = ("account", "date", "amount", "reference",
+                                     "account_holder", "type",
+                                     "type_confidence")
+        ACCOUNT_FIELDS = ("date", "amount", "db_id", "family_name",
+                          "given_names", "category", "account")
 
         import datetime
         from enum import Enum, IntEnum
@@ -719,6 +734,9 @@ class CdEFrontend(AbstractUserFrontend):
                 return self.level < other.level
 
             def __str__(self):
+                return str(self.level)
+            
+            def __repr__(self):
                 return str(self.level)
 
         class Accounts(Enum):
@@ -819,7 +837,7 @@ class CdEFrontend(AbstractUserFrontend):
             """Class to hold all transaction information,"""
 
             def __init__(self, raw):
-                self.t_id = raw["id"]
+                self.t_id = raw["id"] + 1
 
                 try:
                     self.account = Accounts(int(raw["myAccNr"]))
@@ -850,10 +868,10 @@ class CdEFrontend(AbstractUserFrontend):
                         and self.amount != raw["amount"]:
                         # Check whether the original input can be reconstructed
                         problems.append(
-                            "Problem in line {}: {} != {}"
-                                .format(raw["id"],
+                            "Problem in line {}: {} != {}. Cents: {}"
+                                .format(self.t_id,
                                         self.amount_simplified,
-                                        raw["amount"]))
+                                        raw["amount"], self.cents))
                     
                 if CSV_RESTKEY in raw:
                     self.reference = "".join(raw[CSV_RESTKEY])
@@ -1131,13 +1149,13 @@ class CdEFrontend(AbstractUserFrontend):
                         result = re.search(event_name.upper(), self.reference, flags=re.IGNORECASE)
                         if result:
                             # Exact match to Event Name
-                            events.append((event_name, confidence))
+                            events.append((event_name, temp_confidence))
                             continue
                         else:
                             result = re.search(pattern, self.reference, flags=re.IGNORECASE)
                             if result:
                                 # Similar to Event Name
-                                confidence.decrease()
+                                temp_confidence.decrease()
                                 events.append((event_name, temp_confidence))
 
                     if events:
@@ -1166,7 +1184,9 @@ class CdEFrontend(AbstractUserFrontend):
 
             @property
             def amount(self):
-                return "{}{},{}{}".format("-" if self.cents < 0 else "", print_delimiters(self.abs_cents // 100),
+                return "{}{},{}{}".format("-" if self.cents < 0 else "",
+                                          print_delimiters(
+                                              self.abs_cents // 100),
                                           (self.abs_cents % 100) // 10,
                                           self.abs_cents % 10)
 
@@ -1177,32 +1197,41 @@ class CdEFrontend(AbstractUserFrontend):
             @property
             def amount_simplified(self):
                 if self.cents % 100 == 0:
-                    return "{}{}".format("-" if self.cents < 0 else "", print_delimiters(self.abs_cents // 100))
+                    return "{}{}".format("-" if self.cents < 0 else "",
+                                         print_delimiters(
+                                             self.abs_cents // 100))
                 elif self.cents % 10 == 0:
-                    return "{}{},{}".format("-" if self.cents < 0 else "", print_delimiters(self.abs_cents // 100),
-                                            self.abs_cents // 10)
+                    return "{}{},{}".format("-" if self.cents < 0 else "",
+                                            print_delimiters(
+                                                self.abs_cents // 100),
+                                            (self.abs_cents % 100) // 10)
                 else:
-                    return "{}{},{}".format("-" if self.cents < 0 else "", print_delimiters(self.abs_cents // 100),
+                    return "{}{},{}".format("-" if self.cents < 0 else "",
+                                            print_delimiters(
+                                                self.abs_cents // 100),
                                             self.abs_cents % 100)
 
             def __str__(self):
-                return "\n\t".join(["Transaction {}:".format(self.t_id),
-                                    "Account:\t\t {}".format(self.account),
-                                    "Statement-Date:\t {}".format(self.statement_date),
-                                    "Amount:\t\t\t {}".format(self.amount),
-                                    "Account Holder:\t {}".format(self.account_holder),
-                                    "Reference:\t\t {}".format(self.reference),
-                                    "Posting:\t\t {}".format(self.posting),
-                                    "Type:\t\t\t {}".format(self.type),
-                                    "Type-Conf.:\t\t {}".format(self.type_confidence),
-                                    "Member:\t\t\t {}".format(str(self.best_member_match)),
-                                    "Member-Conf.:\t {}".format(self.best_member_confidence),
-                                    "Event:\t\t\t {}".format(self.best_event_match),
-                                    "Event-Conf.:\t {}".format(self.best_event_confidence),
-                                    ])
+                return "\n\t".join(
+                    ["Transaction {}:".format(self.t_id),
+                     "Account:\t\t {}".format(self.account),
+                     "Statement-Date:\t {}".format(self.statement_date),
+                     "Amount:\t\t\t {}".format(self.amount),
+                     "Account Holder:\t {}".format(self.account_holder),
+                     "Reference:\t\t {}".format(self.reference),
+                     "Posting:\t\t {}".format(self.posting),
+                     "Type:\t\t\t {}".format(self.type),
+                     "Type-Conf.:\t\t {}".format(self.type_confidence),
+                     "Member:\t\t\t {}".format(str(self.best_member_match)),
+                     "Member-Conf.:\t {}".format(self.best_member_confidence),
+                     "Event:\t\t\t {}".format(self.best_event_match),
+                     "Events:\t\t\t {}".format(self.event_matches),
+                     "Event-Conf.:\t {}".format(self.best_event_confidence),
+                     ])
 
         statementlines = statement.splitlines()
-        reader = csv.DictReader(statementlines, fieldnames=CSV_FIELDNAMES, dialect=CSVDialect,
+        reader = csv.DictReader(statementlines, fieldnames=CSV_FIELDNAMES,
+                                dialect=CSVDialect,
                                 restkey=CSV_RESTKEY, restval="")
         
         problems = []
@@ -1219,7 +1248,9 @@ class CdEFrontend(AbstractUserFrontend):
             t = Transaction(line)
 
             transactions.append(t)
-            if t.type in {TransactionType.EventFee} and t.best_event_match and t.best_member_match:
+            if t.type in {TransactionType.EventFee} \
+                    and t.best_event_match \
+                    and t.best_member_match:
                 event_fees.append(t)
             elif t.type in {TransactionType.MembershipFee} and t.best_member_match:
                 membership_fees.append(t)
@@ -1234,74 +1265,113 @@ class CdEFrontend(AbstractUserFrontend):
 
         if membership_fees:
             rows = []
-            rows.extend(
-                [[t.best_member_match.db_id, t.best_member_match.family_name,
-                  t.best_member_match.given_names,
-                  t.amount_export, ""]
-                 for t in membership_fees if
-                 (t.best_member_match.given_names != GIVEN_NAMES_UNKNOWN or
-                  t.best_member_match.family_name != FAMILY_NAME_UNKNOWN)])
-            rows.extend(
-                [[t.best_member_match.db_id, t.best_member_match.family_name,
-                  t.best_member_match.given_names,
-                  t.amount_export, t.reference]
-                 for t in membership_fees if
-                 (t.best_member_match.given_names == GIVEN_NAMES_UNKNOWN and
-                  t.best_member_match.family_name == FAMILY_NAME_UNKNOWN)])
+            rows.extend([
+                {"db_id": t.best_member_match.db_id,
+                 "family_name": t.best_member_match.family_name,
+                 "given_names": t.best_member_match.given_names,
+                 "amount": t.amount_export,
+                 "comment": ""}
+                for t in membership_fees if
+                (t.best_member_match.given_names != GIVEN_NAMES_UNKNOWN or
+                 t.best_member_match.family_name != FAMILY_NAME_UNKNOWN)
+                ])
+            rows.extend([
+                {"db_id": t.best_member_match.db_id,
+                 "family_name": t.best_member_match.family_name,
+                 "given_names": t.best_member_match.given_names,
+                 "amount": t.amount_export,
+                 "comment": t.reference}
+                for t in membership_fees if
+                (t.best_member_match.given_names == GIVEN_NAMES_UNKNOWN and
+                 t.best_member_match.family_name == FAMILY_NAME_UNKNOWN)
+                ])
             
             if rows:
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
-                                                 prefix="parser-dl-",
+                                                 prefix=DOWNLOAD_PREFIX,
                                                  encoding="utf8",
                                                  delete=False) as f:
-                    writer = csv.writer(f, CSVDialect)
+                    writer = csv.DictWriter(f,
+                                            fieldnames=MEMBERSHIP_FEE_FIELDS,
+                                            dialect=CSVDialect)
                     writer.writerows(rows)
-                    data["files"]["membership_fees"] = f.name
+                    f_name = f.name.replace(PATH_PREFIX, "")
+                    data["files"]["membership_fees"] = f_name
 
         for event_name in EVENT_NAMES:
             rows = []
-            rows.extend(
-                [[t.statement_date, t.amount_export, t.best_member_match.db_id,
-                  t.best_member_match.family_name,
-                  t.best_member_match.given_names]
-                 for t in event_fees if event_name == t.best_event_match
+            rows.extend([
+                {"date": t.statement_date,
+                 "amount": t.amount_export,
+                 "db_id": t.best_member_match.db_id,
+                 "family_name": t.best_member_match.family_name,
+                 "given_names": t.best_member_match.given_names,
+                 "comment": t.reference}
+    
+                for t in event_fees
+                if event_name == t.best_event_match
                     and t.best_member_match.db_id != "DB-EXTERN"])
-            rows.extend(
-                [[t.statement_date, t.amount_export, t.best_member_match.db_id,
-                  t.best_member_match.family_name, t.reference]
-                 for t in event_fees if event_name == t.best_event_match
+            
+            rows.extend([
+                {"date": t.statement_date,
+                 "amount": t.amount_export,
+                 "db_id": t.best_member_match.db_id,
+                 "family_name": t.best_member_match.family_name,
+                 "given_names": t.best_member_match.given_names,
+                 "comment": t.reference}
+    
+                for t in event_fees
+                if event_name == t.best_event_match
                     and t.best_member_match.db_id == "DB-EXTERN"])
     
             if rows:
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
-                                                 prefix="parser-dl-",
+                                                 prefix=DOWNLOAD_PREFIX,
                                                  encoding="utf8",
                                                  delete=False) as f:
-                    writer = csv.writer(f, CSVDialect)
+                    writer = csv.DictWriter(f,
+                                            fieldnames=EVENT_FEE_FIELDS,
+                                            dialect=CSVDialect)
                     writer.writerows(rows)
-                    name = event_name.replace(" ", "_").replace("/", "-")
-                    data["files"][name] = f.name
+                    e_name = event_name.replace(" ", "_").replace("/", "-")
+                    f_name = f.name.replace(PATH_PREFIX, "")
+                    data["files"][e_name] = f_name
 
         if other_transactions:
             rows = []
             for ty in TransactionType:
-                rows.extend(
-                    [[t.account, t.statement_date, t.amount_export, t.reference,
-                      t.account_holder, t.type, t.type_confidence]
-                     for t in other_transactions if t.type == ty])
-            rows.extend(
-                [[t.account, t.statement_date, t.amount_export, t.reference,
-                  t.account_holder, t.type, t.type_confidence]
-                 for t in other_transactions if t.type is None])
+                rows.extend([
+                    {"account": t.account,
+                     "date": t.statement_date,
+                     "amount": t.amount_export,
+                     "reference": t.reference,
+                     "account_holder": t.account_holder,
+                     "type": t.type,
+                     "type_confidence": t.type_confidence}
+                    for t in other_transactions if t.type == ty
+                    ])
+            rows.extend([
+                    {"account": t.account,
+                     "date": t.statement_date,
+                     "amount": t.amount_export,
+                     "reference": t.reference,
+                     "account_holder": t.account_holder,
+                     "type": t.type,
+                     "type_confidence": t.type_confidence}
+                    for t in other_transactions if t.type is None
+                ])
                 
             if rows:
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
-                                                 prefix="parser-dl-",
+                                                 prefix=DOWNLOAD_PREFIX,
                                                  encoding="utf8",
                                                  delete=False) as f:
-                    writer = csv.writer(f, CSVDialect)
+                    writer = csv.DictWriter(f,
+                                        fieldnames=OTHER_TRANSACTIONS_FIELDS,
+                                        dialect=CSVDialect)
                     writer.writerows(rows)
-                    data["files"]["other"] = f.name
+                    f_name = f.name.replace(PATH_PREFIX, "")
+                    data["files"]["other"] = f_name
                     
         rows = {}
         for t in transactions:
@@ -1309,34 +1379,54 @@ class CdEFrontend(AbstractUserFrontend):
                 rows[t.account] = []
             if t.best_member_match:
                 rows[t.account].append(
-                    [t.statement_date, t.amount_export,
-                     t.best_member_match.db_id, t.best_member_match.family_name,
-                     t.best_member_match.given_names, t.type, t.account])
+                    {"date": t.statement_date,
+                     "amount": t.amount_export,
+                     "db_id": t.best_member_match.db_id,
+                     "family_name": t.best_member_match.family_name,
+                     "given_names": t.best_member_match.given_names,
+                     "category": t.best_event_match
+                        if t.type == TransactionType.EventFee else t.type,
+                     "account": t.account}
+                    )
             else:
                 rows[t.account].append(
-                    [t.statement_date, t.amount_export, "????",
-                     t.account_holder, t.reference, t.type, t.account])
+                    {"date": t.statement_date,
+                     "amount": t.amount_export,
+                     "db_id": "????",
+                     "family_name": t.account_holder,
+                     "given_names": t.reference,
+                     "category": t.type,
+                     "account": t.account}
+                    )
         
         for acc in Accounts:
             if acc in rows:
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
-                                                 prefix="parser-dl-",
+                                                 prefix=DOWNLOAD_PREFIX,
                                                  encoding="utf8",
                                                  delete=False) as f:
-                    writer = csv.writer(f, CSVDialect)
+                    writer = csv.DictWriter(f,
+                                            fieldnames=ACCOUNT_FIELDS,
+                                            dialect=CSVDialect)
                     writer.writerows(rows[acc])
-                    data["files"]["transactions_{}".format(acc)] = f.name
+                    f_name = f.name.replace(PATH_PREFIX, "")
+                    data["files"]["transactions_{}".format(acc)] = f_name
                 
         csvfields = None
-        return self.parse_statement_form(rs, data=data, problems=problems, csvfields=csvfields)
+        return self.parse_statement_form(rs, data=data, problems=problems,
+                                         csvfields=csvfields)
 
-
-    @access("cde_admin")
+    @access("cde_admin", modi={"GET"})
+    @REQUESTdata(("path", "str"), ("filename", "str"))
     def parse_download(self, rs, path=None, filename=None):
         if not path:
             raise ValueError(n_("No path given"))
+        if "/" in path:
+            raise ValueError(n_("Invalid Path"))
+        PATH_PREFIX = "/tmp/parser-dl-"
+        path = "{}{}".format(PATH_PREFIX, path)
         filename = filename or "file.csv"
-        return self.send_file(rs, path=path, filename=filename)
+        return self.send_file(rs, mimetype="text/csv", path=path, filename=filename)
     
     @access("cde_admin")
     def money_transfers_form(self, rs, data=None, csvfields=None):

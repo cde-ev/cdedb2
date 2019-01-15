@@ -22,84 +22,33 @@
             {% trans -%}Directly paste the Bank Statement from Bank für Sozialwirtschaft here.{%- endtrans %}
         </p>
 
-        {% if problems %}
-            {{ problems }}
-        {% endif %}
-        <br>
-        <br>
+        {{ util.form_input_submit(value=gettext("Validate"), horizontal=False) }}
+
         {% if data %}
             {% if "files" in data %}
                 {% for key, value in data["files"]|dictsort %}
-                    {{ util.href(cdedblink('cde/parse_download', {"path": value, "filename": key}),
+                    {{ util.href(cdedblink('cde/parse_download', {"path": value, "filename": key + ".csv"}),
                         gettext("Download {}.csv ").format(key),
                         aclass="btn btn-info btn-sm", icon="download") }} <br>
                 {% endfor %}
             {% endif %}
-        {% elif False %}
-            <h2>{% trans -%}Validation results{%- endtrans %}</h2>
-            {{ data }}
-            {% if False %}{% for dataset in data %}
-                <strong>
-                    <span class="row-key" data-row="{{ dataset['lineno']|e }}">
-                        {% trans lineno=dataset['lineno'] -%}Line {{ lineno }}{%- endtrans -%}
-                    </span>:
-                    {% trans amount=dataset['amount']|money|e, given_names=dataset['raw']['given_names']|e,
-                             family_name=dataset['raw']['family_name']|e -%}
-                        {{ amount }} for {{ given_names }} {{ family_name }}
-                    {%- endtrans %}
-                </strong>
-                <div class="batch-line-body">
-                    {% if dataset['problems'] or dataset['warnings'] %}
-                        <ul class="list-unstyled">
-                            {% for key, problem in dataset['problems'] %}
-                                <li class="text-danger">
-                                    {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
-                                    {% if key %}
-                                        <em class="row-col-key clickable" data-row="{{ dataset['lineno']|e }}"
-                                            data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key|e -}}
-                                        </em>:
-                                    {% endif %}
-                                    {{ util.format_error(problem) }}
-                                </li>
-                            {% endfor %}
-                            {% for key, warning in dataset['warnings'] %}
-                                <li class="text-warning">
-                                    {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
-                                    {% if key %}
-                                        <em class="row-col-key clickable" data-row="{{ dataset['lineno']|e }}"
-                                            data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key|e -}}
-                                        </em>:
-                                    {% endif %}
-                                    {{ util.format_error(warning) }}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
-            {% endfor %} {% endif %}
-            <script type="text/javascript">
-                $(function() {
-                    var $textinput = $('#input-data');
-                    $('.row-col-key').addClass('clickable').click(function() {
-                        $textinput.jumpCsvPosition($(this).attr('data-row'),$(this).attr('data-col'));
-                    });
-                    $('.row-key').addClass('clickable').click(function() {
-                        $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
-                    });
-                });
-            </script>
+        {% endif %}
+        <br>
+        <br>
+        {% if problems %}
+            {{ problems }}
         {% endif %}
 
-        {% if values['checksum'] %}
-            <p class="help-block">
-                {{ util.make_icon('info-sign') }}
-                {% trans -%}If the input changed, the validation results will be displayed again.{%- endtrans %}
-            </p>
-            {{ util.form_input_submit(value=gettext("Confirm"), horizontal=False) }}
-        {% else %}
-            {{ util.form_input_submit(value=gettext("Validate"), horizontal=False) }}
+        {% if data %}
+            {% for key, value in data|dictsort %}
+                {% if key == "transactions" %}
+                    {% for t in value %}
+                        {{ t|string|replace("\n", "<br>")|replace("\t", "    ") }}
+                        <br>
+                        <br>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
         {% endif %}
     </form>
 {% endblock %}
