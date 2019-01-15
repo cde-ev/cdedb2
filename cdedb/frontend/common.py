@@ -1827,7 +1827,8 @@ def make_transaction_subject(persona):
                                asciificator(persona['family_name']),
                                asciificator(persona['given_names']))
 
-def csv_output(data, fields, replace_newlines=True, substitutions=None):
+def csv_output(data, fields, writeheader=True, replace_newlines=True,
+               substitutions=None):
     """Generate a csv representation of the passed data.
 
     :type data: [{str: object}]
@@ -1847,7 +1848,8 @@ def csv_output(data, fields, replace_newlines=True, substitutions=None):
         outfile, fields, delimiter=';', quoting=csv.QUOTE_MINIMAL,
         quotechar='"', doublequote=False, escapechar='\\',
         lineterminator='\n')
-    writer.writeheader()
+    if writeheader:
+        writer.writeheader()
     for original in data:
         row = {}
         for field in fields:

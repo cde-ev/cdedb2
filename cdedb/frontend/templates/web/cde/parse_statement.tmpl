@@ -23,32 +23,37 @@
         </p>
 
         {{ util.form_input_submit(value=gettext("Validate"), horizontal=False) }}
+    </form>
 
-        {% if data %}
-            {% if "files" in data %}
-                {% for key, value in data["files"]|dictsort %}
-                    {{ util.href(cdedblink('cde/parse_download', {"path": value, "filename": key + ".csv"}),
-                        gettext("Download {}.csv ").format(key),
-                        aclass="btn btn-info btn-sm", icon="download") }} <br>
-                {% endfor %}
-            {% endif %}
-        {% endif %}
-        <br>
-        <br>
-        {% if problems %}
-            {{ problems }}
-        {% endif %}
-
-        {% if data %}
-            {% for key, value in data|dictsort %}
-                {% if key == "transactions" %}
-                    {% for t in value %}
-                        {{ t|string|replace("\n", "<br>")|replace("\t", "    ") }}
-                        <br>
-                        <br>
-                    {% endfor %}
-                {% endif %}
+    {% if data %}
+        {% if "files" in data %}
+            {% for key, value in data["files"]|dictsort %}
+                <form action="{{ cdedblink('cde/parse_download') }}" method="POST" id="key">
+                    {{ util.input_hidden("data", value=value) }}
+                    {{ util.input_hidden("filename", value="{}.csv".format(key)) }}
+                    {{ util.form_input_submit(value=gettext("Download {}.csv ").format(key),
+                        aclass="btn btn-info btn-sm", icon="download", horizontal=False) }}
+                </form>
             {% endfor %}
         {% endif %}
-    </form>
+    {% endif %}
+    <br>
+    <br>
+    {% if CDEDB_DEV and problems %}
+        {% for problem in problems %}
+            {{ problem }}
+        {% endfor %}
+    {% endif %}
+
+    {% if CDEDB_DEV and data %}
+        {% for key, value in data|dictsort %}
+            {% if key == "transactions" %}
+                {% for t in value %}
+                    {{ t|string|replace("\n", "<br>")|replace("\t", "    ") }}
+                    <br>
+                    <br>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 {% endblock %}

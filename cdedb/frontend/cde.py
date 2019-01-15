@@ -666,7 +666,7 @@ class CdEFrontend(AbstractUserFrontend):
                        "NRW Nachtreffen 2018":
                            "((NRW|NACHTREFFEN|VELBERT)\s*)+(2018)?",
                        "Große TestAkademie 2222":
-                           "(Große\s*Testaka(demie)?\s*(2222)?", }
+                           "Große\s*Testaka(demie)?\s*(2222)?", }
         DB_ID_PATTERN = "(DB-[0-9]+-[0-9X])"
         DB_ID_SIMILAR = "(DB[-. ]*[0-9]+[-. 0-9]*[0-9X])"
         DOWNLOAD_PREFIX = "parser-dl-"
@@ -675,9 +675,9 @@ class CdEFrontend(AbstractUserFrontend):
                                  "amount", "comment")
         EVENT_FEE_FIELDS = ("date", "amount", "db_id", "family_name",
                             "given_names", "comment")
-        OTHER_TRANSACTIONS_FIELDS = ("account", "date", "amount", "reference",
-                                     "account_holder", "type",
-                                     "type_confidence")
+        OTHER_TRANSACTION_FIELDS = ("account", "date", "amount", "reference",
+                                    "account_holder", "type",
+                                    "type_confidence")
         ACCOUNT_FIELDS = ("date", "amount", "db_id", "family_name",
                           "given_names", "category", "account")
 
@@ -865,7 +865,7 @@ class CdEFrontend(AbstractUserFrontend):
                         raise
                 else:
                     if self.amount_simplified != raw["amount"] \
-                        and self.amount != raw["amount"]:
+                            and self.amount != raw["amount"]:
                         # Check whether the original input can be reconstructed
                         problems.append(
                             "Problem in line {}: {} != {}. Cents: {}"
@@ -900,7 +900,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.best_member_confidence = None
                 self.match_member()
                 
-                #Get all matching events and the best match
+                # Get all matching events and the best match
                 self.event_matches = []
                 self.best_event_match = None
                 self.best_event_confidence = None
@@ -1056,8 +1056,8 @@ class CdEFrontend(AbstractUserFrontend):
                             value = db_id[:-1].replace("DB", "").replace(" ", "-").replace("-", "")
                             checkdigit = db_id[-1]
                             
-                            persona_id, p = validate.check_cdedbid("DB-{}-{}".format(value, checkdigit),
-                                                                          "persona_id")
+                            persona_id, p = validate.check_cdedbid("DB-{}-{}"
+                                   .format(value, checkdigit), "persona_id")
                             problems.extend(p)
                             
                             if not p:
@@ -1287,17 +1287,11 @@ class CdEFrontend(AbstractUserFrontend):
                 ])
             
             if rows:
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
-                                                 prefix=DOWNLOAD_PREFIX,
-                                                 encoding="utf8",
-                                                 delete=False) as f:
-                    writer = csv.DictWriter(f,
-                                            fieldnames=MEMBERSHIP_FEE_FIELDS,
-                                            dialect=CSVDialect)
-                    writer.writerows(rows)
-                    f_name = f.name.replace(PATH_PREFIX, "")
-                    data["files"]["membership_fees"] = f_name
+                csv_data = csv_output(rows, MEMBERSHIP_FEE_FIELDS,
+                                      writeheader=False)
+                data["files"]["membership_fees"] = csv_data
 
+        all_rows = []
         for event_name in EVENT_NAMES:
             rows = []
             rows.extend([
@@ -1310,7 +1304,8 @@ class CdEFrontend(AbstractUserFrontend):
     
                 for t in event_fees
                 if event_name == t.best_event_match
-                    and t.best_member_match.db_id != "DB-EXTERN"])
+                   and t.best_member_match.db_id != "DB-EXTERN"
+                ])
             
             rows.extend([
                 {"date": t.statement_date,
@@ -1322,20 +1317,19 @@ class CdEFrontend(AbstractUserFrontend):
     
                 for t in event_fees
                 if event_name == t.best_event_match
-                    and t.best_member_match.db_id == "DB-EXTERN"])
+                   and t.best_member_match.db_id == "DB-EXTERN"
+                ])
     
             if rows:
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
-                                                 prefix=DOWNLOAD_PREFIX,
-                                                 encoding="utf8",
-                                                 delete=False) as f:
-                    writer = csv.DictWriter(f,
-                                            fieldnames=EVENT_FEE_FIELDS,
-                                            dialect=CSVDialect)
-                    writer.writerows(rows)
-                    e_name = event_name.replace(" ", "_").replace("/", "-")
-                    f_name = f.name.replace(PATH_PREFIX, "")
-                    data["files"][e_name] = f_name
+                all_rows.extend(rows)
+                e_name = event_name.replace(" ", "_").replace("/", "-")
+                csv_data = csv_output(rows, EVENT_FEE_FIELDS,
+                                      writeheader=False)
+                data["files"][e_name] = csv_data
+        if all_rows:
+            csv_data = csv_output(all_rows, EVENT_FEE_FIELDS,
+                                  writeheader=False)
+            data["files"]["event_fees"] = csv_data
 
         if other_transactions:
             rows = []
@@ -1351,28 +1345,21 @@ class CdEFrontend(AbstractUserFrontend):
                     for t in other_transactions if t.type == ty
                     ])
             rows.extend([
-                    {"account": t.account,
-                     "date": t.statement_date,
-                     "amount": t.amount_export,
-                     "reference": t.reference,
-                     "account_holder": t.account_holder,
-                     "type": t.type,
-                     "type_confidence": t.type_confidence}
-                    for t in other_transactions if t.type is None
+                {"account": t.account,
+                 "date": t.statement_date,
+                 "amount": t.amount_export,
+                 "reference": t.reference,
+                 "account_holder": t.account_holder,
+                 "type": t.type,
+                 "type_confidence": t.type_confidence}
+                for t in other_transactions if t.type is None
                 ])
                 
             if rows:
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
-                                                 prefix=DOWNLOAD_PREFIX,
-                                                 encoding="utf8",
-                                                 delete=False) as f:
-                    writer = csv.DictWriter(f,
-                                        fieldnames=OTHER_TRANSACTIONS_FIELDS,
-                                        dialect=CSVDialect)
-                    writer.writerows(rows)
-                    f_name = f.name.replace(PATH_PREFIX, "")
-                    data["files"]["other"] = f_name
-                    
+                csv_data = csv_output(rows, OTHER_TRANSACTION_FIELDS,
+                                      writeheader=False)
+                data["files"]["other_transactions"] = csv_data
+                
         rows = {}
         for t in transactions:
             if t.account not in rows:
@@ -1401,32 +1388,19 @@ class CdEFrontend(AbstractUserFrontend):
         
         for acc in Accounts:
             if acc in rows:
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".csv",
-                                                 prefix=DOWNLOAD_PREFIX,
-                                                 encoding="utf8",
-                                                 delete=False) as f:
-                    writer = csv.DictWriter(f,
-                                            fieldnames=ACCOUNT_FIELDS,
-                                            dialect=CSVDialect)
-                    writer.writerows(rows[acc])
-                    f_name = f.name.replace(PATH_PREFIX, "")
-                    data["files"]["transactions_{}".format(acc)] = f_name
+                csv_data = csv_output(rows[acc], ACCOUNT_FIELDS,
+                                      writeheader=False)
+                data["files"]["transactions_{}".format(acc)] = csv_data
                 
         csvfields = None
         return self.parse_statement_form(rs, data=data, problems=problems,
                                          csvfields=csvfields)
 
-    @access("cde_admin", modi={"GET"})
-    @REQUESTdata(("path", "str"), ("filename", "str"))
-    def parse_download(self, rs, path=None, filename=None):
-        if not path:
-            raise ValueError(n_("No path given"))
-        if "/" in path:
-            raise ValueError(n_("Invalid Path"))
-        PATH_PREFIX = "/tmp/parser-dl-"
-        path = "{}{}".format(PATH_PREFIX, path)
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("data", "str"), ("filename", "str"))
+    def parse_download(self, rs, data, filename=None):
         filename = filename or "file.csv"
-        return self.send_file(rs, mimetype="text/csv", path=path, filename=filename)
+        return self.send_file(rs, mimetype="text/csv", data=data, filename=filename)
     
     @access("cde_admin")
     def money_transfers_form(self, rs, data=None, csvfields=None):
