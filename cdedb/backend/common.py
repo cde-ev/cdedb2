@@ -361,8 +361,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if not keys:
             ## no input is an automatic success
             return 1
-        query = glue("UPDATE {table} SET ({keys}) = ROW ({placeholders})",
-                     "WHERE {entity_key} = %s")
+        if len(keys) == 1:
+            query = glue("UPDATE {table} SET {keys} = {placeholders}",
+                         "WHERE {entity_key} = %s")
+        else:
+            query = glue("UPDATE {table} SET ({keys}) = ({placeholders})",
+                         "WHERE {entity_key} = %s")
         query = query.format(
             table=table, keys=", ".join(keys),
             placeholders=", ".join(("%s",) * len(keys)), entity_key=entity_key)
