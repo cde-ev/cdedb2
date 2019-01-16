@@ -952,8 +952,13 @@ def diacritic_patterns(s, two_way_replace=False):
 
     This is intended for use with the sql SIMILAR TO clause or a python
     re module.
+    
 
     :type s: str or None
+    :type two_way_replace: bool
+    :param two_way_replace: If this is True, replace all diacriticsc with
+    eachother. This can be used to search occurences of names stored in the db
+    within input, that may not contain proper diacritics.
     :rtype: str or None
     """
     if s is None:
