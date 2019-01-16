@@ -1222,13 +1222,41 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "lastschrift_subscription_form_fill",
                            {"persona": persona, "minor": minor})
         
-    @access("anonymous", modi={"POST"})
-    @REQUESTdatadict("full_name", "address_supplement", "address",
-                     "postal_code", "location", "country", "username", "id",
-                     "minor", "amount", "iban", "bic", "account_owner",
-                     "max_dsa")
-    def lastschrift_subscription_form(self, rs, data):
+    @access("anonymous", modi={"GET"})
+    @REQUESTdata(("full_name", "str_or_None"), ("db_id", "cdedbid_or_None"),
+                 ("username", "email_or_None"), ("minor", "bool_or_None"),
+                 ("address_supplement", "str_or_None"),
+                 ("address", "str_or_None"),
+                 ("postal_code", "german_postal_code_or_None"),
+                 ("location", "str_or_None"), ("country", "str_or_None"),
+                 ("amount", "non_negative_decimal_or_None"),
+                 ("iban", "iban_or_None"), ("account_holder", "str_or_None"),
+                 ("max_dsa", "non_negative_decimal_or_None"))
+    def lastschrift_subscription_form(self, rs, full_name, db_id, username,
+                                      minor, address_supplement, address,
+                                      postal_code, location, country, amount,
+                                      iban, account_holder, max_dsa):
         """Fill the direct debit authorization template with information."""
+        
+        if rs.errors:
+            return self.lastschrift_subscription_form_fill(rs)
+        
+        data = {
+            "full_name": full_name or "",
+            "db_id": db_id,
+            "username": username or "",
+            "minor": minor,
+            "address_supplement": address_supplement or "",
+            "address": address or "",
+            "postal_code": postal_code or "",
+            "location": location or "",
+            "country": country or "",
+            "amount": float(amount),
+            "iban": iban or "",
+            "account_holder": account_holder or "",
+            "max_dsa": max_dsa,
+            }
+            
         meta_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_subscription_form", {
             'meta_info': meta_info,

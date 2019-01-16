@@ -20,6 +20,10 @@
     \usepackage{parskip}
         \parskip = 10pt
 <<% endblock %>>
+<<% block backaddress_oneline %>>
+        <<< "{}, {} {}, {} {} {}".format(data["full_name"], data["address_supplement"],
+                                      data["address"], data["postal_code"], data["location"], data["country"]) >>>
+<<% endblock %>>
 <<% block content %>>
     \begin{letter}{Club der Ehemaligen e.\,V.\\
                    c/o <<< meta_info['Finanzvorstand_Name']|te  >>>
@@ -32,23 +36,48 @@
         \opening{}
 
         \begin{tabular}{ll}
-            <<% if data %>>
-                Name & <<< data['full_name']|te >>>\\
-                Adresszusatz & <<< data['address_supplement']|te >>>\\
-                Straße & <<< data['address']|te >>>\\
-                PLZ, Ort & <<< "{} {}".format(data['postal_code'], data['location'])|te >>>\\
-                Land & <<< data['country']|te >>>\\
-                E-Mail & <<< data['username']|te >>>\\
-                Datenbank-ID & <<< data['id']|int|cdedbid|te >>>\\
-            <<% else %>>
-                Name & \makebox[10cm]{\dotfill}\\
-                Adresszusatz & \makebox[10cm]{\dotfill}\\
-                Straße & \makebox[10cm]{\dotfill}\\
-                PLZ, Ort & \makebox[10cm]{\dotfill}\\
-                Land & \makebox[10cm]{\dotfill}\\
-                E-Mail & \makebox[10cm]{\dotfill}\\
-                Datenbank-ID & \makebox[10cm]{\dotfill}\\
-            <<% endif %>>
+            Name &
+                <<% if data["full_name"] %>>
+                    <<< data["full_name"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Adresszusatz &
+                <<% if data["address_supplement"] %>>
+                    <<< data["address_supplement"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Straße &
+                <<% if data["address"] %>>
+                    <<< data["address"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            PLZ, Ort &
+                <<% if data["postal_code"] and data["location"] %>>
+                    <<< "{} {}".format(data["postal_code"], data["location"])|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Land &
+                <<% if data["country"] %>>
+                    <<< data["country"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            E-Mail &
+                <<% if data["username"] %>>
+                    <<< data["username"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Datenbank-ID &
+                <<% if data["db_id"] %>>
+                    <<< data["db_id"]|cdedbid|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
             Kontoinhaber (falls abweichend) &
                 <<% if data["account_holder"] %>>
                     <<< data["acount_holder"]|te >>>\\
@@ -67,7 +96,7 @@
         e.\,V., von meinem oben angegebenem Konto mittels Lastschrift jährlich
         \begin{center}
             <<% if data["amount"] %>>
-                <<< data["amount"]|int|te >>> €
+                <<< data["amount"]|money|te >>>
             <<% else %>>
                 \makebox[4cm]{\dotfill}€ (mindestens 25\,€)
             <<% endif %>>
