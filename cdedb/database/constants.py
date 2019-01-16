@@ -220,6 +220,66 @@ class LastschriftTransactionStati(enum.IntEnum):
                         LastschriftTransactionStati.failure,
                         LastschriftTransactionStati.cancelled,
                         LastschriftTransactionStati.rollback)
+
+@enum.unique
+class Accounts(enum.Enum):
+    """Store the existing CdE Accounts."""
+    Account0 = 8068900
+    Account1 = 8068901
+    Account2 = 8068902
+    # Fallback if Account is none of the above
+    Unknown = 0
+
+    def __str__(self):
+        return str(self.value)
+
+@enum.unique
+class TransactionType(enum.Enum):
+    """Store the type of a Transactions."""
+    MembershipFee = 1
+    EventFee = 2
+    Other = 3
+    Refund = 4
+    Unknown = 10
+
+    def __str__(self):
+        to_string = {TransactionType.MembershipFee.name: n_("Mitgliedsbeitrag"),
+                     TransactionType.EventFee.name: n_("Teilnehmerbeitrag"),
+                     TransactionType.Other.name: n_("Sonstiges"),
+                     TransactionType.Refund.name: n_("Rückerstattung"),
+                     TransactionType.Unknown.name: n_("Unbekannt"), }
+        if self.name in to_string:
+            return to_string[self.name]
+        else:
+            return repr(self)
+
+@enum.unique
+class ConfidenceLevel(enum.IntEnum):
+    Null = 0
+    Low = 1
+    Medium = 2
+    High = 3
+    Full = 4
+
+    @staticmethod
+    def destroy():
+        return __class__.Null
+
+    def decrease(self, amount=1):
+        if self.value - amount > __class__.Null.value:
+            return __class__(self.value - amount)
+        else:
+            return __class__.Null
+
+    def increase(self, amount=1):
+        if self.value + amount < __class__.Full.value:
+            return __class__(self.value + amount)
+        else:
+            return __class__.Full
+    
+    def __format__(self, format_spec):
+        return str(self)
+    
 @enum.unique
 class CoreLogCodes(enum.IntEnum):
     """Available log messages core.log."""
