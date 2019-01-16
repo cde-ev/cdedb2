@@ -494,11 +494,33 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_subscription_form(self, user):
         self.traverse({'href': '/cde'},
                       {'href': '/cde/i25p'},
-                      {'href': '/cde/lastschrift/subscription'})
+                      {'href': '/cde/lastschrift/subscription_form_fill'})
+        self.assertTitle("Einzugsermächtigung ausfüllen")
+        f = self.response.forms['filllastschriftform']
+        self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
+    
+    @as_users("anton")
+    def test_lastschrift_subscription_form_fail(self, user):
+        self.traverse({'href': '/cde'},
+                      {'href': '/cde/i25p'},
+                      {'href': '/cde/lastschrift/subscription_form_fill'})
+        self.assertTitle("Einzugsermächtigung ausfüllen")
+        f = self.response.forms['filllastschriftform']
+        f["db_id"] = "DB-1-8"
+        f["postal_code"] = "ABC"
+        f["iban"] = "DE12500105170648489809"
+        self.submit(f)
+        self.assertPresence("Checksumme stimmt nicht")
+        self.assertPresence("Ungültige Postleitzahl")
+        self.assertPresence("Ungültige Checksumme")
 
     def test_lastschrift_subscription_form_anonymous(self):
-        self.get("/cde/lastschrift/subscription")
+        self.get("/cde/lastschrift/subscription_form_fill")
+        self.assertTitle("Einzugsermächtigung ausfüllen")
+        f = self.response.forms['filllastschriftform']
+        f["iban"] = "DE12500105170648489890"
+        self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("anton")
