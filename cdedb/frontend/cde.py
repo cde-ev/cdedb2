@@ -1208,8 +1208,8 @@ class CdEFrontend(AbstractUserFrontend):
                 rs, tmp_dir, 'workdir', "lastschrift_receipt.tex")
 
     @access("anonymous")
-    def lastschrift_subscription_form(self, rs):
-        """Generate a form for allowing direct debit transactions.
+    def lastschrift_subscription_form_fill(self, rs):
+        """Generate a form for configuring direct debit authorization.
 
         If we are not anonymous we prefill this with known information.
         """
@@ -1219,9 +1219,21 @@ class CdEFrontend(AbstractUserFrontend):
             persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             minor = determine_age_class(
                 persona['birthday'], now().date()).is_minor()
+        return self.render(rs, "lastschrift_subscription_form_fill",
+                           {"persona": persona, "minor": minor})
+        
+    @access("anonymous", modi={"POST"})
+    @REQUESTdatadict("full_name", "address_supplement", "address",
+                     "postal_code", "location", "country", "username", "id",
+                     "minor", "amount", "iban", "bic", "account_owner",
+                     "max_dsa")
+    def lastschrift_subscription_form(self, rs, data):
+        """Fill the direct debit authorization template with information."""
         meta_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_subscription_form", {
-            'meta_info': meta_info, 'persona': persona, 'minor': minor})
+            'meta_info': meta_info,
+            'data': data
+            })
         return self.serve_latex_document(rs, tex,
                                          "lastschrift_subscription_form")
 

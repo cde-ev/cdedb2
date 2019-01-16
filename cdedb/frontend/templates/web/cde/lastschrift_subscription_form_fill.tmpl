@@ -1,0 +1,63 @@
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}{% trans -%}Fill Direct Debit Authorization Form{%- endtrans %}{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/i25p_index"), "Initiative 25+ (weitere Informationen)") }}
+    {{ util.breadcrumb_link(cdedblink("cde/lastschrift_subscription_form"),
+            "Initiative 25+ (weitere Informationen)", active=True) }}
+{% endblock %}
+{% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#changelastschriftform').cdedbProtectChanges();
+        });
+    </script>
+    <form action="{{ cdedblink('cde/lastschrift_subscription_form')|e }}" method="POST"
+          id="changelastschriftform" class="form-horizontal">
+        {% if persona %}
+            {{ util.form_input_text(name="full_name", label=gettext("Member"),
+                                    defaultvalue="{} {}".format(persona['given_names'], persona['family_name'])) }}
+            {{ util.form_input_text(name="id", label=gettext("DB-ID"), defaultvalue=persona["id"],
+                                    type="number") }}
+            {{ util.form_input_text(name="username", label=gettext("E-Mail"), defaultvalue=persona['username']) }}
+            {{ util.input_hidden("minor", value=minor) }}
+            Anschrift:
+            {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"),
+                                    defaultvalue=persona["address_supplement"]) }}
+            {{ util.form_input_text(name="address", label=gettext("Address"),
+                                    defaultvalue=persona["address"]) }}
+            {{ util.form_input_text(name="postal_code", label=gettext("ZIP-Code"),
+                                    defaultvalue=persona["postal_code"]) }}
+            {{ util.form_input_text(name="location", label=gettext("Location"),
+                                    defaultvalue=persona["location"]) }}
+            {{ util.form_input_text(name="country", label=gettext("Country (if other than Germany)"),
+                                    defaultvalue=persona["country"]) }}
+        {% else %}
+            {{ util.form_input_text(name="full_name", label=gettext("Member")) }}
+            {{ util.form_input_text(name="id", label=gettext("DB-ID"), type="number") }}
+            {{ util.form_input_text(name="username", label=gettext("E-Mail")) }}
+            {{ util.input_hidden("minor", value=minor) }}
+            Anschrift:
+            {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement") }}
+            {{ util.form_input_text(name="address", label=gettext("Address")) }}
+            {{ util.form_input_text(name="postal_code", label=gettext("ZIP-Code")) }}
+            {{ util.form_input_text(name="location", label=gettext("Location")) }}
+            {{ util.form_input_text(name="country", label=gettext("Country (if other than Germany)")) }}
+
+        {% endif %}
+        Bankdaten:
+        {{ util.form_input_text(name="amount", label=gettext("Amount"), type="number",
+                                attributes='min="0" step="0.01"') }}
+        {{ util.form_input_text(name="iban", label=gettext("IBAN")) }}
+        {{ util.form_input_text(name="BIC", label=gettext("BIC")) }}
+        {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
+        {{ util.form_input_text(name="max_dsa", label=gettext("Maximum DSA-Share"), type="number",
+                                attributes='min="0" max="1" step="0.01"') }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5",
+                                    info=gettext("Supports reStructuredText")) }}
+
+        {{ util.form_input_submit(value=gettext("Confirm"), cancellink=cdedblink("cde/index")) }}
+    </form>
+{% endblock %}
