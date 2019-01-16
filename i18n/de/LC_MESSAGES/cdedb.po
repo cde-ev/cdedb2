@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-01-16 23:37+0100\n"
+"POT-Creation-Date: 2019-01-17 00:32+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -4808,7 +4808,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:46
 msgid "Initiative 25+"
-msgstr ""
+msgstr "Initiative 25+"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:49
 #: cdedb/frontend/templates/web/cde/index.tmpl:74
@@ -4861,7 +4861,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/index.tmpl:74
 #, python-format
 msgid "Get %(link_more_info)s or go directly to the %(link_form)s."
-msgstr "%(link_more_info)s dazu oder direkt zum %(link_form)s."
+msgstr "%(link_more_info)s dazu oder direkt die %(link_form)s."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:76
+msgid "Authorization Form"
+msgstr "Einzugsermächtigung ausfüllen"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:85
 msgid "Membership-Fee"
