@@ -892,19 +892,16 @@ class CdEFrontend(AbstractUserFrontend):
                 # Guess the transaction type
                 self.type = TransactionType.Unknown
                 self.type_confidence = None
-                self.guess_type()
 
                 # Get all matching members and the best match
                 self.member_matches = []
                 self.best_member_match = None
                 self.best_member_confidence = None
-                self.match_member()
                 
                 # Get all matching events and the best match
                 self.event_matches = []
                 self.best_event_match = None
                 self.best_event_confidence = None
-                self.match_event()
 
             def guess_type(self):
                 """Assign the best Guess for TransactionType to self.type and return the confidence level."""
@@ -1246,6 +1243,9 @@ class CdEFrontend(AbstractUserFrontend):
                 continue
             line["id"] = i
             t = Transaction(line)
+            t.guess_type()
+            t.match_member()
+            t.match_event()
 
             transactions.append(t)
             if t.type in {TransactionType.EventFee} \
