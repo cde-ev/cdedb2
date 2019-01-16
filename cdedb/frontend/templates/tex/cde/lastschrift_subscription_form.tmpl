@@ -21,8 +21,12 @@
         \parskip = 10pt
 <<% endblock %>>
 <<% block backaddress_oneline %>>
+    <<% if data["full_name"] and data["address"] and data["postal_code"] and data["location"] %>>
         <<< "{}, {} {}, {} {} {}".format(data["full_name"], data["address_supplement"],
                                       data["address"], data["postal_code"], data["location"], data["country"]) >>>
+    <<% else %>>
+        \makebox[10cm]{}
+    <<% endif %>>
 <<% endblock %>>
 <<% block content %>>
     \begin{letter}{Club der Ehemaligen e.\,V.\\
