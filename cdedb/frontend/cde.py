@@ -1224,7 +1224,7 @@ class CdEFrontend(AbstractUserFrontend):
         
     @access("anonymous", modi={"GET"})
     @REQUESTdata(("full_name", "str_or_None"), ("db_id", "cdedbid_or_None"),
-                 ("username", "email_or_None"), ("minor", "bool_or_None"),
+                 ("username", "email_or_None"), ("minor", "any"),
                  ("address_supplement", "str_or_None"),
                  ("address", "str_or_None"),
                  ("postal_code", "german_postal_code_or_None"),
@@ -1241,6 +1241,14 @@ class CdEFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.lastschrift_subscription_form_fill(rs)
         
+        if minor is None or minor == "":
+            minor = True
+        else:
+            minor, p = validate.check_bool(minor)
+            if p:
+                rs.errors.append(p)
+                return self.lastschrift_subscription_form_fill(rs)
+        
         data = {
             "full_name": full_name or "",
             "db_id": db_id,
@@ -1251,10 +1259,10 @@ class CdEFrontend(AbstractUserFrontend):
             "postal_code": postal_code or "",
             "location": location or "",
             "country": country or "",
-            "amount": float(amount),
+            "amount": float(amount) if amount else None,
             "iban": iban or "",
             "account_holder": account_holder or "",
-            "max_dsa": max_dsa,
+            "max_dsa": float(max_dsa) if max_dsa else None,
             }
             
         meta_info = self.coreproxy.get_meta_info(rs)
