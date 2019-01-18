@@ -578,8 +578,9 @@ new_id = past_event.create_institution(
 INSTITUTION_MAP[3] = new_id
 
 ## Import events
-EVENT_MAP = {}
+EVENT_MAP = {} # maps old past_event to new past_event
 SPLIT_AKA_MAP = {}
+DB_ORGA_MAP = {}  # maps new past_event to old event
 query = "SELECT * FROM veranstaltungen"
 events = query_all(cdedbxy, query, tuple())
 events = tuple(sorted(events, key=lambda e: e['shortname']))
@@ -601,7 +602,7 @@ for event in events:
     mo = re.search('[^0-9]([0-9]{4})([^0-9]|$)', new['title'])
     if not mo:
         print("*** NO YEAR *** {}".format(new['title']))
-        year = 2000
+        year = 2017
     else:
         year = int(mo.group(1))
     new['tempus'] = datetime.date(year, 7, 1)
@@ -626,7 +627,34 @@ for event in events:
     EVENT_MAP[event['id']] = new_id
     if split_name:
         SPLIT_AKA_MAP[split_name] = new_id
-    print("Created event in {} -- {}".format(new['tempus'].year, new['title']))
+    ## Search for organized event
+    star = ''
+    orgacomment = ''
+    if event['organisator'] == 0:
+        parts = []
+        for part in event['name'].split():
+            if part in ("Steken", "Latky", "Metten", "Eger", "Goniadz", "Piechowice"):
+                continue
+            parts.append(part)
+            if part.startswith('20'):
+                break
+        base_name = ' '.join(parts)
+        col = 'e.name'
+        for pattern, replace in (('/20', '/'), ('[0-9][0-9]/', ''),
+                                 (' in ', ' '), ('2012-1', '2012'),
+                                 ('2012-2', 'XXXX')):
+            col = "regexp_replace({}, '{}', '{}')".format(col, pattern,
+                                                          replace)
+        query = "SELECT * FROM events.events AS e WHERE {} ~* %s".format(col)
+        orgaevents = query_all(cdedbxy, query, (base_name,))
+        star = ','
+        if len(orgaevents) == 1:
+            DB_ORGA_MAP[new_id] = orgaevents[0]['id']
+            orgacomment = '({}) <==> {}/{}'.format(new_id, orgaevents[0]['id'],
+                                                   orgaevents[0]['name'])
+            star = "*"
+    print("Created event in {}{} -- {}{}".format(
+        new['tempus'].year, star, new['title'], orgacomment))
 
 ## Import courses
 COURSE_MAP = {}
@@ -635,10 +663,15 @@ ORGA_COURSES = set()
 for event_id in EVENT_MAP:
     query = "SELECT * FROM veranstaltungen WHERE id = %s"
     event = query_one(cdedbxy, query, (event_id,))
-    print("Creating courses for {} -- ".format(event['shortname']), end="")
+    dbmarker = ""
+    if EVENT_MAP[event['id']] in DB_ORGA_MAP:
+        dbmarker = "(<-{})".format(DB_ORGA_MAP[EVENT_MAP[event['id']]])
+    print("Creating courses for {}{} -- ".format(event['shortname'], dbmarker),
+          end="")
     query = "SELECT * FROM veranstaltungen_kurse WHERE v_id = %s"
     courses = query_all(cdedbxy, query, (event_id,))
     courses = sorted(courses, key=lambda e: e['kurs_nr'])
+    mapped_courses = []
     for course in courses:
         new = {
             'pevent_id': EVENT_MAP[course['v_id']],
@@ -652,6 +685,52 @@ for event_id in EVENT_MAP:
             continue
         ident = (new['pevent_id'], new['nr'])
         printprefix = ""
+        orgacomment = ""
+        mapped_id = None
+        if EVENT_MAP[course['v_id']] in DB_ORGA_MAP:
+            query = ("SELECT * FROM events.courses"
+                     " WHERE event_id = %s AND nr = %s AND name = %s")
+            orgaevents = query_all(cdedbxy, query, (
+                DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr'],
+                new['title']))
+            if len(orgaevents) == 1:
+                new['description'] = orgaevents[0]['description']
+                orgacomment = "(<={})".format(orgaevents[0]['id'])
+                mapped_id = orgaevents[0]['id']
+            elif len(orgaevents) == 0:
+                query = ("SELECT * FROM events.courses"
+                         " WHERE event_id = %s AND (nr = %s OR name = %s)")
+                orgaevents = query_all(cdedbxy, query, (
+                    DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr'],
+                    new['title']))
+                if len(orgaevents) == 1:
+                    new['description'] = orgaevents[0]['description']
+                    orgacomment = "(<-{})".format(orgaevents[0]['id'])
+                    mapped_id = orgaevents[0]['id']
+                else:
+                    query = ("SELECT * FROM events.courses"
+                             " WHERE event_id = %s AND name = %s")
+                    orgaevents = query_all(cdedbxy, query, (
+                        DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['title']))
+                    if len(orgaevents) == 1:
+                        new['description'] = orgaevents[0]['description']
+                        orgacomment = "(<~{})".format(orgaevents[0]['id'])
+                        mapped_id = orgaevents[0]['id']
+                    else:
+                        query = ("SELECT * FROM events.courses"
+                                 " WHERE event_id = %s AND nr = %s")
+                        orgaevents = query_all(cdedbxy, query, (
+                            DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr']))
+                        if len(orgaevents) == 1:
+                            new['description'] = orgaevents[0]['description']
+                            orgacomment = "(<.{})".format(orgaevents[0]['id'])
+                            mapped_id = orgaevents[0]['id']
+                        else:
+                            orgacomment = "##{}##".format(new['title'])
+            if mapped_id:
+                if mapped_id in mapped_courses:
+                    orgacomment += "!"*200
+                mapped_courses.append(mapped_id)
         if ident in COURSE_COMBINATIONS:
             ## This can happen in case of deduplicated split academies
             COURSE_MAP[course['id']] = COURSE_COMBINATIONS[ident]
@@ -661,7 +740,7 @@ for event_id in EVENT_MAP:
             COURSE_MAP[course['id']] = new_id
             COURSE_COMBINATIONS[ident] = new_id
         nr = new['nr'] or '.'
-        print(" {}{}".format(printprefix, nr), end="")
+        print(" {}{}{}".format(printprefix, nr, orgacomment), end="")
     print()
 
 ## Import participants
