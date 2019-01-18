@@ -9,6 +9,10 @@
             gettext("Authorization Form"), active=True) }}
 {% endblock %}
 {% block content %}
+    {% trans -%}
+        Unfortunately the Direct Debit Authorization Form is only available in German.
+        Direct Debit is only possilbe from German Accounts.
+    {%- endtrans %}
     <form action="{{ cdedblink('cde/lastschrift_subscription_form')|e }}" method="GET"
           id="filllastschriftform" class="form-horizontal">
     
