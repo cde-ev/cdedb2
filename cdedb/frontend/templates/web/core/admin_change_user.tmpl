@@ -41,7 +41,8 @@
             {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="7",
-                                    info="Für alle Admins sichtbar, unterstützt reStructuredText") }}
+                                    info="Für alle Admins sichtbar, unterstützt reStructuredText",
+				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
 
         <h4 class="heading-underline">Kontakt</h4>
         {{ util.form_input_static(label="E-Mail", value=values['username']) }}
@@ -77,7 +78,8 @@
             {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
             {{ util.form_input_textarea(name="interests", label="Interessen") }}
             {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5",
-                                        info="Unterstützt reStructuredText") }}
+                                        info="Unterstützt reStructuredText",
+					infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
         {% endif %}
 
         {{ util.form_input_submit(value="Speichern", cancellink=show_user_link(values['persona_id'])) }}

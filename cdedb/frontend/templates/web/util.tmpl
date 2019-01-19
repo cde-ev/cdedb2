@@ -95,9 +95,14 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro output_info(info) %}
+{% macro output_info(info, link='') %}
     {%- if info %}
-        <p class="help-block no-color">{{ make_icon('info-sign') }} {{ info|e }}</p>
+        <p class="help-block no-color">
+	    {{ make_icon('info-sign') }} {{ info|e }}
+	    {% if link %}
+	        {{ link }}
+	    {% endif %}
+	</p>
     {%- endif %}
 {%- endmacro %}
 
@@ -137,7 +142,7 @@
 {% endmacro %}
 
 {% macro form_input_general(name='', label='', anid='', small=False, info='', displayerrors=True,
-        horizontal=True, labelid='') %}
+        horizontal=True, labelid='', infolink='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {%- if label %}
             <label{% if labelid %} id="{{ labelid|e }}"{% endif %}{% if anid %} for="{{ anid|e }}"{% endif %} {# -#}
@@ -152,9 +157,10 @@
                                        {%- endif %}"{% endif %}>
             {{- caller() }}
             {{- output_errors(name, displayerrors) }}
-            {{- output_info(info) }}
+            {{- output_info(info, infolink) }}
         </div>
     </div>
+    AAA{{infolink|e}}BBB
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, type='text',
@@ -176,15 +182,15 @@
             {%- endif %}
             {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }} />
 {%- endmacro %}
+
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='') %}
+    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', infolink='') %}
     {%- if not anid %}{% set anid = "input-text-{}".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink) %}
         {{- input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
                 aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}
 {%- endmacro %}
-
 
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
     <input type="file" {%- if aclass %} class="{{ aclass|e }}"{% endif %}
@@ -195,9 +201,9 @@
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
-        small=False, horizontal=True) %}
+        small=False, horizontal=True, infolink='') %}
     {%- if not anid %}{% set anid = "input-file-{}".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink) %}
         {{- input_file(name, readonly, defaultvalue, anid, accept=accept) }}
     {%- endcall %}
 {%- endmacro %}
@@ -213,12 +219,13 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-        aclass='', small=False, maxlength=0, rows=3, horizontal=True, attributes='') %}
+        aclass='', small=False, maxlength=0, rows=3, horizontal=True, attributes='', infolink='') %}
     {%- if not anid %}{% set anid = "input-textarea-{}".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
                           aclass='form-control '+aclass) }}
     {%- endcall %}
+    {{infolink|e}}
 {%- endmacro %}
 
 {# list as default value is not supported yet #}
@@ -253,7 +260,7 @@
 {%- endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
-        anid='', horizontal=True, small=False, attributes='') %}
+        anid='', horizontal=True, small=False, attributes='', infolink='') %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- if not anid %}{% set anid = "input-checkbox-{}".format(name) %}{% endif %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
@@ -263,17 +270,17 @@
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, anid, attributes=attributes) }}
             </div>
             {{- output_errors(name, displayerrors) }}
-            {{- output_info(info) }}
+            {{- output_info(info, infolink) }}
         </div>
     </div>
 {%- endmacro %}
 
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-        small=False, radio=False, horizontal=True, aclass='', labelid='') %}
+        small=False, radio=False, horizontal=True, aclass='', labelid='', infolink='') %}
     {#- This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid) %}
+    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, infolink=infolink) %}
         {{- input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
                 arialabeledby=labelid) }}
     {%- endcall %}
@@ -300,9 +307,9 @@
 {%- endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="") %}
+        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="", infolink="") %}
     {%- if not anid %}{% set anid = "input-select-{}".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink) %}
         {{- input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}
@@ -311,9 +318,9 @@
 {% macro input_static(value, anid='') %}
     <div class="form-control-static"{% if anid %}id="{{ anid|e }}"{% endif %}>{{ value|e }}</div>
 {%- endmacro %}
-{% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True) %}
+{% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True, infolink='') %}
     {%- if caller %}{% set value=caller() %}{% else %}{% set value=value|e %}{% endif %}
-    {%- call form_input_general(None, label, anid, small, info, False, horizontal) %}
+    {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink) %}
         {{- input_static(value, anid) }}
     {%- endcall %}
 {%- endmacro %}
@@ -342,7 +349,7 @@
 {%- endmacro %}
 
 {% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
-        horizontal=True) %}
+        horizontal=True, infolink='') %}
     <div class="form-group {% if name1 in errors or name2 in errors %}has-error{% endif %}">
         <label class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
             {{- label|e -}}
@@ -356,7 +363,7 @@
             </div>
             {{- output_errors(name1, displayerrors) }}
             {{- output_errors(name2, displayerrors) }}
-            {{- output_info(info) }}
+            {{- output_info(info, infolink) }}
         </div>
     </div>
 {% endmacro %}
@@ -393,11 +400,11 @@
 {%- endmacro %}
 
 {% macro form_event_field_input(fields, name='', label=None, info='', displayerrors=True, readonly=False,
-                                defaultvalue='', anid='', force_label=False) %}
+                                defaultvalue='', anid='', force_label=False, infolink='') %}
     {%- if label is none %}{% set label = fields['field_name'] %}{% endif %}
     {%- if not anid %}{% set anid = "event-input-{}".format(name) %}{% endif %}
     {%- call form_input_general(name, (None if fields['kind'] == "bool" and not force_label else label), anid, False,
-                               info, displayerrors, True) %}
+                               info, displayerrors, True, infolink=infolink) %}
         {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
     {%- endcall %}
 {%- endmacro %}

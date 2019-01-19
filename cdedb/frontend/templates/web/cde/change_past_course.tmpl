@@ -29,7 +29,8 @@
         {{ util.form_input_text(name="nr", label=gettext("Number")) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports reStructuredText")) }}
+                                    info=gettext("Supports reStructuredText"),
+				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("cde/show_past_course")) }}
     </form>
 {% endblock %}

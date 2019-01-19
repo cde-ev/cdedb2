@@ -20,10 +20,12 @@
         {{ util.form_input_text(name="title", label="Titel") }}
         {{ util.form_input_text(name="address", label="Adresse") }}
         {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
-                                    info="Unterstützt reStructuredText") }}
+                                    info="Unterstützt reStructuredText",
+				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
         {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="5",
-                                    info="Unterstützt reStructuredText") }}
-
+                                    info="Unterstützt reStructuredText",
+				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+				    
 
         <h4 class="heading-underline">Moderation &amp; Abonnenten</h4>
         {{ util.form_input_select(name="mod_policy", label="Moderation",

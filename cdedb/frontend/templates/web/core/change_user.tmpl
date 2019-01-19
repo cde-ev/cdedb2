@@ -64,7 +64,8 @@
             {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
             {{ util.form_input_textarea(name="interests", label="Interessen") }}
             {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5",
-                                        info="Unterstützt reStructuredText") }}
+                                        info="Unterstützt reStructuredText",
+					infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
         {% endif %}
 
         {{ util.form_input_submit(value="Speichern", cancellink=show_user_link(user.persona_id)) }}
