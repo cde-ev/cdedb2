@@ -1230,12 +1230,11 @@ class CdEFrontend(AbstractUserFrontend):
                  ("postal_code", "german_postal_code_or_None"),
                  ("location", "str_or_None"), ("country", "str_or_None"),
                  ("amount", "non_negative_decimal_or_None"),
-                 ("iban", "iban_or_None"), ("account_holder", "str_or_None"),
-                 ("max_dsa", "non_negative_decimal_or_None"))
+                 ("iban", "iban_or_None"), ("account_holder", "str_or_None"))
     def lastschrift_subscription_form(self, rs, full_name, db_id, username,
                                       minor, address_supplement, address,
                                       postal_code, location, country, amount,
-                                      iban, account_holder, max_dsa):
+                                      iban, account_holder):
         """Fill the direct debit authorization template with information."""
         
         if rs.errors:
@@ -1262,7 +1261,6 @@ class CdEFrontend(AbstractUserFrontend):
             "amount": float(amount) if amount else None,
             "iban": iban or "",
             "account_holder": account_holder or "",
-            "max_dsa": float(max_dsa) if max_dsa else None,
             }
             
         meta_info = self.coreproxy.get_meta_info(rs)

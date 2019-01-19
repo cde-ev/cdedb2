@@ -19,22 +19,22 @@
         <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
         {% if persona %}
             {{ util.form_input_text(name="full_name", label=gettext("Member"),
-                                    defaultvalue="{} {}".format(persona['given_names'], persona['family_name'])|e) }}
-            {{ util.form_input_text(name="db_id", label=gettext("CdEDB-ID"), defaultvalue=persona["id"]|cdedbid|e) }}
-            {{ util.form_input_text(name="username", label=gettext("E-Mail"), defaultvalue=persona['username']|e) }}
-            {{ util.input_hidden("minor", value=minor|e) }}
+                                    defaultvalue="{} {}".format(persona['given_names'], persona['family_name'])) }}
+            {{ util.form_input_text(name="db_id", label=gettext("CdEDB-ID"), defaultvalue=persona["id"]|cdedbid) }}
+            {{ util.form_input_text(name="username", label=gettext("E-Mail"), defaultvalue=persona['username']) }}
+            {{ util.input_hidden("minor", value=minor) }}
             
             <h4 class="heading-underline">{% trans -%}Address (of account holder){%- endtrans %}</h4>
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"),
-                                    defaultvalue=persona["address_supplement"]|e) }}
-            {{ util.form_input_text(name="address", label=gettext("Address")|e,
-                                    defaultvalue=persona["address"]|e) }}
+                                    defaultvalue=persona["address_supplement"]) }}
+            {{ util.form_input_text(name="address", label=gettext("Address"),
+                                    defaultvalue=persona["address"]) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode (if in Germany)"),
-                                    defaultvalue=persona["postal_code"]|e) }}
+                                    defaultvalue=persona["postal_code"]) }}
             {{ util.form_input_text(name="location", label=gettext("City"),
-                                    defaultvalue=persona["location"]|e) }}
+                                    defaultvalue=persona["location"]) }}
             {{ util.form_input_text(name="country", label=gettext("Country (if other than Germany)"),
-                                    defaultvalue=persona["country"]|e) }}
+                                    defaultvalue=persona["country"]) }}
         {% else %}
             {{ util.form_input_text(name="full_name", label=gettext("Member")) }}
             {{ util.form_input_text(name="id", label=gettext("CdEDB-ID")) }}
