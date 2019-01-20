@@ -34,12 +34,12 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
           class="form-horizontal">
         <h3 class="heading-underline">Personendaten</h3>
         {{ util.form_input_static(label="Name", value=output_name(persona)) }}
-        {{ util.form_input_static(label="CdEDB-ID", value=persona['id']|cdedbid|e) }}
+        {{ util.form_input_static(label="CdEDB-ID", value=persona['id']|cdedbid) }}
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
             {{ util.form_input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
         {% endif %}
-        {{ util.form_input_static(label="Geburtstag", value=persona['birthday']|date(lang=lang)|e) }}
-        {{ util.form_input_static(label="Geschlecht", value=gettext(enums['Genders'](persona['gender'])|string)|e) }}
+        {{ util.form_input_static(label="Geburtstag", value=persona['birthday']|date(lang=lang)) }}
+        {{ util.form_input_static(label="Geschlecht", value=gettext(enums['Genders'](persona['gender'])|string)) }}
         {{ util.form_input_textarea(name="reg.orga_notes", label="Orga-Notizen", rows="5") }}
 
         <h3 class="heading-underline">Status</h3>

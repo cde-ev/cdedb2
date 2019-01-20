@@ -68,7 +68,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
         {% endcall %}
 
         {% if values['enable_reg.gender'] %}
-            {{ util.form_input_static(label="Geschlecht", value=gettext(enums['Genders'](values['reg.gender'])|string)|e) }}
+            {{ util.form_input_static(label="Geschlecht", value=gettext(enums['Genders'](values['reg.gender'])|string)) }}
         {% else %}
             {{ util.form_input_static(label="Geschlecht", value="unterschiedlich") }}
         {% endif %}

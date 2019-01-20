@@ -167,9 +167,9 @@
             name="{{ name|e }}"
             {%- if type != 'password' %}
                 {%- if type == 'date' %}
-                    value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
+                    value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True)|e }}"
                 {%- elif type == 'datetime-local' %}
-                    value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
+                    value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True)|e }}"
                 {%- else %}
                     value="{{ values.get(name, defaultvalue)|e }}"
                 {%- endif %}
@@ -309,7 +309,7 @@
 {%- endmacro%}
 
 {% macro input_static(value, anid='') %}
-    <div class="form-control-static"{% if anid %}id="{{ anid|e }}"{% endif %}>{{ value }}</div>
+    <div class="form-control-static"{% if anid %}id="{{ anid|e }}"{% endif %}>{{ value|e }}</div>
 {%- endmacro %}
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True) %}
     {%- if caller %}{% set value=caller() %}{% else %}{% set value=value|e %}{% endif %}
