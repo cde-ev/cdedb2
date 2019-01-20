@@ -148,6 +148,25 @@ Data
 
 See cde realm.
 
+Step-by-step plan
+-----------------
+
+1. Make everything ready as described above.
+2. Prepare the v2 VM (install/configure system packages).
+3. Stop the mailserver (alternatively: make mailinglists static, that is independent of db).
+4. Deploy a change to v1 making it read-only and only accessible to admins.
+5. Stop v1 and make an SQL dump.
+6. Restart v1 and move it to https://db1.cde-ev.de.
+7. Import dump into v2 (see below).
+8. Move v2 to https://db.cde-ev.de and initialize it.
+9. Adapt mailinglist scripts to v2 and restart mailserver
+
+Longterm steps:
+
+1. Migrate to new mailinglist software.
+2. Migrate all lists to new mailinglist software (obsoleting ezml).
+3. Migrate mailinglist server to postfix.
+
 Implementation Details
 ----------------------
 
