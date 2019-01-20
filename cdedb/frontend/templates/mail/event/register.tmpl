@@ -5,9 +5,14 @@ angekommen. Beachte bitte, dass Deine Anmeldung erst mit Überweisung des
 Teilnehmerbeitrags gültig wird.
 
 {% if ambience['event']['iban'] %}
-Überweise dazu bitte {{ fee }}€ auf folgendes Konto. Achte bitte bei
-internationalen Überweisungen darauf, dass der Empfänger keine Gebühren
-zahlen muss.
+{% if ambience['event']['mail_text'] %}
+Überweise dazu bitte {{ fee }}€ plus möglicherweise unten erwähnte
+veranstaltungsspezifische Beträge auf folgendes Konto.
+{% else %}
+Überweise dazu bitte {{ fee }}€ auf folgendes Konto.
+{% endif %}
+Achte bitte bei internationalen Überweisungen darauf, dass der
+Empfänger keine Gebühren zahlen muss.
 
 Kontoinhaber: CdE e.V.
 IBAN: {{ ambience['event']['iban'] }}
