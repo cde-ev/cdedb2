@@ -323,7 +323,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_lastschrift_index(self, user):
         self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/lastschrift$'})
+                      {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn("generatetransactionform2", self.response.forms)
 
@@ -347,7 +347,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_lastschrift_generate_transactions(self, user):
         self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/lastschrift$'})
+                      {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionsform']
         self.submit(f, check_notification=False)
@@ -361,7 +361,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_lastschrift_generate_single_transaction(self, user):
         self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/lastschrift$'})
+                      {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionform2']
         self.submit(f, check_notification=False)
@@ -375,13 +375,13 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_lastschrift_transaction_rollback(self, user):
         self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/lastschrift$'})
+                      {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionform2']
         saved = self.response
         self.submit(f, check_notification=False)
         self.response = saved
-        self.traverse({'href': '/cde/lastschrift$'})
+        self.traverse({'href': '/cde/lastschrift/$'})
         f = self.response.forms['finalizationform']
         f['transaction_ids'] = [4]
         self.submit(f, button="success")
@@ -400,13 +400,13 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_lastschrift_transaction_cancel(self, user):
         self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/lastschrift$'})
+                      {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionform2']
         saved = self.response
         self.submit(f, check_notification=False)
         self.response = saved
-        self.traverse({'href': '/cde/lastschrift$'})
+        self.traverse({'href': '/cde/lastschrift/$'})
         f = self.response.forms['finalizationform']
         f['transaction_ids'] = [4]
         self.submit(f, button="cancelled")
@@ -417,13 +417,13 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_lastschrift_transaction_failure(self, user):
         self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/lastschrift$'})
+                      {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionform2']
         saved = self.response
         self.submit(f, check_notification=False)
         self.response = saved
-        self.traverse({'href': '/cde/lastschrift$'})
+        self.traverse({'href': '/cde/lastschrift/$'})
         f = self.response.forms['finalizationform']
         f['transaction_ids'] = [4]
         self.submit(f, button="failure")
@@ -434,7 +434,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_lastschrift_skip(self, user):
         self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/lastschrift$'})
+                      {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['skiptransactionform2']
         self.submit(f)
