@@ -72,7 +72,8 @@
                     </p>
                     <p>
                         {% trans link_more_info=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
-                                 link_form=util.href(cdedblink("cde/lastschrift_subscription_form"), "Direct Debit Form") -%}
+                                 link_form=util.href(cdedblink("cde/lastschrift_subscription_form_fill"),
+                                                               gettext("Authorization Form")) -%}
                             Get {{ link_more_info }} or go directly to the {{ link_form }}.
                         {%- endtrans %}
                     </p>

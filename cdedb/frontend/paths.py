@@ -18,6 +18,8 @@ _POST = ("POST",)
 
 #: Using a routing map allows to do lookups as well as the reverse process
 #: of generating links to targets instead of hardcoding them.
+
+
 CDEDB_PATHS = werkzeug.routing.Map((
     werkzeug.routing.EndpointPrefix('core/', (
         rule("/", methods=_GET,
@@ -171,14 +173,17 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="user_search"),)),
             rule("/i25p", methods=_GET,
                  endpoint="i25p_index"),
-            rule("/lastschrift", methods=_GET,
-                 endpoint="lastschrift_index"),
-            rule("/lastschrift/subscription", methods=_GET,
-                 endpoint="lastschrift_subscription_form"),
-            rule("/lastschrift/transaction/generate", methods=_POST,
-                 endpoint="lastschrift_generate_transactions"),
-            rule("/lastschrift/transaction/finalize", methods=_POST,
-                 endpoint="lastschrift_finalize_transactions"),
+            sub("/lastschrift/", (
+                rule("/", methods=_GET,
+                     endpoint="lastschrift_index"),
+                rule("/form/download", methods=_GET,
+                     endpoint="lastschrift_subscription_form"),
+                rule("/form/fill", methods=_GET,
+                     endpoint="lastschrift_subscription_form_fill"),
+                rule("/transaction/generate", methods=_POST,
+                     endpoint="lastschrift_generate_transactions"),
+                rule("/transaction/finalize", methods=_POST,
+                     endpoint="lastschrift_finalize_transactions"),)),
             sub('/past/', (
                 rule("/institution/summary", methods=_GET,
                      endpoint="institution_summary_form"),

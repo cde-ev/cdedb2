@@ -5,9 +5,10 @@
     \makeatletter
     \def\@mysignature{%
         \begin{tabular}{lll}
-        \makebox[3cm]{\dotfill} & \makebox[6cm]{\dotfill} & <<% if minor %>>\makebox[6cm]{\dotfill} <<% endif %>> \\
-        Ort, Datum & Unterschrift & <<% if minor %>>\emph{bei Minderjährigen:}<<% endif %>>\\
-         & & <<% if minor %>>Unterschrift Erziehungsberechtigte/-r<<% endif %>>\\
+        \makebox[3cm]{\dotfill} & \makebox[6cm]{\dotfill} &
+            <<% if data["minor"] == True %>>\makebox[6cm]{\dotfill} <<% endif %>> \\
+        Ort, Datum & Unterschrift & <<% if data["minor"] == True %>>\emph{bei Minderjährigen:}<<% endif %>>\\
+         & & <<% if data["minor"] == True %>>Unterschrift Erziehungsberechtigte/-r<<% endif %>>\\
         \end{tabular}}
     \setkomavar{signature}{\@mysignature}
     \makeatother
@@ -16,6 +17,16 @@
     \setkomavar{firsthead}{}
 
     \def\subsection#1{\bigskip\noindent\textbf{\large #1}\smallskip}
+    \usepackage{parskip}
+        \parskip = 10pt
+<<% endblock %>>
+<<% block backaddress_oneline %>>
+    <<% if data["full_name"] and data["address"] and data["postal_code"] and data["location"] %>>
+        <<< "{}, {} {}, {} {} {}".format(data["full_name"], data["address_supplement"],
+                                      data["address"], data["postal_code"], data["location"], data["country"]) >>>
+    <<% else %>>
+        \makebox[10cm]{}
+    <<% endif %>>
 <<% endblock %>>
 <<% block content %>>
     \begin{letter}{Club der Ehemaligen e.\,V.\\
@@ -29,31 +40,70 @@
         \opening{}
 
         \begin{tabular}{ll}
-            <<% if persona %>>
-                Name & <<< "{} {}".format(persona['given_names'], persona['family_name'])|te >>>\\
-                Adresszusatz & <<< persona['address_supplement']|te >>>\\
-                Straße & <<< persona['address']|te >>>\\
-                PLZ, Ort & <<< "{} {}".format(persona['postal_code'], persona['location'])|te >>>\\
-                Land & <<< persona['country']|te >>>\\
-                E-Mail & <<< persona['username']|te >>>\\
-                Datenbank-ID & <<< persona['id']|cdedbid|te >>>\\
-            <<% else %>>
-                Name & \makebox[10cm]{\dotfill}\\
-                Adresszusatz & \makebox[10cm]{\dotfill}\\
-                Straße & \makebox[10cm]{\dotfill}\\
-                PLZ, Ort & \makebox[10cm]{\dotfill}\\
-                Land & \makebox[10cm]{\dotfill}\\
-                E-Mail & \makebox[10cm]{\dotfill}\\
-                Datenbank-ID & \makebox[10cm]{\dotfill}\\
-            <<% endif %>>
-            Kontoinhaber (falls abweichend) & \makebox[10cm]{\dotfill}\\
-            IBAN & \makebox[10cm]{\dotfill}\\
+            Name &
+                <<% if data["full_name"] %>>
+                    <<< data["full_name"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Adresszusatz &
+                <<% if data["address_supplement"] %>>
+                    <<< data["address_supplement"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Straße &
+                <<% if data["address"] %>>
+                    <<< data["address"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            PLZ, Ort &
+                <<% if data["postal_code"] and data["location"] %>>
+                    <<< "{} {}".format(data["postal_code"], data["location"])|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Land &
+                <<% if data["country"] %>>
+                    <<< data["country"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            E-Mail &
+                <<% if data["username"] %>>
+                    <<< data["username"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Datenbank-ID &
+                <<% if data["db_id"] %>>
+                    <<< data["db_id"]|cdedbid|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            Kontoinhaber (falls abweichend) &
+                <<% if data["account_holder"] %>>
+                    <<< data["acount_holder"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
+            IBAN &
+                <<% if data["iban"] %>>
+                    <<< data["iban"]|te >>>\\
+                <<% else %>>
+                    \makebox[10cm]{\dotfill}\\
+                <<% endif %>>
         \end{tabular}
 
         \emph{SEPA-Lastschriftmandat:} Hiermit ermächtige ich den Club der Ehemaligen der Deutschen SchülerAkademien
         e.\,V., von meinem oben angegebenem Konto mittels Lastschrift jährlich
         \begin{center}
-            \makebox[4cm]{\dotfill}€ (mindestens 25\,€)
+            <<% if data["amount"] %>>
+                <<< data["amount"]|money|te >>>
+            <<% else %>>
+                \makebox[4cm]{\dotfill}€ (mindestens 25\,€)
+            <<% endif %>>
         \end{center}
         einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von dem Club der Ehemaligen der Deutschen
         SchülerAkademien e.\,V.  gezogenen Lastschriften einzulösen.
@@ -80,7 +130,7 @@
 
         Mit diesen mindestens 25\,€ wird zunächst der -- jeweils aktuelle -- Mitgliedsbeitrag für ein Jahr verrechnet,
         derzeit also 5\,€. Der Restbetrag kommt dem CdE e.\,V. als Spende zugute. Im Rahmen der Vereinsarbeit soll
-        darauf geachtet werden, dass in etwa 40 Prozent davon der Deutschen SchülerAkademie gespendet oder für eine
+        darauf geachtet werden, dass in etwa 40 bis 50 Prozent davon der Deutschen SchülerAkademie gespendet oder für eine
         sonstige Unterstützung der "`Idee SchülerAkademie"' verwendet werden.
 
         \subsection{Wofür benötigt der CdE Spenden?}
@@ -96,11 +146,6 @@
         an die "`Idee SchülerAkademie"' auch finanziell unterstützt werden.  Dazu darf der CdE einen Teil der auf diesem
         Weg erhaltenen Spenden an Bildung \& Begabung gem. GmbH weiterreichen oder aber auf anderem Wege die
         SchülerAkademien fördern.
-
-        \subsection{Spendenbescheinigung}
-
-        Über die abgebuchten Spenden stellt dir der CdE e.\,V. eine Spendenbescheinigung zur Vorlage beim Finanzamt
-        aus. Die Bescheinigung wird dir ca. 8 Wochen nach Einlösung der Lastschrift zugesandt.
 
         \subsection{Fragen?}
 
