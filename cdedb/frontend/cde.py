@@ -1221,10 +1221,10 @@ class CdEFrontend(AbstractUserFrontend):
                 persona['birthday'], now().date()).is_minor()
         return self.render(rs, "lastschrift_subscription_form_fill",
                            {"persona": persona, "minor": minor})
-        
-    @access("anonymous", modi={"GET"})
+
+    @access("anonymous")
     @REQUESTdata(("full_name", "str_or_None"), ("db_id", "cdedbid_or_None"),
-                 ("username", "email_or_None"), ("minor", "any"),
+                 ("username", "email_or_None"), ("minor", "bool"),
                  ("address_supplement", "str_or_None"),
                  ("address", "str_or_None"),
                  ("postal_code", "german_postal_code_or_None"),
@@ -1236,18 +1236,10 @@ class CdEFrontend(AbstractUserFrontend):
                                       postal_code, location, country, amount,
                                       iban, account_holder):
         """Fill the direct debit authorization template with information."""
-        
+
         if rs.errors:
             return self.lastschrift_subscription_form_fill(rs)
-        
-        if minor is None or minor == "":
-            minor = True
-        else:
-            minor, p = validate.check_bool(minor)
-            if p:
-                rs.errors.append(p)
-                return self.lastschrift_subscription_form_fill(rs)
-        
+
         data = {
             "full_name": full_name or "",
             "db_id": db_id,
@@ -1261,13 +1253,11 @@ class CdEFrontend(AbstractUserFrontend):
             "amount": float(amount) if amount else None,
             "iban": iban or "",
             "account_holder": account_holder or "",
-            }
-            
+        }
+
         meta_info = self.coreproxy.get_meta_info(rs)
-        tex = self.fill_template(rs, "tex", "lastschrift_subscription_form", {
-            'meta_info': meta_info,
-            'data': data
-            })
+        tex = self.fill_template(rs, "tex", "lastschrift_subscription_form",
+                                 {'meta_info': meta_info, 'data': data})
         return self.serve_latex_document(rs, tex,
                                          "lastschrift_subscription_form")
 
