@@ -15,15 +15,15 @@
     {%- endtrans %}
     <form action="{{ cdedblink('cde/lastschrift_subscription_form')|e }}" method="GET"
           id="filllastschriftform" class="form-horizontal">
-    
+
         <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
         {% if persona %}
             {{ util.form_input_text(name="full_name", label=gettext("Member"),
                                     defaultvalue="{} {}".format(persona['given_names'], persona['family_name'])) }}
             {{ util.form_input_text(name="db_id", label=gettext("CdEDB-ID"), defaultvalue=persona["id"]|cdedbid) }}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), defaultvalue=persona['username']) }}
-            {{ util.input_hidden("minor", value=minor) }}
-            
+            {{ util.input_hidden("not_minor", value=not_minor) }}
+
             <h4 class="heading-underline">{% trans -%}Address (of account holder){%- endtrans %}</h4>
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"),
                                     defaultvalue=persona["address_supplement"]) }}

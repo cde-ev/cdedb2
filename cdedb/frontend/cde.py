@@ -1214,17 +1214,17 @@ class CdEFrontend(AbstractUserFrontend):
         If we are not anonymous we prefill this with known information.
         """
         persona = None
-        minor = True
+        not_minor = False
         if rs.user.persona_id:
             persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-            minor = determine_age_class(
+            not_minor = not determine_age_class(
                 persona['birthday'], now().date()).is_minor()
         return self.render(rs, "lastschrift_subscription_form_fill",
-                           {"persona": persona, "minor": minor})
+                           {"persona": persona, "not_minor": not_minor})
 
     @access("anonymous")
     @REQUESTdata(("full_name", "str_or_None"), ("db_id", "cdedbid_or_None"),
-                 ("username", "email_or_None"), ("minor", "bool"),
+                 ("username", "email_or_None"), ("not_minor", "bool"),
                  ("address_supplement", "str_or_None"),
                  ("address", "str_or_None"),
                  ("postal_code", "german_postal_code_or_None"),
@@ -1232,7 +1232,7 @@ class CdEFrontend(AbstractUserFrontend):
                  ("amount", "non_negative_decimal_or_None"),
                  ("iban", "iban_or_None"), ("account_holder", "str_or_None"))
     def lastschrift_subscription_form(self, rs, full_name, db_id, username,
-                                      minor, address_supplement, address,
+                                      not_minor, address_supplement, address,
                                       postal_code, location, country, amount,
                                       iban, account_holder):
         """Fill the direct debit authorization template with information."""
@@ -1244,7 +1244,7 @@ class CdEFrontend(AbstractUserFrontend):
             "full_name": full_name or "",
             "db_id": db_id,
             "username": username or "",
-            "minor": minor,
+            "not_minor": not_minor,
             "address_supplement": address_supplement or "",
             "address": address or "",
             "postal_code": postal_code or "",

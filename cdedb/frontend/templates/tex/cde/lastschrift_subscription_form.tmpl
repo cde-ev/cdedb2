@@ -6,9 +6,9 @@
     \def\@mysignature{%
         \begin{tabular}{lll}
         \makebox[3cm]{\dotfill} & \makebox[6cm]{\dotfill} &
-            <<% if data["minor"] == True %>>\makebox[6cm]{\dotfill} <<% endif %>> \\
-        Ort, Datum & Unterschrift & <<% if data["minor"] == True %>>\emph{bei Minderjährigen:}<<% endif %>>\\
-         & & <<% if data["minor"] == True %>>Unterschrift Erziehungsberechtigte/-r<<% endif %>>\\
+            <<% if not data["not_minor"] == True %>>\makebox[6cm]{\dotfill} <<% endif %>> \\
+        Ort, Datum & Unterschrift & <<% if not data["not_minor"] == True %>>\emph{bei Minderjährigen:}<<% endif %>>\\
+         & & <<% if not data["not_minor"] == True %>>Unterschrift Erziehungsberechtigte/-r<<% endif %>>\\
         \end{tabular}}
     \setkomavar{signature}{\@mysignature}
     \makeatother
