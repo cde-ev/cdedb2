@@ -2,6 +2,7 @@
 
 import itertools
 import json
+import csv
 import re
 import unittest
 import time
@@ -754,6 +755,165 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Gerhard Schröder")
         self.assertPresence("Angela Merkel")
 
+    @as_users("anton")
+    def test_parse_statement(self, user):
+        self.get("/cde/parse")
+        self.assertTitle("Parse Bank Statement")
+        f = self.response.forms["statementform"]
+        with open("/cdedb2/test/ancillary_files/statement.csv") as statementfile:
+            f["statement"] = statementfile.read()
+        self.submit(f, check_notification=False)
+        
+        self.assertTitle("Parse Bank Statement")
+        self.assertPresence("3 Transactions found for event_fees.")
+        self.assertPresence("3 Transactions found for membership_fees.")
+        self.assertPresence("3 Transactions found for other_transactions.")
+        self.assertPresence("9 Transactions found for transactions.")
+        
+        save = self.response
+        
+        # check event_fees.csv
+        event_fees_fields = ("date", "amount", "db_id", "family_name",
+                             "given_names", "reference")
+        f = save.forms["event_fees"]
+        self.submit(f, check_notification=False)
+        result = list(csv.DictReader(self.response.text.split("\n"),
+                                     delimiter=";",
+                                     fieldnames=event_fees_fields))
+                
+        self.assertEqual("584.49", result[0]["amount"])
+        self.assertEqual("DB-1-9", result[0]["db_id"])
+        self.assertEqual("Administrator", result[0]["family_name"])
+        self.assertEqual("Anton Armin A.", result[0]["given_names"])
+        
+        self.assertEqual("100.00", result[1]["amount"])
+        self.assertEqual("DB-5-1", result[1]["db_id"])
+        self.assertEqual("Eventis", result[1]["family_name"])
+        self.assertEqual("Emilia E.", result[1]["given_names"])
+        
+        self.assertEqual("584.49", result[2]["amount"])
+        self.assertEqual("DB-7-8", result[2]["db_id"])
+        self.assertEqual("Generalis", result[2]["family_name"])
+        self.assertEqual("Garcia G.", result[2]["given_names"])
+        
+        # check TestAkademie file
+        f = save.forms["Große_TestAkademie_2222"]
+        self.submit(f, check_notification=False)
+        self.assertEqual(list(csv.DictReader(self.response.text.split("\n"),
+                                             delimiter=";",
+                                             fieldnames=event_fees_fields)),
+                         result)
+        
+        # check membership_fees.csv
+        membership_fees_fields = ("db_id", "family_name", "given_names",
+                                  "amount", "problems")
+        f = save.forms["membership_fees"]
+        self.submit(f, check_notification=False)
+        result = list(csv.DictReader(self.response.text.split("\n"),
+                                     delimiter=";",
+                                     fieldnames=membership_fees_fields))
+
+        self.assertEqual("10.00", result[0]["amount"])
+        self.assertEqual("DB-1-9", result[0]["db_id"])
+        self.assertEqual("Administrator", result[0]["family_name"])
+        self.assertEqual("Anton Armin A.", result[0]["given_names"])
+        self.assertIn("not found in", result[0]["problems"])
+
+        self.assertEqual("5.00", result[1]["amount"])
+        self.assertEqual("DB-2-7", result[1]["db_id"])
+        self.assertEqual("Beispiel", result[1]["family_name"])
+        self.assertEqual("Bertålotta", result[1]["given_names"])
+        self.assertNotIn("not found in", result[1]["problems"])
+
+        self.assertEqual("2.50", result[2]["amount"])
+        self.assertEqual("DB-7-8", result[2]["db_id"])
+        self.assertEqual("Generalis", result[2]["family_name"])
+        self.assertEqual("Garcia G.", result[2]["given_names"])
+        self.assertIn("not found in", result[2]["problems"])
+        
+        # TODO check other_transactions
+        # Need to decide on output format for this
+        
+        # check transactions files
+        # check account 00
+        transactions_fields = ("date", "amount", "db_id", "family_name",
+                               "given_names", "type", "account")
+        f = save.forms["transactions_8068900"]
+        self.submit(f, check_notification=False)
+        result = list(csv.DictReader(self.response.text.split("\n"),
+                                     delimiter=";",
+                                     fieldnames=transactions_fields))
+        
+        self.assertEqual("10.00", result[0]["amount"])
+        self.assertEqual("DB-1-9", result[0]["db_id"])
+        self.assertEqual("Administrator", result[0]["family_name"])
+        self.assertEqual("Anton Armin A.", result[0]["given_names"])
+        self.assertEqual("Mitgliedsbeitrag", result[0]["type"])
+        self.assertEqual("8068900", result[0]["account"])
+        
+        self.assertEqual("5.00", result[1]["amount"])
+        self.assertEqual("DB-2-7", result[1]["db_id"])
+        self.assertEqual("Beispiel", result[1]["family_name"])
+        self.assertEqual("Bertålotta", result[1]["given_names"])
+        self.assertEqual("Mitgliedsbeitrag", result[1]["type"])
+        self.assertEqual("8068900", result[1]["account"])
+        
+        self.assertEqual("2.50", result[2]["amount"])
+        self.assertEqual("DB-7-8", result[2]["db_id"])
+        self.assertEqual("Generalis", result[2]["family_name"])
+        self.assertEqual("Garcia G.", result[2]["given_names"])
+        self.assertEqual("Mitgliedsbeitrag", result[2]["type"])
+        self.assertEqual("8068900", result[2]["account"])
+        
+        self.assertEqual("2.50", result[3]["amount"])
+        self.assertEqual("????", result[3]["db_id"])
+        self.assertEqual("Daniel Dino", result[3]["family_name"])
+        self.assertEqual("Mitgliedsbeitrag", result[3]["given_names"])
+        self.assertEqual("Mitgliedsbeitrag", result[3]["type"])
+        self.assertEqual("8068900", result[3]["account"])
+        
+        # check account 01
+        f = save.forms["transactions_8068901"]
+        self.submit(f, check_notification=False)
+        result = list(csv.DictReader(self.response.text.split("\n"),
+                                     delimiter=";",
+                                     fieldnames=transactions_fields))
+
+        self.assertEqual("-18.54", result[0]["amount"])
+        self.assertEqual("????", result[0]["db_id"])
+        self.assertEqual("", result[0]["family_name"])
+        self.assertIn("Genutzte Freiposten", result[0]["given_names"])
+        self.assertEqual("Sonstiges", result[0]["type"])
+        self.assertEqual("8068901", result[0]["account"])
+
+        self.assertEqual("-52.50", result[1]["amount"])
+        self.assertEqual("????", result[1]["db_id"])
+        self.assertEqual("", result[1]["family_name"])
+        self.assertEqual("KONTOFUEHRUNGSGEBUEHREN", result[1]["given_names"])
+        self.assertEqual("Sonstiges", result[1]["type"])
+        self.assertEqual("8068901", result[1]["account"])
+
+        self.assertEqual("584.49", result[2]["amount"])
+        self.assertEqual("DB-1-9", result[2]["db_id"])
+        self.assertEqual("Administrator", result[2]["family_name"])
+        self.assertEqual("Anton Armin A.", result[2]["given_names"])
+        self.assertEqual("Große TestAkademie 2222", result[2]["type"])
+        self.assertEqual("8068901", result[2]["account"])
+
+        self.assertEqual("100.00", result[3]["amount"])
+        self.assertEqual("DB-5-1", result[3]["db_id"])
+        self.assertEqual("Eventis", result[3]["family_name"])
+        self.assertEqual("Emilia E.", result[3]["given_names"])
+        self.assertEqual("Große TestAkademie 2222", result[3]["type"])
+        self.assertEqual("8068901", result[3]["account"])
+
+        self.assertEqual("584.49", result[4]["amount"])
+        self.assertEqual("DB-7-8", result[4]["db_id"])
+        self.assertEqual("Generalis", result[4]["family_name"])
+        self.assertEqual("Garcia G.", result[4]["given_names"])
+        self.assertEqual("Große TestAkademie 2222", result[4]["type"])
+        self.assertEqual("8068901", result[4]["account"])
+    
     @as_users("anton")
     def test_money_transfers(self, user):
         self.traverse({'href': '/cde/$'},
