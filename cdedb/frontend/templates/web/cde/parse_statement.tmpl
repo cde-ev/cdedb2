@@ -29,7 +29,7 @@
     {% if data %}
         {% if "files" in data %}
             {% for key, value in data["files"]|dictsort %}
-                <form action="{{ cdedblink('cde/parse_download') }}" method="POST" id="key">
+                <form action="{{ cdedblink('cde/parse_download') }}" method="POST" id="{{ key }}">
                     {{ util.input_hidden("data", value=value) }}
                     {{ util.input_hidden("filename", value="{}.csv".format(key)) }}
                     {{ util.form_input_submit(value=gettext("Download {}.csv ").format(key),
@@ -40,21 +40,31 @@
     {% endif %}
     <br>
     <br>
-    {% if CDEDB_DEV and problems %}
-        {% for problem in problems %}
-            {{ problem }}<br>
-        {% endfor %}
-    {% endif %}
-
-    {% if CDEDB_DEV and data %}
-        {% for key, value in data|dictsort %}
-            {% if key == "transactions" %}
-                {% for t in value %}
-                    {{ t|string|replace("\n", "<br>")|replace("\t", "    ") }}
+    {% if CDEDB_DEV %}
+        {% if problems %}
+            {% trans -%}Problems:{%- endtrans %}<br>
+            {% for problem in problems %}
+                - {{ problem }}<br>
+            {% endfor %}
+        {% endif %}
+        <br>
+        {% if data %}
+            {% for key, value in data|dictsort %}
+                {% if key != "files" %}
+                    {% trans count=value|length, key=key|e -%}
+                        {{ count }} Transactions found for {{ key }}.
+                    {%- endtrans %}
                     <br>
+                {% endif %}
+                {% if key == "transactions" %}
                     <br>
-                {% endfor %}
-            {% endif %}
-        {% endfor %}
+                    {% for t in value %}
+                        {{ t|string|replace("\n", "<br>")|replace("\t", "    ") }}
+                        <br>
+                        <br>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     {% endif %}
 {% endblock %}

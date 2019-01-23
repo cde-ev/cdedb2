@@ -454,16 +454,16 @@ class Transaction:
                             
                             if not re.search(gn_pattern, self.reference,
                                              flags=re.IGNORECASE):
-                                self.problems.append(gn_pattern
-                                                     + " not found in "
-                                                     + self.reference)
+                                p = "({}) not found in ({})". \
+                                    format(gn_pattern, self.reference)
+                                self.problems.append(p)
                                 temp_confidence = \
                                     temp_confidence.decrease()
                             if not re.search(fn_pattern, self.reference,
                                              flags=re.IGNORECASE):
-                                self.problems.append(fn_pattern
-                                                     + " not found in "
-                                                     + self.reference)
+                                p = "({}) not found in ({})". \
+                                    format(fn_pattern, self.reference)
+                                self.problems.append(p)
                                 temp_confidence = \
                                     temp_confidence.decrease()
 
