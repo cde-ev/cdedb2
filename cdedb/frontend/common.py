@@ -34,6 +34,7 @@ import threading
 import urllib.parse
 
 import babel.dates
+import bleach
 import docutils.core
 import jinja2
 import werkzeug
@@ -428,6 +429,37 @@ def linebreaks_filter(val, replacement="<br>"):
     val = str(val)
     return val.replace('\n', replacement)
 
+def bleach_filter(val):
+    """Custom jinja filter to convert sanitize html with bleach.
+
+    :type val: str
+    :rtype: str
+    """
+    if val is None:
+        return None
+    TAGS = [
+        'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li',
+        'ol', 'strong', 'ul',
+        # customizations
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
+        'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre']
+
+    ATTRIBUTES = {
+        'a': ['href', 'title'],
+        'abbr': ['title'],
+        'acronym': ['title'],
+        # customizations
+        '*': ['class'],
+        'col': ['width'],
+        'thead': ['valign'],
+        'tbody': ['valign'],
+        'table': ['border'],
+        'tr': ['colspan'],
+        'th': ['colspan'],
+        'div': ['id'],
+    }
+    return bleach.clean(val, tags=TAGS, attributes=ATTRIBUTES)
+
 def rst_filter(val):
     """Custom jinja filter to convert rst to html.
 
@@ -443,7 +475,7 @@ def rst_filter(val):
                 'doctitle_xform': False,}
     ret = docutils.core.publish_parts(val, writer_name='html',
                                       settings_overrides=defaults)
-    return ret['html_body']
+    return bleach_filter(ret['html_body'])
 
 def xdictsort_filter(value, attribute, pad=False, reverse=False):
     """Allow sorting by an arbitrary attribute of the value.

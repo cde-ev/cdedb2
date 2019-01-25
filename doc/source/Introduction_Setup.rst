@@ -32,6 +32,7 @@ Further we depend on a number of python packages:
 * ldap3
 * python-magic
 * python-imaging-library (more specifically pillow)
+* bleach
 
 At last there are some recommended dependencies:
 
@@ -39,13 +40,6 @@ At last there are some recommended dependencies:
 * webtest (for tests, at least 2.0.17 for handling of multiple elements with the same name)
 * pgbouncer (otherwise database performance may be degraded)
 * fail2ban (for preventing brute-force attacks)
-
-Here are some oneliners for the lazy::
-
-  # Gentoo
-  emerge -avt >=dev-lang/python-3.4.0 >=dev-db/postgresql-server-9.4 www-servers/apache dev-vcs/git net-nds/openldap app-text/texlive dev-python/passlib >=dev-python/psycopg-2.5.4 >=dev-python/werkzeug-0.10 dev-python/python-dateutil dev-python/Babel dev-python/jinja dev-python/pytz dev-python/ldap3 dev-python/python-magic virtual/python-imaging dev-python/sphinx >=dev-python/webtest-2.0.17 dev-db/pgbouncer net-analyzer/fail2ban
-  # Debian
-  aptitude install apache2 libapache2-mod-wsgi-py3 fail2ban slapd ldap-utils postgresql-client postgresql pgbouncer texlive-full python3 python3-psycopg2 python3-dateutil python3-babel python3-jinja2 python3-tz python3-sphinx python3-lxml python3-magic python3-pil python3-ldap3 # python3-webtest python3-werkzeug python3-passlib (note these last are not packaged or outdated)
 
 Checkout the repository
 -----------------------
