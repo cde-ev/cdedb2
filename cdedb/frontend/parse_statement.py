@@ -27,6 +27,59 @@ STATEMENT_DB_ID_PATTERN = "(DB-[0-9]+-[0-9X])"
 STATEMENT_DB_ID_SIMILAR = "(DB[-. ]*[0-9]+[-. 0-9]*[0-9X])"
 
 
+def get_event_name_pattern(event):
+    """
+    Turn event_name into a re pattern that hopefully matches most
+    variants of the event name.
+
+    :type event: {str: object}
+    :rtype: str
+    """
+    y_p = re.compile("(\d\d)(\d\d)")
+    replacements = [
+        ("Pseudo", "Pseudo"),
+        ("Winter", "Winter"),
+        ("Sommer", "Sommer"),
+        ("Musik", "Musik"),
+        ("Herbst", "Herbst"),
+        ("Familien", "Familien"),
+        ("Pfingst(en)?", "Pfingst(en)?"),
+        ("Multi(nationale)?", "Multi(nationale)?"),
+        ("Nachhaltigkeits", "(Nachhaltigkeits|N)"),
+        ("(NRW|JuniorAka(demie)?|Velbert|Nachtreffen)",
+         "(NRW|JuniorAka(demie)?|Velbert|Nachtreffen)"),
+        ("Studi(en)?info(rmations)?", "Studi(en)?info(rmations)?"),
+        ("Wochenende", "(Wochenende)?"),
+        ("Ski(freizeit)?", "Ski(freizeit)?"),
+        ("Segeln", "Segeln"),
+        ("Seminar", "Seminar"),
+        ("Test", "Test"),
+        ("Party", "Party"),
+        ("Biomodels", "Biomodels"),
+        ("Academy", "(Academy|Akademie)"),
+        ("Aka(demie)?", "Aka(demie)?"),
+        ]
+    result_parts = []
+    for key, replacement in replacements:
+        if re.search(key, event["title"], flags=re.IGNORECASE):
+            result_parts.append(replacement)
+    
+    if event.get("begin") and event.get("end"):
+        if event["begin"].year == event["end"].year:
+            result_parts.append(y_p.sub("(\\1)?\\2", str(event["begin"].year)))
+        else:
+            x = "(" + y_p.sub("(\\1)?\\2", str(event["begin"].year)) + "/" + \
+                y_p.sub("(\\1)?\\2", str(event["end"].year)) + ")?"
+            result_parts.append(x)
+    
+    if result_parts:
+        result_pattern = "[-\s]*".join(result_parts)
+    else:
+        result_pattern = y_p.sub("(\\1)?\\2", event["title"])
+    
+    return result_pattern
+
+
 def parse_cents(amount):
     """Parse amount into cents, trying different decimal separators."""
     if amount:

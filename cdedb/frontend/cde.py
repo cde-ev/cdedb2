@@ -37,8 +37,8 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.frontend.parse_statement import (
-    Transaction, TransactionType, Accounts, STATEMENT_CSV_FIELDS,
-    STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
+    Transaction, TransactionType, Accounts, get_event_name_pattern,
+    STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
     STATEMENT_FAMILY_NAME_UNKNOWN)
 
 MEMBERSEARCH_DEFAULTS = {
@@ -661,17 +661,10 @@ class CdEFrontend(AbstractUserFrontend):
         
         statement = statement or ""
         
-        # TODO fill this by reading current events from DB
-        EVENT_NAMES = {"WinterAkademie 2018/19":
-                           "(WINTER[- ]?AKA(DEMIE)?)\s*((20)?18/(20)?19)?",
-                       "NachhaltigkeitsAkademie 2019":
-                           "(NACHHALTIGKEITS[- ]?AKA(DEMIE)?|NAKA)\s*(2019)?",
-                       "CdE Skifreizeit 2019":
-                           "(CDE)?\s*SKI(FREIZEIT)?\s*(2019)?",
-                       "NRW Nachtreffen 2018":
-                           "((NRW|NACHTREFFEN|VELBERT)\s*)+(2018)?",
-                       "Große TestAkademie 2222":
-                           "Große\s*Testaka(demie)?\s*(2222)?", }
+        event_list = self.eventproxy.list_db_events(rs)
+        events = self.eventproxy.get_events(rs, event_list)
+        event_names = {e["title"]: get_event_name_pattern(e)
+                       for e in events.values()}
         
         statementlines = statement.splitlines()
         reader = csv.DictReader(statementlines, fieldnames=STATEMENT_CSV_FIELDS,
@@ -692,9 +685,9 @@ class CdEFrontend(AbstractUserFrontend):
                 continue
             line["id"] = i
             t = Transaction(line)
-            t.guess_type(EVENT_NAMES)
+            t.guess_type(event_names)
             t.match_member(rs, self.coreproxy.get_persona)
-            t.match_event(EVENT_NAMES)
+            t.match_event(event_names)
             
             problems.extend(t.problems)
             
@@ -748,7 +741,7 @@ class CdEFrontend(AbstractUserFrontend):
                 data["files"]["membership_fees"] = csv_data
 
         all_rows = []
-        for event_name in EVENT_NAMES:
+        for event_name in event_names:
             rows = []
             rows.extend([
                 {"date": t.statement_date.strftime("%d.%m.%Y"),
