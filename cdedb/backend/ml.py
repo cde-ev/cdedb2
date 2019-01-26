@@ -13,7 +13,7 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set, singularize)
 from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS, SubscriptionStates,
-    extract_roles, implying_realms)
+    extract_roles, implying_realms, now)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -816,3 +816,135 @@ class MlBackend(AbstractBackend):
                 "whitelist": mailinglist['whitelist'],
             }
 
+    @access("ml_script")
+    def oldstyle_mailinglist_config_export(self, rs):
+        """
+        mailinglist_config_export() - get config information about all lists
+
+        Get configuration information for all lists which are needed
+        for autoconfiguration. See the description of table mailinglist
+        for the meaning of the entries in the dict returned.
+
+        @rtype: [{'address' : unicode, 'inactive' : bool,
+                  'maxsize' : int or None, 'mime' : bool or None}]
+        """
+        ## FIXME this has a hardcoded value for 'mime'
+        query = glue("SELECT address, NOT is_active AS inactive, maxsize,",
+                     "NULL AS mime FROM ml.mailinglists")
+        data = self.query_all(rs, query, tuple())
+        return data
+
+    @access("ml_script")
+    def oldstyle_mailinglist_export(self, rs, address):
+        """
+        mailinglist_export() - get export information about a list
+
+        This function returns a dict containing all necessary fields
+        for the mailinglist software to run the list with the list
+        address @address.
+
+        @type address: unicode
+        @rtype: {'listname' : unicode, 'address' : unicode,
+                 'sender' : unicode, 'list-unsubscribe' : unicode,
+                 'list-subscribe' : unicode, 'list-owner' : unicode,
+                 'moderators' : [unicode, ...],
+                 'subscribers' : [unicode, ...],
+                 'whitelist' : [unicode, ...]}
+        """
+        address = affirm("email", address)
+        with Atomizer(rs):
+            query = "SELECT id FROM ml.mailinglists WHERE address = %s"
+            mailinglist_id = self.query_one(rs, query, (address,))
+            if not mailinglist_id:
+                return None
+            mailinglist_id = unwrap(mailinglist_id)
+            mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+            local_part, domain = mailinglist['address'].split('@')
+            envelope = local_part + u"-bounces@" + domain
+            ## We do not use self.core.get_personas since this triggers an
+            ## access violation. It would be quite tedious to fix this so
+            ## it's better to allow a small hack.
+            query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
+            tmp = self.query_all(rs, query, (mailinglist['moderators'],))
+            moderators = tuple(filter(None, (e['username'] for e in tmp)))
+            subscribers = tuple(filter(
+                None, self.subscribers(rs, mailinglist_id).values()))
+            return {
+                'listname'    : mailinglist['subject_prefix'],
+                'address'     : mailinglist['address'],
+                'moderators'  : moderators,
+                'subscribers' : subscribers,
+                'whitelist'   : tuple(mailinglist['whitelist']),
+                'sender'      : envelope,
+                'list-unsubscribe': u"https://db.cde-ev.de/",
+                'list-subscribe': u"https://db.cde-ev.de/",
+                'list-owner'  : u"https://db.cde-ev.de/",
+            }
+
+
+    @access("ml_script")
+    def oldstyle_modlist_export(self, rs, address):
+        """
+        mod_export() - get export information for moderators' list
+
+        This function returns a dict containing all necessary fields
+        for the mailinglist software to run a list for the moderators
+        of the list with address @address.
+
+        @type address: unicode
+        @rtype: {'listname' : unicode, 'address' : unicode,
+                 'sender' : unicode, 'list-unsubscribe' : unicode,
+                 'list-subscribe' : unicode, 'list-owner' : unicode,
+                 'moderators' : [unicode, ...],
+                 'subscribers' : [unicode, ...],
+                 'whitelist' : [unicode, ...]}
+        """
+        address = affirm("email", address)
+        with Atomizer(rs):
+            query = "SELECT id FROM ml.mailinglists WHERE address = %s"
+            mailinglist_id = self.query_one(rs, query, (address,))
+            if not mailinglist_id:
+                return None
+            mailinglist_id = unwrap(mailinglist_id)
+            mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+            local_part, domain = mailinglist['address'].split('@')
+            ## We do not use self.core.get_personas since this triggers an
+            ## access violation. It would be quite tedious to fix this so
+            ## it's better to allow a small hack.
+            query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
+            tmp = self.query_all(rs, query, (mailinglist['moderators'],))
+            moderators = tuple(filter(None, (e['username'] for e in tmp)))
+            return {
+                'listname'    : mailinglist['subject_prefix'],
+                'address'     : mailinglist['address'],
+                'moderators'  : moderators,
+                'subscribers' : moderators,
+                'whitelist'   : ['*'],
+                'sender'      : "cdedb-doublebounces@cde-ev.de",
+                'list-unsubscribe': u"https://db.cde-ev.de/",
+                'list-subscribe': u"https://db.cde-ev.de/",
+                'list-owner'  : u"https://db.cde-ev.de/",
+            }
+
+    @access("ml_script")
+    def oldstyle_bounce(self, rs, address, error):
+        address = affirm("email", address)
+        error = affirm("int", error)
+        with Atomizer(rs):
+            ## We do not use self.core.get_personas since this triggers an
+            ## access violation. It would be quite tedious to fix this so
+            ## it's better to allow a small hack.
+            query = glue("SELECT id, username FROM core.personas",
+                         "WHERE username = lower(%s)")
+            data = self.query_all(rs, query, (address,))
+            if not data:
+                return None
+            reasons = {1: "Ungültige Adresse",
+                       2: "Mailbox voll",
+                       3: "Sonstige Probleme"}
+            line = "eMail-Adresse '{}' macht Probleme - {} - {}".format(
+                address, reasons.get(error, "Unbekanntes Problem"),
+                now().date().isoformat())
+            self.ml_log(rs, const.MlLogCodes.email_trouble, None,
+                        persona_id=unwrap(data)['id'], additional_info=line)
+            return True

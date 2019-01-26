@@ -1014,7 +1014,7 @@ CREATE TABLE ml.log (
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
         -- see cdedb.database.constants.MlLogCodes
         code                    integer NOT NULL,
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer REFERENCES core.personas(id),
         mailinglist_id          integer REFERENCES ml.mailinglists(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),

@@ -341,3 +341,4 @@ class MlLogCodes(enum.IntEnum):
     request_approved = 30 #:
     request_denied = 31 #:
     request_cancelled = 32 #:
+    email_trouble = 40 #:

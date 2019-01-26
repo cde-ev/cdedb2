@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-import unittest
+import json
 import quopri
+import unittest
+
 import webtest
+
 from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
@@ -347,7 +350,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Janis Jalapeño")
 
     def test_export(self):
-        self.app.set_cookie('scriptkey', "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3")
+        HEADERS = {'SCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
         expectation =  [{'address': 'announce@example.cde', 'is_active': True},
                         {'address': 'werbung@example.cde', 'is_active': True},
                         {'address': 'witz@example.cde', 'is_active': True},
@@ -358,7 +361,7 @@ class TestMlFrontend(FrontendTest):
                         {'address': 'aka@example.cde', 'is_active': True},
                         {'address': 'participants@example.cde', 'is_active': True},
                         {'address': 'wait@example.cde', 'is_active': True}]
-        self.get("/ml/script/all")
+        self.get("/ml/script/all", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
         expectation = {
             'address': 'werbung@example.cde',
@@ -376,8 +379,88 @@ class TestMlFrontend(FrontendTest):
                             'janis@example.cde',
                             'kalif@example.cde'],
             'whitelist': ['honeypot@example.cde']}
-        self.get("/ml/script/one?address=werbung@example.cde")
+        self.get("/ml/script/one?address=werbung@example.cde", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
+
+    def test_oldstyle_access(self):
+        HEADERS = {'SCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
+        expectation = [{'address': 'announce@example.cde',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': None},
+                       {'address': 'werbung@example.cde',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': None},
+                       {'address': 'witz@example.cde',
+                        'inactive': False,
+                        'maxsize': 2048,
+                        'mime': None},
+                       {'address': 'klatsch@example.cde',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': None},
+                       {'address': 'kongress@example.cde',
+                        'inactive': False,
+                        'maxsize': 1024,
+                        'mime': None},
+                       {'address': 'aktivenforum2000@example.cde',
+                        'inactive': True,
+                        'maxsize': 1024,
+                        'mime': None},
+                       {'address': 'aktivenforum@example.cde',
+                        'inactive': False,
+                        'maxsize': 1024,
+                        'mime': None},
+                       {'address': 'aka@example.cde',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': None},
+                       {'address': 'participants@example.cde',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': None},
+                       {'address': 'wait@example.cde',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': None}]
+        self.get("/ml/script/all/compat", headers=HEADERS)
+        self.assertEqual(expectation, self.response.json)
+        expectation =  {'address': 'werbung@example.cde',
+                        'list-owner': 'https://db.cde-ev.de/',
+                        'list-subscribe': 'https://db.cde-ev.de/',
+                        'list-unsubscribe': 'https://db.cde-ev.de/',
+                        'listname': '[werbung]',
+                        'moderators': ['janis@example.cde',],
+                        'sender': 'werbung-bounces@example.cde',
+                        'subscribers': ['anton@example.cde',
+                                        'berta@example.cde',
+                                        'charly@example.cde',
+                                        'emilia@example.cde',
+                                        'garcia@example.cde',
+                                        'inga@example.cde',
+                                        'janis@example.cde',
+                                        'kalif@example.cde'],
+                        'whitelist': ['honeypot@example.cde',]}
+        self.get("/ml/script/one/compat?address=werbung@example.cde",
+                 headers=HEADERS)
+        self.assertEqual(expectation, self.response.json)
+        expectation = {'address': 'werbung@example.cde',
+                       'list-owner': 'https://db.cde-ev.de/',
+                       'list-subscribe': 'https://db.cde-ev.de/',
+                       'list-unsubscribe': 'https://db.cde-ev.de/',
+                       'listname': '[werbung]',
+                       'moderators': ['janis@example.cde',],
+                       'sender': 'cdedb-doublebounces@cde-ev.de',
+                       'subscribers': ['janis@example.cde',],
+                       'whitelist': ['*']}
+        self.get("/ml/script/mod/compat?address=werbung@example.cde",
+                 headers=HEADERS)
+        self.assertEqual(expectation, self.response.json)
+        self.post("/ml/script/bounce/compat",
+                  params={'address': "anton@example.cde", 'error': 1},
+                  headers=HEADERS)
+        self.assertEqual(True, self.response.json)
 
     def test_log(self):
         ## First: generate data

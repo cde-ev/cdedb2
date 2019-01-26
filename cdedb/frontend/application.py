@@ -137,7 +137,7 @@ class Application(BaseApp):
                 ## note time for performance measurement
                 begin = now()
                 sessionkey = request.cookies.get("sessionkey")
-                scriptkey = request.cookies.get("scriptkey")
+                scriptkey = request.headers.get("SCRIPTKEY")
                 data = self.sessionproxy.lookupsession(sessionkey,
                                                        request.remote_addr)
                 urls = self.urlmap.bind_to_environ(request.environ)
