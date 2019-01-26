@@ -758,17 +758,17 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_parse_statement(self, user):
         self.get("/cde/parse")
-        self.assertTitle("Parse Bank Statement")
+        self.assertTitle("Kontoauszug parsen")
         f = self.response.forms["statementform"]
         with open("/cdedb2/test/ancillary_files/statement.csv") as statementfile:
             f["statement"] = statementfile.read()
         self.submit(f, check_notification=False)
         
-        self.assertTitle("Parse Bank Statement")
-        self.assertPresence("3 Transactions found for event_fees.")
-        self.assertPresence("3 Transactions found for membership_fees.")
-        self.assertPresence("3 Transactions found for other_transactions.")
-        self.assertPresence("9 Transactions found for transactions.")
+        self.assertTitle("Kontoauszug parsen")
+        self.assertPresence("3 Transaktionen für event_fees gefunden.")
+        self.assertPresence("3 Transaktionen für membership_fees gefunden.")
+        self.assertPresence("3 Transaktionen für other_transactions gefunden.")
+        self.assertPresence("9 Transaktionen für transactions gefunden.")
         
         save = self.response
         

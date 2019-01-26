@@ -9361,5 +9361,9 @@ msgstr ""
 msgid "%(count)s Transactions found for %(key)s."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:26
+msgid "Parse"
+msgstr ""
+
 #~ msgid "for_gender_enter_part2"
 #~ msgstr "."
