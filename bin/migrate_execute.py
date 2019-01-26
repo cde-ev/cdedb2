@@ -633,6 +633,82 @@ for event in events:
 COURSE_MAP = {}
 COURSE_COMBINATIONS = {}
 ORGA_COURSES = set()
+EXPLICIT_ORGA_COURSES = {
+    ## WA201112H1
+    933: 235,
+    934: 236,
+    935: 237,
+    936: 240,
+    937: 242,
+    938: 243,
+    939: 258,
+    ## WA201112H2
+    946: 270,
+    947: 273,
+    948: 277,
+    955: 279,
+    950: 280,
+    953: 276,
+    956: 285,
+    940: 261,
+    ## WA201314H1
+    1399: 524,
+    1401: 529,
+    ## WA201314H2
+    1413: 525,
+    1415: 530,
+    ## WA201415H1
+    1613: 629,
+    ## WA201415H2
+    1630: 630,
+    1639: 654,
+    1644: 673,
+    ## WA201516H1
+    2734: 790,
+    2735: 788,
+    2736: 792,
+    2737: 794,
+    2738: 796,
+    2739: 798,
+    2740: 800,
+    2741: 802,
+    2742: 806,
+    2743: 808,
+    2744: 810,
+    2745: 812,
+    2746: 814,
+    2747: 819,
+    2748: 822,
+    ## WA201516H2
+    2765: 791,
+    2766: 789,
+    2767: 793,
+    2768: 795,
+    2769: 797,
+    2770: 799,
+    2771: 801,
+    2772: 803,
+    2773: 807,
+    2774: 809,
+    2775: 811,
+    2776: 813,
+    2777: 815,
+    2778: 820,
+    2779: 824,
+    ## WA201718H1
+    3291: 1091,
+    3292: 1163,
+    3293: 1112,
+    3294: 1068,
+    3295: 1115,
+    ## WA201718H2
+    3306: 1092,
+    3307: 1164,
+    3308: 1113,
+    3309: 1118,
+    3310: 1142,
+}
+
 for event_id in EVENT_MAP:
     query = "SELECT * FROM veranstaltungen WHERE id = %s"
     event = query_one(cdedbxy, query, (event_id,))
@@ -661,45 +737,58 @@ for event_id in EVENT_MAP:
         orgacomment = ""
         mapped_id = None
         if EVENT_MAP[course['v_id']] in DB_ORGA_MAP:
-            query = ("SELECT * FROM events.courses"
-                     " WHERE event_id = %s AND nr = %s AND name = %s")
-            orgaevents = query_all(cdedbxy, query, (
-                DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr'],
-                new['title']))
-            if len(orgaevents) == 1:
-                new['description'] = orgaevents[0]['description']
-                orgacomment = "(<={})".format(orgaevents[0]['id'])
-                mapped_id = orgaevents[0]['id']
-            elif len(orgaevents) == 0:
+            if course['id'] in EXPLICIT_ORGA_COURSES:
+                ## FIXME implement this
+                query = "SELECT * FROM events.courses WHERE id = %s"
+                orgacourse = query_all(
+                    cdedbxy, query, (EXPLICIT_ORGA_COURSES[course['id']],))
+                if len(orgacourse) == 1:
+                    new['description'] = orgacourse[0]['description']
+                    orgacomment = "(<#{})".format(orgacourse[0]['id'])
+                    mapped_id = orgacourse[0]['id']
+                else:
+                    print("Missing explicit course! vkurs={} orga={}".format(
+                        course['id'], EXPLICIT_ORGA_COURSES[course['id']]))
+            else:
                 query = ("SELECT * FROM events.courses"
-                         " WHERE event_id = %s AND (nr = %s OR name = %s)")
-                orgaevents = query_all(cdedbxy, query, (
+                         " WHERE event_id = %s AND nr = %s AND name = %s")
+                orgacourse = query_all(cdedbxy, query, (
                     DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr'],
                     new['title']))
-                if len(orgaevents) == 1:
-                    new['description'] = orgaevents[0]['description']
-                    orgacomment = "(<-{})".format(orgaevents[0]['id'])
-                    mapped_id = orgaevents[0]['id']
-                else:
+                if len(orgacourse) == 1:
+                    new['description'] = orgacourse[0]['description']
+                    orgacomment = "(<={})".format(orgacourse[0]['id'])
+                    mapped_id = orgacourse[0]['id']
+                elif len(orgacourse) == 0:
                     query = ("SELECT * FROM events.courses"
-                             " WHERE event_id = %s AND name = %s")
-                    orgaevents = query_all(cdedbxy, query, (
-                        DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['title']))
-                    if len(orgaevents) == 1:
-                        new['description'] = orgaevents[0]['description']
-                        orgacomment = "(<~{})".format(orgaevents[0]['id'])
-                        mapped_id = orgaevents[0]['id']
+                             " WHERE event_id = %s AND (nr = %s OR name = %s)")
+                    orgacourse = query_all(cdedbxy, query, (
+                        DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr'],
+                        new['title']))
+                    if len(orgacourse) == 1:
+                        new['description'] = orgacourse[0]['description']
+                        orgacomment = "(<-{})".format(orgacourse[0]['id'])
+                        mapped_id = orgacourse[0]['id']
                     else:
                         query = ("SELECT * FROM events.courses"
-                                 " WHERE event_id = %s AND nr = %s")
-                        orgaevents = query_all(cdedbxy, query, (
-                            DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr']))
-                        if len(orgaevents) == 1:
-                            new['description'] = orgaevents[0]['description']
-                            orgacomment = "(<.{})".format(orgaevents[0]['id'])
-                            mapped_id = orgaevents[0]['id']
+                                 " WHERE event_id = %s AND name = %s")
+                        orgacourse = query_all(cdedbxy, query, (
+                            DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['title']))
+                        if len(orgacourse) == 1:
+                            new['description'] = orgacourse[0]['description']
+                            orgacomment = "(<~{})".format(orgacourse[0]['id'])
+                            mapped_id = orgacourse[0]['id']
                         else:
-                            orgacomment = "##{}##".format(new['title'])
+                            query = ("SELECT * FROM events.courses"
+                                     " WHERE event_id = %s AND nr = %s")
+                            orgacourse = query_all(cdedbxy, query, (
+                                DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr']))
+                            if len(orgacourse) == 1:
+                                new['description'] = orgacourse[0]['description']
+                                orgacomment = "(<.{})".format(orgacourse[0]['id'])
+                                mapped_id = orgacourse[0]['id']
+                            else:
+                                orgacomment = "##{}##".format(new['title'])
             if mapped_id:
                 if mapped_id in mapped_courses:
                     orgacomment += "!"*200
