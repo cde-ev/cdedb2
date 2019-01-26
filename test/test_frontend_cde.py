@@ -27,7 +27,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
-        f['location'] = "Hyrule"
+        f['location2'] = "Hyrule"
         f['specialisation'] = "Okarinas"
         self.submit(f)
         self.assertPresence("Hyrule")

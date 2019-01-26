@@ -150,8 +150,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
-        f['location'] = "Hyrule"
-        f['country'] = "Arcadia"
+        f['location2'] = "Hyrule"
+        f['country2'] = "Arcadia"
         f['specialisation'] = "Okarinas"
         self.submit(f)
         self.assertTitle("{} {}".format(user['given_names'], user['family_name']))
