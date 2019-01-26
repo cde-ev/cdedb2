@@ -796,8 +796,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Generalis", result[2]["family_name"])
         self.assertEqual("Garcia G.", result[2]["given_names"])
         
-        # check TestAkademie file
-        f = save.forms["Große_TestAkademie_2222"]
+        # check Testakademie file
+        f = save.forms["Große_Testakademie_2222"]
         self.submit(f, check_notification=False)
         self.assertEqual(list(csv.DictReader(self.response.text.split("\n"),
                                              delimiter=";",
@@ -897,21 +897,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("DB-1-9", result[2]["db_id"])
         self.assertEqual("Administrator", result[2]["family_name"])
         self.assertEqual("Anton Armin A.", result[2]["given_names"])
-        self.assertEqual("Große TestAkademie 2222", result[2]["type"])
+        self.assertEqual("Große Testakademie 2222", result[2]["type"])
         self.assertEqual("8068901", result[2]["account"])
 
         self.assertEqual("100.00", result[3]["amount"])
         self.assertEqual("DB-5-1", result[3]["db_id"])
         self.assertEqual("Eventis", result[3]["family_name"])
         self.assertEqual("Emilia E.", result[3]["given_names"])
-        self.assertEqual("Große TestAkademie 2222", result[3]["type"])
+        self.assertEqual("Große Testakademie 2222", result[3]["type"])
         self.assertEqual("8068901", result[3]["account"])
 
         self.assertEqual("584.49", result[4]["amount"])
         self.assertEqual("DB-7-8", result[4]["db_id"])
         self.assertEqual("Generalis", result[4]["family_name"])
         self.assertEqual("Garcia G.", result[4]["given_names"])
-        self.assertEqual("Große TestAkademie 2222", result[4]["type"])
+        self.assertEqual("Große Testakademie 2222", result[4]["type"])
         self.assertEqual("8068901", result[4]["account"])
     
     @as_users("anton")

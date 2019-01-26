@@ -13,8 +13,6 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('cde/parse_statement')|e }}" method="POST" id="statementform">
-        {{ util.input_hidden("checksum") }}
-        {{ util.input_checkbox(name="old_db", label=gettext("Compatible to old DB?"), defaultvalue=False) }}
         {{ util.form_input_textarea(name="statement", label=gettext("Statement"), horizontal=False,
                 rows=8, anid="input-data") }}
 

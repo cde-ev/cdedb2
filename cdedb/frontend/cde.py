@@ -641,18 +641,35 @@ class CdEFrontend(AbstractUserFrontend):
                                                    'csvfields': csv_position})
     
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("statement", "str"), ("old_db", "bool"))
-    def parse_statement(self, rs, statement, old_db):
+    @REQUESTdata(("statement", "str"))
+    def parse_statement(self, rs, statement):
+        """
+        Parse the statement into multiple CSV files.
+        
+        Every transaction is matched to a TransactionType, as well as to a
+        member and an event, if applicable.
+        
+        The transaction's reference is searched for DB-IDs.
+        If found the associated persona is looked up and their given_names and
+        family_name, and variations thereof, are compared to the transaction's
+        reference.
+        
+        To match to an event, this compares the names of current events, and
+        variations thereof, to the transacion's reference.
+        
+        Every match to Type, Member and Event is given a ConfidenceLevel, to be
+        used on further validation.
+        
+        This uses POST because the expected data is too large for GET.
+        """
         
         # These are more immediately important and should maybe stay here
         # because the output is still subject to change for now
 
         MEMBERSHIP_FEE_FIELDS = ("db_id", "family_name", "given_names",
                                  "amount", "comment")
-        EVENT_FEE_FIELDS = ["date", "amount", "db_id", "family_name",
-                            "given_names", "comment"]
-        if old_db:
-            del EVENT_FEE_FIELDS[-1]
+        EVENT_FEE_FIELDS = ("date", "amount", "db_id", "family_name",
+                            "given_names", "comment")
         OTHER_TRANSACTION_FIELDS = ("account", "date", "amount", "reference",
                                     "account_holder", "type",
                                     "type_confidence")
@@ -746,11 +763,9 @@ class CdEFrontend(AbstractUserFrontend):
             rows.extend([
                 {"date": t.statement_date.strftime("%d.%m.%Y"),
                  "amount": t.amount_export,
-                 "db_id": t.best_member_match.db_id if not old_db else
-                    t.best_member_match.db_id[3:-2],
+                 "db_id": t.best_member_match.db_id,
                  "family_name": t.best_member_match.family_name,
-                 "given_names": t.best_member_match.given_names if not old_db
-                    else t.reference,
+                 "given_names": t.best_member_match.given_names,
                  "comment": t.reference}
                 for t in event_fees
                 if (event_name == t.best_event_match
@@ -760,11 +775,9 @@ class CdEFrontend(AbstractUserFrontend):
             rows.extend([
                 {"date": t.statement_date.strftime("%d.%m.%Y"),
                  "amount": t.amount_export,
-                 "db_id": t.best_member_match.db_id if not old_db else
-                    t.best_member_match.db_id[3:],
+                 "db_id": t.best_member_match.db_id,
                  "family_name": t.best_member_match.family_name,
-                 "given_names": t.best_member_match.given_names if not old_db
-                    else t.reference,
+                 "given_names": t.best_member_match.given_names,
                  "comment": t.reference}
     
                 for t in event_fees
