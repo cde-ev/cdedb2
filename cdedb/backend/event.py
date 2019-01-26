@@ -1467,6 +1467,35 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
+    def check_orga_addition_limit(self, rs, event_id):
+        """Implement a rate limiting check for orgas adding persons.
+
+        Since adding somebody as participant or orga to an event gives all
+        orgas basically full access to their data, we rate limit this
+        operation.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: bool
+        :returns: True if limit has not been reached.
+        """
+        event_id = affirm("id", event_id)
+        if (not self.is_orga(rs, event_id=event_id)
+                and not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+        if self.is_admin(rs):
+            # Admins are exempt
+            return True
+        with Atomizer(rs):
+            query = glue(
+                "SELECT COUNT(*) AS num FROM event.log WHERE event_id = %s",
+                "AND ((code = %s AND submitted_by != persona_id) OR code = %s)")
+            params = (event_id, const.EventLogCodes.registration_created,
+                      const.EventLogCodes.orga_added)
+            num = unwrap(self.query_one(rs, query, params))
+        return num < self.conf.ORGA_ADD_LIMIT
+
+    @access("event")
     def list_lodgements(self, rs, event_id):
         """List all lodgements for an event.
 

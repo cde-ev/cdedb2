@@ -171,6 +171,29 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("Bertålotta")
 
+    @as_users("garcia")
+    def test_orga_rate_limit(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        for i in range(7):
+            self.assertTitle("Große Testakademie 2222")
+            self.assertNonPresence("Bertålotta")
+            f = self.response.forms['addorgaform']
+            f['orga_id'] = "DB-2-7"
+            if i == 6:
+                break
+            self.submit(f)
+            self.assertTitle("Große Testakademie 2222")
+            self.assertPresence("Bertålotta")
+            f = self.response.forms['removeorgaform2']
+            self.submit(f)
+            self.assertTitle("Große Testakademie 2222")
+            self.assertNonPresence("Bertålotta")
+        self.submit(f, check_notification=False)
+        self.assertTitle("Große Testakademie 2222")
+        self.assertNonPresence("Bertålotta")
+        self.assertIn("alert alert-danger", self.response.text)
+
     def test_event_visibility(self):
         # Add a course track, a course and move the registration start to one
         # week in the future.

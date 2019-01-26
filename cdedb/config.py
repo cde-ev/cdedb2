@@ -54,10 +54,10 @@ _BASIC_DEFAULTS = {
 def generate_event_registration_default_queries(event, spec):
     """
     Generate default queries for registration_query.
-    
+
     Some of these contain dynamic information about the event's Parts,
     Tracks, etc.
-    
+
     :param event: The Event for which to generate the queries
     :type event:
     :param spec: The Query Spec, dynamically generated for the event
@@ -67,7 +67,7 @@ def generate_event_registration_default_queries(event, spec):
     default_sort = (("persona.family_name", True),
                     ("persona.given_names", True),
                     ("reg.id", True))
-    
+
     queries = {
         n_("00_query_event_registration_all"): Query(
             "qview_registration", spec,
@@ -125,7 +125,7 @@ def generate_event_registration_default_queries(event, spec):
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True)), ),
         }
-    
+
     return queries
 
 
@@ -271,9 +271,9 @@ _DEFAULTS = {
     "SEPA_PAYMENT_OFFSET": datetime.timedelta(days=17),
     ## processing fee we incur if a transaction is rolled back
     "SEPA_ROLLBACK_FEE": decimal.Decimal('4.50'),
-    
+
     ### event stuff
-    
+
     ## log
     "EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-event.log"),
     ## Bank accounts. First is shown to participants,
@@ -281,26 +281,28 @@ _DEFAULTS = {
     "EVENT_BANK_ACCOUNTS": (
             ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
     ),
-    
+    ## Rate limit for orgas adding persons to their event
+    "ORGA_ADD_LIMIT": 6,
+
     ### past event stuff
-    
+
     ## log
     "PAST_EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-past-event.log"),
-    
+
     ### ml stuff
-    
+
     ## log
     "ML_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-ml.log"),
-    
+
     ### assembly stuff
-    
+
     ## log
     "ASSEMBLY_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-assembly.log"),
-    
+
     ###
     ### Query stuff
     ###
-    
+
     ## dict where the values are dicts mapping titles to queries for "speed
     ## dialing"
     "DEFAULT_QUERIES": {
@@ -344,10 +346,10 @@ _DEFAULTS = {
                 tuple(), )
             },
         },
-    
+
     "DEFAULT_QUERIES_REGISTRATION":
         generate_event_registration_default_queries,
-    
+
     }
 
 

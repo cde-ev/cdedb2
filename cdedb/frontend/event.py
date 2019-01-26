@@ -282,6 +282,10 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def add_orga(self, rs, event_id, orga_id):
         """Make an additional persona become orga."""
+        if not rs.errors and not self.eventproxy.check_orga_addition_limit(
+                rs, event_id):
+            rs.errors.append(("orga_id",
+                              ValueError(n_("Rate-limit reached."))))
         if rs.errors:
             return self.show_event(rs, event_id)
         new = {
@@ -2464,6 +2468,10 @@ class EventFrontend(AbstractUserFrontend):
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], do_fields=False,
             do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
+        if not rs.errors and not self.eventproxy.check_orga_addition_limit(
+                rs, event_id):
+            rs.errors.append(("persona.persona_id",
+                              ValueError(n_("Rate-limit reached."))))
         if rs.errors:
             return self.add_registration_form(rs, event_id)
 
