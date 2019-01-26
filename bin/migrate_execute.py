@@ -6,8 +6,7 @@ This assumes the following.
 
 * The old dataset has been imported into a database named cdedbxy.
 
-* A pristine copy of the new database cdb exists (with an empty ldap
-  tree)
+* A pristine copy of the new database cdb exists
 
 * The script is run by the www-data user (who has access to the
   configuration file containing the passwords).
@@ -23,8 +22,6 @@ import re
 import string
 import sys
 import time
-
-import ldap3
 
 import psycopg2
 import psycopg2.extras
@@ -228,13 +225,6 @@ def fulltext(persona):
     values = (str(persona[a]) for a in attributes if persona[a] is not None)
     return " ".join(values)
 
-def ldap_bool(val):
-    mapping = {
-        True: 'TRUE',
-        False: 'FALSE',
-    }
-    return mapping[val]
-
 def now():
     return datetime.datetime.now(pytz.utc)
 
@@ -321,16 +311,11 @@ cdb = psycopg2.connect(conn_string,
                        cursor_factory=psycopg2.extras.RealDictCursor)
 cdb.set_client_encoding("UTF8")
 
-ldap_server = ldap3.Server("ldap://localhost")
-def ldap():
-    return ldap3.Connection(ldap_server, user="cn=root,dc=cde-ev,dc=de",
-                            password="s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0")
-
 def rs(persona_id):
     return RequestState(persona_id, cdb)
 
 ##
-## initialize core.personas and ldap
+## initialize core.personas
 ##
 
 ## select scope (existing personas)
@@ -396,18 +381,6 @@ for persona_id in persona_ids:
             data[new] = initial[old]
     data['fulltext'] = fulltext(data)
     insert(cdb, 'core.personas', data)
-    ldap_data = {
-        'sn': data['family_name'],
-        'mail': username or '',
-        ## slight modification of 'secret'
-        'userPassword': "{SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWV",
-        'cn': data['given_names'],
-        'displayName': data['display_name'],
-        'isActive': ldap_bool(data['is_active'])
-    }
-    dn = "uid={},ou=personas,dc=cde-ev,dc=de".format(persona_id)
-    with ldap() as l:
-        l.add(dn, object_class='cdePersona', attributes=ldap_data)
     data.update({
         'submitted_by': initial['who'],
         'reviewed_by': None,

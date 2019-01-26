@@ -3,7 +3,6 @@
 import copy
 import datetime
 import decimal
-import ldap3
 import subprocess
 
 import cdedb.database.constants as const
@@ -139,55 +138,6 @@ class TestCoreBackend(BackendTest):
         ret, _ = self.core.make_reset_cookie(self.key, "nonexistant@example.cde")
         self.assertFalse(ret)
 
-    @as_users("anton", "berta")
-    def test_ldap(self, user):
-        new_name = "Zelda"
-        new_address = "zelda@example.cde"
-        newpass = "er3NQ_5bkrc#"
-        dn = "uid={},{}".format(user['id'], "ou=personas-test,dc=cde-ev,dc=de")
-        ret, message = self.core.change_password(self.key, user['id'], user['password'], newpass)
-        self.assertTrue(ret)
-        self.assertEqual(newpass, message)
-        self.assertEqual(
-            "dn:{}\n".format(dn).encode('utf-8'), subprocess.check_output(
-            ['/usr/bin/ldapwhoami', '-x', '-D', dn, '-w', newpass]))
-        update = {
-            'id': user['id'],
-            'display_name': new_name,
-            'username': new_address,
-        }
-        self.core.set_persona(self.key, update, allow_specials=("username",))
-        ldap_server = ldap3.Server("ldap://localhost")
-        with ldap3.Connection(ldap_server, "cn=root,dc=cde-ev,dc=de",
-                              "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0") as l:
-            ret = l.search(
-                search_base="ou=personas-test,dc=cde-ev,dc=de",
-                search_scope=ldap3.LEVEL,
-                search_filter='(uid={})'.format(user['id']),
-                attributes=['cn', 'displayName', 'mail'])
-            self.assertTrue(ret)
-            expectation = {
-                'cn': user['given_names'],
-                'displayName': new_name,
-                'mail': new_address,
-            }
-            self.assertEqual(1, len(l.entries))
-            try:
-                found_dn = l.entries[0].entry_dn
-            except:
-                found_dn = l.entries[0].entry_get_dn()
-            self.assertEqual(dn, found_dn)
-            for attr, val in expectation.items():
-                try:
-                    self.assertEqual(val, l.entries[0][attr].value)
-                except AssertionError:
-                    ## Backwards compatability hack for ldap3 version < 2.0.0
-                    if type(val) == bool:
-                        self.assertEqual(str(val).upper(),
-                                         l.entries[0][attr].value)
-                    else:
-                        raise
-
     @as_users("anton")
     def test_create_persona(self, user):
         data = copy.deepcopy(PERSONA_TEMPLATE)
@@ -264,38 +214,6 @@ class TestCoreBackend(BackendTest):
                 'weblink': None}}
         history = self.core.changelog_get_history(self.key, new_id, None)
         self.assertEqual(expectation, history)
-        ldap_server = ldap3.Server("ldap://localhost")
-        with ldap3.Connection(ldap_server, "cn=root,dc=cde-ev,dc=de",
-                              "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0") as l:
-            ret = l.search(
-                search_base="ou=personas-test,dc=cde-ev,dc=de",
-                search_scope=ldap3.LEVEL,
-                search_filter='(uid={})'.format(new_id),
-                attributes=['cn', 'displayName', 'mail',
-                            'isActive'])
-            self.assertTrue(ret)
-            dn = "uid={},{}".format(new_id, "ou=personas-test,dc=cde-ev,dc=de")
-            expectation = {
-                'cn': data['display_name'],
-                'displayName': data['display_name'],
-                'mail': data['username'],
-                'isActive': True}
-            self.assertEqual(1, len(l.entries))
-            try:
-                found_dn = l.entries[0].entry_dn
-            except:
-                found_dn = l.entries[0].entry_get_dn()
-            self.assertEqual(dn, found_dn)
-            for attr, val in expectation.items():
-                try:
-                    self.assertEqual(val, l.entries[0][attr].value)
-                except AssertionError:
-                    ## Backwards compatability hack for ldap3 version < 2.0.0
-                    if type(val) == bool:
-                        self.assertEqual(str(val).upper(),
-                                         l.entries[0][attr].value)
-                    else:
-                        raise
 
     @as_users("anton")
     def test_create_member(self, user):

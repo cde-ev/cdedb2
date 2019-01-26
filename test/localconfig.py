@@ -4,7 +4,6 @@ import pathlib
 
 CDB_DATABASE_NAME = "cdb_test"
 SERVER_NAME_TEMPLATE = "test_{}_server"
-LDAP_UNIT_NAME = "ou=personas-test,dc=cde-ev,dc=de"
 STORAGE_DIR = pathlib.Path("/tmp/cdedb-store/")
 FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend.log")
 BACKEND_LOG = pathlib.Path("/tmp/test-cdedb-backend.log")

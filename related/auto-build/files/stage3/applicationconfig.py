@@ -7,5 +7,4 @@ CDB_DATABASE_ROLES = {
     "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
     "cdb_admin": "9876543210abcdefghijklmnopqrst",
    }
-LDAP_PASSWORD = "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0"
 ML_SCRIPT_KEY = "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"

@@ -37,8 +37,6 @@ sudo -u cdedb echo '        driver = i18n/git-merge-po.sh %O %A %B' >> /cdedb2/.
 sudo -u cdedb echo '' >> /cdedb2/.git/info/attributes
 sudo -u cdedb echo '*.po diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
 sudo -u cdedb echo '*.pot diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
-# secure the ldap password
-chmod 600 /cdedb2/.ldap_rootpw
 # build the documentation
 sudo -u cdedb make doc
 # build the i18n files
@@ -54,21 +52,6 @@ mkdir /var/lib/cdedb/minor_form/
 mkdir /var/lib/cdedb/ballot_result/
 mkdir /var/lib/cdedb/assembly_attachment/
 chown --recursive www-data:www-data /var/lib/cdedb
-
-echo ""
-echo "Initialize LDAP..."
-echo "--------------------------------------------"
-
-ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/related/auto-build/files/stage3/init.ldif
-TMPDIR=`mktemp -d`
-slaptest -f /cdedb2/related/auto-build/files/stage3/temp_ldap.conf -F $TMPDIR
-# stupid LDAP needs manual fixing
-sed -n -i -e '/structuralObjectClass: olcSchemaConfig/q;p' "$TMPDIR/cn=config/cn=schema/cn="*"cdepersona.ldif"
-sed -i -e 's/^dn: cn={[0-9]\+}cdepersona/dn: cn=cdepersona,cn=schema,cn=config/' "$TMPDIR/cn=config/cn=schema/cn="*"cdepersona.ldif"
-sed -i -e 's/^cn: {[0-9]\+}cdepersona/cn: cdepersona/' "$TMPDIR/cn=config/cn=schema/cn="*"cdepersona.ldif"
-ldapadd -Y EXTERNAL -H ldapi:/// -f "$TMPDIR/cn=config/cn=schema/cn="*"cdepersona.ldif"
-rm -rf $TMPDIR
-make ldap
 
 echo ""
 echo "Setting up the database..."

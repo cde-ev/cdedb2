@@ -12,7 +12,6 @@ import hmac
 import subprocess
 import tempfile
 
-import ldap3
 from passlib.hash import sha512_crypt
 
 from cdedb.backend.common import AbstractBackend
@@ -35,28 +34,6 @@ from cdedb.query import QueryOperators
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 
-def ldap_bool(val):
-    """Convert a :py:class:`bool` to its LDAP representation.
-
-    :type val: bool
-    :rtype: str
-    """
-    mapping = {
-        True: 'TRUE',
-        False: 'FALSE',
-    }
-    return mapping[val]
-
-def ldap_str(val):
-    """Sanitize a string to be digestable by LDAP.
-
-    :type val: str or None
-    :rtype: str
-    """
-    if not val:
-        return ""
-    return val
-
 class CoreBackend(AbstractBackend):
     """Access to this is probably necessary from everywhere, so we need
     ``@internal_access`` quite often. """
@@ -71,9 +48,6 @@ class CoreBackend(AbstractBackend):
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets, self.conf.DB_PORT)
-        self.ldap_server = ldap3.Server(self.conf.LDAP_URL)
-        self.ldap_connect = lambda: ldap3.Connection(
-            self.ldap_server, self.conf.LDAP_USER, secrets.LDAP_PASSWORD)
         self.generate_reset_cookie = (
             lambda rs, persona_id: self._generate_reset_cookie(
                 rs, persona_id, secrets.RESET_SALT))
@@ -567,8 +541,7 @@ class CoreBackend(AbstractBackend):
         """Actually update a persona data set.
 
         This is the innermost layer of the changelog functionality and
-        actually modifies the core.personas table. Here we also take
-        care of keeping the ldap store in sync with the database.
+        actually modifies the core.personas table.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
@@ -576,24 +549,6 @@ class CoreBackend(AbstractBackend):
         :rtype int:
         :returns: standard return code
         """
-        ldap_ops = {}
-        if 'username' in data:
-            ldap_ops['mail'] = [(ldap3.MODIFY_REPLACE,
-                                 [ldap_str(data['username'])])]
-        if 'given_names' in data:
-            ldap_ops['cn'] = [(ldap3.MODIFY_REPLACE,
-                               [ldap_str(data['given_names'])])]
-        if 'family_name' in data:
-            ldap_ops['sn'] = [(ldap3.MODIFY_REPLACE,
-                               [ldap_str(data['family_name'])])]
-        if 'display_name' in data:
-            ldap_ops['displayName'] = [(ldap3.MODIFY_REPLACE,
-                                        [ldap_str(data['display_name'])])]
-        if 'is_active' in data:
-            ldap_ops['isActive'] = [(ldap3.MODIFY_REPLACE,
-                                     [ldap_bool(data['is_active'])])]
-        dn = "uid={},{}".format(data['id'], self.conf.LDAP_UNIT_NAME)
-        ## Atomize so that ldap and postgres do not diverge.
         with Atomizer(rs):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
@@ -608,9 +563,6 @@ class CoreBackend(AbstractBackend):
             self.sql_update(rs, "core.personas", fulltext_update)
             self.core_log(rs, const.CoreLogCodes.persona_change, data['id'],
                           additional_info=change_note)
-            if ldap_ops:
-                with self.ldap_connect() as l:
-                    l.modify(dn, ldap_ops)
         return num
 
     @internal_access("persona")
@@ -1330,8 +1282,8 @@ class CoreBackend(AbstractBackend):
     def create_persona(self, rs, data, submitted_by=None):
         """Instantiate a new data set.
 
-        This does the house-keeping and inserts corresponding entries in
-        the changelog and the ldap service.
+        This does the house-keeping and inserts the corresponding entry in
+        the changelog.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
@@ -1366,14 +1318,6 @@ class CoreBackend(AbstractBackend):
         fulltext_input = copy.deepcopy(data)
         fulltext_input['id'] = None
         data['fulltext'] = self.create_fulltext(fulltext_input)
-        attributes = {
-            'sn': ldap_str(data['family_name']),
-            'mail': ldap_str(data['username']),
-            ## againg slight modification of 'secret'
-            'userPassword': "{SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWV",
-            'cn': ldap_str(data['given_names']),
-            'displayName': ldap_str(data['display_name']),
-            'isActive': ldap_bool(data['is_active'])}
         with Atomizer(rs):
             new_id = self.sql_insert(rs, "core.personas", data)
             data.update({
@@ -1387,10 +1331,7 @@ class CoreBackend(AbstractBackend):
             del data['password_hash']
             del data['fulltext']
             self.sql_insert(rs, "core.changelog", data)
-            dn = "uid={},{}".format(new_id, self.conf.LDAP_UNIT_NAME)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
-            with self.ldap_connect() as l:
-                l.add(dn, object_class='cdePersona', attributes=attributes)
         return new_id
 
     @access("anonymous")
@@ -1633,21 +1574,12 @@ class CoreBackend(AbstractBackend):
         ## do not use set_persona since it doesn't operate on password
         ## hashes by design
         query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-        with tempfile.NamedTemporaryFile(mode='w') as f:
-            f.write(new_password)
-            f.flush()
-            ldap_passwd = subprocess.check_output(
-                ['/usr/sbin/slappasswd', '-T', f.name, '-h', '{SSHA}', '-n'])
-        dn = "uid={},{}".format(persona_id, self.conf.LDAP_UNIT_NAME)
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(
                     cur, query,
                     (self.encrypt_password(new_password), persona_id))
                 ret = cur.rowcount
-                with self.ldap_connect() as l:
-                    l.modify(dn, {'userPassword': [(ldap3.MODIFY_REPLACE,
-                                                    [ldap_passwd])]})
         if orig_conn:
             ## deescalate
             rs.conn = orig_conn

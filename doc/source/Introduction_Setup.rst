@@ -29,7 +29,6 @@ Further we depend on a number of python packages:
 * docutils
 * jinja2
 * pytz
-* ldap3
 * python-magic
 * python-imaging-library (more specifically pillow)
 
@@ -102,38 +101,6 @@ refuse connections)::
 
 This file may be regenerated with the ``mkauth.py`` tool from the pgbouncer
 tar-ball.
-
-Next up is LDAP. Edit the ``/etc/openldap/slapd.conf`` and enter the
-following values (we will use a basic setup via config file, this will be
-deprecated at some point in the future, then the ``cn=config`` machinery
-needs to be used -- how this works can be seen in the auto-build scripts)::
-
-  include         /etc/openldap/schema/core.schema
-  include         /etc/openldap/schema/cosine.schema
-  include         /etc/openldap/schema/inetorgperson.schema
-  include         /etc/openldap/schema/cdepersona.schema
-
-  pidfile         /var/run/openldap/slapd.pid
-  argsfile        /var/run/openldap/slapd.args
-
-  database        hdb
-  suffix          "dc=cde-ev,dc=de"
-  rootdn          "cn=root,dc=cde-ev,dc=de"
-  rootpw          s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0
-  directory       /var/lib/openldap-data
-  index           objectClass     eq
-  index           cn      pres,sub,eq
-  index           sn      pres,sub,eq
-  index           uid     pres,sub,eq
-  index           displayName     pres,sub,eq
-
-You need to place a symlink to the custom cdepersona schema::
-
-  ln -s /path/to/repo/cdedb/database/cdepersona.schema /etc/openldap/schema/cdepersona.schema
-
-Now start the slapd daemon and issue the following in the repo::
-
-  make ldap
 
 Now we set up the Apache server, first add the following lines to
 ``/etc/apache2/httpd.conf``::

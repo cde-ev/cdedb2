@@ -202,8 +202,6 @@ Now we reset the working copy of the new database::
     sudo -u postgres psql -U postgres -f /cdedb2/cdedb/database/cdedb-users.sql
     sudo -u postgres psql -U postgres -f /cdedb2/cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
     sudo -u postgres psql -U postgres -d cdb -f /cdedb2/cdedb/database/cdedb-tables.sql
-    echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D 'cn=root,dc=cde-ev,dc=de' -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0
-    ldapadd -c -x -D 'cn=root,dc=cde-ev,dc=de'  -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0 -f /cdedb2/cdedb/database/init.ldif
 
 We can now execute the migration script (it might be a good idea to turn of
 fsync in the postgres configuration before running this)::

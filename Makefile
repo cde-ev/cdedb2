@@ -9,8 +9,6 @@ help:
 	@echo "                            (this is a fast version of sample-data-test,"
 	@echo "                             can be substituted after sample-data-test was"
 	@echo "                             executed)"
-	@echo "ldap -- initialize ldap (use sample-data instead)"
-	@echo "ldap-test -- initialize ldap for test suite (use sample-data-test instead)"
 	@echo "sql -- initialize postgres (use sample-data instead)"
 	@echo "sql-test -- initialize postgres for test suite (use sample-data-test instead)"
 	@echo "sql-test-shallow -- reset postgres for test suite"
@@ -25,12 +23,6 @@ help:
 
 PYTHONBIN ?= python3
 TESTPATTERN ?=
-
-ifeq ($(wildcard .ldap_rootpw_local), .ldap_rootpw_local)
-LDAP_PASSWORDFILE = .ldap_rootpw_local
-else
-LDAP_PASSWORDFILE = .ldap_rootpw
-endif
 
 doc:
 	make -C doc html
@@ -50,17 +42,14 @@ i18n-compile:
 
 sample-data:
 	make sql
-	make ldap
 
 sample-data-test:
 	make storage-test
 	make sql-test
-	make ldap-test
 
 sample-data-test-shallow:
 	make storage-test
 	make sql-test-shallow
-	make ldap-test
 
 storage-test:
 	rm -rf "/tmp/cdedb-store/"
@@ -71,21 +60,6 @@ storage-test:
 	mkdir -p "/tmp/cdedb-store/assembly_attachment/"
 	mkdir -p "/tmp/cdedb-store/testfiles/"
 	cp test/ancillary_files/{picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv} /tmp/cdedb-store/testfiles/
-
-ldap:
-ifeq ($(wildcard /DBVM),/DBVM)
-	$(error Refusing to touch live instance)
-endif
-	echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
-	echo 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
-	ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} -f cdedb/database/init.ldif || true
-	sed -e 's/{LDAP_ORGANIZATION}/personas/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
-	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
-
-ldap-test:
-	echo 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
-	ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} -f cdedb/database/init.ldif || true
-	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
 
 sql:
 ifeq ($(wildcard /DBVM),/DBVM)
@@ -163,4 +137,4 @@ quick-check:
 coverage: .coverage
 	${PYTHONBIN} /usr/bin/coverage report -m --omit='test/*,related/*'
 
-.PHONY: help doc sample-data sample-data-test sample-data-test-shallow ldap ldap-test sql sql-test sql-test-shallow lint check single-check .coverage coverage
+.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint check single-check .coverage coverage

@@ -150,13 +150,6 @@ _DEFAULTS = {
     ## True for development instances
     "CDEDB_DEV": False,
 
-    ## location of ldap server
-    "LDAP_URL": "ldap://localhost",
-    ## name of ldap unit (i.e. subtree) to use
-    "LDAP_UNIT_NAME": "ou=personas,dc=cde-ev,dc=de",
-    ## name of ldap user to use
-    "LDAP_USER": "cn=root,dc=cde-ev,dc=de",
-
     ## place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
 
@@ -371,9 +364,6 @@ _SECRECTS_DEFAULTS = {
 
     ## salting value used for verifying tokens for username changes
     "USERNAME_CHANGE_TOKEN_SALT": "kaoslrcekhvx2387krcoekd983xRKCh309xKX",
-
-    ## password of ldap user above
-    "LDAP_PASSWORD": "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0",
 
     ## key to use by mailing list software for authentification
     "ML_SCRIPT_KEY": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
