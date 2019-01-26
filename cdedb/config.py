@@ -275,6 +275,7 @@ _DEFAULTS = {
             ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
     ),
     ## Rate limit for orgas adding persons to their event
+    ## number of persons per day
     "ORGA_ADD_LIMIT": 6,
 
     ### past event stuff
