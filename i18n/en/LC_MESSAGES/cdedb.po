@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-12-09 17:03+0100\n"
+"POT-Creation-Date: 2019-01-27 18:30+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.3.4\n"
+"Generated-By: Babel 2.6.0\n"
 
 #: cdedb/common.py:115
 msgid "Invalid notification type {t} found."
@@ -2057,6 +2057,10 @@ msgstr ""
 msgid "Balance too low."
 msgstr ""
 
+#: cdedb/frontend/cde.py:1403
+msgid "End trial membership."
+msgstr ""
+
 #: cdedb/frontend/cde.py:1417
 msgid "Started updating balance."
 msgstr ""
@@ -2726,11 +2730,12 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:200
 #: cdedb/frontend/templates/web/base.tmpl:201
-#: cdedb/frontend/templates/web/core/error.tmpl:40
-#: cdedb/frontend/templates/web/core/error.tmpl:41
-#: cdedb/frontend/templates/web/error.tmpl:12
-#: cdedb/frontend/templates/web/error.tmpl:13
-#: cdedb/frontend/templates/web/error.tmpl:25
+#: cdedb/frontend/templates/web/error.tmpl:27
+#: cdedb/frontend/templates/web/error.tmpl:28
+#: cdedb/frontend/templates/web/error.tmpl:39
+#: cdedb/frontend/templates/web/error.tmpl:40
+#: cdedb/frontend/templates/web/error.tmpl:59
+#: cdedb/frontend/templates/web/error.tmpl:60
 msgid "CdE-Datenbank development team"
 msgstr ""
 
@@ -2739,45 +2744,71 @@ msgid "Version"
 msgstr ""
 
 #: cdedb/frontend/templates/web/error.tmpl:8
-msgid "You do not have sufficient permissions to access this site:"
+msgid "You do not have sufficient permissions to access this page:"
 msgstr ""
 
-#: cdedb/frontend/templates/web/error.tmpl:12
+#: cdedb/frontend/templates/web/error.tmpl:11
+msgid "Couldn't find the requested page"
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:13
+msgid "This HTTP method is not allowed for this URL."
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:15
+msgid "An internal error occured:"
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:18
+msgid "An unknown error occurred."
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:27
 #, python-format
 msgid ""
-"If You think this is an error, please contact the %(team)s at %(mail)s "
-"and describe what You did."
-msgstr ""
-
-#: cdedb/frontend/templates/web/error.tmpl:21
-msgid "Couldn't find the requested site:"
-msgstr ""
-
-#: cdedb/frontend/templates/web/error.tmpl:25
-#, python-format
-msgid ""
-"If You got here via an internal CdE-Datenbank Link, please constact the "
-"%(team)s at %(mail)s\n"
-"                and describe what You did."
-msgstr ""
-
-#: cdedb/frontend/templates/web/error.tmpl:26
-msgid "CdE-Datenbank development team"
-msgstr ""
-
-#: cdedb/frontend/templates/web/error.tmpl:33
-msgid "Frontpage"
-msgstr ""
-
-#: cdedb/frontend/templates/web/error.tmpl:33
-#, python-format
-msgid ""
-"Use the navigation bar of your Browser to get back or go to the %(link)s "
-"of the CdE-Datenbank."
+"If you think this is an error, please contact the %(team)s at %(mail)s "
+"with the error message\n"
+"                displayed above, the current time (%(time)s) and a "
+"detailed description of your actions: What were you\n"
+"                about to do? Which links and buttons did you click to get"
+" here? Have you changed any settings before the\n"
+"                error occurred?"
 msgstr ""
 
 #: cdedb/frontend/templates/web/error.tmpl:39
-msgid "An unknown Error occurred."
+#, python-format
+msgid ""
+"If you reached this page via an internal link of the CdE-Datenbank, "
+"please contact the %(team)s at\n"
+"                %(mail)s and describe how you got here."
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:47
+msgid "frontpage"
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:47
+#, python-format
+msgid ""
+"Use the navigation buttons of your browser to get back to the previous "
+"page or go to the\n"
+"                %(frontpage_link)s of the CdE-Datenbank."
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:56
+msgid "First try reloading this page."
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:59
+#, python-format
+msgid ""
+"If the error persists, you probably found a bug, hidden in our code.\n"
+"                Please contact the %(team)s at %(mail)s with the error "
+"message displayed above, the current time\n"
+"                (%(time)s) and a detailed description of your actions: "
+"What were you about to do? Which links and\n"
+"                buttons did you click to get here? Have you changed any "
+"settings before the error occurred?"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:27
@@ -4774,7 +4805,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:80
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:44
-#: cdedb/frontend/templates/web/core/error.tmpl:3
 msgid "Error"
 msgstr ""
 
@@ -5743,38 +5773,6 @@ msgstr ""
 msgid "Password"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/error.tmpl:10
-msgid "A database transaction went wrong. Please try again."
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/error.tmpl:16
-msgid ""
-"You reached the internal Limit for databse requests.\n"
-"                This is a security feature to prevent cloning of the "
-"database.\n"
-"                Unfortunately this can lead to false positives.\n"
-"                The Counter will reset within a few days."
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/error.tmpl:25
-msgid ""
-"An error occurred. This probably means that there is a Bug in the Code, "
-"which You stumbled upon."
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/error.tmpl:32
-#, python-format
-msgid "The Error Message was <strong>%(message)s</strong>."
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/error.tmpl:40
-#, python-format
-msgid ""
-"Should the Problem persist, please contact the %(team)s at %(mail)s.\n"
-"            Be sure to include a description of how to reproduce this "
-"error, as well as the current time (%(now)s)."
-msgstr ""
-
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:17
 msgid "The Account Request will be permanently deleted."
 msgstr ""
@@ -6420,571 +6418,3 @@ msgstr "Usermanagement"
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:23
 msgid "Generation"
 msgstr ""
-
-#~ msgid "course (part {})"
-#~ msgstr ""
-
-#~ msgid "registration status (part {})"
-#~ msgstr ""
-
-#~ msgid "lodgement (part {})"
-#~ msgstr ""
-
-#~ msgid "course instructor (part {})"
-#~ msgstr ""
-
-#~ msgid "Invalid notification type {t} found"
-#~ msgstr ""
-
-#~ msgid "Out of scope."
-#~ msgstr ""
-
-#~ msgid "Must be an identifier."
-#~ msgstr ""
-
-#~ msgid "Must be a restrictive identifier."
-#~ msgstr ""
-
-#~ msgid "Entry in definition list."
-#~ msgstr ""
-
-#~ msgid "Not a CdE-Account."
-#~ msgstr ""
-
-#~ msgid "Link expired"
-#~ msgstr ""
-
-#~ msgid "Year missing."
-#~ msgstr ""
-
-#~ msgid "Month missing."
-#~ msgstr ""
-
-#~ msgid "Day missing."
-#~ msgstr ""
-
-#~ msgid "Hours missing."
-#~ msgstr ""
-
-#~ msgid "Minutes missing."
-#~ msgstr ""
-
-#~ msgid "Must be a superset of active parts."
-#~ msgstr ""
-
-#~ msgid "Non-associated parts found."
-#~ msgstr ""
-
-#~ msgid "Non-existing parts specified in choices."
-#~ msgstr ""
-
-#~ msgid "Wrong part for course."
-#~ msgstr ""
-
-#~ msgid "FIXME bar description text"
-#~ msgstr ""
-
-#~ msgid "Committed {num} transfers."
-#~ msgstr ""
-
-#~ msgid "No action taken."
-#~ msgstr ""
-
-#~ msgid "Wrong number of reserve lodgers used."
-#~ msgstr ""
-
-#~ msgid "course (part {title})"
-#~ msgstr ""
-
-#~ msgid "registration status (part {title})"
-#~ msgstr ""
-
-#~ msgid "lodgement (part {title})"
-#~ msgstr ""
-
-#~ msgid "course instructor (part {title})"
-#~ msgstr ""
-
-#~ msgid "course (any part)"
-#~ msgstr ""
-
-#~ msgid "course instuctor (any part)"
-#~ msgstr ""
-
-#~ msgid "To be done."
-#~ msgstr ""
-
-#~ msgid "Invalid genesis case."
-#~ msgstr ""
-
-#~ msgid "TODO"
-#~ msgstr ""
-
-#~ msgid "Not available in assembly realm."
-#~ msgstr ""
-
-#~ msgid "Not available in cde realm."
-#~ msgstr ""
-
-#~ msgid "End trial membership."
-#~ msgstr ""
-
-#~ msgid "CdEDB account approved"
-#~ msgstr ""
-
-#~ msgid "Case not approved."
-#~ msgstr ""
-
-#~ msgid "Case abandoned."
-#~ msgstr ""
-
-#~ msgid "Already registrations present."
-#~ msgstr ""
-
-#~ msgid "Broken link."
-#~ msgstr ""
-
-#~ msgid "EventLogCodes.course_parts_changed"
-#~ msgstr ""
-
-#~ msgid "course ({title})"
-#~ msgstr ""
-
-#~ msgid "course instructor ({title})"
-#~ msgstr ""
-
-#~ msgid "course (any track)"
-#~ msgstr ""
-
-#~ msgid "course instuctor (any track)"
-#~ msgstr ""
-
-#~ msgid "registration status ({title})"
-#~ msgstr ""
-
-#~ msgid "lodgement ({title})"
-#~ msgstr ""
-
-#~ msgid "reserve lodger ({title})"
-#~ msgstr ""
-
-#~ msgid "registration status (any part)"
-#~ msgstr ""
-
-#~ msgid "lodgement (any part)"
-#~ msgstr ""
-
-#~ msgid "reserve lodger (any part)"
-#~ msgstr ""
-
-#~ msgid "any part lodgement: {field})"
-#~ msgstr ""
-
-#~ msgid "Address check mail for ExPuls"
-#~ msgstr ""
-
-#~ msgid "Not deleting a non-empty lodgement."
-#~ msgstr ""
-
-#~ msgid "Must not end with a digit."
-#~ msgstr ""
-
-#~ msgid "Registrations exist, only modifications."
-#~ msgstr ""
-
-#~ msgid "Genders.unknown"
-#~ msgstr ""
-
-#~ msgid "Modification of cloud access prevented."
-#~ msgstr ""
-
-#~ msgid "Diese Seite bietet mit JavaScript erweiterte Funktionalität."
-#~ msgstr ""
-
-#~ msgid "Diese Seite ist mit JavaScript einfacher nutzbar."
-#~ msgstr ""
-
-#~ msgid "This site provides additional functionality when using JavaScript."
-#~ msgstr ""
-
-#~ msgid "Datenbank-Entwicklungs-Team"
-#~ msgstr ""
-
-#~ msgid "CdE-Datenbankentwicklungsteam"
-#~ msgstr ""
-
-#~ msgid "You do not have sufficient permissions to acces this site:"
-#~ msgstr ""
-
-#~ msgid "You do not have sufficient permissions to access this site:"
-#~ msgstr ""
-
-#~ msgid "You do not have sufficient permissions to acces this site."
-#~ msgstr ""
-
-#~ msgid "You do not have sufficient permissions to access this site."
-#~ msgstr ""
-
-#~ msgid "Couldn't find the requested site: "
-#~ msgstr ""
-
-#~ msgid "Couldn't find the requested site:"
-#~ msgstr ""
-
-#~ msgid "Birthname"
-#~ msgstr ""
-
-#~ msgid "Namme Affix"
-#~ msgstr ""
-
-#~ msgid "Mobilphone"
-#~ msgstr ""
-
-#~ msgid "Save"
-#~ msgstr ""
-
-#~ msgid "Cancel"
-#~ msgstr ""
-
-#~ msgid "Attach File {title}"
-#~ msgstr ""
-
-#~ msgid "Leave empty for current filename"
-#~ msgstr ""
-
-#~ msgid "Only PDFs allowed"
-#~ msgstr ""
-
-#~ msgid "Leave empty for Alternative Vote"
-#~ msgstr ""
-
-#~ msgid "You are not participating.\") "
-#~ msgstr ""
-
-#~ msgid "Ballot File"
-#~ msgstr ""
-
-#~ msgid "Voting Period"
-#~ msgstr ""
-
-#~ msgid "Status"
-#~ msgstr ""
-
-#~ msgid "This Ballot has not yet begun."
-#~ msgstr ""
-
-#~ msgid "Admins can still make changes to description, files and candidates."
-#~ msgstr ""
-
-#~ msgid "This Ballot has been concluded."
-#~ msgstr ""
-
-#~ msgid "You can see the results below."
-#~ msgstr ""
-
-#~ msgid "This Ballot is currently open for voting."
-#~ msgstr ""
-
-#~ msgid "You have abstained."
-#~ msgstr ""
-
-#~ msgid "You can make your choice below, during the voting period."
-#~ msgstr ""
-
-#~ msgid "You already voted."
-#~ msgstr ""
-
-#~ msgid "Add Candidate"
-#~ msgstr ""
-
-#~ msgid "Shortname"
-#~ msgstr ""
-
-#~ msgid "and"
-#~ msgstr ""
-
-#~ msgid "Against all Candidates."
-#~ msgstr ""
-
-#~ msgid "Summary"
-#~ msgstr ""
-
-#~ msgid "Download results"
-#~ msgstr ""
-
-#~ msgid "Your vote"
-#~ msgstr ""
-
-#~ msgid "You are not participating in this assembly."
-#~ msgstr ""
-
-#~ msgid "You have not voted yet."
-#~ msgstr ""
-
-#~ msgid "You abstained."
-#~ msgstr ""
-
-#~ msgid "You voted against all Candidates."
-#~ msgstr ""
-
-#~ msgid "You voted for the following Candidates:"
-#~ msgstr ""
-
-#~ msgid "You have %(votes)s votes."
-#~ msgstr ""
-
-#~ msgid "Candidates"
-#~ msgstr ""
-
-#~ msgid "Against all Candidates"
-#~ msgstr ""
-
-#~ msgid "Vote"
-#~ msgstr ""
-
-#~ msgid "Additional Options"
-#~ msgstr ""
-
-#~ msgid "Abstain"
-#~ msgstr ""
-
-#~ msgid "Remove Candidate"
-#~ msgstr ""
-
-#~ msgid "The Candidate will be removed."
-#~ msgstr ""
-
-#~ msgid "Short: "
-#~ msgstr ""
-
-#~ msgid "Text-based voting"
-#~ msgstr ""
-
-#~ msgid "Interactive voting"
-#~ msgstr ""
-
-#~ msgid "Preferencelist"
-#~ msgstr ""
-
-#~ msgid "Help"
-#~ msgstr ""
-
-#~ msgid "Luke Skywalker, short: [Luke]"
-#~ msgstr ""
-
-#~ msgid "Princess Leia Organa of Alderaan, short: [Leia]"
-#~ msgstr ""
-
-#~ msgid "Han Solo, short: [Han]"
-#~ msgstr ""
-
-#~ msgid "Obi-Wan \"Ben\" Kenobi, short: [ObiWan]"
-#~ msgstr ""
-
-#~ msgid "Your Vote could look like this:"
-#~ msgstr ""
-
-#~ msgid "Increasing preference"
-#~ msgstr ""
-
-#~ msgid "neutral"
-#~ msgstr ""
-
-#~ msgid "Box {0}"
-#~ msgstr ""
-
-#~ msgid "Box {0}: highest priority"
-#~ msgstr ""
-
-#~ msgid "Box {0}: lowest priority"
-#~ msgstr ""
-
-#~ msgid "Between box {0} and {1}"
-#~ msgstr ""
-
-#~ msgid "Above box with highest priority"
-#~ msgstr ""
-
-#~ msgid "Below box with lowest priority"
-#~ msgstr ""
-
-#~ msgid "To abstain, place all Candidates in the neutral box."
-#~ msgstr ""
-
-#~ msgid "To abstain, place all Candidates in the same box."
-#~ msgstr ""
-
-#~ msgid "Delete"
-#~ msgstr ""
-
-#~ msgid "This Ballot and all its Data will be permanently deleted."
-#~ msgstr ""
-
-#~ msgid "Deletes the Ballot and all associated Settings and Candidates."
-#~ msgstr ""
-
-#~ msgid "You did not vote."
-#~ msgstr ""
-
-#~ msgid "Course choices will be displayed after first search "
-#~ msgstr ""
-
-#~ msgid "Must continue with digits."
-#~ msgstr ""
-
-#~ msgid "Show"
-#~ msgstr ""
-
-#~ msgid "Course choices will be displayed after first search"
-#~ msgstr ""
-
-#~ msgid "Participantlist %(title)s"
-#~ msgstr ""
-
-#~ msgid "Attach File %(title)s"
-#~ msgstr ""
-
-#~ msgid "Label"
-#~ msgstr ""
-
-#~ msgid "Filename"
-#~ msgstr ""
-
-#~ msgid "Leave empty for current filename."
-#~ msgstr ""
-
-#~ msgid "Only PDFs allowed."
-#~ msgstr ""
-
-#~ msgid "Upload"
-#~ msgstr ""
-
-#~ msgid "Extension until %(extension)s if Quorum = %(quorum)s is not reached."
-#~ msgstr ""
-
-#~ msgid "Help (%for_this_site)"
-#~ msgstr ""
-
-#~ msgid "Attach File (%(title)s"
-#~ msgstr ""
-
-#~ msgid "Edit %(assembly)s"
-#~ msgstr ""
-
-#~ msgid "<value>,<value>,..."
-#~ msgstr ""
-
-#~ msgid "<id>,<id>,..."
-#~ msgstr ""
-
-#~ msgid "CourseFilterPositions.first_choice"
-#~ msgstr ""
-
-#~ msgid "CourseFilterPositions.second_choice"
-#~ msgstr ""
-
-#~ msgid "CourseFilterPositions.third_choice"
-#~ msgstr ""
-
-#~ msgid "Must choose three different courses."
-#~ msgstr ""
-
-#~ msgid "For Gender enter"
-#~ msgstr ""
-
-#~ msgid "%(val)s for %(name)s"
-#~ msgstr ""
-
-#~ msgid "for_gender_enter_part2"
-#~ msgstr "."
-
-#~ msgid "Account & Membership"
-#~ msgstr ""
-
-#~ msgid "Search Archive Users"
-#~ msgstr ""
-
-#~ msgid ""
-#~ msgstr ""
-
-#~ msgid "Specilisation"
-#~ msgstr ""
-
-#~ msgid "The following fields are only relevant for Event-Account Requests"
-#~ msgstr ""
-
-#~ msgid "Genders"
-#~ msgstr ""
-
-#~ msgid "User-ID or Username"
-#~ msgstr ""
-
-#~ msgid "(already %(link)s)"
-#~ msgstr ""
-
-#~ msgid "register"
-#~ msgstr ""
-
-#~ msgid "(until %(date)s)"
-#~ msgstr ""
-
-#~ msgid "(late Registrations until %(date)s)"
-#~ msgstr ""
-
-#~ msgid "(only late Registrations possible)"
-#~ msgstr ""
-
-#~ msgid "Current Registrations"
-#~ msgstr ""
-
-#~ msgid "(already attending)"
-#~ msgstr ""
-
-#~ msgid "CdEDB_ID"
-#~ msgstr ""
-
-#~ msgid "Contac Information"
-#~ msgstr ""
-
-#~ msgid "This is an Offline-Instance of the CdEDB"
-#~ msgstr ""
-
-#~ msgid "The Profile Picture will be premanently deleted."
-#~ msgstr ""
-
-#~ msgid "max. 138 kB Filesize"
-#~ msgstr ""
-
-#~ msgid "event_admin"
-#~ msgstr ""
-
-#~ msgid "ml_admin"
-#~ msgstr ""
-
-#~ msgid "assembly_admin"
-#~ msgstr ""
-
-#~ msgid "-Admin"
-#~ msgstr ""
-
-#~ msgid "active"
-#~ msgstr ""
-
-#~ msgid "Miscellaneous …"
-#~ msgstr ""
-
-#~ msgid "Are Your sure?"
-#~ msgstr ""
-
-#~ msgid "Codes"
-#~ msgstr ""
-
-#~ msgid "Change Your E-Mail"
-#~ msgstr ""
-
-#~ msgid "Change E-Mail"
-#~ msgstr ""
-
-#~ msgid "New E-Mail"
-#~ msgstr ""
-

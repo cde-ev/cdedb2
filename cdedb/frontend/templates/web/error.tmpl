@@ -2,41 +2,69 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}{{ error|e }}{% endblock %}
 {% block content %}
+    <div class="alert alert-danger">
+        {{ util.make_icon('remove-sign') }}
+        {% if error.code == 403 %}
+            {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
+            {{ error.description|e }}
+        {% elif error.code == 404 %}
+            {% trans %}Couldn't find the requested page{% endtrans %}
+        {% elif error.code == 405 %}
+            {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
+        {% elif error.code == 500 %}
+            {% trans %}An internal error occured:{% endtrans %}
+            {{ error.description|e }}
+        {% else %}
+             {% trans %}An unknown error occurred.{% endtrans %}
+        {% endif %}
+    </div>
+
     {% if error.code == 403 %}
-        <div class="alert alert-danger">
-            {{ util.make_icon('remove-sign') }}
-            {% trans -%}You do not have sufficient permissions to access this site:{%- endtrans %}
-            {{ error.description|e }}
-        </div>
+        {% if not help is none %}
+            <p>{{ gettext(help) }}</p>
+        {% endif %}
         <p>
             {% trans team=gettext("CdE-Datenbank development team"),
                      mail="<a href='mailto:" + gettext("CdE-Datenbank development team") +
-                           "<cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>" -%}
-                If You think this is an error, please contact the {{ team }} at {{ mail }} and describe what You did.
+                           " <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>",
+                     time=now()|datetime(lang=lang)|e -%}
+                If you think this is an error, please contact the {{ team }} at {{ mail }} with the error message
+                displayed above, the current time ({{ time }}) and a detailed description of your actions: What were you
+                about to do? Which links and buttons did you click to get here? Have you changed any settings before the
+                error occurred?
             {%- endtrans %}
         </p>
-    {% elif error.code == 404 %}
-        <div class="alert alert-danger">
-            {{ util.make_icon('remove-sign') }}
-            {% trans -%}Couldn't find the requested site:{%- endtrans %}
-            {{ error.description|e }}
-        </div>
+    {% elif error.code in (404, 405) %}
         <p>
             {% trans team=gettext("CdE-Datenbank development team"),
-                     mail="<a href='mailto:" + gettext("CdE-Datenbank development team") +
-                           "<cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>" -%}
-                If You got here via an internal CdE-Datenbank Link, please constact the {{ team }} at {{ mail }}
-                and describe what You did.
+                     mail="<a href=\"mailto:" + gettext("CdE-Datenbank development team") +
+                           " <cdedb@lists.cde-ev.de>\">cdedb@lists.cde-ev.de</a>" -%}
+                If you reached this page via an internal link of the CdE-Datenbank, please contact the {{ team }} at
+                {{ mail }} and describe how you got here.
             {%- endtrans %}
         </p>
         <p>
-            {% trans link=util.href(cdedblink('core/index'), gettext("Frontpage")) -%}
-                Use the navigation bar of your Browser to get back or go to the {{ link }} of the CdE-Datenbank.
+            {% trans frontpage_link=util.href(cdedblink('core/index'), gettext("frontpage")) -%}
+                Use the navigation buttons of your browser to get back to the previous page or go to the
+                {{ frontpage_link }} of the CdE-Datenbank.
             {%- endtrans %}
         </p>
     {% else %}
-        <div class="alert alert-danger">
-            {{ util.make_icon('remove-sign') }} {% trans -%}An unknown Error occurred.{%- endtrans %}
-        </div>
+            {% if not help is none %}
+                <p>{{ gettext(help) }}</p>
+            {% else %}
+                <p>{% trans %}First try reloading this page.{% endtrans %}</p>
+            {% endif %}
+        <p>
+            {% trans team=gettext("CdE-Datenbank development team"),
+                     mail="<a href='mailto:" + gettext("CdE-Datenbank development team") +
+                           " <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>",
+                     time=now()|datetime(lang=lang)|e -%}
+                If the error persists, you probably found a bug, hidden in our code.
+                Please contact the {{ team }} at {{ mail }} with the error message displayed above, the current time
+                ({{ time }}) and a detailed description of your actions: What were you about to do? Which links and
+                buttons did you click to get here? Have you changed any settings before the error occurred?
+            {%- endtrans %}
+        </p>
     {% endif %}
 {% endblock %}
