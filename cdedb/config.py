@@ -148,7 +148,7 @@ _DEFAULTS = {
     "LOCKDOWN": False,
 
     ## True for development instances
-    "CDEDB_DEV": True,
+    "CDEDB_DEV": False,
 
     ## location of ldap server
     "LDAP_URL": "ldap://localhost",
