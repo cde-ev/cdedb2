@@ -1,16 +1,22 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}E-Mail-Adresse ändern{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Change Your E-Mail-Address
+    {%- endtrans %}
+{% endblock %}
 {% block content %}
-    Gib Dein Passwort ein und klicke den Bestätigungsknopf um Deine
-    E-Mail-Adresse in <code>{{ raw_email|e }}</code> zu ändern. Nachdem Du die
-    Änderung durchgeführt hast musst Du bei der Anmeldung Deine neue
-    E-Mail-Adresse angeben.
+    <p>
+        {% trans email=raw_email|e -%}
+        	Enter Your Password and click "Confirm" to change Your E-Mail-Address to <code>{{ email }}</code>.
+            Aftwerwards you need to user Your new E-Mail-Address to login.
+        {%- endtrans %}
+    </p>
 
     <form action="{{ cdedblink('core/do_username_change')|e }}" method="POST" id="usernamechangeform"
           class="form-horizontal">
         {{ util.input_hidden(name="new_username") }}
-        {{ util.form_input_text(name="password", type="password", label="Passwort") }}
-        {{ util.form_input_submit(value="E-Mail-Adresse ändern") }}
+        {{ util.form_input_text(name="password", type="password", label=gettext("Password")) }}
+        {{ util.form_input_submit(value=gettext("Confirm")) }}
     </form>
 {% endblock %}

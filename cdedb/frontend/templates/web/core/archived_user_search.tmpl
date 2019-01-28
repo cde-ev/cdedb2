@@ -4,10 +4,14 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
-{% block title %}Archivnutzersuche{% endblock %}
+{% block title %}
+    {% trans -%}
+        Search Archived Users
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/archived_user_search"), "Archivsuche", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), active="True") }}
 {% endblock %}
 {% block content %}
     {{ generic.place_default_queries("core/archived_user_search", default_queries) }}
@@ -15,7 +19,7 @@
     {{ generic.user_search_mask("archived", ("pevent_id",)) }}
 
     {% if values['is_search'] %}
-        <h3>Ergebnis [{{ result|length|e }}]</h3>
+        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length|e }}]</h3>
         {{ generic.user_search_result(result, "archived") }}
     {% endif %}
 {% endblock %}

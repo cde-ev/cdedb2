@@ -1,23 +1,25 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-Privilegien ändern für {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }}
+    {% trans given_names=ambience['persona']['given_names']|e, family_name=ambience['persona']['family_name']|e -%}
+    	Change Privileges for {{ given_names }} {{ family_name }}
+    {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']),
             ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/change_privileges_form"), "Privilegien anpassen", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/change_privileges_form"), gettext("Change Privileges"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/change_privileges')|e }}" method="POST" id="privilegechangeform">
-        {{ util.form_input_checkbox(name="is_admin", label="Super-Admin", small=True) }}
-        {{ util.form_input_checkbox(name="is_core_admin", label="Core-Admin", small=True) }}
-        {{ util.form_input_checkbox(name="is_cde_admin", label="CdE-Admin", small=True) }}
-        {{ util.form_input_checkbox(name="is_event_admin", label="Veranstaltungs-Admin", small=True) }}
-        {{ util.form_input_checkbox(name="is_ml_admin", label="Mailinglisten-Admin", small=True) }}
-        {{ util.form_input_checkbox(name="is_assembly_admin", label="Versammlungs-Admin", small=True) }}
-        {{ util.form_input_submit(value="Privilegien setzen", cancellink=show_user_link(ambience['persona']['id']),
+        {{ util.form_input_checkbox(name="is_admin", label=gettext("Super-Admin"), small=True) }}
+        {{ util.form_input_checkbox(name="is_core_admin", label=gettext("Core-Admin"), small=True) }}
+        {{ util.form_input_checkbox(name="is_cde_admin", label=gettext("CdE-Admin"), small=True) }}
+        {{ util.form_input_checkbox(name="is_event_admin", label=gettext("Event-Admin"), small=True) }}
+        {{ util.form_input_checkbox(name="is_ml_admin", label=gettext("Mailinglist-Admin"), small=True) }}
+        {{ util.form_input_checkbox(name="is_assembly_admin", label=gettext("Assembly-Admin"), small=True) }}
+        {{ util.form_input_submit(value=gettext("Confirm"), cancellink=show_user_link(ambience['persona']['id']),
                 small=True) }}
     </form>
 {% endblock %}

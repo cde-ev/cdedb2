@@ -371,7 +371,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton")
     def test_archived_user_search(self,  user):
         self.traverse({'href': '/core/search/archiveduser'})
-        self.assertTitle("Archivnutzersuche")
+        self.assertTitle("Archivsuche")
         f = self.response.forms['queryform']
         f['qop_given_names'] = QueryOperators.similar.value
         f['qval_given_names'] = 'des'
@@ -379,14 +379,14 @@ class TestCoreFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Archivnutzersuche")
+        self.assertTitle("Archivsuche")
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Hell")
 
     @as_users("anton")
     def test_archived_user_search2(self, user):
         self.traverse({'href': '/core/search/archiveduser'})
-        self.assertTitle("Archivnutzersuche")
+        self.assertTitle("Archivsuche")
         f = self.response.forms['queryform']
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
@@ -394,7 +394,7 @@ class TestCoreFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Archivnutzersuche")
+        self.assertTitle("Archivsuche")
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Hell")
 
@@ -437,12 +437,12 @@ class TestCoreFrontend(FrontendTest):
     def test_meta_info(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/meta'})
-        self.assertTitle("Allgemeine Metainformationen")
+        self.assertTitle("Metadaten")
         f = self.response.forms['changeinfoform']
         self.assertEqual("Bertålotta Beispiel", f["Finanzvorstand_Name"].value)
         f["Finanzvorstand_Name"] = "Zelda"
         self.submit(f)
-        self.assertTitle("Allgemeine Metainformationen")
+        self.assertTitle("Metadaten")
         f = self.response.forms['changeinfoform']
         self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
 
@@ -484,7 +484,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("03.04.1933")
         self.traverse({'href': '/core/persona/2/history'})
-        self.assertTitle("Geschichte von Bertålotta Beispiel")
+        self.assertTitle("Änderungs Historie von Bertålotta Beispiel")
         self.assertPresence(r"Gen 2\W*03.04.1933", regex=True)
         self.assertPresence(r"Gen 1\W*11.02.1981", regex=True)
 
@@ -556,8 +556,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde")
         self.assertNonPresence("zorro@example.cde")
-        self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Anfragen vor")
-        self.assertPresence("Zur Zeit liegen keine Mailinglisten-Anfragen vor")
+        self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor")
+        self.assertPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor")
         self.traverse({'href': '/core/genesis/1/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
@@ -567,15 +567,15 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfragen")
         self.assertNonPresence("zelda@example.cde")
         self.assertPresence("zorro@example.cde")
-        self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Anfragen vor")
-        self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Anfragen vor")
+        self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor")
+        self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor")
         self.traverse({'href': '/core/genesis/1/modify'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = 'event'
         self.submit(f)
         self.assertTitle("Accountanfragen")
-        self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Anfragen vor")
-        self.assertPresence("Zur Zeit liegen keine Mailinglisten-Anfragen vor")
+        self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor")
+        self.assertPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor")
         f = self.response.forms['genesiseventapprovalform1']
         self.submit(f)
         mail = self.fetch_mail()[0]
@@ -629,8 +629,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde")
-        self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Anfragen vor")
-        self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Anfragen vor")
+        self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor")
+        self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor")
         f = self.response.forms['genesismlapprovalform1']
         self.submit(f)
         mail = self.fetch_mail()[0]
@@ -668,4 +668,4 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'description': 'Index', 'href': '^/d?b?/?$'},
                       {'href': '/core/log'})
-        self.assertTitle("Account-Log [0–1]")
+        self.assertTitle("Core Log [0–1]")

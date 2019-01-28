@@ -1,26 +1,26 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% with p = ambience['persona'] %}
-        Bereichsänderung für {{ p['given_names']|e }} {{ p['family_name']|e }}
-    {% endwith %}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] -%}
+    	Change Realms for {{ given_names }} {{ family_name }}
+    {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']),
             ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), "Bereich hinzufügen",
+    {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Add Realm"),
             active=(values['target_realm'] == '')) }}
     {% if values['target_realm'] %}
-        {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), "Bestätigung", active=True) }}
+        {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Confirm"), active=True) }}
     {% endif %}
 {% endblock %}
 {% block content %}
    {% with p = ambience['persona'], 
-           realms = {'cde': 'CdE',
-                     'event': 'Veranstaltung',
-                     'ml': 'Mailinglisten',
-                     'assembly': 'Versammlung'} %}
+           realms = {'cde': gettext("cde_realm"),
+                     'event': gettext("Event"),
+                     'ml': gettext("Mailinglists"),
+                     'assembly': gettext("Assembly")} %}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- set not_my_realms = [] %}
@@ -32,24 +32,26 @@
         
         {% if not values['target_realm'] %}
             <p>
-                Mit diesem Formular kann der Benutzer zu weiteren Bereichen der CdE-Datenbank hinzugefügt werden. Damit
-                erhält er Zugriff auf die entsprechenden Seiten und erhält ggf. neue Nutzer-Attribute.
+                {% trans -%}
+                    With this Form You can add the User to new Realms in the CdEDB.
+                    They will gain access to the respective Sites and they may gain additional User-Attributes.
+                {%- endtrans %}
             </p>
             <form action="{{ cdedblink('core/promote_user_form')|e }}" method="GET" id="realmselectionform"
                     class="form-horizontal">
-                {{ util.form_input_static("Benutzer", value="{} {}".format(p['given_names'], p['family_name']),
+                {{ util.form_input_static(gettext("User"), value="{} {}".format(p['given_names'], p['family_name']),
                         small=True) }}
-                {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label="Zielbereich", radio=True,
-                        small=True) }}
-                {{ util.form_input_submit(value="Bereich wählen", small=True) }}
+                {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label=gettext("Target Realm"),
+                        radio=True, small=True) }}
+                {{ util.form_input_submit(value=gettext("Confirm"), small=True) }}
             </form>
             
         {% else %}
         
             <form action="{{ cdedblink('core/promote_user')|e }}" method="POST" id="promotionform"
                     class="form-horizontal">
-                {{ util.form_input_static("Benutzer", value="{} {}".format(p['given_names'], p['family_name'])) }}
-                {{ util.form_input_static("Neuer Bereich", value=realms[values['target_realm']]) }}
+                {{ util.form_input_static(gettext("User"), value="{} {}".format(p['given_names'], p['family_name'])) }}
+                {{ util.form_input_static(gettext("New Realm"), value=realms[values['target_realm']]) }}
             
                 {% set implicit_realms = [] %}
                 {% if values['target_realm'] == 'cde' %}
@@ -57,7 +59,7 @@
                 {% elif values['target_realm'] in ('event', 'assembly') %}
                     {% set tmp = implicit_realms.extend(['ml']) %}
                 {% endif %}
-                {% call util.form_input_static(label="Implizite neue Bereiche") %}
+                {% call util.form_input_static(label=gettext("Implied new Realms")) %}
                     <ul>
                         {% for i in implicit_realms %}
                             {% if i in not_my_realms %}
@@ -67,29 +69,30 @@
                     </ul>
                 {% endcall %}
             
-            <h3 class="heading-underline">Zusätzliche Daten</h3>
+            <h3 class="heading-underline">{% trans -%}Additional Data{%- endtrans %}</h3>
                 {{ util.input_hidden(name="target_realm") }}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
-                    {{ util.form_input_text(name="title", label="Titel") }}
-                    {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
-                    {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD")
-                            }}
+                    {{ util.form_input_text(name="title", label=gettext("Title")) }}
+                    {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
+                    {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", 
+                            placeholder="YYYY-MM-DD") }}
                     {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                              label="Geschlecht") }}
+                                              label=gettext("Gender")) }}
                 {% endif %}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
-                    {{ util.form_input_text(name="telephone", label="Telefon") }}
-                    {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
-                    {{ util.form_input_text(name="address", label="Straße") }}
-                    {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
-                    {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
-                    {{ util.form_input_text(name="location", label="Stadt") }}
-                    {{ util.form_input_text(name="country", label="Land") }}
+                    {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
+                    {{ util.form_input_text(name="mobile", label=gettext("Mobilephone")) }}
+                    {{ util.form_input_text(name="address", label=gettext("Street")) }}
+                    {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
+                    {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
+                    {{ util.form_input_text(name="location", label=gettext("City")) }}
+                    {{ util.form_input_text(name="country", label=gettext("Country")) }}
                 {% endif %}
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
-                    {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
+                    {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
+                            info=gettext("Supports reStructuredText")) }}
                 {% endif %}
-                {{ util.form_input_submit(value="Bereich hinzufügen",
+                {{ util.form_input_submit(value=gettext("Add Realm"),
                         cancellink=show_user_link(ambience['persona']['id'])) }}
             </form>
         {% endif %}

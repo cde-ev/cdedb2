@@ -1,23 +1,28 @@
 {% set sidenav_active='core_mydata' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Eigene E-Mail-Adresse ändern{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Change Your E-Mail-Address
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(user['persona_id']), user['given_names'] + " " + user['family_name'],
                             icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/change_username_form"), "E-Mail-Adresse bearbeiten", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/change_username_form"), gettext("Change E-Mail-Address"), active=True) }}
 {% endblock %}
 {% block content %}
     <p>
-        Um Deine E-Mail-Adresse zu ändern wird zuerst eine E-Mail an die neue
-        Adresse geschickt, um diese zu verifizieren. In der E-Mail findest Du
-        einen Link, mit dem Du den Vorgang abschließen kannst.
+        {% trans -%}
+        	To change Your E-Mail-Address, You will have to confirm Your new E-Mail-Address by clicking a link in the
+            verification mail sent to the new E-Mail.
+        {%- endtrans %}
     </p>
 
     <form action="{{ cdedblink('core/send_username_change_link')|e }}" method="GET" id="usernamechangeform"
             class="form-horizontal">
-        {{ util.form_input_text(name="new_username", label="Neue E-Mail-Adresse", type="email") }}
-        {{ util.form_input_submit(value="Verifizierungs-E-Mail abschicken") }}
+        {{ util.form_input_text(name="new_username", label=gettext("New E-Mail-Address"), type="email") }}
+        {{ util.form_input_submit(value=gettext("Send verification mail")) }}
     </form>
 {% endblock %}

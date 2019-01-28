@@ -1260,4 +1260,4 @@ class TestCdEFrontend(FrontendTest):
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/core/changelog/view'})
-        self.assertTitle("Nutzerdaten-Log [0–12]")
+        self.assertTitle("Nutzerdaten Log [0–12]")

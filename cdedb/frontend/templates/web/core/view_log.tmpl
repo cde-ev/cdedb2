@@ -2,21 +2,24 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+    {% trans -%}
+    	Core Log
+    {%- endtrans %}
+    [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/view_log"), "Account-Log", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/view_log"), "Core Log", active="True") }}
 {% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th>Zeitstempel</th>
-                <th>Code</th>
-                <th>Verantwortlich</th>
-                <th>Betroffen</th>
-                <th>Zusatz</th>
+                <th>{% trans -%}Timestamp{%- endtrans %}</th>
+                <th>{% trans -%}Code{%- endtrans %}</th>
+                <th>{% trans -%}Submitted By{%- endtrans %}</th>
+                <th>{% trans -%}Affected{%- endtrans %}</th>
+                <th>{% trans -%}Additional Info{%- endtrans %}</th>
             </tr>
         </thead>
         <tbody>
@@ -44,14 +47,15 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
         </tbody>
     </table>
 
-    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
+    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('core/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-            {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
+            {{ util.form_input_checkboxes("codes", label=gettext("Categories"),
+                    info=gettext("No selection means everything."),
                     entries=enums['CoreLogCodes']|enum_entries(processing=gettext), small=True) }}
-            {{ util.form_input_text(name="persona_id", label="Account", small=True, placeholder="DB-XXXX-X") }}
+            {{ util.form_input_text(name="persona_id", label=gettext("Account"), small=True, placeholder="DB-XXXX-X") }}
 
-            {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
-            {{ util.form_input_submit(value="Anzeigen", small=True) }}
+            {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
+            {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
         </form>
     {% endcall %}
 {% endblock %}

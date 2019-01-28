@@ -1,8 +1,11 @@
-/**
- * Simple jQuery plugin for collapsable lists for profile history.
- */
 (function($) {
-    $.fn.cdedbHistoryCollapse = function() {
+    /**
+     * Simple jQuery plugin for collapsable lists for profile history.
+     *
+     * @param labels An object of translated labels to be used in HTML objects. Must contain:
+     *        'more_versions' (with '{num}' placeholder for number of versions)
+    */
+    $.fn.cdedbHistoryCollapse = function(labels) {
         $(this).each(function() {
             var $element = $(this);
             var $rows = $element.find('.history-row:not(.pending)');
@@ -14,7 +17,7 @@
             $crows.addClass('collapse').hide();
             
             var $more_row = $('<div></div>', {'class': 'row history-row more', 'tab-index': '0'})
-                .text('– ' + String($rows.length - 1) + ' weitere Version' + ($rows.length > 2 ? 'en' : '') + ' –');
+                .text((labels['more_versions']).replace('{num}', String($rows.length - 1)));
             
             var $hide_button = $('<button></button>',
                     {'type': 'button', 'class': 'btn btn-default btn-sm softhide collapse-button'})

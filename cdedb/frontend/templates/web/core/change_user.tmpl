@@ -3,12 +3,16 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}Eigene Daten bearbeiten{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Edit Your Data
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(values['id']), values['given_names'] + " " + values['family_name'],
             icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/change_user_form"), "Bearbeiten", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/change_user_form"), "Edit Data", active=True) }}
 {% endblock %}
 {% block content %}
     <script type="text/javascript">
@@ -19,54 +23,55 @@
     <form action="{{ cdedblink('core/change_user')|e }}" method="POST" id="changedataform" class="form-horizontal">
         {{ util.input_hidden(name="generation") }}
 
-        <h4 class="heading-underline">Person</h4>
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
-        {{ util.form_input_text(name="family_name", label="Nachname") }}
-        {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
-        {{ util.form_input_text(name="display_name", label="Rufname") }}
+        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
+        {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
+        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
 
         {% if values['is_cde_realm'] %}
-            <h4 class="heading-underline">Account</h4>
-            {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
+            <h4 class="heading-underline">{% trans -%}Account{%- endtrans %}</h4>
+            {{ util.form_input_checkbox(name="bub_search", label=gettext("Searchable for BuB")) }}
         {% endif %}
 
-        <h4 class="heading-underline">Kontakt</h4>
-        {{ util.form_input_static(label="E-Mail", value=username,
-                info="Um Deine E-Mail-Adresse zu ändern, benutze den entsprechenden Button auf Deiner Profilseite.") }}
+        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
+        {{ util.form_input_static(label=gettext("E-Mail"), value=username,
+                info=gettext("To Change Your E-Mail, which serves as Your
+                              username, use the button on Your Profile Page.")) }}
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
-            {{ util.form_input_text(name="telephone", label="Telefon") }}
-            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobilephone")) }}
         {% endif %}
         {% if values['is_cde_realm'] %}
-            {{ util.form_input_text(name="weblink", label="WWW") }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
         {% endif %}
 
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
-            <h4 class="heading-underline">Adresse</h4>
-            {{ util.form_input_text(name="address", label="Straße") }}
-            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.form_input_text(name="location", label="Stadt") }}
-            {{ util.form_input_text(name="country", label="Land") }}
+            <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
+            {{ util.form_input_text(name="address", label=gettext("Street")) }}
+            {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
+            {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
+            {{ util.form_input_text(name="location", label=gettext("City")) }}
+            {{ util.form_input_text(name="country", label=gettext("Country")) }}
         {% endif %}
         {% if values['is_cde_realm'] %}
-            <h4 class="heading-underline">Zweitadresse</h4>
-            {{ util.form_input_text(name="address2", label="Straße") }}
-            {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
-            {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
-            {{ util.form_input_text(name="location2", label="Stadt") }}
-            {{ util.form_input_text(name="country2", label="Land") }}
+            <h4 class="heading-underline">Second Address</h4>
+            {{ util.form_input_text(name="address2", label=gettext("Street")) }}
+            {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
+            {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
+            {{ util.form_input_text(name="location2", label=gettext("City")) }}
+            {{ util.form_input_text(name="country2", label=gettext("Country")) }}
 
-            <h4 class="heading-underline">Lebenslauf</h4>
-            {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
-            {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
-            {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
-            {{ util.form_input_textarea(name="interests", label="Interessen") }}
-            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5",
-                                        info="Unterstützt reStructuredText") }}
+            <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
+            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
+            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
+            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation")) }}
+            {{ util.form_input_textarea(name="interests", label=gettext("Interests")) }}
+            {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
+                                        info=gettext("Supports reStructuredText")) }}
         {% endif %}
 
-        {{ util.form_input_submit(value="Speichern", cancellink=show_user_link(user.persona_id)) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user.persona_id)) }}
     </form>
 {% endblock %}

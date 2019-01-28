@@ -3,19 +3,23 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('historycollapse') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}Geschichte von {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
+{% block title %}
+    {% trans given_names=current['given_names']|e, family_name=current['family_name']|e -%}
+    	Change History of {{ given_names }} {{ family_name }}
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(current['id']), current['given_names'] + " " + current['family_name'],
             icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/show_history"), "Geschichte", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/show_history"), gettext("Change History"), active=True) }}
 {% endblock %}
-{% set STATUS={enums["MemberChangeStati"].pending: ('pending','check','ausstehend'),
+{% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
                 enums["MemberChangeStati"].committed: ('','',''),
-                enums["MemberChangeStati"].superseded: ('superseded', 'refresh', 'obsolet'),
-                enums["MemberChangeStati"].nacked: ('nacked', 'ban-circle', 'abgelehnt'),
-                enums["MemberChangeStati"].displaced: ('displaced', 'refresh', 'obsolet'),
-                -1: ('complicated','question-sign','kompliziert'),} %}
+                enums["MemberChangeStati"].superseded: ('superseded', 'refresh', gettext("superseded")),
+                enums["MemberChangeStati"].nacked: ('nacked', 'ban-circle', gettext("nacked")),
+                enums["MemberChangeStati"].displaced: ('displaced', 'refresh', gettext("displaced")),
+                -1: ('complicated','question-sign',gettext("complicated")),} %}
 {% macro print_history(f) %}
     {% for c in entries %}
         {% if c not in constants[f] %}
@@ -54,7 +58,7 @@
         {% if vars['has_nonconstant'] %}
             <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}">
                 <div class="col-xs-3">
-                    Gen {{ c }}
+                    {% trans -%}Gen{%- endtrans %} {{ c }}
                     {% if entries[c]['change_status'] != 1 %}
                         {{ util.make_icon(STATUS[vars['eventual_status']][1],
                                 title=STATUS[vars['eventual_status']][2]) }}
@@ -78,30 +82,32 @@
 {% block content %}
     {% if pending|length > 0 %}
         <p>
-            {{ util.href(cdedblink('core/inspect_change', {'persona_id': current['id']}), "Änderung prüfen",
+            {{ util.href(cdedblink('core/inspect_change', {'persona_id': current['id']}), gettext("Review Changes"),
                     icon="check", aclass="btn btn-sm btn-info") }}
         </p>
     {% endif %}
     {% if not current['is_active'] %}
         <p class="text-danger">
-            Der Benutzer ist deaktiviert.
+            {% trans -%}The User is deactivated.{%- endtrans %}
         </p>
     {% endif %}
     {% if current['is_archived'] %}
         <p class="text-danger">
-            Der Benutzer ist archiviert.
+            {% trans -%}The User is archived.{%- endtrans %}
         </p>
     {% endif %}
 
     <script type="text/javascript">
         $(function() {
-            $('.history-container').cdedbHistoryCollapse();
+            $('.history-container').cdedbHistoryCollapse({
+                'more_versions': "{{ gettext("– {num} more versions –") }}",
+            });
         });
     </script>
 
     <div class="form-horizontal">
         <h4 class="heading-underline">Person</h4>
-        {% call history_field('Name') %}
+        {% call history_field(gettext("Name")) %}
             {% call(c) print_multifield_history(
                     ['title','given_names', 'display_name', 'family_name', 'name_supplement']) %}
                 {{ entries[c]['title']|e }}
@@ -110,18 +116,18 @@
             {% endcall %}
         {% endcall %}
 
-        {% call history_field("Geburtsname") %}
+        {% call history_field(gettext("Birth Name")) %}
             {{ print_history('birth_name') }}
         {% endcall %}
 
         {% if current['is_cde_realm'] or current['is_event_realm'] %}
-            {% call history_field("Geburtstag") %}
+            {% call history_field(gettext("Birthday")) %}
                 {% call(c) print_history('birthday') %}
                      {{ entries[c]['birthday']|date(lang=lang)|e }}
                 {% endcall %}
             {% endcall %}
 
-            {% call history_field("Geschlecht") %}
+            {% call history_field(gettext("Gender")) %}
                 {% call(c) print_history('gender') %}
                      {{ gettext(enums['Genders'](entries[c]['gender'])|string)|e }}
                 {% endcall %}
@@ -129,19 +135,19 @@
         {% endif %}
 
 
-        <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
+        <h4 class="heading-underline">{% trans -%}Account &amp; Membership{%- endtrans %}</h4>
 
-        {% call history_field('Aktiv') %}
+        {% call history_field(gettext("Active")) %}
             {{ print_history('is_active') }}
         {% endcall %}
 
-        {% call history_field('Bereiche') %}
+        {% call history_field(gettext("Realms")) %}
             {% call(c) print_multifield_history(
                     ['is_cde_realm','is_event_realm', 'is_ml_realm', 'is_assembly_realm']) %}
-                {% for bit, desc, icon in (("is_cde_realm", "CdE", "education"),
-                                           ("is_event_realm", "Veranstaltungen", "blackboard"),
-                                           ("is_ml_realm", "Mailinglisten", "envelope"),
-                                           ("is_assembly_realm", "Versammlungen", "bullhorn"),)%}
+                {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "education"),
+                                           ("is_event_realm", gettext("Events"), "blackboard"),
+                                           ("is_ml_realm", gettext("Mailinglists"), "envelope"),
+                                           ("is_assembly_realm", gettext("Assembly"), "bullhorn"),)%}
                     {% if entries[c][bit] %}
                         {{ util.make_icon(icon) }} {{ desc|e }},
                     {% endif %}
@@ -149,18 +155,18 @@
             {% endcall %}
         {% endcall %}
 
-        {% call history_field('Admin-Privilegien') %}
+        {% call history_field(gettext("Admin Privileges")) %}
             {% call(c) print_multifield_history(['is_admin','is_core_admin','is_cde_admin','is_event_admin',
                                                  'is_ml_admin', 'is_assembly_admin']) %}
                 {% set vars = {'any_privilege': False} %}
-                {% for bit, desc, icon in (("is_admin", "Super", "wrench"),
-                                          ("is_core_admin", "Core", "user"),
-                                          ("is_cde_admin", "CdE", "education"),
-                                          ("is_event_admin", "Veranstaltungs", "blackboard"),
-                                          ("is_ml_admin", "Mailinglisten", "envelope"),
-                                          ("is_assembly_admin", "Versammlungs", "bullhorn"),)%}
+                {% for bit, desc, icon in (("is_admin", gettext("Super-Admin"), "wrench"),
+                                          ("is_core_admin", gettext("Core-Admin"), "user"),
+                                          ("is_cde_admin", gettext("CdE-Admin"), "education"),
+                                          ("is_event_admin", gettext("Event-Admin"), "blackboard"),
+                                          ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
+                                          ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
                     {% if entries[c][bit] %}
-                        {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
+                        {{ util.make_icon(icon) }} {{ desc|e }},
                         {# Dirty hack to workaround Jinjas set drawbacks #}
                         {% set tmp = vars.update({'any_privilege': True}) %}
                     {% endif %}
@@ -170,56 +176,56 @@
         {% endcall %}
 
         {% if current['is_cde_realm'] %}
-            {% call history_field('CdE-Mitgliedschaft') %}
+            {% call history_field(gettext("CdE-Membership")) %}
                 {% call(c) print_multifield_history(['is_member', 'trial_member']) %}
                     {% if entries[c]['is_member'] %}
                         {% if entries[c]['trial_member'] %}
-                            Probemitgliedschaft
+                            {% trans -%}Trialmembership{%- endtrans %}
                         {% else %}
-                            Mitglied
+                            {% trans -%}CdE-Member{%- endtrans %}
                         {% endif %}
                     {% else %}
-                        Kein Mitglied
+                        {% trans -%}Not a Member{%- endtrans %}
                     {% endif %}
                 {% endcall %}
             {% endcall %}
 
-            {% call history_field('Sichtbarkeit') %}
+            {% call history_field(gettext("Searchability")) %}
                 {% call(c) print_multifield_history(['is_searchable', 'decided_search']) %}
                     {% if entries[c]['decided_search'] %}
                         {% if entries[c]['is_searchable'] %}
-                            sichtbar
+                            {% trans -%}Searchable{%- endtrans %}
                         {% else %}
-                            nicht sichtbar
+                            {% trans -%}Not Searchable{%- endtrans %}
                         {% endif %}
                     {% else %}
-                        (unentschieden)
+                        {% trans -%}(Undecided){%- endtrans %}
                     {% endif %}
                 {% endcall %}
             {% endcall %}
 
-            {% for name, field in (("Guthaben", 'balance'),
-                                   ("Sichtbar für BuB", 'bub_search'),
-                                   ("Notizen", 'notes')) %}
+            {% for name, field in ((gettext("Balance"), 'balance'),
+                                   (gettext("Searchable for BuB"), 'bub_search'),
+                                   (gettext("Admin-Notes"), 'notes')) %}
                 {% call history_field(name) %}
                     {{ print_history(field) }}
                 {% endcall %}
             {% endfor %}
         {% endif %}
 
-        <h4 class="heading-underline">Kontakt</h4>
+        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
 
-        {% for name, field in (("E-Mail", 'username'),
-                               ("Telefon", 'telephone'),
-                               ("Mobiltelefon", 'mobile'),
-                               ("WWW", 'weblink')) %}
+        {% for name, field in ((gettext("E-Mail"), 'username'),
+                               (gettext("Phone"), 'telephone'),
+                               (gettext("Mobilephone"), 'mobile'),
+                               (gettext("WWW"), 'weblink')) %}
             {% call history_field(name) %}
                 {{ print_history(field) }}
             {% endcall %}
         {% endfor %}
 
         {% if current['is_event_realm'] or current['is_cde_realm'] %}
-            {% call history_field('Adresse') %}
+            {% call history_field(gettext("Address")) %}
                 {% call(c) print_multifield_history(
                         ['address','address_supplement', 'postal_code', 'location', 'country']) %}
                     {{ entries[c]['address'] }}{% if entries[c]['address'] %}<br />{% endif %}
@@ -232,7 +238,7 @@
         {% endif %}
 
         {% if current['is_cde_realm'] %}
-            {% call history_field('Zweitadresse') %}
+            {% call history_field(gettext("Second Address")) %}
                 {% call(c) print_multifield_history(
                         ['address2','address_supplement2', 'postal_code2', 'location2', 'country2']) %}
                     {{ entries[c]['address2'] }}{% if entries[c]['address2'] %}<br />{% endif %}
@@ -245,13 +251,13 @@
         {% endif %}
 
         {% if current['is_cde_realm'] %}
-            <h4 class="heading-underline">Lebenslauf</h4>
+            <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
 
-            {% for name, field in (("Fachgebiet", 'specialisation'),
-                                   ("Schule, Uni, …", 'affiliation'),
-                                   ("Jahrgang, Matrikel, …", 'timeline'),
-                                   ("Interessen", 'interests'),
-                                   ("Sonstiges …", 'free_form')) %}
+            {% for name, field in ((gettext("Specialisation"), 'specialisation'),
+                                   (gettext("School, University, …"), 'affiliation'),
+                                   (gettext("Year(s) of Graduation"), 'timeline'),
+                                   (gettext("Interests"), 'interests'),
+                                   (gettext("Miscellaneous"), 'free_form')) %}
                 {% call history_field(name) %}
                     {{ print_history(field) }}
                 {% endcall %}
@@ -260,22 +266,22 @@
 
     </div>
 
-    <h3>Veränderungen</h3>
+    <h3>{% trans -%}Changes{%- endtrans %}</h3>
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
                 <th></th>
-                <th>Zeitstempel</th>
-                <th>Status</th>
-                <th>Verantwortlich</th>
-                <th>Geprüft von</th>
-                <th>Notiz</th>
+                <th>{% trans -%}Timestamp{%- endtrans %}</th>
+                <th>{% trans -%}Status{%- endtrans %}</th>
+                <th>{% trans -%}Submitted By{%- endtrans %}</th>
+                <th>{% trans -%}Reviewed By{%- endtrans %}</th>
+                <th>{% trans -%}Additional Info{%- endtrans %}</th>
             </tr>
         </thead>
         <tbody>
             {% for _, entry in entries|xdictsort('generation')|reverse %}
                 <tr>
-                    <td class="nowrap">Gen {{ entry['generation']|e }}</td>
+                    <td class="nowrap">{% trans -%}Gen{%- endtrans %} {{ entry['generation']|e }}</td>
                     <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
                     <td>{{ gettext(entry['change_status']|enum(enums['MemberChangeStati']))|e }}</td>
                     <td>{{ util.persona_anchor(personas[entry['submitted_by']]) }}</td>

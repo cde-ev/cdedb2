@@ -206,4 +206,21 @@ I18N_STRINGS = (
     ##
     n_("Cancel"),
     n_("Save"),
+    
+    ##
+    ## Metadata
+    ##
+    n_("Finanzvorstand_Name"),
+    n_("Finanzvorstand_Vorname"),
+    n_("Finanzvorstand_Ort"),
+    n_("Finanzvorstand_Adresse_Einzeiler"),
+    n_("Finanzvorstand_Adresse_Zeile2"),
+    n_("Finanzvorstand_Adresse_Zeile3"),
+    n_("Finanzvorstand_Adresse_Zeile4"),
+    n_("CdE_Konto_Inhaber"),
+    n_("CdE_Konto_IBAN"),
+    n_("CdE_Konto_BIC"),
+    n_("CdE_Konto_Institut"),
+    n_("banner_before_login"),
+    n_("banner_after_login")
 )
