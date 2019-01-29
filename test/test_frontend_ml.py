@@ -104,37 +104,37 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'})
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertNonPresence("Inga Iota")
         f = self.response.forms['addmoderatorform']
         f['moderator_id'] = "DB-9-4"
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertPresence("Inga Iota")
         f = self.response.forms['removemoderatorform9']
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertNonPresence("Inga Iota")
         self.assertNonPresence("zelda@example.cde")
         f = self.response.forms['addwhitelistform']
         f['email'] = "zelda@example.cde"
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertNonPresence("zelda@example.cde")
         self.assertPresence("Janis Jalapeño")
         f = self.response.forms['removesubscriberform10']
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertNonPresence("Janis Jalapeño")
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
         f['subscriber_id'] = "DB-9-4"
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertIn("removesubscriberform9", self.response.forms)
 
     @as_users("anton")
@@ -199,10 +199,10 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'},)
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         f = self.response.forms['ackrequestform9']
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch -- Verwalten")
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertNotIn('ackrequestform9', self.response.forms)
         self.logout()
         self.login(USER_DICT['inga'])
@@ -275,7 +275,7 @@ class TestMlFrontend(FrontendTest):
     def test_global_check_states(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/check$'},)
-        self.assertTitle("globaler Konsistenzcheck")
+        self.assertTitle("Globaler Konsistenzcheck")
         self.assertPresence("Sozialistischer Kampfbrief")
         self.assertNonPresence("Janis Jalapeño")
         ## generate an inconsistency
@@ -290,7 +290,7 @@ class TestMlFrontend(FrontendTest):
         ## now check
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/check$'},)
-        self.assertTitle("globaler Konsistenzcheck")
+        self.assertTitle("Globaler Konsistenzcheck")
         self.assertPresence("Witz des Tages")
         self.assertPresence("Janis Jalapeño")
 
@@ -390,17 +390,17 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("Log: Mailinglisten [0–7]")
+        self.assertTitle("Mailinglisten Log [0–7]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Log: Mailinglisten [1–3]")
+        self.assertTitle("Mailinglisten Log [1–3]")
 
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
-        self.assertTitle("Log: Klatsch und Tratsch [0–6]")
+        self.assertTitle("Klatsch und Tratsch – Log [0–6]")
