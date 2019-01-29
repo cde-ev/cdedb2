@@ -665,6 +665,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                     for c in rs.ambience['ballot']['candidates'].values()}
         if moniker in monikers:
             rs.errors.append(("moniker", ValueError(n_("Duplicate moniker."))))
+        if moniker == "_bar_":
+            rs.errors.append(
+                ("moniker", ValueError(n_("Mustn't be the bar moniker."))))
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)
         data = {
