@@ -2441,7 +2441,7 @@ msgstr "Mindestens ein Teil muss ausgewählt werden."
 
 #: cdedb/frontend/event.py:1866
 msgid "Must choose different courses."
-msgstr ""
+msgstr "Bitte verschiedene Kurse wählen."
 
 #: cdedb/frontend/event.py:1870
 msgid "Must consent for participation."

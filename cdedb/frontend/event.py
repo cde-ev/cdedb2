@@ -2383,9 +2383,17 @@ class EventFrontend(AbstractUserFrontend):
                 continue
             extractor = lambda i: raw_tracks["track{}.course_choice_{}".format(
                 track_id, i)]
-            new_tracks[track_id]['choices'] = tuple(
+            choices_set = {extractor(i) for i in range(track['num_choices'])
+                           if extractor(i)}
+            choices_tuple = tuple(
                 extractor(i)
                 for i in range(track['num_choices']) if extractor(i))
+            if len(choices_set) != len(choices_tuple):
+                rs.errors.extend(
+                    ("track{}.course_choice_{}".format(track_id, i),
+                     ValueError(n_("Must choose different courses.")))
+                    for i in range(track['num_choices']))
+            new_tracks[track_id]['choices'] = choices_tuple
         new_fields = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
 

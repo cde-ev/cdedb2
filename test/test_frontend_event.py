@@ -907,6 +907,25 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
+        
+    @as_users("garcia")
+    def test_add_illegal_registration(self, user):
+        self.get("/event/event/1/registration/add")
+        self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
+        f = self.response.forms["addregistrationform"]
+        f["persona.persona_id"] = "DB-2-7"
+        f["part1.status"] = 1
+        f["track1.course_choice_0"] = 5
+        f["track1.course_choice_1"] = 5
+        self.submit(f, check_notification=False)
+        self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Bitte verschiedene Kurse wählen.")
+        f = self.response.forms["addregistrationform"]
+        f["track1.course_choice_1"] = 4
+        self.submit(f)
+        self.assertTitle("\nAnmeldung von Bertålotta Beispiel (Große Testakademie 2222)\n")
+        self.assertEqual("5", f['track1.course_choice_0'].value)
+        self.assertEqual("4", f['track1.course_choice_1'].value)
 
     @as_users("anton")
     def test_add_empty_registration(self, user):
