@@ -4,11 +4,13 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint = 'weak' %}
-{% block title %}Neuen Mailinglistennutzer anlegen{% endblock %}
+{% block title %}
+    {% trans -%}Create New Mailinglist-Account{%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("ml/user_search"), "Nutzer verwalten") }}
-{{ util.breadcrumb_link(cdedblink("ml/create_user"), "Nutzer anlegen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("ml/user_search"), gettext("Manage Users")) }}
+{{ util.breadcrumb_link(cdedblink("ml/create_user"), gettext("Create User"), active=True) }}
 {% endblock %}
 {% block content %}
     {{ generic.create_user('ml') }}

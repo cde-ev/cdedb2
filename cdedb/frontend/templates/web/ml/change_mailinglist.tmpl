@@ -3,15 +3,19 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('change-mailinglist')}}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}{{ ambience['mailinglist']['title']|e }} – Konfiguration{% endblock %}
+{% block title %}
+    {% trans title=ambience['mailinglist']['title']|e -%}
+        {{ title }} – Configuration
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
-{{ util.breadcrumb_link(cdedblink("ml/change_mailinglist"), "Konfiguration", active=True) }}
+{{ util.breadcrumb_link(cdedblink("ml/change_mailinglist"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Konfiguration
+        {% trans -%}Configuration{%- endtrans %}
         <small>
             {{- util.make_icon('envelope', arialabel="Mailingliste") }} {{ ambience['mailinglist']['title']|e -}}
         </small>
@@ -24,39 +28,39 @@
         });
     </script>
     <form action="{{ cdedblink('ml/change_mailinglist')|e }}" method="POST" id="changelistform" class="form-horizontal">
-        <h4 class="heading-underline">Meta</h4>
-        {{ util.form_input_checkbox(name="is_active", label="Aktiv") }}
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_text(name="address", label="Adresse") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
-                                    info="Unterstützt reStructuredText") }}
-        {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="5",
-                                    info="Unterstützt reStructuredText") }}
+        <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
+        {{ util.form_input_checkbox(name="is_active", label=gettext("Active")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="address", label=gettext("Address")) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
+                                    info=gettext("Supports reStructuredText")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
+                                    info=gettext("Supports reStructuredText")) }}
 
-        <h4 class="heading-underline">Moderation &amp; Abonnenten</h4>
-        {{ util.form_input_select(name="mod_policy", label="Moderation",
+        <h4 class="heading-underline">{% trans -%}Moderation &amp; Subscribers{%- endtrans %}</h4>
+        {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
                 entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="audience_policy", label="Empfängerkreis",
+        {{ util.form_input_select(name="audience_policy", label=gettext("Audience"),
                 entries=enums['AudiencePolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="sub_policy", label="Einschreibung",
+        {{ util.form_input_select(name="sub_policy", label=gettext("Subscription"),
                 entries=enums['SubscriptionPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption="", entries=events|dictsort,
-                info="Die Teilnehmer dieser Veranstaltung werden der Liste hinzugefügt. (Opt-Out)") }}
-        {{ util.form_input_checkboxes(name="registration_stati", label="Veranstaltungsempfänger",
+        {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=events|dictsort,
+                info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
+        {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
                 entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
-                info="Keine Auswahl entspricht einer Orgaliste.") }}
-        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption="",
+                info=gettext("No selection results in an orga-list.")) }}
+        {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
                 entries=assemblies|dictsort|dict_entries('id', 'title'),
-                info="Die Teilnehmer dieser Versammlung werden der Liste hinzugefügt. (Opt-Out)") }}
-        {{ util.form_input_select(name="gateway", label="Zugangsvererbung", nulloption="",
+                info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
+        {{ util.form_input_select(name="gateway", label=gettext("Gateway"), nulloption="",
                 entries=mailinglists|dictsort,
-                info="Die Abonnenten dieser Liste können sich immer eintragen. (Opt-In)") }}
+                info=gettext("Subscribers of this list can always subscribe. (Opt-In)")) }}
 
-        <h4 class="heading-underline">Mails</h4>
-        {{ util.form_input_text(name="subject_prefix", label="Präfix (Betreffzeile)") }}
-        {{ util.form_input_select(name="attachment_policy", label="Anhänge",
+        <h4 class="heading-underline">{% trans -%}Mails{%- endtrans %}</h4>
+        {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix")) }}
+        {{ util.form_input_select(name="attachment_policy", label=gettext("Attachments"),
                 entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_text(name="maxsize", label="max. Nachrichtengröße (in kB)") }}
-        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('ml/show_mailinglist')) }}
+        {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)")) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
     </form>
 {% endblock %}

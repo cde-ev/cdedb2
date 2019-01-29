@@ -4,11 +4,13 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}Mailinglisten-Nutzerverwaltung{% endblock %}
+{% block title %}
+    {% trans -%}Mailinglist-User Management{%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("ml/user_search"), "Nutzer verwalten", active=True) }}
+{{ util.breadcrumb_link(cdedblink("ml/user_search"), gettext("Manage Users"), active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('ml', info="Diese Nutzer-Suche findet nur reine Mailinglisten-Benutzer.") }}
+    {{ generic.user_search('ml', info=gettext("This search will only show pure Mailinglist-Users.")) }}
 {% endblock %}

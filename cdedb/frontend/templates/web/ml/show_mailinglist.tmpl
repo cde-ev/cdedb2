@@ -10,42 +10,48 @@
 {% block content %}
     {% if ambience['mailinglist']['event_id'] %}
         <div class="subtitle">
-            Mailingliste zur Veranstaltung
             {% if event['is_visible'] %}
-                {{ util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
-                        icon='blackboard')}}
+                {% set link = util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
+                        icon='blackboard') %}
             {% else %}
-                {{ util.make_icon('blackboard') }} {{ event['title']|e }}
+                {% set link = "{} {}".format(util.make_icon('blackboard'), event['title']|e) %}
             {% endif %}
+            {% trans link=link -%}
+                Mailinglist of Event {{ link }}
+            {%- endtrans %}
         </div>
     {% endif %}
     {% if ambience['mailinglist']['assembly_id'] %}
         <div class="subtitle">
-            Mailingliste zur Versammlung
             {% if assembly['is_visible'] %}
-                {{ util.href(cdedblink('assembly/show_assembly',{'assembly_id':assembly['id']}), assembly['title'],
-                        icon='bullhorn')}}
+                {% set link = util.href(cdedblink('assembly/show_assembly',{'assembly_id':assembly['id']}), assembly['title'],
+                        icon='bullhorn') %}
             {% else %}
-                {{ util.make_icon('bullhorn') }} {{ assembly['title']|e }}
+                {% set link = "{} {}".format(util.make_icon('bullhorn'), assembly['title']|e) %}
             {% endif %}
+            {% trans link=link -%}
+                Mailinglist of Assembly {{ link }}
+            {%- endtrans %}
         </div>
     {% endif %}
 
     {% if ambience['mailinglist']['gateway'] %}
         <p>
-            Zugänglich für Abonnenten von
             {% if gateway['is_active'] or is_admin %}
-                {{ util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': gateway['id']}), gateway['title'],
-                        icon='envelope')}}
+                {% set link = util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id':gateway['id']}), gateway['title'],
+                        icon='envelope') %}
             {% else %}
-                {{ util.make_icon('envelope') }} {{ gateway['title']|e }}
+                {% set link = "{} {}".format(util.make_icon('envelope'), gateway['title']|e) %}
             {% endif %}
+            {% trans link=link -%}
+                Available for subscribers of {{ link }}
+            {%- endtrans %}
         </p>
     {% endif %}
     <dl class="dl-horizontal">
-        <dt>Listen-Adresse</dt>
+        <dt>{% trans -%}Mailinglist Address{%- endtrans %}</dt>
         <dd>{{ util.href('mailto:' + ambience['mailinglist']['address']|e, ambience['mailinglist']['address']) }}</dd>
-        <dt>Moderatoren</dt>
+        <dt>{% trans -%}Moderators{%- endtrans %}</dt>
         <dd>
             {% for moderator in ambience['mailinglist']['moderators'] %}
                 {{ util.persona_anchor(personas[moderator]) }}{% if not loop.last %},{% endif %}
@@ -56,20 +62,22 @@
     {{ ambience['mailinglist']['description']|rst }}
     
     {% if is_admin and ambience['mailinglist']['notes'] %}
-        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['mailinglist']['notes']|rst }}
         {% endcall %}
     {% endif %}
 
     {% if not ambience['mailinglist']['is_active'] %}
-        <p class="text-warning"><strong>Diese Liste ist nicht mehr aktiv.</strong></p>
+        <p class="text-warning"><strong>{% trans -%}This mailinglist is inactive.{%- endtrans %}</strong></p>
     {% else %}
         {% call util.bootstrap_panel(title="Dein Abonnement",
                                      aclass=("panel-success" if is_subscribed else "panel-default")) %}
                 {% if is_subscribed %}
-                    <p class="text-success"><strong>Du hast diese Mailingliste abonniert.</strong></p>
+                    <p class="text-success"><strong>
+                        {% trans -%}You are subscribed to this mailinglist.{%- endtrans %}
+                    </strong></p>
                     <dl class="dl-horizontal">
-                        <dt>Deine Adresse</dt>
+                        <dt>{% trans -%}Your E-Mail address{%- endtrans %}</dt>
                         <dd>
                             {% if sub_address %}
                                 {{ sub_address|e }}
@@ -84,69 +92,83 @@
                                 <form action="{{ cdedblink('ml/change_address')|e }}" method="POST"
                                   id="resetaddressform" style="display: inline;">
                                     {{ util.input_hidden(name="email", value="") }}
-                                    {{ util.input_submit(value="Adresse zurücksetzen", icon="share-alt",
+                                    {{ util.input_submit(value=gettext("Reset E-Mail adress"), icon="share-alt",
                                             aclass="btn btn-warning btn-sm") }}
                                 </form>
                             {% endif %}
                             <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
                                     id="unsubscribeform" style="display: inline;">
                                 {{ util.input_hidden(name="subscribe", value=False) }}
-                                {{ util.input_submit(value="Liste abbestellen", aclass="btn btn-danger btn-sm",
+                                {{ util.input_submit(value=gettext("Unsubscribe"), aclass="btn btn-danger btn-sm",
                                         icon="remove") }}
                             </form>
                         </div>
 
-                        <h4 class="mosp">Adresse ändern</h4>
+                        <h4 class="mosp">{% trans -%}Change E-Mail address{%- endtrans %}</h4>
                         <p class="text-muted">
-                            {{ util.make_icon('info-sign') }} Um Mails dieser Mailingliste an eine andere
-                            E-Mail-Adresse zu erhalten, trage die neue Adresse ins folgende Formular ein. Nach dem
-                            Absenden erhältst Du eine E-Mail an diese Adresse, mit der Du Deinen Besitz der Adresse
-                            bestätigen kannst.
+                            {{ util.make_icon('info-sign') }}
+                            {% trans -%}
+                                To recieve mails from this mailinglist with a different E-Mail address,
+                                enter the new address in this form. You will recieve a confirmation mail.
+                            {%- endtrans %}
                         </p>
                         <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="changeaddressform"
                               {% if 'email' in errors %}class="has-error"{% endif %}>
-                            <label for="input-new-adress" class="sr-only">Neue Abonnement-Adresse</label>
+                            <label for="input-new-adress" class="sr-only">
+                                {% trans -%}New Subsciption Address{%- endtrans %}
+                            </label>
                             <div class="input-group">
                                 {{ util.input_text(name="email", type="email", placeholder="new-address@example.com",
-                                        anid="input-new-adress", arialabel="Neue E-Mail-Adresse") }}
-                                <div class="input-group-btn">{{ util.input_submit(value="Adresse ändern") }}</div>
+                                        anid="input-new-adress", arialabel=gettext("New E-Mail address")) }}
+                                <div class="input-group-btn">
+                                    {{ util.input_submit(value=gettext("Change E-Mail")) }}
+                                </div>
                             </div>
                             {{ util.output_errors('email') }}
                         </form>
                     {% else %}
                         <p class="text-muted">
-                            {{ util.make_icon('info-sign') }} Diese Mailingliste ist obligatorisch. Daher bist Du stets
-                            mit deiner primären E-Mail-Adresse eingeschrieben. Um diese zu ändern, besuche die
-                            {{ util.href(cdedblink('core/change_username_form'), 'entsprechende Seite') }} in Deinen
-                            Account-Einstellungen.
+                            {{ util.make_icon('info-sign') }} 
+                            {% trans link=util.href(cdedblink('core/change_username_form'),
+                                                    gettext("corresponding site")) -%}
+                                This mailinglist is mandatory. Therefor you are always subscribed to this list
+                                with your primary email address. To change this address go to the
+                                {{ link }} in your Account-Settings.
+                            {%- endtrans %}
                         </p>
                     {% endif %}
                 {% else %}
                     {% if may_toggle %}
                         {% if pending %}
                             <p><strong>
-                                Deine Anfrage für diese Mailingliste wartet auf Bestätigung durch einen Moderator.
+                                {% trans -%}
+                                    Your subscription request is currently pending review by a moderator.
+                                {%- endtrans %}
                             </strong></p>
                             <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
                                     id="subscribeform">
                                 {{ util.input_hidden(name="subscribe", value=False) }}
-                                {{ util.input_submit(value="Zurücktreten", aclass="btn btn-sm btn-danger",
+                                {{ util.input_submit(value=gettext("Cancel"), aclass="btn btn-sm btn-danger",
                                         icon="remove") }}
                             </form>
                         {% else %}
-                            <p><strong>Du bist zurzeit kein Abonnent dieser Mailingliste.</strong></p>
+                            <p><strong>
+                                {% trans -%}You are not currently subscribed to this mailinglist.{%- endtrans %}
+                            </strong></p>
                             <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
                               id="subscribeform">
                                 <div>
                                     {{ util.input_hidden(name="subscribe", value=True) }}
-                                    {{ util.input_submit(value="Abonnieren", aclass="btn btn-sm btn-success") }}
+                                    {{ util.input_submit(value=gettext("Subscribe"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
                         {% endif%}
                     {% else %}
                         <p>
-                            Du kannst diese Mailingliste nicht abonnieren, da Du nicht Teil ihres Adressatenkreises
-                            bist.
+                            {% trans -%}
+                                You cannot subscribe to this mailinglist, because you are not
+                                part of the configured audience.
+                            {%- endtrans %}
                         </p>
                     {% endif %}
                 {% endif %}
