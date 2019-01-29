@@ -1,15 +1,17 @@
 {% set sidenav_active='ml_index' %}
 {% extends "web/ml/base.tmpl" %}
-{% block title %}Mailinglisten{% endblock %}
+{% block title %}
+    {% trans -%}Mailinglists{%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten", active=True) }}
+{{ util.breadcrumb_link(cdedblink("ml/index"), gettext("Mailinglists"), active=True) }}
 {% endblock %}
 {% macro format_entry(mailinglist_id, title) %}
     <li>
-        {{ util.deko_checkbox(mailinglist_id in subscriptions, titles=['nicht abonniert','abonniert']) }}
+        {{ util.deko_checkbox(mailinglist_id in subscriptions, titles=[gettext("not subscribed"), gettext("subscribed")]) }}
         {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
         {% if user.persona_id in mailinglist_infos[mailinglist_id]['moderators'] %}
-            {{ util.href(cdedblink('ml/management',{'mailinglist_id' : mailinglist_id}), 'Verwalten', icon='list',
+            {{ util.href(cdedblink('ml/management',{'mailinglist_id' : mailinglist_id}), gettext("Manage"), icon='list',
                     aclass='btn btn-xs btn-info') }}
         {% endif %}
     </li>
@@ -17,18 +19,19 @@
 {% block content %}
     {% if is_admin %}
         <div class="p">
-            {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen", icon="plus",
+            {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
-            {{ util.href(cdedblink("ml/global_check_states"), "globaler Konsistenzcheck", icon="check",
+            {{ util.href(cdedblink("ml/global_check_states"), gettext("Global Consistency-Check"), icon="check",
                     aclass="btn btn-sm btn-info") }}
         </div>
     {% endif %}
     <p>
-        Hier findest Du die Mailinglisten des CdE; insbesondere auch zu
-        Akademien und Mitgliederversammlungen.
+        {% trans -%}
+            Here you can find the CdE's Mailinglists; notably also those linked to events and assemblies.
+        {%- endtrans %}
     </p>
 
-    <h3>Allgemeine Listen</h3>
+    <h3>{% trans -%}General Mailinglists{%- endtrans %}</h3>
     <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if mailinglist_infos[mailinglist_id]['audience_policy'] not in (
@@ -39,7 +42,7 @@
         {% endfor %}
     </ul>
     {% if 'event' in user.roles %}
-    <h3>Veranstaltungslisten</h3>
+    <h3>{% trans -%}Event Mailinglists{%- endtrans %}</h3>
     <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_event %}
@@ -49,7 +52,7 @@
     </ul>
     {% endif %}
     {% if 'assembly' in user.roles %}
-    <h3>Versammlungslisten</h3>
+    <h3>{% trans -%}Assembly Mailinglists{%- endtrans %}</h3>
     <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_assembly %}

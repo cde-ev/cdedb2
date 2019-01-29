@@ -1,10 +1,12 @@
 {% set sidenav_active='ml_all' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Mailinglisten Komplettübersicht{% endblock %}
+{% block title %}
+    {% trans -%}Complete Mailinglist-Overview{%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), "Alle Mailinglisten", active=True) }}
+{{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists"), active=True) }}
 {% endblock %}
 {% macro format_entry(mailinglist_id, title) %}
     {% set ml = mailinglist_infos[mailinglist_id] %}
@@ -12,70 +14,82 @@
         {# {{ util.deko_checkbox(mailinglist_id in subscriptions) }} #}
         <div class="col-sm-3">
             {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
-            {% if mailinglist_id in subscriptions %}{{ util.make_icon('ok-sign', title="abonniert") }}{% endif %}<br />
-            {% if not ml['is_active'] %}<span class="small">inaktiv</span>{% endif %}
+            {% if mailinglist_id in subscriptions %}
+                {{ util.make_icon('ok-sign', title=gettext("subscribed")) }}
+            {% endif %}<br />
+            {% if not ml['is_active'] %}
+                <span class="small">{% trans -%}inactive{%- endtrans %}</span>
+            {% endif %}
         </div>
         <div class="col-sm-1">
             {% if ml['audience_policy'] == enums['AudiencePolicy'].everybody %}
-                {{ util.make_icon('user', title="Sichtbar für alle") }}
+                {{ util.make_icon('user', title=gettext("Visible to Everybody")) }}
             {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_assembly %}
-                {{ util.make_icon('bullhorn', title="Sichtbar für Versammlungs-Nutzer") }}
+                {{ util.make_icon('bullhorn', title=gettext("Visible to Assembly-Users")) }}
             {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_event %}
-                {{ util.make_icon('blackboard', title="Sichtbar für Veranstaltungs-Nutzer") }}
+                {{ util.make_icon('blackboard', title=gettext("Visible to Event-Users")) }}
             {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_cde %}
-                {{ util.make_icon('education', title="Sichtbar für CdE-Nutzer") }}
+                {{ util.make_icon('education', title=gettext("Visible to CdE-Users")) }}
             {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_member %}
-                <span title="Sichtbar für CdE-Mitglieder">
+                <span title="{% trans -%}Visible to CdE-Members{%- endtrans %}">
                     {{ util.make_icon('education') }}{{ util.make_icon('ok-circle') }}
-                    <span class="sr-only">Sichtbar für CdE-Mitglieder</span>
+                    <span class="sr-only">{% trans -%}Visible to CdE-Members{%- endtrans %}</span>
                 </span>
             {% endif %}
         </div>
         <div class="col-sm-5 small">
             {% if ml['sub_policy'] == enums['SubscriptionPolicy'].mandatory %}
-                obligatorisch
+                {% trans -%}mandatory{%- endtrans %}
             {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].opt_out %}
-                Opt-Out
+                {% trans -%}Opt-Out{%- endtrans %}
             {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].opt_in %}
-                Opt-In
+                {% trans -%}Opt-In{%- endtrans %}
             {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].moderated_opt_in %}
-                moderiertes Opt-In
+                {% trans -%}moderated Opt-In{%- endtrans %}
             {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].invitation_only %}
-                durch Moderator
+                {% trans -%}Invitation only{%- endtrans %}
             {% endif %}
 
             {% if ml['sub_policy'] in (enums['SubscriptionPolicy'].moderated_opt_in,
                                        enums['SubscriptionPolicy'].invitation_only) %}
                 {% if ml['event_id'] %}
-                    oder
-                    {{ util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
-                            events[ml['event_id']], icon='blackboard')}}
-                    (Opt-Out)
+                    {% trans link=util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
+                            events[ml['event_id']], icon='blackboard') -%}
+                        or {{ link }} (Opt-Out)
+                    {%- endtrans %}
                 {% elif ml['assembly_id'] %}
-                    oder
-                    {{ util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
-                            assemblies[ml['assembly_id']]['title'], icon='bullhorn')}}
-                    (Opt-Out)
+                    {% trans link=util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
+                            assemblies[ml['assembly_id']]['title'], icon='bullhorn') -%}
+                        or {{ link }} (Opt-Out)
+                    {%- endtrans %}
                 {% elif ml['gateway'] %}
-                    oder
-                    {{ util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': ml['gateway']}),
-                            mailinglist_infos[ml['gateway']]['title'], icon='envelope')}}
-                    (Opt-In)
+                    {% trans link=util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': ml['gateway']}),
+                            mailinglist_infos[ml['gateway']]['title'], icon='envelope') -%}
+                        or {{ link }} (Opt-In)
+                    {%- endtrans %}
                 {% endif %}
             {% endif %}
         </div>
         <div class="col-sm-3 small">
-            {{ ml['num_subscribers'] }} Abonnenten,
-            {{ ml['moderators']|length }} Moderator{% if ml['moderators']|length != 1 %}en{% endif %}
+            {% trans count=ml['num_subscribers']|e, number=ml['num_subscribers'] -%}
+                {{ count }} subscriber.
+            {%- pluralize number -%}
+                {{ count }} subscribers.
+            {%- endtrans %}
+            {% trans count=ml['moderators']|length|e, number=ml['moderators']|length -%}
+                {{ count }} moderator.
+            {%- pluralize number -%}
+                {{ count }} moderators.
+            {%- endtrans %}
         </div>
     </div>
 {% endmacro %}
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen", icon="plus",
+        {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                 aclass="btn btn-sm btn-success") }}
     </div>
-    <h3>Allgemeine Listen</h3>
+    <h3>{% trans -%}General Mailinglists{%- endtrans %}</h3>
         <div class="list-group list-group-hover list-group-condensed">
         {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if mailinglist_infos[mailinglist_id]['audience_policy'] not in (
@@ -85,13 +99,13 @@
             {% endif %}
         {% endfor %}
         </div>
-    <h3>Veranstaltungslisten</h3>
+    <h3>Event Mailinglists</h3>
         {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_event %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
-    <h3>Versammlungslisten</h3>
+    <h3>Asssembly Mailinglists</h3>
         {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_assembly %}
                 {{ format_entry(mailinglist_id, title) }}

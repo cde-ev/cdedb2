@@ -1,22 +1,26 @@
 {% set sidenav_active='ml_index' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}globaler Konsistenzcheck{% endblock %}
+{% block title %}
+    {% trans -%}
+        Global Consistency-Check
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("ml/global_check_states"), "Konsistenzcheck", active=True) }}
+{{ util.breadcrumb_link(cdedblink("ml/global_check_states"), gettext("Global Consistency-Check"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">Konsistenzcheck</h1>
+    <h1 class="title">{% trans -%}Global Consistency-Check{%- endtrans %}</h1>
 {% endblock %}
 {% block content %}
     {% for mailinglist_id, title in mailinglists|dictsort %}
         <h2>{{ title|e }}</h2>
-        <h3>Problematische Abonnenten</h3>
+        <h3>{% trans -%}Problematic Subscribers{%- endtrans %}</h3>
         {% if not problems[mailinglist_id] %}
-            Alle Abonnenten gehören zur konfigurierten Zielgruppe.
+            {% trans -%}All subscribers belong to the configured audience.{%- endtrans %}
         {% else %}
-            Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe.
+            {% trans -%}The following subscribers do not belong to the configured audience.{%- endtrans %}
             <ul>
                 {% for problem in problems[mailinglist_id]|sort %}
                     <li>
@@ -25,23 +29,27 @@
                                 id="removeproblemform{{ problem|e }}" style="display: inline;">
                             {{ util.input_hidden(name="subscriber_id", value=problem) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
-                                    title=personas[problem]['given_names'] + " " + personas[problem]['family_name'] +
-                                    " als Abonnent entfernen") }}
+                                    title=gettext("Remove {given_names} {family_name} as subscriber").format(
+                                        given_names=personas[problem]['given_names'],
+                                        family_name=personas[problem]['family_name'])) }}
                         </form>
                         <form action="{{ cdedblink('ml/mark_override', {'mailinglist_id': mailinglist_id})|e }}" method="POST"
                                 id="markoverrideform{{ problem|e }}" style="display: inline;">
                             {{ util.input_hidden(name="subscriber_id", value=problem) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-success", icon="flag",
-                                    title=personas[problem]['given_names'] + " " + personas[problem]['family_name'] +
-                                    " als Ausnahme markieren") }}
+                                    title=gettext("Mark {given_names} {family_name} as an exception.").format(
+                                        given_names=personas[problem]['given_names'],
+                                        family_name=personas[problem]['family_name'])) }}
                         </form>
                     </li>
                 {% endfor %}
             </ul>
         {% endif %}
         {% if overrides[mailinglist_id] %}
-            <h3>Ausnahmen</h3>
-            Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe, wurden aber explizit markiert.
+            <h3>{% trans -%}Exceptions{%- endtrans %}</h3>
+            {% trans -%}
+                The following subscribers do not belong to the configured audience, but were marked as exceptions.
+            {%- endtrans %}
             <ul>
                 {% for problem in overrides[mailinglist_id]|sort %}
                     <li>
@@ -50,8 +58,9 @@
                                 id="removeproblemform{{ problem|e }}" style="display: inline;">
                             {{ util.input_hidden(name="subscriber_id", value=problem) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
-                                    title=personas[problem]['given_names'] + " " + personas[problem]['family_name'] +
-                                    " als Abonnent entfernen") }}
+                                    title=gettext("Remove {given_names} {family_name} as subscriber").format(
+                                        given_names=personas[problem]['given_names'],
+                                        family_name=personas[problem]['family_name'])) }}
                         </form>
                     </li>
                 {% endfor %}

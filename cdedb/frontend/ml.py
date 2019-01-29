@@ -225,7 +225,7 @@ class MlFrontend(AbstractUserFrontend):
             event['is_visible'] = (
                 "event_admin" in rs.user.roles or
                 rs.user.persona_id in event['orgas'] or
-                event['is_open'] or
+                (event['is_open'] and event['is_visible']) or
                 bool(self.eventproxy.list_registrations(
                     rs, event['id'], rs.user.persona_id)))
         assembly = {}

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-01-27 19:20+0100\n"
+"POT-Creation-Date: 2019-01-29 18:01+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -780,6 +780,7 @@ msgstr "Keine Zahl gefunden."
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:111
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:31
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:151
 #: cdedb/i18n_additional.py:207
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -794,6 +795,8 @@ msgstr "Abbrechen"
 #: cdedb/frontend/templates/web/core/change_user.tmpl:75
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:69
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:25
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:64
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:53
 #: cdedb/i18n_additional.py:208
 msgid "Save"
 msgstr "Speichern"
@@ -2720,6 +2723,9 @@ msgstr "Veranstaltungen"
 #: cdedb/frontend/templates/web/generic.tmpl:192
 #: cdedb/frontend/templates/web/generic.tmpl:252
 #: cdedb/frontend/templates/web/generic.tmpl:256
+#: cdedb/frontend/templates/web/ml/base.tmpl:26
+#: cdedb/frontend/templates/web/ml/index.tmpl:4
+#: cdedb/frontend/templates/web/ml/index.tmpl:7
 msgid "Mailinglists"
 msgstr "Mailinglisten"
 
@@ -2901,6 +2907,8 @@ msgstr "Person"
 #: cdedb/frontend/templates/web/generic.tmpl:94
 #: cdedb/frontend/templates/web/generic.tmpl:157
 #: cdedb/frontend/templates/web/generic.tmpl:221
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:33
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:22
 msgid "Title"
 msgstr "Titel"
 
@@ -3141,6 +3149,8 @@ msgstr "WWW"
 #: cdedb/frontend/templates/web/generic.tmpl:111
 #: cdedb/frontend/templates/web/generic.tmpl:163
 #: cdedb/frontend/templates/web/generic.tmpl:227
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:34
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:23
 msgid "Address"
 msgstr "Adresse"
 
@@ -3309,6 +3319,10 @@ msgstr "Notizen"
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:22
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:93
 #: cdedb/frontend/templates/web/generic.tmpl:68
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:36
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:38
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:25
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:27
 msgid "Supports reStructuredText"
 msgstr "Unterstützt reStructuredText"
 
@@ -3317,6 +3331,7 @@ msgstr "Unterstützt reStructuredText"
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:16
 #: cdedb/frontend/templates/web/generic.tmpl:71
 #: cdedb/frontend/templates/web/generic.tmpl:126
+#: cdedb/frontend/templates/web/ml/create_user.tmpl:13
 msgid "Create User"
 msgstr "Nutzer anlegen"
 
@@ -3439,6 +3454,9 @@ msgstr "Suchbarkeit entschieden"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:165
 #: cdedb/frontend/templates/web/generic.tmpl:185
 #: cdedb/frontend/templates/web/generic.tmpl:249
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:37
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:26
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:65
 msgid "Admin-Notes"
 msgstr "Admin-Notizen"
 
@@ -3510,6 +3528,7 @@ msgstr "Feld anzeigen"
 msgid "Fields"
 msgstr "Felder"
 
+#: cdedb/frontend/templates/web/assembly/view_log.tmpl:58
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:50
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:58
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:59
@@ -3517,6 +3536,8 @@ msgstr "Felder"
 #: cdedb/frontend/templates/web/core/view_log.tmpl:50
 #: cdedb/frontend/templates/web/generic.tmpl:303
 #: cdedb/frontend/templates/web/generic.tmpl:406
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:59
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:51
 msgid "Filter"
 msgstr "Filter"
 
@@ -3794,6 +3815,8 @@ msgstr "Abstimmung"
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:62
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:23
 #: cdedb/frontend/templates/web/core/show_history.tmpl:150
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:52
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:41
 msgid "Assembly"
 msgstr "Versammlung"
 
@@ -3832,6 +3855,8 @@ msgstr "Hochladen"
 #: cdedb/frontend/templates/web/assembly/base.tmpl:38
 #: cdedb/frontend/templates/web/cde/base.tmpl:10
 #: cdedb/frontend/templates/web/core/base.tmpl:11
+#: cdedb/frontend/templates/web/ml/base.tmpl:7
+#: cdedb/frontend/templates/web/ml/base.tmpl:57
 msgid "Overview"
 msgstr "Übersicht"
 
@@ -3846,6 +3871,9 @@ msgstr "Teilnehmer"
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:13
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:20
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:14
+#: cdedb/frontend/templates/web/ml/base.tmpl:15
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:14
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:18
 msgid "Configuration"
 msgstr "Konfiguration"
 
@@ -3862,12 +3890,19 @@ msgstr "Versammlungs-Übersicht"
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:10
 #: cdedb/frontend/templates/web/core/base.tmpl:19
 #: cdedb/frontend/templates/web/core/index.tmpl:35
+#: cdedb/frontend/templates/web/ml/base.tmpl:52
+#: cdedb/frontend/templates/web/ml/create_user.tmpl:12
+#: cdedb/frontend/templates/web/ml/user_search.tmpl:12
 msgid "Manage Users"
 msgstr "Nutzer verwalten"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:45
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:16
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:12
+#: cdedb/frontend/templates/web/ml/base.tmpl:19
+#: cdedb/frontend/templates/web/ml/base.tmpl:54
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:12
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:13
 msgid "Log"
 msgstr "Log"
 
@@ -3887,6 +3922,8 @@ msgstr "%(title)s bearbeiten"
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:29
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:23
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:28
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:35
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:24
 msgid "Description"
 msgstr "Beschreibung"
 
@@ -4067,6 +4104,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:73
 #: cdedb/frontend/templates/web/core/index.tmpl:40
 #: cdedb/frontend/templates/web/core/index.tmpl:49
+#: cdedb/frontend/templates/web/ml/management.tmpl:48
+#: cdedb/frontend/templates/web/ml/management.tmpl:154
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr "CdEDB-ID, Name oder E-Mail"
 
@@ -4728,6 +4767,7 @@ msgid "Deletes the Ballot and all associated Settings and Candidates."
 msgstr "Löscht die Abstimmung und alle dazugehörigen Einstellungen und Kandidaten."
 
 #: cdedb/frontend/templates/web/assembly/user_search.tmpl:7
+#: cdedb/frontend/templates/web/ml/user_search.tmpl:8
 msgid "Assembly-User Management"
 msgstr "Versammlungs-Nutzerverwaltung"
 
@@ -4750,6 +4790,8 @@ msgstr "Versammlungs Log"
 #: cdedb/frontend/templates/web/core/show_history.tmpl:274
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:18
 #: cdedb/frontend/templates/web/core/view_log.tmpl:18
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:18
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:19
 msgid "Timestamp"
 msgstr "Zeitstempel"
 
@@ -4758,6 +4800,8 @@ msgstr "Zeitstempel"
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:19
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:19
 #: cdedb/frontend/templates/web/core/view_log.tmpl:19
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:19
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:20
 msgid "Code"
 msgstr "Code"
 
@@ -4768,6 +4812,8 @@ msgstr "Code"
 #: cdedb/frontend/templates/web/core/show_history.tmpl:276
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:20
 #: cdedb/frontend/templates/web/core/view_log.tmpl:20
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:20
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:21
 msgid "Submitted By"
 msgstr "Verantwortlich"
 
@@ -4777,6 +4823,8 @@ msgstr "Verantwortlich"
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:22
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:22
 #: cdedb/frontend/templates/web/core/view_log.tmpl:21
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:22
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:22
 msgid "Affected"
 msgstr "Betroffen"
 
@@ -4787,6 +4835,8 @@ msgstr "Betroffen"
 #: cdedb/frontend/templates/web/core/show_history.tmpl:278
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:24
 #: cdedb/frontend/templates/web/core/view_log.tmpl:22
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:23
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:23
 msgid "Additional Info"
 msgstr "Zusatz"
 
@@ -4795,6 +4845,8 @@ msgstr "Zusatz"
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:60
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:61
 #: cdedb/frontend/templates/web/core/view_log.tmpl:52
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:61
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:53
 msgid "Categories"
 msgstr "Kategorien"
 
@@ -4813,6 +4865,8 @@ msgstr "Keine Auswahl entspricht allem."
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:66
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:75
 #: cdedb/frontend/templates/web/core/view_log.tmpl:57
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:66
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:56
 msgid "Entries"
 msgstr "Einträge"
 
@@ -4822,6 +4876,8 @@ msgstr "Einträge"
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:67
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:76
 #: cdedb/frontend/templates/web/core/view_log.tmpl:58
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:67
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:57
 msgid "Apply"
 msgstr "Anwenden"
 
@@ -5818,6 +5874,8 @@ msgstr "Gesamtguthaben"
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:85
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:31
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:21
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:47
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:36
 msgid "Event"
 msgstr "Veranstaltung"
 
@@ -6070,6 +6128,9 @@ msgstr "Veranstaltungs-Accountanfragen [%(count)s]"
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:38
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:86
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:32
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:19
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:21
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:63
 msgid "Mailinglist"
 msgstr "Mailingliste"
 
@@ -6080,6 +6141,7 @@ msgstr "Genehmigen"
 
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:54
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:102
+#: cdedb/frontend/templates/web/ml/management.tmpl:92
 msgid "Reject"
 msgstr "Ablehnen"
 
@@ -6526,6 +6588,8 @@ msgstr "– {num} weitere Versionen –"
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:140
 #: cdedb/frontend/templates/web/core/show_user.tmpl:225
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:32
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:21
 msgid "Active"
 msgstr "Aktiv"
 
@@ -6727,3 +6791,487 @@ msgstr "Allgemeine Nutzerverwaltung"
 msgid "Generation"
 msgstr "Generation"
 
+#: cdedb/frontend/templates/web/ml/base.tmpl:10
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:12
+#: cdedb/frontend/templates/web/ml/index.tmpl:14
+#: cdedb/frontend/templates/web/ml/management.tmpl:13
+msgid "Manage"
+msgstr "Verwalten"
+
+#: cdedb/frontend/templates/web/ml/base.tmpl:32
+#: cdedb/frontend/templates/web/ml/base.tmpl:35
+msgid "Mailinglist-Overview"
+msgstr "Mailinglisten-Übersicht"
+
+#: cdedb/frontend/templates/web/ml/base.tmpl:46
+msgid "Active Malinglists"
+msgstr "Aktive Mailinglisten"
+
+#: cdedb/frontend/templates/web/ml/base.tmpl:48
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:9
+msgid "All Mailinglists"
+msgstr "Alle Mailinglisten"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:7
+#, python-format
+msgid "%(title)s – Configuration"
+msgstr "%(title)s – Konfiguration"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:31
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:20
+msgid "Meta"
+msgstr "Meta"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:40
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:29
+msgid "Moderation &amp; Subscribers"
+msgstr "Moderation &amp; Abonnenten"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:41
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:30
+msgid "Moderation"
+msgstr "Moderation"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:43
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:32
+msgid "Audience"
+msgstr "Empfängerkreis"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:45
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
+msgid "Subscription"
+msgstr "Einschreibung"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:48
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:37
+msgid ""
+"The participants of this event will be subscribers of this mailinglist. "
+"(Opt-Out)"
+msgstr ""
+"Die Teilnehmer dieser Veranstaltung werden der Liste hinzugeüfgt. (Opt-"
+"Out)"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:49
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:38
+msgid "Event Audience"
+msgstr "Veranstaltungsempfänger"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:51
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:40
+msgid "No selection results in an orga-list."
+msgstr "Keine Auswahl entspricht einer Orgaliste."
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:54
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:43
+msgid ""
+"The participants of this assembly will be subscribers of this "
+"mailinglist. (Opt-Out)"
+msgstr "Die Teilnehmer dieser Versammlung werden der Liste hinzugefügt. (Opt-Out)"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:55
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:44
+msgid "Gateway"
+msgstr "Zugangsvererbung"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:57
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:46
+msgid "Subscribers of this list can always subscribe. (Opt-In)"
+msgstr "Die Abonnenten dieser Liste können sich immer eintragen. (Opt-In)"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:59
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:48
+msgid "Mails"
+msgstr "Mails"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:60
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:49
+msgid "Subject Prefix"
+msgstr "Präfix (Betreffzeile)"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:61
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:50
+msgid "Attachments"
+msgstr "Anhänge"
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:63
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:52
+msgid "max. message size (in kB)"
+msgstr "max. Nachrichtengröße (in kB)"
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:5
+#, python-format
+msgid "%(title)s – Consistency-Check"
+msgstr "%(title)s – Konsistenzcheck"
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:13
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:17
+#: cdedb/frontend/templates/web/ml/management.tmpl:24
+msgid "Consistency-Check"
+msgstr "Konsistenzcheck"
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:24
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:15
+msgid "Problematic Subscribers"
+msgstr "Problematische Abonnenten"
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:26
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:17
+msgid "All subscribers belong to the configured audience."
+msgstr "Alle Abonnenten gehören zur konfigurierten Zielgruppe."
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:28
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:19
+msgid "The following subscribers do not belong to the configured audience."
+msgstr "Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe."
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:37
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:72
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:28
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:57
+#: cdedb/frontend/templates/web/ml/management.tmpl:177
+msgid "Remove {given_names} {family_name} as subscriber"
+msgstr "{given_names} {family_name} als Abonnent entfernen"
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:45
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:36
+msgid "Mark {given_names} {family_name} as an exception."
+msgstr "{given_names} {family_name} als Ausnahme markieren."
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:56
+msgid "Remove all the above as subscribers."
+msgstr "Alle obigen Abonnements entfernen."
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:60
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:45
+msgid "Exceptions"
+msgstr "Ausnahmen"
+
+#: cdedb/frontend/templates/web/ml/check_states.tmpl:61
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:46
+msgid ""
+"The following subscribers do not belong to the configured audience, but "
+"were marked as exceptions."
+msgstr ""
+"Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe, "
+"wurden aber explizit markiert."
+
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:7
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:11
+#: cdedb/frontend/templates/web/ml/index.tmpl:22
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:89
+msgid "Create Mailinglist"
+msgstr "Mailingliste anlegen"
+
+#: cdedb/frontend/templates/web/ml/create_user.tmpl:8
+#: cdedb/frontend/templates/web/ml/genesis.tmpl:5
+msgid "Create Mailinglist-Account"
+msgstr "Mailinglistennutzer anlegen"
+
+msgid "Create New Mailinglist-Account"
+msgstr "Neuen Mailinglistennutzer anlegen"
+
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:7
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:10
+#: cdedb/frontend/templates/web/ml/index.tmpl:24
+msgid "Global Consistency-Check"
+msgstr "Globaler Konsistenzcheck"
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:11
+msgid "not subscribed"
+msgstr "nicht abonniert"
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:11
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:18
+msgid "subscribed"
+msgstr "abonniert"
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:29
+msgid ""
+"Here you can find the CdE's Mailinglists; notably also those linked to "
+"events and assemblies."
+msgstr ""
+"Hier findest Du die Mailinglisten des CdE; insbesondere auch zu Akademien"
+" und Versammlungen."
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:34
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:92
+msgid "General Mailinglists"
+msgstr "Allgemeine Mailinglisten"
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:45
+msgid "Event Mailinglists"
+msgstr "Veranstaltungsmailinglisten"
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:55
+msgid "Assembly Mailinglists"
+msgstr "Versammlungsmailinglisten"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:5
+msgid "Complete Mailinglist-Overview"
+msgstr "Mailinglisten Komplettübersicht"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:21
+msgid "inactive"
+msgstr "inaktiv"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:26
+msgid "Visible to Everybody"
+msgstr "Sichtbar für alle"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:28
+msgid "Visible to Assembly-Users"
+msgstr "Sichtbar für Versammlungsnutzer"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:30
+msgid "Visible to Event-Users"
+msgstr "Sichtbar für Veranstaltungsnutzer"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:32
+msgid "Visible to CdE-Users"
+msgstr "Sichtbar für CdE-Nutzer"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:34
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:36
+msgid "Visible to CdE-Members"
+msgstr "Sichtbar für CdE-Mitglieder"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:42
+msgid "mandatory"
+msgstr "obligatorisch"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:44
+msgid "Opt-Out"
+msgstr "Opt-Out"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:46
+msgid "Opt-In"
+msgstr "Opt-In"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:48
+msgid "moderated Opt-In"
+msgstr "moderiertes Opt-In"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:50
+msgid "Invitation only"
+msgstr "durch Moderator"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:56
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:61
+#, python-format
+msgid "or %(link)s (Opt-Out)"
+msgstr "oder %(link)s (Opt-Out)"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:66
+#, python-format
+msgid "or %(link)s (Opt-In)"
+msgstr "oder %(link)s (Opt-In)"
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:74
+#, python-format
+msgid "%(count)s subscriber."
+msgid_plural "%(count)s subscribers."
+msgstr[0] "%(count)s Abonnent."
+msgstr[1] "%(count)s Abonnenten."
+
+#: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:79
+#, python-format
+msgid "%(count)s moderator."
+msgid_plural "%(count)s moderators."
+msgstr[0] "%(count)s Moderator."
+msgstr[1] "%(count)s Moderatoren."
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:7
+#, python-format
+msgid "%(title)s – Manage"
+msgstr "%(title)s – Verwalten"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:17
+msgid "Manage Mailinglist"
+msgstr "Mailingliste Verwalten"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:29
+msgid ""
+"Note, that only DB-Accounts can be moderators and subscribers.\n"
+"            Any email address can be added to the whitelist though."
+msgstr ""
+"Beachte, dass als Moderatoren und Abonnenten nur DB-Accounts und keine "
+"beliebigen E-Mail-Adressen eingetragen werden können.Bei der Whitelist "
+"können hingegen beliebige E-Mail-Adressen eingetragen werden."
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:37
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:54
+msgid "Moderators"
+msgstr "Moderatoren"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:43
+msgid "ID of the new moderator"
+msgstr "ID des neuen Moderators"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:52
+msgid "Add Moderator"
+msgstr "Moderator hinzufügen"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:68
+msgid "Remove {given_names} {family_name} as moderator"
+msgstr "{given_names} {family_name} als Moderator entfernen"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:78
+msgid "Subscription Requests"
+msgstr "Abonnement-Anfragen"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:101
+msgid "Accept"
+msgstr "Genehmigen"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:108
+msgid "There are currently no Subscription Requests pending."
+msgstr "Zur Zeit liegen keine Abonnement-Anfragen vor."
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:115
+msgid "Whitelist"
+msgstr "Whitelist"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:121
+msgid "Email Address to whitelist"
+msgstr "E-Mail-Adresse zum Whitelisten"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:123
+msgid "Add Entry"
+msgstr "Eintrag hinzufügen"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:138
+msgid "Remove {} from Whitelist"
+msgstr "{} von der Whitelist entfernen."
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:143
+msgid "Subscribers"
+msgstr "Abonnenten"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:149
+msgid "ID of the new Subscriber"
+msgstr "ID des neuen Abonnenten"
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:158
+msgid "Add Subscriber"
+msgstr "Abonnent hinzufügen"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:19
+#, python-format
+msgid "Mailinglist of Event %(link)s"
+msgstr "Mailingliste zur Veranstaltung %(link)s"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:32
+#, python-format
+msgid "Mailinglist of Assembly %(link)s"
+msgstr "Mailingliste zur Versammlung %(link)s"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:46
+#, python-format
+msgid "Available for subscribers of %(link)s"
+msgstr "Zugänglich für Abonnenten von %(link)s"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:52
+msgid "Mailinglist Address"
+msgstr "Listen-Adresse"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:71
+msgid "This mailinglist is inactive."
+msgstr "Diese Mailingliste ist nicht mehr aktiv."
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:77
+msgid "You are subscribed to this mailinglist."
+msgstr "Du hast diese Mailinglsite abonniert."
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:80
+msgid "Your E-Mail address"
+msgstr "Deine Adresse"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:95
+msgid "Reset E-Mail adress"
+msgstr "Adresse zurücksetzen"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:102
+msgid "Unsubscribe"
+msgstr "Deabonnieren"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:107
+msgid "Change E-Mail address"
+msgstr "Adresse ändern"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:110
+msgid ""
+"To recieve mails from this mailinglist with a different E-Mail address,\n"
+"                                enter the new address in this form. You "
+"will recieve a confirmation mail."
+msgstr ""
+"Um Mails dieser Mailingliste an eine andere E-Mail-Adresse zu erhalten, "
+"trage die neue Adresse ins folgende Formular ein. Nach dem Absenden "
+"erhältst Du eine E-Mail an diese Adresse, mit der Du Deinen Besitz der "
+"Adresse bestätigen kannst. "
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:118
+msgid "New Subsciption Address"
+msgstr "Neue Abonnement-Adresse"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:122
+msgid "New E-Mail address"
+msgstr "Neue E-Mail-Adresse"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:124
+msgid "Change E-Mail"
+msgstr "Adresse ändern"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:133
+msgid "corresponding site"
+msgstr "entsprechende Seite"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:132
+#, python-format
+msgid ""
+"This mailinglist is mandatory. Therefor you are always subscribed to this"
+" list\n"
+"                                with your primary email address. To "
+"change this address go to the\n"
+"                                %(link)s in your Account-Settings."
+msgstr ""
+"Diese Mailingliste ist obligatorisch. Daher bist Du stets mit deiner "
+"primären E-Mail-Adresse eingeschrieben. Um diese zu ändern, besuche die "
+"%(link)s in Deinen Account-Einstellungen."
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:144
+msgid "Your subscription request is currently pending review by a moderator."
+msgstr ""
+"Deine Anfrage für diese Mailinglsite wartet auf Bestätigung durch einen "
+"Moderator."
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:156
+msgid "You are not currently subscribed to this mailinglist."
+msgstr "Du bist zurzeit kein Abonnent dieser Mailingliste."
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:162
+msgid "Subscribe"
+msgstr "Abonnieren"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:168
+msgid ""
+"You cannot subscribe to this mailinglist, because you are not\n"
+"                                part of the configured audience."
+msgstr ""
+"Du kannst diese Mailinglsite nicht abonnieren, da Du nicht Teil ihres "
+"Empfängerkreises bist."
+
+#: cdedb/frontend/templates/web/ml/user_search.tmpl:15
+msgid "This search will only show pure Mailinglist-Users."
+msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
+
+#: cdedb/frontend/templates/web/ml/view_log.tmpl:5
+msgid "Mailinglists Log"
+msgstr "Mailinglisten Log"
+
+#: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:5
+#, python-format
+msgid "%(title)s – Log"
+msgstr "%(title)s – Log"
+
+msgid "Mailinglist-User Management"
+msgstr "Mailinglisten-Nutzerverwaltung"
