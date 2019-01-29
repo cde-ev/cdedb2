@@ -102,7 +102,7 @@
         </dl>
 
 
-        {% if data['id'] == user.persona_id or is_relative_admin %}
+
             <h4 class="heading-underline">{% trans -%}Account &amp; Membership{%- endtrans %}</h4>
             <dl class="dl-horizontal">
                 <dt>{% trans -%}CdEDB-ID{%- endtrans %}</dt>
@@ -113,7 +113,7 @@
                                               titles=[gettext("No"), gettext("Yes")]) }}</dd>
                 {% endif %}
             </dl>
-
+        {% if data['id'] == user.persona_id or is_relative_admin %}
             <dl class="dl-horizontal">
                 <dt>{% trans -%}Realms{%- endtrans %}</dt>
                 <dd>
