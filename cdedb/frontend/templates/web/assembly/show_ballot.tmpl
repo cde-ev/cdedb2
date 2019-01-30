@@ -156,8 +156,8 @@
                         The following Candidates have less votes than the {{ against_all }} choice.
                     {%- endtrans %}
                 {% else %}
-                    {% trans assembly_bar_moniker="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                        The following Candidates lost against the bar ({{ assembly_bar_moniker }}).
+                    {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER) -%}
+                        The following Candidates lost against the bar ({{ abm }}).
                     {%- endtrans %}
                 {% endif %}
             <ol>
@@ -411,7 +411,7 @@
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
-                                    {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER|e) %}
+                                    {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER|e) -%}
                                         Additionally You need to use the Rejection Bar {{ abm }} in Your preferencelist.
                                         Use it in Your preferencelist like You would a Candidate. Put all
                                         Candidates You deem suitable higher than {{ abm }} and all

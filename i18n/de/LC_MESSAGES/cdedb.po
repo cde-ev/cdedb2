@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-01-29 18:01+0100\n"
+"POT-Creation-Date: 2019-01-30 01:32+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -796,7 +796,6 @@ msgstr "Abbrechen"
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:69
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:25
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:64
-#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:53
 #: cdedb/i18n_additional.py:208
 msgid "Save"
 msgstr "Speichern"
@@ -875,7 +874,7 @@ msgstr "Muss eine Ganzzahl sein."
 
 #: cdedb/validation.py:252
 msgid "Must not be negative."
-msgstr ""
+msgstr "Darf nicht negativ sein."
 
 #: cdedb/validation.py:269
 msgid "Must be positive."
@@ -1112,11 +1111,11 @@ msgstr "Nicht erlaubetes Zeichen ({char})."
 
 #: cdedb/validation.py:1698
 msgid "Must be before or equal to hard limit."
-msgstr ""
+msgstr "Muss vor dem tatsächlichen Anmeldeschluss liegen."
 
 #: cdedb/validation.py:1705
 msgid "Must be before hard and soft limit."
-msgstr ""
+msgstr "Muss vor dem offiziellen und dem tatsächlichen Anmeldeschluss liegen."
 
 #: cdedb/validation.py:1919
 msgid "Duplicate value."
@@ -1164,7 +1163,7 @@ msgstr "Veranstaltungsverknüpfung benötigt Veranstaltungsnutzer."
 msgid "Mustn't be in the past."
 msgstr "Darf nicht in der Vergangenheit liegen."
 
-#: cdedb/validation.py:2629
+#: cdedb/frontend/assembly.py:670 cdedb/validation.py:2629
 msgid "Mustn't be the bar moniker."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
@@ -1707,7 +1706,7 @@ msgstr "Kurse sind nur in Veranstaltungen mit Kursschienen möglich."
 
 #: cdedb/backend/event.py:1047
 msgid "Referential integrity violated."
-msgstr ""
+msgstr "Verweis-Integrität verletzt."
 
 #: cdedb/backend/event.py:1179
 msgid "Only registrations from exactly one event allowed!"
@@ -1849,7 +1848,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:126 cdedb/frontend/cde.py:237
 #: cdedb/frontend/core.py:785 cdedb/frontend/core.py:838
-#: cdedb/frontend/event.py:177 cdedb/frontend/event.py:3408
+#: cdedb/frontend/event.py:177 cdedb/frontend/event.py:3416
 #: cdedb/frontend/ml.py:125
 msgid "result.csv"
 msgstr "Ergebnis.csv"
@@ -1857,7 +1856,7 @@ msgstr "Ergebnis.csv"
 #: cdedb/frontend/assembly.py:131 cdedb/frontend/assembly.py:658
 #: cdedb/frontend/cde.py:243 cdedb/frontend/core.py:791
 #: cdedb/frontend/core.py:844 cdedb/frontend/event.py:183
-#: cdedb/frontend/event.py:3414 cdedb/frontend/ml.py:130
+#: cdedb/frontend/event.py:3422 cdedb/frontend/ml.py:130
 msgid "result.json"
 msgstr "Ergebnis.json"
 
@@ -1876,8 +1875,8 @@ msgstr "Bereits angemeldet."
 #: cdedb/frontend/assembly.py:298 cdedb/frontend/assembly.py:589
 #: cdedb/frontend/cde.py:1875 cdedb/frontend/core.py:1528
 #: cdedb/frontend/core.py:1555 cdedb/frontend/event.py:746
-#: cdedb/frontend/event.py:2491 cdedb/frontend/event.py:2858
-#: cdedb/frontend/event.py:3618
+#: cdedb/frontend/event.py:2499 cdedb/frontend/event.py:2866
+#: cdedb/frontend/event.py:3626
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
@@ -2090,7 +2089,7 @@ msgstr "Guthaben zu niedrig."
 
 #: cdedb/frontend/cde.py:1439
 msgid "End trial membership."
-msgstr ""
+msgstr "Probemitgliedschaft beenden."
 
 #: cdedb/frontend/cde.py:1453
 msgid "Started updating balance."
@@ -2110,7 +2109,7 @@ msgstr "Adressabfrage bereits erledigt."
 
 #: cdedb/frontend/cde.py:1514
 msgid "Address check mail for exPuls"
-msgstr ""
+msgstr "Adressabfrage für exPuls"
 
 #: cdedb/frontend/cde.py:1534
 msgid "Not sending mail."
@@ -2165,11 +2164,11 @@ msgstr "E-Mail als {path} auf der Festplatte gespeichert."
 
 #: cdedb/frontend/common.py:1061
 msgid "{}.tex"
-msgstr ""
+msgstr "{}.tex"
 
 #: cdedb/frontend/common.py:1066
 msgid "{}.pdf"
-msgstr ""
+msgstr "{}.pdf"
 
 #: cdedb/frontend/common.py:1281
 msgid "You must login."
@@ -2345,9 +2344,9 @@ msgstr "Elternbrief.pdf"
 msgid "Minor form updated."
 msgstr "Minderjähringenformular aktualisiert."
 
-#: cdedb/frontend/event.py:288 cdedb/frontend/event.py:2474
+#: cdedb/frontend/event.py:288 cdedb/frontend/event.py:2482
 msgid "Rate-limit reached."
-msgstr ""
+msgstr "Limit erreicht."
 
 #: cdedb/frontend/event.py:366 cdedb/frontend/event.py:432
 msgid "Registrations exist, no deletion."
@@ -2359,7 +2358,7 @@ msgstr "Anmeldungen vorhanden, kein Erstellen möglich."
 
 #: cdedb/frontend/event.py:750
 msgid "Course in use cannot be deleted."
-msgstr ""
+msgstr "Kurse mit Kurswahlen oder Teilnehmern können nicht gelöscht werden."
 
 #: cdedb/frontend/event.py:1160
 msgid "No choice available."
@@ -2403,21 +2402,21 @@ msgstr "ExPuls.tex"
 
 #: cdedb/frontend/event.py:1607
 msgid "courses.csv"
-msgstr ""
+msgstr "courses.csv"
 
 #: cdedb/frontend/event.py:1632
 msgid "lodgements.csv"
-msgstr ""
+msgstr "lodgements.csv"
 
 #: cdedb/frontend/event.py:1763
 msgid "registrations.csv"
-msgstr ""
+msgstr "registrations.csv"
 
 #: cdedb/frontend/event.py:1773
 msgid "export_event.json"
 msgstr "Veranstaltungsexport.json"
 
-#: cdedb/frontend/event.py:1782 cdedb/frontend/event.py:2467
+#: cdedb/frontend/event.py:1782 cdedb/frontend/event.py:2475
 msgid "Allready registered."
 msgstr "Bereits angemeldet."
 
@@ -2439,7 +2438,7 @@ msgstr "Minderjährige können sich nicht anmelden."
 msgid "Must select at least one part."
 msgstr "Mindestens ein Teil muss ausgewählt werden."
 
-#: cdedb/frontend/event.py:1866
+#: cdedb/frontend/event.py:1866 cdedb/frontend/event.py:2394
 msgid "Must choose different courses."
 msgstr "Bitte verschiedene Kurse wählen."
 
@@ -2473,163 +2472,163 @@ msgstr "Keine Änderungen mehr möglich."
 msgid "Questionnaire disabled."
 msgstr "Fragebogen nicht aktiviert."
 
-#: cdedb/frontend/event.py:2463
+#: cdedb/frontend/event.py:2471
 msgid "Invalid persona."
 msgstr "Ungültiger Account."
 
-#: cdedb/frontend/event.py:2511
+#: cdedb/frontend/event.py:2519
 msgid "No participants found to edit."
 msgstr "Keine Teilnehmer zur Bearbeitung ausgewählt."
 
-#: cdedb/frontend/event.py:2684
+#: cdedb/frontend/event.py:2692
 msgid "Mixed lodgement with non-mixing participants."
 msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmern."
 
-#: cdedb/frontend/event.py:2698
+#: cdedb/frontend/event.py:2706
 msgid "Too many reserve lodgers used."
 msgstr "Zu viele Isomattenplätze belegt."
 
-#: cdedb/frontend/event.py:2711
+#: cdedb/frontend/event.py:2719
 msgid "Overful lodgement."
 msgstr "Überfüllte Unterkunft"
 
-#: cdedb/frontend/event.py:2714
+#: cdedb/frontend/event.py:2722
 msgid "Too few reserve lodgers used."
 msgstr "Zu wenige Isomattenplätze belegt."
 
-#: cdedb/frontend/event.py:2725
+#: cdedb/frontend/event.py:2733
 msgid "Non-Binary Participant."
-msgstr ""
+msgstr "nicht-binärer Teilnehmer"
 
-#: cdedb/frontend/event.py:3256
+#: cdedb/frontend/event.py:3264
 msgid "{title}: course "
 msgstr "{title}: Kurs"
 
-#: cdedb/frontend/event.py:3259
+#: cdedb/frontend/event.py:3267
 msgid "{title}: course instructor"
 msgstr "{title}: Kursleiter"
 
-#: cdedb/frontend/event.py:3263
+#: cdedb/frontend/event.py:3271
 msgid "{title}: instructs their course"
 msgstr "{title}: Hält seinen/ihren Kurs"
 
-#: cdedb/frontend/event.py:3269
+#: cdedb/frontend/event.py:3277
 msgid "{title} course: {field}"
 msgstr "{title} Kurs: {field}"
 
-#: cdedb/frontend/event.py:3277
+#: cdedb/frontend/event.py:3285
 msgid "any track: course"
 msgstr "Bel. Schiene: Kurs"
 
-#: cdedb/frontend/event.py:3280
+#: cdedb/frontend/event.py:3288
 msgid "any track: course instuctor"
 msgstr "Bel. Schiene: Kursleiter"
 
-#: cdedb/frontend/event.py:3283
+#: cdedb/frontend/event.py:3291
 msgid "any track: instructs their course"
 msgstr "Bel. Schiene: Hält seinen/ihren Kurs"
 
-#: cdedb/frontend/event.py:3289
+#: cdedb/frontend/event.py:3297
 msgid "any track course: {field}"
 msgstr "Bel. Schiene Kurs: {field}"
 
-#: cdedb/frontend/event.py:3296
+#: cdedb/frontend/event.py:3304
 msgid "course"
 msgstr "Kurs"
 
-#: cdedb/frontend/event.py:3298
+#: cdedb/frontend/event.py:3306
 msgid "course instructor"
 msgstr "Kursleiter"
 
-#: cdedb/frontend/event.py:3300
+#: cdedb/frontend/event.py:3308
 msgid "instructs their course"
 msgstr "Hält seinen/ihren Kurs"
 
-#: cdedb/frontend/event.py:3304
+#: cdedb/frontend/event.py:3312
 msgid "course: {field}"
 msgstr "Kurs: {field}"
 
-#: cdedb/frontend/event.py:3310
+#: cdedb/frontend/event.py:3318
 msgid "{title}: registration status"
 msgstr "{title}: Status"
 
-#: cdedb/frontend/event.py:3313
+#: cdedb/frontend/event.py:3321
 msgid "{title}: lodgement"
 msgstr "{title}: Unterkunft"
 
-#: cdedb/frontend/event.py:3315
+#: cdedb/frontend/event.py:3323
 msgid "{title}: reserve lodger"
 msgstr "{title}: Isomattenplatz"
 
-#: cdedb/frontend/event.py:3320
+#: cdedb/frontend/event.py:3328
 msgid "{title} lodgement: {field}"
 msgstr "{title} Unterkunft: {field}"
 
-#: cdedb/frontend/event.py:3327
+#: cdedb/frontend/event.py:3335
 msgid "any part: registration status"
 msgstr "Bel. Teil: Status"
 
-#: cdedb/frontend/event.py:3330
+#: cdedb/frontend/event.py:3338
 msgid "any part: lodgement"
 msgstr "Bel. Teil: Unterkunft"
 
-#: cdedb/frontend/event.py:3333
+#: cdedb/frontend/event.py:3341
 msgid "any part: reserve lodger"
 msgstr "Bel. Teil: Isomattenplatz"
 
-#: cdedb/frontend/event.py:3338
+#: cdedb/frontend/event.py:3346
 msgid "any part lodgement: {field}"
 msgstr "Bel. Teil Unterkunft: {field}"
 
-#: cdedb/frontend/event.py:3347
+#: cdedb/frontend/event.py:3355
 msgid "registration status"
 msgstr "Status"
 
-#: cdedb/frontend/event.py:3349
+#: cdedb/frontend/event.py:3357
 msgid "lodgement"
 msgstr "Unterkunft"
 
-#: cdedb/frontend/event.py:3351
+#: cdedb/frontend/event.py:3359
 msgid "reserve lodger"
 msgstr "Isomattenplatz"
 
-#: cdedb/frontend/event.py:3355
+#: cdedb/frontend/event.py:3363
 msgid "lodgement: {field}"
 msgstr "Unterkunft: {field}"
 
-#: cdedb/frontend/event.py:3459 cdedb/frontend/event.py:3489
-#: cdedb/frontend/event.py:3506 cdedb/frontend/event.py:3539
+#: cdedb/frontend/event.py:3467 cdedb/frontend/event.py:3497
+#: cdedb/frontend/event.py:3514 cdedb/frontend/event.py:3547
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/frontend/event.py:3461
+#: cdedb/frontend/event.py:3469
 msgid "Allready checked in."
 msgstr "Bereits eingecheckt."
 
-#: cdedb/frontend/event.py:3493 cdedb/frontend/event.py:3509
-#: cdedb/frontend/event.py:3542
+#: cdedb/frontend/event.py:3501 cdedb/frontend/event.py:3517
+#: cdedb/frontend/event.py:3550
 msgid "Wrong associated field."
 msgstr "Feld einer anderen Veranstaltung angegeben."
 
-#: cdedb/frontend/event.py:3591
+#: cdedb/frontend/event.py:3599
 msgid "Data from wrong event."
 msgstr "Daten passen nicht zur Veranstaltung."
 
-#: cdedb/frontend/event.py:3598
+#: cdedb/frontend/event.py:3606
 msgid "There exist unmigrated personas."
 msgstr "Unmigrierte Accounts gefunden."
 
-#: cdedb/frontend/event.py:3615
+#: cdedb/frontend/event.py:3623
 msgid "Event already archived."
 msgstr "Veranstaltung bereits archiviert."
 
-#: cdedb/frontend/event.py:3625
+#: cdedb/frontend/event.py:3633
 msgid "Event archived."
 msgstr "Veranstaltung archiviert."
 
-#: cdedb/frontend/event.py:3630
+#: cdedb/frontend/event.py:3638
 msgid "Created multiple past events."
-msgstr ""
+msgstr "Mehrere vergangene Veranstaltungen erstellt."
 
 #: cdedb/frontend/ml.py:438
 msgid "Subscription request awaits moderation."
@@ -2661,7 +2660,7 @@ msgstr "Account erstellt."
 
 #: cdedb/frontend/templates/web/base.tmpl:30
 msgid "View E-Mail in Browser"
-msgstr ""
+msgstr "E-Mail im Browser anzeigen"
 
 #: cdedb/frontend/templates/web/base.tmpl:76
 msgid "This site provides additional functionality with JavaScript enabled."
@@ -2776,7 +2775,7 @@ msgstr "Das sollte nicht sichtbar sein."
 
 #: cdedb/frontend/templates/web/base.tmpl:200
 msgid "Club der Ehemaligen e.V."
-msgstr ""
+msgstr "Club der Ehemaligen e.V."
 
 #: cdedb/frontend/templates/web/base.tmpl:200
 #: cdedb/frontend/templates/web/base.tmpl:201
@@ -2801,11 +2800,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/error.tmpl:11
 msgid "Couldn't find the requested page"
-msgstr ""
+msgstr "Konnte die angeforderte Seite nicht finden"
 
 #: cdedb/frontend/templates/web/error.tmpl:13
 msgid "This HTTP method is not allowed for this URL."
-msgstr ""
+msgstr "Diese Anfrage-Methode ist nicht erlaubt für diese Seite."
 
 #: cdedb/frontend/templates/web/error.tmpl:15
 msgid "An internal error occured:"
@@ -2855,6 +2854,9 @@ msgid ""
 "page or go to the\n"
 "                %(frontpage_link)s of the CdE-Datenbank."
 msgstr ""
+"Verwende die Navigations-Schaltflächen deines Browsers um zurück zur "
+"vorherigen Seite zu gelangen oder öffne die %(frontpage_link)s der CdE-"
+"Datenbank."
 
 #: cdedb/frontend/templates/web/error.tmpl:56
 msgid "First try reloading this page."
@@ -4021,6 +4023,7 @@ msgstr "Achtung: Die Versammlung ist sofort für alle CdE-Mitglieder sichtbar."
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:31
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:45
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:84
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:53
 msgid "Create"
 msgstr "Anlegen"
 
@@ -4349,11 +4352,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:159
 #, python-format
-msgid ""
-"\n"
-"                        The following Candidates lost against the bar "
-"(%(assembly_bar_moniker)s)."
-msgstr "Die folgenden Kandidaten haben gegen die Ablehnungsgrenze verloren."
+msgid "The following Candidates lost against the bar (%(abm)s)."
+msgstr ""
+"Die folgenden Kandidaten haben gegen die Ablehnungsgrenze (%(abm)s) "
+"verloren."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:188
 msgid "Summary"
@@ -4550,9 +4552,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:414
 #, python-format
 msgid ""
-"\n"
-"                                        Additionally You need to use the "
-"Rejection Bar %(abm)s in Your preferencelist.\n"
+"Additionally You need to use the Rejection Bar %(abm)s in Your "
+"preferencelist.\n"
 "                                        Use it in Your preferencelist "
 "like You would a Candidate. Put all\n"
 "                                        Candidates You deem suitable "
@@ -4767,7 +4768,6 @@ msgid "Deletes the Ballot and all associated Settings and Candidates."
 msgstr "Löscht die Abstimmung und alle dazugehörigen Einstellungen und Kandidaten."
 
 #: cdedb/frontend/templates/web/assembly/user_search.tmpl:7
-#: cdedb/frontend/templates/web/ml/user_search.tmpl:8
 msgid "Assembly-User Management"
 msgstr "Versammlungs-Nutzerverwaltung"
 
@@ -5183,7 +5183,8 @@ msgid ""
 "annually. %(link)s"
 msgstr ""
 "Mit der Initiative 25+ unterstützt Du den CdE und die %(idea)s finanziell"
-" durch einen Lastschrifteinzug von jährlich %(amount)s oder mehr."
+" durch einen Lastschrifteinzug von jährlich %(amount)s oder mehr. "
+"%(link)s"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:50
 #: cdedb/frontend/templates/web/cde/index.tmpl:68
@@ -5530,6 +5531,8 @@ msgid ""
 "German.\n"
 "        Direct Debit is only possilbe from German Accounts."
 msgstr ""
+"Leider gibt es das Einzugsermächtigungsformular nur auf Deutsch. "
+"Lastschrifteinzug ist nur von deutschen Konten möglich."
 
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:23
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:40
@@ -5591,7 +5594,7 @@ msgstr[1] "%(count)s Mitglieder gefunden"
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:43
 msgid "Family/Birth Name"
-msgstr ""
+msgstr "Nachname/Geburtsname"
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:57
 msgid "Course choices will be displayed after first search."
@@ -6910,30 +6913,30 @@ msgid "Consistency-Check"
 msgstr "Konsistenzcheck"
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:24
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:15
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:19
 msgid "Problematic Subscribers"
 msgstr "Problematische Abonnenten"
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:26
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:17
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:21
 msgid "All subscribers belong to the configured audience."
 msgstr "Alle Abonnenten gehören zur konfigurierten Zielgruppe."
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:28
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:19
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:23
 msgid "The following subscribers do not belong to the configured audience."
 msgstr "Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe."
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:37
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:72
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:28
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:57
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:32
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:61
 #: cdedb/frontend/templates/web/ml/management.tmpl:177
 msgid "Remove {given_names} {family_name} as subscriber"
 msgstr "{given_names} {family_name} als Abonnent entfernen"
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:45
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:36
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:40
 msgid "Mark {given_names} {family_name} as an exception."
 msgstr "{given_names} {family_name} als Ausnahme markieren."
 
@@ -6942,12 +6945,12 @@ msgid "Remove all the above as subscribers."
 msgstr "Alle obigen Abonnements entfernen."
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:60
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:45
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:49
 msgid "Exceptions"
 msgstr "Ausnahmen"
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:61
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:46
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:50
 msgid ""
 "The following subscribers do not belong to the configured audience, but "
 "were marked as exceptions."
@@ -6963,15 +6966,16 @@ msgid "Create Mailinglist"
 msgstr "Mailingliste anlegen"
 
 #: cdedb/frontend/templates/web/ml/create_user.tmpl:8
+msgid "Create New Mailinglist-Account"
+msgstr "Neuen Mailinglistennutzer anlegen"
+
 #: cdedb/frontend/templates/web/ml/genesis.tmpl:5
 msgid "Create Mailinglist-Account"
 msgstr "Mailinglistennutzer anlegen"
 
-msgid "Create New Mailinglist-Account"
-msgstr "Neuen Mailinglistennutzer anlegen"
-
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:7
-#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:10
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:5
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:11
+#: cdedb/frontend/templates/web/ml/global_check_states.tmpl:14
 #: cdedb/frontend/templates/web/ml/index.tmpl:24
 msgid "Global Consistency-Check"
 msgstr "Globaler Konsistenzcheck"
@@ -7260,6 +7264,10 @@ msgstr ""
 "Du kannst diese Mailinglsite nicht abonnieren, da Du nicht Teil ihres "
 "Empfängerkreises bist."
 
+#: cdedb/frontend/templates/web/ml/user_search.tmpl:8
+msgid "Mailinglist-User Management"
+msgstr "Mailinglisten-Nutzerverwaltung"
+
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:15
 msgid "This search will only show pure Mailinglist-Users."
 msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
@@ -7273,5 +7281,3 @@ msgstr "Mailinglisten Log"
 msgid "%(title)s – Log"
 msgstr "%(title)s – Log"
 
-msgid "Mailinglist-User Management"
-msgstr "Mailinglisten-Nutzerverwaltung"
