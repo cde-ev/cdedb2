@@ -2383,11 +2383,10 @@ class EventFrontend(AbstractUserFrontend):
                 continue
             extractor = lambda i: raw_tracks["track{}.course_choice_{}".format(
                 track_id, i)]
-            choices_set = {extractor(i) for i in range(track['num_choices'])
-                           if extractor(i)}
             choices_tuple = tuple(
                 extractor(i)
                 for i in range(track['num_choices']) if extractor(i))
+            choices_set = set(choices_tuple)
             if len(choices_set) != len(choices_tuple):
                 rs.errors.extend(
                     ("track{}.course_choice_{}".format(track_id, i),
