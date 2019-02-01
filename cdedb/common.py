@@ -329,13 +329,20 @@ def merge_dicts(*dicts):
     we create a new return dict we would have to add extra logic to
     cater for this.
 
+    Additionally if the target is a MultiDict we use the correct method for
+    setting list-type values.
+
     :type dicts: [{object: object}]
     """
     assert(len(dicts) > 0)
     for adict in dicts[1:]:
         for key in adict:
             if key not in dicts[0]:
-                dicts[0][key] = adict[key]
+                if (isinstance(adict[key], collections.abc.Sequence)
+                        and isinstance(dicts[0], werkzeug.MultiDict)):
+                    dicts[0].setlist(key, adict[key])
+                else:
+                    dicts[0][key] = adict[key]
 
 def now():
     """Return an up to date timestamp.

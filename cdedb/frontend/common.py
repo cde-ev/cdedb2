@@ -32,7 +32,6 @@ import subprocess
 import tempfile
 import threading
 import urllib.parse
-from builtins import type
 
 import babel.dates
 import docutils.core
@@ -387,10 +386,7 @@ def stringIn_filter(val, alist):
     :type alist: [object]
     :rtype: bool
     """
-    return any(str(val) in x
-        for x in ((str(x) for x in y)
-                  if isinstance(y, collections.Iterable) and not isinstance(y, str) else
-                  (str(x) for x in [y]) for y in alist))
+    return str(val) in (str(x) for x in alist)
 
 def querytoparams_filter(val):
     """Custom jinja filter to convert query into a parameter dict
