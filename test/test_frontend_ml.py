@@ -189,6 +189,18 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
         self.assertNonPresence("Munkelwand")
+        
+    @as_users("anton")
+    def test_change_mailinglist_registration_stati(self, user):
+        self.get("/ml/mailinglist/9/change")
+        self.assertTitle("Teilnehmer-Liste – Konfiguration")
+        f = self.response.forms['changelistform']
+        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
+        self.assertEqual({"2", "4", None}, tmp)
+        f['registration_stati'] = [3, 5]
+        self.submit(f)
+        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
+        self.assertEqual({"3", "5", None}, tmp)
 
     def test_subscription_request(self):
         self.login(USER_DICT['inga'])
