@@ -529,16 +529,16 @@ class Transaction:
                         p = "Invalid checkdigit: {}".format(db_id)
                         self.problems.append(p)
         
-        elif self.type in {TransactionType.EventFee}:
-            result = re.search(STATEMENT_REFERENCE_EXTERNAL,
-                               self.reference, flags=re.IGNORECASE)
-            if result:
-                # Reference matches External Event Fee
-                confidence = confidence.decrease()
-                members.append((Member("Extern",
-                                       "Extern",
-                                       "DB-EXTERN"),
-                                confidence))
+            elif self.type in {TransactionType.EventFee}:
+                result = re.search(STATEMENT_REFERENCE_EXTERNAL,
+                                   self.reference, flags=re.IGNORECASE)
+                if result:
+                    # Reference matches External Event Fee
+                    confidence = confidence.decrease()
+                    members.append((Member("Extern",
+                                           "Extern",
+                                           "DB-EXTERN"),
+                                    confidence))
         
         if members:
             # Save all matched members

@@ -39,6 +39,17 @@
     <br>
     <br>
     {% if CDEDB_DEV %}
+        {% if data %}
+            {% for key, value in data|dictsort %}
+                {% if key != "files" %}
+                    {% trans count=value|length, key=key|e -%}
+                        {{ count }} Transactions found for {{ key }}.
+                    {%- endtrans %}
+                    <br>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        <br>
         {% if problems %}
             {% trans -%}Problems:{%- endtrans %}<br>
             {% for problem in problems %}
@@ -48,12 +59,6 @@
         <br>
         {% if data %}
             {% for key, value in data|dictsort %}
-                {% if key != "files" %}
-                    {% trans count=value|length, key=key|e -%}
-                        {{ count }} Transactions found for {{ key }}.
-                    {%- endtrans %}
-                    <br>
-                {% endif %}
                 {% if key == "transactions" %}
                     <br>
                     {% for t in value %}
