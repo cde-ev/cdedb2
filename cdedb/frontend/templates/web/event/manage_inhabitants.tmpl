@@ -3,21 +3,25 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('manage_participants') }}{% endblock %}
 {% set jshint='strong' %}
+{% block title %}
+    {% trans lodgement=ambience['lodgement']['moniker']|e, title=ambience['event']['title']|e -%}
+    	Manage Inhabitants of Lodgement {{ lodgement }} ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft") }}
+    {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker'], icon='home') }}
-    {{ util.breadcrumb_link(cdedblink("event/manage_inhabitants"), "Belegung ändern", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/manage_inhabitants"), gettext("Manage Inhabitants"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Bewohner von {{ ambience['lodgement']['moniker']|e }}
+        {% trans lodgement=ambience['lodgement']['moniker']|e-%}
+        	Inhabitants of {{ lodgement }}
+        {%- endtrans %}
         <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title']|e }}</small>
     </h1>
-{% endblock %}
-{% block title %}
-Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/manage_inhabitants')|e }}" method="POST" id="manageinhabitantsform">
@@ -25,7 +29,7 @@ Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ a
             {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(part['title'] if ambience['event']['parts']|length > 1
-                                                                      else "Eingeteilte Bewohner"),
+                                                                      else gettext("Assigned Inhabitants")),
                                                  aclass="panel-info") %}
                         <table class="table table-condensed">
                             <tbody>
@@ -36,25 +40,25 @@ Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ a
                                         {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
                                     </td>
                                     <td>
-                                        &ensp;{{ util.input_checkbox('reserve_'+part_id|e+'_'+registration_id|e, "Isom.") }}
+                                        &ensp;{{ util.input_checkbox('reserve_'+part_id|e+'_'+registration_id|e, gettext("Reserve")) }}
                                     </td>
                                     <td>
-                                        &ensp;{{ util.input_checkbox('delete_'+part_id|e+'_'+registration_id|e, "Entf.",
+                                        &ensp;{{ util.input_checkbox('delete_'+part_id|e+'_'+registration_id|e, gettext("Remove"),
                                                                 aclass="del-box") }}
                                     </td>
                                 </tr>
                             {% else %}
-                                <tr class="text-muted"><td>Zur Zeit keine Bewohner eingeteilt</td></tr>
+                                <tr class="text-muted"><td>{% trans -%}The are currently no inhabitants assigned.{%- endtrans %}</td></tr>
                             {% endfor %}
                             </tbody>
                         </table>
 
                         <label for="input_new_{{ part_id|e }}">
-                            {{ util.make_icon('plus') }} Bewohner hinzufügen
+                            {{ util.make_icon('plus') }} {% trans -%}Add Inhabitant{%- endtrans %}
                         </label>
                         <select multiple="multiple" id="input_new_{{ part_id|e }}" class="form-control"
                                 name="new_{{ part_id|e }}">
-                            <option value="">— keine —</option>
+                            <option value="">{% trans -%}– none –{%- endtrans %}</option>
                             {% for registration_id in without_lodgement[part_id] %}
                                 <option id="{{ registration_id|e }}_{{ part_id|e }}" value="{{ registration_id|e }}">
                                     {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
@@ -69,12 +73,12 @@ Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ a
                 var lodgement_names = {{ lodgement_names|json }};
                 {% for part_id in ambience['event']['parts'] %}
                     $('#input_new_{{ part_id }}').cdedbSearchParticipant(
-                        {{ selectize_data[part_id]|json }}, lodgement_names, "aktuell: ");
+                        {{ selectize_data[part_id]|json }}, lodgement_names, "{{ gettext("currently") }}: ");
                 {% endfor %}
-                $('.del-box').cdedbRemoveParticipantButton('Teilnehmer aus Unterkunft entfernen');
+                $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Inhabitant") }}');
             </script>
         </div>
-        {{ util.input_submit(value="Speichern") }}&emsp;
-        {{ util.href(cdedblink('event/show_lodgement'), "Abbrechen", icon='remove', aclass="btn btn-default") }}
+        {{ util.input_submit(value=gettext("Save")) }}&emsp;
+        {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='remove', aclass="btn btn-default") }}
     </form>
 {% endblock %}

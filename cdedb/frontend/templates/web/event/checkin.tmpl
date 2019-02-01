@@ -3,22 +3,27 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}Checkin ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+        Checkin ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block heading %}
     <h1 class="title">
-        Checkin
+        {% trans -%}Checkin{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/checkin"), "Checkin", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/checkin"), gettext("Checkin"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% call util.bootstrap_panel("Namen suchen", icon='search', aclass='panel-primary panel-condensed softhide',
+    {% call util.bootstrap_panel(gettext("Search Name"), icon='search', aclass='panel-primary panel-condensed softhide',
                                  anid='searchpanel') %}
-        <input type="text" id="selector" class="form-control" value="" aria-label="Name zum Filtern" />
+        <input type="text" id="selector" class="form-control" value=""
+               aria-label="{% trans -%}Name to Search{%- endtrans %}" />
     {% endcall %}
     <div class="list-group list-group-hover">
         {% for registration_id, registration in registrations|dictsort %}
@@ -36,19 +41,19 @@
                                 {{ part['title']|e }}
                                 {% if registration['parts'][part_id]['status']
                                         == enums['RegistrationPartStati'].guest.value %}
-                                    (Gast)
+                                    ({{ gettext(enums['RegistrationPartStati'].guest) }})
                                 {% endif %}
                                 {% if not loop.last %} • {% endif %}
                             {% endfor %}
                         </span>
                     {% elif (registration['parts']|dictsort)[0]['status']
                             == enums['RegistrationPartStati'].guest.value %}
-                        (Gast)
+                        ({{ gettext(enums['RegistrationPartStati'].guest) }})
                     {% endif %}
                 </div>
                 <div class="col-sm-4 hide-xs">
                     <small class="text-info">
-                        Unterkunft:
+                        {% trans -%}Lodgement{%- endtrans %}:
                         {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin')
                                if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
                             {% if registration['parts'][part_id]['lodgement_id'] %}
@@ -64,10 +69,10 @@
                     <form action="{{ cdedblink('event/checkin')|e }}" method="POST" id="checkinform{{ registration_id|e }}"
                           style="display: inline;" class="checkinform">
                         {{ util.input_hidden(name="registration_id", value=registration_id) }}
-                        {{ util.input_submit(value="Checkin", aclass="btn btn-primary btn-sm") }}
+                        {{ util.input_submit(value=gettext("Checkin"), aclass="btn btn-primary btn-sm") }}
                     </form>
                     {{ util.href(cdedblink('event/change_registration', {'registration_id': registration_id}),
-                                 "Bearbeiten", icon='pencil', aclass="btn btn-sm btn-warning") }}
+                                 gettext("Edit"), icon='pencil', aclass="btn btn-sm btn-warning") }}
                 </div>
             </div>
         {% endfor %}
@@ -86,6 +91,6 @@
                 });
             })
             .trigger('input');
-        $('.checkinform').cdedbProtectAction("Der Teilnehmer wird eingecheckt.");
+        $('.checkinform').cdedbProtectAction("{{ gettext("The Participant will be checked in.") }}");
     </script>
 {% endblock %}

@@ -5,16 +5,23 @@
     {{ util.cdedb_script('helper') }}
 {% endblock %}
 {% set jshint = 'weak' %}
-{% block title %}Kurs {{ ambience['course']['shortname']|e }} ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans course=ambience['course']['shortname']|e, title=ambience['event']['title']|e -%}
+    	Course {{ course }} ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse") }}
-    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], active=True, icon='book') }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], active=True,
+            icon='book') }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Kurs {{ ambience['course']['nr']|e }}: {{ ambience['course']['shortname']|e }}
+        {% trans nr=ambience['course']['nr']|e, course=ambience['course']['shortname']|e -%}
+            Course {{ nr }}: {{ course }}
+        {%- endtrans %}
     </h1>
     <div class="subtitle">
         {{ ambience['course']['title']|e }}
@@ -23,18 +30,18 @@
 
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink('event/change_course_form'), "Bearbeiten", readonly=is_locked,
+        {{ util.href(cdedblink('event/change_course_form'), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="pencil") }}
-        {{ util.href(cdedblink('event/manage_attendees_form'), "Kursteilnehmer verwalten", readonly=is_locked,
+        {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="user") }}
     </div>
 
     <div class="row">
         <div class="col-md-6">
             <dl class="dl-horizontal">
-                <dt>Kursleiter</dt><dd>{{ ambience['course']['instructors']|e }}</dd>
-                <dt>Maximalgröße</dt><dd>{{ ambience['course']['max_size']|e }}</dd>
-                <dt>Minimalgröße</dt><dd>{{ ambience['course']['min_size']|e }}</dd>
+                <dt>{% trans -%}Instructor{%- endtrans %}</dt><dd>{{ ambience['course']['instructors']|e }}</dd>
+                <dt>{% trans -%}Maximum Size{%- endtrans %}</dt><dd>{{ ambience['course']['max_size']|e }}</dd>
+                <dt>{% trans -%}Minimum Size{%- endtrans %}</dt><dd>{{ ambience['course']['min_size']|e }}</dd>
             </dl>
 
             <dl class="dl-horizontal">
@@ -70,7 +77,7 @@
 
         {% if ambience['course']['notes'] %}
             <div class="col-md-6">
-                {% call util.bootstrap_panel("Orga-Notizen", icon='tag',
+                {% call util.bootstrap_panel(gettext("Orga-Notes"), icon='tag',
                                              aclass='panel panel-default panel-condensed') %}
                     {{ ambience['course']['notes']|rst }}
                 {% endcall %}
@@ -78,7 +85,7 @@
         {% endif %}
     </div>
 
-    <h2>Teilnehmer</h2>
+    <h2>{% trans -%}Attendees{%- endtrans %}</h2>
     <div class="row">
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
                 if track_id in ambience['course']['segments'] %}
@@ -89,35 +96,39 @@
                         <div class="pull-right">
                             {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                             'course_id': ambience['course']['id'],
-                                                                            'position': 6,
+                                                                            'position': -5,
                                                                             'submitform': True}),
                                          num_track_attendees,
-                                         title="Kurswahlen der Teilnehmer") }}
+                                         title=gettext("Participants' Course Choices")) }}
                         </div>
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
                                 {{ track['title']|e }}
                             {% else %}
-                                Teilnehmer
+                                {% trans -%}Attendees{%- endtrans %}
                             {% endif %}
                         </h3>
                     </div>
                     <div class="panel-body">
                         {% if track_id not in ambience['course']['active_segments'] %}
                             <p class="text-danger">
-                                <strong>Kurs fällt aus.</strong>
+                                <strong>{% trans -%}Course is cancelled{%- endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['min_size'] != None and
                                 num_track_attendees < ambience['course']['min_size'] %}
                             <p class="text-warning">
-                                <strong>Kurs hat {{ (ambience['course']['min_size'] - num_track_attendees)|e }}
-                                    Teilnehmer zu wenig.</strong>
+                                <strong>
+                                    {% trans count=(ambience['course']['min_size'] - num_track_attendees)|e -%}
+                                        Course has {{ count }} attendees too few.
+                                    {%- endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['max_size'] != None and
                                 num_track_attendees > ambience['course']['max_size'] %}
                             <p class="text-warning">
-                                <strong>Kurs hat {{ (num_track_attendees - ambience['course']['max_size'])|e }}
-                                    Teilnehmer zu viel.</strong>
+                                <strong>
+                                    {% trans count=(num_track_attendees - ambience['course']['max_size'])|e -%}
+                                    	Course has {{ count }} attendees too many.
+                                    {%- endtrans %}</strong>
                             </p>
                         {% endif %}
                         <ul class="slim">
@@ -125,8 +136,10 @@
                                 <li>
                                     {{ util.href(cdedblink('event/show_registration',
                                                            {'registration_id': registration_id}),
-                                                 "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
-                                                                personas[registrations[registration_id]['persona_id']]['family_name'])) }}
+                                                 "{} {}".format(personas[registrations[registration_id]
+                                                        ['persona_id']]['given_names'],
+                                                                personas[registrations[registration_id]
+                                                        ['persona_id']]['family_name'])) }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -135,31 +148,31 @@
             </div>
         {% endfor %}
     </div>
-    {% call util.bootstrap_panel(title="Beschreibung", icon="pushpin", aclass="panel-default panel-condensed") %}
+    {% call util.bootstrap_panel(title=gettext("Description"), icon="pushpin", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|rst }}
     {% endcall %}
     {% if is_removable %}
-        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('event/delete_course')|e }}" method="POST" id="deletecourseform"
                                 style="display: inline;">
-                            {{ util.input_submit(value="Löschen", readonly=is_locked,
+                            {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
                                                  aclass="btn btn-danger", icon="folder-close") }}
-                            {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                         </form>
                     </div>
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        Entferne den Kurs.
+                        {% trans -%}Delete the Course.{%- endtrans %}
                     </p>
                 </div>
             </div>
         {% endcall %}
         <script type="text/javascript">
-            $('#deletecourseform').cdedbProtectAction("Der Kurs wird irreversibel gelöscht.");
+            $('#deletecourseform').cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}");
             $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
         </script>
     {% endif %}

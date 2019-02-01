@@ -1,18 +1,33 @@
-{% set sidenav_active='event_quest' %}
+{% set sidenav_active = 'event_quest_preview' if preview else 'event_quest' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='weak' %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}Fragebogen ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% if preview %}
+        {% trans title=ambience['event']['title']|e -%}
+            Questionnaire Preview ({{ title }})
+        {%- endtrans %}
+    {% else %}
+        {% trans title=ambience['event']['title']|e -%}
+            Questionnaire ({{ title }})
+        {%- endtrans %}
+    {% endif %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
                         readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
-{{ util.breadcrumb_link(cdedblink("event/questionnaire"), "Fragebogen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/questionnaire"),
+                        gettext("Questionnaire Preview") if preview else gettext("Questionnaire"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Teilnehmer-Fragebogen
+        {% if preview %}
+            {% trans -%}Questionnaire Preview{%- endtrans %}
+        {% else %}
+            {% trans -%}Participant Questionnaire{%- endtrans %}
+        {% endif %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
@@ -61,8 +76,10 @@
                 {% endif %}
             {% endif %}
         {% endfor %}
-        {{ util.form_input_submit(value="Abschicken", cancellink=cdedblink("event/registration_status"),
-                                  readonly=is_locked) }}
+        {% if not preview %}
+            {{ util.form_input_submit(value="Abschicken", cancellink=cdedblink("event/registration_status"),
+                                      readonly=is_locked) }}
+        {% endif %}
     </form>
     <script type="text/javascript">
         $('#questionnaireform').cdedbProtectChanges();

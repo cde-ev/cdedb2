@@ -4,17 +4,19 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
+    {% trans title=ambience['event']['title']|e -%}
+        Edit Registrations ({{ title }})
+    {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
-{{ util.breadcrumb_link(cdedblink("event/change_registrations_form"), "Bearbeiten", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+{{ util.breadcrumb_link(cdedblink("event/change_registrations_form"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Anmeldungen bearbeiten
+        {% trans -%}Edit Registrations{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
@@ -33,13 +35,31 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             </label>
         {% endif %}
         <div class="col-sm-1 text-center {% if not label %}col-sm-offset-4{% endif %}">
-            <div class="checkbox" title="{% if label %}'{{ label|e }}'{% else %}Dieses Feld{% endif %} überschreiben">
+            <div class="checkbox" title="
+                {% if label %}
+                    {% trans label=label|e -%}
+                        Overwrite '{{ label }}'
+                    {%- endtrans %}
+                {% else %}
+                    {% trans -%}
+                        Overwrite this field
+                    {%- endtrans %}
+                {% endif %}
+            ">
                 <label>
                     <input type="checkbox" name="enable_{{ name|e }}" value="True" class="enable-input"
                            {% if anid %}id="enable_{{ anid|e }}" data-input="{{ anid|e }}"{% endif %}
                            {% if values.get("enable_{}".format(name), False) %}checked="checked"{% endif %} />
                     <span class="sr-only">
-                        {% if label %}'{{ label|e }}'{% else %}Dieses Feld{% endif %} überschreiben
+                        {% if label %}
+                            {% trans label=label|e -%}
+                                Overwrite '{{ label }}'
+                            {%- endtrans %}
+                        {% else %}
+                            {% trans -%}
+                                Overwrite this field
+                            {%- endtrans %}
+                        {% endif %}
                     </span>
                 </label>
             </div>
@@ -53,38 +73,38 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
 {% endmacro %}
 
 {% block content %}
-    {{ util.output_info("Alle Felder, die mit einem Häkchen markiert sind, werden in allen Anmeldungen mit dem "
-                        "eingestellten Wert überschrieben. Felder, die schon jetzt bei allen Anmeldungen "
-                        "übereinstimmen, sind vorausgewählt.") }}
+    {{ util.output_info(gettext("All checked fields will be overwritten with the specified value in all "
+                                "registrations. Fields that are equal in all registrations are already "
+                                "selected.")) }}
 
     <form action="{{ cdedblink('event/change_registrations')|e }}" method="POST" id="changeregistrationform"
           class="form-horizontal">
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
-        <h3 class="heading-underline">Anmeldungen</h3>
-        {% call util.form_input_general(label="Name", displayerrors=False) %}
+        <h3 class="heading-underline">{% trans -%}Registrations{%- endtrans %}</h3>
+        {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}
             {% for reg_id, reg in registrations|dictsort %}
                 {{ util.input_static(value=output_name(personas[reg['persona_id']])) }}
             {% endfor %}
         {% endcall %}
 
         {% if values['enable_reg.gender'] %}
-            {{ util.form_input_static(label="Geschlecht", value=gettext(enums['Genders'](values['reg.gender'])|string)) }}
+            {{ util.form_input_static(label=gettext("Gender"), value=gettext(enums['Genders'](values['reg.gender'])|string)) }}
         {% else %}
-            {{ util.form_input_static(label="Geschlecht", value="unterschiedlich") }}
+            {{ util.form_input_static(label=gettext("Gender"), value="unterschiedlich") }}
         {% endif %}
 
-        <h3 class="heading-underline">Status</h3>
-        {% call form_input_optional('reg.payment', label="Teilnehmerbeitrag bezahlt am", anid="input_reg_payment") %}
+        <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
+        {% call form_input_optional('reg.payment', label=gettext("Fee paid"), anid="input_reg_payment") %}
             {{ util.input_text(name="reg.payment", type="date", placeholder="YYYY-MM-DD", anid="input_reg_payment") }}
         {% endcall %}
         {% call form_input_optional('reg.parental_agreement', anid="input_reg_parental_agreement") %}
             <div class="checkbox">
-                {{ util.input_checkbox(name="reg.parental_agreement", label="Einverständniserklärung der Eltern",
+                {{ util.input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent"),
                                        anid="input_reg_parental_agreement") }}
             </div>
         {% endcall %}
 
-        {% call form_input_optional('reg.checkin', label="Eingecheckt am", anid="input_reg_checkin") %}
+        {% call form_input_optional('reg.checkin', label=gettext("Checked-In"), anid="input_reg_checkin") %}
             {{ util.input_text(name="reg.checkin", type="datetime-local", placeholder="YYYY-MM-DDThh:ii",
                                anid="input_reg_checkin") }}
         {% endcall %}
@@ -93,14 +113,14 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title']|e }}</h4>
             {% endif %}
-            {% call form_input_optional("part{}.status".format(part_id), label="Status",
+            {% call form_input_optional("part{}.status".format(part_id), label=gettext("Status"),
                                         anid="part{}_status".format(part_id)) %}
                 {{ util.input_select(name="part{}.status".format(part_id),
                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
                                      anid="part{}_status".format(part_id)) }}
             {% endcall %}
 
-            {% call form_input_optional("part{}.lodgement_id".format(part_id), label="Unterkunft",
+            {% call form_input_optional("part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
                                         anid="part{}_lodgement_id".format(part_id)) %}
                 {{ util.input_select(name="part{}.lodgement_id".format(part_id),
                                      entries=lodgements|xdictsort('moniker')|dict_entries('id', 'moniker'), nulloption="",
@@ -109,7 +129,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% call form_input_optional("part{}.is_reserve".format(part_id),
                                         anid="part{}_is_reserve".format(part_id)) %}
                 <div class="checkbox">
-                    {{ util.input_checkbox(name="part{}.is_reserve".format(part_id), label="Isomattenplatz",
+                    {{ util.input_checkbox(name="part{}.is_reserve".format(part_id), label=gettext("Is Reserve"),
                                            anid="part{}_is_reserve".format(part_id)) }}
                 </div>
             {% endcall %}
@@ -118,8 +138,8 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {% call form_input_optional("track{}.course_id".format(track_id),
-                                            label="Kurs {}".format(track['title'])
-                                                  if ambience['event']['tracks']|length > 1  else "Kurs",
+                                            label=gettext("Course {}").format(track['title'])
+                                                  if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                             anid="track{}_course_id".format(track_id)) %}
                     {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
                                          nulloption="", anid="track{}_course_id".format(track_id)) }}
@@ -127,25 +147,25 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% endfor %}
         {% endfor %}
 
-        <h3 class="heading-underline">Anmeldedaten</h3>
+        <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
         {% call form_input_optional("reg.mixed_lodging", anid="input_reg_mixed_lodging") %}
             <div class="checkbox">
-                {{ util.input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung",
+                {{ util.input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging"),
                                        anid="input_reg_mixed_lodging") }}
             </div>
         {% endcall %}
         {% call form_input_optional("reg.foto_consent", anid="input_reg_foto_consent") %}
             <div class="checkbox">
                 {{ util.input_checkbox(name="reg.foto_consent", anid="input_reg_foto_consent",
-                                       label="Foto-Einwilligung") }}
+                                       label=gettext("Foto Consent")) }}
             </div>
         {% endcall %}
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% set course_entries = courses|xdictsort('nr', pad=True)
                                     |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
             {% call form_input_optional("track{}.course_instructor".format(track_id),
-                                        label="{}: Kursleiter von".format(track['title'])
-                                              if ambience['event']['tracks']|length > 1  else "Kursleiter von",
+                                        label=gettext("{}: Instructor of").format(track['title'])
+                                              if ambience['event']['tracks']|length > 1  else gettext("Instructor of"),
                                         anid="input_track{}_course_instructor".format(track_id)) %}
                 {{ util.input_select(name="track{}.course_instructor".format(track_id),
                                      entries=course_entries, nulloption="",
@@ -154,7 +174,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
         {% endfor %}
 
         {% if ambience['event']['fields']|length > 0 %}
-            <h3 class="heading-underline">Datenfelder</h3>
+            <h3 class="heading-underline">{% trans -%}Custom Fields{%- endtrans %}</h3>
             {% for field_id, field in ambience['event']['fields']|dictsort
                    if field['association'] == enums['FieldAssociations'].registration %}
                 {% call form_input_optional("fields.{}".format(field['field_name']),
@@ -165,7 +185,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% endfor %}
         {% endif %}
 
-        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/registration_query")) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/registration_query")) }}
     </form>
     <script type="text/javascript">
         /**

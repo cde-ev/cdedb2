@@ -1,12 +1,16 @@
 {% set sidenav_active='event_index' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Veranstaltungen{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Events
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events"), active=True) }}
 {% endblock %}
 {% block content %}
-    <h3>Aktuelle Veranstaltungen</h3>
+    <h3>{% trans -%}Current Events{%- endtrans %}</h3>
     {% if open_events %}
         <ul>
             {% for event_id, event in open_events|dictsort|reverse %}
@@ -19,12 +23,12 @@
         </ul>
     {% else %}
         <p class="text-muted">
-            Zur Zeit sind keine Veranstaltungen zur Anmeldung freigegeben.
+            {% trans -%}There are currently no event registrations open.{%- endtrans %}
         </p>
     {% endif %}
 
     {% if orga_events %}
-        <h3>Organisierte Veranstaltungen</h3>
+        <h3>{% trans -%}Organized Events{%- endtrans %}</h3>
         <ul>
             {% for event_id, entry in orga_events|dictsort|reverse %}
                 <li>
@@ -34,14 +38,14 @@
                     <br />
                     <span class="small">
                         {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
-                                     "Anmeldungen", icon='list') }}
+                                     gettext("Registrations"), icon='list') }}
                         &bull;
                         {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
-                                     "Statistik", icon='stats') }}
+                                     gettext("Statistics"), icon='stats') }}
                         {% if entry['tracks'] %}
                             &bull;
                             {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
-                                         "Kurse", icon='book') }}
+                                         gettext("Courses"), icon='book') }}
                         {% endif %}
                     </span>
                 </li>
@@ -50,7 +54,7 @@
     {% endif %}
 
     {% if other_events %}
-        <h3>Weitere Veranstaltungen</h3>
+        <h3>{% trans -%}Other Events{%- endtrans %}</h3>
         <ul>
             {% for event_id, event in other_events|dictsort|reverse %}
                 <li>

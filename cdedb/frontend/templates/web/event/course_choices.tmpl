@@ -4,16 +4,18 @@
 {% set jshint='weak' %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}
-Kurswahlen ({{ ambience['event']['title']|e }})
+    {% trans title=ambience['event']['title']|e -%}
+    	Course Choices ({{ title }})
+    {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/course_choices"), "Kurseinteilung", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Choices"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Kurseinteilung
+        Course Choices
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
@@ -27,8 +29,15 @@ Kurswahlen ({{ ambience['event']['title']|e }})
             <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
                        {% if filtered %}filtered_column{% endif %} {{ aclass }}">
                 <span title="{{ course['nr'] }}. {{ course['shortname'] }}
-                             ({{ attendees|e }}
-                              {% if course['max_size']|e %} von {{ course['max_size']|e }}{% endif %} TN)"
+                            {% if course['max_size']|e %}
+                                ({% trans count=attendees|e, max=course['max_size'] -%}
+                                    {{ count }} of {{ max }} Att.
+                                {%- endtrans %})
+                            {% else %}
+                                ({% trans count=attendees|e -%}
+                                	{{ count }} Att.
+                                {%- endtrans %})
+                            {% endif %}"
                       data-id="{{ course_id|e }}"
                       class="event_course_id">
                    {{ course['nr']|e }}
@@ -46,70 +55,65 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 {% block content %}
     {% set course_entries = courses|xdictsort('nr', pad=True)|xdict_entries('{id}', '{nr}. {shortname}') %}
 
-    {% call util.bootstrap_panel(title="Filter", icon="search", aclass='panel-primary') %}
+    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform"
-              aria-label="Filter">
+              aria-label="{% trans -%}Filter{%- endtrans %}">
             <p>
-                Teilnehmer, die
                 {% if ambience['event']['tracks']|length > 1 %}
-                    in Kursschiene
-                    {{ util.input_select(name="track_id",
-                                         entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
-                                         nulloption='— egal —', aclass="form-control input-slim input-sm",
-                                         arialabel="Filter: Kursschiene") }}
+                    {% set select1 = util.input_select(name="track_id", nulloption=gettext("— any —"),
+                    entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
+                    aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Coursetrack")) %}
                 {% else %}
+                    {% set select1 = "" %}
                     {{ util.input_hidden(name="track_id", value=(ambience['event']['tracks']|list)[0]) }}
                 {% endif %}
-                den Kurs
-                {{ util.input_select(name="course_id", entries=course_entries, nulloption="",
-                                     aclass="form-control input-slim input-sm", arialabel="Filter: Kurs") }}
-                {{ util.input_select(name="position", entries=filter_entries, aclass="form-control input-slim input-sm",
-                                     arialabel="Filter: Kursoperator", nulloption="— kein Filter —") }}<br />
-                mit einer der folgenden Teilnehmer-IDs:
-                {{ util.input_text(name='ids', aclass="form-control input-slim input-sm",
-                                   arialabel="Filter: Anmeldungs-ID") }}
+
+                {% trans select1=gettext("in Track {}").format(select1) if select1 else "",
+                        select2=util.input_select(name="course_id", entries=course_entries, nulloption="",
+                                aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Course")),
+                        select3=util.input_select(name="position", entries=filter_entries,
+                                aclass="form-control input-slim input-sm", nulloption=gettext("— no Filter —"),
+                                arialabel=gettext("Filter: Course Operator")),
+                        select4=util.input_text(name='ids', aclass="form-control input-slim input-sm",
+                                   arialabel=gettext("Filter: Registration IDs"))
+                        -%}
+                    Show participants who {{ select3 }} {{ select2 }} {{ select1 }},
+                    with one of these participant IDs: {{ select4 }}
+                {%- endtrans %}
             </p>
             <p class="nosp">
-                {{ util.input_submit(value="anzeigen", icon="search") }}
-                &emsp;oder
-                {{ util.href(cdedblink("event/course_choices",{}), "alle anzeigen", icon="remove",
+                {{ util.input_submit(value=gettext("Go!"), icon="search") }}
+                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show All"), icon="remove",
                              aclass="btn btn-default") }}
             </p>
         </form>
     {% endcall %}
 
     <form action="{{ cdedblink('event/course_choices')|e }}" method="POST" id="choiceactionform"
-          aria-label="Zuteilung">
-        {% call util.bootstrap_panel(title="Zuteilen", icon="screenshot", aclass='panel-warning',
+          aria-label="{% trans -%}Assignment{%- endtrans %}">
+        {% call util.bootstrap_panel(title=gettext("Assign"), icon="screenshot", aclass='panel-warning',
                                      anid="assignment-options") %}
+            {% if ambience['event']['tracks']|length == 1 %}
+                {% set tracks=util.input_hidden(name="track_ids", value=(ambience['event']['tracks']|list)[0]) %}
+            {% else %}
+                {% set tracks='<label class="sr-only" id="input-track_ids-label">{}</label>'.format(gettext("Coursetracks"))
+                    + '<div class="col-md-3 strip-inner-space">{}{}</div>'.format( gettext("in Tracks"),
+                        util.input_checkboxes(name="track_ids", arialabeledby="input-track_ids-label",
+                            entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'))) %}
+            {% endif %}
             <div class="row">
-                <div class="col-md-3">
-                    Markierte Personen in
-                </div>
-                {% if ambience['event']['tracks']|length == 1 %}
-                    {{ util.input_hidden(name="track_ids", value=(ambience['event']['tracks']|list)[0]) }}
-                {% else %}
-                    <label class="sr-only" id="input-track_ids-label">Kursschienen</label>
-                    <div class="col-md-3 strip-inner-space">
-                        {{ util.input_checkboxes(name="track_ids",
-                                                 entries=ambience['event']['tracks']|xdictsort('sortkey')
-                                                    |dict_entries('id', 'title'),
-                                                 arialabeledby="input-track_ids-label") }}
-                    </div>
-                {% endif %}
-                <div class="col-md-4">
-                    <div class="form-group">
-                        {{ util.input_select(name="action", anid="input-action", entries=action_entries,
-                                arialabel="Einteilungsverfahren") }}
-                    </div>
-                    <div class="form-group">
-                        {{ util.input_select(name="course_id", anid="input-course_id", entries=course_entries,
-                                             nulloption="", arialabel="Einteilung in Kurs") }}
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    {{ util.input_submit(value="einteilen.") }}
-                </div>
+                {% trans assign='<div class="col-md-1">{}</div>'.format(gettext("Assign")),
+                        participants='<div class="col-md-2">{}</div>'.format(gettext("selected participants")),
+                        course='<div class="col-md-4"><div class="form-group">{}</div>'.format(
+                            util.input_select(name="action", anid="input-action",
+                                entries=action_entries, arialabel=gettext("Assignment Method")))
+                            + '<div class="form-group">{}</div></div>'.format(
+                            util.input_select(name="course_id", anid="input-course_id", entries=course_entries,
+                                nulloption="", arialabel="Assign to Course")),
+                        tracks=tracks,
+                        submit='<div class="col-md-2">{}</div>'.format(util.input_submit(value=gettext("Go!"))) -%}
+                	{{ assign }} {{ participants }} {{ course }} {{ tracks }} {{ submit }}
+                {%- endtrans %}
                 <script type="text/javascript">
                     {
                         var $actionSelect = $('#input-action');
@@ -129,18 +133,21 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 
         <div class="pull-right">
             {{ util.href(cdedblink('event/registration_query', corresponding_query|querytoparams),
-                         "in Anmeldungsliste", icon='list', aclass='btn btn-sm btn-default') }}
+                         gettext("View Registrations"), icon='list', aclass='btn btn-sm btn-default') }}
         </div>
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">alle</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Select All{%- endtrans %}"
+                        id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans -%}All{%- endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="Keines auswählen" id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">keines</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Select None{%- endtrans %}"
+                        id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans -%}None{%- endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="Auswahl umkehren" id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">umkehren</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Invert Selection{%- endtrans %}"
+                        id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans -%}Invert{%- endtrans %}</span>
                 </button>
             </div>
         </div>
@@ -150,7 +157,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% if ambience['event']['tracks']|length > 1 %}
                     <tr>
                         <th rowspan="2"></th>
-                        <th rowspan="2">Name</th>
+                        <th rowspan="2">{% trans -%}Full Name{%- endtrans %}</th>
                         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                             <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['title']|e }}</th>
                         {% endfor %}
@@ -159,7 +166,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 <tr>
                     {% if ambience['event']['tracks']|length <= 1 %}
                         <th></th>
-                        <th>Name</th>
+                        <th>{% trans -%}Name{%- endtrans %}</th>
                     {% endif %}
 
                     {# Some definitions to highlight the headings of the filtered columns #}
@@ -176,9 +183,11 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     {% endmacro %}
                     {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
-                            {{ util.make_icon('screenshot', title="eingeteilt in") }}
+                            {{ util.make_icon('screenshot', title=gettext("assigned to")) }}
                         </th>
-                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">KL</th>
+                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">
+                            {% trans -%}Instr.{%- endtrans %}
+                        </th>
                         {% for i in range(track['num_choices']) %}
                             <th class="text-center {{ filtered_col_class(track_id, i) }}">
                                 {{ (i + 1)|e }}.</th>
@@ -193,7 +202,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     <tr class="ls-item">
                         <td>
                             {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector",
-                                    arialabel="{} {} auswählen".format(persona['given_names'], persona['family_name']))
+                                    arialabel=gettext("Select {} {}").format(persona['given_names'], persona['family_name']))
                                     }}
                         </td>
                         <td>
@@ -250,12 +259,13 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 
     <hr />
     <p>
-        <strong>Farb-Legende:</strong> &emsp;
-        <span class="color-legend course-fewp"></span>&nbsp;Kurs ist zu leer &emsp;
-        <span class="color-legend course-manyp"></span>&nbsp;Kurs ist zu voll &emsp;
-        <span class="color-legend course-cancelled"></span>&nbsp;keine Kurseinteilung oder Kurs fällt aus &emsp;
+        <strong>{% trans -%}Color Guide{%- endtrans %}:</strong> <br>
+        <span class="color-legend course-fewp"></span>&nbsp;{% trans -%}Course is too empty{%- endtrans %} &emsp;
+        <span class="color-legend course-manyp"></span>&nbsp;{% trans -%}Course is overfull{%- endtrans %} &emsp;
+        <span class="color-legend course-cancelled"></span>&nbsp;
+                {% trans -%}not assigned or course is cancelled{%- endtrans %}&emsp;
     </p>
     <p>
-        {{ util.make_icon('info-sign') }} Doppelklick auf Kursnummer führt zum Kurs.
+        {{ util.make_icon('info-sign') }} {% trans -%}Double-Click the course number to view the course.{%- endtrans %}
     </p>
 {% endblock %}

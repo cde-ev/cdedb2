@@ -1,22 +1,26 @@
 {% set sidenav_active='event_course_stats' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Kurse verwalten ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+    	Manage Courses ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Kurse verwalten
+        {% trans -%}Manage Courses{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=is_locked, icon='plus',
+        {{ util.href(cdedblink('event/create_course_form'), gettext("Add Course"), readonly=is_locked, icon='plus',
                      aclass='btn btn-success btn-sm') }}
     </div>
     <table class="table table-condensed">
@@ -26,13 +30,13 @@
                 {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                     <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
                         {%- if ambience['event']['tracks']|length == 1 -%}
-                            Teilnehmer &amp; Kurswahl
+                            {% trans -%}Attendees &amp; Course Choices{%- endtrans %}
                         {%- else -%}
                             {{ track['title']|e }}
                         {%- endif -%}
                     </th>
                 {% endfor %}
-                <th colspan="2" class="b-left">Grenzen</th>
+                <th colspan="2" class="b-left">{% trans -%}Limit{%- endtrans %}</th>
                 {% if ambience['event']['tracks']|length < 4 %}
                     <th rowspan="2" class="b-left"></th>
                 {% endif %}
@@ -40,13 +44,13 @@
             <tr>
                 {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                     <th class="b-left"></th>
-                    <th class="text-right">{{ util.make_icon('screenshot', title="eingeteilt") }}</th>
+                    <th class="text-right">{{ util.make_icon('screenshot', title=gettext("Assigned")) }}</th>
                     {% for i in range(track['num_choices']) %}
                         <th class="text-right">{{ (i + 1)|e }}</th>
                     {% endfor %}
                 {% endfor %}
-                <th class="b-left text-right">Min</th>
-                <th class="text-right">Max</th>
+                <th class="b-left text-right">{% trans -%}Min{%- endtrans %}</th>
+                <th class="text-right">{% trans -%}Max{%- endtrans %}</th>
             </tr>
         </thead>
         <tbody>
@@ -64,7 +68,7 @@
                                               ('course-fewp' if course['min_size'] and attendees < course['min_size'] else ''))) %}
                             <td class="b-left course-primary {{ aclass }}">
                                 {% if track_id not in course['active_segments'] %}
-                                    {{ util.make_icon('ban-circle', title="Findet nicht statt") }}
+                                    {{ util.make_icon('ban-circle', title=gettext("Course cancelled")) }}
                                 {% endif %}
                             </td>
                             <td class="text-right course-primary {{ aclass }}">
@@ -84,7 +88,7 @@
                                              choice_counts[course_id][(track_id, i)]) }}
                             {% endfor %}
                         {% else %}
-                            <td class="b-left">{{ util.make_icon('remove-sign', title="Nicht angeboten") }}</td>
+                            <td class="b-left">{{ util.make_icon('remove-sign', title=gettext("Not Offered")) }}</td>
                             <td colspan="{{ track['num_choices'] + 1 }}"></td>
                         {% endif %}
                     {% endfor %}
@@ -94,10 +98,10 @@
                         <td class="b-left text-nowrap">
                             {{ util.href(cdedblink("event/change_course_form", {'course_id': course_id}),
                                          readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
-                                         title="Bearbeiten") }}
+                                         title=gettext("Edit")) }}
                             {{ util.href(cdedblink("event/manage_attendees_form", {'course_id': course_id}),
                                          readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
-                                         title="Teilnehmer ändern") }}
+                                         title=gettext("Manage Attendees")) }}
                         </td>
                     {% endif %}
                 </tr>
@@ -107,10 +111,10 @@
 
     <hr />
     <p>
-        <strong>Farb-Legende:</strong> &emsp;
-        <span class="color-legend course-fewp"></span>&nbsp;zu wenige Teilnehmer &emsp;
-        <span class="color-legend course-manyp"></span>&nbsp;zu viele Teilnehmer &emsp;
-        <span class="color-legend course-cancelled-ok"></span>&nbsp;fällt aus &emsp;
-        <span class="color-legend course-cancelled"></span>&nbsp;fällt aus, hat noch Teilnehmer
+        <strong>Color Guide</strong>:<br> &emsp;
+        <span class="color-legend course-fewp"></span>&nbsp;{% trans -%}Not enough Attendees{%- endtrans %}&emsp;
+        <span class="color-legend course-manyp"></span>&nbsp;{% trans -%}Too many Attendees{%- endtrans %}&emsp;
+        <span class="color-legend course-cancelled-ok"></span>&nbsp;{% trans -%}Course cancelled{%- endtrans %}&emsp;
+        <span class="color-legend course-cancelled"></span>&nbsp;{% trans -%}Course cancelled, has Attendees{%- endtrans %}
     </p>
 {% endblock %}

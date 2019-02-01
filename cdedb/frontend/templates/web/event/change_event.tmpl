@@ -3,59 +3,64 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}{{ ambience['event']['title']|e }} – Konfiguration{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+        {{ title }} – Configuration
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/change_event"), "Konfiguration", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Konfiguration
-        <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title']|e }}</small>
+        {% trans -%}Configuration{%- endtrans %}
+        <small>{{ util.make_icon('blackboard', arialabel=gettext("Configuration")) }}
+            {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/change_event')|e }}" method="POST" id="changeeventform" class="form-horizontal">
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_select(name="institution", label="Organisation", entries=institutions|dictsort) }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
-        {{ util.form_input_text(name="shortname", label="Kürzel") }}
-        {{ util.form_input_checkbox(name="is_visible", label="Sichtbarkeit der Veranstaltung") }}
-        {{ util.form_input_checkbox(name="is_course_list_visible", label="Sichtbarkeit der Kursliste") }}
-        {{ util.form_input_text(name="registration_start", label="Anmeldebeginn", type='datetime-local',
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5") }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event")) }}
+        {{ util.form_input_checkbox(name="is_course_list_visible", label=gettext("Visibility of the Courselist")) }}
+        {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local',
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
-        {{ util.form_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss",
+        {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
                                 type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
-                                info="Wird zunächst angezeigt. Änderungen an Anmeldungen sind nur bis dahin möglich. "
-                                     "Falls leer sind Änderungen dauerhaft möglich.") }}
-        {{ util.form_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss",
+                                info=gettext("Is displayed initially. Changes to registration are only possible until "
+                                "then. If left empty, Changes will be possible indefinitely.")) }}
+        {{ util.form_input_text(name="registration_hard_limit", label=gettext("Registration Hard Limit"),
                                 type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
-                                info="Endgültiger Anmeldeschluss. Bis dahin sind Nachmeldungen möglich. Falls leer, "
-                                     "bleibt die Anmeldung für Nachmeldungen offen.") }}
-        {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=accounts, nulloption="") }}
-        {{ util.form_input_textarea(name="mail_text", label="Freitext Anmeldungsbestätigung", rows="5") }}
-        {{ util.form_input_checkbox(name="use_questionnaire", label="Fragebogen anzeigen") }}
+                                info=gettext("Final registration end. Until then late registrations are possible. "
+                                "If left empty, late registrations will be possible indefinitely.")) }}
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="") }}
+        {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
+        {{ util.form_input_checkbox(name="use_questionnaire", label=gettext("Show Questionnaire")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|dictsort
                 if field['kind'] == "str" and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name']))|e %}
         {%- endfor %}
-        {{ util.form_input_select(name="lodge_field", label="Extrafeld für Hauswünsche", entries=myentries,
-                                  nulloption="", info="In welchem Datenfeld werden Hauswünsche der Teilnehmer "
-                                                        "eingetragen?") }}
+        {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
+                                  nulloption="", info=gettext("The custom field in which the participants' "
+                                  "rooming preferences will be saved.")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|dictsort
                 if field['kind'] == "bool" and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name']))|e %}
         {%- endfor %}
-        {{ util.form_input_select(name="reserve_field", label="Extrafeld für Isomattenschläfer", entries=myentries,
-                                  nulloption="", info="In welchem Datenfeld wird eingetragen, ob Teilnehmer bereit "
-                                                        "sind, auf Isomatte zu schlafen?") }}
-        {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}
-        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/show_event')) }}
+        {{ util.form_input_select(name="reserve_field", label=gettext("Field for Reserve"), entries=myentries,
+                                  nulloption="", info=gettext("The custom field in which the participants' "
+                                  "willingness to sleep on a camping mat will be saved.")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event')) }}
     </form>
     <script type="text/javascript">
         $('#changelistform').cdedbProtectChanges();

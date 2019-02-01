@@ -4,11 +4,13 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% import "web/generic.tmpl" as generic with context %}
-{% block title %}Neuen Veranstaltungsnutzer anlegen{% endblock %}
+{% block title %}
+    {% trans -%}Create New Event-User{%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/user_search"), "Nutzer verwalten") }}
-{{ util.breadcrumb_link(cdedblink("event/create_user"), "Nutzer anlegen", active="True") }}
+{{ util.breadcrumb_link(cdedblink("event/user_search"), gettext("Manage Users")) }}
+{{ util.breadcrumb_link(cdedblink("event/create_user"), gettext("Create User"), active="True") }}
 {% endblock %}
 {% block content %}
     {{ generic.create_user("event") }}
