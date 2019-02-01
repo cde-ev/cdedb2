@@ -339,6 +339,7 @@ def merge_dicts(*dicts):
         for key in adict:
             if key not in dicts[0]:
                 if (isinstance(adict[key], collections.abc.Sequence)
+                        and not isinstance(adict[key], str)
                         and isinstance(dicts[0], werkzeug.MultiDict)):
                     dicts[0].setlist(key, adict[key])
                 else:
