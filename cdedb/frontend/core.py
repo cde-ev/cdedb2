@@ -204,7 +204,10 @@ class CoreFrontend(AbstractFrontend):
             basic_redirect(rs, wants)
         else:
             self.redirect(rs, "cde/consent_decision_form")
-        rs.response.set_cookie("sessionkey", sessionkey)
+        # TODO add samesite="Lax", as soon as we switched to Debian
+        #  Buster/Werkzeug 0.14 to mitigate CSRF attacks
+        rs.response.set_cookie("sessionkey", sessionkey, httponly=True,
+                               secure=True)
         return rs.response
 
     @access("persona", modi={"POST"})
