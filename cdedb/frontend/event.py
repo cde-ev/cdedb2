@@ -1261,38 +1261,44 @@ class EventFrontend(AbstractUserFrontend):
 
         registration_id = None
         if persona_id:
-            persona = self.coreproxy.get_persona(rs, persona_id)
-            registration_id = tuple(self.eventproxy.list_registrations(
-                rs, event['id'], persona_id).keys())
-            if registration_id:
-                registration_id = unwrap(registration_id)
-                registration = self.eventproxy.get_registration(rs, registration_id)
-                if registration['payment']:
-                    warnings.append(('persona_id',
-                                     ValueError(n_("Already paid."))))
-                relevant_stati = (const.RegistrationPartStati.applied,
-                                  const.RegistrationPartStati.waitlist,
-                                  const.RegistrationPartStati.participant,)
-                fee = sum(event['parts'][part_id]['fee']
-                          for part_id, part in registration['parts'].items()
-                          if part['status'] in relevant_stati)
-                if amount and amount < fee:
-                    problems.append(('amount',
-                                     ValueError(n_("Not enough money."))))
-                if amount and amount > fee:
-                    warnings.append(('amount',
-                                     ValueError(n_("Too much money."))))
-            else:
+            try:
+                persona = self.coreproxy.get_persona(rs, persona_id)
+            except KeyError:
                 problems.append(('persona_id',
-                                 ValueError(n_("No registration found."))))
-            if not re.search(diacritic_patterns(family_name),
-                             persona['family_name'], flags=re.IGNORECASE):
-                warnings.append(('family_name',
-                                 ValueError(n_("Family name doesn't match."))))
-            if not re.search(diacritic_patterns(given_names),
-                             persona['given_names'], flags=re.IGNORECASE):
-                warnings.append(('given_names',
-                                 ValueError(n_("Given names don't match."))))
+                                 ValueError(n_("No Member with ID {p_id} found."),
+                                            {"p_id": persona_id})))
+            else:
+                registration_id = tuple(self.eventproxy.list_registrations(
+                    rs, event['id'], persona_id).keys())
+                if registration_id:
+                    registration_id = unwrap(registration_id)
+                    registration = self.eventproxy.get_registration(rs, registration_id)
+                    if registration['payment']:
+                        warnings.append(('persona_id',
+                                         ValueError(n_("Already paid."))))
+                    relevant_stati = (const.RegistrationPartStati.applied,
+                                      const.RegistrationPartStati.waitlist,
+                                      const.RegistrationPartStati.participant,)
+                    fee = sum(event['parts'][part_id]['fee']
+                              for part_id, part in registration['parts'].items()
+                              if part['status'] in relevant_stati)
+                    if amount and amount < fee:
+                        problems.append(('amount',
+                                         ValueError(n_("Not enough money."))))
+                    if amount and amount > fee:
+                        warnings.append(('amount',
+                                         ValueError(n_("Too much money."))))
+                else:
+                    problems.append(('persona_id',
+                                     ValueError(n_("No registration found."))))
+                if not re.search(diacritic_patterns(family_name),
+                                 persona['family_name'], flags=re.IGNORECASE):
+                    warnings.append(('family_name',
+                                     ValueError(n_("Family name doesn't match."))))
+                if not re.search(diacritic_patterns(given_names),
+                                 persona['given_names'], flags=re.IGNORECASE):
+                    warnings.append(('given_names',
+                                     ValueError(n_("Given names don't match."))))
         datum.update({
             'persona_id': persona_id,
             'registration_id': registration_id,
