@@ -553,11 +553,12 @@ INSTITUTION_MAP[3] = new_id
 ## Import events
 EVENT_MAP = {} # maps old past_event to new past_event
 SPLIT_AKA_MAP = {}
-DB_ORGA_MAP = {}  # maps new past_event to old event
+DB_ORGA_EVENT_MAP = {}  # maps new past_event to old event
+DB_ORGA_SPLIT_MAP = {}  # maps new past_event to number of split part (if applicable)
 query = "SELECT * FROM veranstaltungen"
-events = query_all(cdedbxy, query, tuple())
-events = tuple(sorted(events, key=lambda e: e['shortname']))
-for event in events:
+old_pevents = query_all(cdedbxy, query, tuple())
+old_pevents = tuple(sorted(old_pevents, key=lambda e: e['shortname']))
+for event in old_pevents:
     split_name = None
     if 'Musik' in event['name']:
         ## Deduplicate MusikAkademie (but not WinterAkademie)
@@ -606,7 +607,8 @@ for event in events:
     if event['organisator'] == 0:
         parts = []
         for part in event['name'].split():
-            if part in ("Steken", "Latky", "Metten", "Eger", "Goniadz", "Piechowice"):
+            if part in ("Steken", "Latky", "Metten", "Eger", "Goniadz",
+                        "Piechowice"):
                 continue
             parts.append(part)
             if part.startswith('20'):
@@ -615,17 +617,24 @@ for event in events:
         col = 'e.name'
         for pattern, replace in (('/20', '/'), ('[0-9][0-9]/', ''),
                                  (' in ', ' '), ('2012-1', '2012'),
-                                 ('2012-2', 'XXXX')):
+                                 ('2012-2', 'XXXX'), ('- und Neujahrs', '')):
             col = "regexp_replace({}, '{}', '{}')".format(col, pattern,
                                                           replace)
         query = "SELECT * FROM events.events AS e WHERE {} ~* %s".format(col)
         orgaevents = query_all(cdedbxy, query, (base_name,))
         star = ','
         if len(orgaevents) == 1:
-            DB_ORGA_MAP[new_id] = orgaevents[0]['id']
+            DB_ORGA_EVENT_MAP[new_id] = orgaevents[0]['id']
             orgacomment = '({}) <==> {}/{}'.format(new_id, orgaevents[0]['id'],
                                                    orgaevents[0]['name'])
             star = "*"
+            if orgaevents[0]['is_split']:
+                if '1.' in event['name']:
+                    DB_ORGA_SPLIT_MAP[new_id] = 1
+                    star += "1"
+                if '2.' in event['name']:
+                    DB_ORGA_SPLIT_MAP[new_id] = 2
+                    star += "2"
     print("Created event in {}{} -- {}{}".format(
         new['tempus'].year, star, new['title'], orgacomment))
 
@@ -633,6 +642,7 @@ for event in events:
 COURSE_MAP = {}
 COURSE_COMBINATIONS = {}
 ORGA_COURSES = set()
+DB_ORGA_COURSE_RMAP = {} # maps  old course to (new past_event, new past_course)
 EXPLICIT_ORGA_COURSES = {
     ## WA201112H1
     933: 235,
@@ -651,26 +661,66 @@ EXPLICIT_ORGA_COURSES = {
     953: 276,
     956: 285,
     940: 261,
+    ## WA201213H1
+    1128: 380,
+    1130: 382,
+    1131: 383,
+    1132: 384,
+    1133: 401,
+    1134: 386,
+    ## WA201213H2
+    1155: 396,
+    1157: 398,
+    1158: 399,
+    1159: 400,
+    1160: 385,
+    1161: 402,
     ## WA201314H1
+    1391: 500,
+    1392: 501,
+    1393: 503,
+    1394: 504,
     1399: 524,
+    1400: 526,
     1401: 529,
     ## WA201314H2
+    1404: 510,
+    1405: 513,
+    1406: 517,
+    1407: 515,
+    1408: 516,
     1413: 525,
+    1414: 527,
     1415: 530,
     ## WA201415H1
     1613: 629,
+    1614: 633,
+    1615: 631,
+    1616: 642,
+    1617: 640,
+    1618: 646,
+    1619: 663,
+    1620: 670,
+    1621: 644,
+    1622: 668,
     ## WA201415H2
     1630: 630,
+    1631: 632,
+    1632: 643,
+    1633: 647,
+    1634: 664,
+    1635: 671,
+    1636: 677,
     1639: 654,
     1644: 673,
     ## WA201516H1
-    2734: 790,
-    2735: 788,
-    2736: 792,
+    2734: 791,
+    2735: 789,
+    2736: 793,
     2737: 794,
     2738: 796,
     2739: 798,
-    2740: 800,
+    2740: 801,
     2741: 802,
     2742: 806,
     2743: 808,
@@ -680,13 +730,13 @@ EXPLICIT_ORGA_COURSES = {
     2747: 819,
     2748: 822,
     ## WA201516H2
-    2765: 791,
-    2766: 789,
-    2767: 793,
+    2765: 790,
+    2766: 788,
+    2767: 792,
     2768: 795,
     2769: 797,
     2770: 799,
-    2771: 801,
+    2771: 800,
     2772: 803,
     2773: 807,
     2774: 809,
@@ -695,6 +745,18 @@ EXPLICIT_ORGA_COURSES = {
     2777: 815,
     2778: 820,
     2779: 824,
+    ## WA201617H1
+    3055:  923,
+    3056:  955,
+    3057:  962,
+    3058:  963,
+    3059:  967,
+    ## WA201617H2
+    3070:  924,
+    3071:  956,
+    3072:  964,
+    3073:  965,
+    3074:  969,
     ## WA201718H1
     3291: 1091,
     3292: 1163,
@@ -708,13 +770,12 @@ EXPLICIT_ORGA_COURSES = {
     3309: 1118,
     3310: 1142,
 }
-
 for event_id in EVENT_MAP:
     query = "SELECT * FROM veranstaltungen WHERE id = %s"
     event = query_one(cdedbxy, query, (event_id,))
     dbmarker = ""
-    if EVENT_MAP[event['id']] in DB_ORGA_MAP:
-        dbmarker = "(<-{})".format(DB_ORGA_MAP[EVENT_MAP[event['id']]])
+    if EVENT_MAP[event_id] in DB_ORGA_EVENT_MAP:
+        dbmarker = "(<-{})".format(DB_ORGA_EVENT_MAP[EVENT_MAP[event_id]])
     print("Creating courses for {}{} -- ".format(event['shortname'], dbmarker),
           end="")
     query = "SELECT * FROM veranstaltungen_kurse WHERE v_id = %s"
@@ -723,26 +784,32 @@ for event_id in EVENT_MAP:
     mapped_courses = []
     for course in courses:
         new = {
-            'pevent_id': EVENT_MAP[course['v_id']],
+            'pevent_id': EVENT_MAP[event_id],
             'nr': course['kurs_nr'],
             'title': course['kurs_name'],
             'description': None,
         }
-        if 'Orga' in course['kurs_name'] and 'Organ' not in course['kurs_name']:
-            ORGA_COURSES.add(course['id'])
-            print(" **ORGA**", end="")
-            continue
+        if ('Orga' in course['kurs_name'] and 'Organ' not in course['kurs_name']
+                or course['kurs_name'] in ("Akademieleitung", "Märchenonkel")
+                or course['kurs_nr'] == 0):
+            if event['organisator'] == 0:
+                ORGA_COURSES.add(course['id'])
+                print(" **ORGA**", end="")
+                continue
         ident = (new['pevent_id'], new['nr'])
         printprefix = ""
         orgacomment = ""
         mapped_id = None
-        if EVENT_MAP[course['v_id']] in DB_ORGA_MAP:
+        if EVENT_MAP[event_id] in DB_ORGA_EVENT_MAP:
+            split_part = DB_ORGA_SPLIT_MAP.get(EVENT_MAP[event_id])
             if course['id'] in EXPLICIT_ORGA_COURSES:
-                ## FIXME implement this
                 query = "SELECT * FROM events.courses WHERE id = %s"
                 orgacourse = query_all(
                     cdedbxy, query, (EXPLICIT_ORGA_COURSES[course['id']],))
                 if len(orgacourse) == 1:
+                    if split_part and not orgacourse[0]['split_part'] & split_part:
+                        print(" %{}/!{}/{}/{}%".format(new['nr'], split_part, course['id'], new['title'][:20]), end="")
+                        continue
                     new['description'] = orgacourse[0]['description']
                     orgacomment = "(<#{})".format(orgacourse[0]['id'])
                     mapped_id = orgacourse[0]['id']
@@ -753,19 +820,25 @@ for event_id in EVENT_MAP:
                 query = ("SELECT * FROM events.courses"
                          " WHERE event_id = %s AND nr = %s AND name = %s")
                 orgacourse = query_all(cdedbxy, query, (
-                    DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr'],
+                    DB_ORGA_EVENT_MAP[EVENT_MAP[event_id]], new['nr'],
                     new['title']))
                 if len(orgacourse) == 1:
+                    if split_part and not orgacourse[0]['split_part'] & split_part:
+                        print(" %{}/!{}/{}/{}%".format(new['nr'], split_part, course['id'], new['title'][:20]), end="")
+                        continue
                     new['description'] = orgacourse[0]['description']
                     orgacomment = "(<={})".format(orgacourse[0]['id'])
                     mapped_id = orgacourse[0]['id']
-                elif len(orgacourse) == 0:
+                else:
                     query = ("SELECT * FROM events.courses"
                              " WHERE event_id = %s AND (nr = %s OR name = %s)")
                     orgacourse = query_all(cdedbxy, query, (
-                        DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr'],
+                        DB_ORGA_EVENT_MAP[EVENT_MAP[event_id]], new['nr'],
                         new['title']))
                     if len(orgacourse) == 1:
+                        if split_part and not orgacourse[0]['split_part'] & split_part:
+                            print(" %{}/!{}/{}/{}%".format(new['nr'], split_part, course['id'], new['title'][:20]), end="")
+                            continue
                         new['description'] = orgacourse[0]['description']
                         orgacomment = "(<-{})".format(orgacourse[0]['id'])
                         mapped_id = orgacourse[0]['id']
@@ -773,8 +846,11 @@ for event_id in EVENT_MAP:
                         query = ("SELECT * FROM events.courses"
                                  " WHERE event_id = %s AND name = %s")
                         orgacourse = query_all(cdedbxy, query, (
-                            DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['title']))
+                            DB_ORGA_EVENT_MAP[EVENT_MAP[event_id]], new['title']))
                         if len(orgacourse) == 1:
+                            if split_part and not orgacourse[0]['split_part'] & split_part:
+                                print(" %{}/!{}/{}/{}%".format(new['nr'], split_part, course['id'], new['title'][:20]), end="")
+                                continue
                             new['description'] = orgacourse[0]['description']
                             orgacomment = "(<~{})".format(orgacourse[0]['id'])
                             mapped_id = orgacourse[0]['id']
@@ -782,8 +858,11 @@ for event_id in EVENT_MAP:
                             query = ("SELECT * FROM events.courses"
                                      " WHERE event_id = %s AND nr = %s")
                             orgacourse = query_all(cdedbxy, query, (
-                                DB_ORGA_MAP[EVENT_MAP[course['v_id']]], new['nr']))
+                                DB_ORGA_EVENT_MAP[EVENT_MAP[event_id]], new['nr']))
                             if len(orgacourse) == 1:
+                                if split_part and not orgacourse[0]['split_part'] & split_part:
+                                    print(" %{}/!{}/{}/{}%".format(new['nr'], split_part, course['id'], new['title'][:20]), end="")
+                                    continue
                                 new['description'] = orgacourse[0]['description']
                                 orgacomment = "(<.{})".format(orgacourse[0]['id'])
                                 mapped_id = orgacourse[0]['id']
@@ -801,21 +880,49 @@ for event_id in EVENT_MAP:
             new_id = past_event.create_past_course(rs(DEFAULT_ID), new)
             COURSE_MAP[course['id']] = new_id
             COURSE_COMBINATIONS[ident] = new_id
+            if mapped_id:
+                DB_ORGA_COURSE_RMAP[mapped_id] = (EVENT_MAP[event_id], new_id)
         nr = new['nr'] or '.'
         print(" {}{}{}".format(printprefix, nr, orgacomment), end="")
     print()
 
 ## Import participants
-events = {e['id']: e for e in events}
+old_pevents = {e['id']: e for e in old_pevents}
 PARTICIPANT_COMBINATIONS = set()
+EVENT_RMAP = collections.defaultdict(list) # maps new past_event to old past_event
+for old_pevent_id, new_pevent_id in EVENT_MAP.items():
+    EVENT_RMAP[new_pevent_id].append(old_pevent_id)
 for persona_id in persona_ids:
+    pevents_seen = set()
     persona = core.get_personas(rs(DEFAULT_ID), (persona_id,))[persona_id]
     print("Events for {} {} ({}) -- ".format(
         persona['given_names'], persona['family_name'], persona_id), end="")
     query = "SELECT * FROM veranstaltungen_teilnehmer WHERE user_id = %s"
     participations = query_all(cdedbxy, query, (persona_id,))
     participations = sorted(participations, key=lambda p: p['v_id'])
+    query = ("SELECT * FROM events.events AS e"
+             " JOIN events.registration AS r ON e.id = r.event_id"
+             " JOIN events.users AS u ON u.id = r.user_id"
+             " WHERE cdedb_id = %s AND status = 1")
+    registrations = query_all(cdedbxy, query, (persona_id,))
+    db_courses = []
+    for reg in registrations:
+        if reg['is_split']:
+            if reg['split_part'] & 1 and reg['course_id']:
+                db_courses.append(reg['course_id'])
+            if reg['split_part'] & 2 and reg['course2_id']:
+                db_courses.append(reg['course2_id'])
+        else:
+            if reg['course_id']:
+                db_courses.append(reg['course_id'])
+    expectation = collections.defaultdict(list)
+    for course_id in db_courses:
+        ## Orga courses do not appear so we have to check for existence
+        if course_id in DB_ORGA_COURSE_RMAP:
+            pevent_id, pcourse_id = DB_ORGA_COURSE_RMAP[course_id]
+            expectation[pevent_id].append(pcourse_id)
     for participant in participations:
+        fixsuffix = ""
         is_orga = False
         if participant['kurs_id'] is not None:
             if participant['kurs_id'] in ORGA_COURSES:
@@ -824,18 +931,39 @@ for persona_id in persona_ids:
             else:
                 course = COURSE_MAP[participant['kurs_id']]
         else:
-            course = None
+            if len(expectation[EVENT_MAP[participant['v_id']]]) == 1:
+                fixsuffix = "!"
+                course = expectation[EVENT_MAP[participant['v_id']]][0]
+            else:
+                course = None
         ident = (EVENT_MAP[participant['v_id']], course, persona_id, is_orga)
         printprefix = ""
         if ident in PARTICIPANT_COMBINATIONS:
             ## This can mainly happen for deduplicated split academies
             printprefix = "*DUP*"
         else:
+            pevents_seen.add(EVENT_MAP[participant['v_id']])
             past_event.add_participant(
-                rs(DEFAULT_ID), EVENT_MAP[participant['v_id']], course, persona_id,
-                is_instructor=False, is_orga=is_orga)
+                rs(DEFAULT_ID), EVENT_MAP[participant['v_id']], course,
+                persona_id, is_instructor=False, is_orga=is_orga)
             PARTICIPANT_COMBINATIONS.add(ident)
-        print(" {}{}".format(printprefix, events[participant['v_id']]['shortname']), end="")
+        msg = " {}{}{}".format(
+            printprefix, old_pevents[participant['v_id']]['shortname'], fixsuffix)
+        print(msg, end="")
+    for pevent_id, pcourse_ids in expectation.items():
+        if not pcourse_ids or pevent_id in pevents_seen:
+            continue
+        for pcourse_id in pcourse_ids:
+            ident = (pevent_id, pcourse_id, persona_id, False)
+            if ident not in PARTICIPANT_COMBINATIONS:
+                past_event.add_participant(
+                    rs(DEFAULT_ID), pevent_id, pcourse_id,
+                    persona_id, is_instructor=False, is_orga=False)
+                PARTICIPANT_COMBINATIONS.add(ident)
+                printprefix = "*MISS(pevent_id={}/pcourse_id={})*".format(pevent_id, pcourse_id)
+                msg = " {}{}".format(
+                    printprefix, old_pevents[EVENT_RMAP[pevent_id][0]]['shortname'])
+                print(msg, end="")
     print()
 
 ##
