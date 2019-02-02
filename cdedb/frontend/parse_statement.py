@@ -272,6 +272,8 @@ class Transaction:
         
         self.account_holder = "".join([raw["accHolder"],
                                        raw["accHolder2"]])
+        self.iban = raw["IBAN"]
+        self.bic = raw["BIC"]
         
         self.posting = str(raw["posting"]).upper()
         
@@ -653,6 +655,8 @@ class Transaction:
              "Statement-Date:\t {}".format(self.statement_date),
              "Amount:\t\t\t {}".format(self.amount),
              "Account Holder:\t {}".format(self.account_holder),
+             "IBAN:\t\t\t {}".format(self.iban),
+             "BIC:\t\t\t {}".format(self.bic),
              "Reference:\t\t {}".format(self.reference),
              "Posting:\t\t {}".format(self.posting),
              "Type:\t\t\t {}".format(self.type),

@@ -38,36 +38,34 @@
     {% endif %}
     <br>
     <br>
-    {% if CDEDB_DEV %}
-        {% if data %}
-            {% for key, value in data|dictsort %}
-                {% if key != "files" %}
-                    {% trans count=value|length, key=key|e -%}
-                        {{ count }} Transactions found for {{ key }}.
-                    {%- endtrans %}
+    {% if data %}
+        {% for key, value in data|dictsort %}
+            {% if key != "files" %}
+                {% trans count=value|length, key=key|e -%}
+                    {{ count }} Transactions found for {{ key }}.
+                {%- endtrans %}
+                <br>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    <br>
+    {% if problems %}
+        {% trans -%}Problems:{%- endtrans %}<br>
+        {% for problem in problems %}
+            - {{ problem }}<br>
+        {% endfor %}
+    {% endif %}
+    <br>
+    {% if data %}
+        {% for key, value in data|dictsort %}
+            {% if key == "transactions" %}
+                <br>
+                {% for t in value %}
+                    {{ t|string|replace("\n", "<br>")|replace("\t", "    ") }}
                     <br>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-        <br>
-        {% if problems %}
-            {% trans -%}Problems:{%- endtrans %}<br>
-            {% for problem in problems %}
-                - {{ problem }}<br>
-            {% endfor %}
-        {% endif %}
-        <br>
-        {% if data %}
-            {% for key, value in data|dictsort %}
-                {% if key == "transactions" %}
                     <br>
-                    {% for t in value %}
-                        {{ t|string|replace("\n", "<br>")|replace("\t", "    ") }}
-                        <br>
-                        <br>
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-        {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
     {% endif %}
 {% endblock %}

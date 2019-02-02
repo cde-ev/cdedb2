@@ -669,10 +669,10 @@ class CdEFrontend(AbstractUserFrontend):
         MEMBERSHIP_FEE_FIELDS = ("db_id", "family_name", "given_names",
                                  "amount", "comment")
         EVENT_FEE_FIELDS = ("date", "amount", "db_id", "family_name",
-                            "given_names", "comment")
+                            "given_names", "iban", "bic", "comment")
         OTHER_TRANSACTION_FIELDS = ("account", "date", "amount", "reference",
                                     "account_holder", "type",
-                                    "type_confidence")
+                                    "type_confidence", "iban", "bic")
         ACCOUNT_FIELDS = ("date", "amount", "db_id", "family_name",
                           "given_names", "category", "account")
         
@@ -695,7 +695,7 @@ class CdEFrontend(AbstractUserFrontend):
         membership_fees = []
         other_transactions = []
 
-        for i, line in enumerate(reader):
+        for i, line in enumerate(reversed(list(reader))):
             if not len(line) == 23:
                 problems.append("Line {} does not have the correct "
                                 "number of columns".format(i+1))
@@ -732,7 +732,10 @@ class CdEFrontend(AbstractUserFrontend):
                  "family_name": t.best_member_match.family_name,
                  "given_names": t.best_member_match.given_names,
                  "amount": t.amount_export,
-                 "comment": "" if not t.problems else t.problems}
+                 "iban": t.iban,
+                 "bic": t.bic,
+                 "comment": t.reference,
+                 "problems": t.problems}
                 for t in membership_fees if
                 (t.best_member_match.given_names !=
                  STATEMENT_GIVEN_NAMES_UNKNOWN or
@@ -744,7 +747,10 @@ class CdEFrontend(AbstractUserFrontend):
                  "family_name": t.best_member_match.family_name,
                  "given_names": t.best_member_match.given_names,
                  "amount": t.amount_export,
-                 "comment": (t.reference, t.problems)}
+                 "iban": t.iban,
+                 "bic": t.bic,
+                 "comment": t.reference,
+                 "problems": t.problems}
                 for t in membership_fees if
                 (t.best_member_match.given_names ==
                  STATEMENT_GIVEN_NAMES_UNKNOWN and
@@ -766,7 +772,10 @@ class CdEFrontend(AbstractUserFrontend):
                  "db_id": t.best_member_match.db_id,
                  "family_name": t.best_member_match.family_name,
                  "given_names": t.best_member_match.given_names,
-                 "comment": t.reference}
+                 "iban": t.iban,
+                 "bic": t.bic,
+                 "comment": t.reference,
+                 "problems": t.problems}
                 for t in event_fees
                 if (event_name == t.best_event_match
                     and t.best_member_match.db_id != "DB-EXTERN")
@@ -778,7 +787,10 @@ class CdEFrontend(AbstractUserFrontend):
                  "db_id": t.best_member_match.db_id,
                  "family_name": t.best_member_match.family_name,
                  "given_names": t.best_member_match.given_names,
-                 "comment": t.reference}
+                 "iban": t.iban,
+                 "bic": t.bic,
+                 "comment": t.reference,
+                 "problems": t.problems}
     
                 for t in event_fees
                 if (event_name == t.best_event_match
@@ -805,8 +817,11 @@ class CdEFrontend(AbstractUserFrontend):
                      "amount": t.amount_export,
                      "reference": t.reference,
                      "account_holder": t.account_holder,
+                     "iban": t.iban,
+                     "bic": t.bic,
                      "type": t.type,
-                     "type_confidence": t.type_confidence}
+                     "type_confidence": t.type_confidence,
+                     "problems": t.problems}
                     for t in other_transactions if t.type == ty
                     ])
             rows.extend([
@@ -815,8 +830,11 @@ class CdEFrontend(AbstractUserFrontend):
                  "amount": t.amount_export,
                  "reference": t.reference,
                  "account_holder": t.account_holder,
+                 "iban": t.iban,
+                 "bic": t.bic,
                  "type": t.type,
-                 "type_confidence": t.type_confidence}
+                 "type_confidence": t.type_confidence,
+                 "problems": t.problems}
                 for t in other_transactions if t.type is None
                 ])
                 
@@ -838,7 +856,8 @@ class CdEFrontend(AbstractUserFrontend):
                      "given_names": t.best_member_match.given_names,
                      "category": t.best_event_match
                         if t.type == TransactionType.EventFee else t.type,
-                     "account": t.account}
+                     "account": t.account,
+                     "problems": t.problems}
                     )
             else:
                 rows[t.account].append(
@@ -848,7 +867,8 @@ class CdEFrontend(AbstractUserFrontend):
                      "family_name": t.account_holder,
                      "given_names": t.reference,
                      "category": t.type,
-                     "account": t.account}
+                     "account": t.account,
+                     "problems": t.problems}
                     )
         
         for acc in Accounts:
@@ -908,18 +928,24 @@ class CdEFrontend(AbstractUserFrontend):
 
         persona = None
         if persona_id:
-            persona = self.coreproxy.get_persona(rs, persona_id)
-            if persona['is_archived']:
+            try:
+                persona = self.coreproxy.get_persona(rs, persona_id)
+            except KeyError:
                 problems.append(('persona_id',
-                                 ValueError(n_("Persona is archived."))))
-            if not re.search(diacritic_patterns(family_name),
-                             persona['family_name'], flags=re.IGNORECASE):
-                problems.append(('family_name',
-                                 ValueError(n_("Family name doesn't match."))))
-            if not re.search(diacritic_patterns(given_names),
-                             persona['given_names'], flags=re.IGNORECASE):
-                problems.append(('given_names',
-                                 ValueError(n_("Given names don't match."))))
+                                 ValueError(n_("No Member with ID {p_id} found."),
+                                            persona_id)))
+            else:
+                if persona['is_archived']:
+                    problems.append(('persona_id',
+                                     ValueError(n_("Persona is archived."))))
+                if not re.search(diacritic_patterns(family_name),
+                                 persona['family_name'], flags=re.IGNORECASE):
+                    problems.append(('family_name',
+                                     ValueError(n_("Family name doesn't match."))))
+                if not re.search(diacritic_patterns(given_names),
+                                 persona['given_names'], flags=re.IGNORECASE):
+                    problems.append(('given_names',
+                                     ValueError(n_("Given names don't match."))))
         datum.update({
             'persona_id': persona_id,
             'amount': amount,
