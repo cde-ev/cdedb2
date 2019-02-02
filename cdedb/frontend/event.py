@@ -2057,6 +2057,13 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "questionnaire", {
             'questionnaire': questionnaire,})
 
+    @access("event", modi={"GET"})
+    def questionnaire_preview(self, rs, event_id):
+        """Render a preview of the Questionnaire form."""
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        return self.render(rs, "questionnaire_preview",
+                           {"questionnaire": questionnaire, })
+
     @access("event", modi={"POST"})
     def questionnaire(self, rs, event_id):
         """Fill in additional fields.

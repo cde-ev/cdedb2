@@ -78,6 +78,8 @@
     <div class="p">
         {{ util.href(cdedblink('event/reorder_questionnaire_form'), "Anordnung ändern", readonly=is_locked,
                      aclass="btn btn-info btn-sm", icon='sort') }}
+        {{ util.href(cdedblink('event/questionnaire_preview'), gettext("Preview Questionnaire"),
+                     aclass="btn btn-info btn-sm", icon='edit') }}
     </div>
     <form action="{{ cdedblink('event/questionnaire_summary')|e }}" method="POST" id="questionnairesummaryform">
         <div id="drow-container">
