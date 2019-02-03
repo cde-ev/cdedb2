@@ -139,11 +139,13 @@ class Application(BaseApp):
                 begin = now()
                 sessionkey = request.cookies.get("sessionkey")
                 scriptkey = request.headers.get("SCRIPTKEY")
-                data = self.sessionproxy.lookupsession(sessionkey,
+                user = self.sessionproxy.lookupsession(sessionkey,
                                                        request.remote_addr)
                 urls = self.urlmap.bind_to_environ(request.environ)
                 endpoint, args = urls.match()
-                if sessionkey and not data["persona_id"]:
+
+                # Check for timed out / invalid sessionkey
+                if sessionkey and not user.persona_id:
                     params = {
                         'wants': self.encode_parameter(
                             "core/index", "wants", request.url,
@@ -192,10 +194,7 @@ class Application(BaseApp):
                     raise werkzeug.exceptions.MethodNotAllowed(
                         handler.modi,
                         "Unsupported request method {}.".format(request.method))
-                vals = {k: data[k] for k in ('persona_id', 'username',
-                                             'given_names', 'display_name',
-                                             'family_name')}
-                rs.user = User(roles=extract_roles(data), **vals)
+                rs.user = user
                 ## Store database connection as private attribute.
                 ## It will be made accessible for the backends by the ProxyShim.
                 rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
@@ -249,9 +248,7 @@ class Application(BaseApp):
                    "reset in the next days."))
         except Exception as e:
             ## debug output if applicable
-            if self.conf.CDEDB_DEV or ('data' in locals()
-                                       and data.get('db_privileges')
-                                       and (data.get('db_privileges') % 2)):
+            if self.conf.CDEDB_DEV:
                 return Response(cgitb.html(sys.exc_info(), context=7),
                                 mimetype="text/html")
             ## generic errors

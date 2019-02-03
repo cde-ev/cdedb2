@@ -14,7 +14,8 @@ import logging
 import psycopg2.extensions
 
 from cdedb.database.connection import connection_pool_factory
-from cdedb.common import glue, make_root_logger, now, PERSONA_STATUS_FIELDS
+from cdedb.common import (glue, make_root_logger, now, PERSONA_STATUS_FIELDS,
+                          User, extract_roles)
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
 
@@ -56,13 +57,13 @@ class SessionBackend:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
-        data required for a :py:class:`cdedb.common.RequestState`. We
+        User wrapper required for a :py:class:`cdedb.common.RequestState`. We
         bind sessions to IPs, so they get automatically invalidated if
         the IP changes.
 
         :type sessionkey: str
         :type ip: str
-        :rtype: {str: object}
+        :rtype: User or None
         """
         persona_id = None
         data = None
@@ -110,32 +111,30 @@ class SessionBackend:
                     with conn.cursor() as cur:
                         cur.execute(query, (sessionkey,))
 
-        ret = {'persona_id': None,
-               'display_name': "",
-               'given_names': "",
-               'family_name': "",
-               'username': "",}
-        for key in PERSONA_STATUS_FIELDS:
-            ret[key] = False
-        if persona_id:
-            query = glue("UPDATE core.sessions SET atime = now()",
-                         "WHERE sessionkey = %s")
-            query2 = glue(
-                "SELECT id AS persona_id, display_name, given_names,",
-                "family_name, username, {} FROM core.personas",
-                "WHERE id = %s").format(', '.join(PERSONA_STATUS_FIELDS))
-            with self.connpool["cdb_persona"] as conn:
-                with conn.cursor() as cur:
-                    cur.execute(query, (sessionkey,))
-                    cur.execute(query2, (persona_id,))
-                    data = cur.fetchone()
-            if self.conf.LOCKDOWN and not (data['is_admin']
-                                           or data['is_core_admin']):
-                ## Short circuit in case of lockdown
-                return ret
-            if data["is_active"]:
-                ret.update(data)
-            else:
-                self.logger.warning("Found inactive user {}".format(persona_id))
-        return ret
+        if not persona_id:
+            return User()
+
+        query = glue("UPDATE core.sessions SET atime = now()",
+                     "WHERE sessionkey = %s")
+        query2 = glue(
+            "SELECT id AS persona_id, display_name, given_names,",
+            "family_name, username, {} FROM core.personas",
+            "WHERE id = %s").format(', '.join(PERSONA_STATUS_FIELDS))
+        with self.connpool["cdb_persona"] as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (sessionkey,))
+                cur.execute(query2, (persona_id,))
+                data = cur.fetchone()
+        if self.conf.LOCKDOWN and not (data['is_admin']
+                                       or data['is_core_admin']):
+            ## Short circuit in case of lockdown
+            return User()
+        if not data["is_active"]:
+            self.logger.warning("Found inactive user {}".format(persona_id))
+            return User()
+
+        vals = {k: data[k]
+                for k in ('persona_id', 'username', 'given_names',
+                          'display_name', 'family_name')}
+        return User(roles=extract_roles(data), **vals)
 
