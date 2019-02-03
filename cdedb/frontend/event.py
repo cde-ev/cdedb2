@@ -2039,30 +2039,36 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/registration_status")
 
     @access("event")
-    def questionnaire_form(self, rs, event_id):
+    @REQUESTdata(("preview", "bool_or_None"))
+    def questionnaire_form(self, rs, event_id, preview=False):
         """Render form."""
-        registration_id = unwrap(self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id), keys=True)
-        if not registration_id:
-            rs.notify("warning", n_("Not registered for event."))
-            return self.redirect(rs, "event/show_event")
-        registration = self.eventproxy.get_registration(rs, registration_id)
-        if not rs.ambience['event']['use_questionnaire']:
-            rs.notify("warning", n_("Questionnaire disabled."))
-            return self.redirect(rs, "event/registration_status")
-        if self.is_locked(rs.ambience['event']):
-            rs.notify("info", n_("Event locked."))
+        if not preview:
+            registration_id = unwrap(self.eventproxy.list_registrations(
+                rs, event_id, persona_id=rs.user.persona_id), keys=True)
+            if not registration_id:
+                rs.notify("warning", n_("Not registered for event."))
+                return self.redirect(rs, "event/show_event")
+            registration = self.eventproxy.get_registration(rs, registration_id)
+            if not rs.ambience['event']['use_questionnaire']:
+                rs.notify("warning", n_("Questionnaire disabled."))
+                return self.redirect(rs, "event/registration_status")
+            if self.is_locked(rs.ambience['event']):
+                rs.notify("info", n_("Event locked."))
+            merge_dicts(rs.values, registration['fields'])
+        else:
+            if event_id not in rs.user.orga and not self.is_admin(rs):
+                if rs.ambience['event']['is_visible']:
+                    rs.notify("warning", n_("Must be Orga to use Preview."))
+                    return self.redirect(rs, "event/show_event")
+                else:
+                    rs.notify("error", n_("The event is not published yet."))
+                    return self.redirect(rs, "event/index")
+            if not rs.ambience['event']['use_questionnaire']:
+                rs.notify("info", n_("Questionnaire is not enabled yet."))
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        merge_dicts(rs.values, registration['fields'])
         return self.render(rs, "questionnaire", {
-            'questionnaire': questionnaire,})
-
-    @access("event", modi={"GET"})
-    def questionnaire_preview(self, rs, event_id):
-        """Render a preview of the Questionnaire form."""
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        return self.render(rs, "questionnaire_preview",
-                           {"questionnaire": questionnaire, })
+            'questionnaire': questionnaire,
+            'preview': preview})
 
     @access("event", modi={"POST"})
     def questionnaire(self, rs, event_id):

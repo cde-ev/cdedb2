@@ -59,9 +59,9 @@
             {{ util.href(cdedblink("event/questionnaire_summary", {"event_id": data['id']}), "Fragebogen konfigurieren",
                      readonly=is_locked, aclass="list-group-item", active=(sidenav_active == 'event_quest_summary'),
                      icon='unchecked') }}
-            {{ util.href(cdedblink("event/questionnaire_preview", {"event_id": data['id']}), gettext("Preview Questionnaire"),
-                    aclass="list-group-item", active=(sidenav_active == 'event_quest_preview'),
-                    icon='edit') }}
+            {{ util.href(cdedblink("event/questionnaire_form", {"event_id": data['id'], "preview": True}),
+                    gettext("Questionnaire Preview"), aclass="list-group-item", icon="edit",
+                    active=(sidenav_active == 'event_quest_preview')) }}
             {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), "Log", aclass="list-group-item",
                     icon="list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>
