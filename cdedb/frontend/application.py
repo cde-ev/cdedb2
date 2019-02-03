@@ -122,7 +122,8 @@ class Application(BaseApp):
             return response
         except Exception:
             self.logger.exception("Exception while rendering error page")
-            return Response(str(error) + "\n" + error.description,
+            return Response("HTTP {}: {}\n{}".format(error.code, error.name,
+                                                     error.description),
                             status=error.code)
 
     @werkzeug.wrappers.Request.application

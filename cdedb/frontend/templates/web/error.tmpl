@@ -1,6 +1,6 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{{ error|e }}{% endblock %}
+{% block title %}{{ error.code|e }}: {{ error.name }}{% endblock %}
 {% block content %}
     <div class="alert alert-danger">
         {{ util.make_icon('remove-sign') }}
