@@ -571,8 +571,7 @@ class PastEventBackend(AbstractBackend):
         if len(event['parts']) > 1:
             # Add part designation in case of events with multiple parts
             pevent['title'] += " ({})".format(part['title'])
-            pevent['shortname'] += " ({})".format(part.get('shortname')
-                                                  or part['title'])
+            pevent['shortname'] += " ({})".format(part['shortname'])
         del pevent['id']
         new_id = self.create_past_event(rs, pevent)
         course_ids = self.event.list_db_courses(rs, event['id'])

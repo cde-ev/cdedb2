@@ -366,6 +366,7 @@ class EventFrontend(AbstractUserFrontend):
             raise ValueError(n_("Registrations exist, no deletion."))
         spec = {
             'title': "str",
+            'shortname': "str",
             'part_begin': "date",
             'part_end': "date",
             'fee': "decimal",
@@ -629,6 +630,7 @@ class EventFrontend(AbstractUserFrontend):
             -1: {
                 'tracks': {},
                 'title': data['title'],
+                'shortname': data['shortname'],
                 'part_begin': event_begin,
                 'part_end': event_end,
                 'fee': decimal.Decimal(0),

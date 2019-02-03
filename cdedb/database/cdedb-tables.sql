@@ -560,6 +560,7 @@ CREATE TABLE event.event_parts (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         title                   varchar NOT NULL,
+        shortname               varchar NOT NULL,
         -- we implicitly assume, that parts are non-overlapping
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
