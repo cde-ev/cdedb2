@@ -254,6 +254,9 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def get_minor_form(self, rs, event_id):
         """Retrieve minor form."""
+        if not rs.ambience['event']['is_visible']:
+            raise werkzeug.exceptions.Forbidden(
+                n_("The event is not published yet."))
         path = self.conf.STORAGE_DIR / "minor_form" / str(event_id)
         return self.send_file(
             rs, mimetype="application/pdf",
@@ -2057,12 +2060,8 @@ class EventFrontend(AbstractUserFrontend):
             merge_dicts(rs.values, registration['fields'])
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):
-                if rs.ambience['event']['is_visible']:
-                    rs.notify("warning", n_("Must be Orga to use Preview."))
-                    return self.redirect(rs, "event/show_event")
-                else:
-                    rs.notify("error", n_("The event is not published yet."))
-                    return self.redirect(rs, "event/index")
+                raise werkzeug.exceptions.Forbidden(
+                    n_("Must be Orga to use Preview."))
             if not rs.ambience['event']['use_questionnaire']:
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
