@@ -89,7 +89,7 @@ WHITELIST.add(10848)
 WHITELIST.add(8674)
 
 # disable
-# WHITELIST = None
+WHITELIST = None
 
 ##
 ## Fixes for real world data
@@ -639,7 +639,7 @@ for event in old_pevents:
         new['tempus'].year, star, new['title'], orgacomment))
 
 ## Import courses
-COURSE_MAP = {}
+COURSE_MAP = {} # maps old past_course to new past_course
 COURSE_COMBINATIONS = {}
 ORGA_COURSES = set()
 DB_ORGA_COURSE_RMAP = {} # maps  old course to (new past_event, new past_course)
@@ -663,6 +663,7 @@ EXPLICIT_ORGA_COURSES = {
     940: 261,
     ## WA201213H1
     1128: 380,
+    1129: 381,
     1130: 382,
     1131: 383,
     1132: 384,
@@ -670,6 +671,7 @@ EXPLICIT_ORGA_COURSES = {
     1134: 386,
     ## WA201213H2
     1155: 396,
+    1156: 397,
     1157: 398,
     1158: 399,
     1159: 400,
