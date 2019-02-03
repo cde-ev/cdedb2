@@ -2000,6 +2000,7 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'sortkey': 1}},
                     'title': "First coming",
+                    'shortname': "First",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56")},
@@ -2010,6 +2011,7 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'sortkey': 1}},
                     'title': "Second coming",
+                    'shortname': "Second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'fee': decimal.Decimal("0.00")},
@@ -2064,6 +2066,7 @@ class TestEventBackend(BackendTest):
                      'num_choices': 2,
                      'sortkey': 2}},
             'title': "Third coming",
+            'shortname': "Third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'fee': decimal.Decimal("123.40")}
