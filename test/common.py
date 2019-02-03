@@ -289,7 +289,10 @@ class FrontendTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         app = Application(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
-        cls.app = webtest.TestApp(app, extra_environ={'REMOTE_ADDR': "127.0.0.0", 'SERVER_PROTOCOL': "HTTP/1.1"})
+        cls.app = webtest.TestApp(app, extra_environ={
+            'REMOTE_ADDR': "127.0.0.0",
+            'SERVER_PROTOCOL': "HTTP/1.1",
+            'wsgi.url_scheme': 'https'})
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
