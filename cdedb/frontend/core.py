@@ -1105,7 +1105,9 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_password2",
                               ValueError(n_("Passwords don't match."))))
             rs.notify("error", n_("Passwords don't match."))
-        new_password = check(rs, "password_strength", new_password, "strength")
+        new_password = check(rs, "password_strength", new_password, "new_password",
+                             inputs=[ rs.user.username, rs.user.given_names,
+                               rs.user.family_name ] )
         if rs.errors:
             if any(name == "strength" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
@@ -1188,7 +1190,9 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_password2",
                               ValueError(n_("Passwords don't match."))))
             rs.notify("error", n_("Passwords don't match."))
-        new_password = check(rs, "password_strength", new_password, "strength")
+        new_password = check(rs, "password_strength", new_password, "new_password",
+                             inputs=[rs.user.username, rs.user.given_names,
+                                     rs.user.family_name])
         if rs.errors:
             if any(name == "strength" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))

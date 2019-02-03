@@ -44,6 +44,8 @@ import PIL.Image
 import pytz
 import werkzeug.datastructures
 
+from zxcvbn import zxcvbn
+
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
@@ -606,16 +608,15 @@ def _int_csv_list(val, argname=None, *, _convert=True):
     return val, []
 
 @_addvalidator
-def _password_strength(val, argname=None, *, _convert=True):
+def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
     """Implement a password policy.
 
     This has the strictly competing goals of security and usability. We
     will use the results of [1] to select a hopefully good policy.
 
-    However, we diverge by using nine instead of twelve as the lower
-    limit for length for the sake of usability.
-
-    [1] https://www.ece.cmu.edu/~lbauer/papers/2016/tissec2016-password-policies.pdf
+    We are using zxcvbn for this task instead of any other solutions here,
+    as it is the most popular solution to measure the actual entropy of a
+    password.
 
     :type val: object
     :type argname: str or None
@@ -623,37 +624,14 @@ def _password_strength(val, argname=None, *, _convert=True):
     :rtype: (str or None, [(str or None, exception)])
     """
     val, errors = _str(val, argname=argname, _convert=_convert)
-    LOWER = {c for c in string.ascii_lowercase}
-    UPPER = {c for c in string.ascii_uppercase}
-    DIGITS = {c for c in string.digits}
-    ## Note that the selection of an appropriate blacklist is quite
-    ## non-trivial. Currently it tries to err on the side of usability.
-    BLACKLIST = (
-        "1234",
-        "passwor",
-        "qwert",)
     if val:
-        if len(val) < 9:
+        results = zxcvbn(val, list(filter(None,inputs)))
+        if results['score'] < 2:
+            feedback = [results['feedback']['warning']]
+            feedback.extend(results['feedback']['suggestions'][0:2])
             errors.append((argname,
-                           ValueError(n_("Must be at least 9 characters."))))
-        num_classes = 0
-        INPUT = {c for c in val}
-        if INPUT & LOWER:
-            num_classes += 1
-        if INPUT & UPPER:
-            num_classes += 1
-        if INPUT & DIGITS:
-            num_classes += 1
-        if INPUT - (LOWER | UPPER | DIGITS):
-            num_classes += 1
-        if num_classes < 3:
-            errors.append(
-                (argname, ValueError(
-                    n_("Must contain at least three character classes."))))
-        for entry in BLACKLIST:
-            if entry in val.lower():
-                errors.append(
-                    (argname, ValueError(n_("Contains blacklisted substring."))))
+                           ValueError(' '.join(filter(None, feedback)))
+            ))
     return val, errors
 
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')

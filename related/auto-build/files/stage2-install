@@ -68,7 +68,7 @@ apt-get -y install \
 #   python3-magic
 
 apt-get -y install python3-pip
-pip3 install python-magic guzzle_sphinx_theme
+pip3 install python-magic guzzle_sphinx_theme zxcvbn
 
 for file in /var/cache/apt/archives/*.deb
 do
