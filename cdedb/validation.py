@@ -1760,6 +1760,7 @@ def _event(val, argname=None, *, creation=False, _convert=True):
 
 _EVENT_PART_COMMON_FIELDS = {
     'title': _str,
+    'shortname': _str,
     'part_begin': _date,
     'part_end': _date,
     'fee': _decimal,

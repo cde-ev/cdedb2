@@ -232,7 +232,7 @@ class TestPastEventBackend(BackendTest):
             'id': 2,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Warmup)',
-            'shortname': "TestAka (Warmup)",
+            'shortname': "TestAka (Wu)",
             'tempus': datetime.date(2003, 2, 2),}
         self.assertEqual(expectation, pevent_data[0])
         expectation = {
@@ -240,7 +240,7 @@ class TestPastEventBackend(BackendTest):
             'id': 3,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Erste Hälfte)',
-            'shortname': "TestAka (Erste Hälfte)",
+            'shortname': "TestAka (1.H.)",
             'tempus': datetime.date(2003, 11, 1),}
         self.assertEqual(expectation, pevent_data[1])
         expectation = {
@@ -248,7 +248,7 @@ class TestPastEventBackend(BackendTest):
             'id': 4,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Zweite Hälfte)',
-            'shortname': "TestAka (Zweite Hälfte)",
+            'shortname': "TestAka (2.H.)",
             'tempus': datetime.date(2003, 11, 11),}
         self.assertEqual(expectation, pevent_data[2])
         expectation = set()

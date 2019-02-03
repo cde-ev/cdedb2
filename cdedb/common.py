@@ -1281,7 +1281,8 @@ EVENT_FIELDS = (
     "reserve_field")
 
 #: Fields of an event part organized via CdEDB
-EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")
+EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
+                     "part_end", "fee")
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
