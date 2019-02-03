@@ -203,7 +203,6 @@ class CoreFrontend(AbstractFrontend):
 
         if wants:
             basic_redirect(rs, wants)
-        # FIXME: rs.user is not yet filled with roles and persona_id
         elif "member" in rs.user.roles and "searchable" not in rs.user.roles:
             data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             if not data['decided_search']:

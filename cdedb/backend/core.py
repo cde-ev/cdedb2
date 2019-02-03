@@ -19,7 +19,7 @@ from cdedb.backend.common import (
     access, internal_access, singularize,
     affirm_validation as affirm, affirm_set_validation as affirm_set)
 from cdedb.common import (
-    n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles,
+    n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
     privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
@@ -1379,6 +1379,22 @@ class CoreBackend(AbstractBackend):
                     "INSERT INTO core.sessions (persona_id, ip, sessionkey)",
                     "VALUES (%s, %s, %s)")
                 self.query_exec(rs, query, (data["id"], ip, sessionkey))
+
+            # Get more information about user (for immediate use in frontend)
+            # FIXME This does not work due to missing database permissions of
+            #  the cdb_anonymous user
+            query = glue("SELECT id AS persona_id, display_name, given_names,",
+                         "family_name, username, {}",
+                         "FROM core.personas",
+                         "WHERE id = %s")\
+                .format(', '.join(PERSONA_STATUS_FIELDS))
+            data = self.query_one(rs, query, (data["id"],))
+            vals = {k: data[k] for k in (
+                'persona_id', 'username', 'given_names', 'display_name',
+                'family_name')}
+            # FIXME We also need to update the database connection user ...
+            rs.user = User(roles=extract_roles(data), **vals)
+
             return sessionkey
 
     @access("persona")
