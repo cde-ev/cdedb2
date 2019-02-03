@@ -86,6 +86,47 @@ working with test data.
     full_page_writes = off
 
 
+Configuring
+-----------
+
+In the `/cdedb2/i18n/` directory in the VM there are two helper scripts for git,
+that are enabled by default: `git-diff-filter-po.sh` and `git-merge-po.sh`.
+
+The first one is used when executing ``git diff`` on `.po` and `.pot` files.
+It removes all lines starting with ``#`` before comparing the files, because
+these lines contain line numbers of every string usage and those numbers are
+prone to change.
+
+If you want to disable this, remove the following lines from your
+``.git/config`` file::
+
+	[diff "podiff"]
+		textconv = i18n/git-diff-filter-po.sh
+
+and the following lines from your ``.git/info/attributes`` file::
+
+	*.po diff=podiff
+	*.pot diff=podiff
+
+Or you can run ``git diff --no-textconv`` to temporarily disable this.
+
+
+The second one is a three-way merge driver for `.po` and `.pot` files, hopefully
+making merging of these files easier. The merge will fail if there are duplicate
+msgids in either of the files to be merged.
+
+If you want to disable this, remove the following lines from your
+``.git/config`` file::
+
+	[merge "pomerge"]
+		name = Gettext merge driver
+		driver = i18n/get-merge-po.sh %O %A %B
+
+and the following lines from your ``.git/info/attributes`` file::
+
+	*.po merge=pemerge
+	*.pot merge=pomerge
+
 Sample dev setup
 ----------------
 
