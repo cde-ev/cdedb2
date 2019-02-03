@@ -281,6 +281,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn('title_5', f.fields)
         f['create_-1'].checked = True
         f['title_-1'] = "Cooldown"
+        f['shortname_-1'] = "cd"
         f['part_begin_-1'] = "2233-4-5"
         f['part_end_-1'] = "2233-6-7"
         f['fee_-1'] = "23456.78"
@@ -293,6 +294,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Cooldown", f['title_5'].value)
+        self.assertEqual("cd", f['shortname_5'].value)
         self.assertEqual("Chillout Training", f['track_title_5_4'].value)
         f['title_5'] = "Größere Hälfte"
         f['fee_5'] = "99.99"

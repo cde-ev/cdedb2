@@ -56,6 +56,7 @@ class TestEventBackend(BackendTest):
                              'sortkey': 1}
                     },
                     'title': "First coming",
+                    'shortname': "first",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56")},
@@ -67,6 +68,7 @@ class TestEventBackend(BackendTest):
                              'sortkey': 1}
                     },
                     'title': "Second coming",
+                    'shortname': "second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'fee': decimal.Decimal("0.00")},
@@ -146,6 +148,7 @@ class TestEventBackend(BackendTest):
                      'sortkey': 2}
             },
             'title': "Third coming",
+            'shortname': "third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'fee': decimal.Decimal("123.40")}
@@ -203,6 +206,7 @@ class TestEventBackend(BackendTest):
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
+        changed_part['shortname'] = "second"
         changed_part['tracks'][5].update({'part_id': 6, 'id': 5})
         data['parts'][part_map["Second coming"]] = changed_part
         for field in tmp['fields']:
@@ -1350,18 +1354,21 @@ class TestEventBackend(BackendTest):
                                       'id': 1,
                                       'part_begin': datetime.date(2222, 2, 2),
                                       'part_end': datetime.date(2222, 2, 2),
+                                      'shortname': 'Wu',
                                       'title': 'Warmup'},
                                   2: {'event_id': 1,
                                       'fee': decimal.Decimal('123.00'),
                                       'id': 2,
                                       'part_begin': datetime.date(2222, 11, 1),
                                       'part_end': datetime.date(2222, 11, 11),
+                                      'shortname': '1.H.',
                                       'title': 'Erste Hälfte'},
                                   3: {'event_id': 1,
                                       'fee': decimal.Decimal('450.99'),
                                       'id': 3,
                                       'part_begin': datetime.date(2222, 11, 11),
                                       'part_end': datetime.date(2222, 11, 30),
+                                      'shortname': '2.H.',
                                       'title': 'Zweite Hälfte'}},
             'event.events': {1: {'description': 'Everybody come!',
                                  'iban': 'DE96 3702 0500 0008 0689 01',
@@ -1751,7 +1758,8 @@ class TestEventBackend(BackendTest):
             'id': 4000,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
-            'title': 'Aftershowparty'}
+            'title': 'Aftershowparty',
+            'shortname': 'Aftershow'}
         ## course tracks
         new_data['event.course_tracks'][1100] = {
             'part_id': 4000,
@@ -1864,6 +1872,7 @@ class TestEventBackend(BackendTest):
             'id': 5,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
+            'shortname': 'Aftershow',
             'title': 'Aftershowparty'}
         stored_data['event.course_tracks'][4] = {
             'part_id': 5,
