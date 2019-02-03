@@ -59,16 +59,18 @@
                 {% for moderator in ambience['mailinglist']['moderators']|sort %}
                     <li>
                         {{ util.persona_anchor(personas[moderator], ml_id=ambience['mailinglist']['id']) }}
-                        <form action="{{ cdedblink('ml/remove_moderator')|e }}"
-                              method="POST"
-                              id="removemoderatorform{{ moderator|e }}"
-                              style="display: inline;">
-                            {{ util.input_hidden(name="moderator_id", value=moderator) }}
-                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
-                                    title=gettext("Remove {given_names} {family_name} as moderator").format(
-                                        given_names=personas[moderator]['given_names'],
-                                        family_name=personas[moderator]['family_name'])) }}
-                        </form>
+                        {% if is_admin or moderator != user.persona_id %}
+                            <form action="{{ cdedblink('ml/remove_moderator')|e }}"
+                                  method="POST"
+                                  id="removemoderatorform{{ moderator|e }}"
+                                  style="display: inline;">
+                                {{ util.input_hidden(name="moderator_id", value=moderator) }}
+                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+                                        title=gettext("Remove {given_names} {family_name} as moderator").format(
+                                            given_names=personas[moderator]['given_names'],
+                                            family_name=personas[moderator]['family_name'])) }}
+                            </form>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>

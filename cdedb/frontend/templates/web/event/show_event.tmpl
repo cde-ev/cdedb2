@@ -102,12 +102,14 @@
                     {% for anid, entry in orgas|dictsort %}
                         <li>
                             {{ util.persona_anchor(entry) }} ({{ anid|cdedbid|e }})
-                            <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST"
-                                    id="removeorgaform{{ anid|e }}" style="display: inline;">
-                                {{ util.input_hidden(name="orga_id", value=anid) }}
-                                {{ util.input_submit(value="", readonly=is_locked, title="Orga entfernen", icon='minus',
-                                                     aclass='btn btn-xs btn-danger') }}
-                            </form>
+                            {% if is_admin or anid != user.persona_id %}
+                                <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST"
+                                        id="removeorgaform{{ anid|e }}" style="display: inline;">
+                                    {{ util.input_hidden(name="orga_id", value=anid) }}
+                                    {{ util.input_submit(value="", readonly=is_locked, title="Orga entfernen",
+                                                         icon='minus', aclass='btn btn-xs btn-danger') }}
+                                </form>
+                            {% endif %}
                         </li>
                     {% endfor %}
                 </ul>

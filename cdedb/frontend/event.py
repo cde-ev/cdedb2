@@ -305,9 +305,12 @@ class EventFrontend(AbstractUserFrontend):
     def remove_orga(self, rs, event_id, orga_id):
         """Demote a persona.
 
-        This can drop your own orga role.
+        This can drop your own orga role (but only if you're admin).
         """
         if rs.errors:
+            return self.show_event(rs, event_id)
+        if orga_id == rs.user.persona_id and not self.is_admin(rs):
+            rs.notify("error", n_("Not allowed to remove yourself as orga."))
             return self.show_event(rs, event_id)
         new = {
             'id': event_id,

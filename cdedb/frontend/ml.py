@@ -338,6 +338,10 @@ class MlFrontend(AbstractUserFrontend):
         """Demote persona from moderator status."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
+        if moderator_id == rs.user.persona_id and not self.is_admin(rs):
+            rs.notify("error",
+                      n_("Not allowed to remove yourself as moderator."))
+            return self.management(rs, mailinglist_id)
         data = {
             'id': mailinglist_id,
             'moderators': (set(rs.ambience['mailinglist']['moderators'])
