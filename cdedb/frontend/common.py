@@ -429,6 +429,18 @@ def linebreaks_filter(val, replacement="<br>"):
     val = str(val)
     return val.replace('\n', replacement)
 
+#: bleach internals are not thread-safe, so we have to be a bit defensive
+#: w.r.t. threads
+BLEACH_CLEANER = threading.local()
+
+def get_bleach_cleaner():
+    cleaner = getattr(BLEACH_CLEANER, 'cleaner', None)
+    if cleaner:
+        return cleaner
+    cleaner = xxx
+    BLEACH_CLEANER.cleaner = cleaner
+    return cleaner
+
 def bleach_filter(val):
     """Custom jinja filter to convert sanitize html with bleach.
 
