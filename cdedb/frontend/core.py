@@ -14,7 +14,7 @@ import operator
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
-    check_validation as check, request_extractor, REQUESTfile,
+    check_validation as check, request_extractor, REQUESTfile, check_anti_csrf,
     request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
     csv_output, query_result_to_json, enum_entries_filter)
 from cdedb.common import (
@@ -1000,6 +1000,7 @@ class CoreFrontend(AbstractFrontend):
         "title", "name_supplement", "birthday", "gender", "free_form",
         "telephone", "mobile", "address", "address_supplement", "postal_code",
         "location", "country")
+    @check_anti_csrf()
     def promote_user(self, rs, persona_id, target_realm, data):
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):

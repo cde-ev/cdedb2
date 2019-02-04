@@ -1823,6 +1823,34 @@ def decode_parameter(salt, target, name, param):
     return message[26:]
 
 
+def check_anti_csrf():
+    """This decorator checks the anti CSRF (Cross-Site Request Forgery) token,
+    sent with the request. This should be used on authentication- or
+    authorization-critical forms, to prevent CSRF attacks.
+
+    The form template should use the util.anti_csrf_token() template macro to
+    add the secured user id as a hidden input to the form.
+    """
+    TOKEN_NAME = "anti_csrf"
+    def wrap(fun):
+        @functools.wraps(fun)
+        def new_fun(obj, rs, *args, **kwargs):
+            val = rs.request.values.get(TOKEN_NAME, "").strip()
+            if val:
+                val = rs._coders['decode_parameter'](
+                    "{}/{}".format(obj.realm, fun.__name__), TOKEN_NAME, val)
+                val = check_validation(rs, 'id', val, TOKEN_NAME)
+            if val != rs.user.persona_id:
+                # TODO maybe add some more user-friendly behaviour on token
+                #  timeout?
+                return werkzeug.exceptions.Forbidden(
+                    n_("Anti CSRF token's origin user does not match requesting"
+                       " user: {} vs. {}").format(val, rs.user.persona_id))
+            return fun(obj, rs, *args, **kwargs)
+        return new_fun
+    return wrap
+
+
 def check_validation(rs, assertion, value, name=None, **kwargs):
     """Helper to perform parameter sanitization.
 
