@@ -1,6 +1,13 @@
-{# This template provides a set of standard macros which should be used to
-   create html-elements. #}
+{# This template provides a set of standard macros which should be used to certain create html-elements. #}
 
+{# Macro to load JavaScript files on a per-template basis. This macro should be used the following way in templates, to
+   add the correct <script src="..."> tags to the HTML header:
+
+       {% block scripts %}{{ util.cdedb_script('SCRIPTNAME') }}{% endblock %}
+
+   This Macro takes care of including the correct dependencies (other script files (or CSS stylesheets) required for the
+   target script) and including each script only once. For the possible values of SCRIPTNAME, take a glance at the
+   if-else-ladder down below. #}
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
@@ -37,27 +44,21 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro make_icon(icon, aclass='', title='', arialabel='') -%}
-    {% if title and not arialabel %}{% set arialabel = title %}{% endif -%}
-    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}"
-            {%- if title %} title="{{ title|e }}"{% endif %} aria-hidden="true"></span>
-    {%- if arialabel %}
-        <span class="sr-only">{{ arialabel|e }}</span>
-    {%- endif %}
-{%- endmacro %}
 
-{% macro deko_checkbox(checked, anid='', titles=[]) %}
-    {%- if checked %}
-        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"
-                {%- if titles[1] %} title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{#-#}
-        <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
-    {%- elif checked is not none %}
-        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="False"
-                {%- if titles[0] %} title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{#-#}
-        <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
-    {%- endif %}
-{%- endmacro %}
+{# ############################################ #
+ # General helper macros for links, icons, etc. #
+ # ############################################ #}
 
+{# A really generic macro to generate <a href=""></a> tags.
+
+   ref        The full URL to reference to
+   label      The Link text. (Please consider to add some sr-only text, if this is empty, to maintain a11y.
+   readonly   If True, a simple text instead of a link is added
+   icon       If set, the icon is prepended to the link text. Must be the short icon name, as passed to make_icon()
+   aclass     Additional HTML/CSS classes to be added to the link tag
+   active     If this link is part of a navigation menu, the current active page/tag can be highlighted by setting this
+              to True
+   title      A HTML `title` attribute (hover text) to add to the link #}
 {% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='') -%}
 {% if readonly %}<span>{%- else -%}<a href="{{ ref|e }}"{% endif %}
 {%- if aclass or active or readonly -%}
@@ -70,18 +71,144 @@
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
-{% macro output_errors(name, displayerrors=True, wrapper=False) %}
-    {%- if displayerrors and name in errors %}
-        {%- if wrapper %}<div class="has-error">{% endif %}
-        {%- for error in errors.get(name, []) if error %}
-            <div class="help-block">
-                {{ make_icon('exclamation-sign') }}
-                {{ format_error(error) }}
-            </div>
-        {%- endfor %}
-        {%- if wrapper %}</div>{% endif %}
+{# Macro to place a Bootstrap/Glyphicon icon
+
+   icon       The icon's name. See https://getbootstrap.com/docs/3.3/components/#glyphicons for a list of available
+              icons. Only the distinguishing part of the icon's CSS class is required. E.g. "ok" instead of
+              "glyphicon glyphicon-ok"
+   aclass     An additonal HTML/CSS class to add to the icon. Useful if you want to access the icon via JavaScript
+   title      A HTML `title` attribute (hover text) to add to the icon. This is also used as arialabel, if you don't
+              provide one explicitly.
+   arialabel  A screenreader-only text to append to the icon. Please make sure, to provide one (or a title) for every
+              semantically important icon in support of a11y. #}
+{% macro make_icon(icon, aclass='', title='', arialabel='') -%}
+    {% if title and not arialabel %}{% set arialabel = title %}{% endif -%}
+    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}"
+            {%- if title %} title="{{ title|e }}"{% endif %} aria-hidden="true"></span>
+    {%- if arialabel %}
+        <span class="sr-only">{{ arialabel|e }}</span>
     {%- endif %}
 {%- endmacro %}
+
+
+{# ############## #
+ # Layout helpers #
+ # ############## #}
+
+{% macro bootstrap_panel(title="", aclass="panel-default", icon="", anid="") %}
+    <div class="panel {{ aclass|e }}"{% if anid %} id="{{ anid|e }}"{% endif %}>
+        {%- if title or icon %}
+            <div class="panel-heading">
+                <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title|e }}</h3>
+            </div>
+        {%- endif %}
+        <div class="panel-body">
+            {{- caller() }}
+        </div>
+    </div>
+{%- endmacro %}
+
+
+{# ######################################## #
+ # Special purpose links and element macros #
+ # ######################################## #}
+
+{# Macro to visually represent an immutable boolean value
+
+   checked    The actual boolean value to show
+   anid       The HTML id to add to the element. Useful for testing purposes.
+   titles     An optional list/tuple of two elements: The HTML `title` attribute (hover text) for the False state and
+              the title attribute for the True state. The title is also used as an screenreader-readable hidden text.
+              If you don't provide `titles` and the icon is semantically important, please make sure to make the value
+              accessible to screen readers by any other means. #}
+{% macro deko_checkbox(checked, anid='', titles=[]) %}
+    {%- if checked %}
+        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"
+                {%- if titles[1] %} title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{#-#}
+        <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
+    {%- elif checked is not none %}
+        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="False"
+                {%- if titles[0] %} title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{#-#}
+        <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
+    {%- endif %}
+{%- endmacro %}
+
+{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=None, ml_id=None) %}
+    {%- if verbose -%}
+        {{ href(show_user_link(persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {} {} {}".format(
+              persona['title'], persona['given_names'],
+              persona['family_name'], persona['name_supplement'])) }}
+    {%- else -%}
+        {{ href(show_user_link(persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {}".format(
+              persona['given_names'], persona['family_name'])) }}
+    {%- endif -%}
+{% endmacro %}
+
+{% macro output_given_displayname(given_names, display_name) %}
+    {%- if display_name in given_names %}
+        {%- if not display_name or display_name == given_names -%}
+            {{ given_names|e }}
+        {%- else -%}
+            {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e)) }}
+        {%- endif %}
+    {%- else -%}
+        {{ given_names|e }} ({{ display_name|e }})
+    {%- endif -%}
+{% endmacro %}
+
+{# Macro to generate breadcrumb links. Should be used like this in individual templates:
+
+       {% block breadcrumb %}
+            {{ super() }}
+            {{ util.breadcrumb_link(cdedblink("realm/intermediate_endpoint"), "Intermediate label") }}
+            {{ util.breadcrumb_link(cdedblink("realm/endpoint"), "Page link label", active=True) }}
+       {% endblock %}
+
+   Where the displayed link texts (`label`) directly correspond to the navigation links or button labels, the user has
+   to follow to reach this page.
+
+   The active=True parameter should be used exaclty for the link to the current page, which is alwas the las Breadcrumb
+   link. The readonly=True parameters should be used for rare cases, in which an intermediate page – which is normally
+   required to navigate to the currente page – is not accessible to the user (e.g. visible course listing of not yet
+   published event, only reachable via direct link).
+
+   An icon (given by its name – see comments of make_icon() macro) should exactly be used, when the Breadcrumb link
+   represents a page of a dynamic object (e.g. a persona, an event, a course) and is labeled with this object's
+   name/title. In this case the icon should represent the type of the named object. For a complex example, take a look
+   at the event/change_course template.
+  #}
+{% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
+    {%- if active or readonly -%}
+        <li {% if active %}class="active" aria-current="location"{% endif %}>
+            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e -}}
+        </li>
+    {%- else -%}
+        <li><a href="{{ ref|e }}">
+                {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e -}}
+        </a></li>
+    {%- endif -%}
+{% endmacro %}
+
+{# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
+   docurl(). #}
+{% macro doclink(topic, anchor=None) %}
+    <a href="{{ docurl(topic, anchor)|e }}" class="btn btn-info btn-lg pull-right" target="_blank">
+        {{ make_icon('question-sign') }}
+    {% trans -%}
+        Help
+    {%- endtrans %}
+    <span class="sr-only">
+        {% trans -%}
+            for this site
+        {%- endtrans %}
+    </span>
+    </a>
+{%- endmacro %}
+
+
+{# ########################################################################################### #
+ # Macros to add additional information (infotext, validation errors, ...) around input fields #
+ # ########################################################################################### #}
 
 {% macro format_error(error) %}
     {%- if error.args|length == 1 %}
@@ -101,22 +228,25 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=None, ml_id=None) %}
-    {%- if verbose -%}
-        {{ href(show_user_link(persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {} {} {}".format(
-              persona['title'], persona['given_names'],
-              persona['family_name'], persona['name_supplement'])) }}
-    {%- else -%}
-        {{ href(show_user_link(persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {}".format(
-              persona['given_names'], persona['family_name'])) }}
-    {%- endif -%}
-{% endmacro %}
+{% macro output_errors(name, displayerrors=True, wrapper=False) %}
+    {%- if displayerrors and name in errors %}
+        {%- if wrapper %}<div class="has-error">{% endif %}
+        {%- for error in errors.get(name, []) if error %}
+            <div class="help-block">
+                {{ make_icon('exclamation-sign') }}
+                {{ format_error(error) }}
+            </div>
+        {%- endfor %}
+        {%- if wrapper %}</div>{% endif %}
+    {%- endif %}
+{%- endmacro %}
+
 
 {# ################### #
  # (Form) input macros #
  # ################### #}
 
-{# The input_* macro generates a blank input field of the given type. Note that some input types don't have an own macro
+{# The input_* macros generate a blank input field of the given type. Note that some input types don't have an own macro
    but can be produced by passing an additional parameter to another macro:
 
    * password: input_text(..., type="password")
@@ -124,8 +254,8 @@
    * radio: input_checkbox(..., radio=True)
 
    The form_input_* wraps the specific input macro and adds some divs, label and error output. These macros are meant to
-   be used inside an form.form-horizontal.
-#}
+   be used inside an form.form-horizontal. (If you want to use it in a non-horizontal form, you may pass the
+   horizontal=False parameter.) #}
 {% macro input_hidden(name, value=None, defaultvalue='', anid='', aclass='') %}
     {%- if value is none -%}
         <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
@@ -400,57 +530,4 @@
                                info, displayerrors, True) %}
         {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
     {%- endcall %}
-{%- endmacro %}
-
-{% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
-    {%- if active or readonly -%}
-        <li {% if active %}class="active" aria-current="location"{% endif %}>
-            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e -}}
-        </li>
-    {%- else -%}
-        <li><a href="{{ ref|e }}">
-                {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e -}}
-        </a></li>
-    {%- endif -%}
-{% endmacro %}
-
-{% macro bootstrap_panel(title="", aclass="panel-default", icon="", anid="") %}
-    <div class="panel {{ aclass|e }}"{% if anid %} id="{{ anid|e }}"{% endif %}>
-        {%- if title or icon %}
-            <div class="panel-heading">
-                <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title|e }}</h3>
-            </div>
-        {%- endif %}
-        <div class="panel-body">
-            {{- caller() }}
-        </div>
-    </div>
-{%- endmacro %}
-
-{% macro output_given_displayname(given_names, display_name) %}
-    {%- if display_name in given_names %}
-        {%- if not display_name or display_name == given_names -%}
-            {{ given_names|e }}
-        {%- else -%}
-            {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e)) }}
-        {%- endif %}
-    {%- else -%}
-        {{ given_names|e }} ({{ display_name|e }})
-    {%- endif -%}
-{% endmacro %}
-
-{# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
-   docurl(). #}
-{% macro doclink(topic, anchor=None) %}
-    <a href="{{ docurl(topic, anchor)|e }}" class="btn btn-info btn-lg pull-right" target="_blank">
-        {{ make_icon('question-sign') }}
-    {% trans -%}
-        Help
-    {%- endtrans %}
-    <span class="sr-only">
-        {% trans -%}
-            for this site
-        {%- endtrans %}
-    </span>
-    </a>
 {%- endmacro %}
