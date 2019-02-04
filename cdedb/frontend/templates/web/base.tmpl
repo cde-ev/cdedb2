@@ -47,9 +47,8 @@
                         <form action="{{ cdedblink('core/change_locale') }}" id="changelocaleform" method="post"
                               style="display: inline;">
                             {% if request_url %}
-                                <input type="hidden" name="wants"
-                                       value="{{ encode_parameter("core/change_locale", "wants", request_url,
-                                                                  timeout=None)|e }}" />
+                                {{ util.input_hidden("wants", encode_parameter("core/change_locale", "wants",
+                                                                               request_url, timeout=None)) }}
                             {% endif %}
                             {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
                                               'en': ("English", "Switch to English"),} %}

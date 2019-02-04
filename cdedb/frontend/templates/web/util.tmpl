@@ -471,6 +471,11 @@
     </div>
 {%- endmacro %}
 
+
+{# ############################ #
+ # Special purpose input macros #
+ # ############################ #}
+
 {% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
         horizontal=True) %}
     <div class="form-group {% if name1 in errors or name2 in errors %}has-error{% endif %}">
