@@ -444,7 +444,7 @@
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True) %}
     {%- if caller %}{% set value=caller() %}{% else %}{% set value=value|e %}{% endif %}
     {%- call form_input_general(None, label, anid, small, info, False, horizontal) %}
-        {{- input_static(value, anid) }}
+        <div class="form-control-static"{% if anid %}id="{{ anid|e }}"{% endif %}>{{ value }}</div>
     {%- endcall %}
 {%- endmacro %}
 
