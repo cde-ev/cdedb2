@@ -437,25 +437,12 @@ def get_bleach_cleaner():
     cleaner = getattr(BLEACH_CLEANER, 'cleaner', None)
     if cleaner:
         return cleaner
-    cleaner = xxx
-    BLEACH_CLEANER.cleaner = cleaner
-    return cleaner
-
-def bleach_filter(val):
-    """Custom jinja filter to convert sanitize html with bleach.
-
-    :type val: str
-    :rtype: str
-    """
-    if val is None:
-        return None
     TAGS = [
         'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li',
         'ol', 'strong', 'ul',
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre']
-
     ATTRIBUTES = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -470,7 +457,19 @@ def bleach_filter(val):
         'th': ['colspan'],
         'div': ['id'],
     }
-    return bleach.clean(val, tags=TAGS, attributes=ATTRIBUTES)
+    cleaner = bleach.sanitizer.Cleaner(tags=TAGS, attributes=ATTRIBUTES)
+    BLEACH_CLEANER.cleaner = cleaner
+    return cleaner
+
+def bleach_filter(val):
+    """Custom jinja filter to convert sanitize html with bleach.
+
+    :type val: str
+    :rtype: str
+    """
+    if val is None:
+        return None
+    return get_bleach_cleaner().clean(val)
 
 def rst_filter(val):
     """Custom jinja filter to convert rst to html.
