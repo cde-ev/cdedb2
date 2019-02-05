@@ -6,6 +6,9 @@ took. The main idea is to use Selenium to emulate browser actions and then to pe
 """
 
 from selenium import webdriver
+import selenium.webdriver.support.ui as ui
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.remote.webdriver import WebDriver
 from optparse import OptionParser
 from typing import List, Dict
 import datetime
@@ -67,6 +70,13 @@ def to_milliseconds(dt: datetime.timedelta) -> float:
     return (dt.days * 24 * 60 + dt.seconds) * 1000 + dt.microseconds / 1000
 
 
+def page_processing_time(driver: WebDriver):
+    time_taken_re = r"time taken: (\d:\d+:\d+\.\d+)"  # (\d+:\d+:\d+\.\d+)"  # 0:00:00.058722
+    time_taken = re.compile(time_taken_re, re.S)
+    matches = time_taken.search(driver.page_source)
+    return matches.groups()[0]
+
+
 def register_for_event(registration: RegistrationConfiguration, config: TestConfiguration) \
         -> RegistrationResult:
     # create Chrome driver
@@ -116,21 +126,46 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
     course_choice_re = r'(course_choice\d+_\d+)'
     course_choice = re.compile(course_choice_re, re.S)
 
-    page_source = driver.page_source
-    time_taken_re = r"time taken: (\d:\d+:\d+\.\d+)"  #(\d+:\d+:\d+\.\d+)"  # 0:00:00.058722
-    time_taken = re.compile(time_taken_re, re.S)
-    matches = time_taken.search(page_source)
-    page_process_time = matches.groups()[0]
+    page_process_time = page_processing_time(driver)
     print("page processing took: {}".format(page_process_time))
 
-    course_choices = set(course_choice.findall(page_source))
+    course_choices = set(course_choice.findall(driver.page_source))
     print("Have to fill {} course choice boxes with ids {}".format(len(course_choices), course_choices))
     blocks = set()
+    choiceboxes = dict()
     for choicebox in course_choices:
         block = re.search(r'(\d+)_', choicebox).groups()[0]
         blocks.add(block)
+        if not(block in choiceboxes):
+            choiceboxes[block] = set()
+        choiceboxes[block].add(choicebox)
 
     print("{} blocks: {}".format(len(blocks), blocks))
+
+    for block in blocks:
+        # fill the relevant choice boxes
+        for i, choicebox in enumerate(choiceboxes[block]):
+            choicebox_element = ui.Select(driver.find_element_by_name(choicebox))
+            choicebox_element.select_by_index(i)
+
+    # assume everything is already selected
+    # express consent
+    driver.find_element_by_id("input-checkbox-foto_consent").click()
+    # send form
+    driver.find_element_by_name("submitform").click()
+    benchmark.checkpoint("registration_done")
+    print("registration processing took: {}".format(page_processing_time(driver)))
+
+    # find the notification block
+    try:
+        notification_area = driver.find_element_by_id("notifications")
+        ok_sign = notification_area.find_element_by_class_name("glyphicon-ok-sign")
+        print("ok sign exists? {}".format(ok_sign))
+        ret.success = True
+    except NoSuchElementException:
+        print("registration not successful")
+        pass
+    ret.time_taken = to_milliseconds(benchmark.total_time_from_start())
 
     return ret
 
