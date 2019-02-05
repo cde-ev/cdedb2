@@ -774,7 +774,8 @@ class TestCdEFrontend(FrontendTest):
         
         # check event_fees.csv
         event_fees_fields = ("date", "amount", "db_id", "family_name",
-                             "given_names", "reference")
+                             "given_names", "iban", "bic", "reference",
+                             "problems")
         f = save.forms["event_fees"]
         self.submit(f, check_notification=False)
         result = list(csv.DictReader(self.response.text.split("\n"),
@@ -806,7 +807,7 @@ class TestCdEFrontend(FrontendTest):
         
         # check membership_fees.csv
         membership_fees_fields = ("db_id", "family_name", "given_names",
-                                  "amount", "problems")
+                                  "amount", "comment", "problems")
         f = save.forms["membership_fees"]
         self.submit(f, check_notification=False)
         result = list(csv.DictReader(self.response.text.split("\n"),

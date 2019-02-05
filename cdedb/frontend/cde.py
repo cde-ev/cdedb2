@@ -667,12 +667,12 @@ class CdEFrontend(AbstractUserFrontend):
         # because the output is still subject to change for now
 
         MEMBERSHIP_FEE_FIELDS = ("db_id", "family_name", "given_names",
-                                 "amount", "comment")
+                                 "amount", "comment", "problems")
         EVENT_FEE_FIELDS = ("date", "amount", "db_id", "family_name",
-                            "given_names", "iban", "bic", "comment")
+                            "given_names", "iban", "bic", "comment", "problems")
         OTHER_TRANSACTION_FIELDS = ("account", "date", "amount", "reference",
                                     "account_holder", "type",
-                                    "type_confidence", "iban", "bic")
+                                    "type_confidence", "iban", "bic", "problems")
         ACCOUNT_FIELDS = ("date", "amount", "db_id", "family_name",
                           "given_names", "category", "account")
         
