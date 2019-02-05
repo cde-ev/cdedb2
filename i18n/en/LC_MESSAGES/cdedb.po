@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-05 12:38+0100\n"
+"POT-Creation-Date: 2019-02-05 13:11+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -805,7 +805,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:138
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:75
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:81
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:178
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:181
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:106
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:64
 #: cdedb/i18n_additional.py:208
@@ -3923,7 +3923,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:46
 #: cdedb/frontend/templates/web/core/set_foto.tmpl:58
-#: cdedb/frontend/templates/web/event/show_event.tmpl:164
+#: cdedb/frontend/templates/web/event/show_event.tmpl:165
 msgid "Upload"
 msgstr ""
 
@@ -4200,8 +4200,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/create_course.tmpl:46
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:57
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:58
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:97
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:100
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:65
+#: cdedb/frontend/templates/web/event/show_event.tmpl:137
 msgid "Add"
 msgstr ""
 
@@ -4216,7 +4217,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/index.tmpl:49
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:34
 #: cdedb/frontend/templates/web/event/create_event.tmpl:51
-#: cdedb/frontend/templates/web/event/show_event.tmpl:131
 #: cdedb/frontend/templates/web/ml/management.tmpl:48
 #: cdedb/frontend/templates/web/ml/management.tmpl:154
 msgid "CdEDB-ID, Name or E-Mail"
@@ -4299,14 +4299,14 @@ msgstr "belongs to ballot"
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:119
 #: cdedb/frontend/templates/web/core/show_user.tmpl:352
 #: cdedb/frontend/templates/web/event/show_course.tmpl:155
-#: cdedb/frontend/templates/web/event/show_event.tmpl:218
+#: cdedb/frontend/templates/web/event/show_event.tmpl:219
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:134
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:256
 msgid "Actions"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:111
-#: cdedb/frontend/templates/web/event/show_event.tmpl:224
+#: cdedb/frontend/templates/web/event/show_event.tmpl:225
 msgid "Archive"
 msgstr ""
 
@@ -4316,7 +4316,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_user.tmpl:395
 #: cdedb/frontend/templates/web/core/show_user.tmpl:445
 #: cdedb/frontend/templates/web/event/show_course.tmpl:163
-#: cdedb/frontend/templates/web/event/show_event.tmpl:226
+#: cdedb/frontend/templates/web/event/show_event.tmpl:227
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:142
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:264
 msgid "Are you sure?"
@@ -4442,7 +4442,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/create_course.tmpl:29
 #: cdedb/frontend/templates/web/event/create_event.tmpl:25
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:40
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:124
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:85
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:127
 #: cdedb/frontend/templates/web/event/show_event.tmpl:78
 msgid "Shortname"
 msgstr ""
@@ -5735,7 +5736,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:41
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:46
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:61
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:100
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:103
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:69
 msgid "Remove"
 msgstr ""
@@ -6399,7 +6400,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:172
 #: cdedb/frontend/templates/web/event/base.tmpl:19
-#: cdedb/frontend/templates/web/event/questionnaire.tmpl:22
+#: cdedb/frontend/templates/web/event/questionnaire.tmpl:24
 msgid "Questionnaire"
 msgstr ""
 
@@ -6957,7 +6958,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:75
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:51
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:14
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:125
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:128
 #: cdedb/frontend/templates/web/event/register.tmpl:93
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:143
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:184
@@ -7089,6 +7090,7 @@ msgid "Configure Custom Fields"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:60
+#: cdedb/frontend/templates/web/event/questionnaire.tmpl:27
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:18
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:22
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:14
@@ -8011,40 +8013,40 @@ msgstr ""
 msgid "Name of Event-Part"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:85
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:88
 msgid "Begin"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:88
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:91
 msgid "End"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:106
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:109
 msgid "Event-Part Fee"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:123
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:126
 msgid "Coursetrack"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:126
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:129
 msgid "Sortkey"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:147
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:150
 msgid "Add Coursetrack"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:174
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:177
 msgid "Add Event-Part"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:183
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:186
 msgid "Remove Event-Part"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:187
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:195
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:190
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:198
 msgid "Remove Coursetrack"
 msgstr ""
 
@@ -8058,12 +8060,12 @@ msgstr ""
 msgid "Questionnaire (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/questionnaire.tmpl:22
-#: cdedb/frontend/templates/web/event/questionnaire.tmpl:27
+#: cdedb/frontend/templates/web/event/questionnaire.tmpl:29
+#: cdedb/frontend/templates/web/event/questionnaire.tmpl:35
 msgid "Questionnaire Preview"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/questionnaire.tmpl:29
+#: cdedb/frontend/templates/web/event/questionnaire.tmpl:37
 msgid "Participant Questionnaire"
 msgstr ""
 
@@ -8327,80 +8329,83 @@ msgstr ""
 msgid "Questionnaire active"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:116
+#: cdedb/frontend/templates/web/event/show_event.tmpl:117
 msgid "Remove Orga"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:124
-#: cdedb/frontend/templates/web/event/show_event.tmpl:135
+#: cdedb/frontend/templates/web/event/show_event.tmpl:126
 msgid "Add Orga"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:126
+#: cdedb/frontend/templates/web/event/show_event.tmpl:128
 msgid "ID of the new Orga"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:145
+#: cdedb/frontend/templates/web/event/show_event.tmpl:133
+msgid "ID, Name, E-Mail"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:146
 msgid "Minor Form"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:148
+#: cdedb/frontend/templates/web/event/show_event.tmpl:149
 msgid "current Form"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:148
+#: cdedb/frontend/templates/web/event/show_event.tmpl:149
 #, python-format
 msgid "Form present: %(link)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:154
+#: cdedb/frontend/templates/web/event/show_event.tmpl:155
 msgid "No Form present – Minors cannot register"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:162
+#: cdedb/frontend/templates/web/event/show_event.tmpl:163
 msgid "PDF of the new Minor Form"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:173
+#: cdedb/frontend/templates/web/event/show_event.tmpl:174
 msgid "Offline Use"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:176
+#: cdedb/frontend/templates/web/event/show_event.tmpl:177
 msgid "The event is in Offline-Mode."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:179
+#: cdedb/frontend/templates/web/event/show_event.tmpl:180
 msgid "The event is locked for offline use."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:180
+#: cdedb/frontend/templates/web/event/show_event.tmpl:181
 msgid "To unlock it, upload the export of the Offline-DB here."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:187
+#: cdedb/frontend/templates/web/event/show_event.tmpl:188
 msgid "Export of the Offline-DB"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:189
+#: cdedb/frontend/templates/web/event/show_event.tmpl:190
 msgid "Unlock"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:197
+#: cdedb/frontend/templates/web/event/show_event.tmpl:198
 msgid "The event is not locked."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:200
+#: cdedb/frontend/templates/web/event/show_event.tmpl:201
 msgid "Lock"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:205
+#: cdedb/frontend/templates/web/event/show_event.tmpl:206
 msgid ""
 "By locking the event, all changes are prevented. This way the event can "
 "be managed in\n"
 "                                Offline-Mode without causing conflicts."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:232
+#: cdedb/frontend/templates/web/event/show_event.tmpl:233
 msgid ""
 "Archives the event. This creates a new \"Past Event\" in the CdE-Realm "
 "and transfers\n"
@@ -8409,7 +8414,7 @@ msgid ""
 "                            (incl. participants, courses and lodgements)."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:242
+#: cdedb/frontend/templates/web/event/show_event.tmpl:243
 msgid "The event will be permanently archived."
 msgstr ""
 

@@ -110,12 +110,14 @@
                     {% for anid, entry in orgas|dictsort %}
                         <li>
                             {{ util.persona_anchor(entry) }} ({{ anid|cdedbid|e }})
-                            <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST"
-                                    id="removeorgaform{{ anid|e }}" style="display: inline;">
-                                {{ util.input_hidden(name="orga_id", value=anid) }}
-                                {{ util.input_submit(value="", readonly=is_locked, title=gettext("Remove Orga"),
-                                                     icon='minus', aclass='btn btn-xs btn-danger') }}
-                            </form>
+                            {% if is_admin or anid != user.persona_id %}
+                                <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST"
+                                        id="removeorgaform{{ anid|e }}" style="display: inline;">
+                                    {{ util.input_hidden(name="orga_id", value=anid) }}
+                                    {{ util.input_submit(value="", readonly=is_locked, title=gettext("Remove Orga"),
+                                                         icon='minus', aclass='btn btn-xs btn-danger') }}
+                                </form>
+                            {% endif %}
                         </li>
                     {% endfor %}
                 </ul>
@@ -128,12 +130,11 @@
                             $('#input-add-orga').cdedbSearchPerson(
                                 '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux='
                                 + (ambience['event']['id']|string) }}', {{ ambience['event']['orgas']|list|json }},
-                                false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                false, false, "{{ gettext("ID, Name, E-Mail") }}"
                             );
                         </script>
                         <div class="input-group-btn">
-                            {{ util.input_submit(value=gettext("Add Orga"), readonly=is_locked,
-                                                 aclass='btn btn-success') }}
+                            {{ util.input_submit(value=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
                         </div>
                     </div>
                     {{ util.output_errors('orga_id', wrapper=True) }}

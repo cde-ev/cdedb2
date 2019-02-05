@@ -34,7 +34,7 @@
             if field['association'] == enums['FieldAssociations'].lodgement %}
             {{ util.form_event_field_input(field) }}
         {% else %}
-            <p class="text-muted">{% trans -%}No custum fields for lodgements available.{%- endtrans %}</p>
+            <p class="text-muted">{% trans -%}No custom fields for lodgements available.{%- endtrans %}</p>
         {% endfor %}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_lodgement")) }}
     </form>

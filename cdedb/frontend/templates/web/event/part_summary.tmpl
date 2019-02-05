@@ -82,6 +82,9 @@
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-6">
+                    {{ util.form_input_text(name="shortname_{}".format(part_id), label=gettext("Shortname"),
+                                            attributes=('data-basename="part_shortname_"' if newrow else ''),
+                                            aclass='drow-input') }}
                     {{ util.form_input_text(name="part_begin_{}".format(part_id), label=gettext("Begin"), type='date',
                                             attributes=('data-basename="part_begin_"' if newrow else ''),
                                             aclass='drow-input', placeholder="YYYY-MM-DD") }}

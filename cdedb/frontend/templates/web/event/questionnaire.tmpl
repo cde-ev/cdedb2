@@ -1,4 +1,4 @@
-{% set sidenav_active = 'event_quest_preview' if preview else 'event_quest' %}
+{% set sidenav_active = 'event_quest_summary' if preview else 'event_quest' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='weak' %}
@@ -16,10 +16,18 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
-                        readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
-{{ util.breadcrumb_link(cdedblink("event/questionnaire"),
-                        gettext("Questionnaire Preview") if preview else gettext("Questionnaire"), active=True) }}
+{% if not preview %}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
+                            readonly=not (ambience['event']['is_visible']
+                                          or ambience['event']['id'] in user.orga or is_admin)) }}
+    {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
+                            gettext("Questionnaire"), active=True) }}
+{% else %}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), gettext("Configure Questionnaire")) }}
+    {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
+                            gettext("Questionnaire Preview"), active=True) }}
+{% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
