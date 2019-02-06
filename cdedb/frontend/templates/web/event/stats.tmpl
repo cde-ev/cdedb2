@@ -1,39 +1,43 @@
 {% set sidenav_active='event_stats' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Teilnehmer-Übersicht {{ ambience['event']['title']|e }}{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e-%}
+    	Participant Statistics {{ title }}
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/stats"), "Teilnehmer-Statistik", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/stats"), gettext("Participant Statistics"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Teilnehmer
+        {% trans -%}Statistics{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <h3>Teilnehmer-Statistik</h3>
+    <h3>{% trans -%}Participant Statistics{%- endtrans %}</h3>
     {% with HEADINGS = {
-        'total': "Anmeldungen gesamt",
-        'pending': "Offene Anmeldungen",
-        'participant': "Teilnehmer",
-        ' u18': "U18",
-        ' u16': "U16",
-        ' u14': "U14",
-        ' checked in': "Eingecheckt",
-        ' not checked in': "Noch nicht da",
-        ' orgas': "Orgas",
-        'waitlist': "Warteliste",
-        'guest': "Gast",
-        'total involved': "Aktive Anmeldungen gesamt",
-        ' not payed': "Nicht bezahlt",
-        ' payed': "Bezahlt",
-        ' no parental agreement': "Einverständniserklärung fehlt",
-        'no lodgement': "Keine Unterkunft",
-        'cancelled': "Abgemeldet",
-        'rejected': "Abgelehnt"
+        'total': gettext("Total Registrations"),
+        'pending': gettext("Open Registrations"),
+        'participant': gettext("Participants"),
+        ' u18': gettext("U18"),
+        ' u16': gettext("U16"),
+        ' u14': gettext("U14"),
+        ' checked in': gettext("Checked-In"),
+        ' not checked in': gettext("Not Checked-In"),
+        ' orgas': gettext("Orgas"),
+        'waitlist': gettext("Waitinglist"),
+        'guest': gettext("Guests"),
+        'total involved': gettext("Total Active Registrations"),
+        ' not payed': gettext("Not Paid"),
+        ' payed': gettext("Paid"),
+        ' no parental agreement': gettext("Parental Consent Pending"),
+        'no lodgement': gettext("No Lodgement"),
+        'cancelled': gettext("Registration Cancelled"),
+        'rejected': gettext("Rejected"),
     } %}
         <table class="table table-slim table-condensed">
             <thead>
@@ -41,7 +45,11 @@
                     <th colspan="2"></th>
                     {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                         <th>
-                            {% if ambience['event']['parts']|length > 1 %}{{ part['title']|e }}{% else %}Anzahl{% endif %}
+                            {% if ambience['event']['parts']|length > 1 %}
+                                {{ part['title']|e }}
+                            {% else %}
+                                {% trans -%}Count{%- endtrans %}
+                            {% endif %}
                         </th>
                     {% endfor %}
                 </tr>
@@ -73,9 +81,9 @@
     {% if ambience['event']['tracks'] %}
         <h3>Kursteilnehmer-Statistik</h3>
         {% with HEADINGS = {
-            'all instructors': "Kursleiter (theoretisch)",
-            'instructors': "Kursleiter",
-            'attendees': "Kursteilnehmer",
+            'all instructors': gettext("(potential) Instructor"),
+            'instructors': gettext("Instructor"),
+            'attendees': gettext("Attendees"),
         } %}
         {# TODO move headings into translation and translate in python code #}
             <table class="table table-condensed table-slim">
@@ -84,7 +92,11 @@
                         <th></th>
                         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                             <th>
-                                {% if ambience['event']['tracks']|length > 1 %}{{ track['title']|e }}{% else %}Anzahl{% endif %}
+                                {% if ambience['event']['tracks']|length > 1 %}
+                                    {{ track['title']|e }}
+                                {% else %}
+                                    {% trans -%}Count{%- endtrans %}
+                                {% endif %}
                             </th>
                         {% endfor %}
                     </tr>
@@ -132,14 +144,14 @@
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p class="text-muted">Mindestens ein Drittel.</p>
+                        <p class="text-muted">{% trans -%}At least a third.{%- endtrans %}</p>
                     {% endif %}
                 {% endfor %}
             </div>
         {% endfor %}
         {% if ambience['event']['tracks'] %}
             {% for key, heading in (
-                ('wrong choice', "Ungewählter Kurs zugeteilt"),) %}
+                ('wrong choice', gettext("Assigned to unchosen Course")),) %}
 
                 <div class="col-md-6">
                     <h3>{{ heading|e }}</h3>
@@ -158,7 +170,7 @@
                                 {% endfor %}
                             </ul>
                         {% else %}
-                            <p class="text-muted">Mindestens ein Drittel.</p>
+                            <p class="text-muted">{% trans -%}At least a third.{%- endtrans %}</p>
                         {% endif %}
                     {% endfor %}
                 </div>

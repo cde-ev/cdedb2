@@ -3,10 +3,15 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
+{% block title %}
+    {% trans lodgement=ambience['lodgement']['moniker']|e, title=ambience['event']['title']|e -%}
+    	Lodgement {{ lodgement }} ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft") }}
+    {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker'], active=True,
                             icon='home') }}
 {% endblock %}
@@ -16,20 +21,20 @@
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
-{% block title %}Unterkunft {{ ambience['lodgement']['moniker'] }} ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink("event/change_lodgement_form"), "Bearbeiten", readonly=is_locked,
+        {{ util.href(cdedblink("event/change_lodgement_form"), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon='pencil') }}
-        {{ util.href(cdedblink("event/manage_inhabitants_form"), "Belegung ändern", readonly=is_locked, aclass="btn btn-sm btn-warning", icon='user') }}
+        {{ util.href(cdedblink("event/manage_inhabitants_form"), gettext("Manage Inhabitants"), readonly=is_locked,
+                     aclass="btn btn-sm btn-warning", icon='user') }}
     </div>
 
     <div class="row">
         <div class="col-md-6">
             <dl class="dl-horizontal">
-                <dt>normale Plätze</dt>
+                <dt>{% trans -%}Regular Capacity{%- endtrans %}</dt>
                 <dd>{{ ambience['lodgement']['capacity']|e }}</dd>
-                <dt>Isomattenplätze</dt>
+                <dt>{% trans -%}Reserve Capacity{%- endtrans %}</dt>
                 <dd>{{ ambience['lodgement']['reserve']|e }}</dd>
             </dl>
 
@@ -66,7 +71,7 @@
 
         {% if ambience['lodgement']['notes'] %}
             <div class="col-md-6">
-                {% call util.bootstrap_panel("Orga-Notizen", icon='tag',
+                {% call util.bootstrap_panel(gettext("Orga-Notes"), icon='tag',
                                              aclass='panel panel-default panel-condensed') %}
                     {{ ambience['lodgement']['notes']|rst }}
                 {% endcall %}
@@ -74,7 +79,7 @@
         {% endif %}
     </div>
     
-    <h2>Belegung</h2>
+    <h2>{% trans -%}Inhabitants{%- endtrans %}</h2>
     <div class="row">
         {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
             <div class="col-md-4">
@@ -82,7 +87,11 @@
                     <div class="panel-heading">
                         <div class="pull-right">{{ inhabitants[(values['lodgement_id'], part_id)]|length|e }}</div>
                         <h3 class="panel-title">
-                            {% if ambience['event']['parts']|length > 1 %}{{ part['title']|e }}{% else %}Bewohner{% endif %}
+                            {% if ambience['event']['parts']|length > 1 %}
+                                {{ part['title']|e }}
+                            {% else %}
+                                {% trans -%}Inhabitants{%- endtrans %}
+                            {% endif %}
                         </h3>
                     </div>
 
@@ -111,7 +120,7 @@
                                                  "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
                                                                 personas[registrations[registration_id]['persona_id']]['family_name'])) }}
                                     {% if registrations[registration_id]['parts'][part_id]['is_reserve'] %}
-                                        {{ util.make_icon('tent', title="Isomattenplatz") }}
+                                        {{ util.make_icon('tent', title=gettext("Reserve")) }}
                                     {% endif %}
                                 </li>
                             {% endfor %}
@@ -122,24 +131,29 @@
         {% endfor %}
     </div>
 
-    {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+    {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">
                 <div class="p">
-                    <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" id="deletelodgementform" style="display: inline;">
-                        {{ util.input_submit("Löschen", readonly=is_locked, aclass="btn btn-sm btn-danger", icon='trash') }}
-                        {{ util.input_checkbox(name="ack_delete", label="sicher?", readonly=is_locked) }}
+                    <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" id="deletelodgementform"
+                          style="display: inline;">
+                        {{ util.input_submit(gettext("Delete"), readonly=is_locked, aclass="btn btn-sm btn-danger",
+                                icon='trash') }}
+                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                     </form>
                     <script type="text/javascript">
-                        $('#deletelodgementform').cdedbProtectAction("Die Unterkunft wird irreversibel gelöscht.");
+                        $('#deletelodgementform').cdedbProtectAction(
+                            "{{ gettext("The Lodgement will be permanently deleted.") }}");
                         $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
                     </script>
                 </div>
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    Löscht die Unterkunft mit allen Informationen und lässt die aktuell eingeteilten Teilnehmer ohne
-                    Unterkunft zurück.
+                    {% trans -%}
+                        Deletes the Lodgement with all assosiated information
+                        and leaves the inhabitants without lodgement.
+                    {%- endtrans %}
                 </p>
             </div>
         </div>

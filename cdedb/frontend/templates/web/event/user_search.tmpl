@@ -4,10 +4,12 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}Veranstaltungsnutzersuche{% endblock %}
+{% block title %}
+    {% trans -%}Event-User Search{%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/user_search"), "Nutzer verwalten", active="True") }}
+{{ util.breadcrumb_link(cdedblink("event/user_search"), gettext("Manage Users"), active="True") }}
 {% endblock %}
 {% block content %}
     {# TODO use macro generic.user_search() here, after moving the specific TITLES to some more generic place #}
@@ -18,7 +20,9 @@
                              aclass="btn btn-success btn-sm") }}
             </div>
             <p class="text-muted">{{ util.make_icon('info-sign') }}
-                Diese Nutzerverwaltung findet nur Veranstaltungs-Nutzer, keine CdE-Mitglieder, auch nicht ehemalige.
+                {% trans -%}
+                    This User Search will only find Event-Users.
+                {%- endtrans %}
             </p>
         </div>
         <div class="col-md-8">

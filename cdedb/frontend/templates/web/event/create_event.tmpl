@@ -3,37 +3,44 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='strong' %}
-{% block title %}Veranstaltung anlegen{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Create Event
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/list_db_events"), "Veranstaltungen verwalten") }}
-{{ util.breadcrumb_link(cdedblink("event/create_event"), "Veranstaltung anlegen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Manage Events")) }}
+{{ util.breadcrumb_link(cdedblink("event/create_event"), gettext("Create Event"), active=True) }}
 {% endblock %}
 {% block content %}
     {% call util.bootstrap_panel(aclass="panel-warning") %}
         TODO Kursschienen
     {% endcall %}
     <form action="{{ cdedblink('event/create_event')|e }}" method="POST" id="createeventform" class="form-horizontal">
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_select(name="institution", label="Organisation", entries=institutions|dictsort) }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
-        {{ util.form_input_text(name="shortname", label="Kürzel") }}
-        {{ util.form_input_text(name="event_begin", label="Veranstaltungsbeginn", type="date",
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort,
+                defaultvalue=institutions['cde']) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5") }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_text(name="event_begin", label=gettext("Event Begin"), type="date",
                                 placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="event_end", label="Veranstaltungsende", type="date",
+        {{ util.form_input_text(name="event_end", label=gettext("Event End"), type="date",
                                 placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="registration_start", label="Anmeldebeginn", type="datetime-local",
+        {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type="datetime-local",
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
-        {{ util.form_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss",
+        {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
                                 type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
-                                info="Änderungen an Anmeldungen sind nur bis dahin möglich.") }}
-        {{ util.form_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss",
+                                info=gettext("Is displayed initially. Changes to registration are only possible until "
+                                "then. If left empty, Changes will be possible indefinitely.")) }}
+        {{ util.form_input_text(name="registration_hard_limit", label=gettext("Registration Hard Limit"),
                                 type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
-                                info="Endgültiger Anmeldeschluss. Bis dahin sind Nachmeldungen möglich.") }}
-        {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=accounts, nulloption="") }}
-        {{ util.form_input_textarea(name="mail_text", label="Freitext Anmeldungsbestätigung", rows="5") }}
-        {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}
-        {{ util.form_input_text(name="orga_ids", label="Orgas", placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                                info=gettext("Final registration end. Until then late registrations are possible. "
+                                "If left empty, late registrations will be possible indefinitely.")) }}
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="") }}
+        {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
         <script type="text/javascript">
             $('#input-orgas').cdedbSearchPerson(
@@ -41,11 +48,11 @@
                 [],
                 false,
                 true,
-                "CdEDB-ID, Name oder E-Mail"
+                "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
             );
         </script>
         {{ util.input_hidden(name="use_questionnaire", value=False) }}
-        {{ util.form_input_submit(value="Veranstaltung anlegen", cancellink=cdedblink("event/list_db_events")) }}
+        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_db_events")) }}
     </form>
     <script type="text/javascript">
         $('#createeventform').cdedbProtectChanges();

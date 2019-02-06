@@ -1,18 +1,24 @@
 {% set sidenav_active='event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Feld auswählen ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+        Select Field ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block heading %}
     <h1 class="title">
-        Datenfeld setzen
+        {% trans title=ambience['event']['title']|e -%}
+            Select Field
+        {%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
-{{ util.breadcrumb_link(cdedblink("event/field_set_select"), "Datenfeld setzen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+{{ util.breadcrumb_link(cdedblink("event/field_set_select"), gettext("Set Field"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/field_set_select')|e }}" method="GET" id="selectfieldform"
@@ -23,13 +29,13 @@
                 if field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name']))|e -%}
         {%- endfor %}
-        {{ util.form_input_select("field_id", label="Feld", entries=myentries, small=True) }}
+        {{ util.form_input_select("field_id", label=gettext("Field"), entries=myentries, small=True) }}
         {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
-        {{ util.form_input_submit(value="Anzeigen …", cancellink=cdedblink('event/registration_query'), icon="pencil", small=True) }}
+        {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink('event/registration_query'), icon="pencil", small=True) }}
     </form>
 
     {% if reg_ids %}
-        <h4 class="mosp">Zu ändernde Teilnehmer/Anmeldungen</h4>
+        <h4 class="mosp">{% trans -%}Participants/Registrations to be changed{%- endtrans %}</h4>
         <ul>
             {% for reg_id, registration in registrations|dictsort %}
                 <li>{{ personas[registration['persona_id']]['given_names']|e }}

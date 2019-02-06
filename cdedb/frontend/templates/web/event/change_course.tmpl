@@ -3,68 +3,74 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}{{ ambience['course']['shortname']|e }} ({{ ambience['event']['title']|e }}) bearbeiten{% endblock %}
+{% block title %}
+    {% trans course=ambience['course']['shortname']|e, event=ambience['event']['title']|e -%}
+        Edit {{ course }} ({{ event }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse") }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}
-    {{ util.breadcrumb_link(cdedblink("event/change_course"), "bearbeiten", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/change_course"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Kurs {{ ambience['course']['shortname']|e }} bearbeiten
-        <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title']|e }}</small>
+        {% trans course=ambience['course']['shortname'] -%}
+            Edit course {{ course }}
+        {%- endtrans %}
+        <small>{{ util.make_icon('blackboard', arialabel=gettext("Event")) }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 
 {% block content %}
     <form action="{{ cdedblink('event/change_course')|e }}" method="POST" id="changecourseform" class="form-horizontal">
-        <h4 class="heading-underline">Metadaten</h4>
-        {{ util.form_input_text(name="nr", label="Kursnummer") }}
-        {{ util.form_input_text(name="title", label="Langer Titel") }}
-        {{ util.form_input_text(name="shortname", label="Kurzname") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
-                                    info="Unterstützt reStructuredText",
-				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
-        <h4 class="heading-underline">Kurs-Angebot</h4>
-        {{ util.form_input_text(name="instructors", label="Kursleiter") }}
-        {{ util.form_input_text(name="min_size", label="Minimalgröße") }}
-        {{ util.form_input_text(name="max_size", label="Maximalgröße") }}
+        <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
+        {{ util.form_input_text(name="nr", label=gettext("Coursenumer")) }}
+        {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
+                                    info=gettext("Supports reStructuredText"),
+                                    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+        <h4 class="heading-underline">{% trans -%}Course{%- endtrans %}</h4>
+        {{ util.form_input_text(name="instructors", label=gettext("Instructur")) }}
+        {{ util.form_input_text(name="min_size", label=gettext("Minimum Size")) }}
+        {{ util.form_input_text(name="max_size", label=gettext("Maximum Size")) }}
         {% if ambience['event']['tracks']|length == 1 %}
             {# hide selection of course tracks/segments if the event has only one track #}
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
-            {{ util.form_input_checkboxes(name="segments", label="Angeboten in",
+            {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
                                           entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
                                           aclass='checkbox_segment',
-                                          info="Veranstaltungsteile, in denen der Kurs ursprünglich angeboten wurde.") }}
+                                          info=gettext("Course tracks, in which the Course was originally offered.")) }}
         {% endif %}
 
-        <h4 class="heading-underline">Status</h4>
+        <h4 class="heading-underline">{% trans -%}Status{%- endtrans %}</h4>
         {% if ambience['event']['tracks']|length == 1 %}
             {# show only single checkbox if event has only one course track #}
-            {{ util.form_input_checkbox("active_segments", label="Findet statt",
+            {{ util.form_input_checkbox("active_segments", label=gettext("Takes place"),
                                         value=(ambience['event']['tracks']|list)[0],
-                                        info="Ausfallende Kurse sind nicht mehr von Teilnehmern wählbar und werden in"
-                                             " der Kursliste und bei der Kurseinteilung markiert.") }}
+                                        info=gettext("Cancelled courses are no longer choosable by participants and "
+                                                     "are marked in the courselist and the course assignment.")) }}
         {% else %}
-            {{ util.form_input_checkboxes(name="active_segments", label="Findet statt in",
+            {{ util.form_input_checkboxes(name="active_segments", label=gettext("Takes place in"),
                                           entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
                                           aclass='checkbox_active_segment',
-                                          info="Ausfallende Kurse sind nicht mehr von Teilnehmern wählbar und werden in"
-                                               " der Kursliste und bei der Kurseinteilung markiert.") }}
+                                          info=gettext("Cancelled courses are no longer choosable by participants and "
+                                                       "are marked in the courselist and the course assignment.")) }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
 
         <h4 class="heading-underline">Felder</h4>
         {% for field_id, field in ambience['event']['fields']|dictsort
                 if field['association'] == enums['FieldAssociations'].course %}
             {{ util.form_event_field_input(field) }}
         {% else %}
-            <p class="text-muted">Keine Datenfelder für Kurse vorhanden</p>
+            <p class="text-muted">{% trans -%}No custom fields for courses available.{%- endtrans %}</p>
         {% endfor %}
-        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_course")) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_course")) }}
     </form>
     <script type="text/javascript">
         $('#changecourseform').cdedbProtectChanges();

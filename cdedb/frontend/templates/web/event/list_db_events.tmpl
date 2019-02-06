@@ -1,10 +1,14 @@
 {% set sidenav_active='event_list' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Veranstaltungen verwalten{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Manage Events
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/list_db_events"), "Veranstaltungen verwalten", active="True") }}
+{{ util.breadcrumb_link(cdedblink("event/list_db_events"), gettext("Manage Events"), active="True") }}
 {% endblock %}
 
 {% macro format_entry(event) %}
@@ -15,22 +19,32 @@
         <div class="col-sm-5 small">
             {{ event['begin']|date(lang=lang)|e }}&#8239;–&#8239;{{ event['end']|date(lang=lang)|e }}
             {% if event['parts']|length > 1 %}
-                ({{ event['parts']|length }} Teile)
+                ({% trans count=event['parts']|length|e -%}
+                    {{ count }} Parts
+                {%- endtrans %})
             {% endif %}
         </div>
         <div class="col-sm-3 small">
-            <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']})|e }}">{{ event['registrations'] }} Anmeldungen</a>,
-            {{ event['orgas']|length }} Orga{% if event['orgas']|length != 1 %}s{% endif %}
+            <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']})|e }}">
+                {% trans count=event['registrations']|e -%}
+                	{{ count }} Registrations
+                {%- endtrans %}
+            </a>,
+            {% trans count=event['orgas']|length|e, number=event['orgas']|length -%}
+                {{ count }} Orga
+            {%- pluralize number -%}
+                {{ count }} Orgas
+            {%- endtrans %}
         </div>
     </div>
 {% endmacro %}
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink("event/create_event_form"), "Veranstaltung anlegen", aclass="btn btn-success btn-sm",
+        {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), aclass="btn btn-success btn-sm",
                 icon="plus") }}
     </div>
     
-    <h3>Aktuelle Veranstaltungen</h3>
+    <h3>{% trans -%}Current Events{%- endtrans %}</h3>
     <div class="list-group list-group-hover list-group-condensed">
         {% for event_id, entry in events|dictsort|reverse %}
             {% if not entry['is_archived'] %}
@@ -39,7 +53,7 @@
         {% endfor %}
     </div>
 
-    <h3>Archivierte Veranstaltungen</h3>
+    <h3>{% trans -%}Archived Events{%- endtrans %}</h3>
     <div class="list-group list-group-hover list-group-condensed">
         {% for event_id, entry in events|dictsort|reverse %}
             {% if entry['is_archived'] %}

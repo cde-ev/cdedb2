@@ -4,20 +4,24 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    Feld {{ ambience['event']['fields'][values['field_id']|int]['field_name']|e }} setzen
-    ({{ ambience['event']['title']|e }})
+    {% trans field=ambience['event']['fields'][values['field_id']|int]['field_name']|e,
+             title=ambience['event']['title']|e -%}
+        Set Field {{ field }} ({{ title }})
+    {%- endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        <em>{{ ambience['event']['fields'][values['field_id']|int]['field_name']|e }}</em> setzen
+        {% trans field="<em>{}</em>".format(ambience['event']['fields'][values['field_id']|int]['field_name']|e) -%}
+            Set {{ field }}
+        {%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
-{{ util.breadcrumb_link(cdedblink("event/field_set_select"), "Datenfeld setzen") }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+{{ util.breadcrumb_link(cdedblink("event/field_set_select"), gettext("Set Field")) }}
 {{ util.breadcrumb_link(cdedblink("event/field_set_form"),
                         ambience['event']['fields'][values['field_id']|int]['field_name'], active=True, icon="tag") }}
 {% endblock %}
@@ -27,17 +31,17 @@
             {% for registration_id in ordered %}
                 {{ util.form_event_field_input(
                     ambience['event']['fields'][values['field_id']|int], name="input{}".format(registration_id),
-                    label="{} {}".format(
-                        personas[registrations[registration_id]['persona_id']]['given_names'],
-                        personas[registrations[registration_id]['persona_id']]['family_name']), force_label=True) }}
+                    label="{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
+                                         personas[registrations[registration_id]['persona_id']]['family_name']),
+                    force_label=True) }}
             {% endfor %}
             {{ util.input_hidden(name="field_id") }}
             {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
-            {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/registration_query')) }}
+            {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/registration_query')) }}
         </form>
     {% else %}
         <p>
-            Keine Anmeldungen vorhanden.
+            {% trans -%}No registrations found.{%- endtrans %}
         </p>
     {% endif %}
     <script type="text/javascript">

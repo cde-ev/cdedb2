@@ -9,7 +9,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/view_log"), "Core Log", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/view_log"), gettext("Core Log"), active="True") }}
 {% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">

@@ -1,34 +1,38 @@
 {% set sidenav_active='event_lodgements' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Unterkunftsübersicht ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+    	Lodgements ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Unterkünfte
+        {% trans -%}Lodgements{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink("event/create_lodgement_form"), "Unterkunft hinzufügen", readonly=is_locked,
+        {{ util.href(cdedblink("event/create_lodgement_form"), gettext("Add Lodgement"), readonly=is_locked,
                      aclass='btn btn-sm btn-success', icon='plus') }}
     </div>
 
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th rowspan="2">Unterkunft</th>
+            <th rowspan="2">{% trans -%}Lodgement{%- endtrans %}</th>
                 {% if ambience['event']['parts']|length > 1 %}
-                    <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">Belegung</th>
+                    <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">Inhabitants</th>
                 {% else %}
-                    <th rowspan="2" colspan="2" class="text-right">Belegung</th>
+                    <th rowspan="2" colspan="2" class="text-right">{% trans -%}Inhabitants{%- endtrans %}</th>
                 {% endif %}
-                <th colspan="2" class="b-left">Kapazität</th>
+                <th colspan="2" class="b-left">{% trans -%}Capacity{%- endtrans %}</th>
                 <th rowspan="2" class="b-left"></th>
             </tr>
             <tr>
@@ -40,8 +44,8 @@
                         <th></th>
                     {% endfor %}
                 {% endif %}
-                <th class="b-left text-right">Plätze</th>
-                <th class="text-right">Isomattenplätze</th>
+                <th class="b-left text-right">{% trans -%}Regular{%- endtrans %}</th>
+                <th class="text-right">{% trans -%}Reserve{%- endtrans %}</th>
             </tr>
         </thead>
         <tbody>
@@ -68,10 +72,10 @@
                     <td class="b-left">
                         {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
                                      readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
-                                     title="Bearbeiten") }}
+                                     title=gettext("Edit")) }}
                         {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
                                      readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
-                                     title="Belegung ändern") }}
+                                     title=gettext("Manage Inhabitants")) }}
                     </td>
                 </tr>
             {% endfor %}
@@ -80,9 +84,9 @@
 
     <hr />
     <p>
-        <strong>Farb-Legende:</strong> &emsp;
-        <span class="color-legend course-fewp"></span>&nbsp;Warnung &emsp;
-        <span class="color-legend course-manyp"></span>&nbsp;Überfüllung &emsp;
-        <span class="color-legend course-cancelled"></span>&nbsp;unzulässige Geschlechtermischung
+        <strong>{% trans -%}Color Guide{%- endtrans %}:</strong> &emsp;
+        <span class="color-legend course-fewp"></span>&nbsp;{% trans -%}Warning{%- endtrans %} &emsp;
+        <span class="color-legend course-manyp"></span>&nbsp;{% trans -%}Overfull{%- endtrans %} &emsp;
+        <span class="color-legend course-cancelled"></span>&nbsp;{% trans -%}Illegal Gendermix{%- endtrans %}
     </p>
 {% endblock %}

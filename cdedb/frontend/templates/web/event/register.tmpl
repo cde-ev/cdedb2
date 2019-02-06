@@ -2,35 +2,44 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}Anmeldung für {{ ambience['event']['title']|e }}{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+    	Registration for {{ title }}
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
                         readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
-{{ util.breadcrumb_link(cdedblink("event/register"), "Anmelden", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Anmeldung
+        {% trans -%}Registration{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     <p>
         {% if ambience['event']['registration_soft_limit'] is none %}
-            Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss geändert werden.
+            {% trans -%}
+                All data except Event-Parts can be changed until the registration ends.
+            {%- endtrans %}
         {% elif ambience['event']['registration_soft_limit'] >= now() %}
-            Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss
-            ({{ ambience['event']['registration_soft_limit']|datetime(lang=lang)|e }}) geändert werden.
+            {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)|e -%}
+            	All data except Event-Parts can be changed until the registration ends({{ date }}).
+            {%- endtrans %}
         {% else %}
-            Der offizielle Anmeldeschluss ist bereits vorbei. Deine Anmeldung wird nach Möglichkeit berücksichtigt.
+            {% trans -%}
+                The official registration has ended. Your registration will be considered if possible.
+            {%- endtrans %}
         {% endif %}
     </p>
 
     <form action="{{ cdedblink('event/register')|e }}" method="POST" id="registerform" class="form-horizontal">
-        <h3 class="heading-underline">Meine Daten</h3>
+        <h3 class="heading-underline">{% trans -%}My Data{%- endtrans %}</h3>
         <dl class="dl-horizontal">
-            <dt>Name</dt>
+            <dt>{% trans -%}Full Name{%- endtrans %}</dt>
             <dd>
                 {{ persona['title']|e }}
                 {{ persona['given_names']|e }}
@@ -38,36 +47,37 @@
                 {{ persona['name_supplement']|e }}
             </dd>
 
-            <dt>Geburtstag</dt>
+            <dt>{% trans -%}Birthday{%- endtrans %}</dt>
             <dd>{{ persona['birthday']|e }}</dd>
-            <dt>Geschlecht</dt>
+            <dt>{% trans -%}Gender{%- endtrans %}</dt>
             <dd>{{ gettext(enums['Genders'](persona['gender'])|string)|e }}</dd>
-            <dt>E-Mail</dt>
+            <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
             <dd> {{ persona['username']|e }} </dd>
-            <dt>Telefon</dt>
+            <dt>{% trans -%}Phone{%- endtrans %}</dt>
             <dd>{{ persona['telephone']|e }}</dd>
-            <dt>Mobiltelefon</dt>
+            <dt>{% trans -%}Mobilephone{%- endtrans %}</dt>
             <dd>{{ persona['mobile']|e }}</dd>
-            <dt>Straße</dt>
+            <dt>{% trans -%}Address{%- endtrans %}</dt>
             <dd>{{ persona['address']|e }}</dd>
-            <dt>Adresszusatz</dt>
+            <dt>{% trans -%}Address Supplement{%- endtrans %}</dt>
             <dd>{{ persona['address_supplement']|e }}</dd>
-            <dt>Stadt</dt>
+            <dt>{% trans -%}City{%- endtrans %}</dt>
             <dd>{{ persona['postal_code']|e }} {{ persona['location']|e }}</dd>
-            <dt>Land</dt>
+            <dt>{% trans -%}Country{%- endtrans %}</dt>
             <dd>{{ persona['country']|e }}</dd>
         </dl>
         <p>
-            Diese Daten werden werden aus Deinem persönlichen Profil übernommen. Um sie zu ändern, verwende bitte das
-            {{ util.href(cdedblink('core/change_user'), "Formular zum Bearbeiten des Profils") }}.
+            {% trans link=util.href(cdedblink('core/change_user'), gettext("form to edit your profile")) -%}
+            	This data is taken from your personal profile. To change it, use this {{ link }}.
+            {%- endtrans %}
         </p>
 
         {% if ambience['event']['parts']|length > 1
                 or (ambience['event']['parts']|length == 1 and course_choices[(course_choices|list)[0]]|length > 0) %}
-            <h3 class="heading-underline">Anmeldung</h3>
+            <h3 class="heading-underline">{% trans -%}Registration{%- endtrans %}</h3>
         {% endif %}
         {% if ambience['event']['parts']|length > 1 %}
-            {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile",
+            {{ util.form_input_checkboxes(name="parts", label=gettext("Event-Parts"),
                                           entries=ambience['event']['parts']|xdictsort('part_begin')
                                               |dict_entries('id', 'title')) }}
         {% elif ambience['event']['parts']|length == 1 %}
@@ -80,9 +90,11 @@
                 <div id="course_choice_container-{{ track_id }}" class="course_choice_container"
                      data-part="{{ track['part_id'] }}">
                     <h4>
-                        Kurswahl
+                        {% trans -%}Course Choices{%- endtrans %}
                         {% if course_choices|length > 1 %}
-                            für {{ track['title']|e }}
+                            {% trans track=track['title']|e -%}
+                            	for {{ track }}
+                            {%- endtrans %}
                         {% endif %}
                     </h4>
 
@@ -90,40 +102,39 @@
                                             |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
                     {% for i in range(track['num_choices']) %}
                         {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i),
-                                                  label="{}. Wahl".format(i + 1), entries=course_entries) }}
+                                                  label=gettext("{}. Choice").format(i + 1), entries=course_entries) }}
                     {% endfor %}
 
                     {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=course_entries,
-                                              nulloption="— Ich bin kein Kursleiter —", label="Kursleiter",
-                                              info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
+                                              nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
+                                              info=gettext("If you are instructing a course, please specify which one.")) }}
                 </div>
             {% endif %}
         {% endfor %}
 
-        <h3 class="heading-underline">Weitere Angaben</h3>
+        <h3 class="heading-underline">{% trans -%}Additional Information{%- endtrans %}</h3>
         {% if not age.may_mix() %}
             {{ util.input_hidden(name="mixed_lodging", value=False) }}
-            {{ util.form_input_static(label="Geschlechter-getrennte Unterbringung", value="Gemischte Unterbringung nicht möglich.") }}
+            {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
         {% else %}
             {% if age.is_minor() %}
-                {% set mix_info = glue("Die Auswahl muss mit der Einverständniserklärung der",
-                                       "Erziehungsberechtigten kompatibel sein.") %}
+                {% set mix_info = gettext("The selection must be compatible with the parental consent form.") %}
             {% else %}
                 {% set mix_info = "" %}
             {% endif %}
             {{ util.form_input_select(name="mixed_lodging", entries=(
-                (True, "Ich bin mit gemischter Unterbringung einverstanden."),
-                (False, "Ich will geschlechter-getrennt untergebracht werden.")),
-                label="Geschlechter-getrennte Unterbringung", info=mix_info) }}
+                (True, "I agree to mixed lodging."),
+                (False, "I want to be lodged seperated by gender.")),
+                label=gettext("Mixed Lodging"), info=mix_info) }}
         {% endif %}
-        {{ util.form_input_checkbox(name="foto_consent", label=glue(
-                "Ich bin damit einverstanden, dass Fotos und Aufnahmen meiner Person, die im Rahmen dieser",
-                "Veranstaltung entstehen, für die Veranstaltungsdokumentation und eine CdE-interne,",
-                "passwortgeschützte Fotogalerie verwendet werden. Einzelne Fotos können auf gesonderten",
-                "Wunsch davon ausgenommen werden.")) }}
-        {{ util.form_input_textarea(name="notes", label="Anmerkungen für Orgas und Kursleiter", rows="5") }}
+        {{ util.form_input_checkbox(name="foto_consent", label=gettext(
+                "I agree, that photos and recordings of myself, that are made in the context "
+                "of this event, may be used for the event-documentation and a CdE-internal, "
+                "password protected media collection. Individual photos and recordings can "
+                "be excluded from this by my request.")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes for Orgas and Instructors"), rows="5") }}
 
-        {{ util.form_input_submit(value="Anmelden", cancellink=cdedblink('event/show_event')) }}
+        {{ util.form_input_submit(value=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
     </form>
     <script type="text/javascript">
         var $form = $('#registerform');

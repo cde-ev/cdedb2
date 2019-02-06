@@ -1,15 +1,19 @@
 {% set sidenav_active='event_register' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Deine Anmeldung ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+    	Your Registration ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/registration_status"), "Meine Anmeldung", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("Your Registration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Deine Anmeldung
+        {% trans -%}Your Registration{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
@@ -17,36 +21,37 @@
     {% if not registration['payment'] %}
         <h3 class="heading-underline">Überweisung</h3>
         <p>
-             Beachte bitte, dass deine Anmeldung erst mit Überweisung des
-             Teilnehmerbeitrags gültig wird. Überweise dazu {{ fee|money }}
-             auf folgendes Konto. Achte bitte bei internationalen
-             Überweisungen darauf, dass der Empfänger keine Gebühren zahlen
-             muss.
+            {% trans fee=fee|money -%}
+            	Please keep in mind, that your Registration will only be complete, once
+                you pay your participation fee. Please transfer {{ fee }} to the following
+                Account. Please make sure, the recipient does not have to pay any fees,
+                especially when paying internationally.
+            {%- endtrans %}
         </p>
         <table class="table table-condensed">
             <tbody>
                 <tr>
-                    <td>Kontoinhaber</td>
-                    <td>CdE e.V.</td>
+                    <td>{% trans -%}Account holder{%- endtrans %}</td>
+                    <td>{% trans -%}CdE e.V.{%- endtrans %}</td>
                 </tr>
                 <tr>
-                    <td>IBAN</td>
+                    <td>{% trans -%}IBAN{%- endtrans %}</td>
                     <td>{{ ambience['event']['iban']|e }}</td>
                 </tr>
                 <tr>
-                    <td>BIC</td>
+                    <td>{% trans -%}BIC{%- endtrans %}</td>
                     <td>BFSWDE33XXX</td>
                 </tr>
                 <tr>
-                    <td>Kreditinstitut</td>
+                    <td>{% trans -%}Bank{%- endtrans %}</td>
                     <td>Bank für Sozialwirtschaft</td>
                 </tr>
                 <tr>
-                    <td>Betrag</td>
+                    <td>{% trans -%}Amount{%- endtrans %}</td>
                     <td>{{ fee|money }}</td>
                 </tr>
                 <tr>
-                    <td>Verwendungszweck</td>
+                    <td>{% trans -%}Reference{%- endtrans %}</td>
                     <td>{{ user['given_names']|e }} {{ user['family_name']|e }},
                           {{ user['persona_id']|cdedbid|e }}, {{ ambience['event']['title']|e }}</td>
                 </tr>
@@ -55,11 +60,11 @@
     {% endif %}
 
     {% if age.is_minor() and not registration['parental_agreement'] %}
-        <h3 class="heading-underline">Einverständniserklärung</h3>
+        <h3 class="heading-underline">{% trans -%}Parental Consent{%- endtrans %}</h3>
         <p>
-            Du musst noch die Einverständniserklärung deiner
-            Erziehungsberechtigten an die Orgas schicken. Du findest die Vorlage
-            {{ util.href(cdedblink('event/get_minor_form'), "hier", icon='file') }}.
+            {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("here"), icon='file') -%}
+            	You need to send the parental consent form to the Orgas. You can find the form {{ link }}.
+            {%- endtrans %}
         </p>
     {% endif %}
 
@@ -70,60 +75,61 @@
                 {% if ambience['event']['parts']|length > 1 %}
                     {{ ambience['event']['parts'][part_id]['title']|e }}
                 {% else %}
-                    Anmeldestatus
+                    {% trans -%}Registration Status{%- endtrans %}
                 {% endif %}
             </dt>
             <dd>{{ gettext(part['status']|enum(enums['RegistrationPartStati']))|e }}</dd>
         {% endfor %}
     </dl>
 
-    <h3 class="heading-underline">Anmeldedaten</h3>
+    <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
     {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), "Ändern", aclass="btn btn-sm btn-warning",
                          icon='pencil') }}
             {% if not ambience['event']['registration_soft_limit'] is none %}
-                &ensp; Änderungen sind bis zum Anmeldeschluss
-                    ({{ ambience['event']['registration_soft_limit']|datetime(lang=lang)|e }})
-                möglich.
+                {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)|e-%}
+                    Changes can be made until the registration end({{ date }}).
+                {%- endtrans %}
             {% endif %}
         </p>
     {% else %}
         <p>
-            Da der Anmeldeschluss bereits vorbei ist, sind keine Änderungen mehr möglich. Wende Dich bitte per E-Mail an
-            die Orgas, falls Du etwas ändern musst.
+            {% trans -%}
+                Registration has ended, therefore no more changes are possible.
+                Please contact the Orgas per E-Mail, if you need to change something about your registration.
+            {%- endtrans %}
         </p>
     {% endif %}
 
     <dl class="dl-horizontal">
-        <dt>Gemischte Unterbringung</dt>
+        <dt>{% trans -%}Mixed Lodging{%- endtrans %}</dt>
         <dd>
             {% if not age.may_mix() %}
-                Keine geschlechter-gemischte Unterbringung möglich.
+                {% trans -%}Mixed Lodging not possible.{%- endtrans %}
             {% else %}
                 {% if registration['mixed_lodging'] %}
-                    Ich bin mit einer geschlechter-gemischten Unterbringung einverstanden.
+                    {% trans -%}I agree to mixed lodging.{%- endtrans %}
                 {% else %}
-                    Ich will geschlechter-getrennt untergebracht werden.
+                    {% trans -%}I want to be lodged seperated by gender.{%- endtrans %}
                 {% endif %}
             {% endif %}
         </dd>
         <dt>Fotos</dt>
         <dd>
-            Ich bin
-            {% if not registration['foto_consent'] %}
-                <strong>nicht</strong>
-            {% endif %}
-            damit einverstanden, dass Fotos und Aufnahmen meiner Person
-            von dieser Veranstaltung für die
-            Doku und eine CdE-interne,
-            passwortgeschützte Fotogalerie verwendet werden.
+            {% trans consent="<strong>{}</strong>".format(gettext("do not"))
+                            if registration['foto_consent'] else "" -%}
+                I {{ consent }} agree, that photos and recordings of myself, that are made in the context
+                of this event, may be used for the event-documentation and a CdE-internal,
+                password protected media collection. Individual photos and recordings can
+                be excluded from this by my request.
+            {%- endtrans %}
         </dd>
     </dl>
     {% if registration['notes'] %}
         <dl class="dl-horizontal">
-            <dt>Anmerkungen</dt>
+            <dt>{% trans -%}Notes{%- endtrans %}</dt>
             <dd>
                 {{ registration['notes']|rst }}
             </dd>
@@ -134,7 +140,7 @@
         {% set reg_track = registration['tracks'][track_id] %}
         {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
             <h4>
-                Kurswahl
+                {% trans -%}Course Choices{%- endtrans %}
                 {% if ambience['event']['tracks']|length > 1 %}
                     für {{ track['title']|e }}
                 {% endif %}
@@ -142,7 +148,7 @@
 
             <dl class="dl-horizontal">
                 {% if reg_track['course_instructor'] %}
-                    <dt>Kursleiter von</dt>
+                    <dt>{% trans -%}Instructor of{%- endtrans %}</dt>
                     <dd><em>{{ courses[reg_track['course_instructor']]['title']|e }}</em>.</dd>
                 {% endif %}
                 {% for i in range(track['num_choices']) %}

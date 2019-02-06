@@ -1083,19 +1083,21 @@ class EventFrontend(AbstractUserFrontend):
             (("persona.family_name", True), ("persona.given_names", True),)
         )
         filter_entries = [
-            (CourseFilterPositions.anywhere.value, "know somehow"),
-            (CourseFilterPositions.assigned.value, "participate in"),
-            (CourseFilterPositions.instructor.value, "offer"),
-            (CourseFilterPositions.any_choice.value, "chose")]
+            (CourseFilterPositions.anywhere.value, rs.gettext("somehow know")),
+            (CourseFilterPositions.assigned.value, rs.gettext("participate in")),
+            (CourseFilterPositions.instructor.value, rs.gettext("offer")),
+            (CourseFilterPositions.any_choice.value, rs.gettext("chose"))]
         filter_entries.extend(
-            (i, "have as {}. choice".format(i+1))
+            (i, rs.gettext("have as {}. choice").format(i+1))
             for i in range(max(t['num_choices'] for t in tracks.values())))
         action_entries = [
-            (i, "into their {}. choice".format(i+1))
+            (i, rs.gettext("into their {}. choice").format(i+1))
             for i in range(max(t['num_choices'] for t in tracks.values()))]
         action_entries.extend((
-            (CourseChoiceToolActions.assign_fixed.value, "in the course …"),
-            (CourseChoiceToolActions.assign_auto.value, "automatically")))
+            (CourseChoiceToolActions.assign_fixed.value,
+             rs.gettext("in the course …")),
+            (CourseChoiceToolActions.assign_auto.value,
+             rs.gettext("automatically"))))
         return self.render(rs, "course_choices", {
             'courses': courses, 'personas': personas,
             'registrations': OrderedDict(

@@ -3,44 +3,48 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}Kurs hinzufügen ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+    	Add Course ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse") }}
-    {{ util.breadcrumb_link(cdedblink("event/create_course"), "Kurs hinzufügen", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
+    {{ util.breadcrumb_link(cdedblink("event/create_course"), gettext("Add Course"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Kurs hinzufügen
+        {% trans -%}Add Course{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 
 {% block content %}
     <form action="{{ cdedblink('event/create_course')|e }}" method="POST" id="createcourseform" class="form-horizontal">
-        <h4 class="heading-underline">Metadaten</h4>
-        {{ util.form_input_text(name="nr", label="Nummer") }}
-        {{ util.form_input_text(name="title", label="Langer Titel") }}
-        {{ util.form_input_text(name="shortname", label="Kurzname") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
+        <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
+        {{ util.form_input_text(name="nr", label=gettext("Number")) }}
+        {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info="Unterstützt reStructuredText",
-				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
-        <h4 class="heading-underline">Kurs-Angebot</h4>
-        {{ util.form_input_text(name="instructors", label="Kursleiter") }}
-        {{ util.form_input_text(name="min_size", label="Minimalgröße") }}
-        {{ util.form_input_text(name="max_size", label="Maximalgröße") }}
+                                    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+        <h4 class="heading-underline">{% trans -%}Course{%- endtrans %}</h4>
+        {{ util.form_input_text(name="instructors", label=gettext("Instructor")) }}
+        {{ util.form_input_text(name="min_size", label=gettext("Minimum Size")) }}
+        {{ util.form_input_text(name="max_size", label=gettext("Maximum Size")) }}
         {% if ambience['event']['tracks']|length == 1 %}
             {# hide selection of course tracks/segments if the event has only one track #}
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
-            {{ util.form_input_checkboxes(name="segments", label="Veranstaltungsteile",
+            {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
                                           entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title')) }}
         {% endif %}
 
-        <h4 class="heading-underline">Status</h4>
-        {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
-        {{ util.form_input_submit(value="Kurs hinzufügen", cancellink=cdedblink('event/course_stats')) }}
+        <h4 class="heading-underline">{% trans -%}Status{%- endtrans %}</h4>
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_submit(value=gettext("Add"), cancellink=cdedblink('event/course_stats')) }}
     </form>
     <script type="text/javascript">
         $('#createcourseform').cdedbProtectChanges();

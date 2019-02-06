@@ -1,11 +1,15 @@
 {% set sidenav_active='event_downloads' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Downloads zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+        Downloads for Event {{ title }}
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/downloads"), "Downloads", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/downloads"), gettext("Downloads"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -13,7 +17,7 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <h3>Drucksachen</h3>
+    <h3>{% trans -%}Printables{%- endtrans %}</h3>
     <table class="table table-slim">
         <tbody>
             {% for name, endpoint in [("Namensschilder", 'event/download_nametags'),
@@ -24,39 +28,39 @@
                                       ("Unterkunftslisten",'event/download_lodgement_lists')] %}
                 <tr>
                     <td>{{ name }}</td>
-                    <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), "LaTeX", icon='download') }}</td>
-                    <td>{{ util.href(cdedblink(endpoint, {'runs': 2}), "PDF", icon='file') }}</td>
+                    <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                    <td>{{ util.href(cdedblink(endpoint, {'runs': 2}), gettext("PDF"), icon='file') }}</td>
                 </tr>
             {% endfor %}
 
         </tbody>
     </table>
 
-    <h3>Datenexport</h3>
+    <h3>{% trans -%}Export{%- endtrans %}</h3>
     <table class="table table-slim">
         <tbody>
             <tr>
                 <td>
-                    Export der Veranstaltung<br />
-                    <small>(für Initialisierung der Offline-VM und andere Tools)</small>
+                    {% trans -%}Full Event Export{%- endtrans %}<br />
+                    <small>({% trans -%}for Initilization of the Offline-VM and external Tools{%- endtrans %})</small>
                 </td>
-                <td>{{ util.href(cdedblink('event/download_export'), "JSON-Datei", icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_export'), gettext("JSON-File"), icon='download') }}</td>
             </tr>
             <tr>
-                <td>Anmeldedaten</td>
-                <td>{{ util.href(cdedblink('event/download_csv_registrations'), "CSV-Datei", icon='download') }}</td>
+                <td>{% trans -%}Registrations{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_csv_registrations'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
             <tr>
-                <td>Kursliste</td>
-                <td>{{ util.href(cdedblink('event/download_csv_courses'), "CSV-Datei", icon='download') }}</td>
+                <td>{% trans -%}Courselist{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_csv_courses'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
             <tr>
-                <td>Unterkunftsliste</td>
-                <td>{{ util.href(cdedblink('event/download_csv_lodgements'), "CSV-Datei", icon='download') }}</td>
+                <td>{% trans -%}Lodgementlist{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_csv_lodgements'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
             <tr>
-                <td>Kursliste für den exPuls</td>
-                <td>{{ util.href(cdedblink('event/download_expuls'), "TeX-Code", icon='download') }}</td>
+                <td>{% trans -%}Courselist for exPuls{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_expuls'), gettext("TeX-Code"), icon='download') }}</td>
             </tr>
         </tbody>
     </table>

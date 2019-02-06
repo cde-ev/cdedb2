@@ -123,7 +123,7 @@
                         <form action="{{ cdedblink('cde/delete_past_course')|e }}" method="POST"
                                 id="deletecourseform" style="display: inline;">
                             {{ util.input_submit(value=gettext("Delete Course"), icon="trash", aclass="btn btn-danger") }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are You sure?"), readonly=is_locked) }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>
                     </div>
                 </div>

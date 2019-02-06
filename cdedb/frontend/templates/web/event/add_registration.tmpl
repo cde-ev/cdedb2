@@ -3,70 +3,76 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint = 'strong' %}
-{% block title %}Neue Anmeldung ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title']|e -%}
+        New Registration ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
-    {{ util.breadcrumb_link(cdedblink("event/add_registration"), "Hinzufügen", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
+    {{ util.breadcrumb_link(cdedblink("event/add_registration"), gettext("New Participant"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Neue Anmeldung
+        {% trans -%}
+            New Registration
+        {%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/add_registration')|e }}" method="POST" id="addregistrationform"
           class="form-horizontal">
-        <h3 class="heading-underline">Personendaten</h3>
-        {{ util.form_input_text(name="persona.persona_id", label="CdEDB-ID", anid="input-persona-persona_id",
-                                placeholder='DB-XXXX-X') }}
+        <h3 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h3>
+        {{ util.form_input_text(name="persona.persona_id", label=gettext("CdEDB-ID"), anid="input-persona-persona_id",
+                                placeholder=gettext("DB-XXXX-X")) }}
         <script type="text/javascript">
             $('#input-persona-persona_id').cdedbSearchPerson(
                 '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + (ambience['event']['id']|string) }}',
-                {{ registered_personas|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
+                {{ registered_personas|list|json }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
             );
         </script>
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
-            {{ util.form_input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
+            {{ util.form_input_text(name="reg.real_persona_id", label=gettext("Online CdEDB-ID")) }}
         {% endif %}
 
-        <h3 class="heading-underline">Status</h3>
-        {{ util.form_input_textarea(name="reg.orga_notes", label="Orga-Notizen", rows="5") }}
-        {{ util.form_input_text(name="reg.payment", label="Teilnehmerbeitrag bezahlt am", type="date",
+        <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
+        {{ util.form_input_textarea(name="reg.orga_notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
                             placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_checkbox(name="reg.parental_agreement", label="Einverständniserklärung der Eltern") }}
-        {{ util.form_input_text(name="reg.checkin", label="Eingecheckt am", type="datetime-local",
+        {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
+        {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local",
                                 placeholder="YYYY-MM-DDThh:ii") }}
 
         {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title']|e }}</h4>
             {% endif %}
-            {{ util.form_input_select(name="part{}.status".format(part_id), label="Status",
+            {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
+            {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
                                      entries=lodgements|xdictsort('moniker')|dict_entries('id', 'moniker'), nulloption="") }}
             {% for track_id, track in part['tracks']|xdictsort('sortkey') %}
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
-                                          label="Kurs {}".format(track['title'])
-                                                if ambience['event']['tracks']|length > 1  else "Kurs",
+                                          label=gettext("Course {}").format(track['title'])
+                                                if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                           entries=course_entries,
                                           nulloption="") }}
             {% endfor %}
         {% endfor %}
 
-        <h3 class="heading-underline">Anmeldedaten</h3>
-        {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung", defaultvalue='True') }}
-        {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung", defaultvalue='True') }}
-        {{ util.form_input_textarea(name="reg.notes", label="Anmerkungen", rows="5") }}
+        <h3 class="heading-underline">Registration Data</h3>
+        {{ util.form_input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging"), defaultvalue=True) }}
+        {{ util.form_input_checkbox(name="reg.foto_consent", label=gettext("Foto Consent"), defaultvalue=True) }}
+        {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% if course_choices[track_id]|length > 0 %}
                 <h4>
-                    Kurswahl
+                    {% trans -%}Course Choices{%- endtrans %}
                     {% if ambience['event']['tracks']|length > 1 %}
                     {{ track['title']|e }}
                     {% endif %}
@@ -74,16 +80,16 @@
 
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
-                {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label="Kursleiter von",
+                {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label=gettext("Instructor of"),
                                          entries=course_entries, nulloption="") }}
                 {% for i in range(track['num_choices']) %}
                     {{ util.form_input_select(name="track{}.course_choice_{}".format(track_id, i),
-                                              label="{}. Wahl".format(i + 1), entries=course_entries, nulloption="") }}
+                                              label=gettext("{}. Choice").format(i + 1), entries=course_entries, nulloption="") }}
                 {% endfor %}
             {% endif %}
         {% endfor %}
 
-        {{ util.form_input_submit(value="Anmelden", cancellink=cdedblink('event/registration_query')) }}
+        {{ util.form_input_submit(value=gettext("Add"), cancellink=cdedblink('event/registration_query')) }}
     </form>
     <script type="text/javascript">
         $('#addregistrationform').cdedbProtectChanges();
