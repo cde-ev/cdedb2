@@ -69,7 +69,8 @@
             {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation")) }}
             {{ util.form_input_textarea(name="interests", label=gettext("Interests")) }}
             {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                                        info=gettext("Supports reStructuredText")) }}
+                                        info=gettext("Supports reStructuredText"),
+                                        infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
         {% endif %}
 
         {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user.persona_id)) }}

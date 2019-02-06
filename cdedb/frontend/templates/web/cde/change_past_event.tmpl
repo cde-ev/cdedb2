@@ -28,7 +28,8 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports reStructuredText")) }}
+                                    info=gettext("Supports reStructuredText"),
+				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
         {{ util.form_input_text(name="tempus", label=gettext("Cutoff date")) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("cde/show_past_event")) }}
     </form>

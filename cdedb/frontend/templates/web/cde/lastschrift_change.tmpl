@@ -30,7 +30,8 @@
 	{{ util.form_input_text(name="max_dsa", label=gettext("Maximum DSA-Share"), type="number",
 	                        attributes='min="0" max="1" step="0.01"') }}
 	{{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5",
-								info=gettext("Supports reStructuredText")) }}
+				    info=gettext("Supports reStructuredText"),
+				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
 	
 	{{ util.form_input_submit(value=gettext("Save"),
 		cancellink=cdedblink("cde/lastschrift_show", {'persona_id': ambience['lastschrift']['persona_id']})) }}
