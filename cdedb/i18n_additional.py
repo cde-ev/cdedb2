@@ -200,7 +200,37 @@ I18N_STRINGS = (
     ##
     n_("day is out of range for month"),
     n_("[<class 'decimal.ConversionSyntax'>]"),
-
+    
+    # zxcvbn feedback
+    n_('Use a few words, avoid common phrases.'),
+    n_('No need for symbols, digits, or uppercase letters.'),
+    n_('Add another word or two. Uncommon words are better.'),
+    n_('Straight rows of keys are easy to guess.'),
+    n_('Short keyboard patterns are easy to guess.'),
+    n_('Use a longer keyboard pattern with more turns.'),
+    n_('Repeats like "aaa" are easy to guess.'),
+    n_('Repeats like "abcabcabc" are only slightly harder to '
+       'guess than "abc".'),
+    n_('Avoid repeated words and characters.'),
+    n_('Sequences like "abc" or "6543" are easy to guess.'),
+    n_('Avoid sequences.'),
+    n_("Recent years are easy to guess."),
+    n_('Avoid recent years.'),
+    n_('Avoid years that are associated with you.'),
+    n_('Avoid dates and years that are associated with you.'),
+    n_('This is a top-10 common password.'),
+    n_('This is a top-100 common password.'),
+    n_('This is a very common password.'),
+    n_('This is similar to a commonly used password.'),
+    n_('A word by itself is easy to guess.'),
+    n_('Names and surnames by themselves are easy to guess.'),
+    n_('Common names and surnames are easy to guess.'),
+    n_("Capitalization doesn't help very much."),
+    n_("All-uppercase is almost as easy to guess as all-lowercase."),
+    n_("Reversed words aren't much harder to guess."),
+    n_("Predictable substitutions like '@' instead of 'a' don't help "
+       "very much."),
+    
     ##
     ## Default Strings
     ##

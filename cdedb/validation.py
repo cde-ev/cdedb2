@@ -625,13 +625,12 @@ def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
     """
     val, errors = _str(val, argname=argname, _convert=_convert)
     if val:
-        results = zxcvbn(val, list(filter(None,inputs)))
+        results = zxcvbn(val, list(filter(None, inputs)))
         if results['score'] < 2:
             feedback = [results['feedback']['warning']]
             feedback.extend(results['feedback']['suggestions'][0:2])
-            errors.append((argname,
-                           ValueError(' '.join(filter(None, feedback)))
-            ))
+            for fb in filter(None, feedback):
+                errors.append((argname, ValueError(fb)))
     return val, errors
 
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
