@@ -26,7 +26,7 @@ class RegistrationResult:
 
 class TestConfiguration:
     db_url = ...  # type: str
-    driver_path = ...  # type: str
+    driver_path = None  # type: str
 
 
 class RegistrationConfiguration:
@@ -86,7 +86,11 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
     driver_options = webdriver.ChromeOptions()
     driver_options.headless = True
 
-    driver = webdriver.Chrome(options=driver_options)
+    driver_args = {'options': driver_options}
+    if config.driver_path is not None:
+        driver_args['executable_path'] = config.driver_path
+
+    driver = webdriver.Chrome(**driver_args)
 
     ret = RegistrationResult()
     ret.success = False
