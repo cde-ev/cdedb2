@@ -90,15 +90,32 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ---------------------------------------------------
 
+## added for guzzle
+import sys, os
+import guzzle_sphinx_theme
+
+html_theme_path = guzzle_sphinx_theme.html_theme_path()
+html_theme = 'guzzle_sphinx_theme'
+
+# Register the theme as an extension to generate a sitemap.xml
+extensions.append("guzzle_sphinx_theme")
+
+# Guzzle theme options (see theme.conf for more information)
+html_theme_options = {
+    # Set the name of the project to appear in the sidebar
+    "project_nav_name": "Project Name",
+}
+## end added for guzzle
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 
 ## fix renaming of default (why, oh why did they do this??)
-from sphinx import version_info
-if version_info < (1, 3):
-    html_theme = 'default'
-else:
-    html_theme = 'classic'
+#from sphinx import version_info
+#if version_info < (1, 3):
+#    html_theme = 'default'
+#else:
+#    html_theme = 'classic'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
