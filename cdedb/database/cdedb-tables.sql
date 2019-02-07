@@ -453,8 +453,8 @@ GRANT SELECT, UPDATE ON past_event.institutions_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.events (
         id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL UNIQUE,
-        shortname               varchar NOT NULL UNIQUE,
+        title                   varchar NOT NULL,
+        shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
         institution               integer NOT NULL REFERENCES past_event.institutions(id),
         description             varchar,
@@ -524,7 +524,7 @@ GRANT USAGE ON SCHEMA event TO cdb_persona;
 
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL UNIQUE,
+        title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
         institution             integer NOT NULL REFERENCES past_event.institutions(id),
