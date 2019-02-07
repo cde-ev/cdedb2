@@ -857,7 +857,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     rs.request.is_multithread, rs.request.is_multiprocess,
                     rs.request.base_url, rs.request.cookies, rs.request.url,
                     rs.request.is_secure, rs.request.method,
-                    rs.request.remote_addr, rs.request.values, rs.ambience)
+                    rs.request.remote_addr, rs.values, rs.ambience)
             params['debugstring'] = debugstring
         if rs.errors and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
