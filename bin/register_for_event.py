@@ -136,8 +136,8 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
     course_choice_re = r'(course_choice\d+_\d+)'
     course_choice = re.compile(course_choice_re, re.S)
 
-    page_process_time = page_processing_time(driver)
-    print("page processing ({1}) took: {0}".format(page_process_time, registration.user_email))
+    # page_process_time = page_processing_time(driver)
+    # print("page processing ({1}) took: {0}".format(page_process_time, registration.user_email))
 
     course_choices = set(course_choice.findall(driver.page_source))
     # print("Have to fill {} course choice boxes with ids {}".format(len(course_choices), course_choices))
@@ -168,7 +168,7 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
 
         # find the notification block
         try:
-            print("registration processing took: {}".format(page_processing_time(driver)))
+            # print("registration processing took: {}".format(page_processing_time(driver)))
             notification_area = driver.find_element_by_id("notifications")
             ok_sign = notification_area.find_element_by_class_name("glyphicon-ok-sign")
             print("ok sign exists? {}".format(ok_sign))
