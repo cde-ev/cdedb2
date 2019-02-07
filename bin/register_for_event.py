@@ -10,16 +10,18 @@ import selenium.webdriver.support.ui as ui
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.remote.webdriver import WebDriver
 from optparse import OptionParser
-from typing import List, Dict
+from typing import List, Dict, Union, Tuple
 import datetime
-import abc
 import logging
 import re
+import multiprocessing as mp
+import pandas as pd
 
 
 class RegistrationResult:
     success = False  # type: bool
     time_taken = 60 * 1000  # type: float
+    benchmark = None  # type: TimeBenchmark
 
 
 class TestConfiguration:
@@ -31,6 +33,7 @@ class RegistrationConfiguration:
     user_email = ...  # type: str
     user_password = ...  # type: str
     event_id = ...  # type: str
+    dry_run = True
 
 
 class TimeBenchmark:
@@ -83,7 +86,11 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
     driver_options = webdriver.ChromeOptions()
     driver_options.headless = True
 
-    driver = webdriver.Chrome(options=driver_options, executable_path=config.driver_path)
+    driver = webdriver.Chrome(options=driver_options)
+
+    ret = RegistrationResult()
+    ret.success = False
+    ret.time_taken = 3 * 60 * 1000
 
     # create time benchmark
     benchmark = TimeBenchmark()
@@ -93,29 +100,32 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
     driver.get(config.db_url)
 
     benchmark.checkpoint('load')
-    print("Loading took {} ms".format(to_milliseconds(benchmark.time_from_previous('load'))))
+    # print("Loading took {} ms".format(to_milliseconds(benchmark.time_from_previous('load'))))
 
     driver.find_element_by_id('login_name').send_keys(registration.user_email)
     driver.find_element_by_id('login_password').send_keys(registration.user_password)
     driver.find_element_by_name('submitform').click()
 
     benchmark.checkpoint('login')
-    print("Login took {} ms".format(to_milliseconds(benchmark.time_from_previous('login'))))
+    # print("Login took {} ms".format(to_milliseconds(benchmark.time_from_previous('login'))))
 
     # now, check that we have successfully logged in
-    name = driver.find_element_by_id('displayname')
-    print('Logged in as {}'.format(name.text.strip()))
-
-    ret = RegistrationResult()
-    ret.success = False
-    ret.time_taken = 3 * 60 * 1000
+    try:
+        name = driver.find_element_by_id('displayname')
+        # print('Logged in as {}'.format(name.text.strip()))
+    except NoSuchElementException:
+        print("Error at login for {0}, after {1} ms".format(
+            registration.user_email,
+            to_milliseconds(benchmark.time_from_previous('login'))))
+        ret.benchmark = benchmark
+        return ret
 
     # go to the event page and then to registration (simulates some movement)
     driver.get("{0}/db/event/event/{1}/register".format(config.db_url, registration.event_id))
     benchmark.checkpoint('load_registration_page')
 
-    print("Registration page title is {}, URL: {}".format(driver.title, driver.current_url))
-    print("Registration page took {} ms".format(to_milliseconds(benchmark.time_from_previous('load_registration_page'))))
+    # print("Registration page title is {}, URL: {}".format(driver.title, driver.current_url))
+    # print("Registration page took {} ms".format(to_milliseconds(benchmark.time_from_previous('load_registration_page'))))
 
     ret.time_taken = to_milliseconds(benchmark.total_time_from_start())
 
@@ -127,10 +137,10 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
     course_choice = re.compile(course_choice_re, re.S)
 
     page_process_time = page_processing_time(driver)
-    print("page processing took: {}".format(page_process_time))
+    print("page processing ({1}) took: {0}".format(page_process_time, registration.user_email))
 
     course_choices = set(course_choice.findall(driver.page_source))
-    print("Have to fill {} course choice boxes with ids {}".format(len(course_choices), course_choices))
+    # print("Have to fill {} course choice boxes with ids {}".format(len(course_choices), course_choices))
     blocks = set()
     choiceboxes = dict()
     for choicebox in course_choices:
@@ -140,7 +150,7 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
             choiceboxes[block] = set()
         choiceboxes[block].add(choicebox)
 
-    print("{} blocks: {}".format(len(blocks), blocks))
+    # print("{} blocks: {}".format(len(blocks), blocks))
 
     for block in blocks:
         # fill the relevant choice boxes
@@ -152,22 +162,58 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
     # express consent
     driver.find_element_by_id("input-checkbox-foto_consent").click()
     # send form
-    driver.find_element_by_name("submitform").click()
-    benchmark.checkpoint("registration_done")
-    print("registration processing took: {}".format(page_processing_time(driver)))
+    if not registration.dry_run:
+        driver.find_element_by_name("submitform").click()
+        benchmark.checkpoint("registration_done")
+        print("registration processing took: {}".format(page_processing_time(driver)))
 
-    # find the notification block
-    try:
-        notification_area = driver.find_element_by_id("notifications")
-        ok_sign = notification_area.find_element_by_class_name("glyphicon-ok-sign")
-        print("ok sign exists? {}".format(ok_sign))
+        # find the notification block
+        try:
+            notification_area = driver.find_element_by_id("notifications")
+            ok_sign = notification_area.find_element_by_class_name("glyphicon-ok-sign")
+            print("ok sign exists? {}".format(ok_sign))
+            ret.success = True
+        except NoSuchElementException:
+            print("registration not successful")
+            pass
+    else:
         ret.success = True
-    except NoSuchElementException:
-        print("registration not successful")
-        pass
+
     ret.time_taken = to_milliseconds(benchmark.total_time_from_start())
+    ret.benchmark = benchmark
+
+    driver.close()
 
     return ret
+
+
+def register_steve(input_args: Tuple[int, RegistrationConfiguration, TestConfiguration]) -> RegistrationResult:
+    steve_id, reg_config, test_config = input_args
+    reg_config.user_password = "secret"
+    reg_config.user_email = "steve{}@example.cde".format(steve_id)
+
+    return register_for_event(reg_config, test_config)
+
+
+def try_register_steves(reg_config: RegistrationConfiguration, test_config: TestConfiguration,
+                        num_of_steves: int, num_processes: int) -> pd.DataFrame:
+
+    def to_dict(data: RegistrationResult) -> Dict[str, Union[float, bool]]:
+        result = {
+            'total': data.time_taken,
+            'success': data.success
+        }
+
+        for name in data.benchmark.checkpoint_names:
+            if name != 'start':
+                result[name] = to_milliseconds(data.benchmark.time_from_previous(name))
+
+        return result
+
+    with mp.Pool(num_processes) as p:
+        input_data = map(lambda steve_id: (steve_id, reg_config, test_config), range(num_of_steves))
+        data = p.map(register_steve, input_data)
+        return pd.DataFrame(list(map(to_dict, data)))
 
 
 if __name__ == "__main__":
@@ -178,18 +224,31 @@ if __name__ == "__main__":
     option_parser.add_option('-p', '--user_password', dest='user_password', help="The password of the DB user")
     option_parser.add_option('-u', '--db-url', dest='db_url', help="The URL of the database installation")
     option_parser.add_option('-x', '--executable-path', dest='driver', help="The URL of the database installation")
+    option_parser.add_option('-f', '--force', action='store_true', dest='force', help="Register for real")
+    option_parser.add_option('-m', '--mass-registration', dest='mass_registration',
+                             help='Number of users to simulate')
+    option_parser.add_option('-t', '--threads', dest='threads',
+                             help='Number of threads to use')
 
     logging.log(logging.INFO, "Application started")
 
     (options, args) = option_parser.parse_args()
-    registration_config = RegistrationConfiguration()
-    registration_config.user_email = options.user_email
-    registration_config.user_password = options.user_password
-    registration_config.event_id = options.event_id
-
     test_config = TestConfiguration()
     test_config.db_url = options.db_url
-    test_config.driver_path = options.driver
+    if options.driver is not None:
+        test_config.driver_path = options.driver
 
-    data_point = register_for_event(registration_config, test_config)
-    print("Took {} ms".format(data_point.time_taken))
+    registration_config = RegistrationConfiguration()
+    registration_config.event_id = options.event_id
+    registration_config.dry_run = not options.force
+
+    if options.mass_registration is not None:
+        data_frame = try_register_steves(registration_config, test_config,
+                                         int(options.mass_registration), int(options.threads))
+        data_frame.to_csv("registration.csv")
+    else:
+        registration_config.user_email = options.user_email
+        registration_config.user_password = options.user_password
+
+        data_point = register_for_event(registration_config, test_config)
+        print("Took {} ms".format(data_point.time_taken))
