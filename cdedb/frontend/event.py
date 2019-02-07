@@ -2520,7 +2520,7 @@ class EventFrontend(AbstractUserFrontend):
 
         code = self.eventproxy.delete_registration(rs, registration_id)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/show_event")
+        return self.redirect(rs, "event/registration_query")
 
     @access("event")
     @REQUESTdata(("reg_ids", "int_csv_list"))
