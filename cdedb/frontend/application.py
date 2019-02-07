@@ -271,14 +271,10 @@ class Application(BaseApp):
                 and request.cookies['locale'] in self.conf.I18N_LANGUAGES:
             return request.cookies['locale']
 
-        # TODO un-comment this, as soon as our english translation is (somehow)
-        #   complete
+        if 'Accept-Language' in request.headers:
+            for lang in request.headers['Accept-Language'].split(','):
+                lang_code = lang.split('-')[0].split(';')[0].strip()
+                if lang_code in self.conf.I18N_LANGUAGES:
+                    return lang_code
 
-        # if 'Accept-Language' in request.headers:
-        #     for lang in request.headers['Accept-Language'].split(','):
-        #         lang_code = lang.split('-')[0].split(';')[0].strip()
-        #         if lang_code in self.conf.I18N_LANGUAGES:
-        #             return lang_code
-
-        # Default to 'de' which is currently best supported
         return 'de'
