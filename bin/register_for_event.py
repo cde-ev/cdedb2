@@ -165,17 +165,18 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
     if not registration.dry_run:
         driver.find_element_by_name("submitform").click()
         benchmark.checkpoint("registration_done")
-        print("registration processing took: {}".format(page_processing_time(driver)))
 
         # find the notification block
         try:
+            print("registration processing took: {}".format(page_processing_time(driver)))
             notification_area = driver.find_element_by_id("notifications")
             ok_sign = notification_area.find_element_by_class_name("glyphicon-ok-sign")
             print("ok sign exists? {}".format(ok_sign))
             ret.success = True
         except NoSuchElementException:
-            print("registration not successful")
-            pass
+            print("registration not successful for {}".format(registration.user_email))
+        except AttributeError:
+            print("registration page not loaded for {}".format(registration.user_email))
     else:
         ret.success = True
 
@@ -210,9 +211,21 @@ def try_register_steves(reg_config: RegistrationConfiguration, test_config: Test
 
         return result
 
+    tracker = TimeBenchmark()
+    tracker.start()
+
     with mp.Pool(num_processes) as p:
         input_data = map(lambda steve_id: (steve_id, reg_config, test_config), range(num_of_steves))
         data = p.map(register_steve, input_data)
+
+        tracker.checkpoint("done")
+        milliseconds = to_milliseconds(tracker.time_from_previous("done"))
+        rps = num_of_steves / (milliseconds / 1000.0)
+
+        print("Served {registrations} registration requests in {time} ms, averaging {rps} rps".format(
+            registrations=num_of_steves,
+            time=milliseconds,
+            rps=rps))
         return pd.DataFrame(list(map(to_dict, data)))
 
 
