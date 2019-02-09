@@ -628,9 +628,9 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def parse_statement_form(self, rs, data=None, problems=None, csvfields=None):
         """Render form.
-        
+
         The ``data`` parameter contains all extra information assembled
-        furing processing of a POST request.
+        during processing of a POST request.
         """
         data = data or {}
         problems = problems or []
@@ -639,30 +639,30 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "parse_statement", {'data': data,
                                                    'problems': problems,
                                                    'csvfields': csv_position})
-    
+
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("statement", "str"))
     def parse_statement(self, rs, statement):
         """
         Parse the statement into multiple CSV files.
-        
+
         Every transaction is matched to a TransactionType, as well as to a
         member and an event, if applicable.
-        
+
         The transaction's reference is searched for DB-IDs.
         If found the associated persona is looked up and their given_names and
         family_name, and variations thereof, are compared to the transaction's
         reference.
-        
+
         To match to an event, this compares the names of current events, and
         variations thereof, to the transacion's reference.
-        
+
         Every match to Type, Member and Event is given a ConfidenceLevel, to be
         used on further validation.
-        
+
         This uses POST because the expected data is too large for GET.
         """
-        
+
         # These are more immediately important and should maybe stay here
         # because the output is still subject to change for now
 
@@ -675,21 +675,21 @@ class CdEFrontend(AbstractUserFrontend):
                                     "type_confidence", "iban", "bic", "problems")
         ACCOUNT_FIELDS = ("date", "amount", "db_id", "family_name",
                           "given_names", "category", "account")
-        
+
         statement = statement or ""
-        
+
         event_list = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
         event_names = {e["title"]: get_event_name_pattern(e)
                        for e in events.values()}
-        
+
         statementlines = statement.splitlines()
         reader = csv.DictReader(statementlines, fieldnames=STATEMENT_CSV_FIELDS,
                                 delimiter=";", quotechar='"',
                                 restkey=STATEMENT_CSV_RESTKEY, restval="")
-        
+
         problems = []
-        
+
         transactions = []
         event_fees = []
         membership_fees = []
@@ -705,9 +705,9 @@ class CdEFrontend(AbstractUserFrontend):
             t.guess_type(event_names)
             t.match_member(rs, self.coreproxy.get_persona)
             t.match_event(event_names)
-            
+
             problems.extend(t.problems)
-            
+
             transactions.append(t)
             if t.type in {TransactionType.EventFee} \
                     and t.best_event_match \
@@ -718,7 +718,7 @@ class CdEFrontend(AbstractUserFrontend):
                 membership_fees.append(t)
             else:
                 other_transactions.append(t)
-                
+
         data = {"event_fees": event_fees,
                 "membership_fees": membership_fees,
                 "other_transactions": other_transactions,
@@ -757,7 +757,7 @@ class CdEFrontend(AbstractUserFrontend):
                  t.best_member_match.family_name ==
                  STATEMENT_FAMILY_NAME_UNKNOWN)
                 ])
-            
+
             if rows:
                 csv_data = csv_output(rows, MEMBERSHIP_FEE_FIELDS,
                                       writeheader=False)
@@ -780,7 +780,7 @@ class CdEFrontend(AbstractUserFrontend):
                 if (event_name == t.best_event_match
                     and t.best_member_match.db_id != "DB-EXTERN")
                 ])
-            
+
             rows.extend([
                 {"date": t.statement_date.strftime("%d.%m.%Y"),
                  "amount": t.amount_export,
@@ -791,12 +791,12 @@ class CdEFrontend(AbstractUserFrontend):
                  "bic": t.bic,
                  "comment": t.reference,
                  "problems": t.problems}
-    
+
                 for t in event_fees
                 if (event_name == t.best_event_match
                     and t.best_member_match.db_id == "DB-EXTERN")
                 ])
-    
+
             if rows:
                 all_rows.extend(rows)
                 e_name = event_name.replace(" ", "_").replace("/", "-")
@@ -837,12 +837,12 @@ class CdEFrontend(AbstractUserFrontend):
                  "problems": t.problems}
                 for t in other_transactions if t.type is None
                 ])
-                
+
             if rows:
                 csv_data = csv_output(rows, OTHER_TRANSACTION_FIELDS,
                                       writeheader=False)
                 data["files"]["other_transactions"] = csv_data
-                
+
         rows = {}
         for t in transactions:
             if t.account not in rows:
@@ -870,13 +870,13 @@ class CdEFrontend(AbstractUserFrontend):
                      "account": t.account,
                      "problems": t.problems}
                     )
-        
+
         for acc in Accounts:
             if acc in rows:
                 csv_data = csv_output(rows[acc], ACCOUNT_FIELDS,
                                       writeheader=False)
                 data["files"]["transactions_{}".format(acc)] = csv_data
-                
+
         csvfields = None
         return self.parse_statement_form(rs, data=data, problems=problems,
                                          csvfields=csvfields)
@@ -887,7 +887,7 @@ class CdEFrontend(AbstractUserFrontend):
         filename = filename or "file.csv"
         return self.send_file(rs, mimetype="text/csv", data=data,
                               filename=filename)
-    
+
     @access("cde_admin")
     def money_transfers_form(self, rs, data=None, csvfields=None):
         """Render form.
