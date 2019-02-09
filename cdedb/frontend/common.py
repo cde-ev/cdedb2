@@ -1833,6 +1833,8 @@ def csv_output(data, fields, writeheader=True, replace_newlines=True,
 
     :type data: [{str: object}]
     :type fields: [str]
+    :type writeheader: bool
+    :param writeheader: If False, no CSV-Header is written.
     :type replace_newlines: bool
     :param replace_newlines: If True all line breaks are replaced by several
       spaces.

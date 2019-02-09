@@ -755,6 +755,20 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Gerhard Schröder")
         self.assertPresence("Angela Merkel")
 
+    def test_parse_statement_additional(self):
+        from cdedb.frontend.parse_statement import get_event_name_pattern
+        from datetime import datetime
+        
+        pattern = get_event_name_pattern({"title": "CdE Pseudo-WinterAkademie",
+                                          "begin": datetime(2222, 12, 27),
+                                          "end": datetime(2223, 1, 6)})
+        
+        self.assertTrue(re.search(pattern, "Pseudo-WinterAkademie 2222/2223"))
+        self.assertTrue(re.search(pattern, "Pseudo-WinterAkademie 2222/23"))
+        self.assertTrue(re.search(pattern, "Pseudo-WinterAkademieXYZ"))
+        self.assertTrue(re.search(pattern, "Pseudo winter -Aka", flags=re.I))
+        self.assertTrue(re.search(pattern, "pseudo\twinter\naka\n", flags=re.I))
+
     @as_users("anton")
     def test_parse_statement(self, user):
         self.get("/cde/parse")

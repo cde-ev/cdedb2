@@ -3,7 +3,7 @@
 """Services for the cde realm."""
 
 import cgitb
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import copy
 import csv
 import hashlib
@@ -626,11 +626,17 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("cde_admin")
-    def parse_statement_form(self, rs, data=None, problems=None, csvfields=None):
+    def parse_statement_form(self, rs, data=None, problems=None,
+                             csvfields=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
+        
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object} or None
+        :type problems: list(str) or None
+        :type csvfields: tuple(str) or None
         """
         data = data or {}
         problems = problems or []
@@ -661,6 +667,9 @@ class CdEFrontend(AbstractUserFrontend):
         used on further validation.
 
         This uses POST because the expected data is too large for GET.
+        
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type statement: str
         """
 
         # These are more immediately important and should maybe stay here
@@ -675,6 +684,9 @@ class CdEFrontend(AbstractUserFrontend):
                                     "type_confidence", "iban", "bic", "problems")
         ACCOUNT_FIELDS = ("date", "amount", "db_id", "family_name",
                           "given_names", "category", "account")
+
+        if rs.errors:
+            return self.parse_statement_form(rs)
 
         statement = statement or ""
 
@@ -709,12 +721,12 @@ class CdEFrontend(AbstractUserFrontend):
             problems.extend(t.problems)
 
             transactions.append(t)
-            if t.type in {TransactionType.EventFee} \
-                    and t.best_event_match \
-                    and t.best_member_match:
+            if (t.type in {TransactionType.EventFee}
+                    and t.best_event_match
+                    and t.best_member_match):
                 event_fees.append(t)
-            elif t.type in {TransactionType.MembershipFee} \
-                    and t.best_member_match:
+            elif (t.type in {TransactionType.MembershipFee}
+                  and t.best_member_match):
                 membership_fees.append(t)
             else:
                 other_transactions.append(t)
@@ -843,33 +855,22 @@ class CdEFrontend(AbstractUserFrontend):
                                       writeheader=False)
                 data["files"]["other_transactions"] = csv_data
 
-        rows = {}
+        rows = defaultdict(list)
         for t in transactions:
-            if t.account not in rows:
-                rows[t.account] = []
-            if t.best_member_match:
-                rows[t.account].append(
-                    {"date": t.statement_date,
-                     "amount": t.amount_export,
-                     "db_id": t.best_member_match.db_id,
-                     "family_name": t.best_member_match.family_name,
-                     "given_names": t.best_member_match.given_names,
-                     "category": t.best_event_match
-                        if t.type == TransactionType.EventFee else t.type,
-                     "account": t.account,
-                     "problems": t.problems}
-                    )
-            else:
-                rows[t.account].append(
-                    {"date": t.statement_date,
-                     "amount": t.amount_export,
-                     "db_id": "????",
-                     "family_name": t.account_holder,
-                     "given_names": t.reference,
-                     "category": t.type,
-                     "account": t.account,
-                     "problems": t.problems}
-                    )
+            rows[t.account].append(
+                {"date": t.statement_date,
+                 "amount": t.amount_export,
+                 "db_id": t.best_member_match.db_id
+                    if t.best_member_match else "????",
+                 "family_name": t.best_member_match.family_name
+                    if t.best_member_match else t.account_holder,
+                 "given_names": t.best_member_match.given_names
+                    if t.best_member_match else t.reference,
+                 "category": t.best_event_match
+                    if t.type == TransactionType.EventFee else t.type,
+                 "account": t.account,
+                 "problems": t.problems}
+                )
 
         for acc in Accounts:
             if acc in rows:
@@ -883,8 +884,14 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("data", "str"), ("filename", "str"))
-    def parse_download(self, rs, data, filename=None):
-        filename = filename or "file.csv"
+    def parse_download(self, rs, data, filename):
+        """
+        Provide data as CSV-Download with the given filename.
+        
+        This uses POST, because the expected filesize is too large for GET.
+        """
+        if rs.errors:
+            return self.parse_statement_form(rs)
         return self.send_file(rs, mimetype="text/csv", data=data,
                               filename=filename)
 
