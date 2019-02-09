@@ -20,12 +20,12 @@
     <h3>{% trans -%}Printables{%- endtrans %}</h3>
     <table class="table table-slim">
         <tbody>
-            {% for name, endpoint in [("Namensschilder", 'event/download_nametags'),
-                                      ("Bastelsatz Kurseinteilung",'event/download_course_puzzle'),
-                                      ("Bastelsatz Unterkunftseinteilung",'event/download_lodgement_puzzle'),
-                                      ("Teilnehmerliste",'event/download_participant_list'),
-                                      ("Kurslisten",'event/download_course_lists'),
-                                      ("Unterkunftslisten",'event/download_lodgement_lists')] %}
+            {% for name, endpoint in [(gettext("Nametags"), 'event/download_nametags'),
+                                      (gettext("Course Puzzle"),'event/download_course_puzzle'),
+                                      (gettext("Lodgement Puzzle"),'event/download_lodgement_puzzle'),
+                                      (gettext("Participant List"),'event/download_participant_list'),
+                                      (gettext("Course Attendee Lists"),'event/download_course_lists'),
+                                      (gettext("Lodgement Inhabitant Lists"),'event/download_lodgement_lists')] %}
                 <tr>
                     <td>{{ name }}</td>
                     <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
