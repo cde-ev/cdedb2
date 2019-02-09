@@ -530,6 +530,10 @@ class EventFrontend(AbstractUserFrontend):
         for row in questionnaire:
             if row['field_id']:
                 is_referenced.add(row['field_id'])
+        if rs.ambience['event']['lodge_field']:
+            is_referenced.add(rs.ambience['event']['lodge_field'])
+        if rs.ambience['event']['reserve_field']:
+            is_referenced.add(rs.ambience['event']['reserve_field'])
         return self.render(rs, "field_summary", {
             'is_referenced': is_referenced})
 
