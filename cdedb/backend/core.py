@@ -1563,27 +1563,30 @@ class CoreBackend(AbstractBackend):
                 return False, n_("Password too weak.")
         ## escalate db privilige role in case of resetting passwords
         orig_conn = None
-        if reset_cookie and not "persona" in rs.user.roles:
-            if rs.conn.is_contaminated:
-                raise RuntimeError(n_("Atomized -- impossible to escalate."))
-            orig_conn = rs.conn
-            rs.conn = self.connpool['cdb_persona']
-        if not new_password:
-            new_password = secure_random_ascii(
-                chars=('abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ' +
-                       '23456789!@#$%&*()[]-=<>'))
-        ## do not use set_persona since it doesn't operate on password
-        ## hashes by design
-        query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-        with rs.conn as conn:
-            with conn.cursor() as cur:
-                self.execute_db_query(
-                    cur, query,
-                    (self.encrypt_password(new_password), persona_id))
-                ret = cur.rowcount
-        if orig_conn:
+        try:
+            if reset_cookie and not "persona" in rs.user.roles:
+                if rs.conn.is_contaminated:
+                    raise RuntimeError(
+                        n_("Atomized -- impossible to escalate."))
+                orig_conn = rs.conn
+                rs.conn = self.connpool['cdb_persona']
+            if not new_password:
+                new_password = secure_random_ascii(
+                    chars=("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+                           "23456789!@#$%&*()[]-=<>"))
+            ## do not use set_persona since it doesn't operate on password
+            ## hashes by design
+            query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+            with rs.conn as conn:
+                with conn.cursor() as cur:
+                    self.execute_db_query(
+                        cur, query,
+                        (self.encrypt_password(new_password), persona_id))
+                    ret = cur.rowcount
+        finally:
             ## deescalate
-            rs.conn = orig_conn
+            if orig_conn:
+                rs.conn = orig_conn
         return ret, new_password
 
     @access("persona")
