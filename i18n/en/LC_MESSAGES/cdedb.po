@@ -6117,11 +6117,15 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_password.tmpl:17
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:15
 msgid ""
-"The new Password must have at least twelve Character from atleast three of "
-"four categories\n"
-"            (Lowercase Letters, Uppercase Letters, Numbers and Special "
-"Characters).\n"
-"            Also some Special Characters are disallowed."
+"There are no hard criteria for your new password, as we are using the zxcvbn "
+"library to evaluate the\n"
+"            actual strength of password. Numerals, Uppercase letters, and "
+"Special characters aren't required.\n"
+"            For example, you can use a randomized string of 8 characters, "
+"but it is also fine to use two words that\n"
+"            aren't too common. This form will provide feedback to help you "
+"chose a better password if your new password\n"
+"            is too weak."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_password.tmpl:26
