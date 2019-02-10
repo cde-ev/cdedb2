@@ -12,7 +12,7 @@ class TestSessionBackend(BackendTest):
         key = self.login(USER_DICT["anton"])
         user = self.session.lookupsession(key, "127.0.0.0")
         self.assertIsInstance(user, User)
-        self.assertEqual(USER_DICT["anton"]['persona_id'], user.persona_id)
+        self.assertEqual(USER_DICT["anton"]['id'], user.persona_id)
 
     def test_ip_mismatch(self):
         key = self.login(USER_DICT["anton"], ip="1.2.3.4")
