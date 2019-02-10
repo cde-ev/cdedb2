@@ -186,6 +186,36 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("03.04.1933")
 
     @as_users("anton", "berta", "emilia")
+    def test_change_password_zxcvbn(self, user):
+        self.traverse({'href': '/core/self/show'})
+        self.traverse({'href': '/core/self/password/change'})
+        # Password one
+        new_password = 'dragonSecret'
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.')
+        self.assertPresence('Das ist ähnlich zu einem häufig genutzen Passwort.')
+        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        # Password two
+        new_password = 'dfgdfg123'
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.')
+        self.assertPresence(' Wiederholungen wie \'abcabcabc\' sind nur geringfügig schwieriger zu erraten als \'abc\'.')
+        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertPresence('Vermeide Wiederholungen von Wörtern und Buchstaben.')
+        # TODO: Password three: Check if a German dictionary is loaded
+        # Obviously depends on loading a German dictionary.
+
+    @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
         new_password = 'krce84#(=kNO3xb'
         self.traverse({'href': '/core/self/show'})
