@@ -15,7 +15,7 @@ QEMUIMG ?= qemu-img
 BUNZIP ?= bunzip2
 MKISOFS ?= genisoimage
 
-QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443
+QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443,hostfwd=tcp:127.0.0.1:20080-:80
 
 QEMUCACHING ?= writethrough
 
