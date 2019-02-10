@@ -1218,7 +1218,8 @@ def reconnoitre_ambience(obj, rs):
     t = tuple()
     def do_assert(x):
         if not x:
-            raise werkzeug.exceptions.BadRequest("Inconsistent request.")
+            raise werkzeug.exceptions.BadRequest(
+                rs.gettext("Inconsistent request."))
     def attachment_check(a):
         if a['attachment']['ballot_id']:
             return a['attachment']['ballot_id'] == rs.requestargs['ballot_id']
@@ -1287,7 +1288,8 @@ def reconnoitre_ambience(obj, rs):
                 ambience[s.object_name] = s.getter(value)
             except KeyError:
                 raise werkzeug.exceptions.NotFound(
-                    "Object {}={} not found".format(param, value))
+                    rs.gettext("Object {param}={value} not found").format(
+                        param=param, value=value))
     for param, value in rs.requestargs.items():
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
@@ -1325,7 +1327,7 @@ def access(*roles, modi=None):
                     ret.set_cookie("displaynote", notifications)
                     return ret
                 raise werkzeug.exceptions.Forbidden(
-                    "Access denied to {realm}/{endpoint}.".format(
+                    rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
         new_fun.access_list = access_list
         new_fun.modi = modi
@@ -1612,11 +1614,13 @@ def event_guard(argname="event_id", check_offline=False):
             else:
                 arg = args[0]
             if arg not in rs.user.orga and not obj.is_admin(rs):
-                return werkzeug.exceptions.Forbidden()
+                raise werkzeug.exceptions.Forbidden(
+                    rs.gettext("This page can only be accessed by orgas."))
             if check_offline:
                 is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
                 if is_locked != obj.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                    return werkzeug.exceptions.Forbidden()
+                    raise werkzeug.exceptions.Forbidden(
+                        rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
         return new_fun
     return wrap
@@ -1638,7 +1642,9 @@ def mailinglist_guard(argname="mailinglist_id"):
             else:
                 arg = args[0]
             if arg not in rs.user.moderator and not obj.is_admin(rs):
-                return werkzeug.exceptions.Forbidden()
+                raise werkzeug.exceptions.Forbidden(rs.gettext(
+                    "This page can only be accessed by the mailinglist's "
+                    "moderators."))
             return fun(obj, rs, *args, **kwargs)
         return new_fun
     return wrap

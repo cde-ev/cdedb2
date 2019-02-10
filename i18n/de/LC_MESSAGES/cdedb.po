@@ -2206,17 +2206,41 @@ msgstr "{}.tex"
 msgid "{}.pdf"
 msgstr "{}.pdf"
 
-#: cdedb/frontend/common.py:1281
+#: cdedb/frontend/common.py:1222
+msgid "Inconsistent request."
+msgstr "Inkonsistenter Request."
+
+#: cdedb/frontend/common.py:1291
+msgid "Object {param}={value} not found"
+msgstr "Objekt {param}={value} wurde nicht gefunden."
+
+#: cdedb/frontend/common.py:1326
 msgid "You must login."
 msgstr "Login benötigt."
 
-#: cdedb/frontend/common.py:1338
+#: cdedb/frontend/common.py:1330
+msgid "Access denied to {realm}/{endpoint}."
+msgstr "Zugriff auf {realm}/{endpoint} verweigert."
+
+#: cdedb/frontend/common.py:1383
 msgid "Magic URL parameter replacement failed."
 msgstr "Ersetzung magischer URL-Parameter fehlgeschlagen."
 
-#: cdedb/frontend/common.py:1456
+#: cdedb/frontend/common.py:1501
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
+
+#: cdedb/frontend/common.py:1618
+msgid "This page can only be accessed by orgas."
+msgstr "Auf diese Seite können nur Orgas zugreifen."
+
+#: cdedb/frontend/common.py:1623
+msgid "This event is locked for offline usage."
+msgstr "Diese Veranstaltung ist für die Offline-Nutzung gesperrt."
+
+#: cdedb/frontend/common.py:1645
+msgid "This page can only be accessed by the mailinglist's moderators."
+msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen"
 
 #: cdedb/frontend/core.py:199
 msgid "Login failure."
