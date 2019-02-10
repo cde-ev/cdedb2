@@ -197,7 +197,7 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
         self.assertPresence('Das ist ähnlich zu einem häufig genutzen Passwort.')
         self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         # Password two
@@ -208,7 +208,7 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
         self.assertPresence(' Wiederholungen wie \'abcabcabc\' sind nur geringfügig schwieriger zu erraten als \'abc\'.')
         self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence('Vermeide Wiederholungen von Wörtern und Buchstaben.')
