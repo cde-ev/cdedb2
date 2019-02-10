@@ -688,8 +688,6 @@ class CdEFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.parse_statement_form(rs)
 
-        statement = statement or ""
-
         event_list = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
         event_names = {e["title"]: get_event_name_pattern(e)
