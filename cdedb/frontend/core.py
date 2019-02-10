@@ -200,10 +200,17 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.extend((("username", ValueError()),
                               ("password", ValueError())))
             return self.index(rs)
+
         if wants:
             basic_redirect(rs, wants)
+        elif "member" in rs.user.roles and "searchable" not in rs.user.roles:
+            data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+            if not data['decided_search']:
+                self.redirect(rs, "cde/consent_decision_form")
+            else:
+                self.redirect(rs, "core/index")
         else:
-            self.redirect(rs, "cde/consent_decision_form")
+            self.redirect(rs, "core/index")
         # TODO add samesite="Lax", as soon as we switched to Debian
         #  Buster/Werkzeug 0.14 to mitigate CSRF attacks
         rs.response.set_cookie("sessionkey", sessionkey, httponly=True,

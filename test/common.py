@@ -67,14 +67,11 @@ class BackendShim(ProxyShim):
             localedir=str(backend.conf.REPOSITORY_PATH / 'i18n'))
 
     def _setup_requeststate(self, key):
-        data = self.sessionproxy.lookupsession(key, "127.0.0.0")
         rs = RequestState(
             key, None, None, None, [], None, None,
             None, [], {}, "de", self.translator.gettext,
             self.translator.ngettext, None, None, key)
-        vals = {k: data[k] for k in ('persona_id', 'username', 'given_names',
-                                     'display_name', 'family_name')}
-        rs.user = User(roles=extract_roles(data), **vals)
+        rs.user = self.sessionproxy.lookupsession(key, "127.0.0.0")
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
         if self.validate_scriptkey(key):
             rs.user.roles.add("ml_script")

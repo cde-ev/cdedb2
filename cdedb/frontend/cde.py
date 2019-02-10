@@ -117,20 +117,15 @@ class CdEFrontend(AbstractUserFrontend):
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
             'meta_info': meta_info, 'deadline': deadline})
 
-    @access("persona")
-    @REQUESTdata(("stay", "bool_or_None"))
-    def consent_decision_form(self, rs, stay):
+    @access("member")
+    def consent_decision_form(self, rs):
         """After login ask cde members for decision about searchability. Do
         this only if no decision has been made in the past.
 
         This is the default page after login, but most users will instantly
         be redirected.
         """
-        if "member" not in rs.user.roles or "searchable" in rs.user.roles:
-            return self.redirect(rs, "core/index")
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        if data['decided_search'] and not stay:
-            return self.redirect(rs, "core/index")
         return self.render(rs, "consent_decision", {
             'decided_search': data['decided_search']})
 
@@ -139,7 +134,7 @@ class CdEFrontend(AbstractUserFrontend):
     def consent_decision(self, rs, ack):
         """Record decision."""
         if rs.errors:
-            return self.consent_decision_form(rs, stay=True)
+            return self.consent_decision_form(rs)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         new = {
             'id': rs.user.persona_id,
@@ -153,7 +148,7 @@ class CdEFrontend(AbstractUserFrontend):
         message = n_("Consent noted.") if ack else n_("Decision noted.")
         self.notify_return_code(rs, code, success=message)
         if not code:
-            return self.consent_decision_form(rs, stay=True)
+            return self.consent_decision_form(rs)
         if not data['decided_search']:
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")

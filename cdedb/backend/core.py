@@ -19,7 +19,7 @@ from cdedb.backend.common import (
     access, internal_access, singularize,
     affirm_validation as affirm, affirm_set_validation as affirm_set)
 from cdedb.common import (
-    n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles,
+    n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
     privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
@@ -1337,8 +1337,14 @@ class CoreBackend(AbstractBackend):
 
     @access("anonymous")
     def login(self, rs, username, password, ip):
-        """Create a new session. This invalidates all existing sessions for this
-        persona. Sessions are bound to an IP-address, for bookkeeping purposes.
+        """Create a new session.
+
+        This invalidates all existing sessions for this persona. Sessions
+        are bound to an IP-address, for bookkeeping purposes.
+
+        In case of successful login, this updates the request state with a
+        new user object and escalates the database connection to reflect the
+        non-anonymous access.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type username: str
@@ -1370,6 +1376,7 @@ class CoreBackend(AbstractBackend):
                 ## Short circuit in case of lockdown
                 return None
             sessionkey = secure_token_hex()
+
             with Atomizer(rs):
                 query = glue(
                     "UPDATE core.sessions SET is_active = False",
@@ -1379,6 +1386,28 @@ class CoreBackend(AbstractBackend):
                     "INSERT INTO core.sessions (persona_id, ip, sessionkey)",
                     "VALUES (%s, %s, %s)")
                 self.query_exec(rs, query, (data["id"], ip, sessionkey))
+
+            ## Escalate db privilige role in case of successful login.
+            ## This will not be deescalated.
+            if rs.conn.is_contaminated:
+                raise RuntimeError(n_("Atomized -- impossible to escalate."))
+
+            is_cde = unwrap(self.sql_select_one(rs, "core.personas",
+                                                ("is_cde_realm",), data["id"]))
+            if is_cde:
+                rs.conn = self.connpool['cdb_member']
+            else:
+                rs.conn = self.connpool['cdb_persona']
+            rs._conn = rs.conn # Necessary to keep the mechanics happy
+
+            # Get more information about user (for immediate use in frontend)
+            data = self.sql_select_one(rs, "core.personas",
+                                       PERSONA_CORE_FIELDS, data["id"])
+            vals = {k: data[k] for k in (
+                'username', 'given_names', 'display_name', 'family_name')}
+            vals['persona_id'] = data['id']
+            rs.user = User(roles=extract_roles(data), **vals)
+
             return sessionkey
 
     @access("persona")

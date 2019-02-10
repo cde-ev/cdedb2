@@ -1218,7 +1218,6 @@ def roles_to_db_role(roles):
             return DB_ROLE_MAPPING[role]
 
 
-
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
     "is_active", "is_admin", "is_core_admin", "is_cde_admin",
