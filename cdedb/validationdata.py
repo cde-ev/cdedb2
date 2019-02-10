@@ -1687,3 +1687,5 @@ GERMAN_POSTAL_CODES = {
     "99947", "99955", "99958", "99974", "99976", "99986", "99988", "99991",
     "99994", "99996", "99998"
     }
+
+GERMAN_WIKIPEDIA_WORDS = ['KirchheimBeispiel', 'Windischleuba']

@@ -45,12 +45,13 @@ import pytz
 import werkzeug.datastructures
 
 from zxcvbn import zxcvbn
+from zxcvbn.matching import add_frequency_lists
 
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
 from cdedb.validationdata import (
-    GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
+    GERMAN_WIKIPEDIA_WORDS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS)
@@ -625,7 +626,11 @@ def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
     """
     val, errors = _str(val, argname=argname, _convert=_convert)
     if val:
+        add_frequency_lists({
+           'german_wikipedia': GERMAN_WIKIPEDIA_WORDS
+        })
         results = zxcvbn(val, list(filter(None, inputs)))
+
         if results['score'] < 2:
             feedback = [results['feedback']['warning']]
             feedback.extend(results['feedback']['suggestions'][0:2])
