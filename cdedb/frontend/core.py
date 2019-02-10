@@ -1105,11 +1105,12 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_password2",
                               ValueError(n_("Passwords don't match."))))
             rs.notify("error", n_("Passwords don't match."))
+            return self.change_password_form(rs)
         new_password = check(rs, "password_strength", new_password, "new_password",
                              inputs=[ rs.user.username, rs.user.given_names,
                                rs.user.family_name ] )
         if rs.errors:
-            if any(name == "strength" for name, _ in rs.errors):
+            if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
             return self.change_password_form(rs)
         code, message = self.coreproxy.change_password(
@@ -1190,11 +1191,12 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_password2",
                               ValueError(n_("Passwords don't match."))))
             rs.notify("error", n_("Passwords don't match."))
+            return self.change_password_form(rs)
         new_password = check(rs, "password_strength", new_password, "new_password",
                              inputs=[rs.user.username, rs.user.given_names,
                                      rs.user.family_name])
         if rs.errors:
-            if any(name == "strength" for name, _ in rs.errors):
+            if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
             ## Redirect so that encoded parameter works.
             params = {
