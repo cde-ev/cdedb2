@@ -1342,8 +1342,9 @@ class CoreBackend(AbstractBackend):
         This invalidates all existing sessions for this persona. Sessions
         are bound to an IP-address, for bookkeeping purposes.
 
-        In case of successful login, this escalates the database connection
-        to reflect the non-anonymous access.
+        In case of successful login, this updates the request state with a
+        new user object and escalates the database connection to reflect the
+        non-anonymous access.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type username: str
