@@ -715,6 +715,9 @@ class CdEFrontend(AbstractUserFrontend):
             if not len(line) == 23:
                 problems.append("Line {} does not have the correct "
                                 "number of columns".format(i+1))
+                rs.errors.append(("statement",
+                                  ValueError("Line {} does not have the correct"
+                                             " number of columns".format(i+1))))
                 continue
             line["id"] = i
             t = Transaction(line)
