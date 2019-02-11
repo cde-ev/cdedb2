@@ -3,6 +3,7 @@
 import itertools
 import json
 import re
+import quopri
 import unittest
 import time
 
@@ -319,6 +320,25 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("12345")
         self.assertPresence("Probemitgliedschaft")
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
+        mail = self.fetch_mail()[0]
+        self.logout()
+        link = None
+        for line in mail.split('\n'):
+            if line.strip().startswith('[1] '):
+                link = line.strip()[4:]
+        link = quopri.decodestring(link).decode('utf-8')
+        self.get(link)
+        self.assertTitle("Neues Passwort setzen")
+        new_password = "krce63koLe#$e"
+        f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f)
+        self.assertNonPresence("Verifizierung für Zurücksetzen fehlgeschlagen.",
+                               div="notifications")
+        data['password'] = new_password
+        self.login(data)
+        self.assertLogin(data['display_name'])
 
     @as_users("anton")
     def test_lastschrift_index(self, user):
