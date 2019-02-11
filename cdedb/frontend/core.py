@@ -1571,8 +1571,8 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
-    @REQUESTdata(("stati", "[int]"), ("start", "int_or_None"),
-                 ("stop", "int_or_None"))
+    @REQUESTdata(("stati", "[int]"), ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negetive_int_or_None"))
     def view_changelog_meta(self, rs, stati, start, stop):
         """View changelog activity."""
         start = start or 0
@@ -1590,7 +1590,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
+                 ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     def view_log(self, rs, codes, persona_id, start, stop):
         """View activity."""
         start = start or 0

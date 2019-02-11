@@ -135,7 +135,8 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly_admin")
     @REQUESTdata(("codes", "[int]"), ("assembly_id", "id_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
+                 ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     def view_log(self, rs, codes, assembly_id, start, stop):
         """View activities."""
         start = start or 0

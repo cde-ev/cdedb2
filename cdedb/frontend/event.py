@@ -3662,7 +3662,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
+                 ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     def view_log(self, rs, codes, event_id, start, stop):
         """View activities concerning events organized via DB."""
         start = start or 0
@@ -3683,8 +3684,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("codes", "[int]"), ("start", "int_or_None"),
-                 ("stop", "int_or_None"))
+    @REQUESTdata(("codes", "[int]"), ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     def view_event_log(self, rs, event_id, codes, start, stop):
         """View activities concerning one event organized via DB."""
         start = start or 0

@@ -178,7 +178,8 @@ class MlFrontend(AbstractUserFrontend):
 
     @access("ml_admin")
     @REQUESTdata(("codes", "[int]"), ("mailinglist_id", "id_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
+                 ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     def view_log(self, rs, codes, mailinglist_id, start, stop):
         """View activities."""
         start = start or 0
@@ -283,8 +284,8 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
-    @REQUESTdata(("codes", "[int]"), ("start", "int_or_None"),
-                 ("stop", "int_or_None"))
+    @REQUESTdata(("codes", "[int]"), ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     @mailinglist_guard()
     def view_ml_log(self, rs, mailinglist_id, codes, start, stop):
         """View activities pertaining to one list."""

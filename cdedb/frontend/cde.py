@@ -1924,7 +1924,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
+                 ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     def view_cde_log(self, rs, codes, persona_id, start, stop):
         """View general activity."""
         start = start or 0
@@ -1941,7 +1942,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
+                 ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     def view_finance_log(self, rs, codes, persona_id, start, stop):
         """View financial activity."""
         start = start or 0
@@ -1959,7 +1961,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
+                 ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"))
     def view_past_log(self, rs, codes, pevent_id, start, stop):
         """View activities concerning concluded events."""
         start = start or 0
