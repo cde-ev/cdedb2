@@ -9,6 +9,8 @@ import time
 
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.query import QueryOperators
+from cdedb.frontend.parse_statement import get_event_name_pattern
+from datetime import datetime
 
 class TestCdEFrontend(FrontendTest):
     @as_users("anton", "berta")
@@ -756,18 +758,38 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Angela Merkel")
 
     def test_parse_statement_additional(self):
-        from cdedb.frontend.parse_statement import get_event_name_pattern
-        from datetime import datetime
+    
+        pseudo_winter = {"title": "CdE Pseudo-WinterAkademie",
+                         "begin": datetime(2222, 12, 27),
+                         "end": datetime(2223, 1, 6)}
+        test_pfingsten = {"title": "CdE Pfingstakademie",
+                          "begin": datetime(1234, 5, 20),
+                          "end": datetime(1234, 5, 23)}
+        naka = {"title": "NachhaltigkeitsAkademie 2019",
+                "begin": datetime(2019, 3, 23),
+                "end": datetime(2019, 3, 30)}
         
-        pattern = get_event_name_pattern({"title": "CdE Pseudo-WinterAkademie",
-                                          "begin": datetime(2222, 12, 27),
-                                          "end": datetime(2223, 1, 6)})
+        pattern = re.compile(get_event_name_pattern(pseudo_winter),
+                             flags=re.IGNORECASE)
         
-        self.assertTrue(re.search(pattern, "Pseudo-WinterAkademie 2222/2223"))
-        self.assertTrue(re.search(pattern, "Pseudo-WinterAkademie 2222/23"))
-        self.assertTrue(re.search(pattern, "Pseudo-WinterAkademieXYZ"))
-        self.assertTrue(re.search(pattern, "Pseudo winter -Aka", flags=re.I))
-        self.assertTrue(re.search(pattern, "pseudo\twinter\naka\n", flags=re.I))
+        self.assertTrue(pattern.search("Pseudo-WinterAkademie 2222/2223"))
+        self.assertTrue(pattern.search("Pseudo-WinterAkademie 2222/23"))
+        self.assertTrue(pattern.search("Pseudo-WinterAkademieXYZ"))
+        self.assertTrue(pattern.search("Pseudo winter -Aka"))
+        self.assertTrue(pattern.search("pseudo\twinter\naka\n"))
+        
+        pattern = re.compile(get_event_name_pattern(test_pfingsten),
+                             flags=re.IGNORECASE)
+        self.assertTrue(pattern.search("PfingstAkademie 1234"))
+        self.assertTrue(pattern.search("Pfingst Akademie 34"))
+        
+        pattern = re.compile(get_event_name_pattern(naka),
+                             flags=re.IGNORECASE)
+        
+        self.assertTrue(pattern.search("NAka 2019"))
+        self.assertTrue(pattern.search("N Akademie 19"))
+        self.assertTrue(pattern.search("NachhaltigkeitsAka 2019"))
+        self.assertTrue(pattern.search("nachhaltigkeitsakademie"))
 
     @as_users("anton")
     def test_parse_statement(self, user):
@@ -780,8 +802,8 @@ class TestCdEFrontend(FrontendTest):
         
         self.assertTitle("Kontoauszug parsen")
         self.assertPresence("3 Transaktionen für event_fees gefunden.")
-        self.assertPresence("3 Transaktionen für membership_fees gefunden.")
-        self.assertPresence("3 Transaktionen für other_transactions gefunden.")
+        self.assertPresence("4 Transaktionen für membership_fees gefunden.")
+        self.assertPresence("2 Transaktionen für other_transactions gefunden.")
         self.assertPresence("9 Transaktionen für transactions gefunden.")
         
         save = self.response
@@ -859,29 +881,29 @@ class TestCdEFrontend(FrontendTest):
                                      delimiter=";",
                                      fieldnames=transactions_fields))
         
-        self.assertEqual("10.00", result[0]["amount"])
+        self.assertEqual("10,00", result[0]["amount"])
         self.assertEqual("DB-1-9", result[0]["db_id"])
         self.assertEqual("Administrator", result[0]["family_name"])
         self.assertEqual("Anton Armin A.", result[0]["given_names"])
         self.assertEqual("Mitgliedsbeitrag", result[0]["type"])
         self.assertEqual("8068900", result[0]["account"])
         
-        self.assertEqual("5.00", result[1]["amount"])
+        self.assertEqual("5,00", result[1]["amount"])
         self.assertEqual("DB-2-7", result[1]["db_id"])
         self.assertEqual("Beispiel", result[1]["family_name"])
         self.assertEqual("Bertålotta", result[1]["given_names"])
         self.assertEqual("Mitgliedsbeitrag", result[1]["type"])
         self.assertEqual("8068900", result[1]["account"])
         
-        self.assertEqual("2.50", result[2]["amount"])
+        self.assertEqual("2,50", result[2]["amount"])
         self.assertEqual("DB-7-8", result[2]["db_id"])
         self.assertEqual("Generalis", result[2]["family_name"])
         self.assertEqual("Garcia G.", result[2]["given_names"])
         self.assertEqual("Mitgliedsbeitrag", result[2]["type"])
         self.assertEqual("8068900", result[2]["account"])
         
-        self.assertEqual("2.50", result[3]["amount"])
-        self.assertEqual("????", result[3]["db_id"])
+        self.assertEqual("2,50", result[3]["amount"])
+        self.assertEqual("DB-UNKNOWN", result[3]["db_id"])
         self.assertEqual("Daniel Dino", result[3]["family_name"])
         self.assertEqual("Mitgliedsbeitrag", result[3]["given_names"])
         self.assertEqual("Mitgliedsbeitrag", result[3]["type"])
@@ -894,35 +916,35 @@ class TestCdEFrontend(FrontendTest):
                                      delimiter=";",
                                      fieldnames=transactions_fields))
 
-        self.assertEqual("-18.54", result[0]["amount"])
-        self.assertEqual("????", result[0]["db_id"])
+        self.assertEqual("-18,54", result[0]["amount"])
+        self.assertEqual("DB-UNKNOWN", result[0]["db_id"])
         self.assertEqual("", result[0]["family_name"])
         self.assertIn("Genutzte Freiposten", result[0]["given_names"])
         self.assertEqual("Sonstiges", result[0]["type"])
         self.assertEqual("8068901", result[0]["account"])
 
-        self.assertEqual("-52.50", result[1]["amount"])
-        self.assertEqual("????", result[1]["db_id"])
+        self.assertEqual("-52,50", result[1]["amount"])
+        self.assertEqual("DB-UNKNOWN", result[1]["db_id"])
         self.assertEqual("", result[1]["family_name"])
         self.assertEqual("KONTOFUEHRUNGSGEBUEHREN", result[1]["given_names"])
         self.assertEqual("Sonstiges", result[1]["type"])
         self.assertEqual("8068901", result[1]["account"])
 
-        self.assertEqual("584.49", result[2]["amount"])
+        self.assertEqual("584,49", result[2]["amount"])
         self.assertEqual("DB-1-9", result[2]["db_id"])
         self.assertEqual("Administrator", result[2]["family_name"])
         self.assertEqual("Anton Armin A.", result[2]["given_names"])
         self.assertEqual("Große Testakademie 2222", result[2]["type"])
         self.assertEqual("8068901", result[2]["account"])
 
-        self.assertEqual("100.00", result[3]["amount"])
+        self.assertEqual("100,00", result[3]["amount"])
         self.assertEqual("DB-5-1", result[3]["db_id"])
         self.assertEqual("Eventis", result[3]["family_name"])
         self.assertEqual("Emilia E.", result[3]["given_names"])
         self.assertEqual("Große Testakademie 2222", result[3]["type"])
         self.assertEqual("8068901", result[3]["account"])
 
-        self.assertEqual("584.49", result[4]["amount"])
+        self.assertEqual("584,49", result[4]["amount"])
         self.assertEqual("DB-7-8", result[4]["db_id"])
         self.assertEqual("Generalis", result[4]["family_name"])
         self.assertEqual("Garcia G.", result[4]["given_names"])
