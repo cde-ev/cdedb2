@@ -479,10 +479,17 @@ class CdEFrontend(AbstractUserFrontend):
         if sendmail:
             for datum in data:
                 if datum['resolution'] == LineResolutions.create:
+                    success, message = self.coreproxy.make_reset_cookie(
+                        rs, datum['raw']['username'])
                     self.do_mail(rs, "welcome",
                                  {'To': (datum['raw']['username'],),
                                   'Subject': n_('CdE admission'), },
-                                 {'data': datum['persona']})
+                                 {'data': datum['persona'],
+                                  'email': self.encode_parameter(
+                                      "core/do_password_reset_form", "email",
+                                      datum['raw']['username'])
+                                  if success else "",
+                                  'cookie': message if success else ""})
         return True, count
 
     @staticmethod
