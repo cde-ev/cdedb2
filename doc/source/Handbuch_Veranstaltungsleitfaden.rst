@@ -269,7 +269,7 @@ Konfigurationssyntax
 Es gibt zwei grundlegende Arten, einen Fragebogenteil zu konfiguriern:
 
 1. Bei "Abfrage" ist "-- nur Text --" ausgewählt.
-2. Bei "Abfrage" ist ein :ref:`Datenfeld <handbuch_ablauf_datenfelder>` ausgewählt.
+2. Bei "Abfrage" ist ein :ref:`Datenfeld <handbuch_ablaufplan_datenfelder>` ausgewählt.
 
 Im ersten Fall kannst du mit "Titel" eine Überschrift festlegen und/oder mit "Text" einen Infotext.
 
@@ -281,7 +281,7 @@ Der "Titel" gibt hierbei die Bezeichnung für diese Abfrage an, mit "Text" kanns
 
 
 Anordnung ändern
-'''''''''''''''
+''''''''''''''''
 
 Klickst du diesen Button oben links auf der Seite, erscheint eine graphische Oberfläche des konfigurierten Fragebogens.
 
@@ -476,6 +476,7 @@ Kommazahl
 
 - Ein Kommazahlenfeld akzeptiert als Werte Kommazahlen mit maximal 17 signifikaten Stellen, die Beschreibung darf auch Buchstaben und Sonderzeichen enthalten.
 - Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in wleches eine Kommazahl eingegeben werden kann.
+
 .. attention:: Kommas werden als Dezimaltrennzeichen nicht akzeptiert, es muss ein Punkt verwendet werden.
 
 
@@ -496,7 +497,7 @@ Datum mit Uhrzeit
 '''''''''''''''''
 
 - Ein Datum mit Uhrzeit Feld akzeptiert Werte im Format YYYY-MM-DDThh:ii:ss (dabei das "T" einfach als solches eingeben) sowie etwaige Browserabhängie Varianen (siehe dazu unter :ref:`Datum <handbuch_ablaufplan_datenfelder_allgemein_datum>`), die Beschreibung darf Buchstaben, Zahlen und Sonderzeichen enthalten.
-* Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in welches ein Datum mit Uhrzeit in obigem Format eingegeben werden kann.
+- Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in welches ein Datum mit Uhrzeit in obigem Format eingegeben werden kann.
  
  
  
