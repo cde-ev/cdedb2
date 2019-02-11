@@ -39,21 +39,26 @@
     <br>
     <br>
     {% if data %}
+        <ul>
         {% for key, value in data|dictsort %}
             {% if key != "files" %}
-                {% trans count=value|length, key=key|e -%}
-                    {{ count }} Transactions found for {{ key }}.
-                {%- endtrans %}
-                <br>
+                <li>
+                    {% trans count=value|length, key=key|e -%}
+                        {{ count }} Transactions found for {{ key }}.
+                    {%- endtrans %}
+                </li>
             {% endif %}
         {% endfor %}
+        </ul>
     {% endif %}
     <br>
     {% if problems %}
-        {% trans -%}Problems:{%- endtrans %}<br>
+        {% trans -%}Problems:{%- endtrans %}
+        <ul>
         {% for problem in problems %}
-            - {{ problem }}<br>
+            <li>{{ problem|e }}</li>
         {% endfor %}
+        </ul>
     {% endif %}
     <br>
     {% if data %}
@@ -61,9 +66,14 @@
             {% if key == "transactions" %}
                 <br>
                 {% for t in value %}
-                    {{ t|string|replace("\n", "<br>")|replace("\t", "    ") }}
-                    <br>
-                    <br>
+                    Transaction {{ t.t_id|e }}:
+                    <ul>
+                    {% for line in (t|string).split("\n") %}
+                        {% if not loop.first %}
+                            <li>{{ line|e }}</li>
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
                 {% endfor %}
             {% endif %}
         {% endfor %}
