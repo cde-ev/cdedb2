@@ -39,7 +39,8 @@ from cdedb.backend.cde import CdEBackend
 from cdedb.frontend.parse_statement import (
     Transaction, TransactionType, Accounts, get_event_name_pattern,
     STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
-    STATEMENT_FAMILY_NAME_UNKNOWN)
+    STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_DB_ID_EXTERN,
+    STATEMENT_DB_ID_UNKNOWN)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -675,22 +676,27 @@ class CdEFrontend(AbstractUserFrontend):
         # These are more immediately important and should maybe stay here
         # because the output is still subject to change for now
 
-        MEMBERSHIP_FEE_FIELDS = ("db_id", "family_name", "given_names",
-                                 "amount", "comment", "problems")
-        EVENT_FEE_FIELDS = ("date", "amount", "db_id", "family_name",
-                            "given_names", "iban", "bic", "comment", "problems")
-        OTHER_TRANSACTION_FIELDS = ("account", "date", "amount", "reference",
-                                    "account_holder", "type",
-                                    "type_confidence", "iban", "bic", "problems")
-        ACCOUNT_FIELDS = ("date", "amount", "db_id", "family_name",
-                          "given_names", "category", "account")
+        membership_fee_fields = ("db_id", "family_name", "given_names",
+                                 "amount_export", "db_id_value", "reference",
+                                 "problems")
+        event_fee_fields = ("date", "amount_export", "db_id", "family_name",
+                            "given_names", "member_confidence",
+                            "event_shortname", "event_confidence",
+                            "account_holder", "iban", "bic", "reference",
+                            "problems")
+        other_transaction_fields = ("account", "date", "amount_export",
+                                    "reference", "account_holder", "type",
+                                    "type_confidence", "iban", "bic",
+                                    "problems")
+        account_fields = ("date", "amount", "db_id", "name_or_holder",
+                          "name_or_ref", "category", "account", "reference")
 
         if rs.errors:
             return self.parse_statement_form(rs)
 
         event_list = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
-        event_names = {e["title"]: get_event_name_pattern(e)
+        event_names = {e["title"]: (get_event_name_pattern(e), e["shortname"])
                        for e in events.values()}
 
         statementlines = statement.splitlines()
@@ -737,15 +743,9 @@ class CdEFrontend(AbstractUserFrontend):
 
         if membership_fees:
             rows = []
+            # Separate by known and unknown Names
             rows.extend([
-                {"db_id": t.best_member_match.db_id,
-                 "family_name": t.best_member_match.family_name,
-                 "given_names": t.best_member_match.given_names,
-                 "amount": t.amount_export,
-                 "iban": t.iban,
-                 "bic": t.bic,
-                 "comment": t.reference,
-                 "problems": t.problems}
+                t.to_dict()
                 for t in membership_fees if
                 (t.best_member_match.given_names !=
                  STATEMENT_GIVEN_NAMES_UNKNOWN or
@@ -753,14 +753,7 @@ class CdEFrontend(AbstractUserFrontend):
                  STATEMENT_FAMILY_NAME_UNKNOWN)
                 ])
             rows.extend([
-                {"db_id": t.best_member_match.db_id,
-                 "family_name": t.best_member_match.family_name,
-                 "given_names": t.best_member_match.given_names,
-                 "amount": t.amount_export,
-                 "iban": t.iban,
-                 "bic": t.bic,
-                 "comment": t.reference,
-                 "problems": t.problems}
+                t.to_dict()
                 for t in membership_fees if
                 (t.best_member_match.given_names ==
                  STATEMENT_GIVEN_NAMES_UNKNOWN and
@@ -769,110 +762,63 @@ class CdEFrontend(AbstractUserFrontend):
                 ])
 
             if rows:
-                csv_data = csv_output(rows, MEMBERSHIP_FEE_FIELDS,
+                csv_data = csv_output(rows, membership_fee_fields,
                                       writeheader=False)
                 data["files"]["membership_fees"] = csv_data
 
         all_rows = []
         for event_name in event_names:
             rows = []
+            # Separate by not Extern and Extern
             rows.extend([
-                {"date": t.statement_date.strftime("%d.%m.%Y"),
-                 "amount": t.amount_export,
-                 "db_id": t.best_member_match.db_id,
-                 "family_name": t.best_member_match.family_name,
-                 "given_names": t.best_member_match.given_names,
-                 "iban": t.iban,
-                 "bic": t.bic,
-                 "comment": t.reference,
-                 "problems": t.problems}
+                t.to_dict()
                 for t in event_fees
-                if (event_name == t.best_event_match
-                    and t.best_member_match.db_id != "DB-EXTERN")
+                if (event_name == t.best_event_match.title
+                    and t.best_member_match.db_id != STATEMENT_DB_ID_EXTERN)
                 ])
 
             rows.extend([
-                {"date": t.statement_date.strftime("%d.%m.%Y"),
-                 "amount": t.amount_export,
-                 "db_id": t.best_member_match.db_id,
-                 "family_name": t.best_member_match.family_name,
-                 "given_names": t.best_member_match.given_names,
-                 "iban": t.iban,
-                 "bic": t.bic,
-                 "comment": t.reference,
-                 "problems": t.problems}
-
+                t.to_dict()
                 for t in event_fees
-                if (event_name == t.best_event_match
-                    and t.best_member_match.db_id == "DB-EXTERN")
+                if (event_name == t.best_event_match.title
+                    and t.best_member_match.db_id == STATEMENT_DB_ID_EXTERN)
                 ])
 
             if rows:
                 all_rows.extend(rows)
                 e_name = event_name.replace(" ", "_").replace("/", "-")
-                csv_data = csv_output(rows, EVENT_FEE_FIELDS,
+                csv_data = csv_output(rows, event_fee_fields,
                                       writeheader=False)
                 data["files"][e_name] = csv_data
         if all_rows:
-            csv_data = csv_output(all_rows, EVENT_FEE_FIELDS,
+            csv_data = csv_output(all_rows, event_fee_fields,
                                   writeheader=False)
             data["files"]["event_fees"] = csv_data
 
         if other_transactions:
             rows = []
+            # Separate by TransactionType
             for ty in TransactionType:
                 rows.extend([
-                    {"account": t.account,
-                     "date": t.statement_date,
-                     "amount": t.amount_export,
-                     "reference": t.reference,
-                     "account_holder": t.account_holder,
-                     "iban": t.iban,
-                     "bic": t.bic,
-                     "type": t.type,
-                     "type_confidence": t.type_confidence,
-                     "problems": t.problems}
+                    t.to_dict()
                     for t in other_transactions if t.type == ty
                     ])
             rows.extend([
-                {"account": t.account,
-                 "date": t.statement_date,
-                 "amount": t.amount_export,
-                 "reference": t.reference,
-                 "account_holder": t.account_holder,
-                 "iban": t.iban,
-                 "bic": t.bic,
-                 "type": t.type,
-                 "type_confidence": t.type_confidence,
-                 "problems": t.problems}
-                for t in other_transactions if t.type is None
-                ])
+                t.to_dict()
+                for t in other_transactions if t.type is None])
 
             if rows:
-                csv_data = csv_output(rows, OTHER_TRANSACTION_FIELDS,
+                csv_data = csv_output(rows, other_transaction_fields,
                                       writeheader=False)
                 data["files"]["other_transactions"] = csv_data
 
         rows = defaultdict(list)
         for t in transactions:
-            rows[t.account].append(
-                {"date": t.statement_date,
-                 "amount": t.amount_export,
-                 "db_id": t.best_member_match.db_id
-                    if t.best_member_match else "????",
-                 "family_name": t.best_member_match.family_name
-                    if t.best_member_match else t.account_holder,
-                 "given_names": t.best_member_match.given_names
-                    if t.best_member_match else t.reference,
-                 "category": t.best_event_match
-                    if t.type == TransactionType.EventFee else t.type,
-                 "account": t.account,
-                 "problems": t.problems}
-                )
+            rows[t.account].append(t.to_dict())
 
         for acc in Accounts:
             if acc in rows:
-                csv_data = csv_output(rows[acc], ACCOUNT_FIELDS,
+                csv_data = csv_output(rows[acc], account_fields,
                                       writeheader=False)
                 data["files"]["transactions_{}".format(acc)] = csv_data
 

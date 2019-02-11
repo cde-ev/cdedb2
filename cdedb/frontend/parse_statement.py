@@ -16,9 +16,11 @@ STATEMENT_CSV_RESTKEY = "reference"
 STATEMENT_GIVEN_NAMES_UNKNOWN = "VORNAME"
 STATEMENT_FAMILY_NAME_UNKNOWN = "NACHNAME"
 STATEMENT_DATEFORMAT = "%d.%m.%y"
+STATEMENT_DB_ID_EXTERN = "DB-EXTERN"
+STATEMENT_DB_ID_UNKNOWN = "DB-UNKNOWN"
 STATEMENT_POSTING_OTHER = r"BUCHUNGSPOSTENGEBUEHREN|KONTOFUEHRUNGSGEBUEHREN"
 STATEMENT_POSTING_REFUND = r"(Sammel-?)?(ü|ue|u| )berweisung"
-STATEMENT_REFERENCE_REFUND = r"R(ü|ue|u|\s)ckerstattung"
+STATEMENT_REFERENCE_REFUND = r"(R(ü|ue|u|\s)ck)?erstattung"
 STATEMENT_REFERENCE_MEMBERSHIP = (r"Mitglied(schaft)?(sbeitrag)?"
                                   r"|(Halb)?Jahresbeitrag")
 STATEMENT_REFERENCE_EXTERNAL = r"\d\d\d\d-\d\d-\d\d[,-.\s]*Extern"
@@ -49,7 +51,7 @@ def get_event_name_pattern(event):
          r"(NRW|JuniorAka(demie)?|Velbert|Nachtreffen)"),
         ("Studi(en)?info(rmations)?", r"Studi(en)?info(rmations)?"),
         ("Wochenende", r"(Wochenende)?"),
-        ("Ski(freizeit)?", r"Ski(freizeit)?"),
+        ("Ski(freizeit)?", r"Ski(freizeit|fahrt)?"),
         ("Segeln", r"Segeln"),
         ("Seminar", "rSeminar"),
         ("Test", r"Test"),
@@ -65,7 +67,8 @@ def get_event_name_pattern(event):
     
     if event.get("begin") and event.get("end"):
         if event["begin"].year == event["end"].year:
-            result_parts.append(y_p.sub(r"(\1)?\2", str(event["begin"].year)))
+            x = "(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + ")?"
+            result_parts.append(x)
         else:
             x = ("(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + "/"
                  + y_p.sub(r"(\1)?\2", str(event["end"].year)) + ")?")
@@ -224,15 +227,35 @@ class ConfidenceLevel(enum.IntEnum):
 class Member:
     """Helper class to store the relevant member data."""
     
-    def __init__(self, given_names, family_name, db_id):
+    def __init__(self, given_names, family_name, db_id, confidence):
         self.given_names = given_names
         self.family_name = family_name
         self.db_id = db_id
+        self.confidence = confidence
     
     def __str__(self):
-        return "({}, {}, {})".format(self.given_names,
-                                     self.family_name,
-                                     self.db_id)
+        return "({}, {}, {}, {})".format(self.given_names,
+                                         self.family_name,
+                                         self.db_id,
+                                         self.confidence)
+    def __format__(self, format_spec):
+        return str(self)
+
+class Event:
+    """Helper class to store the relevant event data."""
+    
+    def __init__(self, title, shortname, confidence):
+        self.title = title
+        self.shortname = shortname
+        self.confidence = confidence
+        
+    def __str__(self):
+        return "({}, {}, {})".format(self.title,
+                                     self.shortname,
+                                     self.confidence)
+    
+    def __format__(self, format_spec):
+        return str(self)
 
 
 class Transaction:
@@ -432,7 +455,8 @@ class Transaction:
             
             else:
                 # Iterate through known Event names and their variations
-                for event_name, pattern in event_names.items():
+                for event_name, value in event_names.items():
+                    pattern, shortname = value
                     if re.search(event_name, self.reference,
                                  flags=re.IGNORECASE):
                         self.type = TransactionType.EventFee
@@ -526,13 +550,11 @@ class Transaction:
                             self.problems.append(p)
                         else:
                             self.problems.append(str((e, db_id)))
-                        temp_confidence = temp_confidence.decrease(
-                            2)
-                        m = (Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
-                                    STATEMENT_FAMILY_NAME_UNKNOWN,
-                                    persona_id),
-                             temp_confidence)
-                        members.append(m)
+
+                        members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
+                                              STATEMENT_FAMILY_NAME_UNKNOWN,
+                                              persona_id,
+                                              temp_confidence.decrease(2)))
                         continue
                     else:
                         given_names = persona.get('given_names', "")
@@ -556,10 +578,10 @@ class Transaction:
                             self.problems.append(p)
                             temp_confidence = temp_confidence.decrease()
                         
-                        members.append((Member(given_names,
-                                               family_name,
-                                               persona_id),
-                                        temp_confidence))
+                        members.append(Member(given_names,
+                                              family_name,
+                                              persona_id,
+                                              temp_confidence))
                 
                 else:
                     p = "Invalid checkdigit: {}".format(db_id)
@@ -570,11 +592,23 @@ class Transaction:
                                self.reference, flags=re.IGNORECASE)
             if result:
                 # Reference matches External Event Fee
-                confidence = confidence.decrease()
-                members.append((Member("Extern",
-                                       "Extern",
-                                       "DB-EXTERN"),
-                                confidence))
+                members.append(Member("Extern",
+                                      "Extern",
+                                      "DB-EXTERN",
+                                      confidence.decrease()))
+            else:
+                members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
+                                      STATEMENT_FAMILY_NAME_UNKNOWN,
+                                      "DB-UNKNOWN",
+                                      ConfidenceLevel.Low))
+                self.problems.append("No DB-ID found.")
+        else:
+            m = Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
+                       STATEMENT_FAMILY_NAME_UNKNOWN,
+                       "DB-UNKNOWN",
+                       ConfidenceLevel.Low)
+            members.append(m)
+            self.problems.append("No DB-ID found.")
         
         if members:
             # Save all matched members
@@ -585,11 +619,11 @@ class Transaction:
             best_confidence = ConfidenceLevel.Null
             
             for member in members:
-                if member[1] > best_confidence:
-                    best_confidence = member[1]
-                    best_match = member[0]
+                if member.confidence > best_confidence:
+                    best_confidence = member.confidence
+                    best_match = member
             
-            if best_confidence not in {ConfidenceLevel.Null}:
+            if best_confidence > ConfidenceLevel.Null:
                 self.best_member_match = best_match
                 self.best_member_confidence = best_confidence
     
@@ -602,27 +636,32 @@ class Transaction:
         
         :param event_names: Current Event Names and RegEx Patternstrings for
             these Names.
-        :type event_names: {str: str}
+        :type event_names: {str: (str, str)}
         """
         
         if self.type in {TransactionType.EventFee}:
             events = []
             confidence = ConfidenceLevel.Full
             
-            for event_name, pattern in event_names.items():
+            for event_name, value in event_names.items():
+                pattern, shortname = value
                 
                 result = re.search(event_name, self.reference,
                                    flags=re.IGNORECASE)
                 if result:
                     # Exact match to Event Name
-                    events.append((event_name, confidence))
+                    events.append(Event(event_name,
+                                        shortname,
+                                        confidence))
                     continue
                 else:
                     result = re.search(pattern, self.reference,
                                        flags=re.IGNORECASE)
                     if result:
                         # Similar to Event Name
-                        events.append((event_name, confidence.decrease()))
+                        events.append(Event(event_name,
+                                            shortname,
+                                            confidence.decrease()))
             
             if events:
                 self.event_matches = events
@@ -631,13 +670,57 @@ class Transaction:
                 best_confidence = ConfidenceLevel.Null
                 
                 for event in events:
-                    if event[1] > best_confidence:
-                        best_confidence = event[1]
-                        best_match = event[0]
+                    if event.confidence > best_confidence:
+                        best_confidence = event.confidence
+                        best_match = event
                 
-                if best_confidence not in {ConfidenceLevel.Null}:
+                if best_confidence > ConfidenceLevel.Null:
                     self.best_event_match = best_match
                     self.best_event_confidence = best_confidence
+    
+    def to_dict(self):
+        """
+        Convert all Transaction data to a dict to be used by csv.DictWriter.
+        
+        :rtype: {str: str}
+        """
+        ret = {
+            "account": self.account,
+            "amount_export": self.amount_export,
+            "amount": self.amount,
+            "date": self.statement_date.strftime("%d.%m.%Y"),
+            "db_id": self.best_member_match.db_id
+            if self.best_member_match else "DB-UNKNOWN",
+            "db_id_value": self.best_member_match.db_id.split("-")[1] if
+            self.best_member_match else "",
+            "name_or_holder": self.best_member_match.family_name
+            if self.best_member_match and self.best_member_confidence > 1
+            else self.account_holder,
+            "name_or_ref": self.best_member_match.given_names
+            if self.best_member_match and self.best_member_confidence > 1
+            else self.reference,
+            "given_names": self.best_member_match.given_names
+            if self.best_member_match else "",
+            "family_name": self.best_member_match.family_name
+            if self.best_member_match else "",
+            "member_confidence": self.best_member_confidence,
+            "event": self.best_event_match.title
+            if self.best_event_match else "",
+            "event_shortname": self.best_event_match.shortname
+            if self.best_event_match else "",
+            "event_confidence": str(self.best_event_confidence),
+            "reference": self.reference,
+            "account_holder": self.account_holder,
+            "iban": self.iban,
+            "bic": self.bic,
+            "type": self.type,
+            "category": self.best_event_match.shortname.replace("-", " ")
+            if self.type == TransactionType.EventFee and self.best_event_match
+            else self.type,
+            "type_confidence": self.type_confidence,
+            "problems": self.problems,
+            }
+        return ret
     
     @property
     def abs_cents(self):
