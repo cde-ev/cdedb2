@@ -28,10 +28,17 @@
         {% if "files" in data %}
             {% for key, value in data["files"]|dictsort %}
                 <form action="{{ cdedblink('cde/parse_download') }}" method="POST" id="{{ key }}">
-                    {{ util.input_hidden("data", value=value) }}
-                    {{ util.input_hidden("filename", value="{}.csv".format(key)) }}
-                    {{ util.form_input_submit(value=gettext("Download {}.csv ").format(key),
-                        aclass="btn btn-info btn-sm", icon="download", horizontal=False) }}
+                    <div class="<pre>">
+                        {{- util.input_hidden("data", value=value) -}}
+                    </div>
+                    <div class="</pre>">
+                    {{- util.input_hidden("filename", value="{}.csv".format(key)) -}}
+                    </div>
+                    {%- trans count=(value.split("\n")|length - 1)|e -%}
+                        {{ count }} entries.
+                    {%- endtrans -%}
+                    {{- util.form_input_submit(value=gettext("Download {}.csv ").format(key),
+                        aclass="btn btn-info btn-sm", icon="download", horizontal=False) -}}
                 </form>
             {% endfor %}
         {% endif %}
