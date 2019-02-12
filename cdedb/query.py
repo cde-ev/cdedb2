@@ -347,7 +347,7 @@ QUERY_PRIMARIES = {
     "qview_archived_persona": "personas.id",
 }
 
-def mangle_query_input(rs, spec, defaults=None):
+def mangle_query_input(rs, spec, defaults=None, values=None):
     """This is to be used in conjunction with the ``query_input`` validator,
     which is exceptional since it is not used via a decorator. To take
     care of the differences this function exists.
@@ -361,23 +361,33 @@ def mangle_query_input(rs, spec, defaults=None):
     :type defaults: {str: str}
     :param defaults: Default values which appear like they have been submitted,
       if nothing has been submitted for this paramater.
+    :type values: {str: str}
+    :param values: Custom values that take preference over whatever values were
+        actually submitted or are submitted via default parameter.
     :rtype: {str: str}
     :returns: The raw data associated to the query described by the spec
         extracted from the request data saved in the request state.
     """
     defaults = defaults or {}
+    values = values or {}
     params = {}
     for field in spec:
         for prefix in ("qval_", "qsel_", "qop_"):
             name = prefix + field
-            if name in rs.request.values:
+            if name in values:
+                params[name] =rs.values[name] = values[name]
+            elif name in rs.request.values:
                 params[name] = rs.values[name] = rs.request.values[name]
     for postfix in ("primary", "secondary", "tertiary"):
         name = "qord_" + postfix
-        if name in rs.request.values:
+        if name in values:
+            params[name] =rs.values[name] = values[name]
+        elif name in rs.request.values:
             params[name] = rs.values[name] = rs.request.values[name]
         name = "qord_" + postfix + "_ascending"
-        if name in rs.request.values:
+        if name in values:
+            params[name] =rs.values[name] = values[name]
+        elif name in rs.request.values:
             params[name] = rs.values[name] = rs.request.values[name]
     for key, value in defaults.items():
         if key not in params:

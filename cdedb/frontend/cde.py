@@ -48,7 +48,7 @@ MEMBERSEARCH_DEFAULTS = {
     'qop_telephone,mobile': QueryOperators.similar,
     'qop_address,address_supplement,address2,address_supplement2':
         QueryOperators.similar,
-    'qop_postal_code,postal_code2': QueryOperators.similar,
+    'qop_postal_code,postal_code2': QueryOperators.between,
     'qop_location,location2': QueryOperators.similar,
     'qop_country,country2': QueryOperators.similar,
     'qop_weblink,specialisation,affiliation,timeline,interests,free_form':
@@ -157,11 +157,21 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("is_search", "bool"))
     def member_search(self, rs, is_search):
         """Search for members."""
+        pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
+        pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
+        if pl and pu:
+            values = {'qval_postal_code,postal_code2': "{},{}".format(pl, pu)}
+        elif pl:
+            values = {'qval_postal_code,postal_code2': "{},99999".format(pl)}
+        elif pu:
+            values = {'qval_postal_code,postal_code2': "0000,{}".format(pu)}
+        else:
+            values = {'qop_postal_code,postal_code2': QueryOperators.similar}
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
         query = check(
             rs, "query_input",
-            mangle_query_input(rs, spec, MEMBERSEARCH_DEFAULTS), "query",
-            spec=spec, allow_empty=not is_search, separator=' ')
+            mangle_query_input(rs, spec, MEMBERSEARCH_DEFAULTS, values),
+            "query", spec=spec, allow_empty=not is_search)
         events = {k: v
                   for k, v in self.pasteventproxy.list_past_events(rs).items()}
         pevent_id = None
