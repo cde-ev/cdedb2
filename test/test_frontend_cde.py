@@ -161,6 +161,31 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("2 Mitglieder gefunden")
         self.assertPresence("Anton")
         self.assertPresence("Bertålotta")
+       
+    @as_users("anton", "berta")
+    def test_member_search_zip(self, user):
+        self.get("/cde/search/member")
+        self.assertTitle("CdE-Mitglied suchen")
+        f = self.response.forms["membersearchform"]
+        f['postal_upper'] = 20000
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("Anton Armin A. Administrator")
+        self.assertPresence("Inga Iota")
+        
+        f = self.response.forms["membersearchform"]
+        f['postal_lower'] = 60000
+        f['postal_upper'] = ""
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("Bertålotta Beispiel")
+        self.assertPresence("Ferdinand F. Findus")
+        
+        f = self.response.forms["membersearchform"]
+        f['postal_lower'] = 10000
+        f['postal_upper'] = 20000
+        self.submit(f)
+        self.assertTitle("Inga Iota")
 
     @as_users("anton")
     def test_user_search(self, user):
