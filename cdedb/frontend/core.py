@@ -1572,7 +1572,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("stati", "[int]"), ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negetive_int_or_None"))
+                 ("stop", "non_negative_int_or_None"))
     def view_changelog_meta(self, rs, stati, start, stop):
         """View changelog activity."""
         start = start or 0
