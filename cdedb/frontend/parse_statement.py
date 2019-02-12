@@ -471,7 +471,7 @@ class Transaction:
                 # Iterate through known Event names and their variations
                 for event_name, value in event_names.items():
                     pattern, shortname = value
-                    if re.search(event_name, self.reference,
+                    if re.search(re.escape(event_name), self.reference,
                                  flags=re.IGNORECASE):
                         self.type = TransactionType.EventFee
                         confidence = confidence.decrease()
@@ -573,10 +573,10 @@ class Transaction:
                     else:
                         given_names = persona.get('given_names', "")
                         d_p = diacritic_patterns
-                        gn_pattern = d_p(given_names,
+                        gn_pattern = d_p(re.escape(given_names),
                                          two_way_replace=True)
                         family_name = persona.get('family_name', "")
-                        fn_pattern = d_p(family_name,
+                        fn_pattern = d_p(re.escape(family_name),
                                          two_way_replace=True)
                         
                         if not re.search(gn_pattern, self.reference,
@@ -660,7 +660,7 @@ class Transaction:
             for event_name, value in event_names.items():
                 pattern, shortname = value
                 
-                result = re.search(event_name, self.reference,
+                result = re.search(re.escape(event_name), self.reference,
                                    flags=re.IGNORECASE)
                 if result:
                     # Exact match to Event Name
