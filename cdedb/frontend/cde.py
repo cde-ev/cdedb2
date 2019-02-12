@@ -40,7 +40,8 @@ from cdedb.frontend.parse_statement import (
     Transaction, TransactionType, Accounts, get_event_name_pattern,
     STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
     STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_DB_ID_EXTERN,
-    STATEMENT_DB_ID_UNKNOWN)
+    STATEMENT_DB_ID_UNKNOWN, MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS,
+    OTHER_TRANSACTION_FIELDS, ACCOUNT_FIELDS)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -672,25 +673,6 @@ class CdEFrontend(AbstractUserFrontend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type statement: str
         """
-
-        # These are more immediately important and should maybe stay here
-        # because the output is still subject to change for now
-
-        membership_fee_fields = ("db_id", "family_name", "given_names",
-                                 "amount_export", "db_id_value", "reference",
-                                 "problems")
-        event_fee_fields = ("date", "amount_export", "db_id", "family_name",
-                            "given_names", "member_confidence",
-                            "event_shortname", "event_confidence",
-                            "account_holder", "iban", "bic", "reference",
-                            "problems")
-        other_transaction_fields = ("account", "date", "amount_export",
-                                    "reference", "account_holder", "type",
-                                    "type_confidence", "iban", "bic",
-                                    "problems")
-        account_fields = ("date", "amount", "db_id", "name_or_holder",
-                          "name_or_ref", "category", "account", "reference")
-
         if rs.errors:
             return self.parse_statement_form(rs)
 
@@ -765,7 +747,7 @@ class CdEFrontend(AbstractUserFrontend):
                 ])
 
             if rows:
-                csv_data = csv_output(rows, membership_fee_fields,
+                csv_data = csv_output(rows, MEMBERSHIP_FEE_FIELDS,
                                       writeheader=False)
                 data["files"]["membership_fees"] = csv_data
 
@@ -790,11 +772,11 @@ class CdEFrontend(AbstractUserFrontend):
             if rows:
                 all_rows.extend(rows)
                 e_name = event_name.replace(" ", "_").replace("/", "-")
-                csv_data = csv_output(rows, event_fee_fields,
+                csv_data = csv_output(rows, EVENT_FEE_FIELDS,
                                       writeheader=False)
                 data["files"][e_name] = csv_data
         if all_rows:
-            csv_data = csv_output(all_rows, event_fee_fields,
+            csv_data = csv_output(all_rows, EVENT_FEE_FIELDS,
                                   writeheader=False)
             data["files"]["event_fees"] = csv_data
 
@@ -811,7 +793,7 @@ class CdEFrontend(AbstractUserFrontend):
                 for t in other_transactions if t.type is None])
 
             if rows:
-                csv_data = csv_output(rows, other_transaction_fields,
+                csv_data = csv_output(rows, OTHER_TRANSACTION_FIELDS,
                                       writeheader=False)
                 data["files"]["other_transactions"] = csv_data
 
@@ -821,7 +803,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         for acc in Accounts:
             if acc in rows:
-                csv_data = csv_output(rows[acc], account_fields,
+                csv_data = csv_output(rows[acc], ACCOUNT_FIELDS,
                                       writeheader=False)
                 data["files"]["transactions_{}".format(acc)] = csv_data
 
