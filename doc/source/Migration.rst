@@ -153,9 +153,11 @@ Step-by-step plan
 
 1. Make everything ready as described above.
 2. Prepare the v2 VM (install/configure system packages).
-3. Stop the mailserver (alternatively: make mailinglists static, that is independent of db).
-4. Deploy a change to v1 making it read-only and only accessible to admins.
-5. Stop v1 and make an SQL dump.
+3. Stop the mailserver (alternatively: make mailinglists static, that is
+   independent of db).
+4. Stop v1 and make an SQL dump.
+5. Deploy a change to v1 making only accessible to admins (and invalidate
+   all sessions).
 6. Restart v1 and move it to https://db1.cde-ev.de.
 7. Import dump into v2 (see below).
 8. Move v2 to https://db.cde-ev.de and initialize it.
