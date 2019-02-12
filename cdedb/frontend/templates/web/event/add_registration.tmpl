@@ -12,7 +12,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-    {{ util.breadcrumb_link(cdedblink("event/add_registration"), gettext("New Participant"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/add_registration"), gettext("Add Participant"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
