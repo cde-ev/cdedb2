@@ -15,6 +15,7 @@ import json
 import logging
 import logging.handlers
 import pathlib
+import re
 import shutil
 import string
 import sys
@@ -837,7 +838,7 @@ def infinite_enum(aclass):
 
     Furthermore by convention the int is always non-negative and the
     enum can have additional states which are all associated with
-    negative values. In case of an additional enum state, the int is 
+    negative values. In case of an additional enum state, the int is
     None.
 
     In the code they are stored as an :py:var:`InfiniteEnum`.
@@ -945,14 +946,24 @@ def asciificator(s):
             ret += ' '
     return ret
 
-def diacritic_patterns(s):
-    """Replace letters with a pattern matching expressions, so that
-    ommitting diacritics in the query input is possible.
+def diacritic_patterns(s, two_way_replace=False):
+    """Replace letters with a pattern matching expressions.
 
-    This is intended for use with the sql SIMILAR TO clause or a python
+    Thus ommitting diacritics in the query input is possible.
+
+    This is intended for use with the sql SIMILAR TO clause or the python
     re module.
 
     :type s: str or None
+    :type two_way_replace: bool
+    :param two_way_replace: If this is True, replace all letter with a
+      potential diacritic (independent of the presence of the diacritic)
+      with a pattern matching all diacritic variations. If this is False
+      only replace in case of no diacritic present.
+
+      This can be used to search for occurences of names stored
+      in the db within input, that may not contain proper diacritics
+      (e.g. it may be constrained to ASCII).
     :rtype: str or None
     """
     if s is None:
@@ -965,8 +976,8 @@ def diacritic_patterns(s):
             return s
     ## some of the diacritics in use according to wikipedia
     umlaut_map = (
-        ("ae", "(ae|[äæ])"),
-        ("oe", "(oe|[öøœ])"),
+        ("ae", "(ae|ä|æ)"),
+        ("oe", "(oe|ö|ø|œ)"),
         ("ue", "(ue|ü)"),
         ("ss", "(ss|ß)"),
         ("a", "[aàáâãäåą]"),
@@ -979,9 +990,13 @@ def diacritic_patterns(s):
         ("u", "[uùúûüű]"),
         ("y", "[yýÿ]"),
         ("z", "[zźż]"),
-    )
-    for normal, replacement in umlaut_map:
-        s = s.replace(normal, replacement)
+        )
+    if not two_way_replace:
+        for normal, replacement in umlaut_map:
+            s = re.sub(normal, replacement, s, flags=re.IGNORECASE)
+    else:
+        for _, regex in umlaut_map:
+            s = re.sub(regex, regex, s, flags=re.IGNORECASE)
     return s
 
 def extract_roles(session, introspection_only=False):

@@ -220,6 +220,7 @@ class LastschriftTransactionStati(enum.IntEnum):
                         LastschriftTransactionStati.failure,
                         LastschriftTransactionStati.cancelled,
                         LastschriftTransactionStati.rollback)
+    
 @enum.unique
 class CoreLogCodes(enum.IntEnum):
     """Available log messages core.log."""

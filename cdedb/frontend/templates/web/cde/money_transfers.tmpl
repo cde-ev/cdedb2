@@ -2,7 +2,11 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('csv-tools') }}{% endblock %}
-{% block title %}Überweisungen eintragen{% endblock %}
+{% block title %}
+    {% trans -%}
+        Enter Money Transfers
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}

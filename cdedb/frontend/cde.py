@@ -3,7 +3,7 @@
 """Services for the cde realm."""
 
 import cgitb
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import copy
 import csv
 import hashlib
@@ -36,6 +36,12 @@ from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.cde import CdEBackend
+from cdedb.frontend.parse_statement import (
+    Transaction, TransactionType, Accounts, get_event_name_pattern,
+    STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
+    STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_DB_ID_EXTERN,
+    STATEMENT_DB_ID_UNKNOWN, MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS,
+    OTHER_TRANSACTION_FIELDS, ACCOUNT_FIELDS)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -624,6 +630,203 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("cde_admin")
+    def parse_statement_form(self, rs, data=None, problems=None,
+                             csvfields=None):
+        """Render form.
+
+        The ``data`` parameter contains all extra information assembled
+        during processing of a POST request.
+        
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object} or None
+        :type problems: list(str) or None
+        :type csvfields: tuple(str) or None
+        """
+        data = data or {}
+        problems = problems or []
+        csvfields = csvfields or tuple()
+        csv_position = {key: ind for ind, key in enumerate(csvfields)}
+        return self.render(rs, "parse_statement", {'data': data,
+                                                   'problems': problems,
+                                                   'csvfields': csv_position})
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("statement", "str"))
+    def parse_statement(self, rs, statement):
+        """
+        Parse the statement into multiple CSV files.
+
+        Every transaction is matched to a TransactionType, as well as to a
+        member and an event, if applicable.
+
+        The transaction's reference is searched for DB-IDs.
+        If found the associated persona is looked up and their given_names and
+        family_name, and variations thereof, are compared to the transaction's
+        reference.
+
+        To match to an event, this compares the names of current events, and
+        variations thereof, to the transacion's reference.
+
+        Every match to Type, Member and Event is given a ConfidenceLevel, to be
+        used on further validation.
+
+        This uses POST because the expected data is too large for GET.
+        
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type statement: str
+        """
+        if rs.errors:
+            return self.parse_statement_form(rs)
+
+        event_list = self.eventproxy.list_db_events(rs)
+        events = self.eventproxy.get_events(rs, event_list)
+        event_names = {e["title"]: (get_event_name_pattern(e), e["shortname"])
+                       for e in events.values()}
+
+        statementlines = statement.splitlines()
+        reader = csv.DictReader(statementlines, fieldnames=STATEMENT_CSV_FIELDS,
+                                delimiter=";", quotechar='"',
+                                restkey=STATEMENT_CSV_RESTKEY, restval="")
+
+        problems = []
+
+        transactions = []
+        event_fees = []
+        membership_fees = []
+        other_transactions = []
+
+        for i, line in enumerate(reversed(list(reader))):
+            if not len(line) == 23:
+                problems.append("Line {} does not have the correct "
+                                "number of columns".format(i+1))
+                rs.errors.append(("statement",
+                                  ValueError("Line {} does not have the correct"
+                                             " number of columns".format(i+1))))
+                continue
+            line["id"] = i
+            t = Transaction(line)
+            t.guess_type(event_names)
+            t.match_member(rs, self.coreproxy.get_persona)
+            t.match_event(event_names)
+
+            problems.extend(t.problems)
+
+            transactions.append(t)
+            if (t.type in {TransactionType.EventFee}
+                    and t.best_event_match
+                    and t.best_member_match):
+                event_fees.append(t)
+            elif (t.type in {TransactionType.MembershipFee}
+                  and t.best_member_match):
+                membership_fees.append(t)
+            else:
+                other_transactions.append(t)
+
+        data = {"event_fees": event_fees,
+                "membership_fees": membership_fees,
+                "other_transactions": other_transactions,
+                "transactions": transactions,
+                "files": {}}
+
+        if membership_fees:
+            rows = []
+            # Separate by known and unknown Names
+            rows.extend([
+                t.to_dict()
+                for t in membership_fees if
+                (t.best_member_match.given_names !=
+                 STATEMENT_GIVEN_NAMES_UNKNOWN or
+                 t.best_member_match.family_name !=
+                 STATEMENT_FAMILY_NAME_UNKNOWN)
+                ])
+            rows.extend([
+                t.to_dict()
+                for t in membership_fees if
+                (t.best_member_match.given_names ==
+                 STATEMENT_GIVEN_NAMES_UNKNOWN and
+                 t.best_member_match.family_name ==
+                 STATEMENT_FAMILY_NAME_UNKNOWN)
+                ])
+
+            if rows:
+                csv_data = csv_output(rows, MEMBERSHIP_FEE_FIELDS,
+                                      writeheader=False)
+                data["files"]["membership_fees"] = csv_data
+
+        all_rows = []
+        for event_name in event_names:
+            rows = []
+            # Separate by not Extern and Extern
+            rows.extend([
+                t.to_dict()
+                for t in event_fees
+                if (event_name == t.best_event_match.title
+                    and t.best_member_match.db_id != STATEMENT_DB_ID_EXTERN)
+                ])
+
+            rows.extend([
+                t.to_dict()
+                for t in event_fees
+                if (event_name == t.best_event_match.title
+                    and t.best_member_match.db_id == STATEMENT_DB_ID_EXTERN)
+                ])
+
+            if rows:
+                all_rows.extend(rows)
+                e_name = event_name.replace(" ", "_").replace("/", "-")
+                csv_data = csv_output(rows, EVENT_FEE_FIELDS,
+                                      writeheader=False)
+                data["files"][e_name] = csv_data
+        if all_rows:
+            csv_data = csv_output(all_rows, EVENT_FEE_FIELDS,
+                                  writeheader=False)
+            data["files"]["event_fees"] = csv_data
+
+        if other_transactions:
+            rows = []
+            # Separate by TransactionType
+            for ty in TransactionType:
+                rows.extend([
+                    t.to_dict()
+                    for t in other_transactions if t.type == ty
+                    ])
+            rows.extend([
+                t.to_dict()
+                for t in other_transactions if t.type is None])
+
+            if rows:
+                csv_data = csv_output(rows, OTHER_TRANSACTION_FIELDS,
+                                      writeheader=False)
+                data["files"]["other_transactions"] = csv_data
+
+        rows = defaultdict(list)
+        for t in transactions:
+            rows[t.account].append(t.to_dict())
+
+        for acc in Accounts:
+            if acc in rows:
+                csv_data = csv_output(rows[acc], ACCOUNT_FIELDS,
+                                      writeheader=False)
+                data["files"]["transactions_{}".format(acc)] = csv_data
+
+        csvfields = None
+        return self.parse_statement_form(rs, data=data, problems=problems,
+                                         csvfields=csvfields)
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("data", "str"), ("filename", "str"))
+    def parse_download(self, rs, data, filename):
+        """
+        Provide data as CSV-Download with the given filename.
+        
+        This uses POST, because the expected filesize is too large for GET.
+        """
+        if rs.errors:
+            return self.parse_statement_form(rs)
+        return self.send_file(rs, mimetype="text/csv", data=data,
+                              filename=filename)
+
+    @access("cde_admin")
     def money_transfers_form(self, rs, data=None, csvfields=None):
         """Render form.
 
@@ -663,18 +866,24 @@ class CdEFrontend(AbstractUserFrontend):
 
         persona = None
         if persona_id:
-            persona = self.coreproxy.get_persona(rs, persona_id)
-            if persona['is_archived']:
+            try:
+                persona = self.coreproxy.get_persona(rs, persona_id)
+            except KeyError:
                 problems.append(('persona_id',
-                                 ValueError(n_("Persona is archived."))))
-            if not re.search(diacritic_patterns(family_name),
-                             persona['family_name'], flags=re.IGNORECASE):
-                problems.append(('family_name',
-                                 ValueError(n_("Family name doesn't match."))))
-            if not re.search(diacritic_patterns(given_names),
-                             persona['given_names'], flags=re.IGNORECASE):
-                problems.append(('given_names',
-                                 ValueError(n_("Given names don't match."))))
+                                 ValueError(n_("No Member with ID {p_id} found."),
+                                            persona_id)))
+            else:
+                if persona['is_archived']:
+                    problems.append(('persona_id',
+                                     ValueError(n_("Persona is archived."))))
+                if not re.search(diacritic_patterns(family_name),
+                                 persona['family_name'], flags=re.IGNORECASE):
+                    problems.append(('family_name',
+                                     ValueError(n_("Family name doesn't match."))))
+                if not re.search(diacritic_patterns(given_names),
+                                 persona['given_names'], flags=re.IGNORECASE):
+                    problems.append(('given_names',
+                                     ValueError(n_("Given names don't match."))))
         datum.update({
             'persona_id': persona_id,
             'amount': amount,

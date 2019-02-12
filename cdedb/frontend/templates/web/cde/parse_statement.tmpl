@@ -1,0 +1,81 @@
+{% set sidenav_active='cde_parse' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('csv-tools') }}{% endblock %}
+{% block title %}
+    {% trans -%}
+        Parse Bank Statement
+    {%- endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("cde/parse_statement_form"), gettext("Parse Bank Statement"), active=True) }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('cde/parse_statement')|e }}" method="POST" id="statementform">
+        {{ util.form_input_textarea(name="statement", label=gettext("Statement"), horizontal=False,
+                rows=8, anid="input-data") }}
+
+        <p class="help-block">
+            {{ util.make_icon('info-sign') }}
+            {% trans -%}Directly paste the Bank Statement from Bank für Sozialwirtschaft here.{%- endtrans %}
+        </p>
+
+        {{ util.form_input_submit(value=gettext("Parse"), horizontal=False) }}
+    </form>
+
+    {% if data %}
+        {% if "files" in data %}
+            {% for key, value in data["files"]|dictsort %}
+                <form action="{{ cdedblink('cde/parse_download') }}" method="POST" id="{{ key }}">
+                    {{ util.input_hidden("data", value=value) }}
+                    {{ util.input_hidden("filename", value="{}.csv".format(key)) }}
+                    {{ util.form_input_submit(value=gettext("Download {}.csv ").format(key),
+                        aclass="btn btn-info btn-sm", icon="download", horizontal=False) }}
+                </form>
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+    <br>
+    <br>
+    {% if data %}
+        <ul>
+        {% for key, value in data|dictsort %}
+            {% if key != "files" %}
+                <li>
+                    {% trans count=value|length, key=key|e -%}
+                        {{ count }} Transactions found for {{ key }}.
+                    {%- endtrans %}
+                </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    {% endif %}
+    <br>
+    {% if problems %}
+        {% trans -%}Problems:{%- endtrans %}
+        <ul>
+        {% for problem in problems %}
+            <li>{{ problem|e }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    <br>
+    {% if data %}
+        {% for key, value in data|dictsort %}
+            {% if key == "transactions" %}
+                <br>
+                {% for t in value %}
+                    Transaction {{ t.t_id|e }}:
+                    <ul>
+                    {% for line in (t|string).split("\n") %}
+                        {% if not loop.first %}
+                            <li>{{ line|e }}</li>
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endblock %}
