@@ -248,10 +248,11 @@ class Member:
         self.confidence = confidence
     
     def __str__(self):
-        return "({}, {}, {}, {})".format(self.given_names,
-                                         self.family_name,
-                                         self.db_id,
-                                         self.confidence)
+        return "({} ({}), {} ({}), {}, {})".format(
+            self.given_names, diacritic_patterns(re.escape(self.given_names), True),
+            self.family_name, diacritic_patterns(re.escape(self.family_name), True),
+            self.db_id, self.confidence)
+    
     def __format__(self, format_spec):
         return str(self)
 
@@ -786,7 +787,7 @@ class Transaction:
              "Type-Conf.:\t\t {}".format(self.type_confidence),
              "Member:\t\t\t {}".format(str(self.best_member_match)),
              "Member-Conf.:\t {}".format(self.best_member_confidence),
-             "Event:\t\t\t {}".format(self.best_event_match),
+             "Event:\t\t\t {}".format(str(self.best_event_match)),
              "Events:\t\t\t {}".format(self.event_matches),
              "Event-Conf.:\t {}".format(self.best_event_confidence),
              ])
