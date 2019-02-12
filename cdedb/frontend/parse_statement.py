@@ -79,16 +79,16 @@ def get_event_name_pattern(event):
         if re.search(key, event["title"], flags=re.IGNORECASE):
             result_parts.append(replacement)
     
-    if event.get("begin") and event.get("end"):
-        if event["begin"].year == event["end"].year:
-            x = "(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + ")?"
-            result_parts.append(x)
-        else:
-            x = ("(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + "/"
-                 + y_p.sub(r"(\1)?\2", str(event["end"].year)) + ")?")
-            result_parts.append(x)
-    
     if result_parts:
+        if event.get("begin") and event.get("end"):
+            if event["begin"].year == event["end"].year:
+                x = "(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + ")?"
+                result_parts.append(x)
+            else:
+                x = ("(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + "/"
+                     + y_p.sub(r"(\1)?\2", str(event["end"].year)) + ")?")
+                result_parts.append(x)
+                
         result_pattern = r"[-\s]*".join(result_parts)
     else:
         result_pattern = y_p.sub(r"(\1)?\2", event["title"])
