@@ -189,7 +189,7 @@ class TestCoreFrontend(FrontendTest):
     def test_change_password_zxcvbn(self, user):
         self.traverse({'href': '/core/self/show'})
         self.traverse({'href': '/core/self/password/change'})
-        # Password one
+        # Password one: Common English words
         new_password = 'dragonSecret'
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
@@ -200,7 +200,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
         self.assertPresence('Das ist ähnlich zu einem häufig genutzen Passwort.')
         self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
-        # Password two
+        # Password two: Repeating patterns
         new_password = 'dfgdfg123'
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
@@ -212,8 +212,18 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(' Wiederholungen wie \'abcabcabc\' sind nur geringfügig schwieriger zu erraten als \'abc\'.')
         self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence('Vermeide Wiederholungen von Wörtern und Buchstaben.')
-        # TODO: Password three: Check if a German dictionary is loaded
-        # Obviously depends on loading a German dictionary.
+        # Password three: Common German words
+        new_password = 'wurdeGemeinde'
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertPresence('Großschreibung hilft nicht wirklich.')
+        # TODO: Password four: User-specific passwords
 
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):

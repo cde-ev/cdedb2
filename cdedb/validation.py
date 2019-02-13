@@ -51,7 +51,8 @@ from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
 from cdedb.validationdata import (
-    GERMAN_WIKIPEDIA_WORDS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
+    GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
+from cdedb.validationpasswords import FREQUENCY_LISTS
 from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS)
@@ -626,9 +627,7 @@ def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
     """
     val, errors = _str(val, argname=argname, _convert=_convert)
     if val:
-        add_frequency_lists({
-           'german_wikipedia': GERMAN_WIKIPEDIA_WORDS
-        })
+        add_frequency_lists(FREQUENCY_LISTS)
         results = zxcvbn(val, list(filter(None, inputs)))
 
         if results['score'] < 2:
@@ -636,6 +635,7 @@ def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
             feedback.extend(results['feedback']['suggestions'][0:2])
             for fb in filter(None, feedback):
                 errors.append((argname, ValueError(fb)))
+
     return val, errors
 
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
