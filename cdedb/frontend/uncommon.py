@@ -58,13 +58,14 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         if new_id:
             success, message = self.coreproxy.make_reset_cookie(rs, data[
                 'username'])
+            email = self.encode_parameter(
+                "core/do_password_reset_form", "email", data['username'],
+                timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
             self.do_mail(rs, "welcome",
                          {'To': (data['username'],),
                           'Subject': n_('CdEDB account creation'), },
                          {'data': data,
-                          'email': self.encode_parameter(
-                              "core/do_password_reset_form", "email",
-                              data['username']) if success else "",
+                          'email': email if success else "",
                           'cookie': message if success else ""})
             
             self.notify_return_code(rs, new_id, success=n_("User created."))

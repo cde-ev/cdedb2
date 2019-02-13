@@ -487,14 +487,15 @@ class CdEFrontend(AbstractUserFrontend):
                 if datum['resolution'] == LineResolutions.create:
                     success, message = self.coreproxy.make_reset_cookie(
                         rs, datum['raw']['username'])
+                    email = self.encode_parameter(
+                        "core/do_password_reset_form", "email",
+                        datum['raw']['username'],
+                        timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
                     self.do_mail(rs, "welcome",
                                  {'To': (datum['raw']['username'],),
                                   'Subject': n_('CdE admission'), },
                                  {'data': datum['persona'],
-                                  'email': self.encode_parameter(
-                                      "core/do_password_reset_form", "email",
-                                      datum['raw']['username'])
-                                  if success else "",
+                                  'email': email if success else "",
                                   'cookie': message if success else ""})
         return True, count
 
