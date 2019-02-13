@@ -579,17 +579,28 @@ class Transaction:
                         family_name = persona.get('family_name', "")
                         fn_pattern = d_p(re.escape(family_name),
                                          two_way_replace=True)
-                        
-                        if not re.search(gn_pattern, self.reference,
-                                         flags=re.IGNORECASE):
-                            p = "({}) not found in ({})".format(gn_pattern,
-                                                                self.reference)
+                        try:
+                            if not re.search(gn_pattern, self.reference,
+                                             flags=re.IGNORECASE):
+                                p = "({}) not found in ({})".format(gn_pattern,
+                                                                    self.reference)
+                                self.problems.append(p)
+                                temp_confidence = temp_confidence.decrease()
+                        except re.error as e:
+                            p = "{} is not a valid regEx ({})".format(
+                                gn_pattern, e)
                             self.problems.append(p)
                             temp_confidence = temp_confidence.decrease()
-                        if not re.search(fn_pattern, self.reference,
+                        try:
+                            if not re.search(fn_pattern, self.reference,
                                          flags=re.IGNORECASE):
-                            p = "({}) not found in ({})".format(fn_pattern,
-                                                                self.reference)
+                                p = "({}) not found in ({})".format(fn_pattern,
+                                                                    self.reference)
+                                self.problems.append(p)
+                                temp_confidence = temp_confidence.decrease()
+                        except re.error as e:
+                            p = "{} is not a valid regEx ({})".format(
+                                fn_pattern, e)
                             self.problems.append(p)
                             temp_confidence = temp_confidence.decrease()
                         
