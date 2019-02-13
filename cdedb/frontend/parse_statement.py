@@ -1,7 +1,7 @@
 import datetime
 import enum
 import re
-from cdedb.common import n_, diacritic_patterns
+from cdedb.common import diacritic_patterns
 from cdedb.frontend.common import cdedbid_filter
 import cdedb.validation as validate
 
@@ -25,6 +25,9 @@ OTHER_TRANSACTION_FIELDS = ("account", "date", "amount_export",
                             "problems")
 ACCOUNT_FIELDS = ("date", "amount", "db_id", "name_or_holder",
                   "name_or_ref", "category", "account", "reference")
+STATEMENT_REFERENCE_DELIMITER_1 = "SVWZ+"
+STATEMENT_REFERENCE_DELIMITER_2 = "EREF+"
+STATEMENT_REFERENCE_DELIMITER_3 = "KREF+"
 
 STATEMENT_CSV_RESTKEY = "reference"
 STATEMENT_GIVEN_NAMES_UNKNOWN = "VORNAME"
@@ -88,7 +91,7 @@ def get_event_name_pattern(event):
                 x = ("(" + y_p.sub(r"(\1)?\2", str(event["begin"].year)) + "/"
                      + y_p.sub(r"(\1)?\2", str(event["end"].year)) + ")?")
                 result_parts.append(x)
-                
+        
         result_pattern = r"[-\s]*".join(result_parts)
     else:
         result_pattern = y_p.sub(r"(\1)?\2", event["title"])
@@ -198,11 +201,17 @@ class TransactionType(enum.Enum):
     Unknown = 10
     
     def __str__(self):
-        to_string = {TransactionType.MembershipFee.name: n_("Mitgliedsbeitrag"),
-                     TransactionType.EventFee.name: n_("Teilnehmerbeitrag"),
-                     TransactionType.Other.name: n_("Sonstiges"),
-                     TransactionType.Refund.name: n_("Rückerstattung"),
-                     TransactionType.Unknown.name: n_("Unbekannt"), }
+        """
+        Return a string represantation for the TransactionType.
+        
+        These are _not_ translated on purpose, so that the generated download
+        is the same regardless of locale.
+        """
+        to_string = {TransactionType.MembershipFee.name: "Mitgliedsbeitrag",
+                     TransactionType.EventFee.name: "Teilnehmerbeitrag",
+                     TransactionType.Other.name: "Sonstiges",
+                     TransactionType.Refund.name: "Erstattung",
+                     TransactionType.Unknown.name: "Unbekannt", }
         if self.name in to_string:
             return to_string[self.name]
         else:
@@ -249,12 +258,15 @@ class Member:
     
     def __str__(self):
         return "({} ({}), {} ({}), {}, {})".format(
-            self.given_names, diacritic_patterns(re.escape(self.given_names), True),
-            self.family_name, diacritic_patterns(re.escape(self.family_name), True),
+            self.given_names,
+            diacritic_patterns(re.escape(self.given_names), True),
+            self.family_name,
+            diacritic_patterns(re.escape(self.family_name), True),
             self.db_id, self.confidence)
     
     def __format__(self, format_spec):
         return str(self)
+
 
 class Event:
     """Helper class to store the relevant event data."""
@@ -263,7 +275,7 @@ class Event:
         self.title = title
         self.shortname = shortname
         self.confidence = confidence
-        
+    
     def __str__(self):
         return "({}, {}, {})".format(self.title,
                                      self.shortname,
@@ -305,8 +317,9 @@ class Transaction:
             self.cents = parse_cents(raw["amount"])
         except ValueError as e:
             if e.args == ("Could not parse",):
-                problems.append("Could not parse Transaction Amount "
-                                "for Transaction {}".format(raw["id"]))
+                problems.append("Could not parse Transaction Amount ({})"
+                                "for Transaction {}".format(raw["amount"],
+                                                            raw["id"]))
                 self.cents = 0
             else:
                 raise
@@ -321,10 +334,12 @@ class Transaction:
         
         if STATEMENT_CSV_RESTKEY in raw:
             self.reference = "".join(raw[STATEMENT_CSV_RESTKEY])
-            if "SVWZ+" in self.reference:
+            if STATEMENT_REFERENCE_DELIMITER_1 in self.reference:
                 # Only use the part after "SVWZ+"
-                self.reference = self.reference.split("SVWZ+", 1)[-1]
-            elif "EREF+" in self.reference or "KREF+" in self.reference:
+                self.reference = self.reference.split(
+                    STATEMENT_REFERENCE_DELIMITER_1, 1)[-1]
+            elif (STATEMENT_REFERENCE_DELIMITER_2 in self.reference
+                  or STATEMENT_REFERENCE_DELIMITER_3 in self.reference):
                 # There seems to be no useful reference
                 self.reference = ""
         else:
@@ -524,7 +539,7 @@ class Transaction:
         if self.type not in {TransactionType.MembershipFee,
                              TransactionType.EventFee}:
             return
-            
+        
         result = re.search(STATEMENT_DB_ID_PATTERN, self.reference,
                            flags=re.IGNORECASE)
         result2 = re.search(STATEMENT_DB_ID_SIMILAR, self.reference,
@@ -565,7 +580,7 @@ class Transaction:
                             self.problems.append(p)
                         else:
                             self.problems.append(str((e, db_id)))
-
+                        
                         members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
                                               STATEMENT_FAMILY_NAME_UNKNOWN,
                                               persona_id,
@@ -582,8 +597,8 @@ class Transaction:
                         try:
                             if not re.search(gn_pattern, self.reference,
                                              flags=re.IGNORECASE):
-                                p = "({}) not found in ({})".format(gn_pattern,
-                                                                    self.reference)
+                                p = "({}) not found in ({})".format(
+                                    gn_pattern, self.reference)
                                 self.problems.append(p)
                                 temp_confidence = temp_confidence.decrease()
                         except re.error as e:
@@ -593,9 +608,9 @@ class Transaction:
                             temp_confidence = temp_confidence.decrease()
                         try:
                             if not re.search(fn_pattern, self.reference,
-                                         flags=re.IGNORECASE):
-                                p = "({}) not found in ({})".format(fn_pattern,
-                                                                    self.reference)
+                                             flags=re.IGNORECASE):
+                                p = "({}) not found in ({})".format(
+                                    fn_pattern, self.reference)
                                 self.problems.append(p)
                                 temp_confidence = temp_confidence.decrease()
                         except re.error as e:
@@ -618,20 +633,20 @@ class Transaction:
                                self.reference, flags=re.IGNORECASE)
             if result:
                 # Reference matches External Event Fee
-                members.append(Member("Extern",
-                                      "Extern",
-                                      "DB-EXTERN",
+                members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
+                                      STATEMENT_FAMILY_NAME_UNKNOWN,
+                                      STATEMENT_DB_ID_EXTERN,
                                       confidence.decrease()))
             else:
                 members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
                                       STATEMENT_FAMILY_NAME_UNKNOWN,
-                                      "DB-UNKNOWN",
+                                      STATEMENT_DB_ID_UNKNOWN,
                                       ConfidenceLevel.Low))
                 self.problems.append("No DB-ID found.")
         else:
             m = Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
                        STATEMENT_FAMILY_NAME_UNKNOWN,
-                       "DB-UNKNOWN",
+                       STATEMENT_DB_ID_UNKNOWN,
                        ConfidenceLevel.Low)
             members.append(m)
             self.problems.append("No DB-ID found.")
@@ -716,7 +731,7 @@ class Transaction:
             "amount": self.amount,
             "date": self.statement_date.strftime("%d.%m.%Y"),
             "db_id": self.best_member_match.db_id
-            if self.best_member_match else "DB-UNKNOWN",
+            if self.best_member_match else STATEMENT_DB_ID_UNKNOWN,
             "db_id_value": self.best_member_match.db_id.split("-")[1] if
             self.best_member_match else "",
             "name_or_holder": self.best_member_match.family_name
