@@ -223,7 +223,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
         self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence('Großschreibung hilft nicht wirklich.')
-        # TODO: Password four: User-specific passwords
+        # Password four: User-specific passwords
+        new_password = (user['given_names'].replace('-', ' ').split()[0] +
+                        user['family_name'].replace('-', ' ').split()[0])
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
 
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
