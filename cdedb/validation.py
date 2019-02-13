@@ -43,16 +43,13 @@ import magic
 import PIL.Image
 import pytz
 import werkzeug.datastructures
-
-from zxcvbn import zxcvbn
-from zxcvbn.matching import add_frequency_lists
+import zxcvbn
 
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
 from cdedb.validationdata import (
-    GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
-from cdedb.validationpasswords import FREQUENCY_LISTS
+    FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS)
@@ -61,6 +58,8 @@ from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS, ENUMS_DICT
 _BASICCONF = BasicConfig()
 
 current_module = sys.modules[__name__]
+
+zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -613,12 +612,12 @@ def _int_csv_list(val, argname=None, *, _convert=True):
 def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
     """Implement a password policy.
 
-    This has the strictly competing goals of security and usability. We
-    will use the results of [1] to select a hopefully good policy.
+    This has the strictly competing goals of security and usability.
 
     We are using zxcvbn for this task instead of any other solutions here,
     as it is the most popular solution to measure the actual entropy of a
-    password.
+    password and does not force character rules to the user that are not
+    really improving password strength.
 
     :type val: object
     :type argname: str or None
@@ -627,8 +626,7 @@ def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
     """
     val, errors = _str(val, argname=argname, _convert=_convert)
     if val:
-        add_frequency_lists(FREQUENCY_LISTS)
-        results = zxcvbn(val, list(filter(None, inputs)))
+        results = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
 
         if results['score'] < 2:
             feedback = [results['feedback']['warning']]
