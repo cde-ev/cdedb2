@@ -157,20 +157,21 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("is_search", "bool"))
     def member_search(self, rs, is_search):
         """Search for members."""
+        stuff = copy.deepcopy(MEMBERSEARCH_DEFAULTS)
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
-            values = {'qval_postal_code,postal_code2': "{},{}".format(pl, pu)}
+            stuff['qval_postal_code,postal_code2'] = "{},{}".format(pl, pu)
         elif pl:
-            values = {'qval_postal_code,postal_code2': "{},99999".format(pl)}
+            stuff['qval_postal_code,postal_code2'] = "{},99999".format(pl)
         elif pu:
-            values = {'qval_postal_code,postal_code2': "0000,{}".format(pu)}
+            stuff['qval_postal_code,postal_code2'] = "0000,{}".format(pu)
         else:
-            values = {'qop_postal_code,postal_code2': QueryOperators.similar}
+            stuff['qop_postal_code,postal_code2'] = QueryOperators.similar
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
         query = check(
             rs, "query_input",
-            mangle_query_input(rs, spec, MEMBERSEARCH_DEFAULTS, values),
+            mangle_query_input(rs, spec, stuff),
             "query", spec=spec, allow_empty=not is_search)
         events = {k: v
                   for k, v in self.pasteventproxy.list_past_events(rs).items()}
