@@ -16,6 +16,7 @@
             {{ error.description|e }}
         {% else %}
              {% trans %}An unknown error occurred.{% endtrans %}
+            {{ error.description|e }}
         {% endif %}
     </div>
 
