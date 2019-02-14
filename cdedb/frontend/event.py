@@ -1944,6 +1944,7 @@ class EventFrontend(AbstractUserFrontend):
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
         new_id = self.eventproxy.create_registration(rs, registration)
+        meta_info = self.coreproxy.get_meta_info(rrs)
         fee = sum(rs.ambience['event']['parts'][part_id]['fee']
                   for part_id, entry in registration['parts'].items()
                   if const.RegistrationPartStati(entry['status']).is_involved())
@@ -1951,7 +1952,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, "register",
             {'To': (rs.user.username,),
              'Subject': n_('Registered for CdE event')},
-            {'fee': fee, 'age': age})
+            {'fee': fee, 'age': age, 'meta_info': meta_info})
         self.notify_return_code(rs, new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")
 

@@ -1604,13 +1604,15 @@ class CdEFrontend(AbstractUserFrontend):
                     self.coreproxy.change_membership(rrs, persona_id,
                                                      is_member=False)
                     transaction_subject = make_transaction_subject(persona)
+                    meta_info = self.coreproxy.get_meta_info(rrs)
                     self.do_mail(
                         rrs, "ejection",
                         {'To': (persona['username'],),
                          'Subject': n_('Ejection from CdE')},
                         {'persona': persona,
                          'fee': self.conf.MEMBERSHIP_FEE,
-                         'transaction_subject': transaction_subject,})
+                         'transaction_subject': transaction_subject,
+                         'meta_info': meta_info, })
                 period_update = {
                     'id': period_id,
                     'ejection_state': persona_id,

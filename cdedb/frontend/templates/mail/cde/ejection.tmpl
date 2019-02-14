@@ -16,10 +16,10 @@ Du kannst jetzt oder auch jederzeit später einfach wieder Mitglied
 werden, indem Du auf das CdE-Konto den halbjährlichen Mitgliedsbeitrag
 von {{ fee|money }} oder ein Vielfaches davon überweist.
 
-Kontoinhaber:     CdE e.V.
-IBAN:             DE26 3702 0500 0008 0689 00
-BIC:              BFSWDE33XXX
-Kreditinstitut:   Bank für Sozialwirtschaft
+Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber']|e }}
+IBAN:             {{ meta_info['CdE_Konto_IBAN']|e }}
+BIC:              {{ meta_info['CdE_Konto_BIC']|e }}
+Kreditinstitut:   {{ meta_info['CdE_Konto_Institut']|e }}
 Verwendungszweck: {{ transaction_subject }}
 
 Alternativ könntest Du dem CdE auch die Erlaubnis erteilen, jährlich
