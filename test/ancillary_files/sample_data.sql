@@ -54,6 +54,7 @@ INSERT INTO core.meta_info (info) VALUES
        "CdE_Konto_BIC": "BFSWDE33XXX",
        "CdE_Konto_Institut": "Bank für Sozialwirtschaft",
        "banner_before_login": "Das Passwort ist secret!",
+       "Vorstand": "Anton und Berta",
        "banner_after_login": "*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*"}'::jsonb);
 
 --
