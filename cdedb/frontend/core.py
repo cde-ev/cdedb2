@@ -1198,11 +1198,9 @@ class CoreFrontend(AbstractFrontend):
             return self.change_password_form(rs)
         # Provide user-specific data to consider it when calculating
         # password strength.
-        inputs = (rs.user.username.replace('@', ' ').split() +
-                   rs.user.given_names.replace('-', ' ').split() +
-                   rs.user.family_name.replace('-', ' ').split())
-        new_password = check(rs, "password_strength", new_password, "new_password",
-                                 inputs=inputs)
+        inputs = email.replace('@', ' ').split()
+        new_password = check(rs, "password_strength", new_password,
+                             "new_password", inputs=inputs)
         if rs.errors:
             if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
