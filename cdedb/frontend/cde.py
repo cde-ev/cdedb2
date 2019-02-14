@@ -501,12 +501,14 @@ class CdEFrontend(AbstractUserFrontend):
                         "core/do_password_reset_form", "email",
                         datum['raw']['username'],
                         timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
+                    meta_info = self.coreproxy.get_meta_info(rs)
                     self.do_mail(rs, "welcome",
                                  {'To': (datum['raw']['username'],),
                                   'Subject': n_('CdE admission'), },
                                  {'data': datum['persona'],
                                   'email': email if success else "",
-                                  'cookie': message if success else ""})
+                                  'cookie': message if success else "",
+                                  'meta_info': meta_info, })
         return True, count
 
     @staticmethod
