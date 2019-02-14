@@ -259,7 +259,7 @@ class TestCoreFrontend(FrontendTest):
             "good": "krce63koLe#$e",
             "bad": "dragonSecret"
         }
-        for j, key, val in new_passwords.items():
+        for key, val in new_passwords.items():
             for i, u in enumerate(("anton", "berta", "emilia")):
                 with self.subTest(u=u):
                     self.setUp()
