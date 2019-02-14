@@ -43,12 +43,13 @@ import magic
 import PIL.Image
 import pytz
 import werkzeug.datastructures
+import zxcvbn
 
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
 from cdedb.validationdata import (
-    GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
+    FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS)
@@ -57,6 +58,8 @@ from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS, ENUMS_DICT
 _BASICCONF = BasicConfig()
 
 current_module = sys.modules[__name__]
+
+zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -606,16 +609,15 @@ def _int_csv_list(val, argname=None, *, _convert=True):
     return val, []
 
 @_addvalidator
-def _password_strength(val, argname=None, *, _convert=True):
+def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
     """Implement a password policy.
 
-    This has the strictly competing goals of security and usability. We
-    will use the results of [1] to select a hopefully good policy.
+    This has the strictly competing goals of security and usability.
 
-    However, we diverge by using nine instead of twelve as the lower
-    limit for length for the sake of usability.
-
-    [1] https://www.ece.cmu.edu/~lbauer/papers/2016/tissec2016-password-policies.pdf
+    We are using zxcvbn for this task instead of any other solutions here,
+    as it is the most popular solution to measure the actual entropy of a
+    password and does not force character rules to the user that are not
+    really improving password strength.
 
     :type val: object
     :type argname: str or None
@@ -623,37 +625,15 @@ def _password_strength(val, argname=None, *, _convert=True):
     :rtype: (str or None, [(str or None, exception)])
     """
     val, errors = _str(val, argname=argname, _convert=_convert)
-    LOWER = {c for c in string.ascii_lowercase}
-    UPPER = {c for c in string.ascii_uppercase}
-    DIGITS = {c for c in string.digits}
-    ## Note that the selection of an appropriate blacklist is quite
-    ## non-trivial. Currently it tries to err on the side of usability.
-    BLACKLIST = (
-        "1234",
-        "passwor",
-        "qwert",)
     if val:
-        if len(val) < 9:
-            errors.append((argname,
-                           ValueError(n_("Must be at least 9 characters."))))
-        num_classes = 0
-        INPUT = {c for c in val}
-        if INPUT & LOWER:
-            num_classes += 1
-        if INPUT & UPPER:
-            num_classes += 1
-        if INPUT & DIGITS:
-            num_classes += 1
-        if INPUT - (LOWER | UPPER | DIGITS):
-            num_classes += 1
-        if num_classes < 3:
-            errors.append(
-                (argname, ValueError(
-                    n_("Must contain at least three character classes."))))
-        for entry in BLACKLIST:
-            if entry in val.lower():
-                errors.append(
-                    (argname, ValueError(n_("Contains blacklisted substring."))))
+        results = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
+
+        if results['score'] < 2:
+            feedback = [results['feedback']['warning']]
+            feedback.extend(results['feedback']['suggestions'][0:2])
+            for fb in filter(None, feedback):
+                errors.append((argname, ValueError(fb)))
+
     return val, errors
 
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')

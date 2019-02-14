@@ -186,6 +186,55 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("03.04.1933")
 
     @as_users("anton", "berta", "emilia")
+    def test_change_password_zxcvbn(self, user):
+        self.traverse({'href': '/core/self/show'})
+        self.traverse({'href': '/core/self/password/change'})
+        # Password one: Common English words
+        new_password = 'dragonSecret'
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertPresence('Das ist ähnlich zu einem häufig genutzen Passwort.')
+        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        # Password two: Repeating patterns
+        new_password = 'dfgdfg123'
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertPresence(' Wiederholungen wie \'abcabcabc\' sind nur geringfügig schwieriger zu erraten als \'abc\'.')
+        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertPresence('Vermeide Wiederholungen von Wörtern und Buchstaben.')
+        # Password three: Common German words
+        new_password = 'wurdeGemeinde'
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertPresence('Großschreibung hilft nicht wirklich.')
+        # Password four: User-specific passwords
+        new_password = (user['given_names'].replace('-', ' ').split()[0] +
+                        user['family_name'].replace('-', ' ').split()[0])
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+
+    @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
         new_password = 'krce84#(=kNO3xb'
         self.traverse({'href': '/core/self/show'})
@@ -206,43 +255,51 @@ class TestCoreFrontend(FrontendTest):
         self.assertLogin(user['display_name'])
 
     def test_reset_password(self):
-        new_password = "krce63koLe#$e"
-        for i, u in enumerate(("anton", "berta", "emilia")):
-            with self.subTest(u=u):
-                if i > 0:
+        new_passwords = {
+            "good": "krce63koLe#$e",
+            "bad": "dragonSecret"
+        }
+        for key, val in new_passwords.items():
+            for i, u in enumerate(("anton", "berta", "emilia")):
+                with self.subTest(u=u):
                     self.setUp()
-                user = USER_DICT[u]
-                self.get('/')
-                self.traverse({'href': '/core/password/reset'})
-                self.assertTitle("Passwort zurücksetzen")
-                f = self.response.forms['passwordresetform']
-                f['email'] = user['username']
-                self.submit(f)
-                self.assertTitle("CdE-Datenbank")
-                if u in {"anton"}:
-                    ## admins are not resettable
-                    self.assertEqual([], self.fetch_mail())
-                    continue
-                mail = self.fetch_mail()[0]
-                link = None
-                for line in mail.split('\n'):
-                    if line.startswith('[1] '):
-                        link = line[4:]
-                link = quopri.decodestring(link).decode('utf-8')
-                self.get(link)
-                self.follow()
-                self.assertTitle("Neues Passwort setzen")
-                f = self.response.forms['passwordresetform']
-                f['new_password'] = new_password
-                f['new_password2'] = new_password
-                self.submit(f)
-                self.login(user)
-                self.assertIn('loginform', self.response.forms)
-                new_user = copy.deepcopy(user)
-                new_user['password'] = new_password
-                self.login(new_user)
-                self.assertNotIn('loginform', self.response.forms)
-                self.assertLogin(user['display_name'])
+                    user = USER_DICT[u]
+                    self.get('/')
+                    self.traverse({'href': '/core/password/reset'})
+                    self.assertTitle("Passwort zurücksetzen")
+                    f = self.response.forms['passwordresetform']
+                    f['email'] = user['username']
+                    self.submit(f)
+                    self.assertTitle("CdE-Datenbank")
+                    if u in {"anton"}:
+                        ## admins are not resettable
+                        self.assertEqual([], self.fetch_mail())
+                        continue
+                    mail = self.fetch_mail()[0]
+                    link = None
+                    for line in mail.split('\n'):
+                        if line.startswith('[1] '):
+                            link = line[4:]
+                    link = quopri.decodestring(link).decode('utf-8')
+                    self.get(link)
+                    self.follow()
+                    self.assertTitle("Neues Passwort setzen")
+                    f = self.response.forms['passwordresetform']
+                    f['new_password'] = val
+                    f['new_password2'] = val
+                    if key == 'good':
+                        self.submit(f)
+                        self.login(user)
+                        self.assertIn('loginform', self.response.forms)
+                        new_user = copy.deepcopy(user)
+                        new_user['password'] = val
+                        self.login(new_user)
+                        self.assertNotIn('loginform', self.response.forms)
+                        self.assertLogin(user['display_name'])
+                    elif key == 'bad':
+                        self.submit(f, check_notification=False)
+                        self.assertNonPresence('Passwort zurückgesetzt.')
+                        self.assertPresence('Passwort ist zu schwach.', div="notifications")
 
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):

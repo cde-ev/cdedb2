@@ -1110,9 +1110,16 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_password2",
                               ValueError(n_("Passwords don't match."))))
             rs.notify("error", n_("Passwords don't match."))
-        new_password = check(rs, "password_strength", new_password, "strength")
+            return self.change_password_form(rs)
+        # Provide user-specific data to consider it when calculating
+        # password strength.
+        inputs = (rs.user.username.replace('@', ' ').split() +
+                  rs.user.given_names.replace('-', ' ').split() +
+                  rs.user.family_name.replace('-', ' ').split())
+        new_password = check(rs, "password_strength", new_password, "new_password",
+                             inputs=inputs)
         if rs.errors:
-            if any(name == "strength" for name, _ in rs.errors):
+            if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
             return self.change_password_form(rs)
         code, message = self.coreproxy.change_password(
@@ -1193,9 +1200,14 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_password2",
                               ValueError(n_("Passwords don't match."))))
             rs.notify("error", n_("Passwords don't match."))
-        new_password = check(rs, "password_strength", new_password, "strength")
+            return self.change_password_form(rs)
+        # Provide user-specific data to consider it when calculating
+        # password strength.
+        inputs = email.replace('@', ' ').split()
+        new_password = check(rs, "password_strength", new_password,
+                             "new_password", inputs=inputs)
         if rs.errors:
-            if any(name == "strength" for name, _ in rs.errors):
+            if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
             ## Redirect so that encoded parameter works.
             params = {
