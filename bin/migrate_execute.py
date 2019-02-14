@@ -44,7 +44,7 @@ from cdedb.database.connection import IrradiatedConnection
 ##
 
 DEFAULT_ID = 5124
-LAST_EXPULS = 51
+LAST_EXPULS = 50
 
 ## WHITELIST
 WHITELIST = {DEFAULT_ID}
@@ -89,7 +89,7 @@ WHITELIST.add(10848)
 WHITELIST.add(8674)
 
 # disable
-WHITELIST = None
+#WHITELIST = None
 
 ##
 ## Fixes for real world data
@@ -974,6 +974,16 @@ for persona_id in persona_ids:
 query = "SELECT * FROM semester"
 semesters = query_all(cdedbxy, query, tuple())
 last_semester = max(s['next_expuls'] for s in semesters)
+for i in range(last_semester):
+    insert(cdb, "cde.org_period", {
+        'id': i + 1,
+        'billing_state': None,
+        'billing_done': now(),
+        'ejection_state': None,
+        'ejection_done': now(),
+        'balance_state': None,
+        'balance_done': now(),
+    })
 insert(cdb, "cde.org_period", {
     'id': last_semester + 1,
     'billing_state': None,
@@ -983,6 +993,12 @@ insert(cdb, "cde.org_period", {
     'balance_state': None,
     'balance_done': None,
 })
+for i in range(LAST_EXPULS):
+    insert(cdb, "cde.expuls_period", {
+        'id': i + 1,
+        'addresscheck_state': None,
+        'addresscheck_done': now(),
+    })
 insert(cdb, "cde.expuls_period", {
     'id': LAST_EXPULS + 1,
     'addresscheck_state': None,
@@ -1029,7 +1045,39 @@ for persona_id in persona_ids:
         LASTSCHRIFT_MAP[lastschrift['id']] = new_id
     print()
 
-## Do not import transactions since we don't import semesters
+## transactions import is a bit hacky, but we need it
+for persona_id in persona_ids:
+    persona = core.get_personas(rs(DEFAULT_ID), (persona_id,))[persona_id]
+    print("Lastschrift transactions for {} {} ({}) --".format(
+        persona['given_names'], persona['family_name'], persona_id), end="")
+    query = "SELECT * FROM lastschrift WHERE user_id = %s"
+    lastschrifts = query_all(cdedbxy, query, (persona_id,))
+    for lastschrift in lastschrifts:
+        print("XXX", lastschrift)
+        print(" {}".format(lastschrift['id'], end=""))
+        query = ("SELECT * FROM lastschrift_transaktion WHERE auftrag = %s"
+                 " ORDER BY id")
+        transactions = query_all(cdedbxy, query, (lastschrift['id'],))
+        for transaction in transactions:
+            print("YYY", transaction)
+            if transaction['erfolg'] > 0:
+                status = 10 ## success
+            elif transaction['erfolg'] < 0:
+                status = 11 ## failure
+            else:
+                status = 12 ## cancelled
+            insert(cdb, "cde.lastschrift_transactions", {
+                'submitted_by': transaction['who'],
+                'lastschrift_id': LASTSCHRIFT_MAP[transaction['auftrag']],
+                'period_id': transaction['semester'],
+                'status': status,
+                'amount': lastschrift['betrag'],
+                'issued_at': transaction['einzug'],
+                'processed_at': transaction['zurueck'],
+                'tally': transaction['erfolg'],
+            })
+            print(".", end="")
+    print("")
 
 ##
 ## mailinglists
