@@ -1012,7 +1012,7 @@ insert(cdb, "cde.expuls_period", {
 LASTSCHRIFT_MAP = {}
 for persona_id in persona_ids:
     persona = core.get_personas(rs(DEFAULT_ID), (persona_id,))[persona_id]
-    query = "SELECT * FROM lastschrift WHERE user_id = %s"
+    query = "SELECT * FROM lastschrift WHERE user_id = %s ORDER BY id"
     lastschrifts = query_all(cdedbxy, query, (persona_id,))
     if not lastschrifts:
         continue
@@ -1048,12 +1048,13 @@ for persona_id in persona_ids:
 ## transactions import is a bit hacky, but we need it
 for persona_id in persona_ids:
     persona = core.get_personas(rs(DEFAULT_ID), (persona_id,))[persona_id]
-    print("Lastschrift transactions for {} {} ({}) --".format(
-        persona['given_names'], persona['family_name'], persona_id), end="")
-    query = "SELECT * FROM lastschrift WHERE user_id = %s"
+    query = "SELECT * FROM lastschrift WHERE user_id = %s ORDER BY id"
     lastschrifts = query_all(cdedbxy, query, (persona_id,))
+    if lastschrifts:
+        print("Lastschrift transactions for {} {} ({}) --".format(
+            persona['given_names'], persona['family_name'], persona_id), end="")
     for lastschrift in lastschrifts:
-        print(" {}".format(lastschrift['id'], end=""))
+        print(" {}".format(lastschrift['id']), end="")
         query = ("SELECT * FROM lastschrift_transaktion WHERE auftrag = %s"
                  " ORDER BY id")
         transactions = query_all(cdedbxy, query, (lastschrift['id'],))
@@ -1075,7 +1076,8 @@ for persona_id in persona_ids:
                 'tally': transaction['erfolg'],
             })
             print(".", end="")
-    print("")
+    if lastschrifts:
+        print("")
 
 ##
 ## mailinglists
