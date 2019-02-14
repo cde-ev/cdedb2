@@ -731,7 +731,7 @@ class CoreFrontend(AbstractFrontend):
         data = check(rs, "persona", data)
         if rs.errors:
             return self.change_user_form(rs)
-        change_note = rs.gettext("Normal dataset change.")
+        change_note = n_("Normal dataset change.")
         code = self.coreproxy.change_persona(rs, data, generation=generation,
                                              change_note=change_note)
         self.notify_return_code(rs, code)

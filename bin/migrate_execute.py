@@ -31,7 +31,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 import pytz
 
-from cdedb.common import json_serialize
+from cdedb.common import n_, json_serialize
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.past_event import PastEventBackend
@@ -386,7 +386,7 @@ for persona_id in persona_ids:
         'reviewed_by': None,
         'ctime': now(),
         'generation': 1,
-        'change_note': "Initial import.",
+        'change_note': n_("Initial import."),
         'change_status': 2,
         'persona_id': persona_id
     })

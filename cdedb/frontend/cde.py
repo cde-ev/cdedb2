@@ -456,15 +456,14 @@ class CdEFrontend(AbstractUserFrontend):
                             }
                             self.coreproxy.change_persona(
                                 rs, update, may_wait=False,
-                                change_note=rs.gettext(
-                                    "Renewed trial membership."))
+                                change_note=n_("Renewed trial membership."))
                         if datum['resolution'].do_update():
                             update = {'id': datum['doppelganger_id']}
                             for field in fields:
                                 update[field] = datum['persona'][field]
                             self.coreproxy.change_persona(
                                 rs, update, may_wait=False,
-                                change_note=rs.gettext("Imported recent data."))
+                                change_note=n_("Imported recent data."))
                             self.coreproxy.change_username(
                                 rs, datum['doppelganger_id'],
                                 datum['persona']['username'], password=None)
@@ -1658,8 +1657,8 @@ class CdEFrontend(AbstractUserFrontend):
                             'trial_member': False,
                         }
                         self.coreproxy.change_persona(
-                            rrs, update, change_note=rrs.gettext(
-                                n_("End trial membership.")))
+                            rrs, update, change_note=n_("End trial membership.")
+                            )
                     else:
                         new_b = persona['balance'] - self.conf.MEMBERSHIP_FEE
                         self.coreproxy.change_persona_balance(

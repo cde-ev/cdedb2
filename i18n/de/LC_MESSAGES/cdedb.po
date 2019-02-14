@@ -2522,7 +2522,7 @@ msgstr "E-Mail-Adresse geändert."
 #: cdedb/frontend/core.py:1307 cdedb/frontend/core.py:1304
 #: cdedb/frontend/core.py:1314 cdedb/frontend/core.py:1311
 msgid "Toggling activity to {activity}."
-msgstr "Aktivirungsstatus auf {activity} geändert."
+msgstr "Aktivierungsstatus auf {activity} geändert."
 
 #: cdedb/frontend/core.py:1332 cdedb/frontend/core.py:1329
 #: cdedb/frontend/core.py:1339 cdedb/frontend/core.py:1336

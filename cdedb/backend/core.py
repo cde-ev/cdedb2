@@ -371,7 +371,7 @@ class CoreBackend(AbstractBackend):
                     "generation": next_generation + 1,
                     "change_status": const.MemberChangeStati.pending,
                     "persona_id": data['id'],
-                    "change_note": rs.gettext("Displaced change."),
+                    "change_note": n_("Displaced change."),
                 })
                 del insert['id']
                 self.sql_insert(rs, "core.changelog", insert)
@@ -431,7 +431,7 @@ class CoreBackend(AbstractBackend):
             ret = 0
             if len(udata) > 1:
                 ret = self.commit_persona(
-                    rs, udata, change_note=rs.gettext("Change committed."))
+                    rs, udata, change_note=n_("Change committed."))
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
@@ -599,7 +599,7 @@ class CoreBackend(AbstractBackend):
         if not change_note:
             self.logger.info("No change note specified (persona_id={}).".format(
                 data['id']))
-            change_note = rs.gettext("Unspecified change.")
+            change_note = n_("Unspecified change.")
 
         current = self.sql_select_one(
             rs, "core.personas", ("is_archived", "decided_search"), data['id'])
@@ -706,7 +706,7 @@ class CoreBackend(AbstractBackend):
                     data['balance'] = tmp['balance']
             return self.set_persona(
                 rs, data, may_wait=False,
-                change_note=rs.gettext("Realms modified."),
+                change_note=n_("Realms modified."),
                 allow_specials=("realms", "finance"))
 
     @access("persona")
@@ -725,7 +725,7 @@ class CoreBackend(AbstractBackend):
             'id': persona_id,
             'foto': foto}
         return self.set_persona(
-            rs, data, may_wait=False, change_note=rs.gettext("Foto modified."),
+            rs, data, may_wait=False, change_note=n_("Foto modified."),
             allow_specials=("foto",))
 
     @access("admin")
@@ -740,7 +740,7 @@ class CoreBackend(AbstractBackend):
         data = affirm("persona", data)
         return self.set_persona(
             rs, data, may_wait=False,
-            change_note=rs.gettext("Admin bits modified."),
+            change_note=n_("Admin bits modified."),
             allow_specials=("admins",))
 
     @access("core_admin", "cde_admin")
@@ -813,7 +813,7 @@ class CoreBackend(AbstractBackend):
                 code = const.FinanceLogCodes.gain_membership
             ret = self.set_persona(
                 rs, update, may_wait=False,
-                change_note=rs.gettext("Membership change."),
+                change_note=n_("Membership change."),
                 allow_specials=("membership", "finance"))
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
@@ -927,7 +927,7 @@ class CoreBackend(AbstractBackend):
             }
             self.set_persona(
                 rs, update, generation=None, may_wait=False,
-                change_note="Prepare for archiving.",
+                change_note=n_("Prepare for archiving."),
                 allow_specials=("admins", "username", "realms", "finance"))
             ##
             ## 4. Delete all sessions and quotas
@@ -1079,7 +1079,7 @@ class CoreBackend(AbstractBackend):
             }
             ret = self.set_persona(
                 rs, update, generation=None, may_wait=False,
-                change_note="Purging persona.",
+                change_note=n_("Purging persona."),
                 allow_specials=("admins", "username", "purge"))
             ##
             ## 2. Clear changelog
@@ -1129,7 +1129,7 @@ class CoreBackend(AbstractBackend):
                     'id': persona_id,
                     'username': new_username,
                 }
-                change_note = rs.gettext("Username change.")
+                change_note = n_("Username change.")
                 if self.set_persona(
                         rs, new, change_note=change_note, may_wait=False,
                         allow_specials=("username",)):
@@ -1326,7 +1326,7 @@ class CoreBackend(AbstractBackend):
                 "generation": 1,
                 "change_status": const.MemberChangeStati.committed,
                 "persona_id": new_id,
-                "change_note": rs.gettext("Persona creation."),
+                "change_note": n_("Persona creation."),
             })
             ## remove unlogged attributes
             del data['password_hash']

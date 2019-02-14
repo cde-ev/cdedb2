@@ -364,8 +364,7 @@ class CdEBackend(AbstractBackend):
                 self.core.change_persona_balance(
                     rs, persona_id, new_balance,
                     const.FinanceLogCodes.lastschrift_transaction_success,
-                    change_note=rs.gettext(
-                        "Successful direct debit transaction."))
+                    change_note=n_("Successful direct debit transaction."))
                 ## Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:
@@ -422,7 +421,7 @@ class CdEBackend(AbstractBackend):
             self.core.change_persona_balance(
                 rs, persona_id, new_balance,
                 const.FinanceLogCodes.lastschrift_transaction_revoked,
-                change_note=rs.gettext("Revoked direct debit transaction"))
+                change_note=n_("Revoked direct debit transaction"))
             lastschrift_update = {
                 'id': lastschrift['id'],
                 'revoked_at': now(),
