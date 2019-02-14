@@ -178,6 +178,25 @@ def print_delimiters(number):
     return result
 
 
+def escape(s):
+    """
+    Custom escape function, because re.escape does not work as expected.
+    
+    We simply remove all re special characters since we don't expect them to
+    show up in names.
+    
+    :param s: String to make re safe
+    :type s: str
+    :return: String without re special characters
+    :rtype: str
+    """
+    
+    special_characters = r".^$*+?{}()[]\|"
+    for x in special_characters:
+        s = s.replace(x, "")
+    return s
+
+
 @enum.unique
 class Accounts(enum.Enum):
     """Store the existing CdE Accounts."""
@@ -259,9 +278,9 @@ class Member:
     def __str__(self):
         return "({} ({}), {} ({}), {}, {})".format(
             self.given_names,
-            diacritic_patterns(re.escape(self.given_names), True),
+            diacritic_patterns(escape(self.given_names), True),
             self.family_name,
-            diacritic_patterns(re.escape(self.family_name), True),
+            diacritic_patterns(escape(self.family_name), True),
             self.db_id, self.confidence)
     
     def __format__(self, format_spec):
@@ -487,7 +506,7 @@ class Transaction:
                 # Iterate through known Event names and their variations
                 for event_name, value in event_names.items():
                     pattern, shortname = value
-                    if re.search(re.escape(event_name), self.reference,
+                    if re.search(escape(event_name), self.reference,
                                  flags=re.IGNORECASE):
                         self.type = TransactionType.EventFee
                         confidence = confidence.decrease()
@@ -589,10 +608,10 @@ class Transaction:
                     else:
                         given_names = persona.get('given_names', "")
                         d_p = diacritic_patterns
-                        gn_pattern = d_p(re.escape(given_names),
+                        gn_pattern = d_p(escape(given_names),
                                          two_way_replace=True)
                         family_name = persona.get('family_name', "")
-                        fn_pattern = d_p(re.escape(family_name),
+                        fn_pattern = d_p(escape(family_name),
                                          two_way_replace=True)
                         try:
                             if not re.search(gn_pattern, self.reference,
@@ -687,7 +706,7 @@ class Transaction:
             for event_name, value in event_names.items():
                 pattern, shortname = value
                 
-                result = re.search(re.escape(event_name), self.reference,
+                result = re.search(escape(event_name), self.reference,
                                    flags=re.IGNORECASE)
                 if result:
                     # Exact match to Event Name
