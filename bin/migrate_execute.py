@@ -1053,13 +1053,11 @@ for persona_id in persona_ids:
     query = "SELECT * FROM lastschrift WHERE user_id = %s"
     lastschrifts = query_all(cdedbxy, query, (persona_id,))
     for lastschrift in lastschrifts:
-        print("XXX", lastschrift)
         print(" {}".format(lastschrift['id'], end=""))
         query = ("SELECT * FROM lastschrift_transaktion WHERE auftrag = %s"
                  " ORDER BY id")
         transactions = query_all(cdedbxy, query, (lastschrift['id'],))
         for transaction in transactions:
-            print("YYY", transaction)
             if transaction['erfolg'] > 0:
                 status = 10 ## success
             elif transaction['erfolg'] < 0:
