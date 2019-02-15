@@ -375,6 +375,7 @@ class TestCoreBackend(BackendTest):
             'Finanzvorstand_Ort': 'Utopia',
             'Finanzvorstand_Vorname': 'Bertålotta',
             'banner_before_login': 'Das Passwort ist secret!',
+            'Vorstand': 'Anton und Berta',
             'banner_after_login': '*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*'}
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
