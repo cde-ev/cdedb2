@@ -19,6 +19,9 @@
     {{ util.breadcrumb_link(cdedblink("event/view_event_log"), gettext("Log"), active="True") }}
 {% endblock %}
 {% block content %}
+    <div class="p">
+        {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-info btn-sm", icon="search") }}
+    </div>
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
