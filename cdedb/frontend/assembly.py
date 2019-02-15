@@ -402,9 +402,9 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         It can either be associated to an assembly or a ballot.
         """
-        if not filename:
+        if attachment and not filename:
             tmp = pathlib.Path(attachment.filename).parts[-1]
-            filename = check(rs, "identifier", tmp, 'attachment')
+            filename = check(rs, "identifier", tmp, 'filename')
         attachment = check(rs, "pdffile", attachment, 'attachment')
         if rs.errors:
             return self.add_attachment_form(rs, assembly_id=assembly_id,
