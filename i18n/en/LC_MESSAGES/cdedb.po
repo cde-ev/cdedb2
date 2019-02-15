@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-15 17:19+0100\n"
+"POT-Creation-Date: 2019-02-15 18:11+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -783,106 +783,122 @@ msgid "[<class 'decimal.ConversionSyntax'>]"
 msgstr ""
 
 #: cdedb/i18n_additional.py:205
-msgid "Use a few words, avoid common phrases."
+msgid "Consent decision (is False)."
 msgstr ""
 
 #: cdedb/i18n_additional.py:206
-msgid "No need for symbols, digits, or uppercase letters."
+msgid "Consent decision (is True)."
 msgstr ""
 
 #: cdedb/i18n_additional.py:207
-msgid "Add another word or two. Uncommon words are better."
+msgid "Toggling activity to False."
 msgstr ""
 
 #: cdedb/i18n_additional.py:208
-msgid "Straight rows of keys are easy to guess."
-msgstr ""
-
-#: cdedb/i18n_additional.py:209
-msgid "Short keyboard patterns are easy to guess."
-msgstr ""
-
-#: cdedb/i18n_additional.py:210
-msgid "Use a longer keyboard pattern with more turns."
+msgid "Toggling activity to True."
 msgstr ""
 
 #: cdedb/i18n_additional.py:211
-msgid "Repeats like \"aaa\" are easy to guess."
+msgid "Use a few words, avoid common phrases."
 msgstr ""
 
 #: cdedb/i18n_additional.py:212
-msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\"."
+msgid "No need for symbols, digits, or uppercase letters."
+msgstr ""
+
+#: cdedb/i18n_additional.py:213
+msgid "Add another word or two. Uncommon words are better."
 msgstr ""
 
 #: cdedb/i18n_additional.py:214
-msgid "Avoid repeated words and characters."
+msgid "Straight rows of keys are easy to guess."
 msgstr ""
 
 #: cdedb/i18n_additional.py:215
-msgid "Sequences like \"abc\" or \"6543\" are easy to guess."
+msgid "Short keyboard patterns are easy to guess."
 msgstr ""
 
 #: cdedb/i18n_additional.py:216
-msgid "Avoid sequences."
+msgid "Use a longer keyboard pattern with more turns."
 msgstr ""
 
 #: cdedb/i18n_additional.py:217
-msgid "Recent years are easy to guess."
+msgid "Repeats like \"aaa\" are easy to guess."
 msgstr ""
 
 #: cdedb/i18n_additional.py:218
-msgid "Avoid recent years."
-msgstr ""
-
-#: cdedb/i18n_additional.py:219
-msgid "Avoid years that are associated with you."
+msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\"."
 msgstr ""
 
 #: cdedb/i18n_additional.py:220
-msgid "Avoid dates and years that are associated with you."
+msgid "Avoid repeated words and characters."
 msgstr ""
 
 #: cdedb/i18n_additional.py:221
-msgid "This is a top-10 common password."
+msgid "Sequences like \"abc\" or \"6543\" are easy to guess."
 msgstr ""
 
 #: cdedb/i18n_additional.py:222
-msgid "This is a top-100 common password."
+msgid "Avoid sequences."
 msgstr ""
 
 #: cdedb/i18n_additional.py:223
-msgid "This is a very common password."
+msgid "Recent years are easy to guess."
 msgstr ""
 
 #: cdedb/i18n_additional.py:224
-msgid "This is similar to a commonly used password."
+msgid "Avoid recent years."
 msgstr ""
 
 #: cdedb/i18n_additional.py:225
-msgid "A word by itself is easy to guess."
+msgid "Avoid years that are associated with you."
 msgstr ""
 
 #: cdedb/i18n_additional.py:226
-msgid "Names and surnames by themselves are easy to guess."
+msgid "Avoid dates and years that are associated with you."
 msgstr ""
 
 #: cdedb/i18n_additional.py:227
-msgid "Common names and surnames are easy to guess."
+msgid "This is a top-10 common password."
 msgstr ""
 
 #: cdedb/i18n_additional.py:228
-msgid "Capitalization doesn't help very much."
+msgid "This is a top-100 common password."
 msgstr ""
 
 #: cdedb/i18n_additional.py:229
-msgid "All-uppercase is almost as easy to guess as all-lowercase."
+msgid "This is a very common password."
 msgstr ""
 
 #: cdedb/i18n_additional.py:230
-msgid "Reversed words aren't much harder to guess."
+msgid "This is similar to a commonly used password."
 msgstr ""
 
 #: cdedb/i18n_additional.py:231
+msgid "A word by itself is easy to guess."
+msgstr ""
+
+#: cdedb/i18n_additional.py:232
+msgid "Names and surnames by themselves are easy to guess."
+msgstr ""
+
+#: cdedb/i18n_additional.py:233
+msgid "Common names and surnames are easy to guess."
+msgstr ""
+
+#: cdedb/i18n_additional.py:234
+msgid "Capitalization doesn't help very much."
+msgstr ""
+
+#: cdedb/i18n_additional.py:235
+msgid "All-uppercase is almost as easy to guess as all-lowercase."
+msgstr ""
+
+#: cdedb/i18n_additional.py:236
+msgid "Reversed words aren't much harder to guess."
+msgstr ""
+
+#: cdedb/i18n_additional.py:237
 msgid "Predictable substitutions like '@' instead of 'a' don't help very much."
 msgstr ""
 
@@ -891,7 +907,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:76
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:82
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:151
-#: cdedb/i18n_additional.py:237
+#: cdedb/i18n_additional.py:243
 msgid "Cancel"
 msgstr ""
 
@@ -916,59 +932,59 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:181
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:106
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:66
-#: cdedb/i18n_additional.py:238
+#: cdedb/i18n_additional.py:244
 msgid "Save"
 msgstr ""
 
-#: cdedb/i18n_additional.py:243
+#: cdedb/i18n_additional.py:249
 msgid "Finanzvorstand_Name"
 msgstr "CFO Name"
 
-#: cdedb/i18n_additional.py:244
+#: cdedb/i18n_additional.py:250
 msgid "Finanzvorstand_Vorname"
 msgstr "CFO First Name"
 
-#: cdedb/i18n_additional.py:245
+#: cdedb/i18n_additional.py:251
 msgid "Finanzvorstand_Ort"
 msgstr "CFO City"
 
-#: cdedb/i18n_additional.py:246
+#: cdedb/i18n_additional.py:252
 msgid "Finanzvorstand_Adresse_Einzeiler"
 msgstr "CFO Address Single Line"
 
-#: cdedb/i18n_additional.py:247
+#: cdedb/i18n_additional.py:253
 msgid "Finanzvorstand_Adresse_Zeile2"
 msgstr "CFO Address Line Two"
 
-#: cdedb/i18n_additional.py:248
+#: cdedb/i18n_additional.py:254
 msgid "Finanzvorstand_Adresse_Zeile3"
 msgstr "CFO Address Line Three"
 
-#: cdedb/i18n_additional.py:249
+#: cdedb/i18n_additional.py:255
 msgid "Finanzvorstand_Adresse_Zeile4"
 msgstr "CFO Address Line Four"
 
-#: cdedb/i18n_additional.py:250
+#: cdedb/i18n_additional.py:256
 msgid "CdE_Konto_Inhaber"
 msgstr "CdE Account Holder"
 
-#: cdedb/i18n_additional.py:251
+#: cdedb/i18n_additional.py:257
 msgid "CdE_Konto_IBAN"
 msgstr "CdE Account IBAN"
 
-#: cdedb/i18n_additional.py:252
+#: cdedb/i18n_additional.py:258
 msgid "CdE_Konto_BIC"
 msgstr "CdE Account BIC"
 
-#: cdedb/i18n_additional.py:253
+#: cdedb/i18n_additional.py:259
 msgid "CdE_Konto_Institut"
 msgstr "CdE Account Bank"
 
-#: cdedb/i18n_additional.py:254
+#: cdedb/i18n_additional.py:260
 msgid "banner_before_login"
 msgstr "Banner before Login"
 
-#: cdedb/i18n_additional.py:255
+#: cdedb/i18n_additional.py:261
 msgid "banner_after_login"
 msgstr "Banner after Login"
 

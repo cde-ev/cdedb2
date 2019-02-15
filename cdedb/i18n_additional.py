@@ -201,6 +201,12 @@ I18N_STRINGS = (
     n_("day is out of range for month"),
     n_("[<class 'decimal.ConversionSyntax'>]"),
     
+    # backend log
+    n_("Consent decision (is False)."),
+    n_("Consent decision (is True)."),
+    n_("Toggling activity to False."),
+    n_("Toggling activity to True."),
+    
     # zxcvbn feedback
     n_('Use a few words, avoid common phrases.'),
     n_('No need for symbols, digits, or uppercase letters.'),

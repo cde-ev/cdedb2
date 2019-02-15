@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-15 17:19+0100\n"
+"POT-Creation-Date: 2019-02-15 18:11+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -783,110 +783,126 @@ msgid "[<class 'decimal.ConversionSyntax'>]"
 msgstr "Keine Zahl gefunden."
 
 #: cdedb/i18n_additional.py:205
+msgid "Consent decision (is False)."
+msgstr "Datenschutz-Einwilligung entschieden (ist Falsch)."
+
+#: cdedb/i18n_additional.py:206
+msgid "Consent decision (is True)."
+msgstr "Datenschutz-Einwilligung entschieden (ist Wahr)."
+
+#: cdedb/i18n_additional.py:207
+msgid "Toggling activity to False."
+msgstr "Aktivierungsstatus auf inaktiv geändert."
+
+#: cdedb/i18n_additional.py:208
+msgid "Toggling activity to True."
+msgstr "Aktivierungsstatus auf aktiv geändert."
+
+#: cdedb/i18n_additional.py:211
 msgid "Use a few words, avoid common phrases."
 msgstr "Benutze mehrere Worte, vermeide übliche Ausdrücke."
 
-#: cdedb/i18n_additional.py:206
+#: cdedb/i18n_additional.py:212
 msgid "No need for symbols, digits, or uppercase letters."
 msgstr "Sonderzeichen, Ziffern und Großbuchstaben nicht notwendig."
 
-#: cdedb/i18n_additional.py:207
+#: cdedb/i18n_additional.py:213
 msgid "Add another word or two. Uncommon words are better."
 msgstr "Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser."
 
-#: cdedb/i18n_additional.py:208
+#: cdedb/i18n_additional.py:214
 msgid "Straight rows of keys are easy to guess."
 msgstr "Reihen von Buchstaben auf der Tastatur sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:209
+#: cdedb/i18n_additional.py:215
 msgid "Short keyboard patterns are easy to guess."
 msgstr "Kurze Tastaturmuster sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:210
+#: cdedb/i18n_additional.py:216
 msgid "Use a longer keyboard pattern with more turns."
 msgstr "Benutze ein längeres Tastaturmuster mit mehr Wendungen."
 
-#: cdedb/i18n_additional.py:211
+#: cdedb/i18n_additional.py:217
 msgid "Repeats like \"aaa\" are easy to guess."
 msgstr "Wiederholungen wie 'aaa' sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:212
+#: cdedb/i18n_additional.py:218
 msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\"."
 msgstr ""
 "Wiederholungen wie 'abcabcabc' sind nur geringfügig schwieriger zu "
 "erraten als 'abc'."
 
-#: cdedb/i18n_additional.py:214
+#: cdedb/i18n_additional.py:220
 msgid "Avoid repeated words and characters."
 msgstr "Vermeide Wiederholungen von Wörtern und Buchstaben."
 
-#: cdedb/i18n_additional.py:215
+#: cdedb/i18n_additional.py:221
 msgid "Sequences like \"abc\" or \"6543\" are easy to guess."
 msgstr "Abfolgen wie 'abc' oder '6543' sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:216
+#: cdedb/i18n_additional.py:222
 msgid "Avoid sequences."
 msgstr "Vermeide Abfolgen."
 
-#: cdedb/i18n_additional.py:217
+#: cdedb/i18n_additional.py:223
 msgid "Recent years are easy to guess."
 msgstr "Jahreszahlen der letzten Jahre sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:218
+#: cdedb/i18n_additional.py:224
 msgid "Avoid recent years."
 msgstr "Vermeide Jahreszahlen der letzten Jahre."
 
-#: cdedb/i18n_additional.py:219
+#: cdedb/i18n_additional.py:225
 msgid "Avoid years that are associated with you."
 msgstr "Vermeide Jahreszahlen, die mit dir in Verbindung stehen."
 
-#: cdedb/i18n_additional.py:220
+#: cdedb/i18n_additional.py:226
 msgid "Avoid dates and years that are associated with you."
 msgstr "Vermeide Daten und Jahre, die mit dir in Verbindung stehen."
 
-#: cdedb/i18n_additional.py:221
+#: cdedb/i18n_additional.py:227
 msgid "This is a top-10 common password."
 msgstr "Das ist eines der 10 häufigsten Passwörter."
 
-#: cdedb/i18n_additional.py:222
+#: cdedb/i18n_additional.py:228
 msgid "This is a top-100 common password."
 msgstr "Das ist eines der 100 häufigsten Passwörter."
 
-#: cdedb/i18n_additional.py:223
+#: cdedb/i18n_additional.py:229
 msgid "This is a very common password."
 msgstr "Das ist ein sehr häufiges Passwort."
 
-#: cdedb/i18n_additional.py:224
+#: cdedb/i18n_additional.py:230
 msgid "This is similar to a commonly used password."
 msgstr "Das ist ähnlich zu einem häufig genutzen Passwort."
 
-#: cdedb/i18n_additional.py:225
+#: cdedb/i18n_additional.py:231
 msgid "A word by itself is easy to guess."
 msgstr "Ein einzelnes Wort ist einfach zu erraten."
 
-#: cdedb/i18n_additional.py:226
+#: cdedb/i18n_additional.py:232
 msgid "Names and surnames by themselves are easy to guess."
 msgstr "Vornamen und Nachnamen für sich genommen sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:227
+#: cdedb/i18n_additional.py:233
 msgid "Common names and surnames are easy to guess."
 msgstr "Häufige Vornamen und Nachnamen sind einfach zu erraten."
 
-#: cdedb/i18n_additional.py:228
+#: cdedb/i18n_additional.py:234
 msgid "Capitalization doesn't help very much."
 msgstr "Großschreibung hilft nicht wirklich."
 
-#: cdedb/i18n_additional.py:229
+#: cdedb/i18n_additional.py:235
 msgid "All-uppercase is almost as easy to guess as all-lowercase."
 msgstr ""
 "Alles Großzuschreiben ist fast genauso einfach zu erraten, wie alles "
 "Kleinzuschreiben."
 
-#: cdedb/i18n_additional.py:230
+#: cdedb/i18n_additional.py:236
 msgid "Reversed words aren't much harder to guess."
 msgstr "Umgedrehte Wörter sind nicht viel schwieriger zu erraten."
 
-#: cdedb/i18n_additional.py:231
+#: cdedb/i18n_additional.py:237
 msgid "Predictable substitutions like '@' instead of 'a' don't help very much."
 msgstr "Vorhersehbare Ersetzungen wie '@' statt 'a' helfen nicht wirklich."
 
@@ -895,7 +911,7 @@ msgstr "Vorhersehbare Ersetzungen wie '@' statt 'a' helfen nicht wirklich."
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:76
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:82
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:151
-#: cdedb/i18n_additional.py:237
+#: cdedb/i18n_additional.py:243
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -920,59 +936,59 @@ msgstr "Abbrechen"
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:181
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:106
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:66
-#: cdedb/i18n_additional.py:238
+#: cdedb/i18n_additional.py:244
 msgid "Save"
 msgstr "Speichern"
 
-#: cdedb/i18n_additional.py:243
+#: cdedb/i18n_additional.py:249
 msgid "Finanzvorstand_Name"
 msgstr "Finanzvorstand Name"
 
-#: cdedb/i18n_additional.py:244
+#: cdedb/i18n_additional.py:250
 msgid "Finanzvorstand_Vorname"
 msgstr "Finanzvorstand Vorname"
 
-#: cdedb/i18n_additional.py:245
+#: cdedb/i18n_additional.py:251
 msgid "Finanzvorstand_Ort"
 msgstr "Finanzorstand Ort"
 
-#: cdedb/i18n_additional.py:246
+#: cdedb/i18n_additional.py:252
 msgid "Finanzvorstand_Adresse_Einzeiler"
 msgstr "Finanzvorstand Adresse Einzeiler"
 
-#: cdedb/i18n_additional.py:247
+#: cdedb/i18n_additional.py:253
 msgid "Finanzvorstand_Adresse_Zeile2"
 msgstr "Finanzvorstand Adresse Zeile 2"
 
-#: cdedb/i18n_additional.py:248
+#: cdedb/i18n_additional.py:254
 msgid "Finanzvorstand_Adresse_Zeile3"
 msgstr "Finanzvorstand Adresse Zeile 3"
 
-#: cdedb/i18n_additional.py:249
+#: cdedb/i18n_additional.py:255
 msgid "Finanzvorstand_Adresse_Zeile4"
 msgstr "Finanzvorstand Adresse Zeile 4"
 
-#: cdedb/i18n_additional.py:250
+#: cdedb/i18n_additional.py:256
 msgid "CdE_Konto_Inhaber"
 msgstr "CdE Konto Inhaber"
 
-#: cdedb/i18n_additional.py:251
+#: cdedb/i18n_additional.py:257
 msgid "CdE_Konto_IBAN"
 msgstr "CdE Konto IBAN"
 
-#: cdedb/i18n_additional.py:252
+#: cdedb/i18n_additional.py:258
 msgid "CdE_Konto_BIC"
 msgstr "CdE Konto BIC"
 
-#: cdedb/i18n_additional.py:253
+#: cdedb/i18n_additional.py:259
 msgid "CdE_Konto_Institut"
 msgstr "CdE Konto Kreditinstitut"
 
-#: cdedb/i18n_additional.py:254
+#: cdedb/i18n_additional.py:260
 msgid "banner_before_login"
 msgstr "Banner bevor Login"
 
-#: cdedb/i18n_additional.py:255
+#: cdedb/i18n_additional.py:261
 msgid "banner_after_login"
 msgstr "Banner nach Login"
 
@@ -9612,3 +9628,4 @@ msgstr "Mailinglisten Log"
 #, python-format
 msgid "%(title)s – Log"
 msgstr "%(title)s – Log"
+
