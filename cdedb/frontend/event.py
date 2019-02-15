@@ -1944,7 +1944,7 @@ class EventFrontend(AbstractUserFrontend):
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
         new_id = self.eventproxy.create_registration(rs, registration)
-        meta_info = self.coreproxy.get_meta_info(rrs)
+        meta_info = self.coreproxy.get_meta_info(rs)
         fee = sum(rs.ambience['event']['parts'][part_id]['fee']
                   for part_id, entry in registration['parts'].items()
                   if const.RegistrationPartStati(entry['status']).is_involved())
