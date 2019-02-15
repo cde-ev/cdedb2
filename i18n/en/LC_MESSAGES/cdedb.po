@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-15 20:06+0100\n"
+"POT-Creation-Date: 2019-02-15 22:55+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -7533,9 +7533,9 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:51
 msgid ""
-"If this is checked, all registrated users can fill out the "
-"Questionnaire.You can configure every part of the questionnaire "
-"individually in the questionnaire configuration."
+"If this is checked, all registrated users can fill out the Questionnaire."
+" You can configure every part of the questionnaire individually in the "
+"questionnaire configuration."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:59
@@ -8531,7 +8531,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:121
 #, python-format
 msgid ""
-"I %(consent)s agree, that photos and recordings of myself, that are made "
+"I %(consent)sagree, that photos and recordings of myself, that are made "
 "in the context\n"
 "                of this event, may be used for the event-documentation "
 "and a CdE-internal,\n"
@@ -9330,88 +9330,3 @@ msgstr ""
 #, python-format
 msgid "%(title)s – Log"
 msgstr ""
-
-#~ msgid "for_gender_enter_part2"
-#~ msgstr "."
-
-#~ msgid "Must be at least 9 characters."
-#~ msgstr ""
-
-#~ msgid "Must contain at least three character classes."
-#~ msgstr ""
-
-#~ msgid "Contains blacklisted substring."
-#~ msgstr ""
-
-#~ msgid "Mitgliedsbeitrag"
-#~ msgstr ""
-
-#~ msgid "Teilnehmerbeitrag"
-#~ msgstr ""
-
-#~ msgid "Sonstiges"
-#~ msgstr ""
-
-#~ msgid "Rückerstattung"
-#~ msgstr ""
-
-#~ msgid "Unbekannt"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "The new Password must have at "
-#~ "least twelve Character from atleast "
-#~ "three of four categories\n"
-#~ "            (Lowercase Letters, Uppercase "
-#~ "Letters, Numbers and Special Characters).\n"
-#~ ""
-#~ "            Also some Special Characters are disallowed."
-#~ msgstr ""
-
-#~ msgid "New Participant"
-#~ msgstr ""
-
-#~ msgid "No selection means everything"
-#~ msgstr ""
-
-#~ msgid "Are You sure?"
-#~ msgstr ""
-
-#~ msgid "Questionnaire Preview (title)"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "\n"
-#~ "                        The following Candidates "
-#~ "lost against the bar "
-#~ "(%(assembly_bar_moniker)s)."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "\n"
-#~ "                                        Additionally You"
-#~ " need to use the Rejection Bar "
-#~ "%(abm)s in Your preferencelist.\n"
-#~ "                                        Use it in"
-#~ " Your preferencelist like You would a"
-#~ " Candidate. Put all\n"
-#~ "                                        Candidates You "
-#~ "deem suitable higher than %(abm)s and"
-#~ " all\n"
-#~ "                                        Candidates You "
-#~ "reject lower, i.e. to the right of"
-#~ " %(abm)s.\n"
-#~ "                                        Should no "
-#~ "Candidate win against the bar, the "
-#~ "board may take additional measures."
-#~ msgstr ""
-
-#~ msgid "No custum fields for lodgements available."
-#~ msgstr ""
-
-#~ msgid "Can be at most 1."
-#~ msgstr ""
-
-#~ msgid "Maximum DSA-Share"
-#~ msgstr ""
-

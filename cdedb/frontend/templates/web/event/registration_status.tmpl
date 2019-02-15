@@ -118,9 +118,9 @@
         </dd>
         <dt>Fotos</dt>
         <dd>
-            {% trans consent="<strong>{}</strong>".format(gettext("do not"))
-                            if registration['foto_consent'] else "" -%}
-                I {{ consent }} agree, that photos and recordings of myself, that are made in the context
+            {% trans consent="<strong>{}</strong> ".format(gettext("do not"))
+                            if not registration['foto_consent'] else "" -%}
+                I {{ consent }}agree, that photos and recordings of myself, that are made in the context
                 of this event, may be used for the event-documentation and a CdE-internal,
                 password protected media collection. Individual photos and recordings can
                 be excluded from this by my request.

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-15 20:06+0100\n"
+"POT-Creation-Date: 2019-02-15 22:55+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -7713,10 +7713,10 @@ msgid ""
 "unchecked, event users can still register within the registration period "
 "by accessing the registration link directly."
 msgstr ""
-"Wenn dies ausgewählt ist, können alle Veranstaltungsnutzer die Veranstaltung "
-"sehen. Wenn dies nicht ausgewählt ist, können Veranstaltungsnutzer sich "
-"innerhalb des Anmeldezeitraums trotzdem anmelden, indem sie den Anmeldelink "
-"aufrufen."
+"Wenn dies ausgewählt ist, können alle Veranstaltungsnutzer die "
+"Veranstaltung sehen. Wenn dies nicht ausgewählt ist, können "
+"Veranstaltungsnutzer sich innerhalb des Anmeldezeitraums trotzdem "
+"anmelden, indem sie den Anmeldelink aufrufen."
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:33
 msgid "Visibility of the Courselist"
@@ -7728,10 +7728,10 @@ msgid ""
 "checked, but the event is not visible, event users can still view the "
 "courselist by accessing the link directly."
 msgstr ""
-"Wenn dies nicht ausgewählt ist, können Veranstaltungsnutzer die Kursliste "
-"nicht sehen. Wenn dies ausgewählt ist, aber die Veranstaltung nicht sichtbar "
-"ist, können Veranstaltungsnutzer die Kursliste trotzdem sehen, indem sie den "
-"Link direkt aufrufen."
+"Wenn dies nicht ausgewählt ist, können Veranstaltungsnutzer die Kursliste"
+" nicht sehen. Wenn dies ausgewählt ist, aber die Veranstaltung nicht "
+"sichtbar ist, können Veranstaltungsnutzer die Kursliste trotzdem sehen, "
+"indem sie den Link direkt aufrufen."
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:37
 #: cdedb/frontend/templates/web/event/create_event.tmpl:30
@@ -7792,13 +7792,13 @@ msgstr "Fragebogen anzeigen"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:51
 msgid ""
-"If this is checked, all registrated users can fill out the "
-"Questionnaire. You can configure every part of the questionnaire "
-"individually in the questionnaire configuration."
+"If this is checked, all registrated users can fill out the Questionnaire."
+" You can configure every part of the questionnaire individually in the "
+"questionnaire configuration."
 msgstr ""
-"Wenn dies ausgewählt ist, können alle angemeldeten Benutzer den Fragebogen "
-"ausfüllen. Jeder Teil des Fragebogens kann in der Fragenbogen-Konfiguration "
-"einzeln konfiguriert werden."
+"Wenn dies ausgewählt ist, können alle angemeldeten Benutzer den "
+"Fragebogen ausfüllen. Jeder Teil des Fragebogens kann in der Fragenbogen-"
+"Konfiguration einzeln konfiguriert werden."
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:59
 msgid "Field for Rooming Preferences"
@@ -8824,7 +8824,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:121
 #, python-format
 msgid ""
-"I %(consent)s agree, that photos and recordings of myself, that are made "
+"I %(consent)sagree, that photos and recordings of myself, that are made "
 "in the context\n"
 "                of this event, may be used for the event-documentation "
 "and a CdE-internal,\n"
@@ -9658,10 +9658,3 @@ msgstr "Mailinglisten Log"
 #, python-format
 msgid "%(title)s – Log"
 msgstr "%(title)s – Log"
-
-#~ msgid "Can be at most 1."
-#~ msgstr "Kann höchstens 1 sein."
-
-#~ msgid "Maximum DSA-Share"
-#~ msgstr "Maximaler DSA-Anteil"
-
