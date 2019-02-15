@@ -237,10 +237,12 @@
     {%- if displayerrors and name in errors %}
         {%- if wrapper %}<div class="has-error">{% endif %}
         {%- for error in errors.get(name, []) if error %}
-            <div class="help-block">
-                {{ make_icon('exclamation-sign') }}
-                {{ format_error(error) }}
-            </div>
+            {% if error.args %}
+                <div class="help-block">
+                    {{ make_icon('exclamation-sign') }}
+                    {{ format_error(error) }}
+                </div>
+            {% endif %}
         {%- endfor %}
         {%- if wrapper %}</div>{% endif %}
     {%- endif %}
