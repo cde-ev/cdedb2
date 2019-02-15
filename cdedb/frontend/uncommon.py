@@ -52,6 +52,13 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
         data = check(rs, "persona", data, creation=True)
+        if data:
+            exists = self.coreproxy.verify_existence(rs, data['username'])
+            if exists:
+                rs.errors.append(
+                    ("username",
+                     ValueError("User with this E-Mail exists already."))
+                    )
         if rs.errors:
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
