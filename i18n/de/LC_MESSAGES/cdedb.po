@@ -2625,7 +2625,7 @@ msgid "export_event.json"
 msgstr "Veranstaltungsexport.json"
 
 #: cdedb/frontend/event.py:1802 cdedb/frontend/event.py:2503
-msgid "Allready registered."
+msgid "Already registered."
 msgstr "Bereits angemeldet."
 
 #: cdedb/frontend/event.py:1805 cdedb/frontend/event.py:1923
@@ -2818,7 +2818,7 @@ msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
 
 #: cdedb/frontend/event.py:3497
-msgid "Allready checked in."
+msgid "Already checked in."
 msgstr "Bereits eingecheckt."
 
 #: cdedb/frontend/event.py:3529 cdedb/frontend/event.py:3545

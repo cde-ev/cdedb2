@@ -1799,7 +1799,7 @@ class EventFrontend(AbstractUserFrontend):
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if rs.user.persona_id in registrations.values():
-            rs.notify("info", n_("Allready registered."))
+            rs.notify("info", n_("Already registered."))
             return self.redirect(rs, "event/registration_status")
         if not rs.ambience['event']['is_open']:
             rs.notify("warning", n_("Registration not open."))
@@ -2500,7 +2500,7 @@ class EventFrontend(AbstractUserFrontend):
         if not rs.errors and self.eventproxy.list_registrations(
                 rs, event_id, persona_id=persona_id):
             rs.errors.append(("persona.persona_id",
-                              ValueError(n_("Allready registered."))))
+                              ValueError(n_("Already registered."))))
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], do_fields=False,
             do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
@@ -3494,7 +3494,7 @@ class EventFrontend(AbstractUserFrontend):
         if registration['event_id'] != event_id:
             return werkzeug.exceptions.NotFound(n_("Wrong associated event."))
         if registration['checkin']:
-            rs.notify("warning", n_("Allready checked in."))
+            rs.notify("warning", n_("Already checked in."))
             return self.checkin_form(rs, event_id)
 
         new_reg = {
