@@ -2553,7 +2553,21 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if 'vote_begin' in val:
         if val['vote_begin'] <= now():
-            errs.append(("vote_begin", ValueError(n_("Mustn't be in the past."))))
+            errs.append(
+                ("vote_begin", ValueError(n_("Mustn't be in the past.")))
+                )
+        if 'vote_end' in val:
+            if val['vote_end'] <= val['vote_begin']:
+                errs.append(
+                    ("vote_end", ValueError(n_(
+                        "Mustn't be before start of voting period.")))
+                    )
+            if 'vote_extension_end' in val and val['vote_extension_end']:
+                if val['vote_extension_end'] <= val['vote_end']:
+                    errs.append(
+                        ("vote_extension_end", ValueError(n_(
+                            "Mustn't be before end of voting period.")))
+                        )
     if 'candidates' in val:
         oldcandidates, e = _mapping(val['candidates'], 'candidates',
                                     _convert=_convert)
