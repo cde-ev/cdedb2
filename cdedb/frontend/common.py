@@ -1036,8 +1036,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return self.redirect(rs, 'core/show_user', params=params)
 
     @staticmethod
-    def notify_return_code(rs, code, success="Change committed.",
-                           pending="Change pending.", error="Change failed."):
+    def notify_return_code(rs, code, success=n_("Change committed."),
+                           pending=n_("Change pending."),
+                           error=n_("Change failed.")):
         """Small helper to issue a notification based on a return code.
 
         We allow some flexibility in what type of return code we accept. It
