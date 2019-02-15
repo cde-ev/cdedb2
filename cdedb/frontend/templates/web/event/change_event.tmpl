@@ -26,8 +26,14 @@
         {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5") }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
-        {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event")) }}
-        {{ util.form_input_checkbox(name="is_course_list_visible", label=gettext("Visibility of the Courselist")) }}
+        {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event"),
+                                info=gettext("If this is checked, all event users can view the event. "
+                                "If this is unchecked, event users can still register within the "
+                                "registration period by accessing the registration link directly.")) }}
+        {{ util.form_input_checkbox(name="is_course_list_visible", label=gettext("Visibility of the Courselist"),
+                                info=gettext("If this is unchecked, event users cannot see the courselist. "
+                                "If this is checked, but the event is not visible, event users can still view the "
+                                "courselist by accessing the link directly.")) }}
         {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local',
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
@@ -38,9 +44,12 @@
                                 type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
                                 info=gettext("Final registration end. Until then late registrations are possible. "
                                 "If left empty, late registrations will be possible indefinitely.")) }}
-        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="") }}
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="",
+                                info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
         {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
-        {{ util.form_input_checkbox(name="use_questionnaire", label=gettext("Show Questionnaire")) }}
+        {{ util.form_input_checkbox(name="use_questionnaire", label=gettext("Show Questionnaire"),
+                                info=gettext("If this is checked, all registrated users can fill out the Questionnaire. "
+                                "You can configure every part of the questionnaire individually in the questionnaire configuration.")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|dictsort

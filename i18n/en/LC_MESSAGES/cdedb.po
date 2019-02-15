@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-15 18:11+0100\n"
+"POT-Creation-Date: 2019-02-15 20:06+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -916,14 +916,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:34
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:34
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:76
-#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:36
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:34
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:89
 #: cdedb/frontend/templates/web/core/change_user.tmpl:76
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:69
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:26
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:70
 #: cdedb/frontend/templates/web/event/change_course.tmpl:73
-#: cdedb/frontend/templates/web/event/change_event.tmpl:63
+#: cdedb/frontend/templates/web/event/change_event.tmpl:72
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:188
 #: cdedb/frontend/templates/web/event/field_set.tmpl:40
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:138
@@ -1032,7 +1032,7 @@ msgstr ""
 msgid "Must be a string."
 msgstr ""
 
-#: cdedb/validation.py:364 cdedb/validation.py:489 cdedb/validation.py:2868
+#: cdedb/validation.py:364 cdedb/validation.py:489 cdedb/validation.py:2865
 msgid "Mustn't be empty."
 msgstr ""
 
@@ -1124,7 +1124,7 @@ msgstr ""
 msgid "More than one digit."
 msgstr ""
 
-#: cdedb/validation.py:1025 cdedb/validation.py:1339
+#: cdedb/validation.py:1025 cdedb/validation.py:1336
 msgid "Too short."
 msgstr ""
 
@@ -1188,172 +1188,168 @@ msgstr ""
 msgid "Only pdf allowed."
 msgstr ""
 
-#: cdedb/validation.py:1321
-msgid "Can be at most 1."
-msgstr ""
-
-#: cdedb/validation.py:1344
+#: cdedb/validation.py:1341
 msgid "Must start with country code."
 msgstr ""
 
-#: cdedb/validation.py:1348
+#: cdedb/validation.py:1345
 msgid "Must have digits for checksum."
 msgstr ""
 
-#: cdedb/validation.py:1352
+#: cdedb/validation.py:1349
 msgid "Invalid character in IBAN."
 msgstr ""
 
-#: cdedb/validation.py:1358
+#: cdedb/validation.py:1355
 msgid "Invalid checksum."
 msgstr ""
 
-#: cdedb/validation.py:1447 cdedb/validation.py:1504 cdedb/validation.py:1513
-#: cdedb/validation.py:1518
+#: cdedb/validation.py:1444 cdedb/validation.py:1501 cdedb/validation.py:1510
+#: cdedb/validation.py:1515
 msgid "Too long."
 msgstr ""
 
-#: cdedb/validation.py:1449
+#: cdedb/validation.py:1446
 msgid "Invalid constant."
 msgstr ""
 
-#: cdedb/validation.py:1506
+#: cdedb/validation.py:1503
 msgid "Unsupported constant."
 msgstr ""
 
-#: cdedb/validation.py:1508
+#: cdedb/validation.py:1505
 msgid "Exactly two lines required."
 msgstr ""
 
-#: cdedb/validation.py:1539
+#: cdedb/validation.py:1536
 msgid "Forbidden character ({char})."
 msgstr ""
 
-#: cdedb/validation.py:1678
+#: cdedb/validation.py:1675
 msgid "Must be before or equal to hard limit."
 msgstr ""
 
-#: cdedb/validation.py:1685
+#: cdedb/validation.py:1682
 msgid "Must be before hard and soft limit."
 msgstr ""
 
-#: cdedb/validation.py:1900
+#: cdedb/validation.py:1897
 msgid "Duplicate value."
 msgstr ""
 
-#: cdedb/validation.py:2011
+#: cdedb/validation.py:2008
 msgid "Must be a superset of active segments."
 msgstr ""
 
-#: cdedb/validation.py:2196
+#: cdedb/validation.py:2193
 msgid "Entry not in definition list."
 msgstr ""
 
-#: cdedb/validation.py:2296
+#: cdedb/validation.py:2293
 msgid "Currently only full exports are supported"
 msgstr ""
 
-#: cdedb/validation.py:2383
+#: cdedb/validation.py:2380
 msgid "Only a single event is supported."
 msgstr ""
 
-#: cdedb/validation.py:2385
+#: cdedb/validation.py:2382
 msgid "Wrong event specified."
 msgstr ""
 
-#: cdedb/validation.py:2390
+#: cdedb/validation.py:2387
 msgid "Mismatched event."
 msgstr ""
 
-#: cdedb/validation.py:2445
+#: cdedb/validation.py:2442
 msgid "Only one allowed of gateway, event_id and assembly_id."
 msgstr ""
 
-#: cdedb/validation.py:2453
+#: cdedb/validation.py:2450
 msgid "Linked assembly requires assembly audience."
 msgstr ""
 
-#: cdedb/validation.py:2458
+#: cdedb/validation.py:2455
 msgid "Linked event requires event audience."
 msgstr ""
 
-#: cdedb/validation.py:2557
+#: cdedb/validation.py:2554
 msgid "Mustn't be in the past."
 msgstr ""
 
-#: cdedb/validation.py:2562
+#: cdedb/validation.py:2559
 msgid "Mustn't be before start of voting period."
 msgstr ""
 
-#: cdedb/validation.py:2568
+#: cdedb/validation.py:2565
 msgid "Mustn't be before end of voting period."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:671 cdedb/validation.py:2624
+#: cdedb/frontend/assembly.py:671 cdedb/validation.py:2621
 msgid "Mustn't be the bar moniker."
 msgstr ""
 
-#: cdedb/validation.py:2654
+#: cdedb/validation.py:2651
 msgid "Only one host allowed."
 msgstr ""
 
-#: cdedb/validation.py:2656
+#: cdedb/validation.py:2653
 msgid "No host given."
 msgstr ""
 
-#: cdedb/validation.py:2684
+#: cdedb/validation.py:2681
 msgid "Superfluous candidates."
 msgstr ""
 
-#: cdedb/validation.py:2686
+#: cdedb/validation.py:2683
 msgid "Missing candidates."
 msgstr ""
 
-#: cdedb/validation.py:2694
+#: cdedb/validation.py:2691
 msgid "Too many levels."
 msgstr ""
 
-#: cdedb/validation.py:2696
+#: cdedb/validation.py:2693
 msgid "Too many votes."
 msgstr ""
 
-#: cdedb/validation.py:2700
+#: cdedb/validation.py:2697
 msgid "Misplaced bar."
 msgstr ""
 
-#: cdedb/validation.py:2751
+#: cdedb/validation.py:2748
 msgid "Query must be specified."
 msgstr ""
 
-#: cdedb/validation.py:2774
+#: cdedb/validation.py:2771
 msgid "Invalid operator for this field."
 msgstr ""
 
-#: cdedb/validation.py:2803
+#: cdedb/validation.py:2800
 msgid "Two endpoints required."
 msgstr ""
 
-#: cdedb/validation.py:2819
+#: cdedb/validation.py:2816
 msgid "Selection may not be empty."
 msgstr ""
 
-#: cdedb/validation.py:2852
+#: cdedb/validation.py:2849
 msgid "Not a Query."
 msgstr ""
 
-#: cdedb/validation.py:2856
+#: cdedb/validation.py:2853
 msgid "Must start with 'qview_'."
 msgstr ""
 
-#: cdedb/frontend/event.py:2191 cdedb/validation.py:2879
+#: cdedb/frontend/event.py:2191 cdedb/validation.py:2876
 msgid "Invalid field."
 msgstr ""
 
-#: cdedb/validation.py:2886
+#: cdedb/validation.py:2883
 msgid "Invalid operator."
 msgstr ""
 
-#: cdedb/validation.py:2957 cdedb/validation.py:3018
+#: cdedb/validation.py:2954 cdedb/validation.py:3015
 msgid "Must be a {type}."
 msgstr ""
 
@@ -2849,11 +2845,11 @@ msgstr ""
 msgid "Confirmation email sent."
 msgstr ""
 
-#: cdedb/frontend/uncommon.py:67
+#: cdedb/frontend/uncommon.py:74
 msgid "CdEDB account creation"
 msgstr ""
 
-#: cdedb/frontend/uncommon.py:73
+#: cdedb/frontend/uncommon.py:80
 msgid "User created."
 msgstr ""
 
@@ -3523,8 +3519,8 @@ msgstr ""
 msgid "Searchable for BuB"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:32
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:43
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:30
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:41
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:58
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:71
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:47
@@ -3550,8 +3546,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:31
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:30
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:24
-#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:33
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:44
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:42
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:85
 #: cdedb/frontend/templates/web/core/change_user.tmpl:72
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:22
@@ -3577,8 +3573,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:32
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:31
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:25
-#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:34
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:45
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:32
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:43
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:49
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:86
 #: cdedb/frontend/templates/web/core/change_user.tmpl:73
@@ -4328,8 +4324,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:40
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:39
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:31
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:46
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:84
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:44
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:81
 #: cdedb/frontend/templates/web/event/create_event.tmpl:55
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:30
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:55
@@ -4560,7 +4556,7 @@ msgid "No Extension neccessary, because %(quorum)s votes were reached."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:60
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:112
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:109
 #: cdedb/frontend/templates/web/core/show_history.tmpl:275
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:22
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:75
@@ -5556,7 +5552,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:117
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:72
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:69
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:34
 msgid "Account holder"
 msgstr ""
@@ -5564,7 +5560,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/index.tmpl:121
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:27
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:38
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:69
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:66
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:55
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:38
 msgid "IBAN"
@@ -5620,7 +5616,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:37
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:90
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:63
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:113
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:110
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:53
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:26
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:25
@@ -5638,12 +5634,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:29
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:40
 msgid "Account holder's address (if different)"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:30
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:41
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:66
-msgid "Maximum DSA-Share"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:4
@@ -5690,12 +5680,12 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:51
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:94
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:91
 msgid "Perform Direct Debit"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:58
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:100
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:97
 msgid "Skip Direct Debit"
 msgstr ""
 
@@ -5731,17 +5721,17 @@ msgid "All selected:"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:110
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:140
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:137
 msgid "Success"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:111
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:149
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:146
 msgid "Failed"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:112
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:158
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:155
 msgid "Cancelled"
 msgstr ""
 
@@ -5771,47 +5761,47 @@ msgstr ""
 msgid "Submitted by"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:75
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:72
 msgid "Acc. holder's address"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:78
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:75
 msgid "Granted"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:83
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:80
 msgid "No active Direct Debit Authorization"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:88
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:85
 msgid "Transactions"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:109
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:106
 msgid "Created"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:110
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:107
 msgid "Finalized"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:111
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:108
 msgid "Semester"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:114
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:111
 msgid "Transaction"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:115
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:112
 msgid "Creator"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:168
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:165
 msgid "Donation receipt"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:176
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:173
 msgid "Reverse"
 msgstr ""
 
@@ -7150,7 +7140,7 @@ msgid "Online CdEDB-ID"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:42
-#: cdedb/frontend/templates/web/event/change_event.tmpl:62
+#: cdedb/frontend/templates/web/event/change_event.tmpl:71
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:46
 #: cdedb/frontend/templates/web/event/create_course.tmpl:46
 #: cdedb/frontend/templates/web/event/create_event.tmpl:42
@@ -7473,69 +7463,96 @@ msgid "Visibility of the Event"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:30
+msgid ""
+"If this is checked, all event users can view the event. If this is "
+"unchecked, event users can still register within the registration period "
+"by accessing the registration link directly."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:33
 msgid "Visibility of the Courselist"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:31
+#: cdedb/frontend/templates/web/event/change_event.tmpl:34
+msgid ""
+"If this is unchecked, event users cannot see the courselist. If this is "
+"checked, but the event is not visible, event users can still view the "
+"courselist by accessing the link directly."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:37
 #: cdedb/frontend/templates/web/event/create_event.tmpl:30
 msgid "Registration Start"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:33
+#: cdedb/frontend/templates/web/event/change_event.tmpl:39
 #: cdedb/frontend/templates/web/event/create_event.tmpl:32
 msgid "Registration Soft Limit"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:35
+#: cdedb/frontend/templates/web/event/change_event.tmpl:41
 #: cdedb/frontend/templates/web/event/create_event.tmpl:34
 msgid ""
 "Is displayed initially. Changes to registration are only possible until "
 "then. If left empty, Changes will be possible indefinitely."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:37
+#: cdedb/frontend/templates/web/event/change_event.tmpl:43
 #: cdedb/frontend/templates/web/event/create_event.tmpl:36
 msgid "Registration Hard Limit"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:39
+#: cdedb/frontend/templates/web/event/change_event.tmpl:45
 #: cdedb/frontend/templates/web/event/create_event.tmpl:38
 msgid ""
 "Final registration end. Until then late registrations are possible. If "
 "left empty, late registrations will be possible indefinitely."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:41
+#: cdedb/frontend/templates/web/event/change_event.tmpl:47
 #: cdedb/frontend/templates/web/event/create_event.tmpl:40
 #: cdedb/frontend/templates/web/event/show_event.tmpl:82
 msgid "CdE-Account IBAN"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:42
+#: cdedb/frontend/templates/web/event/change_event.tmpl:48
+msgid ""
+"Only leave this empty if payment is going to be handled directly by the "
+"orgas."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:49
 #: cdedb/frontend/templates/web/event/create_event.tmpl:41
 #: cdedb/frontend/templates/web/event/show_event.tmpl:100
 msgid "Registration mail free text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:43
+#: cdedb/frontend/templates/web/event/change_event.tmpl:50
 msgid "Show Questionnaire"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:50
+#: cdedb/frontend/templates/web/event/change_event.tmpl:51
+msgid ""
+"If this is checked, all registrated users can fill out the "
+"Questionnaire.You can configure every part of the questionnaire "
+"individually in the questionnaire configuration."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:59
 msgid "Field for Rooming Preferences"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:51
+#: cdedb/frontend/templates/web/event/change_event.tmpl:60
 msgid ""
 "The custom field in which the participants' rooming preferences will be "
 "saved."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:59
+#: cdedb/frontend/templates/web/event/change_event.tmpl:68
 msgid "Field for Reserve"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_event.tmpl:60
+#: cdedb/frontend/templates/web/event/change_event.tmpl:69
 msgid ""
 "The custom field in which the participants' willingness to sleep on a "
 "camping mat will be saved."
@@ -9390,5 +9407,11 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "No custum fields for lodgements available."
+#~ msgstr ""
+
+#~ msgid "Can be at most 1."
+#~ msgstr ""
+
+#~ msgid "Maximum DSA-Share"
 #~ msgstr ""
 
