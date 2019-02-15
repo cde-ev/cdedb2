@@ -91,8 +91,8 @@ Data
 
 No migration for events organized via DB. Past events are migrated in a
 mostly automatic way via SQL script -- the catch being, that they gained a
-``tempus`` column for ordering; however since this needs only to be acurate
-within a month or so it should be easy to fill in.
+``tempus`` column for ordering; this is prefilled with something mostly
+working, any errors should be easy to fix.
 
 Mailinglists
 ^^^^^^^^^^^^
@@ -162,8 +162,11 @@ Step-by-step plan
    all sessions).
 6. Restart v1 and move it to https://db1.cde-ev.de.
 7. Import dump into v2 (see below).
-8. Move v2 to https://db.cde-ev.de and initialize it.
+8. Move v2 to https://db.cde-ev.de and initialize it. Start it in lockdown
+   mode (i.e. only admins may log in).
 9. Adapt mailinglist scripts to v2 and restart mailserver
+10. After a period of inspection by admins the lockdown is lifted or we
+    revert back to v1.
 
 Longterm steps:
 
@@ -181,14 +184,17 @@ First export the data on the old database server::
 
     sudo -u postgres pg_dump cdedbxy > /tmp/cdedbv1.sql
 
-Now manually fix the dump for erroneous double quotes in course titles. Here is a preliminary list of affected courses::
+Now manually fix the dump for erroneous double quotes and strange line
+breaks in course titles. Here is a preliminary list of affected courses::
 
-  _               title                 |                     title                     | id  |  id
-  --------------------------------------+-----------------------------------------------+-----+------
-  Multinationale Akademie Zakopane 2009 | XHTML oder Wie mache ich Websites""           | 230 | 1204
-  WinterAkademie 2013                   | Fisch schwimmt, Vogel fliegt - Mensch läuft"" | 363 | 1847
-  Multinationale Akademie Latky 2016    | Seminar, Workshops, Mitmachkurs""             | 476 | 2835
-  WinterAkademie 2018                   | Verrückte Zauber"würfel""                     | 538 | 3073
+  _               title                 |                     title
+  --------------------------------------+--------------------------------------------------------------------------------------
+  Multinationale Akademie Zakopane 2009 | XHTML oder Wie mache ich Websites""
+  WinterAkademie 2013                   | Fisch schwimmt, Vogel fliegt - Mensch läuft""
+  Multinationale Akademie Latky 2016    | Seminar, Workshops, Mitmachkurs""
+  WinterAkademie 2018                   | Verrückte Zauber"würfel""
+  Braunschweig 1991 - 2                 | „C'est facile, c'est pas cher et ça peut rapporter gros"\n4"
+  Semmering 2012                        | » Von 0 auf 100 in 3,7 Sekunden – oder warum Technik nicht langweilig sein muss«\n11"
 
 
 Copy the dump to the new database server and import it into a separate
@@ -229,4 +235,4 @@ Manual fixes
 Some things still need to be mixed manually after migration. this includes:
 
 * Limit `cde-all` and `cde-info` lists to members only.
-
+* Add the quick-hack for downloadable files.

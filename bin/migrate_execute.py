@@ -56,37 +56,41 @@ for i in range(100000):
         WHITELIST.add(OFFSET + i)
 
 ## admin IDs
-WHITELIST.add(568)
-WHITELIST.add(5682)
-WHITELIST.add(2158)
-WHITELIST.add(1143)
-WHITELIST.add(2718)
-WHITELIST.add(1475)
-WHITELIST.add(8177)
-WHITELIST.add(4463)
-WHITELIST.add(4063)
-WHITELIST.add(5939)
-WHITELIST.add(5936)
-WHITELIST.add(8737)
-WHITELIST.add(2187)
-WHITELIST.add(4443)
-WHITELIST.add(7311)
-WHITELIST.add(11275)
-WHITELIST.add(4114)
-WHITELIST.add(10973)
-WHITELIST.add(8586)
 WHITELIST.add(51)
-WHITELIST.add(10705)
-WHITELIST.add(5843)
-WHITELIST.add(12925)
+WHITELIST.add(568)
+WHITELIST.add(1143)
+WHITELIST.add(1475)
+WHITELIST.add(2158)
+WHITELIST.add(2187)
+WHITELIST.add(2718)
 WHITELIST.add(3915)
-WHITELIST.add(8737)
+WHITELIST.add(4063)
+WHITELIST.add(4114)
+WHITELIST.add(4443)
+WHITELIST.add(4463)
+WHITELIST.add(5124)
+WHITELIST.add(5682)
 WHITELIST.add(5782)
-WHITELIST.add(10441)
+WHITELIST.add(5843)
+WHITELIST.add(5936)
+WHITELIST.add(5939)
+WHITELIST.add(7311)
+WHITELIST.add(8177)
 WHITELIST.add(8565)
-WHITELIST.add(16231)
-WHITELIST.add(10848)
+WHITELIST.add(8586)
 WHITELIST.add(8674)
+WHITELIST.add(8737)
+WHITELIST.add(10441)
+WHITELIST.add(10705)
+WHITELIST.add(10848)
+WHITELIST.add(10973)
+WHITELIST.add(11275)
+WHITELIST.add(12925)
+WHITELIST.add(16231)
+WHITELIST.add(16563)
+WHITELIST.add(17476)
+WHITELIST.add(20109)
+WHITELIST.add(21011)
 
 # disable
 #WHITELIST = None
@@ -1338,17 +1342,51 @@ query_exec(cdb, query, tuple())
 ##
 ## grant admin privileges and reset password
 ##
-core.change_admin_bits(rs(DEFAULT_ID), {
-    'id': DEFAULT_ID,
-    'is_admin': True,
-    'is_core_admin': True,
-    'is_cde_admin': True,
-    'is_event_admin': True,
-    'is_ml_admin': True,
-    'is_assembly_admin': True,
-    })
-query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-query_exec(cdb, query, ('$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', DEFAULT_ID))
+PASSWORD_LIST = {
+    51: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    1475: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    2158: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    4463: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    5124: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    5843: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    7311: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    8586: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    8737: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    10705: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    12925: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    16231: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    16563: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    17476: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    20109: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+    21011: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+}
+
+for superadmin in (2158, 5124, 10705, 17476):
+    core.change_admin_bits(rs(DEFAULT_ID), {
+        'id': superadmin,
+        'is_admin': True,
+        'is_core_admin': True,
+        'is_cde_admin': True,
+        'is_event_admin': True,
+        'is_ml_admin': True,
+        'is_assembly_admin': True,
+        })
+    query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+    query_exec(cdb, query, (PASSWORD_LIST[superadmin], superadmin))
+
+for admin in (1475, 4463, 8586, 5843, 51, 7311, 12925, 8737, 16231, 20109,
+              21011, 16563):
+    core.change_admin_bits(rs(DEFAULT_ID), {
+        'id': admin,
+        'is_admin': False,
+        'is_core_admin': True,
+        'is_cde_admin': True,
+        'is_event_admin': True,
+        'is_ml_admin': True,
+        'is_assembly_admin': True,
+        })
+    query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+    query_exec(cdb, query, (PASSWORD_LIST[admin], admin))
 
 ##
 ## consistency checks

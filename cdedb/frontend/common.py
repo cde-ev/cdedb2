@@ -864,7 +864,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs.notify("error", n_("Failed validation."))
         if self.conf.LOCKDOWN:
             rs.notify("info", n_("The database currently undergoes "
-                                "maintenance and is unavailable."))
+                                 "maintenance and is unavailable."))
         html = self.fill_template(rs, "web", templatename, params)
         if not self.conf.CDEDB_DEV:
             # eliminate multiple whitespace outside <pre>s and <textarea>s,
