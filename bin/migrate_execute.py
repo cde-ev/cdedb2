@@ -1033,7 +1033,6 @@ for persona_id in persona_ids:
         new = {
             'persona_id': lastschrift['user_id'],
             'amount': lastschrift['betrag'],
-            'max_dsa': lastschrift['max_dsa'],
             'iban': bank['iban'],
             'account_owner': bank['kontoinhaber'],
             'account_address': bank['anschrift'],

@@ -1121,7 +1121,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
-                     'notes', 'max_dsa',)
+                     'notes',)
     def lastschrift_change(self, rs, lastschrift_id, data):
         """Modify one permit."""
         data['id'] = lastschrift_id
@@ -1140,7 +1140,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
-                     'notes', 'max_dsa')
+                     'notes',)
     def lastschrift_create(self, rs, persona_id, data):
         """Create a new permit."""
         data['persona_id'] = persona_id

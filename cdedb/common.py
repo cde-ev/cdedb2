@@ -1370,7 +1370,7 @@ EXPULS_PERIOD_FIELDS = ("id", "addresscheck_state", "addresscheck_done")
 
 #: Fields of one direct debit permit
 LASTSCHRIFT_FIELDS = (
-    "id", "submitted_by", "persona_id", "amount", "max_dsa", "iban",
+    "id", "submitted_by", "persona_id", "amount", "iban",
     "account_owner", "account_address", "granted_at", "revoked_at", "notes")
 
 #: Fields of one interaction on behalf of a direct debit permit

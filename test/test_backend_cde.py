@@ -344,7 +344,6 @@ class TestCdEBackend(BackendTest):
                                             tzinfo=pytz.utc),
             'iban': 'DE12500105170648489890',
             'id': 2,
-            'max_dsa': decimal.Decimal('0.40'),
             'notes': 'reicher Onkel',
             'persona_id': 2,
             'revoked_at': None,
@@ -366,7 +365,6 @@ class TestCdEBackend(BackendTest):
             'amount': decimal.Decimal('25.00'),
             'granted_at': datetime.datetime.now(pytz.utc),
             'iban': 'DE69370205000008068902',
-            'max_dsa': decimal.Decimal('0.33'),
             'notes': None,
             'persona_id': 3,
         }
@@ -507,7 +505,6 @@ class TestCdEBackend(BackendTest):
             'amount': decimal.Decimal('25.00'),
             'granted_at': datetime.datetime.now(pytz.utc),
             'iban': 'DE69370205000008068902',
-            'max_dsa': decimal.Decimal('0.33'),
             'notes': None,
             'persona_id': 3,
         }

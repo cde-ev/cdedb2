@@ -67,9 +67,9 @@ INSERT INTO cde.org_period (id, billing_state, billing_done, ejection_state, eje
 INSERT INTO cde.expuls_period (id, addresscheck_state, addresscheck_done) VALUES
     (41, NULL, now()),
     (42, NULL, NULL);
-INSERT INTO cde.lastschrift (id, submitted_by, persona_id, amount, max_dsa, iban, account_owner, account_address, granted_at, revoked_at, notes) VALUES
-    (1, 1, 2, 32.00, 0.4, 'DE26370205000008068900', NULL, NULL, timestamp with time zone '2000-02-22 22:22:22.222222+02', timestamp with time zone '2001-02-22 22:22:22.222222+02', NULL),
-    (2, 1, 2, 42.23, 0.4, 'DE12500105170648489890', 'Dagobert Anatidae', 'Im Geldspeicher 1', timestamp with time zone '2002-02-22 22:22:22.222222+02', NULL, 'reicher Onkel');
+INSERT INTO cde.lastschrift (id, submitted_by, persona_id, amount, iban, account_owner, account_address, granted_at, revoked_at, notes) VALUES
+    (1, 1, 2, 32.00, 'DE26370205000008068900', NULL, NULL, timestamp with time zone '2000-02-22 22:22:22.222222+02', timestamp with time zone '2001-02-22 22:22:22.222222+02', NULL),
+    (2, 1, 2, 42.23, 'DE12500105170648489890', 'Dagobert Anatidae', 'Im Geldspeicher 1', timestamp with time zone '2002-02-22 22:22:22.222222+02', NULL, 'reicher Onkel');
 INSERT INTO cde.lastschrift_transactions (submitted_by, lastschrift_id, period_id, status, amount, issued_at, processed_at, tally) VALUES
     (1, 1, 41, 12, 32.00, timestamp with time zone '2000-03-22 00:00:00+02', timestamp with time zone '2012-03-22 22:22:22.222222+02', 0.00),
     (1, 1, 41, 11, 32.00, timestamp with time zone '2000-03-23 00:00:00+02', timestamp with time zone '2012-03-23 22:22:22.222222+02', -4.50),

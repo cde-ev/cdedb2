@@ -1287,7 +1287,6 @@ _LASTSCHRIFT_COMMON_FIELDS = lambda: {
     'notes': _str_or_None,
 }
 _LASTSCHRIFT_OPTIONAL_FIELDS = lambda: {
-    'max_dsa': _non_negative_decimal,
     'granted_at': _datetime,
     'revoked_at': _datetime_or_None,
 }
@@ -1317,8 +1316,6 @@ def _lastschrift(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    if 'max_dsa' in val and val['max_dsa'] > decimal.Decimal(1):
-        errs.append(('max_dsa', ValueError(n_("Can be at most 1."))))
     return val, errs
 
 @_addvalidator

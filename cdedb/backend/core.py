@@ -944,8 +944,8 @@ class CoreBackend(AbstractBackend):
                 raise ArchiveError(n_("Active lastschrift exists."))
             query = glue(
                 "UPDATE cde.lastschrift",
-                "SET (amount, max_dsa, iban, account_owner, account_address)",
-                "= (%s, %s, %s, %s, %s)",
+                "SET (amount, iban, account_owner, account_address)",
+                "= (%s, %s, %s, %s)",
                 "WHERE persona_id = %s")
             if lastschrift:
                 self.query_exec(rs, query, (0, 0, "", "", "", persona_id))

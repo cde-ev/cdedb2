@@ -503,7 +503,6 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['createlastschriftform']
         f['amount'] = "123.45"
         f['iban'] = "DE26370205000008068900"
-        f['max_dsa'] = "0.1"
         f['notes'] = "grosze Siebte: Take on me"
         self.submit(f)
         self.assertTitle("Einzugsermächtigung Charly C. Clown")
