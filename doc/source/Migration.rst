@@ -21,6 +21,8 @@ The following months should fulfill all wishes:
 * September,
 * October.
 
+The migration is scheduled for the weekend of 2019-03-01 to 2019-03-03.
+
 Then we tidy up the v1 instance with the following steps:
 
 * resolve all outstanding member dataset changes.
@@ -48,8 +50,7 @@ event components.
 Functionality
 """""""""""""
 
-* The IDs have a new format to distinguish them from the old ones (the check
-  digit is a letter now).
+* The IDs have a continue unsing the old format to ensure backwards compatability.
 
 Data
 """"
@@ -65,6 +66,7 @@ Functionality
 
 * There should be little change here except for some goodies (like profile
   foto).
+* The `max_dsa` parameter of Lastschrifts was removed.
 
 Data
 """"
@@ -213,9 +215,18 @@ fsync in the postgres configuration before running this)::
 Take note of the output and double-check any suspicious cases. One more
 manual step has to be done -- initialize the meta info table::
 
-    sudo -u postgres psql -d cdb -c "INSERT INTO core.meta_info (info) VALUES ('{\"Finanzvorstand_Vorname\": \"\", \"Finanzvorstand_Name\": \"\", \"Finanzvorstand_Adresse_Einzeiler\": \"\", \"Finanzvorstand_Adresse_Zeile2\": \"\", \"Finanzvorstand_Adresse_Zeile3\": \"\", \"Finanzvorstand_Adresse_Zeile4\": \"\", \"Finanzvorstand_Ort\": \"\", \"CdE_Konto_Inhaber\": \"\", \"CdE_Konto_IBAN\": \"\", \"CdE_Konto_BIC\": \"\", \"CdE_Konto_Institut\": \"\", \"banner_before_login\": \"\", \"banner_after_login\": \"\"}'::jsonb);"
+    sudo -u postgres psql -d cdb -c "INSERT INTO core.meta_info (info) VALUES ('{\"Finanzvorstand_Vorname\": \"\", \"Finanzvorstand_Name\": \"\", \"Finanzvorstand_Adresse_Einzeiler\": \"\", \"Finanzvorstand_Adresse_Zeile2\": \"\", \"Finanzvorstand_Adresse_Zeile3\": \"\", \"Finanzvorstand_Adresse_Zeile4\": \"\", \"Finanzvorstand_Ort\": \"\", \"CdE_Konto_Inhaber\": \"\", \"CdE_Konto_IBAN\": \"\", \"CdE_Konto_BIC\": \"\", \"CdE_Konto_Institut\": \"\", \"banner_before_login\": \"\", \"Vorstand\": \"\", \"banner_after_login\": \"\"}'::jsonb);"
 
 Finally we dispose of the old dataset::
 
     sudo -u postgres psql -c "DROP DATABASE cdedbxy;"
     sudo -u postgres psql -c "DROP USER cdb_old;"
+
+
+Manual fixes
+------------
+
+Some things still need to be mixed manually after migration. this includes:
+
+* Limit `cde-all` and `cde-info` lists to members only.
+
