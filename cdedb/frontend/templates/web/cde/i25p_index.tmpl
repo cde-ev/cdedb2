@@ -1,56 +1,63 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Initiative 25+{% endblock %}
+{% block title %}
+    {% trans -%}Initiative 25+{%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/i25p_index"), "Initiative 25+ (weitere Informationen)", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("cde/i25p_index"),
+        gettext("Initiative 25+ (Additional Information)"), active=True) }}
 {% endblock %}
 {% block content %}
-    <h2>Initiative 25+ &ndash; Was ist das?</h2>
+    <h2>{% trans -%}Initiative 25+ – What's that?{%- endtrans %}</h2>
 
     <p>
-        Sofern Du die Erlaubnis dazu erteilst, zieht der CdE in Zukunft
-        jährlich 25 € oder einen beliebigen höheren Betrag als Lastschrift
-        von Deinem Konto ein: 25+ eben.
+        {% trans amount=25|money|e -%}
+        	If you give the authorization, the CdE will withdraw {{ amount }}
+            or more annually via Direct Debit.
+        {%- endtrans %}
     </p>
 
     <p>
-        Mit diesen mindestens 25 € wird zunächst der &ndash; jeweils aktuelle &ndash;
-        Mitgliedsbeitrag für ein Jahr verrechnet, derzeit also 5 €. Der
-        Restbetrag kommt dem CdE als Spende zugute. Im Rahmen der
-        Vereinsarbeit soll darauf geachtet werden, dass in etwa 40 bis 50 Prozent
-        davon der Deutschen SchülerAkademie gespendet oder für eine sonstige
-        Unterstützung der „Idee SchülerAkademie“ verwendet werden.
+        {% trans amount=25|money|e, fee=5|money|e, dsa=
+                gettext("Deutsche SchülerAkademie"), idea=gettext("Idee SchülerAkademie")-%}
+        	These {{ amount }} will be used to pay the annual membership fee
+            currently in force, currently {{ fee }}. The remainder is a donation
+            to the CdE. The CdE will make sure, that about 40 to 50 percent of
+            this is given to {{ dsa }} or otherwise used to support the "{{ idea }}".
+        {%- endtrans %}
     </p>
 
-    <h3>Wofür benötigt der CdE Spenden?</h3>
+    <h3>{% trans -%}For what does the CdE need donations?{%- endtrans %}</h3>
 
     <p>
-        Die Pfingst- Sommer-, Winter- und Multinationale Akademie werden
-        durch Spenden bezuschusst. Dadurch sinken ihre Teilnehmerbeiträge,
-        was allen Teilnehmern zugute kommt. Seit 2013 unterstützen wir auch
-        einige kleinere Veranstaltungen mit einem Teil der eingegangen
-        Spenden, etwa das CdE-Seminar, die FamilienAkademie und das
-        Studieninformationswochenende.
+        {% trans -%}
+        	The Pfingst-, Sommer, Winter- and Multinationale Akademie are subsidised
+            with donations. This way the participation fees can be lowered which benefits
+            all participants. Since 2013 we also subsidise some smaller events, such as
+            the CdE-Seminar, the FamilienAkademie and the Studieninformationswochenende.
+        {%- endtrans %}
     </p>
 
-    <h3>Die SchülerAkademie fördern</h3>
+    <h3>{% trans -%}Supporting the SchülerAkademie{%- endtrans %}</h3>
 
     <p>
-        Mit der <em>Initiative 25+</em> soll auch ein Beschluss der
-        Mitgliederversammlung 2008 umgesetzt und von nun an die „Idee
-        SchülerAkademie“ auch finanziell unterstützt werden.  Dazu darf der
-        CdE einen Teil der auf diesem Weg erhaltenen Spenden an Bildung &amp;
-        Begabung gem. GmbH weiterreichen oder aber auf anderem Wege die
-        SchülerAkademien fördern.
+        {% trans initiative="<em>{}</em>".format(gettext("Initiative 25+")), 
+                idea=gettext("Idee SchülerAkademie"),
+                bub=gettext("Bildung &amp; Begabung gem. GmbH") -%}
+        	The {{ initiative }} implements a decision of the General Assembly 2008
+            to support the "{{ idea }}" financially. To this end, the CdE may give a
+            portion of the donations received this way to {{ bub }} or use them to support
+            SchülerAkademien in some other way.
+        {%- endtrans %}
     </p>
 
-    <h2>Formular</h2>
+    <h2>{% trans -%}Authorization Form{%- endtrans %}</h2>
 
     <p>
-        Aus rechtlichen Gründen benötigen wir die Lastschriftermächtigung in
-        Schriftform. Fülle dazu bitte
-        {{ util.href(cdedblink("cde/lastschrift_subscription_form_fill"), "dieses Formular") }}
-        aus und schicke es uns zu.
+        {% trans link=util.href(cdedblink("cde/lastschrift_subscription_form_fill"), gettext("this form")) -%}
+        	For legal reasons, we need the Direct Debit Authorization Form in written form.
+            Please fill {{ link }} and send it to us by mail (not E-Mail).
+        {%- endtrans %}
     </p>
 {% endblock %}

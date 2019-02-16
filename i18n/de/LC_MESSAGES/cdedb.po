@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-16 00:06+0100\n"
+"POT-Creation-Date: 2019-02-16 15:17+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -2014,7 +2014,7 @@ msgid "Already signed up."
 msgstr "Bereits angemeldet."
 
 #: cdedb/frontend/assembly.py:299 cdedb/frontend/assembly.py:590
-#: cdedb/frontend/cde.py:2101 cdedb/frontend/core.py:1548
+#: cdedb/frontend/cde.py:2109 cdedb/frontend/core.py:1548
 #: cdedb/frontend/core.py:1575 cdedb/frontend/event.py:758
 #: cdedb/frontend/event.py:2528 cdedb/frontend/event.py:2895
 #: cdedb/frontend/event.py:3655
@@ -2268,19 +2268,19 @@ msgstr "Adressabfrage noch nicht erledigt."
 msgid "New expuls started."
 msgstr "Nächster Expuls initialisiert."
 
-#: cdedb/frontend/cde.py:2046
+#: cdedb/frontend/cde.py:2054
 msgid "Line {lineno} is faulty."
 msgstr "Zeile {lineno} ist fehlerhaft."
 
-#: cdedb/frontend/cde.py:2055 cdedb/frontend/event.py:654
+#: cdedb/frontend/cde.py:2063 cdedb/frontend/event.py:654
 msgid "Event created."
 msgstr "Veranstaltung erstellt."
 
-#: cdedb/frontend/cde.py:2090 cdedb/frontend/event.py:749
+#: cdedb/frontend/cde.py:2098 cdedb/frontend/event.py:749
 msgid "Course created."
 msgstr "Kurs erstellt"
 
-#: cdedb/frontend/cde.py:2127
+#: cdedb/frontend/cde.py:2135
 msgid "Participant already present."
 msgstr "Teilnehmer bereits vorhanden."
 
@@ -5598,6 +5598,122 @@ msgstr ""
 msgid "Create New Member"
 msgstr "Neues Mitglied anlegen"
 
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:4
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:45
+#: cdedb/frontend/templates/web/cde/index.tmpl:46
+msgid "Initiative 25+"
+msgstr "Initiative 25+"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:9
+msgid "Initiative 25+ (Additional Information)"
+msgstr "Initiative 25+ (weitere Informationen)"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:12
+msgid "Initiative 25+ – What's that?"
+msgstr "Initiative 25+ – Was ist das?"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:15
+#, python-format
+msgid ""
+"If you give the authorization, the CdE will withdraw %(amount)s\n"
+"            or more annually via Direct Debit."
+msgstr ""
+"Sofern Du die Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich "
+"%(amount)s oder einen beliebigen höheren Betrag als Lastschrift von "
+"Deinem Konto ein: 25+ eben."
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:22
+#, python-format
+msgid ""
+"These %(amount)s will be used to pay the annual membership fee\n"
+"            currently in force, currently %(fee)s. The remainder is a "
+"donation\n"
+"            to the CdE. The CdE will make sure, that about 40 to 50 "
+"percent of\n"
+"            this is given to %(dsa)s or otherwise used to support the "
+"\"%(idea)s\"."
+msgstr ""
+"Mit diesen mindestens %(amount)s wird zunächst der – jeweils aktuelle – "
+"Mitgliedsbeitrag für ein Jahr verrechnet, derzeit also %(fee)s. Der "
+"Restbetrag kommt dem CdE als Spende zugute. Im Rahmen der Vereinsarbeit "
+"soll darauf geachtet werden, dass in etwa 40 bis 50 Prozent davon der "
+"%(dsa)s gespendet oder für eine sonstige Unterstützung der „%(idea)s“ "
+"verwendet werden."
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:23
+msgid "Deutsche SchülerAkademie"
+msgstr "Deutschen SchülerAkademie"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:23
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:46
+#: cdedb/frontend/templates/web/cde/index.tmpl:50
+#: cdedb/frontend/templates/web/cde/index.tmpl:68
+msgid "Idee SchülerAkademie"
+msgstr "Idee SchülerAkademie"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:31
+msgid "For what does the CdE need donations?"
+msgstr "Wofür benötigt der CdE Spenden?"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:34
+msgid ""
+"The Pfingst-, Sommer, Winter- and Multinationale Akademie are subsidised\n"
+"            with donations. This way the participation fees can be "
+"lowered which benefits\n"
+"            all participants. Since 2013 we also subsidise some smaller "
+"events, such as\n"
+"            the CdE-Seminar, the FamilienAkademie and the "
+"Studieninformationswochenende."
+msgstr ""
+"Die Pfingst-, Sommer-, Winter- und Multinationale Akademie werden durch "
+"Spenden bezuschusst. Dadurch sinken ihre Teilnehmerbeiträge, was allen "
+"Teilnehmern zugute kommt. Seit 2013 unterstützen wir auch einige kleinere "
+"Veranstaltungen mit einem Teil der eingegangenen Spenden, etwa das CdE-"
+"Seminar, die FamilienAkademie und das Studieninformationswochenende."
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:42
+msgid "Supporting the SchülerAkademie"
+msgstr "Die SchülerAkademie fördern"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:45
+#, python-format
+msgid ""
+"The %(initiative)s implements a decision of the General Assembly 2008\n"
+"            to support the \"%(idea)s\" financially. To this end, the CdE"
+" may give a\n"
+"            portion of the donations received this way to %(bub)s or use "
+"them to support\n"
+"            SchülerAkademien in some other way."
+msgstr ""
+"Mit der %(initiative)s soll auch ein Beschluss der Mitgliederversammlung "
+"2008 umgesetzt werden. Dazu darf der CdE einen Teil der auf diesem Weg "
+"erhaltenen Spenden an %(bub)s weiterreichen oder aber auf anderem Wege "
+"die SchülerAkademien fördern."
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:47
+msgid "Bildung &amp; Begabung gem. GmbH"
+msgstr "Bildung &amp; Begabung gem. GmbH"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:55
+#: cdedb/frontend/templates/web/cde/index.tmpl:76
+#: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:9
+msgid "Authorization Form"
+msgstr "Einzugsermächtigung"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:58
+msgid "this form"
+msgstr "dieses Formular"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:58
+#, python-format
+msgid ""
+"For legal reasons, we need the Direct Debit Authorization Form in written"
+" form.\n"
+"            Please fill %(link)s and send it to us by mail (not E-Mail)."
+msgstr ""
+"Aus rechtlichen Gründen benötigen wir die Lastschriftermächtigung in "
+"Schriftform. Fülle dazu bitte %(link)s aus und schicke es uns zu."
+
 #: cdedb/frontend/templates/web/cde/index.tmpl:4
 msgid "CdE-Member Area"
 msgstr "CdE-Mitgliederbereich"
@@ -5626,10 +5742,6 @@ msgstr ""
 "Um die Mitgliedersuche verwenden zu können, musst Du CdE-Mitglied sein. "
 "Weitere Informationen dazu findest Du weiter unten."
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:46
-msgid "Initiative 25+"
-msgstr "Initiative 25+"
-
 #: cdedb/frontend/templates/web/cde/index.tmpl:49
 #: cdedb/frontend/templates/web/cde/index.tmpl:74
 msgid "More Information"
@@ -5646,11 +5758,6 @@ msgstr ""
 "Mit der Initiative 25+ unterstützt Du den CdE und die %(idea)s finanziell"
 " durch einen Lastschrifteinzug von jährlich %(amount)s oder mehr. "
 "%(link)s"
-
-#: cdedb/frontend/templates/web/cde/index.tmpl:50
-#: cdedb/frontend/templates/web/cde/index.tmpl:68
-msgid "Idee Schülerakademie"
-msgstr "Idee Schülerakademie"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:57
 msgid "You are already a part of the Initiative 25+"
@@ -5682,12 +5789,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/index.tmpl:74
 #, python-format
 msgid "Get %(link_more_info)s or go directly to the %(link_form)s."
-msgstr "%(link_more_info)s dazu oder direkt die %(link_form)s."
-
-#: cdedb/frontend/templates/web/cde/index.tmpl:76
-#: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:9
-msgid "Authorization Form"
-msgstr "Einzugsermächtigung ausfüllen"
+msgstr "%(link_more_info)s dazu oder direkt die %(link_form)s. ausfüllen."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:85
 msgid "Membership-Fee"

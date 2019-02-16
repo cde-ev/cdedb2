@@ -47,7 +47,7 @@
                 {% if has_lastschrift %}
                     <p>
                         {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
-                                 amount=25|money|e, idea=gettext("Idee Schülerakademie") -%}
+                                 amount=25|money|e, idea=gettext("Idee SchülerAkademie") -%}
                             With the Initiative 25+ you can support the CdE and the "{{ idea }}" financially,
                             via Direct Debit of {{ amount }} or more annually. {{ link }}
                         {%- endtrans %}
@@ -65,7 +65,7 @@
                     </p>
                 {% else %}
                     <p>
-                        {% trans amount=25|money|e, idea=gettext("Idee Schülerakademie") -%}
+                        {% trans amount=25|money|e, idea=gettext("Idee SchülerAkademie") -%}
                             You want to support the CdE and the "{{ idea }}" financially?
                             You can give authorization for the CdE to withdraw {{ amount }} or more annually via Direct Debit.
                         {%- endtrans %}
