@@ -1956,7 +1956,10 @@ class CoreBackend(AbstractBackend):
             for e in result:
                 scores[unwrap(e)] += score
         CUTOFF = 21
+        MAX_ENTRIES = 7
         persona_ids = tuple(k for k, v in scores.items() if v > CUTOFF)
+        persona_ids = sorted(persona_ids, key=lambda k: -scores.get(k))
+        persona_ids = persona_ids[:MAX_ENTRIES]
         return self.get_total_personas(rs, persona_ids)
 
     @access("anonymous")
