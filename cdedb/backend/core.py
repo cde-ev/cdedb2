@@ -1011,7 +1011,7 @@ class CoreBackend(AbstractBackend):
             ##
             query = glue(
                 "SELECT id FROM core.changelog WHERE persona_id = %s",
-                "ORDER BY ctime DESC LIMIT 1")
+                "ORDER BY generation DESC LIMIT 1")
             newest = self.query_one(rs, query, (persona_id,))
             query = glue(
                 "DELETE FROM core.changelog",
