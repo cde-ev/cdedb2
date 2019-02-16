@@ -442,7 +442,7 @@ def get_bleach_cleaner():
         'ol', 'strong', 'ul',
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
-        'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre']
+        'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt']
     ATTRIBUTES = {
         'a': ['href', 'title'],
         'abbr': ['title'],
