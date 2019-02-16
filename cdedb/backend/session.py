@@ -19,6 +19,7 @@ from cdedb.common import (glue, make_root_logger, now, PERSONA_STATUS_FIELDS,
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
 
+
 class SessionBackend:
     """Single purpose backend to construct a request state.
 
@@ -38,16 +39,16 @@ class SessionBackend:
             "cdedb.backend.session", getattr(self.conf, "SESSION_BACKEND_LOG"),
             self.conf.LOG_LEVEL, syslog_level=self.conf.SYSLOG_LEVEL,
             console_log_level=self.conf.CONSOLE_LOG_LEVEL)
-        ## logger are thread-safe!
+        # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.session")
-        ## To prevent lots of serialization failures due to races for
-        ## updating time stamps if a user opens several connections at once
-        ## we lower the isolation level for this backend.
-        ##
-        ## This may cause artifacts, but those are not worrisome since the
-        ## writes made are: setting is_active to False (never to True) and
-        ## updating atime (which does not suffer too much from a lost write,
-        ## since the competing write will be pretty similar).
+        # To prevent lots of serialization failures due to races for
+        # updating time stamps if a user opens several connections at once
+        # we lower the isolation level for this backend.
+        #
+        # This may cause artifacts, but those are not worrisome since the
+        # writes made are: setting is_active to False (never to True) and
+        # updating atime (which does not suffer too much from a lost write,
+        # since the competing write will be pretty similar).
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, ("cdb_anonymous", "cdb_persona"),
             secrets, self.conf.DB_PORT,
@@ -87,7 +88,7 @@ class SessionBackend:
                     if data["atime"] + self.conf.SESSION_TIMEOUT >= timestamp:
                         if (data["ctime"] + self.conf.SESSION_LIFESPAN
                                 >= timestamp):
-                            ## here we finally verified the session key
+                            # here we finally verified the session key
                             persona_id = data["persona_id"]
                         else:
                             deactivate = True
@@ -127,7 +128,7 @@ class SessionBackend:
                 data = cur.fetchone()
         if self.conf.LOCKDOWN and not (data['is_admin']
                                        or data['is_core_admin']):
-            ## Short circuit in case of lockdown
+            # Short circuit in case of lockdown
             return User()
         if not data["is_active"]:
             self.logger.warning("Found inactive user {}".format(persona_id))
@@ -137,4 +138,3 @@ class SessionBackend:
                 for k in ('persona_id', 'username', 'given_names',
                           'display_name', 'family_name')}
         return User(roles=extract_roles(data), **vals)
-

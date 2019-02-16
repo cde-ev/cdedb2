@@ -18,6 +18,7 @@ from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 
+
 class MlBackend(AbstractBackend):
     """Take note of the fact that some personas are moderators and thus have
     additional actions available."""
@@ -189,7 +190,7 @@ class MlBackend(AbstractBackend):
             for anid in ids:
                 moderators = {d['persona_id']
                               for d in data if d['mailinglist_id'] == anid}
-                assert('moderators' not in ret[anid])
+                assert ('moderators' not in ret[anid])
                 ret[anid]['moderators'] = moderators
             data = self.sql_select(
                 rs, "ml.whitelist", ("address", "mailinglist_id"), ids,
@@ -197,7 +198,7 @@ class MlBackend(AbstractBackend):
             for anid in ids:
                 whitelist = {d['address']
                              for d in data if d['mailinglist_id'] == anid}
-                assert('whitelist' not in ret[anid])
+                assert ('whitelist' not in ret[anid])
                 ret[anid]['whitelist'] = whitelist
         return ret
 
@@ -331,7 +332,7 @@ class MlBackend(AbstractBackend):
                     for persona_id in requests:
                         ret *= self.decide_request(rs, mailinglist_id,
                                                    persona_id, ack=False)
-                ## Manually delete entries which are not otherwise accessible
+                # Manually delete entries which are not otherwise accessible
                 for table in ("ml.subscription_states", "ml.log"):
                     self.sql_delete_one(rs, table, mailinglist_id,
                                         entity_key="mailinglist_id")
@@ -386,10 +387,10 @@ class MlBackend(AbstractBackend):
                     (ml['assembly_id'],), entity_key="assembly_id")
                 ret = {e['persona_id']: None for e in attendees}
             elif const.SubscriptionPolicy(ml['sub_policy']).is_additive():
-                ## explicits take care of everything
+                # explicits take care of everything
                 pass
             else:
-                ## opt-out lists
+                # opt-out lists
                 query = glue(
                     "SELECT id FROM core.personas",
                     "WHERE {} AND is_active = True".format(
@@ -414,7 +415,7 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int
         :rtype: bool
         """
-        ## validation is done inside
+        # validation is done inside
         return bool(self.subscriptions(rs, persona_id, lists=(mailinglist_id,)))
 
     @access("ml")
@@ -517,13 +518,13 @@ class MlBackend(AbstractBackend):
             subscriptions = self.subscriptions(rs, persona_id,
                                                lists=mailinglist_ids)
             for mailinglist_id in mailinglist_ids:
-                SS = SubscriptionStates
+                ss = SubscriptionStates
                 if mailinglist_id in subscriptions:
-                    ret[(persona_id, mailinglist_id)] = SS.subscribed
+                    ret[(persona_id, mailinglist_id)] = ss.subscribed
                 elif mailinglist_id in requests:
-                    ret[(persona_id, mailinglist_id)] = SS.requested
+                    ret[(persona_id, mailinglist_id)] = ss.requested
                 else:
-                    ret[(persona_id, mailinglist_id)] = SS.unsubscribed
+                    ret[(persona_id, mailinglist_id)] = ss.unsubscribed
         return ret
 
     def write_subscription_state(self, rs, mailinglist_id, persona_id,
@@ -587,7 +588,7 @@ class MlBackend(AbstractBackend):
 
         privileged = self.is_moderator(rs, mailinglist_id) or self.is_admin(rs)
         with Atomizer(rs):
-            ## (1) Initial checks for easy situations
+            # (1) Initial checks for easy situations
             ml = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             if not privileged and not ml['is_active']:
                 return 0
@@ -611,11 +612,11 @@ class MlBackend(AbstractBackend):
                             additional_info=address)
                 return self.write_subscription_state(
                     rs, mailinglist_id, persona_id, subscribe, address)
-            ## (2) Handle actual transitions
+            # (2) Handle actual transitions
             policy = const.AudiencePolicy(ml['audience_policy'])
             roles = extract_roles(self.core.get_persona(rs, persona_id))
             if not policy.check(roles) and not self.is_admin(rs):
-                ## Only admins may add non-matching users
+                # Only admins may add non-matching users
                 return 0
             gateway = False
             if subscribe and ml['gateway']:
@@ -795,9 +796,9 @@ class MlBackend(AbstractBackend):
             mailinglist_id = unwrap(mailinglist_id)
             mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             local_part, domain = mailinglist['address'].split('@')
-            ## We do not use self.core.get_personas since this triggers an
-            ## access violation. It would be quite tedious to fix this so
-            ## it's better to allow a small hack.
+            # We do not use self.core.get_personas since this triggers an
+            # access violation. It would be quite tedious to fix this so
+            # it's better to allow a small hack.
             query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
             tmp = self.query_all(rs, query, (mailinglist['moderators'],))
             moderators = tuple(filter(None, (e['username'] for e in tmp)))
@@ -808,7 +809,7 @@ class MlBackend(AbstractBackend):
                 "address": mailinglist['address'],
                 "admin_address": "{}-owner@{}".format(local_part, domain),
                 "sender": mailinglist['address'],
-                ## "footer" will be set in the frontend
+                # "footer" will be set in the frontend
                 # FIXME "prefix" currently not supported
                 "size_max": mailinglist['maxsize'],
                 "moderators": moderators,
@@ -828,7 +829,7 @@ class MlBackend(AbstractBackend):
         @rtype: [{'address' : unicode, 'inactive' : bool,
                   'maxsize' : int or None, 'mime' : bool or None}]
         """
-        ## FIXME this has a hardcoded value for 'mime'
+        # FIXME this has a hardcoded value for 'mime'
         query = glue("SELECT address, NOT is_active AS inactive, maxsize,",
                      "NULL AS mime FROM ml.mailinglists")
         data = self.query_all(rs, query, tuple())
@@ -843,6 +844,7 @@ class MlBackend(AbstractBackend):
         for the mailinglist software to run the list with the list
         address @address.
 
+        @type rs: :py:class:`cdedb.common.RequestState`
         @type address: unicode
         @rtype: {'listname' : unicode, 'address' : unicode,
                  'sender' : unicode, 'list-unsubscribe' : unicode,
@@ -861,26 +863,25 @@ class MlBackend(AbstractBackend):
             mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             local_part, domain = mailinglist['address'].split('@')
             envelope = local_part + u"-bounces@" + domain
-            ## We do not use self.core.get_personas since this triggers an
-            ## access violation. It would be quite tedious to fix this so
-            ## it's better to allow a small hack.
+            # We do not use self.core.get_personas since this triggers an
+            # access violation. It would be quite tedious to fix this so
+            # it's better to allow a small hack.
             query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
             tmp = self.query_all(rs, query, (mailinglist['moderators'],))
             moderators = tuple(filter(None, (e['username'] for e in tmp)))
             subscribers = tuple(filter(
                 None, self.subscribers(rs, mailinglist_id).values()))
             return {
-                'listname'    : mailinglist['subject_prefix'],
-                'address'     : mailinglist['address'],
-                'moderators'  : moderators,
-                'subscribers' : subscribers,
-                'whitelist'   : tuple(mailinglist['whitelist']),
-                'sender'      : envelope,
+                'listname': mailinglist['subject_prefix'],
+                'address': mailinglist['address'],
+                'moderators': moderators,
+                'subscribers': subscribers,
+                'whitelist': tuple(mailinglist['whitelist']),
+                'sender': envelope,
                 'list-unsubscribe': u"https://db.cde-ev.de/",
                 'list-subscribe': u"https://db.cde-ev.de/",
-                'list-owner'  : u"https://db.cde-ev.de/",
+                'list-owner': u"https://db.cde-ev.de/",
             }
-
 
     @access("ml_script")
     def oldstyle_modlist_export(self, rs, address):
@@ -891,6 +892,7 @@ class MlBackend(AbstractBackend):
         for the mailinglist software to run a list for the moderators
         of the list with address @address.
 
+        @type rs: :py:class:`cdedb.common.RequestState`
         @type address: unicode
         @rtype: {'listname' : unicode, 'address' : unicode,
                  'sender' : unicode, 'list-unsubscribe' : unicode,
@@ -908,22 +910,22 @@ class MlBackend(AbstractBackend):
             mailinglist_id = unwrap(mailinglist_id)
             mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             local_part, domain = mailinglist['address'].split('@')
-            ## We do not use self.core.get_personas since this triggers an
-            ## access violation. It would be quite tedious to fix this so
-            ## it's better to allow a small hack.
+            # We do not use self.core.get_personas since this triggers an
+            # access violation. It would be quite tedious to fix this so
+            # it's better to allow a small hack.
             query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
             tmp = self.query_all(rs, query, (mailinglist['moderators'],))
             moderators = tuple(filter(None, (e['username'] for e in tmp)))
             return {
-                'listname'    : mailinglist['subject_prefix'],
-                'address'     : mailinglist['address'],
-                'moderators'  : moderators,
-                'subscribers' : moderators,
-                'whitelist'   : ['*'],
-                'sender'      : "cdedb-doublebounces@cde-ev.de",
+                'listname': mailinglist['subject_prefix'],
+                'address': mailinglist['address'],
+                'moderators': moderators,
+                'subscribers': moderators,
+                'whitelist': ['*'],
+                'sender': "cdedb-doublebounces@cde-ev.de",
                 'list-unsubscribe': u"https://db.cde-ev.de/",
                 'list-subscribe': u"https://db.cde-ev.de/",
-                'list-owner'  : u"https://db.cde-ev.de/",
+                'list-owner': u"https://db.cde-ev.de/",
             }
 
     @access("ml_script")
@@ -931,9 +933,9 @@ class MlBackend(AbstractBackend):
         address = affirm("email", address)
         error = affirm("int", error)
         with Atomizer(rs):
-            ## We do not use self.core.get_personas since this triggers an
-            ## access violation. It would be quite tedious to fix this so
-            ## it's better to allow a small hack.
+            # We do not use self.core.get_personas since this triggers an
+            # access violation. It would be quite tedious to fix this so
+            # it's better to allow a small hack.
             query = glue("SELECT id, username FROM core.personas",
                          "WHERE username = lower(%s)")
             data = self.query_all(rs, query, (address,))

@@ -20,6 +20,7 @@ from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 
+
 class CdEBackend(AbstractBackend):
     """This is the backend with the most additional role logic.
 
@@ -89,6 +90,7 @@ class CdEBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
+        :type persona_id: int or None
         :type start: int or None
         :type stop: int or None
         :rtype: [{str: object}]
@@ -105,7 +107,7 @@ class CdEBackend(AbstractBackend):
             "additional_info, members, total FROM cde.finance_log {}",
             "ORDER BY id DESC")
         if stop:
-            query = glue(query, "LIMIT {}".format(stop-start))
+            query = glue(query, "LIMIT {}".format(stop - start))
         if start:
             query = glue(query, "OFFSET {}".format(start))
         condition = ""
@@ -174,14 +176,14 @@ class CdEBackend(AbstractBackend):
         """
         data = affirm("lastschrift", data)
         with Atomizer(rs):
-            ## First check whether we revoke a lastschrift
+            # First check whether we revoke a lastschrift
             log_code = const.FinanceLogCodes.modify_lastschrift
             if data.get('revoked_at'):
                 current = unwrap(self.sql_select_one(
                     rs, "cde.lastschrift", ("revoked_at",), data['id']))
                 if not current:
                     log_code = const.FinanceLogCodes.revoke_lastschrift
-            ## Now make the change
+            # Now make the change
             ret = self.sql_update(rs, "cde.lastschrift", data)
             persona_id = unwrap(self.sql_select_one(
                 rs, "cde.lastschrift", ("persona_id",), data['id']))
@@ -342,7 +344,8 @@ class CdEBackend(AbstractBackend):
                 elif status == const.LastschriftTransactionStati.cancelled:
                     tally = decimal.Decimal(0)
                 else:
-                    raise ValueError(n_("Missing tally for failed transaction."))
+                    raise ValueError(
+                        n_("Missing tally for failed transaction."))
             update = {
                 'id': transaction_id,
                 'processed_at': now(),
@@ -365,7 +368,7 @@ class CdEBackend(AbstractBackend):
                     rs, persona_id, new_balance,
                     const.FinanceLogCodes.lastschrift_transaction_success,
                     change_note=n_("Successful direct debit transaction."))
-                ## Return early since change_persona_balance does the logging
+                # Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:
                 code = const.FinanceLogCodes.lastschrift_transaction_failure
@@ -440,12 +443,12 @@ class CdEBackend(AbstractBackend):
         :type lastschrift: {str: object}
         :rtype: bool
         """
-        if now() - datetime.timedelta(days=2*365) < lastschrift['granted_at']:
-            ## If the permit is new enough we are clear.
+        if now() - datetime.timedelta(days=2 * 365) < lastschrift['granted_at']:
+            # If the permit is new enough we are clear.
             return True
         with Atomizer(rs):
             period = self.current_period(rs)
-            cutoff = period - 3*self.conf.PERIODS_PER_YEAR + 1
+            cutoff = period - 3 * self.conf.PERIODS_PER_YEAR + 1
             relevant_periods = tuple(range(cutoff, period + 1))
             ids = self.list_lastschrift_transactions(
                 rs, lastschrift_ids=(lastschrift['id'],),
@@ -473,7 +476,7 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             lastschrift = unwrap(self.get_lastschrifts(rs, (lastschrift_id,)))
             if not self.lastschrift_may_skip(rs, lastschrift):
-                ## Skipping will invalidate permit.
+                # Skipping will invalidate permit.
                 return 0
             if lastschrift['revoked_at']:
                 raise RuntimeError(n_("Lastschrift already revoked."))

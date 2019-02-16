@@ -43,6 +43,7 @@ from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 
+
 class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
     realm = "assembly"
@@ -138,7 +139,7 @@ class AssemblyBackend(AbstractBackend):
         """
         if rs.is_quiet:
             return 0
-        ## do not use sql_insert since it throws an error for selecting the id
+        # do not use sql_insert since it throws an error for selecting the id
         query = glue(
             "INSERT INTO assembly.log",
             "(code, assembly_id, submitted_by, persona_id, additional_info)",
@@ -378,7 +379,7 @@ class AssemblyBackend(AbstractBackend):
             for anid in ids:
                 candidates = {e['id']: e for e in data
                               if e['ballot_id'] == anid}
-                assert('candidates' not in ret[anid])
+                assert ('candidates' not in ret[anid])
                 ret[anid]['candidates'] = candidates
             if "member" not in rs.user.roles:
                 ret = {k: v for k, v in ret.items()
@@ -424,14 +425,14 @@ class AssemblyBackend(AbstractBackend):
                     current['assembly_id'], additional_info=current['title'])
             if 'candidates' in data:
                 existing = set(current['candidates'].keys())
-                if not(existing >= {x for x in data['candidates'] if x > 0}):
+                if not (existing >= {x for x in data['candidates'] if x > 0}):
                     raise ValueError(n_("Non-existing candidates specified."))
                 new = {x for x in data['candidates'] if x < 0}
                 updated = {x for x in data['candidates']
                            if x > 0 and data['candidates'][x] is not None}
                 deleted = {x for x in data['candidates']
                            if x > 0 and data['candidates'][x] is None}
-                ## new
+                # new
                 for x in new:
                     new_candidate = copy.deepcopy(data['candidates'][x])
                     new_candidate['ballot_id'] = data['id']
@@ -441,7 +442,7 @@ class AssemblyBackend(AbstractBackend):
                         rs, const.AssemblyLogCodes.candidate_added,
                         current['assembly_id'],
                         additional_info=data['candidates'][x]['moniker'])
-                ## updated
+                # updated
                 for x in updated:
                     update = copy.deepcopy(data['candidates'][x])
                     update['id'] = x
@@ -450,7 +451,7 @@ class AssemblyBackend(AbstractBackend):
                         rs, const.AssemblyLogCodes.candidate_updated,
                         current['assembly_id'],
                         additional_info=current['candidates'][x]['moniker'])
-                ## deleted
+                # deleted
                 if deleted:
                     ret *= self.sql_delete(rs, "assembly.candidates", deleted)
                     for x in deleted:
@@ -479,8 +480,8 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(n_("Assembly already concluded."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
-            ## do a little dance, so that creating a running ballot does not
-            ## throw an error
+            # do a little dance, so that creating a running ballot does not
+            # throw an error
             begin, bdata['vote_begin'] = bdata['vote_begin'], FUTURE_TIMESTAMP
             new_id = self.sql_insert(rs, "assembly.ballots", bdata)
             if 'candidates' in data:
@@ -489,7 +490,7 @@ class AssemblyBackend(AbstractBackend):
                     'candidates': data['candidates'],
                 }
                 self.set_ballot(rs, cdata)
-            ## update voter register
+            # update voter register
             attendees = self.sql_select(
                 rs, "assembly.attendees", ("persona_id",),
                 (data['assembly_id'],), entity_key="assembly_id")
@@ -499,7 +500,7 @@ class AssemblyBackend(AbstractBackend):
                     'ballot_id': new_id,
                 }
                 self.sql_insert(rs, "assembly.voter_register", entry)
-            ## fix vote_begin stashed above
+            # fix vote_begin stashed above
             update = {
                 'id': new_id,
                 'vote_begin': begin,
@@ -546,7 +547,7 @@ class AssemblyBackend(AbstractBackend):
                     attachments = self.list_attachments(rs, ballot_id=ballot_id)
                     for aid in attachments:
                         self.remove_attachment(rs, aid)
-                ## Manually delete entries which are not otherwise accessible
+                # Manually delete entries which are not otherwise accessible
                 self.sql_delete_one(rs, "assembly.voter_register", ballot_id,
                                     entity_key="ballot_id")
             ret *= self.sql_delete_one(rs, "assembly.ballots", ballot_id)
@@ -586,7 +587,7 @@ class AssemblyBackend(AbstractBackend):
                 'id': ballot_id,
                 'extended': len(votes) < ballot['quorum'],
             }
-            ## do not use set_ballot since it would throw an error
+            # do not use set_ballot since it would throw an error
             self.sql_update(rs, "assembly.ballots", update)
             if update['extended']:
                 self.assembly_log(
@@ -609,7 +610,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             if self.check_attendance(rs, assembly_id=assembly_id,
                                      persona_id=persona_id):
-                ## already signed up
+                # already signed up
                 return None
             assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
             if now() > assembly['signup_end']:
@@ -623,7 +624,7 @@ class AssemblyBackend(AbstractBackend):
             self.sql_insert(rs, "assembly.attendees", new_attendee)
             self.assembly_log(rs, const.AssemblyLogCodes.new_attendee,
                               assembly_id, persona_id=persona_id)
-            ## update voter register
+            # update voter register
             ballots = self.list_ballots(rs, assembly_id)
             for ballot in ballots:
                 entry = {
@@ -642,6 +643,7 @@ class AssemblyBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
+        :type persona_id: int
         :rtype: str or None
         :returns: The secret if a new secret was generated or None if we
           already attend.
@@ -806,8 +808,8 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm("id", ballot_id)
 
-        ## We do not use jinja here as it is currently only used in the
-        ## frontend.
+        # We do not use jinja here as it is currently only used in the
+        # frontend.
         template = string.Template("""{
     "assembly": ${ASSEMBLY},
     "ballot": ${BALLOT},
@@ -852,13 +854,13 @@ class AssemblyBackend(AbstractBackend):
                 'id': ballot_id,
                 'is_tallied': True,
             }
-            ## do not use set_ballot since it would throw an error
+            # do not use set_ballot since it would throw an error
             self.sql_update(rs, "assembly.ballots", update)
             self.assembly_log(
                 rs, const.AssemblyLogCodes.ballot_tallied,
                 ballot['assembly_id'], additional_info=ballot['title'])
 
-            ## now generate the result file
+            # now generate the result file
             esc = json_serialize
             assembly = unwrap(
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
@@ -884,7 +886,7 @@ class AssemblyBackend(AbstractBackend):
                 'CANDIDATES': candidates,
                 'USE_BAR': esc(ballot['use_bar']),
                 'VOTERS': voter_list,
-                'VOTES': vote_list,})
+                'VOTES': vote_list, })
             path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
             with open_utf8(path, 'w') as f:
                 f.write(result_file)
@@ -929,7 +931,7 @@ class AssemblyBackend(AbstractBackend):
                 'secret': None
             }
             self.sql_update(rs, "assembly.attendees", update,
-                                   entity_key="assembly_id")
+                            entity_key="assembly_id")
             self.assembly_log(rs, const.AssemblyLogCodes.assembly_concluded,
                               assembly_id)
         return ret
