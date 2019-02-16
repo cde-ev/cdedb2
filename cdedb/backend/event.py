@@ -827,7 +827,7 @@ class EventBackend(AbstractBackend):
             event = None
             if ret:
                 events = {e['event_id'] for e in data}
-                if len(events) != 1:
+                if len(events) > 1:
                     raise ValueError(n_(
                         "Only courses from exactly one event allowed!"))
                 event = self.get_event(rs, unwrap(events))
@@ -1175,7 +1175,7 @@ class EventBackend(AbstractBackend):
                                          ("persona_id", "event_id"), ids)
             events = {e['event_id'] for e in associated}
             personas = {e['persona_id'] for e in associated}
-            if len(events) != 1:
+            if len(events) > 1:
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed!"))
             event_id = unwrap(events)
@@ -1530,7 +1530,7 @@ class EventBackend(AbstractBackend):
             data = self.sql_select(rs, "event.lodgements", LODGEMENT_FIELDS,
                                    ids)
             events = {e['event_id'] for e in data}
-            if len(events) != 1:
+            if len(events) > 1:
                 raise ValueError(n_(
                     "Only lodgements from exactly one event allowed!"))
             event_id = unwrap(events)
