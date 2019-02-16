@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-16 15:17+0100\n"
+"POT-Creation-Date: 2019-02-16 15:41+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -5176,6 +5176,7 @@ msgid "CdE-Member Search"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:16
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:11
 #: cdedb/frontend/templates/web/cde/index.tmpl:30
 msgid "Privacy Policy"
 msgstr ""
@@ -5393,6 +5394,80 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:33
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:26
 msgid "Cutoff date"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:5
+msgid "Consent to Member Search"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:15
+msgid ""
+"The CdE-Datenbank provides several capabilities, one of which is\n"
+"            an electronical member index."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:22
+msgid "You have not yet decided, whether you want to be visible in this index."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:28
+msgid "You have decided to be visible in this index."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:34
+msgid "You have decided you do not want to be visible in this index."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:41
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:92
+msgid "Decide later"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:44
+msgid "Consent"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:47
+msgid ""
+"The CdE-Datenbank relies on the principle of mutuality:\n"
+"            Only if you consent to the following, others can access your "
+"data\n"
+"            and you can search for and access others."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:56
+msgid "I accept, that my data may be mailed to other CdE-Members by post."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:62
+msgid ""
+"I accept that my personal information can be accessed by other CdE-"
+"Members via the internet.\n"
+"                (All data is encrypted and password-protected. The CdE "
+"can only contact you per E-Mail to give\n"
+"                you important information and to remind you about "
+"outstanding fees, if you consent to the\n"
+"                storage of your data.)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:71
+msgid ""
+"I hereby declare, that I will not pass the data of CdE-Members to third "
+"parties\n"
+"                and that I will will not use it for any purpose, that is "
+"not in the sense and purpose of the CdE."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:81
+msgid "Give consent"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:89
+msgid "Refuse consent"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:94
+msgid "Don't change anything"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:7

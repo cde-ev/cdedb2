@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-02-16 15:17+0100\n"
+"POT-Creation-Date: 2019-02-16 15:41+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -5320,6 +5320,7 @@ msgid "CdE-Member Search"
 msgstr "CdE-Mitglied suchen"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:16
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:11
 #: cdedb/frontend/templates/web/cde/index.tmpl:30
 msgid "Privacy Policy"
 msgstr "Datenschutzerklärung"
@@ -5541,6 +5542,80 @@ msgstr "Organisation"
 msgid "Cutoff date"
 msgstr "Stichtag"
 
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:5
+msgid "Consent to Member Search"
+msgstr "Einwilligung zur Mitgliedersuche"
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:15
+msgid ""
+"The CdE-Datenbank provides several capabilities, one of which is\n"
+"            an electronical member index."
+msgstr "Die CdE-Datenbank stellt verschiedene Möglichkeiten bereit, eine davon ist ein elektronisches Mitgliederverzeichnis."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:22
+msgid "You have not yet decided, whether you want to be visible in this index."
+msgstr "Du hast Dich noch nicht entschieden, ob Du in diesem sichtbar sein möchtest."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:28
+msgid "You have decided to be visible in this index."
+msgstr "Du hast Dich dafür entschieden in diesem sichtbar zu sein."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:34
+msgid "You have decided you do not want to be visible in this index."
+msgstr "Du hast Dich dagegen entschieden in diesem sichtbar zu sein."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:41
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:92
+msgid "Decide later"
+msgstr "Später entscheiden"
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:44
+msgid "Consent"
+msgstr "Einwilligung"
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:47
+msgid ""
+"The CdE-Datenbank relies on the principle of mutuality:\n"
+"            Only if you consent to the following, others can access your "
+"data\n"
+"            and you can search for and access others."
+msgstr "Die CdE-Datenbank beruht auf dem Prinzip der Gegenseitigkeit: nur wenn Du die folgende Einwilligung erteilst, können andere Deine Daten aufrufen und Du die Daten anderer suchen und aufrufen."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:56
+msgid "I accept, that my data may be mailed to other CdE-Members by post."
+msgstr "Ich erkläre mich damit einverstanden, dass meine Daten per Post an andere CdEler verrschickt werden können."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:62
+msgid ""
+"I accept that my personal information can be accessed by other CdE-"
+"Members via the internet.\n"
+"                (All data is encrypted and password-protected. The CdE "
+"can only contact you per E-Mail to give\n"
+"                you important information and to remind you about "
+"outstanding fees, if you consent to the\n"
+"                storage of your data.)"
+msgstr "Ich erkläre mich damit einverstanden, dass meine persönlichen Daten auch im Internet von anderen CdElern eingesehen werden können. (Die Daten sind passwortgeschützt und werden verschlüsselt übertragen. Nur bei Einverständnis mit der Speicherung kann Dir der CdE Mails mit wichtigen Informationen und Erinnerungen an zu zahlende Beiträge scchicken.)"
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:71
+msgid ""
+"I hereby declare, that I will not pass the data of CdE-Members to third "
+"parties\n"
+"                and that I will will not use it for any purpose, that is "
+"not in the sense and purpose of the CdE."
+msgstr "Ich erkläre, dass ich Daten anderer CdEler nicht an Dritte weitergeben oder zu Zwecken benutzen werde, die nicht Sinn und Aufgabe des CdE sind."
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:81
+msgid "Give consent"
+msgstr "Einwilligung erteilen"
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:89
+msgid "Refuse consent"
+msgstr "Einwilligung verweigern"
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:94
+msgid "Don't change anything"
+msgstr "Nichts ändern"
+
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:7
 #, python-format
 msgid "Create Course (%(pevent)s)"
@@ -5667,8 +5742,8 @@ msgid ""
 msgstr ""
 "Die Pfingst-, Sommer-, Winter- und Multinationale Akademie werden durch "
 "Spenden bezuschusst. Dadurch sinken ihre Teilnehmerbeiträge, was allen "
-"Teilnehmern zugute kommt. Seit 2013 unterstützen wir auch einige kleinere "
-"Veranstaltungen mit einem Teil der eingegangenen Spenden, etwa das CdE-"
+"Teilnehmern zugute kommt. Seit 2013 unterstützen wir auch einige kleinere"
+" Veranstaltungen mit einem Teil der eingegangenen Spenden, etwa das CdE-"
 "Seminar, die FamilienAkademie und das Studieninformationswochenende."
 
 #: cdedb/frontend/templates/web/cde/i25p_index.tmpl:42
