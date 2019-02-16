@@ -11,35 +11,38 @@ import enum
 
 from cdedb.common import n_
 
+
 @enum.unique
 class Genders(enum.IntEnum):
     """Spec for field gender of core.personas."""
-    female = 1 #:
-    male = 2 #:
+    female = 1  #:
+    male = 2  #:
     #: this is a catch-all for complicated reality
     other = 10
-    not_specified = 20 #:
+    not_specified = 20  #:
+
 
 @enum.unique
 class MemberChangeStati(enum.IntEnum):
     """Spec for field change_status of core.changelog."""
-    pending = 1 #:
-    committed = 2 #:
-    superseded = 10 #:
-    nacked = 11 #:
+    pending = 1  #:
+    committed = 2  #:
+    superseded = 10  #:
+    nacked = 11  #:
     #: replaced by a change which could not wait
     displaced = 12
+
 
 @enum.unique
 class RegistrationPartStati(enum.IntEnum):
     """Spec for field status of event.registration_parts."""
-    not_applied = -1 #:
-    applied = 1 #:
-    participant = 2 #:
-    waitlist = 3 #:
-    guest = 4 #:
-    cancelled = 5 #:
-    rejected = 6 #:
+    not_applied = -1  #:
+    applied = 1  #:
+    participant = 2  #:
+    waitlist = 3  #:
+    guest = 4  #:
+    cancelled = 5  #:
+    rejected = 6  #:
 
     def is_involved(self):
         """Any status which warrants further attention by the orgas.
@@ -59,12 +62,14 @@ class RegistrationPartStati(enum.IntEnum):
         return self in (RegistrationPartStati.participant,
                         RegistrationPartStati.guest,)
 
+
 @enum.unique
 class FieldAssociations(enum.IntEnum):
     """Coordinates fields to the entities they are attached to."""
-    registration = 1 #:
-    course = 2 #:
-    lodgement = 3 #:
+    registration = 1  #:
+    course = 2  #:
+    lodgement = 3  #:
+
 
 @enum.unique
 class GenesisStati(enum.IntEnum):
@@ -80,13 +85,14 @@ class GenesisStati(enum.IntEnum):
     #: reviewed and rejected (also a final state)
     rejected = 10
 
+
 @enum.unique
 class SubscriptionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: everybody is subscribed (think CdE-all)
     mandatory = 1
-    opt_out = 2 #:
-    opt_in = 3 #:
+    opt_out = 2  #:
+    opt_in = 3  #:
     #: everybody may subscribe, but only after approval
     moderated_opt_in = 4
     #: nobody may subscribe by themselves
@@ -116,13 +122,15 @@ class SubscriptionPolicy(enum.IntEnum):
         else:
             return self == SubscriptionPolicy.mandatory
 
+
 @enum.unique
 class ModerationPolicy(enum.IntEnum):
     """Regulate posting of mail to a list."""
-    unmoderated = 1 #:
+    unmoderated = 1  #:
     #: subscribers may post without moderation, but external mail is reviewed
     non_subscribers = 2
-    fully_moderated = 3 #:
+    fully_moderated = 3  #:
+
 
 @enum.unique
 class AttachmentPolicy(enum.IntEnum):
@@ -130,19 +138,20 @@ class AttachmentPolicy(enum.IntEnum):
 
     This is currently only a tri-state, so we implement it as an enum.
     """
-    allow = 1 #:
+    allow = 1  #:
     #: allow the mime-type application/pdf but nothing else
     pdf_only = 2
-    forbid = 3 #:
+    forbid = 3  #:
+
 
 @enum.unique
 class AudiencePolicy(enum.IntEnum):
     """Regulate who may subscribe to a mailing list by status."""
-    everybody = 1 #:
-    require_assembly = 2 #:
-    require_event = 3 #:
-    require_cde = 4 #:
-    require_member = 5 #:
+    everybody = 1  #:
+    require_assembly = 2  #:
+    require_event = 3  #:
+    require_cde = 4  #:
+    require_member = 5  #:
 
     @staticmethod
     def applicable(roles):
@@ -201,15 +210,16 @@ class AudiencePolicy(enum.IntEnum):
         else:
             raise RuntimeError(n_("Impossible."))
 
+
 @enum.unique
 class LastschriftTransactionStati(enum.IntEnum):
     """Basically store the outcome (if it exists) of a transaction."""
-    issued = 1 #:
-    skipped = 2 #:
-    success = 10 #:
-    failure = 11 #:
-    cancelled = 12 #:
-    rollback = 20 #:
+    issued = 1  #:
+    skipped = 2  #:
+    success = 10  #:
+    failure = 11  #:
+    cancelled = 12  #:
+    rollback = 20  #:
 
     def is_finalized(self):
         """Whether the transaction was already tallied.
@@ -220,126 +230,133 @@ class LastschriftTransactionStati(enum.IntEnum):
                         LastschriftTransactionStati.failure,
                         LastschriftTransactionStati.cancelled,
                         LastschriftTransactionStati.rollback)
-    
+
+
 @enum.unique
 class CoreLogCodes(enum.IntEnum):
     """Available log messages core.log."""
-    persona_creation = 1 #:
-    persona_change = 2 #:
-    password_change = 10 #:
-    password_reset_cookie = 11 #:
-    password_reset = 12 #:
-    password_generated = 13 #:
-    genesis_request = 20 #:
-    genesis_approved = 21 #:
-    genesis_rejected = 22 #:
+    persona_creation = 1  #:
+    persona_change = 2  #:
+    password_change = 10  #:
+    password_reset_cookie = 11  #:
+    password_reset = 12  #:
+    password_generated = 13  #:
+    genesis_request = 20  #:
+    genesis_approved = 21  #:
+    genesis_rejected = 22  #:
+
 
 @enum.unique
 class CdeLogCodes(enum.IntEnum):
     """Available log messages cde.log."""
-    advance_semester = 1 #:
-    advance_expuls = 2 #:
+    advance_semester = 1  #:
+    advance_expuls = 2  #:
+
 
 @enum.unique
 class FinanceLogCodes(enum.IntEnum):
     """Available log messages cde.finance_log."""
-    new_member = 1 #:
-    gain_membership = 2 #:
-    lose_membership = 3 #:
-    increase_balance = 10 #:
-    deduct_membership_fee = 11 #:
-    end_trial_membership = 12 #:
-    grant_lastschrift = 20 #:
-    revoke_lastschrift = 21 #:
-    modify_lastschrift = 22 #:
-    lastschrift_transaction_issue = 30 #:
-    lastschrift_transaction_success = 31 #:
-    lastschrift_transaction_failure = 32 #:
-    lastschrift_transaction_skip = 33 #:
-    lastschrift_transaction_cancelled = 34 #:
-    lastschrift_transaction_revoked = 35 #:
+    new_member = 1  #:
+    gain_membership = 2  #:
+    lose_membership = 3  #:
+    increase_balance = 10  #:
+    deduct_membership_fee = 11  #:
+    end_trial_membership = 12  #:
+    grant_lastschrift = 20  #:
+    revoke_lastschrift = 21  #:
+    modify_lastschrift = 22  #:
+    lastschrift_transaction_issue = 30  #:
+    lastschrift_transaction_success = 31  #:
+    lastschrift_transaction_failure = 32  #:
+    lastschrift_transaction_skip = 33  #:
+    lastschrift_transaction_cancelled = 34  #:
+    lastschrift_transaction_revoked = 35  #:
     #: Fallback for strange cases
     other = 99
+
 
 @enum.unique
 class EventLogCodes(enum.IntEnum):
     """Available log messages event.log."""
-    event_created = 1 #:
-    event_changed = 2 #:
-    orga_added = 10 #:
-    orga_removed = 11 #:
-    part_created = 15 #:
-    part_changed = 16 #:
-    part_deleted = 17 #:
-    field_added = 20 #:
-    field_updated = 21 #:
-    field_removed = 22 #:
-    lodgement_changed = 25 #:
-    lodgement_created = 26 #:
-    lodgement_deleted = 27 #:
-    questionnaire_changed = 30 #:
-    track_added = 35 #:
-    track_updated = 36 #:
-    track_removed = 37 #:
-    course_created = 40 #:
-    course_changed = 41 #:
-    course_segments_changed = 42 #:
-    course_segment_activity_changed = 43 #:
-    course_deleted = 44 #:
-    registration_created = 50 #:
-    registration_changed = 51 #:
-    registration_deleted = 52 #:
-    event_locked = 60 #:
-    event_unlocked = 61 #:
+    event_created = 1  #:
+    event_changed = 2  #:
+    orga_added = 10  #:
+    orga_removed = 11  #:
+    part_created = 15  #:
+    part_changed = 16  #:
+    part_deleted = 17  #:
+    field_added = 20  #:
+    field_updated = 21  #:
+    field_removed = 22  #:
+    lodgement_changed = 25  #:
+    lodgement_created = 26  #:
+    lodgement_deleted = 27  #:
+    questionnaire_changed = 30  #:
+    track_added = 35  #:
+    track_updated = 36  #:
+    track_removed = 37  #:
+    course_created = 40  #:
+    course_changed = 41  #:
+    course_segments_changed = 42  #:
+    course_segment_activity_changed = 43  #:
+    course_deleted = 44  #:
+    registration_created = 50  #:
+    registration_changed = 51  #:
+    registration_deleted = 52  #:
+    event_locked = 60  #:
+    event_unlocked = 61  #:
+
 
 @enum.unique
 class PastEventLogCodes(enum.IntEnum):
     """Available log messages past_event.log."""
-    event_created = 1 #:
-    event_changed = 2 #:
-    course_created = 10 #:
-    course_changed = 11 #:
-    course_deleted = 12 #:
-    participant_added = 20 #:
-    participant_removed = 21 #:
-    institution_created = 30 #:
-    institution_changed = 31 #:
-    institution_deleted = 32 #:
+    event_created = 1  #:
+    event_changed = 2  #:
+    course_created = 10  #:
+    course_changed = 11  #:
+    course_deleted = 12  #:
+    participant_added = 20  #:
+    participant_removed = 21  #:
+    institution_created = 30  #:
+    institution_changed = 31  #:
+    institution_deleted = 32  #:
+
 
 @enum.unique
 class AssemblyLogCodes(enum.IntEnum):
     """Available log messages core.log."""
-    assembly_created = 1 #:
-    assembly_changed = 2 #:
-    assembly_concluded = 3 #:
-    ballot_created = 10 #:
-    ballot_changed = 11 #:
-    ballot_deleted = 12 #:
-    ballot_extended = 13 #:
-    ballot_tallied = 14 #:
-    candidate_added = 20 #:
-    candidate_updated = 21 #:
-    candidate_removed = 22 #:
-    new_attendee = 30 #:
-    attachment_added = 40 #:
-    attachment_removed = 41 #:
+    assembly_created = 1  #:
+    assembly_changed = 2  #:
+    assembly_concluded = 3  #:
+    ballot_created = 10  #:
+    ballot_changed = 11  #:
+    ballot_deleted = 12  #:
+    ballot_extended = 13  #:
+    ballot_tallied = 14  #:
+    candidate_added = 20  #:
+    candidate_updated = 21  #:
+    candidate_removed = 22  #:
+    new_attendee = 30  #:
+    attachment_added = 40  #:
+    attachment_removed = 41  #:
+
 
 @enum.unique
 class MlLogCodes(enum.IntEnum):
     """Available log messages for ml.log."""
-    list_created = 1 #:
-    list_changed = 2 #:
-    list_deleted = 3 #:
-    moderator_added = 10 #:
-    moderator_removed = 11 #:
-    whitelist_added = 12 #:
-    whitelist_removed = 13 #:
-    subscription_requested = 20 #:
-    subscribed = 21 #:
-    subscription_changed = 22 #:
-    unsubscribed = 23 #:
-    marked_override = 24 #:
-    request_approved = 30 #:
-    request_denied = 31 #:
-    request_cancelled = 32 #:
-    email_trouble = 40 #:
+    list_created = 1  #:
+    list_changed = 2  #:
+    list_deleted = 3  #:
+    moderator_added = 10  #:
+    moderator_removed = 11  #:
+    whitelist_added = 12  #:
+    whitelist_removed = 13  #:
+    subscription_requested = 20  #:
+    subscribed = 21  #:
+    subscription_changed = 22  #:
+    unsubscribed = 23  #:
+    marked_override = 24  #:
+    request_approved = 30  #:
+    request_denied = 31  #:
+    request_cancelled = 32  #:
+    email_trouble = 40  #:

@@ -13,15 +13,19 @@ import logging
 import psycopg2
 import psycopg2.extras
 import psycopg2.extensions
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
-psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 
 from cdedb.common import n_
 from cdedb.config import BasicConfig
+
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
+psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
+
 _BASICCONF = BasicConfig()
 
 _LOGGER = logging.getLogger(__name__)
+
 
 def _create_connection(dbname, dbuser, password, port,
                        isolation_level=SERIALIZABLE):
@@ -48,6 +52,7 @@ def _create_connection(dbname, dbuser, password, port,
     conn.set_session(isolation_level)
     _LOGGER.debug("Created connection to {} as {}".format(dbname, dbuser))
     return conn
+
 
 def connection_pool_factory(dbname, roles, secrets, port,
                             isolation_level=SERIALIZABLE):
@@ -76,14 +81,17 @@ def connection_pool_factory(dbname, roles, secrets, port,
     :returns: dict-like object with semantics {str :
                 :py:class:`IrradiatedConnection`}
     """
+
     class InstantConnectionPool:
         """Dict-like for providing database connections."""
+
         def __init__(self, roles):
             self.roles = roles
 
         def __getitem__(self, role):
-            if not role in self.roles:
-                raise ValueError(n_("role {role} not available"), {'role': role})
+            if role not in self.roles:
+                raise ValueError(n_("role {role} not available"),
+                                 {'role': role})
             return _create_connection(
                 dbname, role, secrets.CDB_DATABASE_ROLES[role], port,
                 isolation_level)
@@ -100,6 +108,7 @@ def connection_pool_factory(dbname, roles, secrets, port,
     _LOGGER.info("Initialised instant connection pool for roles {}".format(
         roles))
     return InstantConnectionPool(roles)
+
 
 class Atomizer:
     """Helper to create atomic transactions.
@@ -133,6 +142,7 @@ class Atomizer:
     something goes wrong. We detect suppressed exceptions and complain
     about them, however they are still a bad idea.
     """
+
     def __init__(self, rs):
         """
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -147,6 +157,7 @@ class Atomizer:
         self.rs._conn.decontaminate()
         return self.rs._conn.__exit__(atype, value, tb)
 
+
 class IrradiatedConnection(psycopg2.extensions.connection):
     """Minimally modified version of :py:class:`psycopg2.extensions.connection`
     to facilitate :py:class:`Atomizer`.
@@ -157,10 +168,11 @@ class IrradiatedConnection(psycopg2.extensions.connection):
 
     See :py:class:`Atomizer` for the documentation.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._radiation_level = 0
-        ## keep a copy of any exception we encounter
+        # keep a copy of any exception we encounter
         self._saved_etype = None
         self._saved_evalue = None
         self._saved_tb = None
@@ -171,7 +183,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
         else:
             if self.status != psycopg2.extensions.STATUS_READY:
                 raise RuntimeError(n_("Connection in use!"))
-            ## clear saved exception
+            # clear saved exception
             self._saved_etype = None
             self._saved_evalue = None
             self._saved_tb = None
@@ -179,21 +191,21 @@ class IrradiatedConnection(psycopg2.extensions.connection):
 
     def __exit__(self, etype, evalue, tb):
         if self._radiation_level:
-            ## grab any exception
+            # grab any exception
             self._saved_etype = etype or self._saved_etype
             self._saved_evalue = evalue or self._saved_evalue
             self._saved_tb = tb or self._saved_tb
             return None
         else:
             if not etype and self._saved_etype:
-                ## we encountered an exception but it was suppressed
-                ## somewhere -- this is bad, because it breaks the
-                ## with-contexts.
+                # we encountered an exception but it was suppressed
+                # somewhere -- this is bad, because it breaks the
+                # with-contexts.
 
-                ## first we rollback the transaction
+                # first we rollback the transaction
                 super().__exit__(self._saved_etype, self._saved_evalue,
                                  self._saved_tb)
-                ## second we raise an exception to complain
+                # second we raise an exception to complain
                 raise RuntimeError(n_("Suppressed exception detected"))
             return super().__exit__(etype, evalue, tb)
 
