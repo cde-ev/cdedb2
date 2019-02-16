@@ -823,14 +823,14 @@ class EventBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "event.courses", COURSE_FIELDS, ids)
+            if not data:
+                return {}
             ret = {e['id']: e for e in data}
-            event = None
-            if ret:
-                events = {e['event_id'] for e in data}
-                if len(events) > 1:
-                    raise ValueError(n_(
-                        "Only courses from exactly one event allowed!"))
-                event = self.get_event(rs, unwrap(events))
+            events = {e['event_id'] for e in data}
+            if len(events) > 1:
+                raise ValueError(n_(
+                    "Only courses from one event allowed!"))
+            event = self.get_event(rs, unwrap(events))
             data = self.sql_select(
                 rs, "event.course_segments", COURSE_SEGMENT_FIELDS, ids,
                 entity_key="course_id")
@@ -1168,11 +1168,11 @@ class EventBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
-        if not ids:
-            return {}
         with Atomizer(rs):
             associated = self.sql_select(rs, "event.registrations",
                                          ("persona_id", "event_id"), ids)
+            if not associated:
+                return {}
             events = {e['event_id'] for e in associated}
             personas = {e['persona_id'] for e in associated}
             if len(events) > 1:
@@ -1524,11 +1524,11 @@ class EventBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
-        if not ids:
-            return {}
         with Atomizer(rs):
             data = self.sql_select(rs, "event.lodgements", LODGEMENT_FIELDS,
                                    ids)
+            if not data:
+                return {}
             events = {e['event_id'] for e in data}
             if len(events) > 1:
                 raise ValueError(n_(
