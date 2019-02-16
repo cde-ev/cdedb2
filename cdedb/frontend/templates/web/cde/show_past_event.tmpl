@@ -98,13 +98,13 @@
                     {% else %}
                         {{ personas[anid]['given_names']|e }} {{ personas[anid]['family_name']|e }}
                     {% endif %}
-                    {% if participant['pcourse_ids'] != (None,) %}
+                    {% if participant['pcourses'] %}
                         (
-                        {%- for pcourse_id in participant['pcourse_ids'] %}
+                        {%- for pcourse_id, pcourse in participant['pcourses']|xdictsort('nr', pad=True) %}
                             {%- if pcourse_id -%}
-                                {{ courses[pcourse_id]['nr']|e }}.
+                                {{ pcourse['nr']|e }}.
                                 {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
-                                    courses[pcourse_id]['title']|e) }}
+                                    pcourse['title']|e) }}
                                 {%- if not loop.last %}, {% endif -%}
                             {% endif -%}
                         {% endfor -%}

@@ -1963,6 +1963,15 @@ class CdEFrontend(AbstractUserFrontend):
         institutions = self.pasteventproxy.list_institutions(rs)
         participants, personas, extra_participants = self.process_participants(
             rs, pevent_id)
+        for p_id, p in participants.items():
+            p['pcourses'] = {
+                pc_id: {
+                    k: courses[pc_id][k]
+                    for k in ('id', 'title', 'nr')
+                    }
+                for pc_id in p['pcourse_ids']
+                if pc_id
+                }
         return self.render(rs, "show_past_event", {
             'courses': courses, 'participants': participants,
             'personas': personas, 'institutions': institutions,
