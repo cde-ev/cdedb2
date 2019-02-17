@@ -230,7 +230,8 @@ class TransactionType(enum.Enum):
                      TransactionType.EventFee.name: "Teilnehmerbeitrag",
                      TransactionType.Other.name: "Sonstiges",
                      TransactionType.Refund.name: "Erstattung",
-                     TransactionType.Unknown.name: "Unbekannt", }
+                     TransactionType.Unknown.name: "Unbekannt",
+                     }
         if self.name in to_string:
             return to_string[self.name]
         else:

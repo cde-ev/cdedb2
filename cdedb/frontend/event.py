@@ -223,7 +223,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = None
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        return self.render(rs, "course_list", {'courses': courses, })
+        return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
     @event_guard(check_offline=True)
@@ -703,7 +703,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_course")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("segments", "[int]"), ("active_segments", "[int]"), )
+    @REQUESTdata(("segments", "[int]"), ("active_segments", "[int]"))
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
                      "max_size", "min_size", "notes")
     @event_guard(check_offline=True)
@@ -1342,7 +1342,8 @@ class EventFrontend(AbstractUserFrontend):
             'date': date,
             'amount': amount,
             'warnings': warnings,
-            'problems': problems, })
+            'problems': problems,
+        })
         return datum
 
     def book_fees(self, rs, data):
@@ -1418,7 +1419,7 @@ class EventFrontend(AbstractUserFrontend):
         # Here validation is finished
         success, num = self.book_fees(rs, data)
         if success:
-            rs.notify("success", n_("Committed {num} fees."), {'num': num, })
+            rs.notify("success", n_("Committed {num} fees."), {'num': num})
             return self.redirect(rs, "event/show_event")
         else:
             if num is None:
@@ -2063,7 +2064,8 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, non_trivials, registration)
         return self.render(rs, "amend_registration", {
             'age': age, 'courses': courses, 'course_choices': course_choices,
-            'involved_tracks': involved_tracks, })
+            'involved_tracks': involved_tracks,
+        })
 
     @access("event", modi={"POST"})
     def amend_registration(self, rs, event_id):
@@ -2162,7 +2164,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.questionnaire_form(rs, event_id)
 
         code = self.eventproxy.set_registration(rs, {
-            'id': registration_id, 'fields': data, })
+            'id': registration_id, 'fields': data,
+        })
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/questionnaire_form")
 
@@ -2313,7 +2316,8 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
-            'lodgements': lodgements, })
+            'lodgements': lodgements,
+        })
 
     @access("event")
     @event_guard(check_offline=True)
@@ -2857,7 +2861,8 @@ class EventFrontend(AbstractUserFrontend):
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitant_nums,
             'reserve_inhabitants': reserve_inhabitant_nums,
-            'problems': problems_condensed, })
+            'problems': problems_condensed,
+        })
 
     @access("event")
     @event_guard()
@@ -2885,7 +2890,8 @@ class EventFrontend(AbstractUserFrontend):
 
         return self.render(rs, "show_lodgement", {
             'registrations': registrations, 'personas': personas,
-            'inhabitants': inhabitants, 'problems': problems, })
+            'inhabitants': inhabitants, 'problems': problems,
+        })
 
     @access("event")
     @event_guard(check_offline=True)
@@ -3507,7 +3513,8 @@ class EventFrontend(AbstractUserFrontend):
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'query': query, 'default_queries': default_queries,
-            'titles': titles, 'has_registrations': has_registrations, }
+            'titles': titles, 'has_registrations': has_registrations,
+        }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_registration"
@@ -3791,4 +3798,5 @@ class EventFrontend(AbstractUserFrontend):
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_event_log", {
-            'log': log, 'personas': personas, })
+            'log': log, 'personas': personas,
+        })

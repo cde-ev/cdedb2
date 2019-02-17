@@ -302,7 +302,8 @@ class MlFrontend(AbstractUserFrontend):
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_ml_log", {
-            'log': log, 'personas': personas, })
+            'log': log, 'personas': personas,
+        })
 
     @access("ml")
     @mailinglist_guard()
@@ -478,7 +479,7 @@ class MlFrontend(AbstractUserFrontend):
                 {'To': (email,),
                  'Subject': n_("Confirm email address for CdE mailing list")},
                 {'email': self.encode_parameter(
-                    "ml/do_address_change", "email", email), })
+                    "ml/do_address_change", "email", email)})
             rs.notify("info", n_("Confirmation email sent."))
         return self.redirect(rs, "ml/show_mailinglist")
 

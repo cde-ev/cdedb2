@@ -516,7 +516,8 @@ def rst_filter(val):
                 'raw_enabled': 0,
                 'id_prefix': "CDEDB_RST_",
                 'initial_header_level': 4,
-                'doctitle_xform': False, }
+                'doctitle_xform': False,
+                }
     ret = docutils.core.publish_parts(val, writer_name='html',
                                       settings_overrides=defaults)
     return bleach_filter(ret['html_body'])
@@ -968,7 +969,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Return-Path": self.conf.DEFAULT_RETURN_PATH,
                     "Cc": tuple(),
                     "Bcc": tuple(),
-                    "domain": self.conf.MAIL_DOMAIN, }
+                    "domain": self.conf.MAIL_DOMAIN,
+                    }
         merge_dicts(headers, defaults)
         msg = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)

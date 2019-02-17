@@ -153,7 +153,8 @@ class Application(BaseApp):
                     params = {
                         'wants': self.encode_parameter(
                             "core/index", "wants", request.url,
-                            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT), }
+                            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT),
+                    }
                     ret = construct_redirect(request,
                                              urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")

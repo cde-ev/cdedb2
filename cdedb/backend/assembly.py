@@ -886,7 +886,8 @@ class AssemblyBackend(AbstractBackend):
                 'CANDIDATES': candidates,
                 'USE_BAR': esc(ballot['use_bar']),
                 'VOTERS': voter_list,
-                'VOTES': vote_list, })
+                'VOTES': vote_list,
+            })
             path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
             with open_utf8(path, 'w') as f:
                 f.write(result_file)

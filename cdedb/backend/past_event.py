@@ -225,7 +225,8 @@ class PastEventBackend(AbstractBackend):
                                 'institution_id': e['institution_id'],
                                 'institution_moniker': e['moniker'],
                                 'courses': 0,
-                                'participants': 0, }
+                                'participants': 0
+                                }
                for e in data}
         query = glue(
             "SELECT events.id, COUNT(*) AS courses FROM past_event.events",

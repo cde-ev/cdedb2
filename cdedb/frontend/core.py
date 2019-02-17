@@ -745,7 +745,8 @@ class CoreFrontend(AbstractFrontend):
             self.do_mail(
                 rs, "pending_changes",
                 {'To': (self.conf.MANAGEMENT_ADDRESS,),
-                 'Subject': n_('CdEDB pending changes'), })
+                 'Subject': n_('CdEDB pending changes'),
+                 })
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("core_admin")
@@ -1369,13 +1370,16 @@ class CoreFrontend(AbstractFrontend):
         if not case_id:
             rs.notify("error", n_("Failed."))
             return self.genesis_request_form(rs)
-        self.do_mail(
-            rs, "genesis_verify",
-            {'To': (data['username'],), 'Subject': n_('CdEDB account request')},
-            {'case_id': self.encode_parameter(
-                "core/genesis_verify", "case_id", case_id),
-                'given_names': data['given_names'],
-                'family_name': data['family_name'], })
+        self.do_mail(rs, "genesis_verify",
+                     {'To': (data['username'],),
+                      'Subject': n_('CdEDB account request'),
+                      },
+                     {
+                         'case_id': self.encode_parameter(
+                             "core/genesis_verify", "case_id", case_id),
+                         'given_names': data['given_names'],
+                         'family_name': data['family_name'],
+                     })
         rs.notify(
             "success",
             n_("Email sent. Please follow the link contained in the email."))
@@ -1407,7 +1411,8 @@ class CoreFrontend(AbstractFrontend):
         self.do_mail(
             rs, "genesis_request",
             {'To': (notify,),
-             'Subject': n_('CdEDB account request'), })
+             'Subject': n_('CdEDB account request'),
+             })
         return self.redirect(rs, "core/index")
 
     @access("core_admin", "event_admin", "ml_admin")
@@ -1496,19 +1501,22 @@ class CoreFrontend(AbstractFrontend):
             self.do_mail(
                 rs, "genesis_approved",
                 {'To': (case['username'],),
-                 'Subject': n_('CdEDB account created'), },
+                 'Subject': n_('CdEDB account created'),
+                 },
                 {'case': case,
                  'email': self.encode_parameter(
                      "core/do_password_reset_form", "email", case['username'],
                      timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
-                 'cookie': cookie, })
+                 'cookie': cookie,
+                 })
             rs.notify("success", n_("Case approved."))
         else:
             self.do_mail(
                 rs, "genesis_declined",
                 {'To': (case['username'],),
                  'Subject': n_('CdEDB account declined')},
-                {'case': case, })
+                {'case': case,
+                 })
             rs.notify("info", n_("Case rejected."))
         return self.redirect(rs, "core/genesis_list_cases")
 

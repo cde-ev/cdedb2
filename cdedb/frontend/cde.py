@@ -408,7 +408,8 @@ class CdEFrontend(AbstractUserFrontend):
             'pcourse_id': pcourse_id,
             'doppelgangers': doppelgangers,
             'warnings': warnings,
-            'problems': problems, })
+            'problems': problems,
+        })
         return datum
 
     def perform_batch_admission(self, rs, data, trial_membership, consent,
@@ -505,11 +506,13 @@ class CdEFrontend(AbstractUserFrontend):
                     meta_info = self.coreproxy.get_meta_info(rs)
                     self.do_mail(rs, "welcome",
                                  {'To': (datum['raw']['username'],),
-                                  'Subject': n_('CdE admission'), },
+                                  'Subject': n_('CdE admission'),
+                                  },
                                  {'data': datum['persona'],
                                   'email': email if success else "",
                                   'cookie': message if success else "",
-                                  'meta_info': meta_info, })
+                                  'meta_info': meta_info,
+                                  })
         return True, count
 
     @staticmethod
@@ -848,7 +851,7 @@ class CdEFrontend(AbstractUserFrontend):
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
         """
-        defaults = {'sendmail': True, }
+        defaults = {'sendmail': True}
         merge_dicts(rs.values, defaults)
         data = data or {}
         csvfields = csvfields or tuple()
@@ -908,7 +911,8 @@ class CdEFrontend(AbstractUserFrontend):
             'amount': amount,
             'note': note,
             'warnings': [],
-            'problems': problems, })
+            'problems': problems,
+        })
         return datum
 
     def perform_money_transfers(self, rs, data, sendmail):
@@ -968,7 +972,8 @@ class CdEFrontend(AbstractUserFrontend):
                                + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
-                              'Subject': n_('CdE money transfer received'), },
+                              'Subject': n_('CdE money transfer received'),
+                              },
                              {'persona': persona, 'address': address,
                               'new_balance': new_balance})
         return True, count, memberships_gained
@@ -1128,7 +1133,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
-                     'notes', )
+                     'notes')
     def lastschrift_change(self, rs, lastschrift_id, data):
         """Modify one permit."""
         data['id'] = lastschrift_id
@@ -1147,7 +1152,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
-                     'notes', )
+                     'notes')
     def lastschrift_create(self, rs, persona_id, data):
         """Create a new permit."""
         data['persona_id'] = persona_id
@@ -1622,7 +1627,8 @@ class CdEFrontend(AbstractUserFrontend):
                         {'persona': persona,
                          'fee': self.conf.MEMBERSHIP_FEE,
                          'transaction_subject': transaction_subject,
-                         'meta_info': meta_info, })
+                         'meta_info': meta_info,
+                         })
                 period_update = {
                     'id': period_id,
                     'ejection_state': persona_id,
@@ -1755,7 +1761,8 @@ class CdEFrontend(AbstractUserFrontend):
                     {'persona': persona,
                      'lastschrift': lastschrift,
                      'fee': self.conf.MEMBERSHIP_FEE,
-                     'address': address, })
+                     'address': address,
+                     })
                 if testrun:
                     return False
                 expuls_update = {

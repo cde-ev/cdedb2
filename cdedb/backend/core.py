@@ -315,7 +315,8 @@ class CoreBackend(AbstractBackend):
             fields_requiring_review = {'birthday', 'family_name', 'given_names',
                                        'gender', 'address_supplement',
                                        'address',
-                                       'postal_code', 'location', 'country', }
+                                       'postal_code', 'location', 'country',
+                                       }
             all_changed_fields = {key for key, value in data.items()
                                   if value != committed_state[key]}
             requires_review = (

@@ -1216,7 +1216,7 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         optional_fields = dict(_GENESIS_CASE_OPTIONAL_FIELDS(),
                                **_GENESIS_CASE_LENIENT_FIELDS())
     else:
-        mandatory_fields = {'id': _id, }
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                **_GENESIS_CASE_OPTIONAL_FIELDS(),
                                **_GENESIS_CASE_LENIENT_FIELDS())
@@ -1670,7 +1670,7 @@ def _institution(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _INSTITUTION_COMMON_FIELDS()
         optional_fields = {}
     else:
-        mandatory_fields = {'id': _id, }
+        mandatory_fields = {'id': _id}
         optional_fields = _INSTITUTION_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
@@ -1704,7 +1704,7 @@ def _past_event(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _PAST_EVENT_COMMON_FIELDS()
         optional_fields = {}
     else:
-        mandatory_fields = {'id': _id, }
+        mandatory_fields = {'id': _id}
         optional_fields = _PAST_EVENT_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
@@ -2486,7 +2486,8 @@ def _serialized_event(val, argname=None, *, _convert=True):
             _empty_dict, {'id': _id, 'event_id': _id, 'pos': _int,
                           'field_id': _id_or_None, 'title': _str_or_None,
                           'info': _str_or_None, 'input_size': _int_or_None,
-                          'readonly': _bool_or_None, }),
+                          'readonly': _bool_or_None,
+                          }),
     }
     for table, validator in table_validators.items():
         new_table = {}
@@ -2635,7 +2636,7 @@ def _assembly(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
         optional_fields = _ASSEMBLY_OPTIONAL_FIELDS
     else:
-        mandatory_fields = {'id': _id, }
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,

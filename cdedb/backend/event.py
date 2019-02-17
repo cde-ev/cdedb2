@@ -125,7 +125,8 @@ _REGISTRATION_VIEW_TEMPLATE = glue(
     "json_to_recordset(to_json(array(",
     "SELECT fields FROM event.registrations WHERE event_id={event_id})))",
     "AS X({json_reg_fields_declaration})) AS reg_fields",
-    "ON reg.id = reg_fields.xfield_registration_id", )
+    "ON reg.id = reg_fields.xfield_registration_id",
+)
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data

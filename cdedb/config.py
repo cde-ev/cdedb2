@@ -101,21 +101,21 @@ def generate_event_registration_default_queries(event, spec):
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True)), ),
+             ("persona.given_names", True),)),
         n_("06_query_event_registration_u16"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 16)),),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True)), ),
+             ("persona.given_names", True))),
         n_("07_query_event_registration_u14"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 14)),),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True)), ),
+             ("persona.given_names", True))),
         n_("08_query_event_registration_minors_no_consent"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
@@ -123,7 +123,7 @@ def generate_event_registration_default_queries(event, spec):
               deduct_years(event['begin'], 18)),
              ("reg.parental_agreement", QueryOperators.empty, None)),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True)), ),
+             ("persona.given_names", True))),
     }
 
     return queries
@@ -319,7 +319,7 @@ _DEFAULTS = {
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True)), ),
+                (("family_name", True), ("given_names", True))),
         },
         "qview_archived_persona": {
             n_("00_query_archived_persona_with_notes"): Query(
@@ -327,7 +327,7 @@ _DEFAULTS = {
                 QUERY_SPECS['qview_archived_persona'],
                 ("personas.id", "given_names", "family_name", "birth_name"),
                 (("notes", QueryOperators.nonempty, None),),
-                (("family_name", True), ("given_names", True)), ),
+                (("family_name", True), ("given_names", True))),
         },
         "qview_event_user": {
             n_("00_query_event_user_minors"): Query(
@@ -337,21 +337,21 @@ _DEFAULTS = {
                 (("birthday", QueryOperators.greater,
                   deduct_years(now().date(), 18)),),
                 (("birthday", True), ("family_name", True),
-                 ("given_names", True)), ),
+                 ("given_names", True))),
         },
         "qview_core_user": {
             n_("00_query_core_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_core_user'],
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
-                (("personas.id", True),), )
+                (("personas.id", True),))
         },
         "qview_persona": {
             n_("00_query_mailinglist_persona_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
                 ("id", "given_names", "family_name"),
                 tuple(),
-                tuple(), )
+                tuple())
         },
     },
 
