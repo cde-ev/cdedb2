@@ -2,10 +2,10 @@
 {% extends "web/assembly/base.tmpl" %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('voting') }}{% endblock %}
 {% set jshint = 'weak' %}
-{% block title %}{{ ambience['ballot']['title']|e }} ({{ ambience['assembly']['title']|e }}){% endblock %}
+{% block title %}{{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }}){% endblock %}
 {% block heading %}
     <h1 class="title">
-        {{ ambience['ballot']['title']|e }}
+        {{ ambience['ballot']['title'] }}
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -26,32 +26,32 @@
 
     {# General information about ballot and personalized state info #}
     {{ ambience['ballot']['description']|rst }}
-    
+
     <dl class="dl-horizontal">
         <dt>{% trans -%}Voting Period{%- endtrans %}</dt>
         <dd>
-            {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang)|e,
-                     end=ambience['ballot']['vote_end']|datetime(lang=lang)|e -%}
+            {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
+                     end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
             From {{ begin }} until {{ end }}.
             {%- endtrans %}
             {% if ambience['ballot']['extended'] is none %}
                 {% if ambience['ballot']['quorum'] %}
                     <br />
-                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e,
-                             quorum=ambience['ballot']['quorum']|e -%}
+                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
+                             quorum=ambience['ballot']['quorum'] -%}
                     Extension until {{ extension }} if {{ quorum }} votes are not reached.
                     {%- endtrans %}
                 {% endif %}
             {% else %}
                 {% if ambience['ballot']['extended'] %}
                     <br />
-                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e,
-                             quorum=ambience['ballot']['quorum']|e -%}
+                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
+                             quorum=ambience['ballot']['quorum'] -%}
                     Extended until {{ extension }} because {{ quorum }} votes were not reached.
                     {%- endtrans %}
                 {% elif ambience['ballot']['quorum'] %}
                     <br />
-                    {% trans quorum=anbience['ballot']['quorum']|e -%}
+                    {% trans quorum=anbience['ballot']['quorum'] -%}
                     No Extension neccessary, because {{ quorum }} votes were reached.
                     {%- endtrans %}
                 {% endif %}
@@ -92,7 +92,7 @@
             {% endif %}
         </dd>
     </dl>
-    
+
     {% if is_admin and ambience['ballot']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['ballot']['notes']|rst }}
@@ -103,7 +103,7 @@
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
         {% call util.bootstrap_panel(aclass="panel-success panel-condensed", title=gettext("Add Candidate"),
                 icon='plus') %}
-            <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform" class="row">
+            <form action="{{ cdedblink('assembly/add_candidate') }}" method="POST" id="addcandidateform" class="row">
                 <div class="col-md-3 {% if 'moniker' in errors %}has-error{% endif %}">
                     {{ util.input_text(name="moniker", placeholder=gettext("Shortname"), aclass="form-control input-sm",
                                        arialabel=gettext("Shortname")) }}
@@ -127,17 +127,17 @@
         {% if result['winners'] %}
             <ol>
                 {% for candidate_ids in result['winners'] %}
-                    <li value="{{ loop.index|e }}">
+                    <li value="{{ loop.index }}">
                         {% for candidate_id in candidate_ids %}
                             {% if not ambience['ballot']['votes'] %}
                                 <span class="label label-primary">
-                                    {{- ambience['ballot']['candidates'][candidate_id]['moniker']|e -}}
+                                    {{- ambience['ballot']['candidates'][candidate_id]['moniker'] -}}
                                 </span>
                             {% endif %}
-                            {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
+                            {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
                             {% if result['counts'] %}
                                 {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
-                                {% trans count=result['counts'][candidate_moniker]|e -%}
+                                {% trans count=result['counts'][candidate_moniker] -%}
                                     ({{ count }} votes)
                                 {%- endtrans %}
                             {% endif %}
@@ -156,23 +156,23 @@
                         The following Candidates have less votes than the {{ against_all }} choice.
                     {%- endtrans %}
                 {% else %}
-                    {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER) -%}
+                    {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
                         The following Candidates lost against the bar ({{ abm }}).
                     {%- endtrans %}
                 {% endif %}
             <ol>
                 {% for candidate_ids in result['losers'] %}
-                    <li value="{{ (loop.index + result['winners']|length)|e }}">
+                    <li value="{{ (loop.index + result['winners']|length) }}">
                         {% for candidate_id in candidate_ids %}
                             {% if not ambience['ballot']['votes'] %}
                                 <span class="label label-primary">
-                                    {{- ambience['ballot']['candidates'][candidate_id]['moniker']|e -}}
+                                    {{- ambience['ballot']['candidates'][candidate_id]['moniker'] -}}
                                 </span>
                             {% endif %}
-                            {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
+                            {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
                             {% if result['counts'] %}
                                 {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
-                                {% trans count=result['counts'][candidate_moniker]|e -%}
+                                {% trans count=result['counts'][candidate_moniker] -%}
                                     ({{ count }} votes)
                                 {%- endtrans %}
                             {% endif %}
@@ -184,10 +184,10 @@
                 {% endfor %}
             </ol>
         {% endif %}
-        
+
         <h4>{% trans -%}Summary{%- endtrans %}</h4>
         {% if not ambience['ballot']['votes'] %}
-            <pre style="max-width: 500px;">{{ result['result']|e }}</pre>
+            <pre style="max-width: 500px;">{{ result['result'] }}</pre>
 
             {# info box for preferential votes #}
             {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
@@ -199,7 +199,7 @@
                     {%- endtrans %}
                 </p>
                 <p>
-                    {% trans  gt="<code>></code>", eq="<code>=</code>" -%}
+                    {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
                         The summary shows the combined preference list of all participant.
                         The Greater-Than character {{ gt }} means that the Candidate, represented by their
                         shortname, on the left has higher overall preference than the one on the right.
@@ -209,7 +209,7 @@
                 </p>
                 {% if ambience['ballot']['use_bar'] %}
                     <p>
-                        {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER|e) -%}
+                        {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
                             Additionally the moniker {{ abm }} shows where in the Rejection Bar was ranked in the
                             overall preference list.
                             Should no Candidate have won against the bar, the board may take additional measures.
@@ -219,8 +219,8 @@
             {% endcall %}
         {% endif %}
 
-        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download results"), icon="download")}}</p>
-        
+        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download results"), icon="download") }}</p>
+
         <h3>{% trans -%}Your vote{%- endtrans %}</h3>
         <p>
             {# Show own vote under result: Classical vote #}
@@ -239,15 +239,15 @@
                     {% else %}
                         {% trans -%}You voted for the following Candidates:{%- endtrans %}<br />
                         {% for voted in split_vote[0] %}
-                            {{ candidates[voted]['description']|e }}{% if not loop.last %},{% endif %}
+                            {{ candidates[voted]['description'] }}{% if not loop.last %},{% endif %}
                         {% endfor %}
                     {% endif %}
                 {% endif %}
-                
+
             {# Show own vote under result: Classical vote #}
             {% else %}
                 {% if values['vote'] %}
-                    {%- trans vote="<code>%(vote)s</code>"|format(vote=values['vote']|e) -%}
+                    {%- trans vote="<code>%(vote)s</code>"|s|format(vote=values['vote']) -%}
                         You voted {{ vote }}.
                     {%- endtrans -%}
                 {% elif ambience['assembly']['is_active'] %}
@@ -258,7 +258,7 @@
             {% endif %}
         </p>
     {% else %}
-    
+
         {# Classical voting, not tallied #}
         {% if ambience['ballot']['votes'] %}
 
@@ -268,7 +268,7 @@
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
                     {% if ambience['ballot']['votes'] > 1 %}
                         {{ util.form_input_static(value=gettext("You have %(votes)s votes.")|
-                                                        format(votes=ambience['ballot']['votes']|e), small=True) }}
+                                                        format(votes=ambience['ballot']['votes']), small=True) }}
                     {% endif %}
                     {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
                                                   entries=ambience['ballot']['candidates']|dictsort|dict_entries('moniker', 'description'),
@@ -310,11 +310,11 @@
                 <ul>
                     {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                         <li>
-                            {{ candidate['description']|e }}
+                            {{ candidate['description'] }}
                             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                                 <form action="{{ cdedblink('assembly/remove_candidate',
-                                                           {'candidate_id': candidate_id})|e }}"
-                                        method="POST" id="removecandidateform{{ candidate_id|e }}"
+                                                           {'candidate_id': candidate_id}) }}"
+                                        method="POST" id="removecandidateform{{ candidate_id }}"
                                         style="display: inline;" class="remove-candiate-form">
                                     {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
                                                          title=gettext("Remove Candidate")) }}
@@ -336,17 +336,17 @@
             <ul>
                 {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                     <li>
-                        {{ candidate['description']|e }}
+                        {{ candidate['description'] }}
                         {% if attends or is_admin %}
                             <span class="label label-primary"><span class="sr-only">{% trans -%}Short: {%- endtrans %}</span>
-                                {{ candidate['moniker']|e }}
+                                {{ candidate['moniker'] }}
                             </span>
                         {% endif %}
                         {% if is_admin and now() < ambience['ballot']['vote_begin']
                                 and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
                             <form action="{{ cdedblink('assembly/remove_candidate',
-                                                       {'candidate_id': candidate_id})|e }}"
-                                  method="POST" id="removecandidateform{{ candidate_id|e }}" style="display: inline;"
+                                                       {'candidate_id': candidate_id}) }}"
+                                  method="POST" id="removecandidateform{{ candidate_id }}" style="display: inline;"
                                   class="remove-candiate-form">
                                 {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
                                                      title=gettext("Remove Candidate")) }}
@@ -364,7 +364,7 @@
             {# Preferential voting: Voting form #}
             {% if ambience['ballot']['is_voting'] and attends %}
                 <h3>{% trans -%}Ballot{%- endtrans %}</h3>
-                
+
                 {# Tab controls to switch to javascript preferential voting form #}
                 <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
                     <li role="presentation" class="active">
@@ -379,7 +379,7 @@
                         </a>
                     </li>
                 </ul>
-                
+
                 <div class="tab-content">
                     {# Text based preferential voting form #}
                     <div role="tabpanel" class="tab-pane active" id="tab-textform">
@@ -401,7 +401,7 @@
                                 {%- endtrans %}
                             </p>
                             <p>
-                                {% trans  gt="<code>></code>", eq="<code>=</code>" -%}
+                                {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
                                     To enter Your preferencelist, use the Shortnames given in the list of Candidates and the
                                     {{ gt }} and {{ eq }} characters. Use the Greater-Than character {{ gt }}
                                     to give the Candidates left of the character higher preference, than those on the right.
@@ -411,7 +411,7 @@
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
-                                    {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER|e) -%}
+                                    {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
                                         Additionally You need to use the Rejection Bar {{ abm }} in Your preferencelist.
                                         Use it in Your preferencelist like You would a Candidate. Put all
                                         Candidates You deem suitable higher than {{ abm }} and all
@@ -440,21 +440,21 @@
                                             You deem all candidates suitable, but You like Leia the best,
                                             with no difference between the other Candidate.
                                         {%- endtrans %}<br />
-                                        <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
+                                        <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}</code></li>
                                     <li>{% trans -%}
                                             You deem Leia and Obi-Wan (equally) suitable, You want to reject Luke
                                             and you absolutely can't stand Han Solo.
                                         {%- endtrans %}<br />
-                                        <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}&gt;Luke&gt;Han</code></li>
+                                        <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}&gt;Luke&gt;Han</code></li>
                                     <li>{% trans -%}
                                             You want to vote for Luke and if he doesn't make it, You think Obi-Wan should.
                                             You don't have an opinion about the others.
                                         {%- endtrans %}<br />
-                                        <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}=Han=Leia</code></li>
+                                        <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}=Han=Leia</code></li>
                                     <li>{% trans -%}
                                             You want to completely abstain.
                                         {%- endtrans %}<br />
-                                        <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
+                                        <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER }}</code></li>
                                 </ul>
                             {% else %}
                                 <ul>
@@ -479,7 +479,7 @@
                             {% endif %}
                         {% endcall %}
                     </div>
-                    
+
                     {# Javascript preferential voting form #}
                     <div role="tabpanel" class="tab-pane" id="tab-jsform">
                         <p class="sr-only">
@@ -503,7 +503,7 @@
                             $('#tablist-formselect').show();
                             /* Initialize JS Fancy form */
                             $('#prefvote_container').cdedbPrefVote(
-                                {{ ambience['ballot']['candidates']|dictsort|json }},
+                                {{ ambience['ballot']['candidates']|dictsort|json|s }},
                                 {{ "'"+ASSEMBLY_BAR_MONIKER+"'" if ambience['ballot']['use_bar'] else "null" }},
                                 $('#input-preferencelist'),
                                 {{ {'bar_name': gettext('neutral'),
@@ -513,7 +513,7 @@
                                     'spacer': gettext('Between box {0} and {1}'),
                                     'spacer_highest': gettext('Above box with highest priority'),
                                     'spacer_lowest': gettext('Below box with lowest priority'),
-                                    }|json }}
+                                    }|json|s }}
                             );
                             /* Register callback to refresh fancy form every time the tab is shown */
                             $('#tablink-jsform').on('show.bs.tab',
@@ -522,7 +522,7 @@
                             $('#tablink-jsform').tab('show');
                             $('#button-jsvote').click(function(){$('#voteform').submit();});
                         </script>
-                        
+
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
                                 {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
@@ -563,7 +563,7 @@
                                     {% trans -%}To abstain, place all Candidates in the same box.{%- endtrans %}
                                 </p>
                             {% endif %}
-                            
+
                         {% endcall %}
                     </div>
                 </div>
@@ -579,11 +579,11 @@
                     {% for attachment_id, attachment in attachments|dictsort %}
                         <li>
                             {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
-                                    attachment['title'])}}
+                                    attachment['title']) }}
                             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                                 <form action="{{ cdedblink('assembly/remove_attachment',
-                                                           {'attachment_id': attachment_id})|e }}"
-                                        method="POST" id="removeattachmentform{{ attachment_id|e }}"
+                                                           {'attachment_id': attachment_id}) }}"
+                                        method="POST" id="removeattachmentform{{ attachment_id }}"
                                         style="display: inline;">
                                     {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
                                             title=gettext("Delete File")) }}
@@ -605,7 +605,7 @@
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
-                         <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST" id="deleteballotform"
+                         <form action="{{ cdedblink('assembly/delete_ballot') }}" method="POST" id="deleteballotform"
                                style="display: inline;">
                              {{ util.input_submit(value=gettext("Delete"), icon="trash", aclass="btn btn-danger") }}
                              {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}

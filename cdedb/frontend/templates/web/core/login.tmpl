@@ -24,7 +24,7 @@
         </div>
     {% endif %}
 
-    <form action="{{ cdedblink('core/login')|e }}" method="POST" id="loginform" class="form-horizontal">
+    <form action="{{ cdedblink('core/login') }}" method="POST" id="loginform" class="form-horizontal">
         <p>
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), type="email", small=True,
                                     anid="login_name") }}

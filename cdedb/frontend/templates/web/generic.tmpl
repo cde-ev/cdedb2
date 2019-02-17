@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 
 {% macro create_user(realm) %}
-    <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform"
+    <form action="{{ cdedblink('{}/create_user'.format(realm)) }}" method="POST" id="newuserform"
       class="form-horizontal">
         <h4 class="heading-underline">{{ gettext("Personal Information") }}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
@@ -87,7 +87,7 @@
         {%- endtrans %}
     </p>
 
-    <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform" class="form-horizontal">
+    <form action="{{ cdedblink('{}/genesis'.format(realm)) }}" method="POST" id="newuserform" class="form-horizontal">
         {{ util.input_hidden(name="case_id") }}
         {{ util.input_hidden(name="secret") }}
 
@@ -128,7 +128,7 @@
                         icon="plus", aclass="btn btn-success btn-sm") }}
             </div>
             {% if info %}
-                <p class="text-muted">{{ util.make_icon('info-sign') }} {{ info|e }}</p>
+                <p class="text-muted">{{ util.make_icon('info-sign') }} {{ info }}</p>
             {% endif %}
         </div>
         <div class="col-md-8">
@@ -139,7 +139,7 @@
     {{ user_search_mask(realm) }}
 
     {% if values['is_search'] %}
-        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length|e }}]</h3>
+        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
         {{ user_search_result(result, realm) }}
     {% endif %}
 {% endmacro %}
@@ -270,7 +270,7 @@
 
 
 {% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[]) %}
-    <form action="{{ target|e }}" method="GET" id="queryform" aria-labelledby="qf_title">
+    <form action="{{ target }}" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary">
             <div class="panel-heading">
@@ -308,7 +308,7 @@
                                 {% for field in spec %}
                                     <tr class="query_field {% if field in errors %}errorInput{% endif %}
                                                {% if field == query_mod.QUERY_PRIMARIES[query.scope] %}id-field{% endif %}"
-                                            data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
+                                            data-type="{{ spec[field] }}" data-id="{{ field }}">
                                         <td>
                                             {# multi-fields are not reliably selectable, so we disable selection #}
                                             {% if ',' not in field and field not in selection_blacklist %}
@@ -316,15 +316,15 @@
                                                     {% if output_selection %}
                                                         {{ util.input_checkbox(name, aclass='outputSelector',
                                                                 value=True,
-                                                                arialabel=gettext("show {}")
-                                                                          .format(titles.get(field, field)|e)) }}
+                                                                arialabel=(gettext("show %s")
+                                                                           |format(titles.get(field, field)))) }}
                                                     {% else %}
                                                         {{ util.input_hidden(name, value=True) }}
                                                     {% endif %}
                                                 {% endwith %}
                                             {% endif %}
                                         </td>
-                                        <td class="name">{{ titles.get(field, field)|e }}</td>
+                                        <td class="name">{{ titles.get(field, field) }}</td>
                                         <td>
                                             {% with name = "qop_{}".format(field) %}
                                                 {% with theid = "qop_{}".format(field) %}
@@ -334,12 +334,12 @@
                                                             if field not in choices
                                                                 or op in query_mod.SELECTION_VALUE_OPERATORS %}
                                                         {%- do myentries.append((op.value,
-                                                            gettext(op.value|enum(enums.QueryOperators))))|e %}
+                                                            gettext(op.value|enum(enums.QueryOperators)))) %}
                                                     {%- endfor %}
                                                     {{ util.input_select(name, entries=myentries, nulloption="",
                                                             aclass='form-control input-sm filter-op', anid=theid,
-                                                            arialabel=gettext("filter operator for {}")
-                                                                      .format(titles.get(field, field)|e)) }}
+                                                            arialabel=(gettext("filter operator for %s")
+                                                                       |format(titles.get(field, field)))) }}
                                                 {% endwith %}
                                             {% endwith %}
                                         </td>
@@ -352,13 +352,13 @@
                                                     {{ util.input_select(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
                                                             entries=(('',''),(True, gettext("Yes")),(False, gettext("No"))),
-                                                            arialabel=gettext("compare value for {}")
-                                                                      .format(titles.get(field, field)|e)) }}
+                                                            arialabel=(gettext("compare value for %s")
+                                                                       |format(titles.get(field, field)))) }}
                                                 {% else %}
                                                     {{ util.input_text(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
-                                                            arialabel=gettext("compare value for {}")
-                                                                      .format(titles.get(field, field)|e)) }}
+                                                            arialabel=(gettext("compare value for %s")
+                                                                       |format(titles.get(field, field)))) }}
                                                 {% endif %}
                                                 {{ util.output_errors(field) }}
                                             {% endwith %}
@@ -377,12 +377,12 @@
                                 {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
                                                        ("3.", "qord_tertiary"))%}
                                     <tr class="query_sort">
-                                        <td> {{ title|e }} </td>
+                                        <td> {{ title }} </td>
                                         <td>
                                             {#- jinja does not support list comprehension ... #}
                                             {%- set myentries = [] %}
                                             {%- for field in spec if ',' not in field %}
-                                                {%- do myentries.append((field, titles.get(field,field)))|e %}
+                                                {%- do myentries.append((field, titles.get(field,field))) %}
                                             {%- endfor %}
                                             {{ util.input_select(name, entries=myentries, nulloption="",
                                                                  aclass="form-control input-sm sort-field",
@@ -457,7 +457,7 @@
                     {
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
-                        $qf.cdedbQueryForm({"choices" : {{ choices_lists|json }},
+                        $qf.cdedbQueryForm({"choices" : {{ choices_lists|json|s }},
                                             "labels": {{ {'add_field': gettext('– add displayed field –'),
                                                           'add_filter': gettext('– add filter –'),
                                                           'add_sort': gettext('– add sort key –'),
@@ -472,7 +472,7 @@
                                                           'filter_vals': gettext("compare values"),
                                                           'sort_order': gettext("sort order"),
                                                           'range_values': gettext("<value>,<value>,…"),
-                                                          'range_ids': gettext("<id>,<id>,…")}|json }}});
+                                                          'range_ids': gettext("<id>,<id>,…")}|json|s }}});
                         $('#tab_link_qf_js')
                             .on('show.bs.tab', function() {
                                 $qf.data('cdedbQueryForm').initFromForm();
@@ -602,7 +602,7 @@
             {% set primary_field = query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1] %}
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
-                <tr class="ls-item" data-id="{{ row[primary_field]|e }}">
+                <tr class="ls-item" data-id="{{ row[primary_field] }}">
                     <td>
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
                                                aclass="rowSelector", arialabel=gettext("row {}").format(outerloopindex)) }}
@@ -621,7 +621,7 @@
                             {# NOTE that we split off any possible schema specification since they're not preserved
                                     by the query #}
                             {% with afield = field.split('.')[-1] %}
-                                <td data-col="{{ afield|e }}">  {# The data-col attribute is mainly used for testing #}
+                                <td data-col="{{ afield }}">  {# The data-col attribute is mainly used for testing #}
                                     {% if field in ("personas.id", "persona.id")
                                             or (query.scope == "qview_persona" and field == "id") %}
                                         <span class="nowrap">{{ row[afield]|cdedbid }}</span>
@@ -634,7 +634,7 @@
                                                                                              gettext('true'))) }}
                                     {% else %}
                                         {{ choices.get(csvfield, {}).get(row.get(afield),
-                                                                         row.get(afield, "UNDEFINED"))|e }}
+                                                                         row.get(afield, "UNDEFINED")) }}
                                     {% endif %}
                                 </td>
                             {% endwith %}

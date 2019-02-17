@@ -7,7 +7,7 @@ import datetime
 import pytz
 from cdedb.frontend.common import (
     encode_parameter, decode_parameter, date_filter, datetime_filter,
-    cdedbid_filter)
+    cdedbid_filter, tex_escape_filter)
 
 def rand_str(chars, exclude=''):
     pool = string.printable
@@ -65,3 +65,18 @@ class TestFrontendCommon(unittest.TestCase):
         self.assertEqual("DB-123-6", cdedbid_filter(123))
         self.assertEqual("DB-11111-2", cdedbid_filter(11111))
         self.assertEqual("DB-11118-X", cdedbid_filter(11118))
+
+    def test_tex_escape_filter(self):
+        self.assertEqual(r"\textbackslash foo", tex_escape_filter(r"\foo"))
+        self.assertEqual(r"line\textbackslash \textbackslash next",
+                         tex_escape_filter(r"line\\next"))
+        self.assertEqual(r"a\~{}b", tex_escape_filter(r"a~b"))
+        self.assertEqual(r"a\^{}b", tex_escape_filter(r"a^b"))
+        self.assertEqual(r"a\{b", tex_escape_filter(r"a{b"))
+        self.assertEqual(r"a\}b", tex_escape_filter(r"a}b"))
+        self.assertEqual(r"a\_b", tex_escape_filter(r"a_b"))
+        self.assertEqual(r"a\#b", tex_escape_filter(r"a#b"))
+        self.assertEqual(r"a\%b", tex_escape_filter(r"a%b"))
+        self.assertEqual(r"a\&b", tex_escape_filter(r"a&b"))
+        self.assertEqual(r"a\$b", tex_escape_filter(r"a$b"))
+        self.assertEqual(r"a''b", tex_escape_filter(r'a"b'))

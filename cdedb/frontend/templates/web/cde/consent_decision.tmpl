@@ -76,14 +76,14 @@
     </div>
 
     {% if "searchable" not in user.roles %}
-        <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="ackconsentform" style="display: inline;">
+        <form action="{{ cdedblink("cde/consent_decision") }}" method="POST" id="ackconsentform" style="display: inline;">
                 {{ util.input_hidden(name="ack", value="True") }}
                 {{ util.input_submit(value=gettext("Give consent"), aclass="btn btn-success") }}
         </form>
     {% endif %}
 
     {% if not decided_search %}
-        <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="nackconsentform"
+        <form action="{{ cdedblink("cde/consent_decision") }}" method="POST" id="nackconsentform"
                 style="display: inline;">
                 {{ util.input_hidden(name="ack", value="False") }}
                 {{ util.input_submit(value=gettext("Refuse consent"), icon="remove", aclass="btn btn-danger") }}

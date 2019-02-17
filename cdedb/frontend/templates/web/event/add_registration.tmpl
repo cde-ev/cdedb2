@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint = 'strong' %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
         New Registration ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -19,19 +19,19 @@
         {% trans -%}
             New Registration
         {%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/add_registration')|e }}" method="POST" id="addregistrationform"
+    <form action="{{ cdedblink('event/add_registration') }}" method="POST" id="addregistrationform"
           class="form-horizontal">
         <h3 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h3>
         {{ util.form_input_text(name="persona.persona_id", label=gettext("CdEDB-ID"), anid="input-persona-persona_id",
                                 placeholder=gettext("DB-XXXX-X")) }}
         <script type="text/javascript">
             $('#input-persona-persona_id').cdedbSearchPerson(
-                '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + (ambience['event']['id']|string) }}',
-                {{ registered_personas|list|json }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=orga_event_user&phrase=%s&aux='|s) + (ambience['event']['id']|string|e) }}',
+                {{ registered_personas|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
             );
         </script>
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
@@ -48,7 +48,7 @@
 
         {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
             {% if ambience['event']['parts']|length > 1 %}
-                <h4>{{ part['title']|e }}</h4>
+                <h4>{{ part['title'] }}</h4>
             {% endif %}
             {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
@@ -74,7 +74,7 @@
                 <h4>
                     {% trans -%}Course Choices{%- endtrans %}
                     {% if ambience['event']['tracks']|length > 1 %}
-                    {{ track['title']|e }}
+                    {{ track['title'] }}
                     {% endif %}
                 </h4>
 

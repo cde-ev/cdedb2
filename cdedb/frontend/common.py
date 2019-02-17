@@ -24,7 +24,6 @@ import hmac
 import io
 import json
 import logging
-import os
 import pathlib
 import re
 import smtplib
@@ -185,6 +184,20 @@ def sanitize_None(data):
         return data
 
 
+def safe_filter(val):
+    """Custom jinja filter to mark a string as safe.
+
+    This prevents autoescaping of this entity. To be used for dynamically
+    generated code we insert into the templates.
+
+    :type val: str
+    :rtype: jinja2.Markup
+    """
+    if val is None:
+        return None
+    return jinja2.Markup(val)
+
+
 def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium",
                 passthrough=False):
     """Custom jinja filter to format ``datetime.date`` objects.
@@ -289,7 +302,7 @@ def escape_filter(val):
 
 
 LATEX_ESCAPE_REGEX = (
-    (re.compile(r'\\'), r'\\textbackslash'),
+    (re.compile(r'\\'), r'\\textbackslash '),
     (re.compile(r'([{}_#%&$])'), r'\\\1'),
     (re.compile(r'~'), r'\~{}'),
     (re.compile(r'\^'), r'\^{}'),
@@ -317,8 +330,8 @@ class CustomEscapingJSONEncoder(CustomJSONEncoder):
     escapes all strings for safely embedding the
     resulting JSON string into an HTML <script> tag.
 
-    Inspired by https://github.com/simplejson/simplejson/blob/dd0f99d6431b5e7529
-    3369f5554a1396f8ae6251/simplejson/encoder.py#L378
+    Inspired by https://github.com/simplejson/simplejson/blob/
+    dd0f99d6431b5e75293369f5554a1396f8ae6251/simplejson/encoder.py#L378
     """
 
     def encode(self, o):
@@ -362,22 +375,6 @@ def enum_filter(val, enum):
     if val is None:
         return None
     return str(enum(val))
-
-
-def numerus_filter(val, singular, plural):
-    """Custom jinja filter to select singular or plural form.
-
-    :type val: int
-    :type singular: str
-    :type plural: str
-    :rtype: str
-    """
-    if val is None:
-        return None
-    if val == 1:
-        return singular
-    else:
-        return plural
 
 
 def genus_filter(val, female, male, unknown=None):
@@ -501,7 +498,7 @@ def bleach_filter(val):
     """
     if val is None:
         return None
-    return get_bleach_cleaner().clean(val)
+    return safe_filter(get_bleach_cleaner().clean(val))
 
 
 def rst_filter(val):
@@ -639,12 +636,12 @@ JINJA_FILTERS = {
     'json': json_filter,
     'stringIn': stringIn_filter,
     'querytoparams': querytoparams_filter,
-    'numerus': numerus_filter,
     'genus': genus_filter,
     'linebreaks': linebreaks_filter,
     'rst': rst_filter,
     'enum': enum_filter,
     'xdictsort': xdictsort_filter,
+    's': safe_filter,
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
@@ -671,7 +668,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
-            finalize=sanitize_None,
+            finalize=sanitize_None, autoescape=True,
             auto_reload=self.conf.CDEDB_DEV)
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
@@ -688,12 +685,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
+            autoescape=False,
             block_start_string="<<%",
             block_end_string="%>>",
             variable_start_string="<<<",
             variable_end_string=">>>",
             comment_start_string="<<#",
             comment_end_string="#>>",
+        )
+        self.jinja_env_mail = self.jinja_env.overlay(
+            autoescape=False,
         )
 
     @abc.abstractmethod
@@ -736,8 +737,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         :type rs: :py:class:`RequestState`
         :type modus: str
-        :param modus: type of thing we want to generate (currently 'web' or
-          'mail')
+        :param modus: Type of thing we want to generate; can be one of
+          * web,
+          * mail,
+          * tex.
         :type templatename: str
         :param templatename: file name of template without extension
         :type params: {str: object}
@@ -790,15 +793,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for key, value in rs.errors:
             errorsdict.setdefault(key, []).append(value)
         # here come the always accessible things promised above
+
+        def safe_gettext(*args, **kwargs):
+            return safe_filter(rs.gettext(*args, **kwargs))
+
+        def safe_ngettext(*args, **kwargs):
+            return safe_filter(rs.ngettext(*args, **kwargs))
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
-            'gettext': rs.gettext,
+            'gettext': safe_gettext,
             'is_admin': self.is_admin(rs),
             'lang': rs.lang,
-            'ngettext': rs.ngettext,
+            'ngettext': safe_ngettext,
             'notifications': rs.notifications,
             'request_url': rs.request.url,
             'show_user_link': _show_user_link,
@@ -810,6 +819,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         merge_dicts(data, params)
         if modus == "tex":
             jinja_env = self.jinja_env_tex
+        elif modus == "mail":
+            jinja_env = self.jinja_env_mail
         else:
             jinja_env = self.jinja_env
         t = jinja_env.get_template(str(pathlib.Path(

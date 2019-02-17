@@ -4,14 +4,14 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['assembly']['title']|e -%}
+    {% trans title=ambience['assembly']['title'] -%}
         Edit {{ title }}
     {%- endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans -%}Configuration{%- endtrans %}
-        <small>{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title']|e }}</small>
+        <small>{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -20,7 +20,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/change_assembly"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('assembly/change_assembly')|e }}" method="POST" id="changeassemblyform"
+    <form action="{{ cdedblink('assembly/change_assembly') }}" method="POST" id="changeassemblyform"
             class="form-horizontal">
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",

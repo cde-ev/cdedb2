@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
         {{ title }} – Configuration
     {%- endtrans %}
 {% endblock %}
@@ -17,11 +17,11 @@
     <h1 class="title">
         {% trans -%}Configuration{%- endtrans %}
         <small>{{ util.make_icon('blackboard', arialabel=gettext("Configuration")) }}
-            {{ ambience['event']['title']|e }}</small>
+            {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/change_event')|e }}" method="POST" id="changeeventform" class="form-horizontal">
+    <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5") }}
@@ -54,7 +54,7 @@
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|dictsort
                 if field['kind'] == "str" and field['association'] == enums['FieldAssociations'].registration %}
-            {%- do myentries.append((field_id, field['field_name']))|e %}
+            {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
                                   nulloption="", info=gettext("The custom field in which the participants' "
@@ -63,7 +63,7 @@
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|dictsort
                 if field['kind'] == "bool" and field['association'] == enums['FieldAssociations'].registration %}
-            {%- do myentries.append((field_id, field['field_name']))|e %}
+            {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="reserve_field", label=gettext("Field for Reserve"), entries=myentries,
                                   nulloption="", info=gettext("The custom field in which the participants' "

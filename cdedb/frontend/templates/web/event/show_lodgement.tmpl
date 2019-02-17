@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans lodgement=ambience['lodgement']['moniker']|e, title=ambience['event']['title']|e -%}
+    {% trans lodgement=ambience['lodgement']['moniker'], title=ambience['event']['title'] -%}
     	Lodgement {{ lodgement }} ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -17,8 +17,8 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {{ ambience['lodgement']['moniker']|e }}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        {{ ambience['lodgement']['moniker'] }}
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -33,20 +33,20 @@
         <div class="col-md-6">
             <dl class="dl-horizontal">
                 <dt>{% trans -%}Regular Capacity{%- endtrans %}</dt>
-                <dd>{{ ambience['lodgement']['capacity']|e }}</dd>
+                <dd>{{ ambience['lodgement']['capacity'] }}</dd>
                 <dt>{% trans -%}Reserve Capacity{%- endtrans %}</dt>
-                <dd>{{ ambience['lodgement']['reserve']|e }}</dd>
+                <dd>{{ ambience['lodgement']['reserve'] }}</dd>
             </dl>
 
             <dl class="dl-horizontal">
                 {% for field_id, field in ambience['event']['fields']|dictsort %}
                     {% if field['association'] == enums['FieldAssociations'].lodgement %}
-                        <dt>{{ field['field_name']|e }}</dt>
+                        <dt>{{ field['field_name'] }}</dt>
                         <dd>
                             {% if field['entries'] %}
                                 {% for value, description in field['entries'] %}
                                     {% if ambience['lodgement']['fields'].get(field['field_name']) == value %}
-                                        {{ description|e }}
+                                        {{ description }}
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
@@ -55,12 +55,12 @@
                                         checked=ambience['lodgement']['fields'].get(field['field_name'])) }}
                                 {% elif field['kind'] == "date" %}
                                     {{ ambience['lodgement']['fields'].get(field['field_name'])
-                                       |date(lang=lang, passthrough=True)|e }}
+                                       |date(lang=lang, passthrough=True) }}
                                 {% elif field['kind'] == "datetime" %}
                                     {{ ambience['lodgement']['fields'].get(field['field_name'])
-                                       |datetime(lang=lang, passthrough=True)|e }}
+                                       |datetime(lang=lang, passthrough=True) }}
                                 {% else %}
-                                    {{ ambience['lodgement']['fields'].get(field['field_name'])|e|linebreaks }}
+                                    {{ ambience['lodgement']['fields'].get(field['field_name'])|e|linebreaks|s }}
                                 {% endif %}
                             {% endif %}
                         </dd>
@@ -85,10 +85,10 @@
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
-                        <div class="pull-right">{{ inhabitants[(values['lodgement_id'], part_id)]|length|e }}</div>
+                        <div class="pull-right">{{ inhabitants[(values['lodgement_id'], part_id)]|length }}</div>
                         <h3 class="panel-title">
                             {% if ambience['event']['parts']|length > 1 %}
-                                {{ part['title']|e }}
+                                {{ part['title'] }}
                             {% else %}
                                 {% trans -%}Inhabitants{%- endtrans %}
                             {% endif %}
@@ -99,12 +99,12 @@
                         {% for description, lodgement_id, problem_part, affected_regs, severeness in problems
                                 if problem_part == part_id %}
                             <p class="{% if severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
-                                {{ gettext(description)|e }}
+                                {{ gettext(description) }}
                                 {% if affected_regs %}
                                     (
                                         {%- for reg_id in affected_regs -%}
-                                            {{ personas[registrations[reg_id]['persona_id']]['given_names']|e }}
-                                            {{ personas[registrations[reg_id]['persona_id']]['family_name']|e }}
+                                            {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
+                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
                                             {%- if not loop.last %}, {% endif %}
                                         {%- endfor -%}
                                     )
@@ -135,7 +135,7 @@
         <div class="row">
             <div class="col-sm-4">
                 <div class="p">
-                    <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" id="deletelodgementform"
+                    <form action="{{ cdedblink('event/delete_lodgement') }}" method="POST" id="deletelodgementform"
                           style="display: inline;">
                         {{ util.input_submit(gettext("Delete"), readonly=is_locked, aclass="btn btn-sm btn-danger",
                                 icon='trash') }}

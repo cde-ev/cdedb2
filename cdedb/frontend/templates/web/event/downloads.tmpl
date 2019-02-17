@@ -2,7 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
         Downloads for Event {{ title }}
     {%- endtrans %}
 {% endblock %}
@@ -13,7 +13,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Downloads <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        Downloads <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -34,7 +34,7 @@
             ] %}
                 <tr>
                     <td>
-                        {{ name|e }}
+                        {{ name }}
                         {% if endpoint in landscape %}
                             <br /> Landscape
                         {% endif %}

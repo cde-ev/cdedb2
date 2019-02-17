@@ -2,7 +2,7 @@
 {% extends "web/assembly/base.tmpl" %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint = 'weak' %}
-{% block title %}{{ ambience['assembly']['title']|e }}{% endblock %}
+{% block title %}{{ ambience['assembly']['title'] }}{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn",
@@ -22,7 +22,7 @@
 
     <dl class="dl-horizontal">
         <dt>Anmeldeschluss</dt>
-        <dd>{{ ambience['assembly']['signup_end']|datetime(lang=lang)|e }}</dd>
+        <dd>{{ ambience['assembly']['signup_end']|datetime(lang=lang) }}</dd>
         <dt>{% trans -%}Participationstatus{%- endtrans %}</dt>
         <dd>
             {% if attends %}
@@ -30,7 +30,7 @@
             {% else %}
                 <p><strong class="text-muted">{% trans -%}You are not participating.{%- endtrans %}</strong></p>
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
-                    <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
+                    <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
                         {{ util.input_submit(value=gettext("Participate"), icon="log-in") }}
                     </form>
                 {% endif %}
@@ -54,11 +54,11 @@
                         {% for attachment_id, attachment in attachments|dictsort %}
                             <li>
                                 {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
-                                        attachment['title'])}}
+                                        attachment['title']) }}
                                 {% if is_admin %}
                                     <form action="{{ cdedblink('assembly/remove_attachment',
-                                                               {'attachment_id': attachment_id})|e }}"
-                                            method="POST" id="removeattachmentform{{ attachment_id|e }}",
+                                                               {'attachment_id': attachment_id}) }}"
+                                            method="POST" id="removeattachmentform{{ attachment_id }}",
                                             style="display: inline;">
                                         {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
                                                 title=gettext("Delete File")) }}
@@ -84,10 +84,10 @@
                                     <li>
                                         {{ util.href(cdedblink("assembly/get_attachment",
                                                      {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
-                                                     battachment['title'])}}
+                                                     battachment['title']) }}
                                         (<small class="text-muted nowrap">
                                             {{- util.make_icon('thumbs-up', arialabel=gettext("ballot_file_arialabel")) }}
-                                            {{ ballot['title']|e -}}
+                                            {{ ballot['title'] -}}
                                          </small>)
                                     </li>
                                 {% endfor %}
@@ -106,7 +106,7 @@
                 <div class="row">
                     <div class="col-sm-4">
                         <div class="p">
-                            <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST"
+                            <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST"
                                   id="concludeassemblyform" style="display: inline;">
                                 {{ util.input_submit(value=gettext("Archive"), readonly=has_activity, aclass="btn btn-danger",
                                                      icon="folder-close") }}

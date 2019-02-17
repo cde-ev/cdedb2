@@ -1,7 +1,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names']|e, family_name=ambience['persona']['family_name'] -%}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] -%}
     	Modify Memberhip for {{ given_names }} {{ family_name }}
     {%- endtrans %}
 {% endblock %}
@@ -24,7 +24,7 @@
             <li>{% trans -%}Loss of Membership Fee Balance{%- endtrans %}</li>
         </ul>
 
-        <form action="{{ cdedblink('core/modify_membership')|e }}" method="POST" id="modifymembershipform">
+        <form action="{{ cdedblink('core/modify_membership') }}" method="POST" id="modifymembershipform">
             <div>
                 {{ util.input_hidden(name="is_member", value=False) }}
                 {{ util.input_submit(value=gettext("Terminate Membership"), aclass="btn btn-warning") }}&emsp;
@@ -33,7 +33,7 @@
             </div>
         </form>
    {% else %}
-        <form action="{{ cdedblink('core/modify_membership')|e }}" method="POST" id="modifymembershipform">
+        <form action="{{ cdedblink('core/modify_membership') }}" method="POST" id="modifymembershipform">
             <div>
                 {{ util.input_hidden(name="is_member", value=True) }}
                 {{ util.input_submit(value=gettext("Make a Member")) }}&emsp;

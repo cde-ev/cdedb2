@@ -2,7 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Your Registration ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -14,7 +14,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Your Registration{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -36,7 +36,7 @@
                 </tr>
                 <tr>
                     <td>{% trans -%}IBAN{%- endtrans %}</td>
-                    <td>{{ ambience['event']['iban']|e }}</td>
+                    <td>{{ ambience['event']['iban'] }}</td>
                 </tr>
                 <tr>
                     <td>{% trans -%}BIC{%- endtrans %}</td>
@@ -52,8 +52,8 @@
                 </tr>
                 <tr>
                     <td>{% trans -%}Reference{%- endtrans %}</td>
-                    <td>{{ user['given_names']|e }} {{ user['family_name']|e }},
-                          {{ user['persona_id']|cdedbid|e }}, {{ ambience['event']['title']|e }}</td>
+                    <td>{{ user['given_names'] }} {{ user['family_name'] }},
+                          {{ user['persona_id']|cdedbid }}, {{ ambience['event']['title'] }}</td>
                 </tr>
             </tbody>
         </table>
@@ -73,12 +73,12 @@
         {% for part_id, part in registration['parts']|dictsort %}
             <dt>
                 {% if ambience['event']['parts']|length > 1 %}
-                    {{ ambience['event']['parts'][part_id]['title']|e }}
+                    {{ ambience['event']['parts'][part_id]['title'] }}
                 {% else %}
                     {% trans -%}Registration Status{%- endtrans %}
                 {% endif %}
             </dt>
-            <dd>{{ gettext(part['status']|enum(enums['RegistrationPartStati']))|e }}</dd>
+            <dd>{{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}</dd>
         {% endfor %}
     </dl>
 
@@ -89,7 +89,7 @@
             {{ util.href(cdedblink("event/amend_registration_form"), "Ändern", aclass="btn btn-sm btn-warning",
                          icon='pencil') }}
             {% if not ambience['event']['registration_soft_limit'] is none %}
-                {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)|e-%}
+                {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)-%}
                     Changes can be made until the registration end({{ date }}).
                 {%- endtrans %}
             {% endif %}
@@ -118,7 +118,7 @@
         </dd>
         <dt>Fotos</dt>
         <dd>
-            {% trans consent="<strong>{}</strong> ".format(gettext("do not"))
+            {% trans consent="<strong>%s</strong> "|s|format(gettext("do not"))
                             if not registration['foto_consent'] else "" -%}
                 I {{ consent }}agree, that photos and recordings of myself, that are made in the context
                 of this event, may be used for the event-documentation and a CdE-internal,
@@ -142,21 +142,21 @@
             <h4>
                 {% trans -%}Course Choices{%- endtrans %}
                 {% if ambience['event']['tracks']|length > 1 %}
-                    für {{ track['title']|e }}
+                    für {{ track['title'] }}
                 {% endif %}
             </h4>
 
             <dl class="dl-horizontal">
                 {% if reg_track['course_instructor'] %}
                     <dt>{% trans -%}Instructor of{%- endtrans %}</dt>
-                    <dd><em>{{ courses[reg_track['course_instructor']]['title']|e }}</em>.</dd>
+                    <dd><em>{{ courses[reg_track['course_instructor']]['title'] }}</em>.</dd>
                 {% endif %}
                 {% for i in range(track['num_choices']) %}
                     <dt>{{ "{}. Wahl".format(i + 1) }}</dt>
                     <dd>
                         {% if reg_track['choices']|length > i %}
-                            {{ courses[reg_track['choices'][i]]['nr']|e }}.
-                            {{ courses[reg_track['choices'][i]]['title']|e }}
+                            {{ courses[reg_track['choices'][i]]['nr'] }}.
+                            {{ courses[reg_track['choices'][i]]['title'] }}
                         {% else %}
                             —
                         {% endif %}

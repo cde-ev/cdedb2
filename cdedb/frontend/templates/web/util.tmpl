@@ -12,33 +12,33 @@
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
         {%- if script == 'queryform' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js") }}"></script>
             {{ cdedb_script('selectize') }}
         {%- elif script == 'dynamicrow' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_dynamicrow.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_dynamicrow.js") }}"></script>
         {%- elif script == 'historycollapse' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_historycollapse.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_historycollapse.js") }}"></script>
         {%- elif script == 'helper' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_helper.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_helper.js") }}"></script>
         {%- elif script == 'selectize' %}
-            <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js")|e }}"></script>
-            <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css")|e }}" />
+            <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js") }}"></script>
+            <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
         {%- elif script == 'csv-tools' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_csv_tools.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_csv_tools.js") }}"></script>
         {%- elif script == 'search-persona' %}
             {{- cdedb_script('selectize') }}
-            <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js") }}"></script>
         {%- elif script == 'change-mailinglist' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_change_mailinglist.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_change_mailinglist.js") }}"></script>
         {%- elif script == 'voting' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_voting.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_voting.js") }}"></script>
         {%- elif script == 'questionnaire_config' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_questionnaire_config.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_questionnaire_config.js") }}"></script>
         {%- elif script == 'manage_participants' %}
             {{- cdedb_script('selectize') }}
-            <script type="text/javascript" src="{{ staticurl("cdedb_manage_participants.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_manage_participants.js") }}"></script>
         {%- elif script == 'orderrow' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_orderrow.js")|e }}"></script>
+            <script type="text/javascript" src="{{ staticurl("cdedb_orderrow.js") }}"></script>
         {%- endif %}
         {%- do script_files.append(script) %}
     {%- endif %}
@@ -60,14 +60,14 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link #}
 {% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='') -%}
-{% if readonly %}<span {% else -%}<a href="{{ ref|e }}"{% endif %}
+{% if readonly %}<span {% else -%}<a href="{{ ref }}"{% endif %}
 {%- if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif -%}
            {% if readonly %} {% if not 'btn' in aclass %}link-{% endif%}disabled{% endif %}"
 {%- endif %}
 {%- if active %} aria-current="page" {% endif %}{# We use the `active` attribute for navigation only #}
-{%- if title %} title="{{ title|e }}"{% endif %}>
-{%- if icon %}{{ make_icon(icon) }}&nbsp;{% endif %}{{ label|e }}
+{%- if title %} title="{{ title }}"{% endif %}>
+{%- if icon %}{{ make_icon(icon) }}&nbsp;{% endif %}{{ label }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
@@ -83,10 +83,10 @@
               semantically important icon in support of a11y. #}
 {% macro make_icon(icon, aclass='', title='', arialabel='') -%}
     {% if title and not arialabel %}{% set arialabel = title %}{% endif -%}
-    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}"
-            {%- if title %} title="{{ title|e }}"{% endif %} aria-hidden="true"></span>
+    <span class="glyphicon glyphicon-{{ icon }} {{aclass }}"
+            {%- if title %} title="{{ title }}"{% endif %} aria-hidden="true"></span>
     {%- if arialabel %}
-        <span class="sr-only">{{ arialabel|e }}</span>
+        <span class="sr-only">{{ arialabel }}</span>
     {%- endif %}
 {%- endmacro %}
 
@@ -96,10 +96,10 @@
  # ############## #}
 
 {% macro bootstrap_panel(title="", aclass="panel-default", icon="", anid="") %}
-    <div class="panel {{ aclass|e }}"{% if anid %} id="{{ anid|e }}"{% endif %}>
+    <div class="panel {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
         {%- if title or icon %}
             <div class="panel-heading">
-                <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title|e }}</h3>
+                <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title }}</h3>
             </div>
         {%- endif %}
         <div class="panel-body">
@@ -123,11 +123,11 @@
               accessible to screen readers by any other means. #}
 {% macro deko_checkbox(checked, anid='', titles=[]) %}
     {%- if checked %}
-        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"
+        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid }}"{% endif %} data-checked="True"
                 {%- if titles[1] %} title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
     {%- elif checked is not none %}
-        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="False"
+        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid }}"{% endif %} data-checked="False"
                 {%- if titles[0] %} title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
     {%- endif %}
@@ -147,12 +147,12 @@
 {% macro output_given_displayname(given_names, display_name) %}
     {%- if display_name in given_names %}
         {%- if not display_name or display_name == given_names -%}
-            {{ given_names|e }}
+            {{ given_names }}
         {%- else -%}
-            {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e)) }}
+            {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e))|s }}
         {%- endif %}
     {%- else -%}
-        {{ given_names|e }} ({{ display_name|e }})
+        {{ given_names }} ({{ display_name }})
     {%- endif -%}
 {% endmacro %}
 
@@ -180,11 +180,11 @@
 {% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
     {%- if active or readonly -%}
         <li {% if active %}class="active" aria-current="location"{% endif %}>
-            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e -}}
+            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label -}}
         </li>
     {%- else -%}
-        <li><a href="{{ ref|e }}">
-                {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e -}}
+        <li><a href="{{ ref }}">
+                {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label -}}
         </a></li>
     {%- endif -%}
 {% endmacro %}
@@ -192,7 +192,7 @@
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
 {% macro doclink(topic, anchor=None) %}
-    <a href="{{ docurl(topic, anchor)|e }}" class="btn btn-info btn-lg pull-right" target="_blank">
+    <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
         {{ make_icon('question-sign') }}
     {% trans -%}
         Help
@@ -212,9 +212,9 @@
 
 {% macro format_error(error) %}
     {%- if error.args|length == 1 %}
-        {{- gettext(error.args[0]|string)|e }}<br />
+        {{- gettext(error.args[0]|string) }}<br />
     {%- elif error.args|length == 2 %}
-        {{- gettext(error.args[0]|string).format(**error.args[1])|e }}<br />
+        {{- gettext(error.args[0]|string).format(**error.args[1]) }}<br />
     {%- elif error.args|length == 0 %}
         {#- Display nothing if no message was supplied. #}
     {%- else %}
@@ -225,7 +225,7 @@
 {% macro output_info(info, link='') %}
     {%- if info %}
         <p class="help-block no-color">
-	    {{ make_icon('info-sign') }} {{ info|e }}
+	    {{ make_icon('info-sign') }} {{ info }}
 	    {% if link %}
 	        {{ link }}
 	    {% endif %}
@@ -265,11 +265,11 @@
    horizontal=False parameter.) #}
 {% macro input_hidden(name, value=None, defaultvalue='', anid='', aclass='') %}
     {%- if value is none -%}
-        <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
-          {%- if anid %} id="{{ anid|e }}" {% endif %} {%- if aclass %} class="{{ aclass|e }}"{% endif %} />
+        <input type="hidden" name="{{ name }}" value="{{ values.get(name, defaultvalue) }}"
+          {%- if anid %} id="{{ anid }}" {% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %} />
     {%- else -%}
-        <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" {%- if anid %} id="{{ anid|e }}" {% endif %}
-          {%- if aclass %} class="{{ aclass|e }}"{% endif %} />
+        <input type="hidden" name="{{ name }}" value="{{ value }}" {%- if anid %} id="{{ anid }}" {% endif %}
+          {%- if aclass %} class="{{ aclass }}"{% endif %} />
     {%- endif -%}
 {% endmacro %}
 
@@ -277,10 +277,10 @@
         horizontal=True, labelid='', infolink='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {%- if label %}
-            <label{% if labelid %} id="{{ labelid|e }}"{% endif %}{% if anid %} for="{{ anid|e }}"{% endif %} {# -#}
+            <label{% if labelid %} id="{{ labelid }}"{% endif %}{% if anid %} for="{{ anid }}"{% endif %} {# -#}
                     class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} {# -#}
                            control-label">
-                {{- label|e -}}
+                {{- label -}}
             </label>
         {%- endif %}
         <div {%- if horizontal %} class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
@@ -296,19 +296,19 @@
 
 {% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, type='text',
         placeholder='', arialabel='', attributes='') %}
-    <input type="{{ type|e }}" {%- if aclass %} class="{{ aclass|e }}"{% endif %}
+    <input type="{{ type }}" {%- if aclass %} class="{{ aclass }}"{% endif %}
             {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {%- if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
-            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
-            {%- if anid %} id="{{ anid|e }}"{% endif %} {# -#}
-            name="{{ name|e }}"
+            {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
+            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
+            {%- if anid %} id="{{ anid }}"{% endif %} {# -#}
+            name="{{ name }}"
             {%- if type != 'password' %}
                 {%- if type == 'date' %}
-                    value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True)|e }}"
+                    value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
                 {%- elif type == 'datetime-local' %}
-                    value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True)|e }}"
+                    value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
                 {%- else %}
-                    value="{{ values.get(name, defaultvalue)|e }}"
+                    value="{{ values.get(name, defaultvalue) }}"
                 {%- endif %}
             {%- endif %}
             {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }} />
@@ -324,11 +324,11 @@
 {%- endmacro %}
 
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
-    <input type="file" {%- if aclass %} class="{{ aclass|e }}"{% endif %}
-            {%- if accept %} class="{{ accept|e }}"{% endif %}
-            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
-            {%- if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"{#-#}
-            name="{{ name|e }}" {%- if readonly %} disabled="disabled"{% endif %} />
+    <input type="file" {%- if aclass %} class="{{ aclass }}"{% endif %}
+            {%- if accept %} class="{{ accept }}"{% endif %}
+            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
+            {%- if anid %} id="{{ anid }}"{% endif %} value="{{ values.get(name, defaultvalue) }}"{#-#}
+            name="{{ name }}" {%- if readonly %} disabled="disabled"{% endif %} />
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
@@ -341,11 +341,11 @@
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, rows=3,
                         arialabel='', attributes='') %}
-    <textarea {% if aclass %} class="{{ aclass|e }}"{% endif %} rows="{{ rows }}"
-            {%- if anid %} id="{{ anid|e }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %} {# -#}
-            name="{{ name|e }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+    <textarea {% if aclass %} class="{{ aclass }}"{% endif %} rows="{{ rows }}"
+            {%- if anid %} id="{{ anid }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {# -#}
+            name="{{ name }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }}>
-        {{- values.get(name, defaultvalue)|e -}}
+        {{- values.get(name, defaultvalue) -}}
     </textarea>
 {%- endmacro %}
 
@@ -362,14 +362,14 @@
 {% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
         radio=False, arialabel='', attributes='') -%}
     <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
-        <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name|e }}" value="{{ value|e }}"
+        <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name }}" value="{{ value }}"
             {%- if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %} {# -#}
                 checked="checked"
             {%- endif %}
-            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
-            {%- if readonly %} disabled="disabled"{% endif %} {%- if anid %} id="{{ anid|e }}"{% endif %}
-            {%- if aclass %} class="{{ aclass|e }}"{% endif %} {{ attributes }} />
-        {{ label|e -}}
+            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
+            {%- if readonly %} disabled="disabled"{% endif %} {%- if anid %} id="{{ anid }}"{% endif %}
+            {%- if aclass %} class="{{ aclass }}"{% endif %} {{ attributes }} />
+        {{ label -}}
     </label>
 {%- endmacro %}
 
@@ -377,7 +377,7 @@
         arialabeledby="") %}
     <div role="{% if radio %}radio{% endif %}group"
             {%- if arialabeledby %} aria-labeledby="{{ arialabeledby }}"{% endif %}>
-        {%- if arialabel %}<legend class="sr-only">{{ arialabel|e }}</legend>{% endif %}
+        {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {%- for entry_value, entry_label in entries %}
             {% if not inline -%}
                 <div class="{% if radio %}radio{% else %}checkbox{% endif %}{% if readonly %} disabled{% endif %}">
@@ -419,18 +419,18 @@
 
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
         nulloption=None, arialabel='', attributes="") %}
-    <select name="{{ name|e }}" {%- if anid %} id="{{ anid|e }}"{% endif %}
-            {%- if aclass %} class="{{ aclass|e }}"{% endif %}{% if readonly %} disabled="disabled"{% endif %}
-            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %} {{ attributes }}>
+    <select name="{{ name }}" {%- if anid %} id="{{ anid }}"{% endif %}
+            {%- if aclass %} class="{{ aclass }}"{% endif %}{% if readonly %} disabled="disabled"{% endif %}
+            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {{ attributes }}>
         {%- if nulloption is not none %}
             <option value=""{% if values.get(name, defaultvalue) == None %} selected="selected"{% endif %}>
-                {{- nulloption|e -}}
+                {{- nulloption -}}
             </option>
         {%- endif %}
         {%- for value, label in entries %}
-            <option value="{{ value|e }}"
+            <option value="{{ value }}"
               {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
-                {{- label|e -}}
+                {{- label -}}
             </option>
         {%- endfor %}
     </select>
@@ -446,22 +446,22 @@
 {%- endmacro%}
 
 {% macro input_static(value, anid='') %}
-    <div class="form-control-static"{% if anid %}id="{{ anid|e }}"{% endif %}>{{ value|e }}</div>
+    <div class="form-control-static"{% if anid %}id="{{ anid }}"{% endif %}>{{ value }}</div>
 {%- endmacro %}
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True, infolink='') %}
-    {%- if caller %}{% set value=caller() %}{% else %}{% set value=value|e %}{% endif %}
+    {%- if caller %}{% set value=caller() %}{% endif %}
     {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink) %}
-        <div class="form-control-static"{% if anid %}id="{{ anid|e }}"{% endif %}>{{ value }}</div>
+        <div class="form-control-static"{% if anid %}id="{{ anid }}"{% endif %}>{{ value }}</div>
     {%- endcall %}
 {%- endmacro %}
 
 {% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="ok",
         readonly=False, title='', arialabel='') %}
-    <button type="submit" name="{{ name|e }}" {%- if readonly %} disabled="disabled"{% endif %}
-            {%- if anid %} id="{{ anid|e }}"{% endif %} {%- if aclass %} class="{{ aclass|e }}"{% endif %}
-            {%- if title %} title="{{ title|e }}"{% endif %} value="True"
-            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}>
-            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ value|e -}}</button>
+    <button type="submit" name="{{ name }}" {%- if readonly %} disabled="disabled"{% endif %}
+            {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
+            {%- if title %} title="{{ title }}"{% endif %} value="True"
+            {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}>
+            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ value -}}</button>
 {%- endmacro %}
 
 {% macro form_input_submit(value="Save", name="submitform", readonly=False, anid='',
@@ -487,7 +487,7 @@
         horizontal=True, infolink='') %}
     <div class="form-group {% if name1 in errors or name2 in errors %}has-error{% endif %}">
         <label class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
-            {{- label|e -}}
+            {{- label -}}
         </label>
         <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
             <div class="input-group">

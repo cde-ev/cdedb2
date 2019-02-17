@@ -17,20 +17,20 @@
             {{ util.href(cdedblink("event/show_event", {'event_id': event['id']}), event['title']) }}
         </div>
         <div class="col-sm-5 small">
-            {{ event['begin']|date(lang=lang)|e }}&#8239;–&#8239;{{ event['end']|date(lang=lang)|e }}
+            {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
             {% if event['parts']|length > 1 %}
-                ({% trans count=event['parts']|length|e -%}
+                ({% trans count=event['parts']|length -%}
                     {{ count }} Parts
                 {%- endtrans %})
             {% endif %}
         </div>
         <div class="col-sm-3 small">
-            <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']})|e }}">
-                {% trans count=event['registrations']|e -%}
+            <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']}) }}">
+                {% trans count=event['registrations'] -%}
                 	{{ count }} Registrations
                 {%- endtrans %}
             </a>,
-            {% trans count=event['orgas']|length|e, number=event['orgas']|length -%}
+            {% trans count=event['orgas']|length, number=event['orgas']|length -%}
                 {{ count }} Orga
             {%- pluralize number -%}
                 {{ count }} Orgas

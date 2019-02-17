@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans pcourse=ambience['pcourse']['title']|e, pevent=ambience['pevent']['title']|e -%}
+    {% trans pcourse=ambience['pcourse']['title'], pevent=ambience['pevent']['title'] -%}
         Edit {{ pcourse }} ({{ pevent }})
     {%- endtrans %}
 {% endblock %}
@@ -12,9 +12,9 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title']|e, icon="calendar") }}
+        ambience['pevent']['title'], icon="calendar") }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
-        ambience['pcourse']['title']|e, icon="book") }}
+        ambience['pcourse']['title'], icon="book") }}
 {{ util.breadcrumb_link(cdedblink("cde/change_past_course_form", {'pcourse_id' : ambience['pcourse']['id']}),
         "Bearbeiten", active=True) }}
 {% endblock %}
@@ -24,7 +24,7 @@
             $('#changecourseform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('cde/change_past_course')|e }}" method="POST" id="changecourseform"
+    <form action="{{ cdedblink('cde/change_past_course') }}" method="POST" id="changecourseform"
             class="form-horizontal">
         {{ util.form_input_text(name="nr", label=gettext("Number")) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}

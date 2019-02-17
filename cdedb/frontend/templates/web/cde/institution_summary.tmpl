@@ -28,7 +28,7 @@
             <span class="drow-buttonspace">
                 {% if newrow %}
                     {{ util.input_checkbox("create_{}".format(institution_id), label=gettext("Add"),
-                                           attributes='data-basename="create_"', aclass='drow-indicator')}}
+                                           attributes='data-basename="create_"', aclass='drow-indicator') }}
                 {% else %}
                     {{ util.input_checkbox("delete_{}".format(institution_id), label=gettext("Delete"),
                                            readonly=not deletable, aclass='drow-indicator') }}
@@ -48,7 +48,7 @@
             $('#institutionsummaryform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('cde/institution_summary')|e }}" method="POST" id="institutionsummaryform">
+    <form action="{{ cdedblink('cde/institution_summary') }}" method="POST" id="institutionsummaryform">
         <table class="table table-condensed" id="drow-table">
             <thead>
                 <tr><th>{% trans -%}Name{%- endtrans %}</th><th>{% trans -%}Shortname{%- endtrans %}</th><th></th></tr>

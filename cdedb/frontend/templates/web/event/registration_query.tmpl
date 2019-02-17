@@ -5,14 +5,14 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Registrations ({{ title }})
     {%- endtrans %}    
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans -%}Registrations{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -37,7 +37,7 @@
         </div>
     </div>
 
-    {{ titles.update({
+    {% do titles.update({
             "reg.id": gettext("ID"),
             "reg.notes": gettext("Notes"),
             "reg.orga_notes": gettext("Orga-Notes"),
@@ -64,12 +64,12 @@
             "persona.location": gettext("City"),
             "persona.country": gettext("Country"),
             "ctime.creation_time": gettext("Registration Time"),
-            "mtime.modification_time": gettext("Last Modification Time"),})|e }}
+            "mtime.modification_time": gettext("Last Modification Time"),}) %}
 
     {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
 
     {% if values['is_search'] %}
-        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length|e }}]</h3>
+        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
 
         <!-- Additional buttons for the registration_query -->
         <div class="p pull-right">

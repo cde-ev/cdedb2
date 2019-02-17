@@ -13,7 +13,7 @@
         <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("CdE-Member Quick-Search"), icon='search', aclass="panel-primary") %}
                 {% if "searchable" in user.roles %}
-                    <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform"
+                    <form action="{{ cdedblink('cde/member_search') }}" method="GET" id="membersearchform"
                             class="form-horizontal">
                         {{ util.input_hidden(name="is_search", value=True) }}
                         <p>
@@ -47,7 +47,7 @@
                 {% if has_lastschrift %}
                     <p>
                         {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
-                                 amount=25|money|e, idea=gettext("Idee SchülerAkademie") -%}
+                                 amount=25|money, idea=gettext("Idee SchülerAkademie") -%}
                             With the Initiative 25+ you can support the CdE and the "{{ idea }}" financially,
                             via Direct Debit of {{ amount }} or more annually. {{ link }}
                         {%- endtrans %}
@@ -65,7 +65,7 @@
                     </p>
                 {% else %}
                     <p>
-                        {% trans amount=25|money|e, idea=gettext("Idee SchülerAkademie") -%}
+                        {% trans amount=25|money, idea=gettext("Idee SchülerAkademie") -%}
                             You want to support the CdE and the "{{ idea }}" financially?
                             You can give authorization for the CdE to withdraw {{ amount }} or more annually via Direct Debit.
                         {%- endtrans %}
@@ -85,7 +85,7 @@
         {% call util.bootstrap_panel(title=gettext("Membership-Fee"), icon='euro') %}
             {% if "member" in user.roles %}
                 <p>
-                    {% trans amount=data['balance']|money|e -%}
+                    {% trans amount=data['balance']|money -%}
                         Your current Balance is {{ amount }}.
                     {%- endtrans %}
                     {% if deadline <= now().date() %}
@@ -93,7 +93,7 @@
                             Your Membership will end in a few days.
                         {%- endtrans %}
                     {% else %}
-                        {% trans date=deadline|date(lang=lang)|e -%}
+                        {% trans date=deadline|date(lang=lang) -%}
                             This will presumably last until {{ date }}.
                         {%- endtrans %}
                     {% endif %}
@@ -115,24 +115,24 @@
                 <tbody>
                     <tr>
                         <td>{% trans -%}Account holder{%- endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_Inhaber']|e }}</td>
+                        <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
                     </tr>
                     <tr>
                         <td>{% trans -%}IBAN{%- endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_IBAN']|e }}</td>
+                        <td>{{ meta_info['CdE_Konto_IBAN'] }}</td>
                     </tr>
                     <tr>
                         <td>{% trans -%}BIC{%- endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_BIC']|e }}</td>
+                        <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
                     </tr>
                     <tr>
                         <td>{% trans -%}Bank{%- endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_Institut']|e }}</td>
+                        <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
                     </tr>
                     <tr>
                         <td>{% trans -%}Payment reference{%- endtrans %}</td>
-                        <td>{{ data['id']|cdedbid|e }}, {{ data['family_name']|e }},
-                            {{ data['given_names']|e }}</td>
+                        <td>{{ data['id']|cdedbid }}, {{ data['family_name'] }},
+                            {{ data['given_names'] }}</td>
                     </tr>
                 </tbody>
             </table>

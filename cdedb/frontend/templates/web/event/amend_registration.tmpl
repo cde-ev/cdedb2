@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
         Edit Registration for {{ title }}
     {%- endtrans %}
 {% endblock %}
@@ -17,12 +17,12 @@
 {% endblock %}{% block heading %}
     <h1 class="title">
         {% trans -%}Edit Registration{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('event/amend_registration')|e }}" method="POST" id="amendregistrationform"
+    <form action="{{ cdedblink('event/amend_registration') }}" method="POST" id="amendregistrationform"
           class="form-horizontal">
 
         {% if not age.may_mix() %}
@@ -50,7 +50,7 @@
             <h4>
                 {% trans -%}Course Choices{%- endtrans %}
                 {% if course_choices|length > 1 %}
-                    {% trans title=track['title']|e -%}for {{ title }}{%- endtrans %}
+                    {% trans title=track['title'] -%}for {{ title }}{%- endtrans %}
                 {% endif %}
             </h4>
 

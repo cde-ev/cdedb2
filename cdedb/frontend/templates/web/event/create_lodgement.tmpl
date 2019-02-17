@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Create Lodgement ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -17,11 +17,11 @@
 {% block heading %}
     <h1 class="title">
     {% trans -%}Create Lodgement{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/create_lodgement')|e }}" method="POST" id="createlodgementform"
+    <form action="{{ cdedblink('event/create_lodgement') }}" method="POST" id="createlodgementform"
           class="form-horizontal">
         {{ util.form_input_text(name="moniker", label=gettext("Moniker")) }}
         {{ util.form_input_text(name="capacity", label=gettext("Regular Capacity"), type="number") }}

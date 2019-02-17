@@ -14,7 +14,7 @@
         <h2>
             {% trans -%}Result{%- endtrans %}
             <small>
-            {% trans number=result|length, count=result|length|e -%}
+            {% trans number=result|length, count=result|length -%}
                 {{ count }} Member found
             {%- pluralize number -%}
                 {{ count }} Members found
@@ -31,7 +31,7 @@
         </ul>
     {% endif %}
 
-    <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform" class="form-horizontal">
+    <form action="{{ cdedblink('cde/member_search') }}" method="GET" id="membersearchform" class="form-horizontal">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary mosp">
             <div class="panel-heading">

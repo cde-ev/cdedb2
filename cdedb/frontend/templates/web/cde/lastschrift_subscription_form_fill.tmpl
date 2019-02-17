@@ -12,7 +12,7 @@
     {% trans -%}
         Unfortunately the Direct Debit Authorization Form is only available in German.
     {%- endtrans %}
-    <form action="{{ cdedblink('cde/lastschrift_subscription_form')|e }}" method="GET"
+    <form action="{{ cdedblink('cde/lastschrift_subscription_form') }}" method="GET"
           id="filllastschriftform" class="form-horizontal">
 
         <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>

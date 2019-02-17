@@ -4,7 +4,7 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('orderrow') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Reorder Questionnaire ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -17,33 +17,33 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Reorder Questionnaire{%- endtrans %}
-        <small>{{ util.make_icon('blackboard', arialabel=gettext("Event")) }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     <div class="orderrow-container" id="rowlist">
         {% for entry in questionnaire %}
-            <div class="orderrow-outer" data-id="{{ loop.index0|e }}" tabindex="0">
+            <div class="orderrow-outer" data-id="{{ loop.index0 }}" tabindex="0">
                 <div class="orderrow-inner clearfix" draggable="true">
-                    <div class="orderrow-indicator"><span class="label label-primary">{{ loop.index0|e }}</span></div>
+                    <div class="orderrow-indicator"><span class="label label-primary">{{ loop.index0 }}</span></div>
                     {% if entry['field_id'] %}
                         <div class="miniature-label">{% if entry['title'] %}{{ entry['title']|truncate(50,False,' …') }}{% endif %}</div>
                         {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
                             {% if FIELD['entries'] %}
                                 <div class="miniature-text">
                                     {{ util.make_icon('menu-down', aclass='pull-right') }}
-                                    → [{{ FIELD['field_name']|e }}]
+                                    → [{{ FIELD['field_name'] }}]
                                 </div>
                             {% else %}
                                 {% if FIELD['kind'] == "bool" %}
                                     <div class="miniature-checkbox">
-                                        {{ util.make_icon('check') }} → [{{ FIELD['field_name']|e }}]
+                                        {{ util.make_icon('check') }} → [{{ FIELD['field_name'] }}]
                                     </div>
                                 {% else %}
                                     {% if entry['input_size'] %}
-                                        <div class="miniature-textarea">→ [{{ FIELD['field_name']|e }}]</div>
+                                        <div class="miniature-textarea">→ [{{ FIELD['field_name'] }}]</div>
                                     {% else %}
-                                        <div class="miniature-text">→ [{{ FIELD['field_name']|e }}]</div>
+                                        <div class="miniature-text">→ [{{ FIELD['field_name'] }}]</div>
                                     {% endif %}
                                 {% endif %}
                             {% endif %}
@@ -52,17 +52,17 @@
                     {# Text-only entry #}
                     {% else %}
                         {% if entry['title'] %}
-                            <div class="miniature-heading">{{ entry['title']|e }}</div>
+                            <div class="miniature-heading">{{ entry['title'] }}</div>
                         {% endif %}
                         {% if entry['info'] %}
-                            <div class="miniature-pre">{{ entry['info']|truncate(200,False,' …')|e }}</div>
+                            <div class="miniature-pre">{{ entry['info']|truncate(200,False,' …') }}</div>
                         {% endif %}
                     {% endif %}
                 </div>
             </div>
         {% endfor %}
     </div>
-    <form action="{{ cdedblink('event/reorder_questionnaire')|e }}" method="POST" id="reorderquestionnaireform"
+    <form action="{{ cdedblink('event/reorder_questionnaire') }}" method="POST" id="reorderquestionnaireform"
           class="form-horizontal">
         {{ util.form_input_text(name="order", anid="input-roworder", label=gettext("Order"),
                                 placeholder=gettext("Nr,Nr,Nr,…"), defaultvalue=range(0,questionnaire|length)|join(','),

@@ -33,7 +33,7 @@
     {{ generic.user_search_mask("event", ("pevent_id", "pcourse_id")) }}
 
     {% if values['is_search'] %}
-        <h3>Ergebnis [{{ result|length|e }}]</h3>
+        <h3>Ergebnis [{{ result|length }}]</h3>
         {{ generic.user_search_result(result, "event") }}
     {% endif %}
 {% endblock %}

@@ -4,15 +4,15 @@
 {% block scripts %}
     {% if is_admin %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endif %}
 {% endblock %}
-{% block title %}{{ ambience['pevent']['title']|e }}{% endblock %}
+{% block title %}{{ ambience['pevent']['title'] }}{% endblock %}
 {% block heading %}
-    <h1 class="title">{{ ambience['pevent']['title']|e }}</h1>
+    <h1 class="title">{{ ambience['pevent']['title'] }}</h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Event")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title']|e, icon="calendar", active=True) }}
+        ambience['pevent']['title'], icon="calendar", active=True) }}
 {% endblock %}
 {% block content %}
     {% if is_admin %}
@@ -24,10 +24,10 @@
     <dl class="dl-horizontal">
         {% if is_admin %}
             <dt>{% trans -%}Shortname{%- endtrans %}</dt>
-            <dd>{{ ambience['pevent']['shortname']|e }}</dd>
+            <dd>{{ ambience['pevent']['shortname'] }}</dd>
         {% endif %}
         <dt>{% trans -%}Institution{%- endtrans %}</dt>
-        <dd>{{ institutions[ambience['pevent']['institution']]|e }}</dd>
+        <dd>{{ institutions[ambience['pevent']['institution']] }}</dd>
     </dl>
     
     {{ ambience['pevent']['description']|rst }}
@@ -45,7 +45,7 @@
         <ul>
             {% for anid, acourse in courses|xdictsort('nr', pad=True) %}
                 <li>
-                    {{ acourse['nr']|e }}.
+                    {{ acourse['nr'] }}.
                     {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), acourse['title']) }}
                 </li>
             {% endfor %}
@@ -56,10 +56,10 @@
     {% if is_admin %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">
-                <h4 class="panel-title">{{util.make_icon('plus')}} {% trans -%}Add Participant <u>without</u> Course{%- endtrans %}</h4>
+                <h4 class="panel-title">{{util.make_icon('plus') }} {% trans -%}Add Participant <u>without</u> Course{%- endtrans %}</h4>
             </div>
             <div class="panel-body">
-                <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
+                <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
                     {{ util.input_hidden(name="pcourse_id", value="") }}
                     {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
@@ -69,8 +69,8 @@
                                     arialabel=gettext("ID of the new Participant")) }}
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson(
-                                    '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'}}',
-                                    {{ participants.keys()|list|json }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=past_event_user&phrase=%s'|s) }}',
+                                    {{ participants.keys()|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                 );
                             </script>
                             {{ util.output_errors('persona_id') }}
@@ -96,15 +96,15 @@
                     {% if participant['viewable'] %}
                         {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
                     {% else %}
-                        {{ personas[anid]['given_names']|e }} {{ personas[anid]['family_name']|e }}
+                        {{ personas[anid]['given_names'] }} {{ personas[anid]['family_name'] }}
                     {% endif %}
                     {% if participant['pcourses'] %}
                         (
                         {%- for pcourse_id, pcourse in participant['pcourses']|xdictsort('nr', pad=True) %}
                             {%- if pcourse_id -%}
-                                {{ pcourse['nr']|e }}.
+                                {{ pcourse['nr'] }}.
                                 {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
-                                    pcourse['title']|e) }}
+                                    pcourse['title']) }}
                                 {%- if not loop.last %}, {% endif -%}
                             {% endif -%}
                         {% endfor -%}
@@ -114,8 +114,8 @@
 
                     {# only allow removal of participants without a course #}
                     {% if is_admin and None in participant['pcourse_ids'] %}
-                        <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
-                         id="removeparticipantform{{ anid|e }}" style="display: inline;" class="delete-participant-form">
+                        <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
+                         id="removeparticipantform{{ anid }}" style="display: inline;" class="delete-participant-form">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger",
@@ -125,7 +125,7 @@
                 </li>
             {% endfor %}
             {% if extra_participants %}
-                <li>{% trans count=extra_participants|e, extra_participants=extra_participants -%}
+                <li>{% trans count=extra_participants, extra_participants=extra_participants -%}
                     extra_participants_singular
                 {%- pluralize extra_participants-%}
                     extra_participants_plural
@@ -135,7 +135,7 @@
     {% elif extra_participants %}
         <p>
             <i>
-                {% trans count=extra_participants|e, extra_participants=extra_participants -%}
+                {% trans count=extra_participants, extra_participants=extra_participants -%}
                     {{ count }} Participant
                 {%- pluralize extra_participants -%}
                     {{ count }} Participants

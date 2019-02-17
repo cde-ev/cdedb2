@@ -4,17 +4,17 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans field=ambience['event']['fields'][values['field_id']|int]['field_name']|e,
-             title=ambience['event']['title']|e -%}
+    {% trans field=ambience['event']['fields'][values['field_id']|int]['field_name'],
+             title=ambience['event']['title'] -%}
         Set Field {{ field }} ({{ title }})
     {%- endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans field="<em>{}</em>".format(ambience['event']['fields'][values['field_id']|int]['field_name']|e) -%}
+        {% trans field="<em>%s</em>"|s|format(ambience['event']['fields'][values['field_id']|int]['field_name']|e) -%}
             Set {{ field }}
         {%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -27,7 +27,7 @@
 {% endblock %}
 {% block content %}
     {% if ordered %}
-        <form action="{{ cdedblink('event/field_set')|e }}" method="POST" id="fieldform" class="form-horizontal">
+        <form action="{{ cdedblink('event/field_set') }}" method="POST" id="fieldform" class="form-horizontal">
             {% for registration_id in ordered %}
                 {{ util.form_event_field_input(
                     ambience['event']['fields'][values['field_id']|int], name="input{}".format(registration_id),

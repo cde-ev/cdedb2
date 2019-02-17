@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans pevent=ambience['pevent']['title']|e -%}
+    {% trans pevent=ambience['pevent']['title'] -%}
         Edit {{ pevent }}
     {%- endtrans %}
 {% endblock %}
@@ -12,7 +12,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title']|e, icon="calendar") }}
+        ambience['pevent']['title'], icon="calendar") }}
 {{ util.breadcrumb_link(cdedblink("cde/change_past_event_form", {"pevent_id": ambience['pevent']['id']}), gettext("Edit"),
         active=True) }}
 {% endblock %}
@@ -22,7 +22,7 @@
             $('#changeeventform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('cde/change_past_event')|e }}" method="POST" id="changeeventform"
+    <form action="{{ cdedblink('cde/change_past_event') }}" method="POST" id="changeeventform"
             class="form-horizontal">
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}

@@ -16,11 +16,11 @@
 {% block heading %}
     <h1 class="title">
         {{ gettext("Edit Ballot") }}
-        <small>{{ util.make_icon('thumbs-up') }} {{ ambience['ballot']['title']|e }}</small>
+        <small>{{ util.make_icon('thumbs-up') }} {{ ambience['ballot']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('assembly/change_ballot')|e }}" method="POST" id="changeballotform"
+    <form action="{{ cdedblink('assembly/change_ballot') }}" method="POST" id="changeballotform"
             class="form-horizontal">
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",

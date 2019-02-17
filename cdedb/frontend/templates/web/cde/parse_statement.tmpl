@@ -12,7 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/parse_statement_form"), gettext("Parse Bank Statement"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('cde/parse_statement')|e }}" method="POST" id="statementform">
+    <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform">
         {{ util.form_input_textarea(name="statement", label=gettext("Statement"), horizontal=False,
                 rows=8, anid="input-data") }}
 
@@ -36,7 +36,7 @@
                     <div class="</pre>">
                     {{- util.input_hidden("filename", value="{}.csv".format(key)) -}}
                     </div>
-                    {%- trans count=(value.split("\n")|length - 1)|e -%}
+                    {%- trans count=(value.split("\n")|length - 1) -%}
                         {{ count }} entries.
                     {%- endtrans -%}
                     {{- util.form_input_submit(value=gettext("Download {}.csv ").format(key),
@@ -52,7 +52,7 @@
         {% for key, value in data|dictsort %}
             {% if key != "files" %}
                 <li>
-                    {% trans count=value|length, key=key|e -%}
+                    {% trans count=value|length, key=key -%}
                         {{ count }} Transactions found for {{ key }}.
                     {%- endtrans %}
                 </li>
@@ -65,7 +65,7 @@
         {% trans -%}Problems:{%- endtrans %}
         <ul>
         {% for problem in problems %}
-            <li>{{ problem|e }}</li>
+            <li>{{ problem }}</li>
         {% endfor %}
         </ul>
     {% endif %}
@@ -75,11 +75,11 @@
             {% if key == "transactions" %}
                 <br>
                 {% for t in value %}
-                    Transaction {{ t.t_id|e }}:
+                    Transaction {{ t.t_id }}:
                     <ul>
                     {% for line in (t|string).split("\n") %}
                         {% if not loop.first %}
-                            <li>{{ line|e }}</li>
+                            <li>{{ line }}</li>
                         {% endif %}
                     {% endfor %}
                     </ul>

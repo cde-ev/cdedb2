@@ -13,7 +13,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Enter Bank Transfers"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('cde/money_transfers')|e }}" method="POST" id="transfersform">
+    <form action="{{ cdedblink('cde/money_transfers') }}" method="POST" id="transfersform">
         {{ util.input_hidden("checksum") }}
         {{ util.form_input_checkbox("sendmail", label=gettext("Send Notification"), horizontal=False) }}
         {{ util.form_input_textarea(name="transfers", label=gettext("Transfers"), horizontal=False, rows=8, anid="input-data") }}
@@ -23,7 +23,7 @@
             {% trans -%}Use the following format:{%- endtrans %}
         </p>
         <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
-                format(_("ID"), _("Family Name"), _("Given Names"), _("Amount"), _("Comment")) }}</pre>
+                format(_("ID"), _("Family Name"), _("Given Names"), _("Amount"), _("Comment"))|s }}</pre>
         <p class="help-block">
             {{ util.make_icon('info-sign') }} {% trans -%}The Comment is optional.{%- endtrans %}
         </p>
@@ -32,11 +32,11 @@
             <h2>{% trans -%}Validation results{%- endtrans %}</h2>
             {% for dataset in data %}
                 <strong>
-                    <span class="row-key" data-row="{{ dataset['lineno']|e }}">
+                    <span class="row-key" data-row="{{ dataset['lineno'] }}">
                         {% trans lineno=dataset['lineno'] -%}Line {{ lineno }}{%- endtrans -%}
                     </span>:
-                    {% trans amount=dataset['amount']|money|e, given_names=dataset['raw']['given_names']|e,
-                             family_name=dataset['raw']['family_name']|e -%}
+                    {% trans amount=dataset['amount']|money, given_names=dataset['raw']['given_names'],
+                             family_name=dataset['raw']['family_name'] -%}
                         {{ amount }} for {{ given_names }} {{ family_name }}
                     {%- endtrans %}
                 </strong>
@@ -47,9 +47,9 @@
                                 <li class="text-danger">
                                     {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
                                     {% if key %}
-                                        <em class="row-col-key clickable" data-row="{{ dataset['lineno']|e }}"
+                                        <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
                                             data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key|e -}}
+                                            {{ key -}}
                                         </em>:
                                     {% endif %}
                                     {{ util.format_error(problem) }}
@@ -59,9 +59,9 @@
                                 <li class="text-warning">
                                     {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
                                     {% if key %}
-                                        <em class="row-col-key clickable" data-row="{{ dataset['lineno']|e }}"
+                                        <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
                                             data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key|e -}}
+                                            {{ key -}}
                                         </em>:
                                     {% endif %}
                                     {{ util.format_error(warning) }}

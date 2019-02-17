@@ -2,7 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e-%}
+    {% trans title=ambience['event']['title']-%}
     	Participant Statistics {{ title }}
     {%- endtrans %}
 {% endblock %}
@@ -14,7 +14,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Statistics{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -46,7 +46,7 @@
                     {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                         <th>
                             {% if ambience['event']['parts']|length > 1 %}
-                                {{ part['title']|e }}
+                                {{ part['title'] }}
                             {% else %}
                                 {% trans -%}Count{%- endtrans %}
                             {% endif %}
@@ -59,9 +59,9 @@
                     <tr>
                         {% if key.startswith(" ") %}
                             <th class="indent"></th>
-                            <th>{{ HEADINGS.get(key, key)|e }}</th>
+                            <th>{{ HEADINGS.get(key, key) }}</th>
                         {% else %}
-                            <th colspan="2">{{ HEADINGS.get(key, key)|e }}</th>
+                            <th colspan="2">{{ HEADINGS.get(key, key) }}</th>
                         {% endif %}
                         {% for part_id, datum in row|dictsort %}
                             <td>
@@ -69,7 +69,7 @@
                                 {% if query %}
                                     {{ util.href(cdedblink('event/registration_query', query|querytoparams), datum) }}
                                 {% else %}
-                                    {{ datum|e }}
+                                    {{ datum }}
                                 {% endif %}
                             </td>
                         {% endfor %}
@@ -93,7 +93,7 @@
                         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                             <th>
                                 {% if ambience['event']['tracks']|length > 1 %}
-                                    {{ track['title']|e }}
+                                    {{ track['title'] }}
                                 {% else %}
                                     {% trans -%}Count{%- endtrans %}
                                 {% endif %}
@@ -104,7 +104,7 @@
                 <tbody>
                     {% for key, row in per_track_statistics.items() %}
                         <tr>
-                            <th>{{ HEADINGS.get(key, key)|e }}</th>
+                            <th>{{ HEADINGS.get(key, key) }}</th>
                                 {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                                 <td>
                                     {% set query = get_query(key, track['part_id'], track_id) %}
@@ -112,7 +112,7 @@
                                         {{ util.href(cdedblink('event/registration_query', query|querytoparams),
                                                      row[track_id]) }}
                                     {% else %}
-                                        {{ row[track_id]|e }}
+                                        {{ row[track_id] }}
                                     {% endif %}
                                 </td>
                                 {% endfor %}
@@ -128,9 +128,9 @@
     <div class="row">
         {% for key, heading in (  ) %} {# Add titles for filtered lists of participants by event part here #}
             <div class="col-md-6">
-                <h3>{{ heading|e }}</h3>
+                <h3>{{ heading }}</h3>
                 {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                    <h4>{{ part['title']|e }} ({{ per_part_listings[key][part_id]|length|e }})</h4>
+                    <h4>{{ part['title'] }} ({{ per_part_listings[key][part_id]|length }})</h4>
                     {% if 3*(per_part_listings[key][part_id]|length) < registrations|length %}
                         <ul>
                             {% for registration_id in per_part_listings[key][part_id] %}
@@ -154,9 +154,9 @@
                 ('wrong choice', gettext("Assigned to unchosen Course")),) %}
 
                 <div class="col-md-6">
-                    <h3>{{ heading|e }}</h3>
+                    <h3>{{ heading }}</h3>
                     {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
-                        <h4>{{ track['title']|e }} ({{ per_track_listings[key][track_id]|length|e }})</h4>
+                        <h4>{{ track['title'] }} ({{ per_track_listings[key][track_id]|length }})</h4>
                         {% if 3*(per_track_listings[key][track_id]|length) < registrations|length %}
                             <ul>
                                 {% for registration_id in per_track_listings[key][track_id] %}

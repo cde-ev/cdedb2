@@ -4,13 +4,15 @@
     {% trans -%}
         New Direct Debit Authorization
     {%- endtrans %}
-    ({{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }})
+    ({{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }})
 {%- endblock %}
 {% block heading -%}
     <h1>
         {% trans -%}New Direct Debit Authorization{%- endtrans %}
-        <small>{{ util.make_icon('user') }} {{ "{} {}".format(ambience['persona']['given_names'],
-                                                             ambience['persona']['family_name'])|e }}</small>
+        <small>
+            {{ util.make_icon('user') }} {{ ambience['persona']['given_names'] }}
+            {{ ambience['persona']['family_name'] }}
+        </small>
     </h1>
 {%- endblock %}
 
@@ -21,7 +23,7 @@
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations")) }}
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
                                 "{} {}".format(ambience['persona']['given_names'],
-                                               ambience['persona']['family_name'])|e,
+                                               ambience['persona']['family_name']),
                                 icon="euro") }}
     {% else %}
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
@@ -32,7 +34,7 @@
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('cde/lastschrift_create')|e }}" method="POST" id="createlastschriftform"
+    <form action="{{ cdedblink('cde/lastschrift_create') }}" method="POST" id="createlastschriftform"
             class="form-horizontal">
         {{ util.form_input_text(name="amount", label=gettext("Amount"), type="number", attributes='min="0" step="0.01"') }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN")) }}

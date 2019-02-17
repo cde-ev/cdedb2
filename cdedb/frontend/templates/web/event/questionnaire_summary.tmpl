@@ -8,7 +8,7 @@
     {{ util.cdedb_script('questionnaire_config') }}
 {% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Configure Questionnaire ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -20,7 +20,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Configure Questionnaire{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -64,7 +64,7 @@
                                 {% if newrow %}
                                     {{ util.input_checkbox("create_{}".format(part_id), label=gettext("Add"),
                                                            attributes='data-basename="create_"',
-                                                           aclass='drow-indicator')}}
+                                                           aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.input_checkbox("delete_{}".format(part_id), label=gettext("Remove"),
                                                            aclass='drow-indicator') }}
@@ -85,7 +85,7 @@
         {{ util.href(cdedblink('event/questionnaire', {"preview": True}), gettext("Preview Questionnaire"),
                      aclass="btn btn-info btn-sm", icon='edit') }}
     </div>
-    <form action="{{ cdedblink('event/questionnaire_summary')|e }}" method="POST" id="questionnairesummaryform">
+    <form action="{{ cdedblink('event/questionnaire_summary') }}" method="POST" id="questionnairesummaryform">
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for entry in questionnaire %}
@@ -107,7 +107,7 @@
     </form>
     <script type="text/javascript">
         (function() {
-            var field_list = {{ registration_fields|json }};
+            var field_list = {{ registration_fields|json|s }};
             $('#drow-container').cdedbDynamicRow(
                 {
                     addButton: $('#drow-addbutton'),

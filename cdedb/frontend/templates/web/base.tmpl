@@ -9,12 +9,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>CdEDB – {% block title %}CdEDB{% endblock %}</title>
-        <link rel="shortcut icon" type="image/x-icon" href="{{ staticurl("favicon.ico")|e }}" media="print" />
+        <link rel="shortcut icon" type="image/x-icon" href="{{ staticurl("favicon.ico") }}" media="print" />
 
-        <script type="text/javascript" src="{{ staticurl("jquery-3.min.js")|e }}"></script>
-        <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css")|e }}" rel="stylesheet" media="all" />
-        <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js")|e }}"></script>
-        <script type="text/javascript" src="{{ staticurl("cdedb-general.js")|e }}"></script>
+        <script type="text/javascript" src="{{ staticurl("jquery-3.min.js") }}"></script>
+        <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css") }}" rel="stylesheet" media="all" />
+        <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js") }}"></script>
+        <script type="text/javascript" src="{{ staticurl("cdedb-general.js") }}"></script>
         {% if CDEDB_DEV %}
             <!-- script for adding links to view emails -->
             <script type="text/javascript">
@@ -36,8 +36,8 @@
 
         {% block scripts %}{% endblock %}
 
-        <link rel="stylesheet" type="text/css" href="{{ staticurl("cdedb.css")|e }}" media="all" />
-        <link rel="stylesheet" type="text/css" href="{{ staticurl("print.css")|e }}" media="print" />
+        <link rel="stylesheet" type="text/css" href="{{ staticurl("cdedb.css") }}" media="all" />
+        <link rel="stylesheet" type="text/css" href="{{ staticurl("print.css") }}" media="print" />
     </head>
     <body>
         <div class="container page" id="maincontainer">
@@ -53,10 +53,10 @@
                             {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
                                               'en': ("English", "Switch to English"),} %}
                                 {% for l in I18N_LANGUAGES if l != lang %}
-                                    <button type="submit" class="btn btn-link" name="locale" value="{{ l|e }}"
-                                            title="{{ TITLES.get(l, (None, None))[1]|e }}">
-                                        <img src="{{ staticurl("flags/{}.png".format(l))|e }}"
-                                             alt="{{ TITLES.get(l, (None, None))[0]|e }}" />
+                                    <button type="submit" class="btn btn-link" name="locale" value="{{ l }}"
+                                            title="{{ TITLES.get(l, (None, None))[1] }}">
+                                        <img src="{{ staticurl("flags/{}.png".format(l)) }}"
+                                             alt="{{ TITLES.get(l, (None, None))[0] }}" />
                                     </button>
                                 {% endfor %}
                             {% endwith %}
@@ -64,9 +64,9 @@
                     </div>
                 {% endif %}
                 <div class="logo pull-left">
-                    <img src="{{ staticurl("logo.svg")|e }}" alt="CdE-Datenbank" />
+                    <img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" />
                 </div>
-                
+
                 {% if jshint %}
                     <noscript>
                         {% if jshint == 'strong' %}
@@ -100,7 +100,7 @@
                     {% if "persona" in user.roles %}
                         <ul class="nav navbar-nav navbar-right">
                             <li>
-                                <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform"
+                                <form action="{{ cdedblink("core/logout") }}" method="POST" id="logoutform"
                                   class="navbar-form">
                                     <p class="navbar-text">
                                         <span class="sr-only">{% trans -%}Logged-In as{%- endtrans %}</span>
@@ -171,10 +171,10 @@
                                 messagetypes = {"success" : _("Success!"), "info" : _("Info!"), "question" : _("Question:"),
                                                 "warning" : _("Warning!"), "error" : _("Error!")} %}
                             {% for ntype, message, params in notifications %}
-                                <div class="alert alert-{{ alerttypes[ntype] }}" role="alert">
-                                    <span class="glyphicon glyphicon-{{ icontypes[ntype] }}" aria-hidden="true"></span>
-                                    <strong>{{ messagetypes[ntype] }}</strong>
-                                    <span class="notificationMessage">{{ gettext(message).format(**params)|e }}</span>
+                                <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
+                                    <span class="glyphicon glyphicon-{{ icontypes[ntype]|s }}" aria-hidden="true"></span>
+                                    <strong>{{ messagetypes[ntype]|s }}</strong>
+                                    <span class="notificationMessage">{{ gettext(message).format(**params) }}</span>
                                 </div>
                             {% endfor %}
                         {% endwith %}
@@ -198,17 +198,17 @@
             {% block footer %}
                 © {% trans -%}Club der Ehemaligen e.V.{%- endtrans %} – {% trans -%}CdE-Datenbank development team{%- endtrans %}
                 <a href="mailto:{% trans -%}CdE-Datenbank development team{%- endtrans %} <cdedb@lists.cde-ev.de>">&lt;cdedb@lists.cde-ev.de&gt;</a>
-                <br /> {% trans -%}Version{%- endtrans %} {{ GIT_COMMIT|e }}
+                <br /> {% trans -%}Version{%- endtrans %} {{ GIT_COMMIT }}
                 {% if CDEDB_DEV %}
                     <br /><br />
-                    <div style="word-wrap: break-word;">{{ debugstring|e }} ; time taken: {{ generation_time()|e }}</div>
+                    <div style="word-wrap: break-word;">{{ debugstring }} ; time taken: {{ generation_time() }}</div>
                 {% endif %}
             {% endblock %}
         </div>
     </body>
     {% if errors %}
         <!-- error listing for debugging
-             {{ errors|e }}
+             {{ errors }}
         -->
     {% endif %}
 </html>

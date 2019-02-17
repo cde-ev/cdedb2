@@ -15,7 +15,7 @@
             $('#createeventform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('cde/create_past_event')|e }}" method="POST" id="createeventform"
+    <form action="{{ cdedblink('cde/create_past_event') }}" method="POST" id="createeventform"
         class="form-horizontal">
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}

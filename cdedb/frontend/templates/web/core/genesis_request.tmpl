@@ -21,7 +21,7 @@
         {%- endtrans %}
     </p>
 
-    <form action="{{ cdedblink('core/genesis_request')|e }}" method="POST" id="genesisform" class="form-horizontal">
+    <form action="{{ cdedblink('core/genesis_request') }}" method="POST" id="genesisform" class="form-horizontal">
         <div>
             {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
             {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}

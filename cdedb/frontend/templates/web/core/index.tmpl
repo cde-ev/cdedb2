@@ -18,7 +18,7 @@
                 {{ util.make_icon('info-sign') }} <strong>{% trans -%}Info{%- endtrans %}</strong>
                 {% trans -%}This is an Offline-Instance of the CdE-DB{%- endtrans %}
             </p>
-            
+
             <p class=nosp>{# TODO Erklärtext #}</p>
         </div>
     {% endif %}
@@ -33,7 +33,7 @@
         {% if 'core_admin' in user.roles %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Manage Users"), aclass="panel-warning", icon='user') %}
-                <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
+                <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
                     <div class="sr-only">{% trans -%}Search for Users by ID or Name{%- endtrans %}</div>
                     <div class="input-group">
                         <input type="text" name="phrase" class="form-control" id="input-showuser-id"
@@ -45,7 +45,7 @@
                 </form>
                 <script type="text/javascript">
                     var $i = $('#input-showuser-id');
-                    $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s'}}', [],
+                    $i.cdedbSearchPerson('{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
                                          true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}");
                     $i.change(function(){$('#adminshowuserform').submit();})
                 </script>
@@ -60,7 +60,7 @@
             {% call util.bootstrap_panel(title=gettext("Account Management"), aclass='panel-info', icon='check') %}
                 {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 %}
                     <p>
-                        {% trans count=dashboard['genesis_cases']|e, 
+                        {% trans count=dashboard['genesis_cases'],
                                  link=util.href(cdedblink('core/genesis_list_cases'), gettext("Account Requests")) -%}
                         	There are currently {{ count }} {{ link }} to review.
                         {%- endtrans %}
@@ -69,7 +69,7 @@
 
                 {% if 'pending_changes' in dashboard and dashboard['pending_changes'] > 0 %}
                     <p>
-                        {% trans count=dashboard['pending_changes']|e,
+                        {% trans count=dashboard['pending_changes'],
                                  link=util.href(cdedblink('core/list_pending_changes'), gettext("Changes")) -%}
                         	There are currently {{ count }} {{ link }} to review.
                         {%- endtrans %}
@@ -90,7 +90,7 @@
                             {% if event['registration_start'] %}
                                 <br />
                                 {% if event['registration_start'] <= dashboard['present'] %}
-                                    {% trans count=event['registrations']|e -%}
+                                    {% trans count=event['registrations'] -%}
                                     	{{ count }} Registrations
                                     {%- endtrans %}
                                     {% if not event['registration_hard_limit'] %}
@@ -98,12 +98,12 @@
                                             (Registration open)
                                         {%- endtrans %}
                                     {% elif event['registration_hard_limit'] >= dashboard['present'] %}
-                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang)|e-%}
+                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang)-%}
                                         	(Registration until {{ date }})
                                         {%- endtrans %}
                                     {% endif %}
                                 {% else %}
-                                    {% trans date=event['registration_start']|datetime(lang=lang)|e -%}
+                                    {% trans date=event['registration_start']|datetime(lang=lang) -%}
                                     	(Registration starts {{ date }})
                                     {%- endtrans %}
                                 {% endif %}
@@ -140,7 +140,7 @@
                             {% if mailinglist['requests'] %}
                                 <br />
                                 {{ util.href(cdedblink('ml/management', {'mailinglist_id' : mailinglist_id}),
-                                             gettext("{count} Requests").format(count=mailinglist['requests']|e)) }}
+                                             gettext("%(count)s Requests")|format(count=mailinglist['requests'])) }}
                             {% endif %}
                         </li>
                     {% endfor %}
@@ -176,11 +176,11 @@
                                     gettext("Register"), icon='log-in') }}
                                 {% if not event['registration_soft_limit'] is none %}
                                     {% if now() <= event['registration_soft_limit'] %}
-                                        {% trans date=event['registration_soft_limit']|datetime(lang=lang)|e -%}
+                                        {% trans date=event['registration_soft_limit']|datetime(lang=lang) -%}
                                         	(Until {{ date }})
                                         {%- endtrans %}
                                     {% elif event['registration_hard_limit'] %}
-                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang)|e -%}
+                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang) -%}
                                         	(Late Registrations until {{ date }})
                                         {%- endtrans %}
                                     {% else %}
@@ -189,7 +189,7 @@
                                         {%- endtrans %}
                                     {% endif %}
                                 {% elif not event['registration_hard_limit'] is none %}
-                                    {% trans date=event['registration_hard_limit']|datetime(lang=lang)|e -%}
+                                    {% trans date=event['registration_hard_limit']|datetime(lang=lang) -%}
                                     	(Until {{ date }})
                                     {%- endtrans %}
                                 {% endif %}
@@ -216,7 +216,7 @@
                                 	(Already attending)
                                 {%- endtrans %}
                             {% else %}
-                                {% trans date=assembly['signup_end']|datetime(lang=lang)|e -%}
+                                {% trans date=assembly['signup_end']|datetime(lang=lang) -%}
                                 	(Registration possible until {{ date }})
                                 {%- endtrans %}
                             {% endif %}

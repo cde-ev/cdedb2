@@ -2,16 +2,16 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
         Select Field ({{ title }})
     {%- endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans title=ambience['event']['title']|e -%}
+        {% trans -%}
             Select Field
         {%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -21,13 +21,13 @@
 {{ util.breadcrumb_link(cdedblink("event/field_set_select"), gettext("Set Field"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/field_set_select')|e }}" method="GET" id="selectfieldform"
+    <form action="{{ cdedblink('event/field_set_select') }}" method="GET" id="selectfieldform"
           class="form-horizontal">
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|dictsort
                 if field['association'] == enums['FieldAssociations'].registration %}
-            {%- do myentries.append((field_id, field['field_name']))|e -%}
+            {%- do myentries.append((field_id, field['field_name'])) -%}
         {%- endfor %}
         {{ util.form_input_select("field_id", label=gettext("Field"), entries=myentries, small=True) }}
         {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
@@ -38,8 +38,8 @@
         <h4 class="mosp">{% trans -%}Participants/Registrations to be changed{%- endtrans %}</h4>
         <ul>
             {% for reg_id, registration in registrations|dictsort %}
-                <li>{{ personas[registration['persona_id']]['given_names']|e }}
-                    {{ personas[registration['persona_id']]['family_name']|e }}</li>
+                <li>{{ personas[registration['persona_id']]['given_names'] }}
+                    {{ personas[registration['persona_id']]['family_name'] }}</li>
             {% endfor %}
         </ul>
     {% endif %}

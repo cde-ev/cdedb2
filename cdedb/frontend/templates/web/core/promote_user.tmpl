@@ -26,8 +26,8 @@
         {%- set not_my_realms = [] %}
         {%- for realm in realms
                 if not p['is_{}_realm'.format(realm)] %}
-            {%- do myentries.append((realm, realms[realm]))|e %}
-            {%- do not_my_realms.append(realm)|e %}
+            {%- do myentries.append((realm, realms[realm])) %}
+            {%- do not_my_realms.append(realm) %}
         {%- endfor %}
 
         {% if not values['target_realm'] %}
@@ -37,7 +37,7 @@
                     They will gain access to the respective Sites and they may gain additional User-Attributes.
                 {%- endtrans %}
             </p>
-            <form action="{{ cdedblink('core/promote_user_form')|e }}" method="GET" id="realmselectionform"
+            <form action="{{ cdedblink('core/promote_user_form') }}" method="GET" id="realmselectionform"
                     class="form-horizontal">
                 {{ util.form_input_static(gettext("User"), value="{} {}".format(p['given_names'], p['family_name']),
                         small=True) }}
@@ -48,7 +48,7 @@
 
         {% else %}
 
-            <form action="{{ cdedblink('core/promote_user')|e }}" method="POST" id="promotionform"
+            <form action="{{ cdedblink('core/promote_user') }}" method="POST" id="promotionform"
                     class="form-horizontal">
                 {{ util.form_input_static(gettext("User"), value="{} {}".format(p['given_names'], p['family_name'])) }}
                 {{ util.form_input_static(gettext("New Realm"), value=realms[values['target_realm']]) }}

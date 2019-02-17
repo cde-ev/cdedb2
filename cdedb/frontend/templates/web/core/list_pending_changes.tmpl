@@ -2,7 +2,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans count=pending|length|e -%}
+    {% trans count=pending|length -%}
     	Pending Profilechanges [{{ count }}]
     {%- endtrans %}
 {% endblock %}

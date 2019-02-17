@@ -1,7 +1,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=data['given_names']|e, family_name=data['family_name']|e -%}
+    {% trans given_names=data['given_names'], family_name=data['family_name'] -%}
         Edit Username for {{ given_names }} {{ family_name }}
     {%- endtrans %}
 {% endblock %}
@@ -11,7 +11,7 @@
     {{ util.breadcrumb_link(cdedblink("core/admin_username_change_form"), gettext("Edit Username"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('core/admin_username_change')|e }}" method="POST" id="usernamechangeform"
+    <form action="{{ cdedblink('core/admin_username_change') }}" method="POST" id="usernamechangeform"
             class="form-horizontal">
         {{ util.form_input_static(label=gettext("User"), value=(data['given_names'] +" "+ data['family_name'])) }}
         {{ util.form_input_static(label=gettext("Old Username"), value=data['username']) }}

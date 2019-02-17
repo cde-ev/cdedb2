@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans lodgement=ambience['lodgement']['moniker']|e, event=ambience['event']['title']|e -%}
+    {% trans lodgement=ambience['lodgement']['moniker'], event=ambience['event']['title'] -%}
         Edit Lodgement {{ lodgement }} ({{ event }})
     {%- endtrans %}
 {% endblock %}
@@ -12,17 +12,17 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker']|e, icon='home') }}
+    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker'], icon='home') }}
     {{ util.breadcrumb_link(cdedblink("event/change_lodgement"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans lodgement=ambience['lodgement']['moniker']|e -%}Edit Lodgement {{ lodgement }}{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        {% trans lodgement=ambience['lodgement']['moniker'] -%}Edit Lodgement {{ lodgement }}{%- endtrans %}
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/change_lodgement')|e }}" method="POST" id="changelodgementform"
+    <form action="{{ cdedblink('event/change_lodgement') }}" method="POST" id="changelodgementform"
           class="form-horizontal">
         {{ util.form_input_text(name="moniker", label=gettext("Moniker")) }}
         {{ util.form_input_text(name="capacity", label=gettext("Regular Capacity")) }}

@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=values['given_names']|e, family_name=values['family_name']|e -%}
+    {% trans given_names=values['given_names'], family_name=values['family_name'] -%}
         Edit {{ given_names }} {{ family_name }}
     {%- endtrans %}
 {% endblock %}
@@ -20,7 +20,7 @@
             $('#changedataform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('core/admin_change_user')|e }}" method="POST" id="changedataform"
+    <form action="{{ cdedblink('core/admin_change_user') }}" method="POST" id="changedataform"
         class="form-horizontal">
         {{ util.input_hidden(name="generation") }}
         {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}

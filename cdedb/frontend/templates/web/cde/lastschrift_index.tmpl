@@ -45,15 +45,15 @@
                                  "{} {}".format(persona['given_names'], persona['family_name'])) }}
                 </td>
                 <td>
-                    <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
-                            id="generatetransactionform{{ lastschrift_id|e }}" class="generatetransactionform">
+                    <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
+                            id="generatetransactionform{{ lastschrift_id }}" class="generatetransactionform">
                         {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
                         {{ util.input_submit(gettext("Perform Direct Debit"), icon='download', aclass='btn btn-xs btn-primary') }}
                     </form>
                 </td>
                 <td>
-                    <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id})|e }}"
-                            method="POST" id="skiptransactionform{{ lastschrift_id|e }}" class="skip-form">
+                    <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id}) }}"
+                            method="POST" id="skiptransactionform{{ lastschrift_id }}" class="skip-form">
                         {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
                         {{ util.input_submit(gettext("Skip Direct Debit"), icon='step-forward', aclass='btn btn-xs btn-warning') }}
                     </form>
@@ -65,7 +65,7 @@
         </tbody>
     </table>
 
-    <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
+    <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
       id="generatetransactionsform">
         {{ util.input_submit(gettext("Perform all Direct Debits"), icon='download', aclass='btn btn-primary') }}
     </form>
@@ -80,7 +80,7 @@
             {%- endtrans %}
         </p>
 
-        <form action="{{ cdedblink('cde/lastschrift_finalize_transactions')|e }}" method="POST" id="finalizationform">
+        <form action="{{ cdedblink('cde/lastschrift_finalize_transactions') }}" method="POST" id="finalizationform">
             <table class="table table-condensed">
                 <thead>
                     <tr>
@@ -100,8 +100,8 @@
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': persona['id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                         </td>
-                        <td>{{ transaction['issued_at']|datetime(lang=lang)|e }}</td>
-                        <td>{{ transaction['amount']|e }}€</td>
+                        <td>{{ transaction['issued_at']|datetime(lang=lang) }}</td>
+                        <td>{{ transaction['amount'] }}€</td>
                    </tr>
                 {% endfor %}
                 </tbody>

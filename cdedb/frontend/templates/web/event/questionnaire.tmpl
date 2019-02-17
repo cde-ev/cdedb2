@@ -5,11 +5,11 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}
     {% if preview %}
-        {% trans title=ambience['event']['title']|e -%}
+        {% trans title=ambience['event']['title'] -%}
             Questionnaire Preview ({{ title }})
         {%- endtrans %}
     {% else %}
-        {% trans title=ambience['event']['title']|e -%}
+        {% trans title=ambience['event']['title'] -%}
             Questionnaire ({{ title }})
         {%- endtrans %}
     {% endif %}
@@ -36,11 +36,11 @@
         {% else %}
             {% trans -%}Participant Questionnaire{%- endtrans %}
         {% endif %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/questionnaire')|e }}" method="POST" id="questionnaireform"
+    <form action="{{ cdedblink('event/questionnaire') }}" method="POST" id="questionnaireform"
           class="form-horizontal">
         {% for entry in questionnaire %}
             {# Field entry #}
@@ -77,7 +77,7 @@
             {# Text-only entry #}
             {% else %}
                 {% if entry['title'] %}
-                    <h3 class="heading-underline">{{ entry['title']|e }}</h3>
+                    <h3 class="heading-underline">{{ entry['title'] }}</h3>
                 {% endif %}
                 {% if entry['info'] %}
                     {{ entry['info']|rst }}

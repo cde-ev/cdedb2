@@ -17,7 +17,7 @@
     {% call util.bootstrap_panel(aclass="panel-warning") %}
         TODO Kursschienen
     {% endcall %}
-    <form action="{{ cdedblink('event/create_event')|e }}" method="POST" id="createeventform" class="form-horizontal">
+    <form action="{{ cdedblink('event/create_event') }}" method="POST" id="createeventform" class="form-horizontal">
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort,
                 defaultvalue=institutions['cde']) }}
@@ -44,7 +44,7 @@
             anid="input-orgas") }}
         <script type="text/javascript">
             $('#input-orgas').cdedbSearchPerson(
-                '{{ cdedblink('core/select_persona') + '?kind=event_admin_user&phrase=%s'}}',
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_admin_user&phrase=%s'|s) }}',
                 [],
                 false,
                 true,

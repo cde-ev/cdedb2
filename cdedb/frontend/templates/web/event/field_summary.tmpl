@@ -4,7 +4,7 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('dynamicrow') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Configure Custom Fields ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -17,7 +17,7 @@
     {{ util.doclink('Handbuch_Orga_Hinweise') }}
     <h1 class="title">
         {% trans -%}Configure Custom Fields{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -29,7 +29,7 @@
     <div class="col-md-6 {{ aclass }}" role="group">
         <div class="panel panel-default panel-condensed">
             <div class="panel-heading {% if "field_name_{}".format(field_id) in errors %}has-error{% endif %}">
-                {{ util.input_text(name="field_name_{}".format(field_id), 
+                {{ util.input_text(name="field_name_{}".format(field_id),
                                    placeholder=gettext("Name of the Custom Field"),
                                    readonly=not newrow, aclass='drow-input form-control',
                                    arialabel=gettext("Name of the Custom Field"),
@@ -38,7 +38,7 @@
             </div>
             <div class="panel-body">
                 <div class="form-group">
-                    <label class="col-sm-4 control-label" for="{{ "input-select-kind_{}".format(field_id)|e }}">
+                    <label class="col-sm-4 control-label" for="{{ "input-select-kind_{}".format(field_id) }}">
                         {% trans -%}Datatype{%- endtrans %}
                     </label>
                     <div class="col-sm-5 {% if "kind_{}".format(field_id) in errors %}has-error{% endif %}">
@@ -55,7 +55,7 @@
                             <span class="drow-buttonspace">
                                 {% if newrow %}
                                     {{ util.input_checkbox("create_{}".format(field_id), label=gettext("Add"),
-                                                           attributes='data-basename="create_"', aclass='drow-indicator')}}
+                                                           attributes='data-basename="create_"', aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.input_checkbox("delete_{}".format(field_id), label=gettext("Remove"),
                                                            readonly=not deletable, aclass='drow-indicator') }}
@@ -89,7 +89,7 @@
 
 
 {% block content %}
-    <form action="{{ cdedblink('event/field_summary')|e }}" method="POST" id="fieldsummaryform" class="form-horizontal">
+    <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
         {% set associations = ((gettext("Registration Fields"), enums['FieldAssociations'].registration, 'user'),
                                (gettext("Course Fields"), enums['FieldAssociations'].course, 'book'),
                                (gettext("Lodgement Fields"), enums['FieldAssociations'].lodgement, 'home')) %}
@@ -105,7 +105,7 @@
             {% for title, association, icon in associations %}
                 <div class="tab-pane active" role="tabpanel" id="tab_{{ association.name }}"
                         data-association-id="{{ association.value }}">
-                    <h3 class="heading-underline">{{ util.make_icon(icon) }} {{ title|e }}</h3>
+                    <h3 class="heading-underline">{{ util.make_icon(icon) }} {{ title }}</h3>
                     <div class="row">
                         {# Old items, already stored in the database #}
                         {% for field_id, entry in ambience['event']['fields']|dictsort %}
@@ -153,15 +153,15 @@
                 /* Select association according to active tab and hide select box */
                 $(this).find('.association-input').val(container.attr('data-association-id'));
                 $(this).find('.association-input-container').hide();
-            }});
+             }});
         $('#fieldsummaryform').cdedbProtectChanges();
     </script>
 
     <hr />
     <p class="help-block">
         {{ util.make_icon('info-sign') }}
-        {% trans format="<br /><code style='padding: 2px 0;'>{value}1;{desc}<br />{value}2;{desc}<br />…</code><br />".format(
-                value=gettext("Value"), desc=gettext("Description Text")) -%}
+        {% trans format="<br /><code style='padding: 2px 0;'>%(value_one)s1;%(desc_one)s<br />%(value_two)s2;%(desc_two)s<br />…</code><br />"|s|format(
+                value_one=gettext("Value"), desc_one=gettext("Description Text"), value_two=gettext("Value"), desc_two=gettext("Description Text")) -%}
         	Enter Options in the following format:
             {{ format }}
             Setting Options will create a selection box when using this field.

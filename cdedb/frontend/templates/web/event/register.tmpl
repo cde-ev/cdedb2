@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Registration for {{ title }}
     {%- endtrans %}
 {% endblock %}
@@ -16,7 +16,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Registration{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -26,7 +26,7 @@
                 All data except Event-Parts can be changed until the registration ends.
             {%- endtrans %}
         {% elif ambience['event']['registration_soft_limit'] >= now() %}
-            {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)|e -%}
+            {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang) -%}
             	All data except Event-Parts can be changed until the registration ends({{ date }}).
             {%- endtrans %}
         {% else %}
@@ -36,35 +36,35 @@
         {% endif %}
     </p>
 
-    <form action="{{ cdedblink('event/register')|e }}" method="POST" id="registerform" class="form-horizontal">
+    <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal">
         <h3 class="heading-underline">{% trans -%}My Data{%- endtrans %}</h3>
         <dl class="dl-horizontal">
             <dt>{% trans -%}Full Name{%- endtrans %}</dt>
             <dd>
-                {{ persona['title']|e }}
-                {{ persona['given_names']|e }}
-                {{ persona['family_name']|e }}
-                {{ persona['name_supplement']|e }}
+                {{ persona['title'] }}
+                {{ persona['given_names'] }}
+                {{ persona['family_name'] }}
+                {{ persona['name_supplement'] }}
             </dd>
 
             <dt>{% trans -%}Birthday{%- endtrans %}</dt>
-            <dd>{{ persona['birthday']|e }}</dd>
+            <dd>{{ persona['birthday'] }}</dd>
             <dt>{% trans -%}Gender{%- endtrans %}</dt>
-            <dd>{{ gettext(enums['Genders'](persona['gender'])|string)|e }}</dd>
+            <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
             <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
-            <dd> {{ persona['username']|e }} </dd>
+            <dd> {{ persona['username'] }} </dd>
             <dt>{% trans -%}Phone{%- endtrans %}</dt>
-            <dd>{{ persona['telephone']|e }}</dd>
+            <dd>{{ persona['telephone'] }}</dd>
             <dt>{% trans -%}Mobilephone{%- endtrans %}</dt>
-            <dd>{{ persona['mobile']|e }}</dd>
+            <dd>{{ persona['mobile'] }}</dd>
             <dt>{% trans -%}Address{%- endtrans %}</dt>
-            <dd>{{ persona['address']|e }}</dd>
+            <dd>{{ persona['address'] }}</dd>
             <dt>{% trans -%}Address Supplement{%- endtrans %}</dt>
-            <dd>{{ persona['address_supplement']|e }}</dd>
+            <dd>{{ persona['address_supplement'] }}</dd>
             <dt>{% trans -%}City{%- endtrans %}</dt>
-            <dd>{{ persona['postal_code']|e }} {{ persona['location']|e }}</dd>
+            <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
             <dt>{% trans -%}Country{%- endtrans %}</dt>
-            <dd>{{ persona['country']|e }}</dd>
+            <dd>{{ persona['country'] }}</dd>
         </dl>
         <p>
             {% trans link=util.href(cdedblink('core/change_user'), gettext("form to edit your profile")) -%}
@@ -92,7 +92,7 @@
                     <h4>
                         {% trans -%}Course Choices{%- endtrans %}
                         {% if course_choices|length > 1 %}
-                            {% trans track=track['title']|e -%}
+                            {% trans track=track['title'] -%}
                             	for {{ track }}
                             {%- endtrans %}
                         {% endif %}

@@ -20,7 +20,7 @@
     <h2>{% trans -%}CdE-Semester{%- endtrans %}</h2>
 
     <p>
-        {% trans number="<span class='label label-default'>%s</span>"|format(period['id']|e) -%}
+        {% trans number="<span class='label label-default'>%s</span>"|s|format(period['id']) -%}
             We are currently in Semester {{ number }}.
         {%- endtrans %}
     </p>
@@ -59,19 +59,19 @@
                 <div class="panel-body">
                     {% if period['billing_done'] %}
                         <span class="text-success">
-                            {% trans date=period['billing_done']|datetime(lang=lang)|e -%}
+                            {% trans date=period['billing_done']|datetime(lang=lang) -%}
                                 Done on the {{ date }}.
                             {%- endtrans %}
                         </span>
                     {% else %}
                         {% if period['billing_state'] %}
                             <p>
-                                {% trans state=period['billing_state']|cdedbid|e -%}
+                                {% trans state=period['billing_state']|cdedbid -%}
                                     Done up until {{ state }}.
                                 {%- endtrans %}
                             </p>
                         {% endif %}
-                        <form action="{{ cdedblink('cde/semester_bill')|e }}" method="POST" id="billform"
+                        <form action="{{ cdedblink('cde/semester_bill') }}" method="POST" id="billform"
                                 class="strip-space">
                             <div class="checkbox">
                                 {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
@@ -94,25 +94,25 @@
                 <div class="panel-body">
                     {% if period['ejection_done'] %}
                         <span class="text-success">
-                            {% trans date=period['ejection_done']|datetime(lang=lang)|e -%}
+                            {% trans date=period['ejection_done']|datetime(lang=lang) -%}
                                 Done on the {{ date }}.
                             {%- endtrans %}
                         </span>
                     {% elif period['billing_done'] %}
                         {% if period['ejection_state'] %}
                             <p>
-                                {% trans state=period['ejection_state']|cdedbid|e -%}
+                                {% trans state=period['ejection_state']|cdedbid -%}
                                     Done up until {{ state }}.
                                 {%- endtrans %}
                             </p>
                         {% else %}
                             <p>
-                                {% trans count=stats['low_balance_members']|e -%}
+                                {% trans count=stats['low_balance_members'] -%}
                                     {{ count }} Members have insufficient Balance right now.
                                 {%- endtrans %}
                             </p>
                         {% endif %}
-                        <form action="{{ cdedblink('cde/semester_eject')|e }}" method="POST" id="ejectform">
+                        <form action="{{ cdedblink('cde/semester_eject') }}" method="POST" id="ejectform">
                             {{ util.input_submit(value=gettext("Remove inactive Members")) }}
                         </form>
                     {% else %}
@@ -131,25 +131,25 @@
                 <div class="panel-body">
                     {% if period['balance_done'] %}
                         <span class="text-success">
-                            {% trans date=period['balance_done']|datetime(lang=lang)|e -%}
+                            {% trans date=period['balance_done']|datetime(lang=lang) -%}
                                 Done on the {{ date }}.
                             {%- endtrans %}
                         </span>
                     {% elif period['ejection_done'] %}
                         {% if period['balance_state'] %}
                             <p>
-                                {% trans state=period['balance_state']|cdedbid|e -%}
+                                {% trans state=period['balance_state']|cdedbid -%}
                                     Done up until {{ state }}.
                                 {%- endtrans %}
                             </p>
                         {% else %}
                             <p>
-                                {% trans count=stats['trial_members']|e -%}
+                                {% trans count=stats['trial_members'] -%}
                                     {{ count }} Members have a Trial-Membership right now.
                                 {%- endtrans %}
                             </p>
                         {% endif %}
-                        <form action="{{ cdedblink('cde/semester_balance_update')|e }}" method="POST" id="balanceform">
+                        <form action="{{ cdedblink('cde/semester_balance_update') }}" method="POST" id="balanceform">
                             {{ util.input_submit(value=gettext("Update Balances")) }}
                         </form>
                     {% else %}
@@ -170,7 +170,7 @@
                         {%- endtrans %}
                     </p>
                     {% if period['balance_done'] %}
-                        <form action="{{ cdedblink('cde/semester_advance')|e }}" method="POST" id="proceedform">
+                        <form action="{{ cdedblink('cde/semester_advance') }}" method="POST" id="proceedform">
                             {{ util.input_submit(value=gettext("Next Semester")) }}
                         </form>
                     {% else %}
@@ -184,7 +184,7 @@
     <h2>{% trans -%}exPuls-Semester{%- endtrans %}</h2>
 
     <p>
-        {% trans number="<span class='label label-default'>%s</span>"|format(expuls['id']|e) -%}
+        {% trans number="<span class='label label-default'>%s</span>"|s|format(expuls['id']) -%}
             The next exPuls will be number {{ number }}.
         {%- endtrans %}
     </p>
@@ -198,19 +198,19 @@
                 <div class="panel-body">
                     {% if expuls['addresscheck_done'] %}
                         <span class="text-success">
-                            {% trans date=expuls['addresscheck_done']|datetime(lang=lang)|e -%}
+                            {% trans date=expuls['addresscheck_done']|datetime(lang=lang) -%}
                                 Done on the {{ date }}.
                             {%- endtrans %}
                         </span>
                     {% else %}
                         {% if expuls['addresscheck_state'] %}
                             <p>
-                                {% trans state=expuls['addresscheck_state']|cdedbid|e -%}
+                                {% trans state=expuls['addresscheck_state']|cdedbid -%}
                                     Done up until {{ state }}.
                                 {%- endtrans %}
                             </p>
                         {% endif %}
-                        <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="addresscheckform"
+                        <form action="{{ cdedblink('cde/expuls_addresscheck') }}" method="POST" id="addresscheckform"
                                 class="strip-space">
                             <div class="checkbox">
                                 {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
@@ -219,11 +219,11 @@
                             {{ util.input_submit(value=gettext("Send Mails"), icon="send") }}
                             </div>
                         </form>
-                        <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST"
+                        <form action="{{ cdedblink('cde/expuls_addresscheck') }}" method="POST"
                           id="noaddresscheckform">
                             {{ util.input_hidden("skip", value=True) }}
                             {{ util.input_submit(value=gettext("Mark as done"), aclass="btn btn-warning",
-                                    icon="check")}}
+                                    icon="check") }}
                         </form>
                     {% endif %}
                 </div>
@@ -236,7 +236,7 @@
                 </div>
                 <div class="panel-body">
                     {% if expuls['addresscheck_done'] %}
-                        <form action="{{ cdedblink('cde/expuls_advance')|e }}" method="POST" id="proceedexpulsform">
+                        <form action="{{ cdedblink('cde/expuls_advance') }}" method="POST" id="proceedexpulsform">
                             {{ util.input_submit(value=gettext("Next exPuls")) }}
                         </form>
                     {% else %}

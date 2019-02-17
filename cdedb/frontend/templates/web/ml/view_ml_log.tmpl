@@ -2,10 +2,10 @@
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title']|e -%}
+    {% trans title=ambience['mailinglist']['title'] -%}
         {{ title }} – Log
     {%- endtrans %}
-    [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+    [{{ values['start']|int }}–{{ (values['start']|int + log|length) }}]
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -29,8 +29,8 @@
         <tbody>
             {% for entry in log %}
                 <tr>
-                    <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
-                    <td>{{ gettext(enums['MlLogCodes'](entry['code'])|string)|e }}</td>
+                    <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
+                    <td>{{ gettext(enums['MlLogCodes'](entry['code'])|string) }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.persona_anchor(personas[entry['submitted_by']], ml_id=ambience['mailinglist']['id']) }}
@@ -45,14 +45,14 @@
                             –
                         {% endif %}
                     </td>
-                    <td>{{ entry['additional_info']|e }}</td>
+                    <td>{{ entry['additional_info'] }}</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
-        <form action="{{ cdedblink('ml/view_ml_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
+        <form action="{{ cdedblink('ml/view_ml_log') }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
                     entries=enums['MlLogCodes']|enum_entries(processing=gettext), small=True) }}
 

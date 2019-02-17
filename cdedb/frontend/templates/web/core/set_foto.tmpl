@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names']|e, family_name=ambience['persona']['family_name']|e -%}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] -%}
     	Set Profile Picture for {{ given_names }} {{ family_name }}
     {%- endtrans %}
 {% endblock %}
@@ -21,7 +21,7 @@
         {% if foto %}
             <div class="col-md-5">
                 <h3>{% trans -%}Current Picture{%- endtrans %}</h3>
-                <img src="{{ cdedblink('core/get_foto', {'foto': foto})|e }}" class="profilepic img-thumbnail">
+                <img src="{{ cdedblink('core/get_foto', {'foto': foto}) }}" class="profilepic img-thumbnail">
 
                 <script type="text/javascript">
                     $(function() {
@@ -29,7 +29,7 @@
                             "{{ gettext("The Profile Picture will be permanently deleted.") }}");
                     });
                 </script>
-                <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" id="resetfotoform">
+                <form action="{{ cdedblink('core/set_foto') }}" method="POST" id="resetfotoform">
                     <div class="form-group">
                         {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash") }}
                     </div>
@@ -49,7 +49,7 @@
                 <li>{% trans -%}max. 128 kB Filesize{%- endtrans %}</li>
                 <li>{% trans -%}preferably square{%- endtrans %}</li>
             </ul>
-            <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" enctype="multipart/form-data"
+            <form action="{{ cdedblink('core/set_foto') }}" method="POST" enctype="multipart/form-data"
                     id="setfotoform">
                 <div class="form-group {% if 'foto' in errors %}has-error{% endif %}">
                     <div class="input-group">

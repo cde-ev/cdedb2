@@ -5,7 +5,7 @@
     {% trans -%}
         CdE Log
     {%- endtrans %}
-    [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+    [{{ values['start']|int }}–{{ (values['start']|int + log|length) }}]
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -28,8 +28,8 @@
         <tbody>
             {% for entry in log %}
                 <tr>
-                    <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
-                    <td>{{ gettext(enums['CdeLogCodes'](entry['code'])|string)|e }}</td>
+                    <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
+                    <td>{{ gettext(enums['CdeLogCodes'](entry['code'])|string) }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.persona_anchor(personas[entry['submitted_by']]) }}
@@ -44,14 +44,14 @@
                             –
                         {% endif %}
                     </td>
-                    <td>{{ entry['additional_info']|e }}</td>
+                    <td>{{ entry['additional_info'] }}</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
     
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
-        <form action="{{ cdedblink('cde/view_cde_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
+        <form action="{{ cdedblink('cde/view_cde_log') }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
                     entries=enums['CdeLogCodes']|enum_entries(processing=gettext), small=True) }}
             {{ util.form_input_text(name="persona_id", label=gettext("Account"), small=True) }}

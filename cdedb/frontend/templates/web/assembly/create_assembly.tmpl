@@ -9,7 +9,7 @@
 {{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), gettext("Create Assembly"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('assembly/create_assembly')|e }}" method="POST" id="createassemblyform"
+    <form action="{{ cdedblink('assembly/create_assembly') }}" method="POST" id="createassemblyform"
             class="form-horizontal">
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",

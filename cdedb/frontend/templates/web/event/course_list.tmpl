@@ -2,8 +2,8 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
-    	Courselist {{ title }}
+    {% trans title=ambience['event']['title'] -%}
+        Courselist {{ title }}
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
@@ -15,7 +15,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Courselist{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -31,7 +31,7 @@
     {% if courses %}
         {% for anid, entry in courses|xdictsort('nr', pad=True) if entry['segments'] %}
             <div class="hide-hover-container">
-                <h3>{{ entry['nr'] }}. {{ entry['title']|e }}</h3>
+                <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
                 {% if ambience['event']['id'] in user.orga or is_admin %}
                     <div class="pull-right">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), gettext("Details"),
@@ -42,9 +42,9 @@
                 {% endif %}
                 <p class="heading-supplement">
                     {% if ambience['event']['id'] in user.orga or is_admin %}
-                        <span class="label label-primary">{{ entry['shortname']|e }}</span>
+                        <span class="label label-primary">{{ entry['shortname'] }}</span>
                     {% endif %}
-                    {% trans instructors=entry['instructors']|e -%}
+                    {% trans instructors=entry['instructors'] -%}
                         by {{ instructors }}
                     {%- endtrans %}
                     {% if ambience['event']['tracks']|length > 1 %}
@@ -59,9 +59,9 @@
                                 {% endif %}
                             {% endif %}
                             {% if track_id not in entry['active_segments'] %}
-                                <i><s>{{ track['title']|e }}</s></i>
+                                <i><s>{{ track['title'] }}</s></i>
                             {%- else %}
-                                <i>{{ track['title']|e }}</i>
+                                <i>{{ track['title'] }}</i>
                             {%- endif %}
                         {%- endfor %}</span>.
                     {% elif not entry['active_segments'] %}

@@ -1,7 +1,7 @@
 {% set sidenav_active='ml_show' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{{ ambience['mailinglist']['title']|e }}{% endblock %}
+{% block title %}{{ ambience['mailinglist']['title'] }}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope",
@@ -14,7 +14,7 @@
                 {% set link = util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
                         icon='blackboard') %}
             {% else %}
-                {% set link = "{} {}".format(util.make_icon('blackboard'), event['title']|e) %}
+                {% set link = "%s %s"|s|format(util.make_icon('blackboard'), event['title']) %}
             {% endif %}
             {% trans link=link -%}
                 Mailinglist of Event {{ link }}
@@ -27,7 +27,7 @@
                 {% set link = util.href(cdedblink('assembly/show_assembly',{'assembly_id':assembly['id']}), assembly['title'],
                         icon='bullhorn') %}
             {% else %}
-                {% set link = "{} {}".format(util.make_icon('bullhorn'), assembly['title']|e) %}
+                {% set link = "%s %s"|s|format(util.make_icon('bullhorn'), assembly['title']) %}
             {% endif %}
             {% trans link=link -%}
                 Mailinglist of Assembly {{ link }}
@@ -41,7 +41,7 @@
                 {% set link = util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id':gateway['id']}), gateway['title'],
                         icon='envelope') %}
             {% else %}
-                {% set link = "{} {}".format(util.make_icon('envelope'), gateway['title']|e) %}
+                {% set link = "%s %s"|s|format(util.make_icon('envelope'), gateway['title']) %}
             {% endif %}
             {% trans link=link -%}
                 Available for subscribers of {{ link }}
@@ -50,7 +50,7 @@
     {% endif %}
     <dl class="dl-horizontal">
         <dt>{% trans -%}Mailinglist Address{%- endtrans %}</dt>
-        <dd>{{ util.href('mailto:' + ambience['mailinglist']['address']|e, ambience['mailinglist']['address']) }}</dd>
+        <dd>{{ util.href('mailto:' + ambience['mailinglist']['address'], ambience['mailinglist']['address']) }}</dd>
         <dt>{% trans -%}Moderators{%- endtrans %}</dt>
         <dd>
             {% for moderator in ambience['mailinglist']['moderators'] %}
@@ -60,7 +60,7 @@
     </dl>
 
     {{ ambience['mailinglist']['description']|rst }}
-    
+
     {% if is_admin and ambience['mailinglist']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['mailinglist']['notes']|rst }}
@@ -80,23 +80,23 @@
                         <dt>{% trans -%}Your E-Mail address{%- endtrans %}</dt>
                         <dd>
                             {% if sub_address %}
-                                {{ sub_address|e }}
+                                {{ sub_address }}
                             {% else %}
-                                {{ user.username|e }} (default)
+                                {{ user.username }} (default)
                             {% endif %}
                         </dd>
                     </dl>
                     {% if may_toggle %}
                         <div class="p">
                             {% if sub_address %}
-                                <form action="{{ cdedblink('ml/change_address')|e }}" method="POST"
+                                <form action="{{ cdedblink('ml/change_address') }}" method="POST"
                                   id="resetaddressform" style="display: inline;">
                                     {{ util.input_hidden(name="email", value="") }}
                                     {{ util.input_submit(value=gettext("Reset E-Mail adress"), icon="share-alt",
                                             aclass="btn btn-warning btn-sm") }}
                                 </form>
                             {% endif %}
-                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
+                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
                                     id="unsubscribeform" style="display: inline;">
                                 {{ util.input_hidden(name="subscribe", value=False) }}
                                 {{ util.input_submit(value=gettext("Unsubscribe"), aclass="btn btn-danger btn-sm",
@@ -112,7 +112,7 @@
                                 enter the new address in this form. You will recieve a confirmation mail.
                             {%- endtrans %}
                         </p>
-                        <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="changeaddressform"
+                        <form action="{{ cdedblink('ml/change_address') }}" method="POST" id="changeaddressform"
                               {% if 'email' in errors %}class="has-error"{% endif %}>
                             <label for="input-new-adress" class="sr-only">
                                 {% trans -%}New Subsciption Address{%- endtrans %}
@@ -128,7 +128,7 @@
                         </form>
                     {% else %}
                         <p class="text-muted">
-                            {{ util.make_icon('info-sign') }} 
+                            {{ util.make_icon('info-sign') }}
                             {% trans link=util.href(cdedblink('core/change_username_form'),
                                                     gettext("corresponding site")) -%}
                                 This mailinglist is mandatory. Therefor you are always subscribed to this list
@@ -145,7 +145,7 @@
                                     Your subscription request is currently pending review by a moderator.
                                 {%- endtrans %}
                             </strong></p>
-                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
+                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
                                     id="subscribeform">
                                 {{ util.input_hidden(name="subscribe", value=False) }}
                                 {{ util.input_submit(value=gettext("Cancel"), aclass="btn btn-sm btn-danger",
@@ -155,7 +155,7 @@
                             <p><strong>
                                 {% trans -%}You are not currently subscribed to this mailinglist.{%- endtrans %}
                             </strong></p>
-                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
+                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
                               id="subscribeform">
                                 <div>
                                     {{ util.input_hidden(name="subscribe", value=True) }}

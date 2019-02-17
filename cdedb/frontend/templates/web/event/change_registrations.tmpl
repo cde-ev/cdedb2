@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
         Edit Registrations ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -17,27 +17,27 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Edit Registrations{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
 {% macro output_name(persona) %}
-    {{ persona['title']|e }}
-    {{ persona['given_names']|e }}
-    {{ persona['family_name']|e }}
-    {{ persona['name_supplement']|e }}
+    {{ persona['title'] }}
+    {{ persona['given_names'] }}
+    {{ persona['family_name'] }}
+    {{ persona['name_supplement'] }}
 {% endmacro %}
 {% macro form_input_optional(name='', label='', anid='', info='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {% if label %}
-            <label{% if anid %} for="{{ anid|e }}"{% endif %} class="col-sm-4 control-label">
-                {{ label|e }}
+            <label{% if anid %} for="{{ anid }}"{% endif %} class="col-sm-4 control-label">
+                {{ label }}
             </label>
         {% endif %}
         <div class="col-sm-1 text-center {% if not label %}col-sm-offset-4{% endif %}">
             <div class="checkbox" title="
                 {% if label %}
-                    {% trans label=label|e -%}
+                    {% trans label=label -%}
                         Overwrite '{{ label }}'
                     {%- endtrans %}
                 {% else %}
@@ -47,12 +47,12 @@
                 {% endif %}
             ">
                 <label>
-                    <input type="checkbox" name="enable_{{ name|e }}" value="True" class="enable-input"
-                           {% if anid %}id="enable_{{ anid|e }}" data-input="{{ anid|e }}"{% endif %}
+                    <input type="checkbox" name="enable_{{ name }}" value="True" class="enable-input"
+                           {% if anid %}id="enable_{{ anid }}" data-input="{{ anid }}"{% endif %}
                            {% if values.get("enable_{}".format(name), False) %}checked="checked"{% endif %} />
                     <span class="sr-only">
                         {% if label %}
-                            {% trans label=label|e -%}
+                            {% trans label=label -%}
                                 Overwrite '{{ label }}'
                             {%- endtrans %}
                         {% else %}
@@ -77,7 +77,7 @@
                                 "registrations. Fields that are equal in all registrations are already "
                                 "selected.")) }}
 
-    <form action="{{ cdedblink('event/change_registrations')|e }}" method="POST" id="changeregistrationform"
+    <form action="{{ cdedblink('event/change_registrations') }}" method="POST" id="changeregistrationform"
           class="form-horizontal">
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
         <h3 class="heading-underline">{% trans -%}Registrations{%- endtrans %}</h3>
@@ -111,7 +111,7 @@
 
         {% for part_id, part in ambience['event']['parts']|dictsort %}
             {% if ambience['event']['parts']|length > 1 %}
-                <h4>{{ part['title']|e }}</h4>
+                <h4>{{ part['title'] }}</h4>
             {% endif %}
             {% call form_input_optional("part{}.status".format(part_id), label=gettext("Status"),
                                         anid="part{}_status".format(part_id)) %}

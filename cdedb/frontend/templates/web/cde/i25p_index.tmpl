@@ -12,14 +12,14 @@
     <h2>{% trans -%}Initiative 25+ – What's that?{%- endtrans %}</h2>
 
     <p>
-        {% trans amount=25|money|e -%}
+        {% trans amount=25|money -%}
         	If you give the authorization, the CdE will withdraw {{ amount }}
             or more annually via Direct Debit.
         {%- endtrans %}
     </p>
 
     <p>
-        {% trans amount=25|money|e, fee=5|money|e, dsa=
+        {% trans amount=25|money, fee=5|money, dsa=
                 gettext("Deutsche SchülerAkademie"), idea=gettext("Idee SchülerAkademie")-%}
         	These {{ amount }} will be used to pay the annual membership fee
             currently in force, currently {{ fee }}. The remainder is a donation
@@ -42,7 +42,7 @@
     <h3>{% trans -%}Supporting the SchülerAkademie{%- endtrans %}</h3>
 
     <p>
-        {% trans initiative="<em>{}</em>".format(gettext("Initiative 25+")), 
+        {% trans initiative=("<em>%s</em>"|s|format(gettext("Initiative 25+"))),
                 idea=gettext("Idee SchülerAkademie"),
                 bub=gettext("Bildung &amp; Begabung gem. GmbH") -%}
         	The {{ initiative }} implements a decision of the General Assembly 2008

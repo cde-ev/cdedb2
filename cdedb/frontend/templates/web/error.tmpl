@@ -1,22 +1,22 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{{ error.code|e }}: {{ error.name }}{% endblock %}
+{% block title %}{{ error.code }}: {{ error.name }}{% endblock %}
 {% block content %}
     <div class="alert alert-danger">
         {{ util.make_icon('remove-sign') }}
         {% if error.code == 403 %}
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
-            {{ error.description|e }}
+            {{ error.description }}
         {% elif error.code == 404 %}
             {% trans %}Couldn't find the requested page{% endtrans %}
         {% elif error.code == 405 %}
             {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
         {% elif error.code == 500 %}
             {% trans %}An internal error occured:{% endtrans %}
-            {{ error.description|e }}
+            {{ error.description }}
         {% else %}
              {% trans %}An unknown error occurred.{% endtrans %}
-            {{ error.description|e }}
+            {{ error.description }}
         {% endif %}
     </div>
 
@@ -26,9 +26,9 @@
         {% endif %}
         <p>
             {% trans team=gettext("CdE-Datenbank development team"),
-                     mail="<a href='mailto:" + gettext("CdE-Datenbank development team") +
-                           " <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>",
-                     time=now()|datetime(lang=lang)|e -%}
+                     mail=("<a href='mailto:%(moniker)s <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>"|s
+                           |format(moniker=gettext("CdE-Datenbank development team"))),
+                     time=now()|datetime(lang=lang) -%}
                 If you think this is an error, please contact the {{ team }} at {{ mail }} with the error message
                 displayed above, the current time ({{ time }}) and a detailed description of your actions: What were you
                 about to do? Which links and buttons did you click to get here? Have you changed any settings before the
@@ -38,8 +38,8 @@
     {% elif error.code in (404, 405) %}
         <p>
             {% trans team=gettext("CdE-Datenbank development team"),
-                     mail="<a href=\"mailto:" + gettext("CdE-Datenbank development team") +
-                           " <cdedb@lists.cde-ev.de>\">cdedb@lists.cde-ev.de</a>" -%}
+                     mail=("<a href='mailto:%(moniker)s <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>"|s
+                           |format(moniker=gettext("CdE-Datenbank development team"))) -%}
                 If you reached this page via an internal link of the CdE-Datenbank, please contact the {{ team }} at
                 {{ mail }} and describe how you got here.
             {%- endtrans %}
@@ -58,9 +58,9 @@
             {% endif %}
         <p>
             {% trans team=gettext("CdE-Datenbank development team"),
-                     mail="<a href='mailto:" + gettext("CdE-Datenbank development team") +
-                           " <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>",
-                     time=now()|datetime(lang=lang)|e -%}
+                     mail=("<a href='mailto:%(moniker)s <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>"|s
+                           |format(moniker=gettext("CdE-Datenbank development team"))),
+                     time=now()|datetime(lang=lang) -%}
                 If the error persists, you probably found a bug, hidden in our code.
                 Please contact the {{ team }} at {{ mail }} with the error message displayed above, the current time
                 ({{ time }}) and a detailed description of your actions: What were you about to do? Which links and

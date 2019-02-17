@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=persona['given_names']|e, family_name=persona['family_name']|e, title=ambience['event']['title']|e -%}
+    {% trans given_names=persona['given_names'], family_name=persona['family_name'], title=ambience['event']['title'] -%}
         Edit Registration by {{ given_names }} {{ family_name }} ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -13,27 +13,27 @@
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
 {{ util.breadcrumb_link(cdedblink("event/show_registration"), "{} {}".
-        format(persona['given_names']|e, persona['family_name']|e), icon="user") }}
+        format(persona['given_names'], persona['family_name']), icon="user") }}
 {{ util.breadcrumb_link(cdedblink("event/change_registration"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans given_names=persona['given_names']|e, family_name=persona['family_name']|e -%}
+        {% trans given_names=persona['given_names'], family_name=persona['family_name'] -%}
             Edit {{ given_names }} {{ family_name }}
         {%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
 {% macro output_name(persona) %}
-    {{ persona['title']|e }}
-    {{ persona['given_names']|e }}
-    {{ persona['family_name']|e }}
-    {{ persona['name_supplement']|e }}
+    {{ persona['title'] }}
+    {{ persona['given_names'] }}
+    {{ persona['family_name'] }}
+    {{ persona['name_supplement'] }}
 {% endmacro %}
 
 {% block content %}
-    <form action="{{ cdedblink('event/change_registration')|e }}" method="POST" id="changeregistrationform"
+    <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform"
           class="form-horizontal">
         <h3 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h3>
         {{ util.form_input_static(label=gettext("Full Name"), value=output_name(persona)) }}
@@ -54,7 +54,7 @@
 
         {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
             {% if ambience['event']['parts']|length > 1 %}
-                <h4>{{ part['title']|e }}</h4>
+                <h4>{{ part['title'] }}</h4>
             {% endif %}
             {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
@@ -82,7 +82,7 @@
                 <h4>
                     Kurswahl
                     {% if ambience['event']['tracks']|length > 1 %}
-                    {{ track['title']|e }}
+                    {{ track['title'] }}
                     {% endif %}
                 </h4>
 

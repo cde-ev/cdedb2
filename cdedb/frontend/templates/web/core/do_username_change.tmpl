@@ -7,13 +7,13 @@
 {% endblock %}
 {% block content %}
     <p>
-        {% trans email=raw_email|e -%}
+        {% trans email=raw_email -%}
         	Enter Your Password and click "Confirm" to change Your E-Mail-Address to <code>{{ email }}</code>.
             Aftwerwards you need to user Your new E-Mail-Address to login.
         {%- endtrans %}
     </p>
 
-    <form action="{{ cdedblink('core/do_username_change')|e }}" method="POST" id="usernamechangeform"
+    <form action="{{ cdedblink('core/do_username_change') }}" method="POST" id="usernamechangeform"
           class="form-horizontal">
         {{ util.input_hidden(name="new_username") }}
         {{ util.form_input_text(name="password", type="password", label=gettext("Password")) }}

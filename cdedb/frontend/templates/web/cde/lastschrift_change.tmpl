@@ -7,7 +7,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations")) }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
-	"{} {}".format(persona['given_names'], persona['family_name'])|e,
+	"{} {}".format(persona['given_names'], persona['family_name']),
 	icon="euro") }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_change_form", {'persona_id': values['persona_id']}), gettext("Edit"),
 	active=True) }}
@@ -18,7 +18,7 @@
             $('#changelastschriftform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('cde/lastschrift_change')|e }}" method="POST" id="changelastschriftform"
+    <form action="{{ cdedblink('cde/lastschrift_change') }}" method="POST" id="changelastschriftform"
 	    class="form-horizontal">
 	{{ util.form_input_static(label=gettext("Member"),
 		value="{} {}".format(persona['given_names'], persona['family_name'])) }}
@@ -30,7 +30,7 @@
 	{{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5",
 				    info=gettext("Supports reStructuredText"),
 				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
-	
+
 	{{ util.form_input_submit(value=gettext("Save"),
 		cancellink=cdedblink("cde/lastschrift_show", {'persona_id': ambience['lastschrift']['persona_id']})) }}
     </form>

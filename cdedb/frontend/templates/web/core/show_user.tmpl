@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
-    {% trans given_names=data['given_names']|e, family_name=data['family_name']|e -%}
+    {% trans given_names=data['given_names'], family_name=data['family_name'] -%}
         {{ given_names }} {{ family_name }}
     {%- endtrans %}
 {% endblock %}
@@ -65,10 +65,10 @@
     {% if data['is_cde_realm'] %}
         <div class="pull-right-responsive text-right-responsive">
             {% if data['foto'] %}
-                <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']})|e }}"
+                <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
                      alt="{{ gettext("Profile Picture") }}" class="profilepic img-thumbnail">
             {%- else %}
-                <img src="{{ staticurl("generic-avatar.png")|e }}" alt="{{ gettext("Default Profile Picture") }}"
+                <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
                   class="profilepic img-thumbnail">
             {%- endif -%}
             {% if data['id'] == user.persona_id or is_relative_admin -%}
@@ -84,20 +84,20 @@
         <dl class="dl-horizontal">
             <dt>{% trans -%}Name{%- endtrans %}</dt>
             <dd>
-                {{ data['title']|e }} {{ util.output_given_displayname(data['given_names'], data ['display_name']) }}
-                {{ data['family_name']|e }} {{ data['name_supplement']|e }}
+                {{ data['title'] }} {{ util.output_given_displayname(data['given_names'], data ['display_name']) }}
+                {{ data['family_name'] }} {{ data['name_supplement'] }}
             </dd>
             {% if data['birth_name'] %}
                 <dt>{% trans -%}Birth Name{%- endtrans %}</dt>
-                <dd>{{ data['birth_name']|e }}</dd>
+                <dd>{{ data['birth_name'] }}</dd>
             {% endif %}
             {% if data['birthday'] %}
                 <dt>{% trans -%}Birthday{%- endtrans %}</dt>
-                <dd>{{ data['birthday']|date(lang=lang)|e }}</dd>
+                <dd>{{ data['birthday']|date(lang=lang) }}</dd>
             {% endif %}
             {% if (data['id'] == user.persona_id or is_relative_admin) and data['gender'] %}
                 <dt>{% trans -%}Gender{%- endtrans %}</dt>
-                <dd>{{ gettext(enums['Genders'](data['gender'])|string)|e }}</dd>
+                <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
             {% endif %}
         </dl>
 
@@ -106,7 +106,7 @@
             <h4 class="heading-underline">{% trans -%}Account &amp; Membership{%- endtrans %}</h4>
             <dl class="dl-horizontal">
                 <dt>{% trans -%}CdEDB-ID{%- endtrans %}</dt>
-                <dd>{{ data['id']|cdedbid|e }}</dd>
+                <dd>{{ data['id']|cdedbid }}</dd>
                 {% if is_relative_admin %}
                     <dt>{% trans -%}Account active{%- endtrans %}</dt>
                     <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
@@ -185,12 +185,12 @@
                     <dt>{% trans -%}Balance{%- endtrans %}</dt>
                     {% if data['has_lastschrift'] %}
                         <dd>
-                            {{ data['balance']|money|e }} {% trans -%}and{%- endtrans %}
+                            {{ data['balance']|money }} {% trans -%}and{%- endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("Direct Debit Authorization"), icon="euro") }}
                         </dd>
                     {% else %}
-                        <dd>{{ data['balance']|e }}€</dd>
+                        <dd>{{ data['balance'] }}€</dd>
                         {% if 'cde_admin' in user.roles %}
                             <dd>
                                 {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
@@ -235,7 +235,7 @@
             <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
             <dd>
                 {% if data['username'] %}
-                    {{ data['username']|e }}
+                    {{ data['username'] }}
                 {% else %}
                     —
                 {% endif %}
@@ -249,16 +249,16 @@
             </dd>
             {% if data['telephone'] %}
                 <dt>{% trans -%}Phone{%- endtrans %}</dt>
-                <dd>{{ data['telephone']|e }}</dd>
+                <dd>{{ data['telephone'] }}</dd>
             {% endif %}
             {% if data['mobile'] %}
                 <dt>{% trans -%}Mobilephone{%- endtrans %}</dt>
-                <dd>{{ data['mobile']|e }}</dd>
+                <dd>{{ data['mobile'] }}</dd>
             {% endif %}
             {% if data['weblink'] %}
                 <dt>{% trans -%}WWW{%- endtrans %}</dt>
                 {# TODO maybe add links or so - must be validated before! #}
-                <dd>{{ data['weblink']|e }}</dd>
+                <dd>{{ data['weblink'] }}</dd>
             {% endif %}
         </dl>
 
@@ -268,10 +268,10 @@
             <dl class="dl-horizontal">
                 <dt>{% trans -%}Address{%- endtrans %}</dt>
                 <dd>
-                    {{ data['address']|e }}{% if data['address'] %}<br />{% endif %}
-                    {{ data['address_supplement']|e }}{% if data['address_supplement'] %}<br />{% endif %}
-                    {{ data['postal_code']|e }} {{ data['location']|e }}{% if data['location'] %}<br />{% endif %}
-                    {{ data['country']|e }}
+                    {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
+                    {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
+                    {{ data['postal_code'] }} {{ data['location'] }}{% if data['location'] %}<br />{% endif %}
+                    {{ data['country'] }}
                 </dd>
             </dl>
         {% endif %}
@@ -281,11 +281,11 @@
             <dl class="dl-horizontal">
                 <dt>{% trans -%}Second Address{%- endtrans %}</dt>
                 <dd>
-                    {{ data['address2']|e }}{% if data['address2'] %}<br />{% endif %}
-                    {{ data['address_supplement2']|e }}{% if data['address_supplement2'] %}<br />{% endif %}
-                    {{ data['postal_code2']|e }} {{ data['location2']|e }}
+                    {{ data['address2'] }}{% if data['address2'] %}<br />{% endif %}
+                    {{ data['address_supplement2'] }}{% if data['address_supplement2'] %}<br />{% endif %}
+                    {{ data['postal_code2'] }} {{ data['location2'] }}
                     {% if data['location2'] %}<br />{% endif %}
-                    {{ data['country2']|e }}
+                    {{ data['country2'] }}
                 </dd>
             </dl>
         {% endif %}
@@ -331,7 +331,7 @@
                     <div class="col-lg-9">
                         {% if pevent['courses'] -%}
                             {% for pcourse_id, pcourse in pevent['courses']|xdictsort('nr', pad=True) %}
-                                {{ pcourse['nr']|e }}.
+                                {{ pcourse['nr'] }}.
                                 {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent_id,
                                                                                 "pcourse_id": pcourse_id}),
                                              pcourse['course_name'], readonly='cde' not in user.roles) }}
@@ -356,13 +356,13 @@
                         <div class="col-sm-4">
                             <div class="p">
                                 {% if data['is_active'] %}
-                                    <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}"
+                                    <form action="{{ cdedblink('core/toggle_activity', {'activity': False}) }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
                                         {{ util.input_submit(value=gettext("Deactivate Account"), icon="ban-circle",
                                                 aclass="btn btn-danger btn-sm") }}
                                     </form>
                                 {% else %}
-                                    <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}"
+                                    <form action="{{ cdedblink('core/toggle_activity', {'activity': True}) }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
                                         {{ util.input_submit(value=gettext("Reactivate Account"), icon="ok-circle",
                                                 aclass="btn btn-success btn-sm") }}
@@ -388,7 +388,7 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('core/archive_persona')|e }}" method="POST"
+                                <form action="{{ cdedblink('core/archive_persona') }}" method="POST"
                                  id="archivepersonaform" style="display: inline;">
                                     {{ util.input_submit(value=gettext("Archive Account"), icon="erase",
                                             aclass="btn btn-danger btn-sm") }}
@@ -420,7 +420,7 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('core/dearchive_persona')|e }}" method="POST"
+                                <form action="{{ cdedblink('core/dearchive_persona') }}" method="POST"
                                       id="dearchivepersonaform" style="display: inline;">
                                     {{ util.input_submit(value=gettext("Restore Account"), icon="open-file",
                                                          aclass="btn btn-success btn-sm") }}
@@ -438,7 +438,7 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('core/purge_persona')|e }}" method="POST"
+                                <form action="{{ cdedblink('core/purge_persona') }}" method="POST"
                                  id="purgepersonaform" style="display: inline;">
                                     {{ util.input_submit(value=gettext("Delete Account"), icon="fire",
                                             aclass="btn btn-danger btn-sm") }}

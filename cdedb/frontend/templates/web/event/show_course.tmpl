@@ -6,7 +6,7 @@
 {% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}
-    {% trans course=ambience['course']['shortname']|e, title=ambience['event']['title']|e -%}
+    {% trans course=ambience['course']['shortname'], title=ambience['event']['title'] -%}
     	Course {{ course }} ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -19,12 +19,12 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans nr=ambience['course']['nr']|e, course=ambience['course']['shortname']|e -%}
+        {% trans nr=ambience['course']['nr'], course=ambience['course']['shortname'] -%}
             Course {{ nr }}: {{ course }}
         {%- endtrans %}
     </h1>
     <div class="subtitle">
-        {{ ambience['course']['title']|e }}
+        {{ ambience['course']['title'] }}
     </div>
 {% endblock %}
 
@@ -39,20 +39,20 @@
     <div class="row">
         <div class="col-md-6">
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Instructor{%- endtrans %}</dt><dd>{{ ambience['course']['instructors']|e }}</dd>
-                <dt>{% trans -%}Maximum Size{%- endtrans %}</dt><dd>{{ ambience['course']['max_size']|e }}</dd>
-                <dt>{% trans -%}Minimum Size{%- endtrans %}</dt><dd>{{ ambience['course']['min_size']|e }}</dd>
+                <dt>{% trans -%}Instructor{%- endtrans %}</dt><dd>{{ ambience['course']['instructors'] }}</dd>
+                <dt>{% trans -%}Maximum Size{%- endtrans %}</dt><dd>{{ ambience['course']['max_size'] }}</dd>
+                <dt>{% trans -%}Minimum Size{%- endtrans %}</dt><dd>{{ ambience['course']['min_size'] }}</dd>
             </dl>
 
             <dl class="dl-horizontal">
                 {% for field_id, field in ambience['event']['fields']|dictsort %}
                     {% if field['association'] == enums['FieldAssociations'].course %}
-                        <dt>{{ field['field_name']|e }}</dt>
+                        <dt>{{ field['field_name'] }}</dt>
                         <dd>
                             {% if field['entries'] %}
                                 {% for value, description in field['entries'] %}
                                     {% if ambience['course']['fields'].get(field['field_name']) == value %}
-                                        {{ description|e }}
+                                        {{ description }}
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
@@ -61,12 +61,12 @@
                                         checked=ambience['course']['fields'].get(field['field_name'])) }}
                                 {% elif field['kind'] == "date" %}
                                     {{ ambience['course']['fields'].get(field['field_name'])
-                                       |date(lang=lang, passthrough=True)|e }}
+                                       |date(lang=lang, passthrough=True) }}
                                 {% elif field['kind'] == "datetime" %}
                                     {{ ambience['course']['fields'].get(field['field_name'])
-                                       |datetime(lang=lang, passthrough=True)|e }}
+                                       |datetime(lang=lang, passthrough=True) }}
                                 {% else %}
-                                    {{ ambience['course']['fields'].get(field['field_name'])|e|linebreaks }}
+                                    {{ ambience['course']['fields'].get(field['field_name'])|e|linebreaks|s }}
                                 {% endif %}
                             {% endif %}
                         </dd>
@@ -103,7 +103,7 @@
                         </div>
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
-                                {{ track['title']|e }}
+                                {{ track['title'] }}
                             {% else %}
                                 {% trans -%}Attendees{%- endtrans %}
                             {% endif %}
@@ -118,7 +118,7 @@
                                 num_track_attendees < ambience['course']['min_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(ambience['course']['min_size'] - num_track_attendees)|e -%}
+                                    {% trans count=(ambience['course']['min_size'] - num_track_attendees) -%}
                                         Course has {{ count }} attendees too few.
                                     {%- endtrans %}</strong>
                             </p>
@@ -126,7 +126,7 @@
                                 num_track_attendees > ambience['course']['max_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(num_track_attendees - ambience['course']['max_size'])|e -%}
+                                    {% trans count=(num_track_attendees - ambience['course']['max_size']) -%}
                                     	Course has {{ count }} attendees too many.
                                     {%- endtrans %}</strong>
                             </p>
@@ -156,7 +156,7 @@
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
-                        <form action="{{ cdedblink('event/delete_course')|e }}" method="POST" id="deletecourseform"
+                        <form action="{{ cdedblink('event/delete_course') }}" method="POST" id="deletecourseform"
                                 style="display: inline;">
                             {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
                                                  aclass="btn btn-danger", icon="folder-close") }}

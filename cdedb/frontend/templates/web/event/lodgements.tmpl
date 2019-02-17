@@ -2,7 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Lodgements ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -14,7 +14,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Lodgements{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -39,7 +39,7 @@
                 {% if ambience['event']['parts']|length > 1 %}
                     {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                         <th class="text-right{% if loop.first %} b-left{% endif %}">
-                            {{ part['title']|e }}
+                            {{ part['title'] }}
                         </th>
                         <th></th>
                     {% endfor %}
@@ -57,18 +57,18 @@
                     {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                         {% set problem = problems[(lodgement_id, part_id)] %}
                         <td class="text-right {% if loop.first %} b-left{% endif %}
-                            {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1])|e }}"{% endif %}>
-                            {{ (inhabitants[(lodgement_id, part_id)] - reserve_inhabitants[(lodgement_id, part_id)])|e }}
+                            {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}>
+                            {{ (inhabitants[(lodgement_id, part_id)] - reserve_inhabitants[(lodgement_id, part_id)]) }}
                         </td>
                         <td class="text-right {{ colors[problem[0]] }}"
-                            {% if problem[1] %}title="{{ gettext(problem[1])|e }}"{% endif %}>
+                            {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}>
                             {% if reserve_inhabitants[(lodgement_id, part_id)] %}
-                                + {{ reserve_inhabitants[(lodgement_id, part_id)]|e }}
+                                + {{ reserve_inhabitants[(lodgement_id, part_id)] }}
                             {% endif %}
                         </td>
                     {% endfor %}
-                    <td class="b-left text-right">{{ lodgement['capacity']|e }}</td>
-                    <td class=" text-right">+ {{ lodgement['reserve']|e }}</td>
+                    <td class="b-left text-right">{{ lodgement['capacity'] }}</td>
+                    <td class=" text-right">+ {{ lodgement['reserve'] }}</td>
                     <td class="b-left">
                         {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
                                      readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',

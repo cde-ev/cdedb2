@@ -3,11 +3,11 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% if ambience['ballot'] %}
-        {% trans title_assembly=ambience['assembly']['title']|e, title_ballot=ambience['ballot']['title']|e -%}
+        {% trans title_assembly=ambience['assembly']['title'], title_ballot=ambience['ballot']['title'] -%}
             Attach File ({{ title_assembly }}/{{ title_ballot }})
         {%- endtrans %}
     {% else %}
-        {% trans title=ambience['assembly']['title']|e -%}
+        {% trans title=ambience['assembly']['title'] -%}
             Attach File ({{ title }})
         {%- endtrans %}
     {% endif %}
@@ -19,11 +19,11 @@
         {%- endtrans %}
         {% if ambience['ballot'] %}
             <small>
-                {{- util.make_icon('thumbs-up', arialabel=gettext("Ballot")) }} {{ ambience['ballot']['title']|e -}}
+                {{- util.make_icon('thumbs-up', arialabel=gettext("Ballot")) }} {{ ambience['ballot']['title'] -}}
             </small>
         {% else %}
             <small>
-                {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title']|e -}}
+                {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
             </small>
         {% endif %}
     </h1>
@@ -38,7 +38,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Attach File"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('assembly/add_attachment')|e }}" method="POST" enctype="multipart/form-data"
+    <form action="{{ cdedblink('assembly/add_attachment') }}" method="POST" enctype="multipart/form-data"
             id="addattachmentform" class="form-horizontal">
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}

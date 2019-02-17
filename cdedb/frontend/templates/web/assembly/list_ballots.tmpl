@@ -1,10 +1,10 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
-{% block title %}{{ gettext("%(title)s – Ballots")|format(title=ambience['assembly']['title']|e) }}{% endblock %}
+{% block title %}{{ gettext("%(title)s – Ballots")|format(title=ambience['assembly']['title']) }}{% endblock %}
 {% block heading %}
     <h1 class="title">
         {{ gettext("Ballots") }}
-        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title']|e }}</small>
+        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -23,11 +23,11 @@
                                            (gettext("Current Ballots"), current, True),
                                            (gettext("Past Ballots"), done, False)) %}
         {% if sample %}
-        <h3> {{ heading|e }} </h3>
+        <h3> {{ heading }} </h3>
         <ul>
             {% for ballot_id, ballot in sample|dictsort %}
                 <li>
-                    {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title'])}}
+                    {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title']) }}
                     {% if ballot_id in votes and show_state %}
                         ({% if votes[ballot_id] -%}
                             {% if ">" in votes[ballot_id] -%}
@@ -41,7 +41,7 @@
                     {% endif %}
                     {% if is_admin and now() < ballot['vote_begin'] %}
                         {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
-                                     aclass="btn btn-xs btn-warning", icon="pencil")}}
+                                     aclass="btn btn-xs btn-warning", icon="pencil") }}
                     {% endif %}
                 </li>
             {% endfor %}

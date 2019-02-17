@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title']|e -%}{{ title }} – Manage
+    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Manage
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
@@ -15,7 +15,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Manage Mailinglist{%- endtrans %}
-        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title']|e }}</small>
+        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -35,7 +35,7 @@
     <div class="row">
         <div class="col-md-6">
             <h2>{% trans -%}Moderators{%- endtrans %}</h2>
-            <form action="{{ cdedblink('ml/add_moderator')|e }}" method="POST"
+            <form action="{{ cdedblink('ml/add_moderator') }}" method="POST"
                   id="addmoderatorform" class="p">
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
@@ -43,8 +43,8 @@
                                        arialabel=gettext("ID of the new moderator")) }}
                     <script type="text/javascript">
                         $('#input-add-moderator').cdedbSearchPerson(
-                            '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' +
-                                (ambience['mailinglist']['id']|string) }}', {{ ambience['mailinglist']['moderators']|list|json }},
+                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
+                                (ambience['mailinglist']['id']|string|e) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
                             false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                         );
                     </script>
@@ -60,9 +60,9 @@
                     <li>
                         {{ util.persona_anchor(personas[moderator], ml_id=ambience['mailinglist']['id']) }}
                         {% if is_admin or moderator != user.persona_id %}
-                            <form action="{{ cdedblink('ml/remove_moderator')|e }}"
+                            <form action="{{ cdedblink('ml/remove_moderator') }}"
                                   method="POST"
-                                  id="removemoderatorform{{ moderator|e }}"
+                                  id="removemoderatorform{{ moderator }}"
                                   style="display: inline;">
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
                                 {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
@@ -85,18 +85,18 @@
                         <li>
                             {{ util.persona_anchor(personas[request], ml_id=ambience['mailinglist']['id']) }}
                             <span class="nowrap">
-                                <form action="{{ cdedblink('ml/decide_request')|e }}"
+                                <form action="{{ cdedblink('ml/decide_request') }}"
                                       method="POST"
-                                      id="nackrequestform{{ request|e }}"
+                                      id="nackrequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.input_hidden(name="ack", value=False) }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
                                     {{ util.input_submit(icon="remove", value=gettext("Reject"), 
                                         aclass="btn btn-xs btn-danger") }}
                                 </form>
-                                <form action="{{ cdedblink('ml/decide_request')|e }}"
+                                <form action="{{ cdedblink('ml/decide_request') }}"
                                       method="POST"
-                                      id="ackrequestform{{ request|e }}"
+                                      id="ackrequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.input_hidden(name="ack", value=True) }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
@@ -115,7 +115,7 @@
     </div>
 
     <h2>{% trans -%}Whitelist{%- endtrans %}</h2>
-    <form action="{{ cdedblink('ml/add_whitelist')|e }}" method="POST"
+    <form action="{{ cdedblink('ml/add_whitelist') }}" method="POST"
           id="addwhitelistform" class="p">
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
@@ -130,10 +130,10 @@
     <ul>
         {% for email in ambience['mailinglist']['whitelist']|sort %}
             <li>
-                {{ email|e }}
-                <form action="{{ cdedblink('ml/remove_whitelist')|e }}"
+                {{ email }}
+                <form action="{{ cdedblink('ml/remove_whitelist') }}"
                       method="POST"
-                      id="removewhitelistform{{ loop.index|e }}"
+                      id="removewhitelistform{{ loop.index }}"
                       style="display: inline;">
                     {{ util.input_hidden(name="email", value=email) }}
                     {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="minus",
@@ -143,7 +143,7 @@
         {% endfor %}
     </ul>
     <h2>{% trans -%}Subscribers{%- endtrans %}</h2>
-    <form action="{{ cdedblink('ml/add_subscriber')|e }}" method="POST"
+    <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
           id="addsubscriberform" class="p">
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
@@ -151,8 +151,8 @@
                                arialabel=gettext("ID of the new Subscriber")) }}
             <script type="text/javascript">
                 $('#input-add-subscriber').cdedbSearchPerson(
-                    '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' +
-                        (ambience['mailinglist']['id']|string) }}', {{ subscribers|list|json }},
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
+                        (ambience['mailinglist']['id']|string|e) }}', {{ subscribers|list|json|s }},
                     false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
                 );
             </script>
@@ -170,9 +170,9 @@
                     {% for anid in list %}
                         <li>
                             {{ util.persona_anchor(personas[anid], ml_id=ambience['mailinglist']['id']) }}
-                            <form action="{{ cdedblink('ml/remove_subscriber')|e }}"
+                            <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                   method="POST"
-                                  id="removesubscriberform{{ anid|e }}"
+                                  id="removesubscriberform{{ anid }}"
                                   style="display: inline;">
                                 {{ util.input_hidden(name="subscriber_id", value=anid) }}
                                 {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger",

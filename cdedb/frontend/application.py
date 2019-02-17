@@ -61,7 +61,7 @@ class Application(BaseApp):
                 str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
-            finalize=sanitize_None,
+            finalize=sanitize_None, autoescape=True,
             auto_reload=self.conf.CDEDB_DEV)
         self.jinja_env.globals.update({
             'now': now,

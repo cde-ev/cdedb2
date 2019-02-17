@@ -21,7 +21,7 @@
     {% endif %}
 {% endmacro %}
 {% block content %}
-    <form action="{{ cdedblink('cde/batch_admission')|e }}" method="POST" id="admissionform">
+    <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform">
         {{ util.input_hidden("finalized") }}
         <div class="row">
             <div class="col-md-6">
@@ -46,7 +46,7 @@
                 -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
                 format(_("Academy"), _("Course"), _("Family Name"), _("Given Names"), _("Title"), _("Name Affix"),
                        _("Birth Name"), _("Gender"), _("Address Supplement"), _("Street"), _("Zipcode"), _("City"),
-                       _("Country"), _("Phone number"), _("Mobilephone number"), _("E-Mail"), _("Birthday"))}}
+                       _("Country"), _("Phone number"), _("Mobilephone number"), _("E-Mail"), _("Birthday"))|s }}
         </pre>
         <p class="help-block">
             {% trans -%}For Gender enter 1 for male, 2 for female, 3 for other and 0 for not specified.{%- endtrans %}
@@ -59,15 +59,15 @@
             {% for dataset in data %}
                 {{ util.input_hidden("hash{}".format(dataset['lineno'] - 1)) }}
                 <strong>
-                    <span class="row-key" data-row="{{ dataset['lineno']|e }}">
-                        {% trans lineno=dataset['lineno']|e -%}Line {{ lineno }}{%- endtrans -%}
+                    <span class="row-key" data-row="{{ dataset['lineno'] }}">
+                        {% trans lineno=dataset['lineno'] -%}Line {{ lineno }}{%- endtrans -%}
                     </span>:
-                    {{ dataset['raw']['given_names']|e }} {{ dataset['raw']['family_name']|e }}
-                    &lt;{{ dataset['raw']['username']|e }}&gt; {% trans -%}born{%- endtrans %} {{ dataset['raw']['birthday']|e }}
+                    {{ dataset['raw']['given_names'] }} {{ dataset['raw']['family_name'] }}
+                    &lt;{{ dataset['raw']['username'] }}&gt; {% trans -%}born{%- endtrans %} {{ dataset['raw']['birthday'] }}
                     {% if dataset['pevent_id'] %}
-                        ({{ pevents[dataset['pevent_id']]|e }}
+                        ({{ pevents[dataset['pevent_id']] }}
                         {%- if dataset['pcourse_id'] -%}
-                            /{{ pcourses[dataset['pevent_id']][dataset['pcourse_id']]|e }}
+                            /{{ pcourses[dataset['pevent_id']][dataset['pcourse_id']] }}
                         {%- endif -%}
                         )
                     {% endif %}
@@ -79,9 +79,9 @@
                                 <li class="text-danger">
                                     {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
                                     {% if key %}
-                                        <em class="row-col-key" data-row="{{ dataset['lineno']|e }}"
+                                        <em class="row-col-key" data-row="{{ dataset['lineno'] }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key|e -}}
+                                            {{ key -}}
                                         </em>:
                                     {% endif %}
                                     {{ util.format_error(problem) }}
@@ -91,9 +91,9 @@
                                 <li class="text-warning">
                                     {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
                                     {% if key %}
-                                        <em class="row-col-key" data-row="{{ dataset['lineno']|e }}"
+                                        <em class="row-col-key" data-row="{{ dataset['lineno'] }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key|e -}}
+                                            {{ key -}}
                                         </em>:
                                     {% endif %}
                                     {{ util.format_error(warning) }}
@@ -109,11 +109,11 @@
                                 {%- set myentries = [] %}
                                 {%- for resolution in enums['LineResolutions']
                                         if dataset['doppelgangers'] or not resolution.is_modification() %}
-                                    {%- do myentries.append((resolution.value, gettext(resolution|string)))|e %}
+                                    {%- do myentries.append((resolution.value, gettext(resolution|string))) %}
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
                                         nulloption="", aclass="form-control select-action",
-                                        arialabel=gettext("Operation for line {}").format(dataset['lineno']|e)) }}
+                                        arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
                             </div>
                         </div>
 
@@ -126,13 +126,13 @@
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
                                     {%- for key, value in dataset['doppelgangers']|dictsort %}
-                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}{}".format(
+                                        {%- with description = "%s %s (%s) <%s> (%s %s), %s%s"|s|format(
                                                 value['given_names'], value['family_name'],
                                                 value['birth_name'] or value['family_name'],
                                                 value['username'], gettext("born"),
                                                 value['birthday']|date(lang=lang), key|cdedbid,
-                                                '' if value['is_member'] else gettext(" (not a Member)"))|e %}
-                                            {%- do myentries.append((key, description))|e %}
+                                                '' if value['is_member'] else gettext(" (not a Member)")) %}
+                                            {%- do myentries.append((key, description)) %}
                                         {%- endwith %}
                                     {%- endfor %}
                                     {{ util.input_checkboxes("doppelganger_id{}".format(dataset['lineno'] - 1),

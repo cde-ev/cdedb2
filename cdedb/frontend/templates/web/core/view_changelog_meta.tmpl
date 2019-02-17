@@ -5,7 +5,7 @@
     {% trans -%}
     	Userdata Log
     {%- endtrans %}
-    [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+    [{{ values['start']|int }}–{{ (values['start']|int + log|length) }}]
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -30,13 +30,13 @@
         <tbody>
             {% for entry in log %}
                 <tr>
-                    <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
-                    <td>{{ gettext(enums['MemberChangeStati'](entry['change_status'])|string)|e }}</td>
+                    <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
+                    <td>{{ gettext(enums['MemberChangeStati'](entry['change_status'])|string) }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.href(show_user_link(entry['submitted_by']),
-                                    personas[entry['submitted_by']]['given_names']|e
-                                    + " " + personas[entry['submitted_by']]['family_name']|e)
+                                    personas[entry['submitted_by']]['given_names']
+                                    + " " + personas[entry['submitted_by']]['family_name'])
                             }}
                         {% else %}
                             -
@@ -45,8 +45,8 @@
                     <td>
                         {% if entry['reviewed_by'] %}
                             {{ util.href(show_user_link(entry['reviewed_by']),
-                                    personas[entry['reviewed_by']]['given_names']|e
-                                    + " " + personas[entry['reviewed_by']]['family_name']|e)
+                                    personas[entry['reviewed_by']]['given_names']
+                                    + " " + personas[entry['reviewed_by']]['family_name'])
                             }}
                         {% else %}
                             -
@@ -55,22 +55,22 @@
                     <td>
                         {% if entry['persona_id'] %}
                             {{ util.href(show_user_link(entry['persona_id']),
-                                    personas[entry['persona_id']]['given_names']|e
-                                    + " " + personas[entry['persona_id']]['family_name']|e)
+                                    personas[entry['persona_id']]['given_names']
+                                    + " " + personas[entry['persona_id']]['family_name'])
                             }}
                         {% else %}
                             -
                         {% endif %}
                     </td>
-                    <td>{{ entry['generation']|e }}</td>
-                    <td>{{ entry['change_note']|e }}</td>
+                    <td>{{ entry['generation'] }}</td>
+                    <td>{{ entry['change_note'] }}</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
-        <form action="{{ cdedblink('core/view_changelog_meta')|e }}" method="GET" id="logshowform"
+        <form action="{{ cdedblink('core/view_changelog_meta') }}" method="GET" id="logshowform"
           class="form-horizontal">
             {{ util.form_input_checkboxes("stati", label=gettext("Status"),
                     info=gettext("No selection means everything."),

@@ -2,7 +2,7 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']|e -%}
+    {% trans title=ambience['event']['title'] -%}
     	Manage Courses ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -14,7 +14,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans -%}Manage Courses{%- endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -32,7 +32,7 @@
                         {%- if ambience['event']['tracks']|length == 1 -%}
                             {% trans -%}Attendees &amp; Course Choices{%- endtrans %}
                         {%- else -%}
-                            {{ track['title']|e }}
+                            {{ track['title'] }}
                         {%- endif -%}
                     </th>
                 {% endfor %}
@@ -46,7 +46,7 @@
                     <th class="b-left"></th>
                     <th class="text-right">{{ util.make_icon('screenshot', title=gettext("Assigned")) }}</th>
                     {% for i in range(track['num_choices']) %}
-                        <th class="text-right">{{ (i + 1)|e }}</th>
+                        <th class="text-right">{{ (i + 1) }}</th>
                     {% endfor %}
                 {% endfor %}
                 <th class="b-left text-right">{% trans -%}Min{%- endtrans %}</th>
@@ -56,7 +56,7 @@
         <tbody>
             {% for course_id, course in courses|xdictsort('nr', pad=True) %}
                 <tr>
-                    <td>{{ course['nr']|e }}</td>
+                    <td>{{ course['nr'] }}</td>
                     <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                      course['shortname']) }}</td>
                     {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
@@ -92,8 +92,8 @@
                             <td colspan="{{ track['num_choices'] + 1 }}"></td>
                         {% endif %}
                     {% endfor %}
-                    <td class="b-left text-right">{{ course['min_size']|e }}</td>
-                    <td class="text-right">{{ course['max_size']|e }}</td>
+                    <td class="b-left text-right">{{ course['min_size'] }}</td>
+                    <td class="text-right">{{ course['max_size'] }}</td>
                     {% if ambience['event']['tracks']|length < 4 %}
                         <td class="b-left text-nowrap">
                             {{ util.href(cdedblink("event/change_course_form", {'course_id': course_id}),

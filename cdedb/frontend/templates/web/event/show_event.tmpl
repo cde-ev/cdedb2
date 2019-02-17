@@ -10,7 +10,7 @@
     {% set jshint = 'strong' %}
 {% endif %}
 {% block title %}
-    {{ ambience['event']['title']|e }}
+    {{ ambience['event']['title'] }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -32,14 +32,14 @@
             <dd>
                 {% if ambience['event']['parts']|length == 1 %}
                     {% with part = (ambience['event']['parts'].values()|list)[0] %}
-                        <span class="nowrap">{{ part['part_begin']|date(lang=lang,verbosity='full')|e }}</span>&#8239;–
-                        {#-  #}&#8239;<span class="nowrap">{{ part['part_end']|date(lang=lang,verbosity='full')|e }}</span>
+                        <span class="nowrap">{{ part['part_begin']|date(lang=lang,verbosity='full') }}</span>&#8239;–
+                        {#-  #}&#8239;<span class="nowrap">{{ part['part_end']|date(lang=lang,verbosity='full') }}</span>
                     {% endwith %}
                 {% else %}
                     {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                        {{ part['title']|e }}:
-                        {{ part['part_begin']|date(lang=lang)|e }}&#8239;–&#8239;
-                        {{- part['part_end']|date(lang=lang)|e }}<br />
+                        {{ part['title'] }}:
+                        {{ part['part_begin']|date(lang=lang) }}&#8239;–&#8239;
+                        {{- part['part_end']|date(lang=lang) }}<br />
                     {% endfor %}
                 {% endif %}
             </dd>
@@ -49,17 +49,17 @@
             <dd>
                 {% if ambience['event']['registration_soft_limit'] is none and
                         ambience['event']['registration_hard_limit'] is none %}
-                    {% trans date=ambience['event']['registration_start']|datetime(lang=lang)|e-%}
+                    {% trans date=ambience['event']['registration_start']|datetime(lang=lang)-%}
                     	starts {{ date }}
                     {%- endtrans %}
                 {% else %}
-                    {{ ambience['event']['registration_start']|datetime(lang=lang)|e }}&#8239;–&#8239;
+                    {{ ambience['event']['registration_start']|datetime(lang=lang) }}&#8239;–&#8239;
                     {{- (ambience['event']['registration_hard_limit']
                             if ambience['event']['registration_soft_limit'] is none
-                            else ambience['event']['registration_soft_limit'])|datetime(lang=lang)|e }}
+                            else ambience['event']['registration_soft_limit'])|datetime(lang=lang) }}
                     {% if (values['event_id'] in user.orga or is_admin) and
                             ambience['event']['registration_hard_limit'] != ambience['event']['registration_hard_limit'] %}
-                        {% trans date=ambience['event']['registration_hard_limit']|datetime(lang=lang)|e -%}
+                        {% trans date=ambience['event']['registration_hard_limit']|datetime(lang=lang) -%}
                         	(Late registrations until {{ date }})
                         {%- endtrans %}
                     {% endif %}
@@ -76,11 +76,11 @@
     {% if values['event_id'] in user.orga or is_admin %}
         <dl class="dl-horizontal">
             <dt>{% trans -%}Shortname{%- endtrans %}</dt>
-            <dd>{{ ambience['event']['shortname']|e }}</dd>
+            <dd>{{ ambience['event']['shortname'] }}</dd>
             <dt>{% trans -%}Institution{%- endtrans %}</dt>
-            <dd>{{ institutions[ambience['event']['institution']]|e }}</dd>
+            <dd>{{ institutions[ambience['event']['institution']] }}</dd>
             <dt>{% trans -%}CdE-Account IBAN{%- endtrans %}</dt>
-            <dd>{{ ambience['event']['iban']|e }}</dd>
+            <dd>{{ ambience['event']['iban'] }}</dd>
             <dt>{% trans -%}Questionnaire active{%- endtrans %}</dt>
             <dd>{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire'],
                         titles=[gettext("No"),gettext("Yes")]) }}</dd>
@@ -99,7 +99,7 @@
         {% if ambience['event']['mail_text'] %}
             {% call util.bootstrap_panel(title=gettext("Registration mail free text"), icon="envelope",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['mail_text']|e|linebreaks }}
+                {{ ambience['event']['mail_text']|e|linebreaks|s }}
             {% endcall %}
         {% endif %}
 
@@ -109,10 +109,10 @@
                 <ul>
                     {% for anid, entry in orgas|dictsort %}
                         <li>
-                            {{ util.persona_anchor(entry) }} ({{ anid|cdedbid|e }})
+                            {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
                             {% if is_admin or anid != user.persona_id %}
-                                <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST"
-                                        id="removeorgaform{{ anid|e }}" style="display: inline;">
+                                <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
+                                        id="removeorgaform{{ anid }}" style="display: inline;">
                                     {{ util.input_hidden(name="orga_id", value=anid) }}
                                     {{ util.input_submit(value="", readonly=is_locked, title=gettext("Remove Orga"),
                                                          icon='minus', aclass='btn btn-xs btn-danger') }}
@@ -121,16 +121,17 @@
                         </li>
                     {% endfor %}
                 </ul>
-                <form action="{{ cdedblink('event/add_orga')|e }}" method="POST" id="addorgaform" class="p">
+                <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
                     <div class="input-group has-success">
                         <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
                         {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
                                            arialabel=gettext("ID of the new Orga")) }}
                         <script type="text/javascript">
                             $('#input-add-orga').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux='
-                                + (ambience['event']['id']|string) }}', {{ ambience['event']['orgas']|list|json }},
-                                false, false, "{{ gettext("ID, Name, E-Mail") }}"
+                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=orga_event_user&phrase=%s&aux='|s) + 
+                                    (ambience['event']['id']|string|e) }}',
+                                {{ ambience['event']['orgas']|list|json|s }}, false, false,
+                                "{{ gettext("ID, Name, E-Mail") }}"
                             );
                         </script>
                         <div class="input-group-btn">
@@ -156,7 +157,7 @@
                             </strong>
                         {% endif %}
                     </p>
-                    <form action="{{ cdedblink('event/change_minor_form')|e }}" method="POST" enctype="multipart/form-data"
+                    <form action="{{ cdedblink('event/change_minor_form') }}" method="POST" enctype="multipart/form-data"
                      id="changeminorformform" {% if 'minor_form' in errors %}class="has-error"{% endif %}>
                         <div class="input-group">
                             {{ util.input_file(name="minor_form", accept="application/pdf",
@@ -180,7 +181,7 @@
                                 {% trans -%}The event is locked for offline use.{%- endtrans %}
                                 {% trans -%}To unlock it, upload the export of the Offline-DB here.{%- endtrans %}
                             </p>
-                            <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST"
+                            <form action="{{ cdedblink('event/unlock_event') }}" method="POST"
                                   enctype="multipart/form-data" id="unlockform"
                                   {% if 'json' in errors %}class="has-error"{% endif %}>
                                 <div class="input-group">
@@ -197,7 +198,7 @@
                     {% else %}
                         <p>{% trans -%}The event is not locked.{%- endtrans %}</p>
                         <div class="p">
-                            <form action="{{ cdedblink('event/lock_event')|e }}" method="POST" id="lockform">
+                            <form action="{{ cdedblink('event/lock_event') }}" method="POST" id="lockform">
                                 {{ util.input_submit(value=gettext("Lock"), icon='lock', aclass="btn btn-danger") }}
                             </form>
                         </div>
@@ -220,7 +221,7 @@
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
-                        <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" id="archiveeventform"
+                        <form action="{{ cdedblink('event/archive_event') }}" method="POST" id="archiveeventform"
                                 style="display: inline;">
                             {{ util.input_submit(value=gettext("Archive"), readonly=is_locked,
                                                  aclass="btn btn-danger", icon="folder-close") }}

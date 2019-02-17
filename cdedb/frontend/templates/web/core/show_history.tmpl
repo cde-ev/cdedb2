@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('historycollapse') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=current['given_names']|e, family_name=current['family_name']|e -%}
+    {% trans given_names=current['given_names'], family_name=current['family_name'] -%}
     	Change History of {{ given_names }} {{ family_name }}
     {%- endtrans %}
 {% endblock %}
@@ -32,7 +32,7 @@
                     {% endif %}
                 </div>
                 <div class="col-xs-9">
-                    {% if caller %}{{ caller(c) }}{% else %}{{ entries[c][f]|e }}{% endif %}
+                    {% if caller %}{{ caller(c) }}{% else %}{{ entries[c][f] }}{% endif %}
                 </div>
             </div>
         {% endif %}
@@ -43,15 +43,15 @@
         {% set vars = {'has_nonconstant' : False, 'eventual_status': None} %}
         {% for f in fields %}
             {% if c not in constants[f] %}
-                {{ vars.update({'has_nonconstant' : True})|e }}
+                {% do vars.update({'has_nonconstant' : True}) %}
                 {% if vars['eventual_status'] is none %}
-                    {{ vars.update({'eventual_status' : eventual_status[f][c]})|e }}
+                    {% do vars.update({'eventual_status' : eventual_status[f][c]}) %}
                 {% elif vars['eventual_status'] == eventual_status[f][c] %}
                     {# pass #}
                 {% else %}
                     {# Here something complicated happened and we cannot condense it properly
                        so we have to error out. #}
-                    {{ vars.update({'eventual_status' : -1})|e }}
+                    {% do vars.update({'eventual_status' : -1}) %}
                 {% endif %}
             {% endif %}
         {% endfor %}
@@ -72,7 +72,7 @@
 {% endmacro %}
 {% macro history_field(title) %}
     <div class="form-group">
-        <label class="col-sm-3">{{ title|e }}</label>
+        <label class="col-sm-3">{{ title }}</label>
         <div class="col-sm-9 history-container">
             {{ caller() }}
         </div>
@@ -110,9 +110,9 @@
         {% call history_field(gettext("Name")) %}
             {% call(c) print_multifield_history(
                     ['title','given_names', 'display_name', 'family_name', 'name_supplement']) %}
-                {{ entries[c]['title']|e }}
+                {{ entries[c]['title'] }}
                 {{ util.output_given_displayname(entries[c]['given_names'], entries[c]['display_name']) }}
-                {{ entries[c]['family_name']|e }} {{ entries[c]['name_supplement']|e }}
+                {{ entries[c]['family_name'] }} {{ entries[c]['name_supplement'] }}
             {% endcall %}
         {% endcall %}
 
@@ -123,13 +123,13 @@
         {% if current['is_cde_realm'] or current['is_event_realm'] %}
             {% call history_field(gettext("Birthday")) %}
                 {% call(c) print_history('birthday') %}
-                     {{ entries[c]['birthday']|date(lang=lang)|e }}
+                     {{ entries[c]['birthday']|date(lang=lang) }}
                 {% endcall %}
             {% endcall %}
 
             {% call history_field(gettext("Gender")) %}
                 {% call(c) print_history('gender') %}
-                     {{ gettext(enums['Genders'](entries[c]['gender'])|string)|e }}
+                     {{ gettext(enums['Genders'](entries[c]['gender'])|string) }}
                 {% endcall %}
             {% endcall %}
         {% endif %}
@@ -149,7 +149,7 @@
                                            ("is_ml_realm", gettext("Mailinglists"), "envelope"),
                                            ("is_assembly_realm", gettext("Assembly"), "bullhorn"),)%}
                     {% if entries[c][bit] %}
-                        {{ util.make_icon(icon) }} {{ desc|e }},
+                        {{ util.make_icon(icon) }} {{ desc }},
                     {% endif %}
                 {% endfor %}
             {% endcall %}
@@ -166,7 +166,7 @@
                                           ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
                                           ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
                     {% if entries[c][bit] %}
-                        {{ util.make_icon(icon) }} {{ desc|e }},
+                        {{ util.make_icon(icon) }} {{ desc }},
                         {# Dirty hack to workaround Jinjas set drawbacks #}
                         {% set tmp = vars.update({'any_privilege': True}) %}
                     {% endif %}
@@ -281,9 +281,9 @@
         <tbody>
             {% for _, entry in entries|xdictsort('generation')|reverse %}
                 <tr>
-                    <td class="nowrap">{% trans -%}Gen{%- endtrans %} {{ entry['generation']|e }}</td>
-                    <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
-                    <td>{{ gettext(entry['change_status']|enum(enums['MemberChangeStati']))|e }}</td>
+                    <td class="nowrap">{% trans -%}Gen{%- endtrans %} {{ entry['generation'] }}</td>
+                    <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
+                    <td>{{ gettext(entry['change_status']|enum(enums['MemberChangeStati'])) }}</td>
                     <td>{{ util.persona_anchor(personas[entry['submitted_by']]) }}</td>
                     <td>
                         {% if entry['reviewed_by'] %}
@@ -292,7 +292,7 @@
                             –
                         {% endif %}
                     </td>
-                    <td>{{ gettext(entry['change_note'])|e }}</td>
+                    <td>{{ gettext(entry['change_note']) }}</td>
                 </tr>
             {% endfor %}
         </tbody>

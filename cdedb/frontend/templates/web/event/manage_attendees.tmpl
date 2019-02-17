@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('manage_participants') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans course=ambience['course']['title']|e, title=ambience['event']['title']|e -%}
+    {% trans course=ambience['course']['title'], title=ambience['event']['title'] -%}
     	Manage Attendees of Course {{ course }} ({{ title }})
     {%- endtrans %}
 {% endblock %}
@@ -17,14 +17,14 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans course=ambience['course']['shortname']|e -%}
+        {% trans course=ambience['course']['shortname'] -%}
             Attendees of {{ course }}
         {%- endtrans %}
-        <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title']|e }}</small>
+        <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/manage_attendees')|e }}" method="POST" id="manageattendeesform">
+    <form action="{{ cdedblink('event/manage_attendees') }}" method="POST" id="manageattendeesform">
         <div class="row">
             {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
                     if track_id in ambience['course']['segments'] %}
@@ -35,9 +35,9 @@
                         <ul class="slim">
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
                                 <li>
-                                    {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
-                                    {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
-                                    &ensp;{{ util.input_checkbox('delete_'+track_id|e+'_'+registration_id|e,
+                                    {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
+                                    {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}
+                                    &ensp;{{ util.input_checkbox('delete_%s_%s'|format(track_id, registration_id),
                                             gettext("Remove"), aclass="del-box") }}
                                 </li>
                             {% else %}
@@ -47,16 +47,16 @@
                             {% endfor %}
                         </ul>
 
-                        <label for="input_new_{{ track_id|e }}">
+                        <label for="input_new_{{ track_id }}">
                             {{ util.make_icon('plus') }} {% trans -%}Add Attendee{%- endtrans %}
                         </label>
-                        <select multiple="multiple" id="input_new_{{ track_id|e }}" class="form-control"
-                                name="new_{{ track_id|e }}">
+                        <select multiple="multiple" id="input_new_{{ track_id }}" class="form-control"
+                                name="new_{{ track_id }}">
                             <option value="">{% trans -%}– none –{%- endtrans %}</option>
                             {% for registration_id in without_course[track_id] %}
-                                <option id="{{ registration_id|e }}_{{ track_id|e }}" value="{{ registration_id|e }}">
-                                    {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
-                                    {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
+                                <option id="{{ registration_id }}_{{ track_id }}" value="{{ registration_id }}">
+                                    {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
+                                    {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}
                                 </option>
                             {% endfor %}
                         </select>
@@ -64,10 +64,10 @@
                 </div>
             {% endfor %}
             <script type="text/javascript">
-                var course_names = {{ course_names|json }};
+                var course_names = {{ course_names|json|s }};
                 {% for track_id in ambience['event']['tracks'] %}
                     $('#input_new_{{ track_id }}').cdedbSearchParticipant(
-                        {{ selectize_data[track_id]|json }}, course_names, "{{ gettext("currently") }}: ");
+                        {{ selectize_data[track_id]|json|s }}, course_names, "{{ gettext("currently")|s }}: ");
                 {% endfor %}
                 $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Attendee") }}');
             </script>

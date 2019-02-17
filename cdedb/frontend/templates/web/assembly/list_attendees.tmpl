@@ -3,14 +3,14 @@
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans title=ambience['assembly']['title']|e -%}
+    {% trans title=ambience['assembly']['title'] -%}
         Participantlist ({{ title }})
     {%- endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {{ gettext("Participantlist") }}
-        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title']|e }}</small>
+        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -28,7 +28,7 @@
                            "Only external participants can be added with this form. "
                            "This is only possible within the application deadline.") }}
             </p>
-            <form action="{{ cdedblink('assembly/external_signup')|e }}" method="POST" id="addattendeeform">
+            <form action="{{ cdedblink('assembly/external_signup') }}" method="POST" id="addattendeeform">
                 <div class="row">
                     <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
                         {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
@@ -45,21 +45,21 @@
                 $('#addattendeeform').cdedbProtectAction(
                     {{ gettext("The user will be added as a participant. This cannot be undone.") }});
                 $('#input-add-attendee').cdedbSearchPerson(
-                    '{{ cdedblink('core/select_persona') + '?kind=pure_assembly_user&phrase=%s'}}',
-                    {{ attendees|list|json }}, false, false, {{ gettext("CdEDB-ID, Name or E-Mail") }}
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=pure_assembly_user&phrase=%s'|s) }}',
+                    {{ attendees|list|json|s }}, false, false, {{ gettext("CdEDB-ID, Name or E-Mail") }}
                 );
             </script>
         {% endcall %}
     {% endif %}
 
-    <p>{{ gettext("%(count)s participants total.")|format(count=attendees|length|e) }}</p>
+    <p>{{ gettext("%(count)s participants total.")|format(count=attendees|length) }}</p>
     <div class="row">
         {% for list in attendees | dictsort | slice(3 if attendees|length > 20 else
                                                     2 if attendees|length > 10 else 1) %}
             <div class="col-sm-4">
                 <ul class="slim nosp">
                     {% for persona_id, persona in list %}
-                        <li>{{ persona['given_names']|e }} {{ persona['family_name']|e }}</li>
+                        <li>{{ persona['given_names'] }} {{ persona['family_name'] }}</li>
                     {% endfor %}
                 </ul>
             </div>
