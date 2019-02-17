@@ -58,20 +58,24 @@ import cdedb.query as query_mod
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
 
+
 class Response(werkzeug.wrappers.Response):
     """Wrapper around werkzeugs Response to handle displaynote cookie.
 
     This is a pretty thin wrapper, but essential so our magic cookie
     gets cleared and no stale notifications remain.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.delete_cookie("displaynote")
+
 
 class BaseApp(metaclass=abc.ABCMeta):
     """Additional base class under :py:class:`AbstractFrontend` which will be
     inherited by :py:class:`cdedb.frontend.application.Application`.
     """
+
     def __init__(self, configpath, *args, **kwargs):
         """
         :type configpath: str
@@ -79,7 +83,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
-        ## initialize logging
+        # initialize logging
         if getattr(self, 'realm', None):
             logger_name = "cdedb.frontend.{}".format(self.realm)
             logger_file = getattr(self.conf,
@@ -91,16 +95,18 @@ class BaseApp(metaclass=abc.ABCMeta):
             logger_name, logger_file, self.conf.LOG_LEVEL,
             syslog_level=self.conf.SYSLOG_LEVEL,
             console_log_level=self.conf.CONSOLE_LOG_LEVEL)
-        self.logger = logging.getLogger(logger_name) ## logger are thread-safe!
+        self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
         self.decode_parameter = (
             lambda target, name, param:
             decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
+
         def local_encode(target, name, param,
                          timeout=self.conf.PARAMETER_TIMEOUT):
             return encode_parameter(secrets.URL_PARAMETER_SALT, target, name,
                                     param, timeout=timeout)
+
         self.encode_parameter = local_encode
 
     def encode_notification(self, ntype, nmessage, nparams=None):
@@ -134,13 +140,13 @@ class BaseApp(metaclass=abc.ABCMeta):
         """
         message = self.decode_parameter('_/notification', 'displaynote', note)
         if not message:
-            return  None, None, None
+            return None, None, None
         parts = message.split("--")
         ntype = parts[0]
         length = int(parts[1])
         remainder = "--".join(parts[2:])
         nmessage = remainder[:length]
-        nparams = json.loads(remainder[length+2:])
+        nparams = json.loads(remainder[length + 2:])
         return ntype, nmessage, nparams
 
     def redirect(self, rs, target, params=None):
@@ -163,6 +169,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
 
+
 def sanitize_None(data):
     """Helper to let jinja convert all ``None`` into empty strings for display
     purposes; thus we needn't be careful in this regard. (This is
@@ -176,6 +183,7 @@ def sanitize_None(data):
         return ""
     else:
         return data
+
 
 def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium",
                 passthrough=False):
@@ -201,6 +209,7 @@ def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium",
         return babel.dates.format_date(val, locale=lang, format=verbosity)
     else:
         return val.strftime(formatstr)
+
 
 def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
                     verbosity="medium", passthrough=False):
@@ -231,17 +240,20 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
     else:
         return val.strftime(formatstr)
 
+
 def money_filter(val, currency="€"):
     """Custom jinja filter to format ``decimal.Decimal`` objects.
 
     This is for values representing monetary amounts.
 
     :type val: decimal.Decimal
+    :type currency: str
     :rtype: str
     """
     if val is None:
         return None
     return "{:.2f} {}".format(val, currency)
+
 
 def cdedbid_filter(val):
     """Custom jinja filter to format persona ids with a check digit. Every user
@@ -255,6 +267,7 @@ def cdedbid_filter(val):
     if val is None:
         return None
     return "DB-{}-{}".format(val, compute_checkdigit(val))
+
 
 def escape_filter(val):
     """Custom jinja filter to reconcile escaping with the finalize method
@@ -274,6 +287,7 @@ def escape_filter(val):
     else:
         return jinja2.escape(val)
 
+
 LATEX_ESCAPE_REGEX = (
     (re.compile(r'\\'), r'\\textbackslash'),
     (re.compile(r'([{}_#%&$])'), r'\\\1'),
@@ -281,6 +295,8 @@ LATEX_ESCAPE_REGEX = (
     (re.compile(r'\^'), r'\^{}'),
     (re.compile(r'"'), r"''"),
 )
+
+
 def tex_escape_filter(val):
     """Custom jinja filter for escaping LaTeX-relevant charakters.
 
@@ -295,13 +311,16 @@ def tex_escape_filter(val):
             val = pattern.sub(replacement, val)
         return val
 
-class CustomEscapingJSONEncoder (CustomJSONEncoder):
+
+class CustomEscapingJSONEncoder(CustomJSONEncoder):
     """Extension to CustomJSONEncoder defined in cdedb.common, that
     escapes all strings for safely embedding the
     resulting JSON string into an HTML <script> tag.
 
-    Inspired by https://github.com/simplejson/simplejson/blob/dd0f99d6431b5e75293369f5554a1396f8ae6251/simplejson/encoder.py#L378
+    Inspired by https://github.com/simplejson/simplejson/blob/dd0f99d6431b5e7529
+    3369f5554a1396f8ae6251/simplejson/encoder.py#L378
     """
+
     def encode(self, o):
         # Override JSONEncoder.encode to avoid bypasses of interencode()
         # in original version
@@ -320,6 +339,7 @@ class CustomEscapingJSONEncoder (CustomJSONEncoder):
             chunk = chunk.replace('>', '\\x3e')
             yield chunk
 
+
 def json_filter(val):
     """Custom jinja filter to create json representation of objects. This is
     intended to allow embedding of values into generated javascript code.
@@ -329,17 +349,20 @@ def json_filter(val):
     """
     return json.dumps(val, cls=CustomEscapingJSONEncoder)
 
+
 def enum_filter(val, enum):
     """Custom jinja filter to convert enums to something printable.
 
     This exists mainly because of the possibility of None values.
 
     :type val: int
+    :type enum: Enum
     :rtype: str
     """
     if val is None:
         return None
     return str(enum(val))
+
 
 def numerus_filter(val, singular, plural):
     """Custom jinja filter to select singular or plural form.
@@ -355,6 +378,7 @@ def numerus_filter(val, singular, plural):
         return singular
     else:
         return plural
+
 
 def genus_filter(val, female, male, unknown=None):
     """Custom jinja filter to select gendered form of a string.
@@ -376,6 +400,7 @@ def genus_filter(val, female, male, unknown=None):
     else:
         return unknown
 
+
 def stringIn_filter(val, alist):
     """Custom jinja filter to test if a value is in a list, but requiring
     equality only on string representation.
@@ -388,6 +413,7 @@ def stringIn_filter(val, alist):
     :rtype: bool
     """
     return str(val) in (str(x) for x in alist)
+
 
 def querytoparams_filter(val):
     """Custom jinja filter to convert query into a parameter dict
@@ -405,7 +431,8 @@ def querytoparams_filter(val):
     for field, op, value in val.constraints:
         params['qop_{}'.format(field)] = op.value
         if isinstance(value, collections.Iterable):
-            # TODO: Get separator from central place (also used in validation._query_input)
+            # TODO: Get separator from central place (also used in validation._
+            # query_input)
             params['qval_{}'.format(field)] = ','.join(str(x) for x in value)
         else:
             params['qval_{}'.format(field)] = value
@@ -417,21 +444,25 @@ def querytoparams_filter(val):
     params['is_search'] = True
     return params
 
+
 def linebreaks_filter(val, replacement="<br>"):
     """Custom jinja filter to convert line breaks to <br>.
 
     :type val: str
+    :type replacement: str
     :rtype: str
     """
     if val is None:
         return None
-    ## because val is probably a jinja specific 'safe string'
+    # because val is probably a jinja specific 'safe string'
     val = str(val)
     return val.replace('\n', replacement)
+
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
 #: w.r.t. threads
 BLEACH_CLEANER = threading.local()
+
 
 def get_bleach_cleaner():
     cleaner = getattr(BLEACH_CLEANER, 'cleaner', None)
@@ -461,6 +492,7 @@ def get_bleach_cleaner():
     BLEACH_CLEANER.cleaner = cleaner
     return cleaner
 
+
 def bleach_filter(val):
     """Custom jinja filter to convert sanitize html with bleach.
 
@@ -470,6 +502,7 @@ def bleach_filter(val):
     if val is None:
         return None
     return get_bleach_cleaner().clean(val)
+
 
 def rst_filter(val):
     """Custom jinja filter to convert rst to html.
@@ -483,10 +516,12 @@ def rst_filter(val):
                 'raw_enabled': 0,
                 'id_prefix': "CDEDB_RST_",
                 'initial_header_level': 4,
-                'doctitle_xform': False,}
+                'doctitle_xform': False,
+                }
     ret = docutils.core.publish_parts(val, writer_name='html',
                                       settings_overrides=defaults)
     return bleach_filter(ret['html_body'])
+
 
 def xdictsort_filter(value, attribute, pad=False, reverse=False):
     """Allow sorting by an arbitrary attribute of the value.
@@ -512,8 +547,10 @@ def xdictsort_filter(value, attribute, pad=False, reverse=False):
             return value
         to_str = lambda val: '' if val is None else str(val)
         max_len = max(len(to_str(v.get(attribute, ""))) for v in value.values())
-        key = lambda item: to_str(item[1].get(attribute, None)).rjust(max_len, '\0')
+        key = lambda item: to_str(item[1].get(attribute, None)).rjust(max_len,
+                                                                      '\0')
     return sorted(value.items(), key=key, reverse=reverse)
+
 
 def enum_entries_filter(enum, processing=None):
     """
@@ -524,14 +561,16 @@ def enum_entries_filter(enum, processing=None):
     :type enum: enum.Enum
     :type processing: callable object -> str
     :param processing: A function to be applied on the value's string
-      representation before adding it to the result tuple. Typically this is
-      gettext()
+        representation before adding it to the result tuple. Typically this is
+        gettext()
     :rtype: [(object, object)]
-    :return: A list of tuples to be used in the input_checkboxes or input_select macros.
+    :return: A list of tuples to be used in the input_checkboxes or
+        input_select macros.
     """
     if processing is None:
         processing = lambda x: x
     return sorted((entry.value, processing(str(entry))) for entry in enum)
+
 
 def dict_entries_filter(items, *args):
     """
@@ -556,6 +595,7 @@ def dict_entries_filter(items, *args):
       input_select macros), built from the selected fields of the dicts
     """
     return [tuple(value[k] for k in args) for key, value in items]
+
 
 def xdict_entries_filter(items, *args, include=None):
     """
@@ -614,6 +654,7 @@ JINJA_FILTERS = {
 # Regexes used to compress whitespace in rendered web templates
 REGEX_PRE = re.compile(r'(</?(?:pre|textarea).*?>)')
 REGEX_WS = re.compile(r'\s+')
+
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
@@ -702,6 +743,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type params: {str: object}
         :rtype: str
         """
+
         def _cdedblink(endpoint, params=None, magic_placeholders=None):
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
@@ -743,10 +785,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if ml_id:
                 params['ml_id'] = ml_id
             return cdedburl(rs, 'core/show_user', params)
+
         errorsdict = {}
         for key, value in rs.errors:
             errorsdict.setdefault(key, []).append(value)
-        ## here come the always accessible things promised above
+        # here come the always accessible things promised above
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
@@ -762,8 +805,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'user': rs.user,
             'values': rs.values,
         }
-        ## check that default values are not overridden
-        assert(not set(data) & set(params))
+        # check that default values are not overridden
+        assert (not set(data) & set(params))
         merge_dicts(data, params)
         if modus == "tex":
             jinja_env = self.jinja_env_tex
@@ -848,17 +891,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
-        ## handy, should probably survive in a commented HTML portion
+        # handy, should probably survive in a commented HTML portion
         if 'debugstring' not in params:
             debugstring = glue(
                 "We have is_multithreaded={}; is_multiprocess={};",
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
                 "method={} ; remote_addr={} ; values={}, ambience={},",
                 "errors={}").format(
-                    rs.request.is_multithread, rs.request.is_multiprocess,
-                    rs.request.base_url, rs.request.cookies, rs.request.url,
-                    rs.request.is_secure, rs.request.method,
-                    rs.request.remote_addr, rs.values, rs.ambience, rs.errors)
+                rs.request.is_multithread, rs.request.is_multiprocess,
+                rs.request.base_url, rs.request.cookies, rs.request.url,
+                rs.request.is_secure, rs.request.method,
+                rs.request.remote_addr, rs.values, rs.ambience, rs.errors)
             params['debugstring'] = debugstring
         if rs.errors and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
@@ -903,12 +946,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params = params or {}
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
-        ## do i18n here, so _create_mail needs to know less context
+        # do i18n here, so _create_mail needs to know less context
         headers['Subject'] = rs.gettext(headers['Subject'])
         msg = self._create_mail(text, headers, attachments)
         ret = self._send_mail(msg)
         if ret:
-            ## This is mostly intended for the test suite.
+            # This is mostly intended for the test suite.
             rs.notify("info", n_("Stored email to hard drive at {path}"),
                       {'path': ret})
         return ret
@@ -926,14 +969,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Return-Path": self.conf.DEFAULT_RETURN_PATH,
                     "Cc": tuple(),
                     "Bcc": tuple(),
-                    "domain": self.conf.MAIL_DOMAIN,}
+                    "domain": self.conf.MAIL_DOMAIN,
+                    }
         merge_dicts(headers, defaults)
         msg = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
         msg['Content-Transfer-Encoding'] = 'quoted-printable'
-        ## we want quoted-printable, but without encoding spaces and without
-        ## linewrapping (encoding is a pain!)
+        # we want quoted-printable, but without encoding spaces and without
+        # linewrapping (encoding is a pain!)
         payload = msg.get_payload()
         payload = payload.replace('=20', ' ')
         payload = payload.replace('=\n', '')
@@ -943,7 +987,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             container.attach(msg)
             for attachment in attachments:
                 container.attach(self._create_attachment(attachment))
-            ## put the container in place as message to send
+            # put the container in place as message to send
             msg = container
         for header in ("To", "Cc", "Bcc"):
             nonempty = {x for x in headers[header] if x}
@@ -975,7 +1019,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 afile = open_utf8(attachment['path'])
             else:
                 afile = open(str(attachment['path']), 'rb')
-        ## Only support common types
+        # Only support common types
         factories = {
             'application': email.mime.application.MIMEApplication,
             'audio': email.mime.audio.MIMEAudio,
@@ -1171,6 +1215,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 path=(work_dir / pdf_file),
                 filename=rs.gettext(pdf_file))
 
+
 class Worker(threading.Thread):
     """Customization wrapper around ``threading.Thread``.
 
@@ -1197,11 +1242,14 @@ class Worker(threading.Thread):
         connpool = connection_pool_factory(
             conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets, conf.DB_PORT)
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
+
         def runner():
             """Implements the actual loop running the task inside the Thread."""
             while task(rrs):
                 pass
+
         super().__init__(target=runner, daemon=False, *args, **kwargs)
+
 
 def reconnoitre_ambience(obj, rs):
     """Provide automatic lookup of objects in a standard way.
@@ -1218,16 +1266,19 @@ def reconnoitre_ambience(obj, rs):
     Scout = collections.namedtuple('Scout', ('getter', 'param_name',
                                              'object_name', 'dependencies'))
     t = tuple()
+
     def do_assert(x):
         if not x:
             raise werkzeug.exceptions.BadRequest(
                 rs.gettext("Inconsistent request."))
+
     def attachment_check(a):
         if a['attachment']['ballot_id']:
             return a['attachment']['ballot_id'] == rs.requestargs['ballot_id']
         else:
             return (a['attachment']['assembly_id']
                     == rs.requestargs['assembly_id'])
+
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
               'persona', t),
@@ -1298,6 +1349,7 @@ def reconnoitre_ambience(obj, rs):
                 consistency_checker(ambience)
     return ambience
 
+
 def access(*roles, modi=None):
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -1309,6 +1361,7 @@ def access(*roles, modi=None):
     """
     modi = modi or {"GET", "HEAD"}
     access_list = set(roles)
+
     def decorator(fun):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args, **kwargs):
@@ -1321,7 +1374,7 @@ def access(*roles, modi=None):
                         'wants': rs._coders['encode_parameter'](
                             "core/index", "wants", rs.request.url,
                             timeout=None),
-                        }
+                    }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     notifications = json_serialize([
                         rs._coders['encode_notification'](
@@ -1331,10 +1384,13 @@ def access(*roles, modi=None):
                 raise werkzeug.exceptions.Forbidden(
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
+
         new_fun.access_list = access_list
         new_fun.modi = modi
         return new_fun
+
     return decorator
+
 
 def cdedburl(rs, endpoint, params=None, force_external=False,
              magic_placeholders=None):
@@ -1358,16 +1414,16 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
     :rtype: str
     """
     params = params or {}
-    ## First handle magic placeholders, this is kind of a hack, but sadly
-    ## necessary
+    # First handle magic placeholders, this is kind of a hack, but sadly
+    # necessary
     if magic_placeholders:
         newparams = copy.deepcopy(params)
-        for run in range(1,10):
+        for run in range(1, 10):
             for i, name in enumerate(magic_placeholders):
-                ## Generate a hopefully unique integer to replace
+                # Generate a hopefully unique integer to replace
                 newparams[name] = (
-                    i * 10**(9*run + 1)
-                    + 123456789*sum(10**(9*j) for j in range(run)))
+                        i * 10 ** (9 * run + 1)
+                        + 123456789 * sum(10 ** (9 * j) for j in range(run)))
             attempt = cdedburl(rs, endpoint, newparams,
                                force_external=force_external)
             if any(attempt.count(str(newparams[name])) != 1
@@ -1378,12 +1434,13 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
                     attempt = attempt.replace(
                         str(newparams[name]),
                         "_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i))
-                if any(attempt.count("_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i)) != 1
+                if any(attempt.count(
+                        "_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i)) != 1
                        for i in range(len(magic_placeholders))):
                     continue
                 return attempt
         raise RuntimeError(n_("Magic URL parameter replacement failed."))
-    ## Second we come to the normal case
+    # Second we come to the normal case
     allparams = werkzeug.datastructures.MultiDict()
     for arg in rs.requestargs:
         if rs.urlmap.is_endpoint_expecting(endpoint, arg):
@@ -1396,6 +1453,7 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
             allparams[key] = params[key]
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
+
 def staticurl(path):
     """Construct an HTTP URL to a static resource (to be found in the static
     directory). We encapsulate this here so moving the directory around
@@ -1405,6 +1463,7 @@ def staticurl(path):
     :rtype: str
     """
     return str(pathlib.Path("/static", path))
+
 
 def docurl(topic, anchor=None):
     """Construct an HTTP URL to a doc page.
@@ -1417,6 +1476,7 @@ def docurl(topic, anchor=None):
     if anchor:
         ret = ret + "#" + anchor
     return ret
+
 
 def REQUESTdata(*spec):
     """Decorator to extract parameters from requests and validate them. This
@@ -1436,6 +1496,7 @@ def REQUESTdata(*spec):
       are extracted as lists and the hash signals an encoded parameter,
       which needs to be decoded first.
     """
+
     def wrap(fun):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args, **kwargs):
@@ -1447,8 +1508,8 @@ def REQUESTdata(*spec):
                         if vals:
                             rs.values.setlist(name, vals)
                         else:
-                            ## We have to be careful, since empty lists are
-                            ## problematic for the werkzeug MultiDict
+                            # We have to be careful, since empty lists are
+                            # problematic for the werkzeug MultiDict
                             rs.values[name] = None
                         kwargs[name] = tuple(
                             check_validation(rs, argtype[1:-1], val, name)
@@ -1459,14 +1520,17 @@ def REQUESTdata(*spec):
                         if argtype.startswith('#'):
                             argtype = argtype[1:]
                             if val:
-                                ## only decode if exists
+                                # only decode if exists
                                 val = rs._coders['decode_parameter'](
                                     "{}/{}".format(obj.realm, fun.__name__),
                                     name, val)
                         kwargs[name] = check_validation(rs, argtype, val, name)
             return fun(obj, rs, *args, **kwargs)
+
         return new_fun
+
     return wrap
+
 
 def REQUESTdatadict(*proto_spec):
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
@@ -1489,6 +1553,7 @@ def REQUESTdatadict(*proto_spec):
             spec.append((arg, "str"))
         else:
             spec.append(arg)
+
     def wrap(fun):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args, **kwargs):
@@ -1504,8 +1569,11 @@ def REQUESTdatadict(*proto_spec):
                         t=argtype))
                 rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
+
         return new_fun
+
     return wrap
+
 
 def request_extractor(rs, args):
     """Utility to apply REQUESTdata later than usual.
@@ -1521,10 +1589,13 @@ def request_extractor(rs, args):
     :rtype: {str: object}
     :returns: dict containing the requested values
     """
+
     @REQUESTdata(*args)
     def fun(_, rs, **kwargs):
         return kwargs
+
     return fun(None, rs)
+
 
 def request_dict_extractor(rs, args):
     """Utility to apply REQUESTdatadict later than usual.
@@ -1537,11 +1608,14 @@ def request_dict_extractor(rs, args):
     :rtype: {str: object}
     :returns: dict containing the requested values
     """
+
     @REQUESTdatadict(*args)
     def fun(_, rs, data):
         return data
-    ## This looks wrong. but is correct.
+
+    # This looks wrong. but is correct.
     return fun(None, rs)
+
 
 def REQUESTfile(*args):
     """Decorator to extract file uploads from requests.
@@ -1549,6 +1623,7 @@ def REQUESTfile(*args):
     :type args: [str]
     :param args: Names of file parameters.
     """
+
     def wrap(fun):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args2, **kwargs):
@@ -1557,8 +1632,11 @@ def REQUESTfile(*args):
                     kwargs[name] = rs.request.files.get(name, None)
                 rs.values[name] = kwargs[name]
             return fun(obj, rs, *args2, **kwargs)
+
         return new_fun
+
     return wrap
+
 
 def event_usage(fun):
     """Indicate usage of the event realm.
@@ -1577,6 +1655,7 @@ def event_usage(fun):
         fun.realm_usage = {'event'}
     return fun
 
+
 def ml_usage(fun):
     """Indicate usage of the mailinglist realm.
 
@@ -1594,6 +1673,7 @@ def ml_usage(fun):
         fun.realm_usage = {'ml'}
     return fun
 
+
 def event_guard(argname="event_id", check_offline=False):
     """This decorator checks the access with respect to a specific event. The
     event is specified by id which has either to be a keyword
@@ -1608,6 +1688,7 @@ def event_guard(argname="event_id", check_offline=False):
     :type check_offline: bool
     :param check_offline: defaults to False
     """
+
     def wrap(fun):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args, **kwargs):
@@ -1624,8 +1705,11 @@ def event_guard(argname="event_id", check_offline=False):
                     raise werkzeug.exceptions.Forbidden(
                         rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
+
         return new_fun
+
     return wrap
+
 
 def mailinglist_guard(argname="mailinglist_id"):
     """This decorator checks the access with respect to a specific
@@ -1636,6 +1720,7 @@ def mailinglist_guard(argname="mailinglist_id"):
     :type argname: str
     :param argname: name of the keyword argument specifying the id
     """
+
     def wrap(fun):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args, **kwargs):
@@ -1648,8 +1733,11 @@ def mailinglist_guard(argname="mailinglist_id"):
                     "This page can only be accessed by the mailinglist's "
                     "moderators."))
             return fun(obj, rs, *args, **kwargs)
+
         return new_fun
+
     return wrap
+
 
 def encode_parameter(salt, target, name, param,
                      timeout=datetime.timedelta(seconds=60)):
@@ -1701,6 +1789,7 @@ def encode_parameter(salt, target, name, param,
     h.update(tohash.encode("utf-8"))
     return "{}--{}".format(h.hexdigest(), message)
 
+
 def decode_parameter(salt, target, name, param):
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
@@ -1730,6 +1819,7 @@ def decode_parameter(salt, target, name, param):
             return None
     return message[26:]
 
+
 def check_validation(rs, assertion, value, name=None, **kwargs):
     """Helper to perform parameter sanitization.
 
@@ -1751,6 +1841,7 @@ def check_validation(rs, assertion, value, name=None, **kwargs):
     rs.errors.extend(errs)
     return ret
 
+
 def basic_redirect(rs, url):
     """Convenience wrapper around :py:func:`construct_redirect`. This should
     be the main thing to use, however it is even more preferable to use
@@ -1764,6 +1855,7 @@ def basic_redirect(rs, url):
     rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
     return rs.response
 
+
 def construct_redirect(request, url):
     """Construct an HTTP redirect. This should use the 303 status
     code. Unfortunately this code is not available for HTTP 1.0, so we fall
@@ -1774,7 +1866,7 @@ def construct_redirect(request, url):
     :rtype: :py:class:`werkzeug.wrappers.Response`
     """
     if request.environ['SERVER_PROTOCOL'] == "HTTP/1.0":
-        ## in case of HTTP 1.0 we cannot use the 303 code
+        # in case of HTTP 1.0 we cannot use the 303 code
         template = """<!DOCTYPE HTML>
 <html>
     <head>
@@ -1793,6 +1885,7 @@ def construct_redirect(request, url):
         ret = werkzeug.utils.redirect(url, 303)
         ret.delete_cookie("displaynote")
         return ret
+
 
 def make_postal_address(persona):
     """Prepare address info for formatting.
@@ -1823,6 +1916,7 @@ def make_postal_address(persona):
         ret.append(p['country'])
     return ret
 
+
 def make_transaction_subject(persona):
     """Generate a string for users to put on a payment.
 
@@ -1834,6 +1928,7 @@ def make_transaction_subject(persona):
     return "{}, {}, {}".format(cdedbid_filter(persona['id']),
                                asciificator(persona['family_name']),
                                asciificator(persona['given_names']))
+
 
 def csv_output(data, fields, writeheader=True, replace_newlines=True,
                substitutions=None):
@@ -1867,10 +1962,11 @@ def csv_output(data, fields, writeheader=True, replace_newlines=True,
             if field in substitutions:
                 value = substitutions[field].get(value, value)
             if replace_newlines and isinstance(value, str):
-                value = value.replace('\n', 14*' ')
+                value = value.replace('\n', 14 * ' ')
             row[field] = value
         writer.writerow(row)
     return outfile.getvalue()
+
 
 def query_result_to_json(data, fields, substitutions=None):
     """Generate a json representation of the passed data.

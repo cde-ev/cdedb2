@@ -5,14 +5,14 @@
 from cdedb.common import n_
 
 I18N_STRINGS = (
-    ##
-    ## Enums
-    ##
+    #
+    # Enums
+    #
     n_("AgeClasses.full"),
     n_("AgeClasses.u18"),
     n_("AgeClasses.u16"),
     n_("AgeClasses.u14"),
-    
+
     n_("AssemblyLogCodes.assembly_created"),
     n_("AssemblyLogCodes.assembly_changed"),
     n_("AssemblyLogCodes.assembly_concluded"),
@@ -27,20 +27,20 @@ I18N_STRINGS = (
     n_("AssemblyLogCodes.new_attendee"),
     n_("AssemblyLogCodes.attachment_added"),
     n_("AssemblyLogCodes.attachment_removed"),
-    
+
     n_("AttachmentPolicy.allow"),
     n_("AttachmentPolicy.pdf_only"),
     n_("AttachmentPolicy.forbid"),
-    
+
     n_("AudiencePolicy.everybody"),
     n_("AudiencePolicy.require_assembly"),
     n_("AudiencePolicy.require_cde"),
     n_("AudiencePolicy.require_event"),
     n_("AudiencePolicy.require_member"),
-    
+
     n_("CdeLogCodes.advance_semester"),
     n_("CdeLogCodes.advance_expuls"),
-    
+
     n_("CoreLogCodes.persona_creation"),
     n_("CoreLogCodes.persona_change"),
     n_("CoreLogCodes.password_change"),
@@ -87,7 +87,7 @@ I18N_STRINGS = (
     n_("EventLogCodes.registration_deleted"),
     n_("EventLogCodes.event_locked"),
     n_("EventLogCodes.event_unlocked"),
-    
+
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
     n_("FinanceLogCodes.lose_membership"),
@@ -104,7 +104,7 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.lastschrift_transaction_cancelled"),
     n_("FinanceLogCodes.lastschrift_transaction_revoked"),
     n_("FinanceLogCodes.other"),
-    
+
     n_("Genders.female"),
     n_("Genders.male"),
     n_("Genders.other"),
@@ -115,13 +115,13 @@ I18N_STRINGS = (
     n_("LineResolutions.renew_trial"),
     n_("LineResolutions.update"),
     n_("LineResolutions.renew_and_update"),
-    
+
     n_("MemberChangeStati.pending"),
     n_("MemberChangeStati.committed"),
     n_("MemberChangeStati.superseeded"),
     n_("MemberChangeStati.nacked"),
     n_("MemberChangeStati.displaced"),
-    
+
     n_("MlLogCodes.list_created"),
     n_("MlLogCodes.list_changed"),
     n_("MlLogCodes.list_deleted"),
@@ -137,11 +137,11 @@ I18N_STRINGS = (
     n_("MlLogCodes.request_approved"),
     n_("MlLogCodes.request_denied"),
     n_("MlLogCodes.request_cancelled"),
-    
+
     n_("ModerationPolicy.unmoderated"),
     n_("ModerationPolicy.non_subscribers"),
     n_("ModerationPolicy.fully_moderated"),
-    
+
     n_("PastEventLogCodes.event_created"),
     n_("PastEventLogCodes.event_changed"),
     n_("PastEventLogCodes.course_created"),
@@ -152,7 +152,7 @@ I18N_STRINGS = (
     n_("PastEventLogCodes.institution_created"),
     n_("PastEventLogCodes.institution_changed"),
     n_("PastEventLogCodes.institution_deleted"),
-    
+
     n_("RegistrationPartStati.not_applied"),
     n_("RegistrationPartStati.applied"),
     n_("RegistrationPartStati.participant"),
@@ -160,20 +160,20 @@ I18N_STRINGS = (
     n_("RegistrationPartStati.guest"),
     n_("RegistrationPartStati.cancelled"),
     n_("RegistrationPartStati.rejected"),
-    
+
     n_("SubscriptionPolicy.mandatory"),
     n_("SubscriptionPolicy.opt_out"),
     n_("SubscriptionPolicy.opt_in"),
     n_("SubscriptionPolicy.moderated_opt_in"),
     n_("SubscriptionPolicy.invitation_only"),
-    
+
     n_("LastschriftTransactionStati.issued"),
     n_("LastschriftTransactionStati.skipped"),
     n_("LastschriftTransactionStati.success"),
     n_("LastschriftTransactionStati.failure"),
     n_("LastschriftTransactionStati.cancelled"),
     n_("LastschriftTransactionStati.rollback"),
-    
+
     n_("QueryOperators.empty"),
     n_("QueryOperators.nonempty"),
     n_("QueryOperators.equal"),
@@ -194,19 +194,19 @@ I18N_STRINGS = (
     n_("QueryOperators.outside"),
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
-    
-    ##
-    ## Validation errors
-    ##
+
+    #
+    # Validation errors
+    #
     n_("day is out of range for month"),
     n_("[<class 'decimal.ConversionSyntax'>]"),
-    
+
     # backend log
     n_("Consent decision (is False)."),
     n_("Consent decision (is True)."),
     n_("Toggling activity to False."),
     n_("Toggling activity to True."),
-    
+
     # zxcvbn feedback
     n_('Use a few words, avoid common phrases.'),
     n_('No need for symbols, digits, or uppercase letters.'),
@@ -236,16 +236,16 @@ I18N_STRINGS = (
     n_("Reversed words aren't much harder to guess."),
     n_("Predictable substitutions like '@' instead of 'a' don't help "
        "very much."),
-    
-    ##
-    ## Default Strings
-    ##
+
+    #
+    # Default Strings
+    #
     n_("Cancel"),
     n_("Save"),
-    
-    ##
-    ## Metadata
-    ##
+
+    #
+    # Metadata
+    #
     n_("Finanzvorstand_Name"),
     n_("Finanzvorstand_Vorname"),
     n_("Finanzvorstand_Ort"),

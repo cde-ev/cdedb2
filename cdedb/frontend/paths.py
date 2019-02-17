@@ -5,14 +5,17 @@ it here where it is out of the way.
 """
 
 import werkzeug.routing
+
 rule = werkzeug.routing.Rule
 sub = werkzeug.routing.Submount
+
 
 class FilenameConverter(werkzeug.routing.BaseConverter):
     """Handles filename inputs in URL path."""
     regex = '[a-zA-Z0-9][-a-zA-Z0-9._]*'
 
-## shorthands, mainly to avoid missing the comma to make a tuple for POST
+
+# shorthands, mainly to avoid missing the comma to make a tuple for POST
 _GET = ("GET", "HEAD")
 _POST = ("POST",)
 
@@ -586,4 +589,4 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/override", methods=_POST,
                      endpoint="mark_override"),)),
         )),)),
-    ), converters={'filename': FilenameConverter})
+), converters={'filename': FilenameConverter})

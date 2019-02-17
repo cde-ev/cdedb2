@@ -35,6 +35,7 @@ from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
 
+
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
     realm = "event"
@@ -103,7 +104,8 @@ class EventFrontend(AbstractUserFrontend):
         open_event_list = self.eventproxy.list_visible_events(rs)
         open_events = self.eventproxy.get_events(rs, open_event_list.keys())
         orga_events = self.eventproxy.get_events(rs, rs.user.orga)
-        visible_event_list = self.eventproxy.list_db_events(rs, visible_only=True)
+        visible_event_list = self.eventproxy.list_db_events(rs,
+                                                            visible_only=True)
         other_events = self.eventproxy.get_events(
             rs, set(visible_event_list) - set(open_event_list))
         return self.render(rs, "index", {
@@ -141,7 +143,7 @@ class EventFrontend(AbstractUserFrontend):
     def user_search(self, rs, download, is_search):
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_event_user'])
-        ## mangle the input, so we can prefill the form
+        # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:
             query = check(rs, "query_input", query_input, "query", spec=spec,
@@ -160,7 +162,7 @@ class EventFrontend(AbstractUserFrontend):
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
-        ## Tricky logic: In case of no validation errors we perform a query
+        # Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_event_user"
             result = self.eventproxy.submit_general_query(rs, query)
@@ -203,8 +205,8 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event']['orgas'])
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
-            params['minor_form_present'] = (
-                self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
+            params['minor_form_present'] = (self.conf.STORAGE_DIR / 'minor_form'
+                                            / str(event_id)).exists()
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(
                 n_("The event is not published yet."))
@@ -221,7 +223,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = None
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        return self.render(rs, "course_list", {'courses': courses,})
+        return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
     @event_guard(check_offline=True)
@@ -230,8 +232,8 @@ class EventFrontend(AbstractUserFrontend):
         institutions = self.pasteventproxy.list_institutions(rs)
         merge_dicts(rs.values, rs.ambience['event'])
         return self.render(rs, "change_event",
-                       {'institutions': institutions,
-                        'accounts': self.conf.EVENT_BANK_ACCOUNTS})
+                           {'institutions': institutions,
+                            'accounts': self.conf.EVENT_BANK_ACCOUNTS})
 
     @access("event", modi={"POST"})
     @REQUESTdatadict(
@@ -342,7 +344,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
             referenced_tracks.update(course['segments'])
-        ## referenced tracks block part deletion
+        # referenced tracks block part deletion
         for track_id in referenced_tracks:
             referenced_parts.add(tracks[track_id]['part_id'])
         return self.render(rs, "part_summary", {
@@ -363,7 +365,7 @@ class EventFrontend(AbstractUserFrontend):
         :type has_registrations: bool
         :rtype: {int: {str: object}}
         """
-        ## Handle basic part data
+        # Handle basic part data
         delete_flags = request_extractor(
             rs, (("delete_{}".format(part_id), "bool") for part_id in parts))
         deletes = {part_id for part_id in parts
@@ -405,9 +407,9 @@ class EventFrontend(AbstractUserFrontend):
                 k: req_data['track_{}_{}_{}'.format(k, part_id, track_id)]
                 for k in ('title', 'shortname', 'num_choices', 'sortkey')}
 
-        ## Handle newly created parts
+        # Handle newly created parts
         marker = 1
-        while marker < 2**10:
+        while marker < 2 ** 10:
             will_create = unwrap(request_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
@@ -425,16 +427,17 @@ class EventFrontend(AbstractUserFrontend):
         # previously added by JS
         rs.values['create_last_index'] = marker - 1
 
-        ## Handle track data
+        # Handle track data
         track_delete_flags = request_extractor(
             rs, (("track_delete_{}_{}".format(part_id, track_id), "bool")
                  for part_id, part in parts.items()
                  for track_id in part['tracks']))
-        track_deletes = {track_id
-                         for part_id, part in parts.items()
-                         for track_id in part['tracks']
-                         if track_delete_flags['track_delete_{}_{}'.format(
-                                 part_id, track_id)]}
+        track_deletes = {
+            track_id
+            for part_id, part in parts.items() for track_id in part['tracks']
+            if track_delete_flags['track_delete_{}_{}'.format(part_id,
+                                                              track_id)]
+        }
         if has_registrations and track_deletes:
             raise ValueError(n_("Registrations exist, no deletion."))
         params = tuple(itertools.chain.from_iterable(
@@ -452,7 +455,7 @@ class EventFrontend(AbstractUserFrontend):
                            if track_id not in track_deletes else None)
                 for track_id in part['tracks']}
             marker = 1
-            while marker < 2**5:
+            while marker < 2 ** 5:
                 will_create = unwrap(request_extractor(
                     rs,
                     (("track_create_{}_-{}".format(part_id, marker), "bool"),)))
@@ -469,11 +472,11 @@ class EventFrontend(AbstractUserFrontend):
                 marker += 1
             rs.values['track_create_last_index'][part_id] = marker - 1
 
-        ## And now track data for newly created parts
+        # And now track data for newly created parts
         for new_part_id in range(1, rs.values['create_last_index'] + 1):
             ret[-new_part_id]['tracks'] = {}
             marker = 1
-            while marker < 2**5:
+            while marker < 2 ** 5:
                 will_create = unwrap(request_extractor(
                     rs,
                     (("track_create_-{}_-{}".format(new_part_id, marker),
@@ -488,7 +491,7 @@ class EventFrontend(AbstractUserFrontend):
                 marker += 1
             rs.values['track_create_last_index'][-new_part_id] = marker - 1
 
-        ## Handle deleted parts
+        # Handle deleted parts
         for part_id in deletes:
             ret[part_id] = None
         return ret
@@ -504,7 +507,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.part_summary_form(rs, event_id)
         for part_id, part in rs.ambience['event']['parts'].items():
             if parts.get(part_id) == part:
-                ## remove unchanged
+                # remove unchanged
                 del parts[part_id]
         event = {
             'id': event_id,
@@ -555,12 +558,14 @@ class EventFrontend(AbstractUserFrontend):
                    if delete_flags['delete_{}'.format(field_id)]}
         ret = {}
         params = lambda anid: (("kind_{}".format(anid), "str"),
-                               ("association_{}".format(anid), "enum_fieldassociations"),
+                               ("association_{}".format(anid),
+                                "enum_fieldassociations"),
                                ("entries_{}".format(anid), "str_or_None"))
         for field_id in fields:
             if field_id not in deletes:
                 tmp = request_extractor(rs, params(field_id))
-                tmp = check(rs, "event_field", tmp, extra_suffix="_{}".format(field_id))
+                tmp = check(rs, "event_field", tmp,
+                            extra_suffix="_{}".format(field_id))
                 if tmp:
                     temp = {}
                     temp['kind'] = tmp["kind_{}".format(field_id)]
@@ -572,9 +577,10 @@ class EventFrontend(AbstractUserFrontend):
         marker = 1
         params = lambda anid: (("field_name_-{}".format(anid), "str"),
                                ("kind_-{}".format(anid), "str"),
-                               ("association_-{}".format(anid), "enum_fieldassociations"),
+                               ("association_-{}".format(anid),
+                                "enum_fieldassociations"),
                                ("entries_-{}".format(anid), "str_or_None"))
-        while marker < 2**10:
+        while marker < 2 ** 10:
             will_create = unwrap(request_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
@@ -604,7 +610,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.field_summary_form(rs, event_id)
         for field_id, field in rs.ambience['event']['fields'].items():
             if fields.get(field_id) == field:
-                ## remove unchanged
+                # remove unchanged
                 del fields[field_id]
         event = {
             'id': event_id,
@@ -635,7 +641,7 @@ class EventFrontend(AbstractUserFrontend):
         if orga_ids:
             data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
                              for anid in orga_ids.split(",")}
-        ## multi part events will have to edit this later on
+        # multi part events will have to edit this later on
         data['parts'] = {
             -1: {
                 'tracks': {},
@@ -662,11 +668,13 @@ class EventFrontend(AbstractUserFrontend):
         if event_id in rs.user.orga or self.is_admin(rs):
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
             registrations = {
-                k: v for k, v in self.eventproxy.get_registrations(
-                    rs, registration_ids).items()
+                k: v
+                for k, v in
+                self.eventproxy.get_registrations(rs, registration_ids).items()
                 if any(track['course_id'] == course_id
                        or track['course_instructor'] == course_id
-                       for track in v['tracks'].values())}
+                       for track in v['tracks'].values())
+            }
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in registrations.values()))
             attendees = self.calculate_groups(
@@ -695,7 +703,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_course")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("segments", "[int]"), ("active_segments", "[int]"), )
+    @REQUESTdata(("segments", "[int]"), ("active_segments", "[int]"))
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
                      "max_size", "min_size", "notes")
     @event_guard(check_offline=True)
@@ -724,7 +732,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def create_course_form(self, rs, event_id):
         """Render form."""
-        ## by default select all tracks
+        # by default select all tracks
         tracks = rs.ambience['event']['tracks']
         if not tracks:
             rs.notify("error", n_("Event without tracks forbids courses"))
@@ -780,55 +788,55 @@ class EventFrontend(AbstractUserFrontend):
             u['birthday'], rs.ambience['event']['begin'])
         tests1 = OrderedDict((
             ('pending', (lambda e, r, p: (
-                p['status'] == stati.applied))),
+                    p['status'] == stati.applied))),
             (' payed', (lambda e, r, p: (
-                p['status'] == stati.applied
-                and r['payment']))),
+                    p['status'] == stati.applied
+                    and r['payment']))),
             ('participant', (lambda e, r, p: (
-                p['status'] == stati.participant))),
+                    p['status'] == stati.participant))),
             (' u18', (lambda e, r, p: (
-                (p['status'] == stati.participant)
-                and (get_age(personas[r['persona_id']])
-                     == AgeClasses.u18)))),
+                    (p['status'] == stati.participant)
+                    and (get_age(personas[r['persona_id']])
+                         == AgeClasses.u18)))),
             (' u16', (lambda e, r, p: (
-                (p['status'] == stati.participant)
-                and (get_age(personas[r['persona_id']])
-                     == AgeClasses.u16)))),
+                    (p['status'] == stati.participant)
+                    and (get_age(personas[r['persona_id']])
+                         == AgeClasses.u16)))),
             (' u14', (lambda e, r, p: (
-                (p['status'] == stati.participant)
-                and (get_age(personas[r['persona_id']])
-                     == AgeClasses.u14)))),
+                    (p['status'] == stati.participant)
+                    and (get_age(personas[r['persona_id']])
+                         == AgeClasses.u14)))),
             (' checked in', (lambda e, r, p: (
-                p['status'] == stati.participant
-                and r['checkin']))),
+                    p['status'] == stati.participant
+                    and r['checkin']))),
             (' not checked in', (lambda e, r, p: (
-                p['status'] == stati.participant
-                and not r['checkin']))),
+                    p['status'] == stati.participant
+                    and not r['checkin']))),
             (' orgas', (lambda e, r, p: (
-                p['status'] == stati.participant
-                and r['persona_id'] in e['orgas']))),
+                    p['status'] == stati.participant
+                    and r['persona_id'] in e['orgas']))),
             ('waitlist', (lambda e, r, p: (
-                p['status'] == stati.waitlist))),
+                    p['status'] == stati.waitlist))),
             ('guest', (lambda e, r, p: (
-                p['status'] == stati.guest))),
+                    p['status'] == stati.guest))),
             ('total involved', (lambda e, r, p: (
                 stati(p['status']).is_involved()))),
             (' not payed', (lambda e, r, p: (
-                stati(p['status']).is_involved()
-                and not r['payment']))),
+                    stati(p['status']).is_involved()
+                    and not r['payment']))),
             (' no parental agreement', (lambda e, r, p: (
-                stati(p['status']).is_involved()
-                and get_age(personas[r['persona_id']]).is_minor()
-                and not r['parental_agreement']))),
+                    stati(p['status']).is_involved()
+                    and get_age(personas[r['persona_id']]).is_minor()
+                    and not r['parental_agreement']))),
             ('no lodgement', (lambda e, r, p: (
-                stati(p['status']).is_present()
-                and not p['lodgement_id']))),
+                    stati(p['status']).is_present()
+                    and not p['lodgement_id']))),
             ('cancelled', (lambda e, r, p: (
-                p['status'] == stati.cancelled))),
+                    p['status'] == stati.cancelled))),
             ('rejected', (lambda e, r, p: (
-                p['status'] == stati.rejected))),
+                    p['status'] == stati.rejected))),
             ('total', (lambda e, r, p: (
-                p['status'] != stati.not_applied))),
+                    p['status'] != stati.not_applied))),
         ))
         per_part_statistics = OrderedDict()
         for key, test in tests1.items():
@@ -840,28 +848,28 @@ class EventFrontend(AbstractUserFrontend):
 
         tests2 = OrderedDict((
             ('all instructors', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_instructor']))),
+                    p['status'] == stati.participant
+                    and t['course_instructor']))),
             ('instructors', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and t['course_id'] == t['course_instructor']))),
+                    p['status'] == stati.participant
+                    and t['course_id']
+                    and t['course_id'] == t['course_instructor']))),
             ('attendees', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and t['course_id'] != t['course_instructor']))),
+                    p['status'] == stati.participant
+                    and t['course_id']
+                    and t['course_id'] != t['course_instructor']))),
             ('no course', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and not t['course_id']
-                and r['persona_id'] not in e['orgas']))),))
+                    p['status'] == stati.participant
+                    and not t['course_id']
+                    and r['persona_id'] not in e['orgas']))),))
         per_track_statistics = OrderedDict()
         if tracks:
             for i in range(max(t['num_choices'] for t in tracks.values())):
-                tests2['in {}. choice'.format(i+1)] = (lambda e, r, p, t: (
-                    p['status'] == stati.participant
-                    and t['course_id']
-                    and len(t['choices']) > i
-                    and (t['choices'][i] == t['course_id'])))
+                tests2['in {}. choice'.format(i + 1)] = (lambda e, r, p, t: (
+                        p['status'] == stati.participant
+                        and t['course_id']
+                        and len(t['choices']) > i
+                        and (t['choices'][i] == t['course_id'])))
             for key, test in tests2.items():
                 per_track_statistics[key] = {
                     track_id: sum(
@@ -889,11 +897,12 @@ class EventFrontend(AbstractUserFrontend):
         }
         tests4 = {
             'wrong choice': (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and t['course_id'] != t['course_instructor']
-                and (t['course_id'] not in t['choices']
-                     [:e['tracks'][t['track_id']]['num_choices']]))),
+                    p['status'] == stati.participant
+                    and t['course_id']
+                    and t['course_id'] != t['course_instructor']
+                    and (t['course_id'] not in
+                         t['choices']
+                         [:e['tracks'][t['track_id']]['num_choices']]))),
         }
         sorter = lambda registration_id: name_key(
             personas[registrations[registration_id]['persona_id']])
@@ -927,32 +936,34 @@ class EventFrontend(AbstractUserFrontend):
             [x.value for x in stati if x.is_involved()],
         )
         participant_filter = (
-             'part{part}.status{part}',
-             QueryOperators.equal,
-             stati.participant.value,
+            'part{part}.status{part}',
+            QueryOperators.equal,
+            stati.participant.value,
         )
         # Query filters for all the statistics defined and calculated above.
         # They are customized and inserted into the query on the fly by
         # get_query()
         query_filters = {
             'pending': (
-                ('part{part}.status{part}', QueryOperators.equal, stati.applied.value),),
+                ('part{part}.status{part}', QueryOperators.equal,
+                 stati.applied.value),),
             ' payed': (
-                ('part{part}.status{part}', QueryOperators.equal, stati.applied.value),
+                ('part{part}.status{part}', QueryOperators.equal,
+                 stati.applied.value),
                 ("reg.payment", QueryOperators.nonempty, None),),
-            'participant': (participant_filter, ),
+            'participant': (participant_filter,),
             ' u18': (
                 participant_filter,
                 ("persona.birthday", QueryOperators.greater,
-                    deduct_years(rs.ambience['event']['begin'], 18)),),
+                 deduct_years(rs.ambience['event']['begin'], 18)),),
             ' u16': (
                 participant_filter,
                 ("persona.birthday", QueryOperators.greater,
-                    deduct_years(rs.ambience['event']['begin'], 16)),),
+                 deduct_years(rs.ambience['event']['begin'], 16)),),
             ' u14': (
                 participant_filter,
                 ("persona.birthday", QueryOperators.greater,
-                    deduct_years(rs.ambience['event']['begin'], 14)),),
+                 deduct_years(rs.ambience['event']['begin'], 14)),),
             ' checked in': (
                 participant_filter,
                 ("reg.checkin", QueryOperators.nonempty, None),),
@@ -960,11 +971,14 @@ class EventFrontend(AbstractUserFrontend):
                 participant_filter,
                 ("reg.checkin", QueryOperators.empty, None),),
             ' orgas': (
-                ('persona.id', QueryOperators.oneof, rs.ambience['event']['orgas']),),
+                ('persona.id', QueryOperators.oneof,
+                 rs.ambience['event']['orgas']),),
             'waitlist': (
-                ('part{part}.status{part}', QueryOperators.equal, stati.waitlist.value),),
+                ('part{part}.status{part}', QueryOperators.equal,
+                 stati.waitlist.value),),
             'guest': (
-                ('part{part}.status{part}', QueryOperators.equal, stati.guest.value),),
+                ('part{part}.status{part}', QueryOperators.equal,
+                 stati.guest.value),),
             'total involved': (involved_filter,),
             ' not payed': (
                 involved_filter,
@@ -979,22 +993,28 @@ class EventFrontend(AbstractUserFrontend):
                  [x.value for x in stati if x.is_present()]),
                 ('part{part}.lodgement_id{part}', QueryOperators.empty, None)),
             'cancelled': (
-                ('part{part}.status{part}', QueryOperators.equal, stati.cancelled.value),),
+                ('part{part}.status{part}', QueryOperators.equal,
+                 stati.cancelled.value),),
             'rejected': (
-                ('part{part}.status{part}', QueryOperators.equal, stati.rejected.value),),
+                ('part{part}.status{part}', QueryOperators.equal,
+                 stati.rejected.value),),
             'total': (
-                ('part{part}.status{part}', QueryOperators.unequal, stati.not_applied.value),),
+                ('part{part}.status{part}', QueryOperators.unequal,
+                 stati.not_applied.value),),
 
             'all instructors': (
                 participant_filter,
-                ('track{track}.course_instructor{track}', QueryOperators.nonempty, None),),
+                ('track{track}.course_instructor{track}',
+                 QueryOperators.nonempty, None),),
             'instructors': (
                 participant_filter,
-                ('track{track}.is_course_instructor{track}', QueryOperators.equal, True),),
+                ('track{track}.is_course_instructor{track}',
+                 QueryOperators.equal, True),),
             'no course': (
                 participant_filter,
                 ('track{track}.course_id{track}', QueryOperators.empty, None),
-                ('persona.id', QueryOperators.otherthan, rs.ambience['event']['orgas']),)
+                ('persona.id', QueryOperators.otherthan,
+                 rs.ambience['event']['orgas']),)
         }
         query_additional_fields = {
             ' payed': ('reg.payment',),
@@ -1034,7 +1054,8 @@ class EventFrontend(AbstractUserFrontend):
                  ("position", "infinite_enum_coursefilterpositions_or_None"),
                  ("ids", "int_csv_list_or_None"))
     @event_guard()
-    def course_choices_form(self, rs, event_id, course_id, track_id, position, ids):
+    def course_choices_form(self, rs, event_id, course_id, track_id, position,
+                            ids):
         """Provide an overview of course choices.
 
         This allows flexible filtering of the displayed registrations.
@@ -1055,7 +1076,7 @@ class EventFrontend(AbstractUserFrontend):
         course_infos = {}
         stati = const.RegistrationPartStati
         reg_part = lambda registration, track_id: \
-                   registration['parts'][tracks[track_id]['part_id']]
+            registration['parts'][tracks[track_id]['part_id']]
         for course_id, course in courses.items():
             for track_id in tracks:
                 assigned = sum(
@@ -1064,12 +1085,14 @@ class EventFrontend(AbstractUserFrontend):
                     and reg['tracks'][track_id]['course_id'] == course_id)
                 all_instructors = sum(
                     1 for reg in all_regs.values()
-                    if reg['tracks'][track_id]['course_instructor'] == course_id)
+                    if
+                    reg['tracks'][track_id]['course_instructor'] == course_id)
                 assigned_instructors = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track_id)['status'] == stati.participant
                     and reg['tracks'][track_id]['course_id'] == course_id
-                    and reg['tracks'][track_id]['course_instructor'] == course_id)
+                    and reg['tracks'][track_id][
+                        'course_instructor'] == course_id)
                 course_infos[(course_id, track_id)] = {
                     'assigned': assigned,
                     'all_instructors': all_instructors,
@@ -1087,15 +1110,20 @@ class EventFrontend(AbstractUserFrontend):
             (("persona.family_name", True), ("persona.given_names", True),)
         )
         filter_entries = [
-            (CourseFilterPositions.anywhere.value, rs.gettext("somehow know")),
-            (CourseFilterPositions.assigned.value, rs.gettext("participate in")),
-            (CourseFilterPositions.instructor.value, rs.gettext("offer")),
-            (CourseFilterPositions.any_choice.value, rs.gettext("chose"))]
+            (CourseFilterPositions.anywhere.value,
+             rs.gettext("somehow know")),
+            (CourseFilterPositions.assigned.value,
+             rs.gettext("participate in")),
+            (CourseFilterPositions.instructor.value,
+             rs.gettext("offer")),
+            (CourseFilterPositions.any_choice.value,
+             rs.gettext("chose"))
+        ]
         filter_entries.extend(
-            (i, rs.gettext("have as {}. choice").format(i+1))
+            (i, rs.gettext("have as {}. choice").format(i + 1))
             for i in range(max(t['num_choices'] for t in tracks.values())))
         action_entries = [
-            (i, rs.gettext("into their {}. choice").format(i+1))
+            (i, rs.gettext("into their {}. choice").format(i + 1))
             for i in range(max(t['num_choices'] for t in tracks.values()))]
         action_entries.extend((
             (CourseChoiceToolActions.assign_fixed.value,
@@ -1106,7 +1134,8 @@ class EventFrontend(AbstractUserFrontend):
             'courses': courses, 'personas': personas,
             'registrations': OrderedDict(
                 sorted(registrations.items(),
-                       key=lambda reg: name_key(personas[reg[1]['persona_id']]))),
+                       key=lambda reg: name_key(
+                           personas[reg[1]['persona_id']]))),
             'course_infos': course_infos,
             'corresponding_query': corresponding_query,
             'filter_entries': filter_entries,
@@ -1155,19 +1184,20 @@ class EventFrontend(AbstractUserFrontend):
                 elif action.enum == CourseChoiceToolActions.assign_auto:
                     cid = reg_track['course_id']
                     if cid and track_id in courses[cid]['active_segments']:
-                        ## Do not modify a valid assignment
+                        # Do not modify a valid assignment
                         continue
                     instructor = reg_track['course_instructor']
                     if (instructor
                             and track_id in courses[instructor]
                             ['active_segments']):
-                        ## Let instructors instruct
+                        # Let instructors instruct
                         tmp['tracks'][track_id] = {'course_id': instructor}
                         continue
-                    for choice in (reg_track['choices']
-                                   [:tracks[track_id]['num_choices']]):
+                    for choice in (
+                            reg_track['choices'][
+                            :tracks[track_id]['num_choices']]):
                         if track_id in courses[choice]['active_segments']:
-                            ## Assign first possible choice
+                            # Assign first possible choice
                             tmp['tracks'][track_id] = {'course_id': choice}
                             break
                     else:
@@ -1242,7 +1272,6 @@ class EventFrontend(AbstractUserFrontend):
         We test for fitness of the data itself.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
         :type datum: {str: object}
         :rtype: {str: object}
         :returns: The processed input datum.
@@ -1269,14 +1298,16 @@ class EventFrontend(AbstractUserFrontend):
                 persona = self.coreproxy.get_persona(rs, persona_id)
             except KeyError:
                 problems.append(('persona_id',
-                                 ValueError(n_("No Member with ID {p_id} found."),
-                                            {"p_id": persona_id})))
+                                 ValueError(
+                                     n_("No Member with ID {p_id} found."),
+                                     {"p_id": persona_id})))
             else:
                 registration_id = tuple(self.eventproxy.list_registrations(
                     rs, event['id'], persona_id).keys())
                 if registration_id:
                     registration_id = unwrap(registration_id)
-                    registration = self.eventproxy.get_registration(rs, registration_id)
+                    registration = self.eventproxy.get_registration(
+                        rs, registration_id)
                     if registration['payment']:
                         warnings.append(('persona_id',
                                          ValueError(n_("Already paid."))))
@@ -1298,18 +1329,21 @@ class EventFrontend(AbstractUserFrontend):
                 if not re.search(diacritic_patterns(family_name),
                                  persona['family_name'], flags=re.IGNORECASE):
                     warnings.append(('family_name',
-                                     ValueError(n_("Family name doesn't match."))))
+                                     ValueError(
+                                         n_("Family name doesn't match."))))
                 if not re.search(diacritic_patterns(given_names),
                                  persona['given_names'], flags=re.IGNORECASE):
                     warnings.append(('given_names',
-                                     ValueError(n_("Given names don't match."))))
+                                     ValueError(
+                                         n_("Given names don't match."))))
         datum.update({
             'persona_id': persona_id,
             'registration_id': registration_id,
             'date': date,
             'amount': amount,
             'warnings': warnings,
-            'problems': problems,})
+            'problems': problems,
+        })
         return datum
 
     def book_fees(self, rs, data):
@@ -1324,6 +1358,7 @@ class EventFrontend(AbstractUserFrontend):
           * for negative outcome the line where an exception was triggered
             or None if it was a DB serialization error
         """
+        index = 0
         try:
             with Atomizer(rs):
                 count = 0
@@ -1334,15 +1369,15 @@ class EventFrontend(AbstractUserFrontend):
                     }
                     count += self.eventproxy.set_registration(rs, update)
         except psycopg2.extensions.TransactionRollbackError:
-            ## We perform a rather big transaction, so serialization errors
-            ## could happen.
+            # We perform a rather big transaction, so serialization errors
+            # could happen.
             return False, None
         except:
-            ## This blanket catching of all exceptions is a last resort. We try
-            ## to do enough validation, so that this should never happen, but
-            ## an opaque error (as would happen without this) would be rather
-            ## frustrating for the users -- hence some extra error handling
-            ## here.
+            # This blanket catching of all exceptions is a last resort. We try
+            # to do enough validation, so that this should never happen, but
+            # an opaque error (as would happen without this) would be rather
+            # frustrating for the users -- hence some extra error handling
+            # here.
             self.logger.error(glue(
                 ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
                 "<<<\n<<<\n<<<\n<<<"))
@@ -1378,12 +1413,13 @@ class EventFrontend(AbstractUserFrontend):
         if not force:
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.errors or not data or open_issues:
-            return self.batch_fees_form(rs, event_id, data=data, csvfields=fields)
+            return self.batch_fees_form(rs, event_id, data=data,
+                                        csvfields=fields)
 
-        ## Here validation is finished
+        # Here validation is finished
         success, num = self.book_fees(rs, data)
         if success:
-            rs.notify("success", n_("Committed {num} fees."), {'num': num, })
+            rs.notify("success", n_("Committed {num} fees."), {'num': num})
             return self.redirect(rs, "event/show_event")
         else:
             if num is None:
@@ -1391,7 +1427,8 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 rs.notify("error", n_("Unexpected error on line {num}."),
                           {'num': num})
-            return self.batch_fees_form(rs, event_id, data=data, csvfields=fields)
+            return self.batch_fees_form(rs, event_id, data=data,
+                                        csvfields=fields)
 
     @access("event")
     @event_guard()
@@ -1568,8 +1605,8 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = {
             k: v
-            for k, v in self.eventproxy.get_registrations(
-                rs, registration_ids).items()
+            for k, v in (self.eventproxy.get_registrations(rs, registration_ids)
+                         .items())
             if any(part['status'] == const.RegistrationPartStati.participant
                    for part in v['parts'].values())}
         personas = self.coreproxy.get_event_users(
@@ -1604,7 +1641,7 @@ class EventFrontend(AbstractUserFrontend):
         columns.extend('fields.' + field['field_name']
                        for field in rs.ambience['event']['fields'].values()
                        if field['association'] ==
-                           const.FieldAssociations.course)
+                       const.FieldAssociations.course)
         for part in sorted(rs.ambience['event']['parts'].values(),
                            key=lambda x: x['part_begin']):
             columns.extend('track{}'.format(track_id)
@@ -1612,15 +1649,14 @@ class EventFrontend(AbstractUserFrontend):
 
         for course in courses.values():
             for track_id in rs.ambience['event']['tracks']:
-                course['track{}'.format(track_id)] = \
-                    'active' if track_id in course['active_segments']\
-                    else ('cancelled' if track_id in course['segments']
-                          else '')
-            course.update({'fields.{}'.format(field['field_name']):
-                               course['fields'].get(field['field_name'], '')
-                           for field in rs.ambience['event']['fields'].values()
-                           if field['association'] ==
-                               const.FieldAssociations.course})
+                status = 'active' if track_id in course['active_segments'] \
+                    else ('cancelled' if track_id in course['segments'] else '')
+                course['track{}'.format(track_id)] = status
+            course.update({
+                'fields.{}'.format(field['field_name']):
+                    course['fields'].get(field['field_name'], '')
+                for field in rs.ambience['event']['fields'].values()
+                if field['association'] == const.FieldAssociations.course})
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
         return self.send_file(
@@ -1636,14 +1672,14 @@ class EventFrontend(AbstractUserFrontend):
         columns.extend('fields.' + field['field_name']
                        for field in rs.ambience['event']['fields'].values()
                        if field['association'] ==
-                            const.FieldAssociations.lodgement)
+                       const.FieldAssociations.lodgement)
 
         for lodgement in lodgements.values():
-            lodgement.update(
-                {'fields.{}'.format(field['field_name']):
+            lodgement.update({
+                'fields.{}'.format(field['field_name']):
                     lodgement['fields'].get(field['field_name'], '')
-                 for field in rs.ambience['event']['fields'].values()
-                 if field['association'] == const.FieldAssociations.lodgement})
+                for field in rs.ambience['event']['fields'].values()
+                if field['association'] == const.FieldAssociations.lodgement})
         csv_data = csv_output(sorted(lodgements.values(),
                                      key=lambda c: c['id']),
                               columns)
@@ -1682,7 +1718,7 @@ class EventFrontend(AbstractUserFrontend):
         columns.extend('fields.' + field['field_name']
                        for field in rs.ambience['event']['fields'].values()
                        if field['association'] ==
-                            const.FieldAssociations.registration)
+                       const.FieldAssociations.registration)
         # Construct columns for parts and lodgement data
         for part_id in sorted(rs.ambience['event']['parts'].keys()):
             columns.extend("part{}.{}".format(part_id, f)
@@ -1720,12 +1756,14 @@ class EventFrontend(AbstractUserFrontend):
             registration.update({
                 'persona.{}'.format(k): v
                 for k, v in personas[registration['persona_id']].items()})
-            registration.update({
-                'fields.{}'.format(field['field_name']):
-                    registration['fields'].get(field['field_name'], '')
-                for field in rs.ambience['event']['fields'].values()
-                if field['association'] ==
-                    const.FieldAssociations.registration})
+            registration.update(
+                {
+                    'fields.{}'.format(field['field_name']):
+                        registration['fields'].get(field['field_name'], '')
+                    for field in rs.ambience['event']['fields'].values()
+                    if (field['association'] ==
+                        const.FieldAssociations.registration)}
+            )
             # Parts and lodgement data
             for part_id, part in registration['parts'].items():
                 registration.update({'part{}.{}'.format(part_id, k): v
@@ -1736,29 +1774,33 @@ class EventFrontend(AbstractUserFrontend):
                         if part['lodgement_id'] else ''
                     for f in ('id', 'moniker')})
                 registration.update({
-                    'part{}.lodgement.fields.{}'.format(part_id,
-                                                        field['field_name']):
+                    'part{}.lodgement.fields.{}'.format(
+                        part_id, field['field_name']): (
                         lodgements[part['lodgement_id']]['fields'].get(
-                            field['field_name'], '')
-                        if part['lodgement_id'] else ''
+                            field['field_name'], '') if part['lodgement_id']
+                        else '')
                     for field in rs.ambience['event']['fields'].values()
-                    if field['association'] ==
-                        const.FieldAssociations.lodgement})
+                    if (field['association'] ==
+                        const.FieldAssociations.lodgement)
+                })
             # Courses' data for each track
             for track_id, track in registration['tracks'].items():
                 registration.update({
                     'track{}.course.{}'.format(track_id, f):
                         courses[track['course_id']][f]
                         if track['course_id'] else ''
-                    for f in ('id', 'nr', 'shortname', 'title')})
+                    for f in ('id', 'nr', 'shortname', 'title')
+                })
                 registration.update({
-                    'track{}.course.fields.{}'.format(track_id,
-                                                      field['field_name']):
-                        courses[track['course_id']]['fields']
-                            .get(field['field_name'], '')
-                        if track['course_id'] else ''
+                    'track{}.course.fields.{}'.format(
+                        track_id, field['field_name']): (
+                        courses[track['course_id']]['fields'].get(
+                            field['field_name'], '') if track['course_id']
+                        else '')
                     for field in rs.ambience['event']['fields'].values()
-                    if field['association'] == const.FieldAssociations.course})
+                    if (field['association'] ==
+                        const.FieldAssociations.course)
+                })
                 for i, choice in enumerate(track['choices']):
                     registration.update({
                         'track{}.choice{}.{}'.format(track_id, i, f):
@@ -1812,7 +1854,7 @@ class EventFrontend(AbstractUserFrontend):
             persona['birthday'],
             rs.ambience['event']['begin'])
         minor_form_present = (
-            self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
+                self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
             rs.notify("info", n_("No minors may register."))
             return self.redirect(rs, "event/show_event")
@@ -1824,7 +1866,7 @@ class EventFrontend(AbstractUserFrontend):
                        in xdictsort_filter(courses, 'nr', pad=True)
                        if track_id in course['active_segments']]
             for track_id in tracks}
-        ## by default select all parts
+        # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', rs.ambience['event']['parts'])
         return self.render(rs, "register", {
@@ -1887,7 +1929,8 @@ class EventFrontend(AbstractUserFrontend):
                         for i in range(track['num_choices']))
         if not standard['foto_consent']:
             rs.errors.append(("foto_consent",
-                              ValueError(n_("Must consent for participation."))))
+                              ValueError(
+                                  n_("Must consent for participation."))))
         reg_parts = {part_id: {} for part_id in event['parts']}
         if parts is None:
             for part_id in reg_parts:
@@ -1937,7 +1980,7 @@ class EventFrontend(AbstractUserFrontend):
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         minor_form_present = (
-            self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
+                self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
             rs.notify("error", n_("No minors may register."))
             return self.redirect(rs, "event/show_event")
@@ -1989,7 +2032,8 @@ class EventFrontend(AbstractUserFrontend):
         registration = self.eventproxy.get_registration(rs, registration_id)
         if (rs.ambience['event']['registration_soft_limit'] and
                 now() > rs.ambience['event']['registration_soft_limit']):
-            rs.notify("warning", n_("Registration closed, no changes possible."))
+            rs.notify("warning",
+                      n_("Registration closed, no changes possible."))
             return self.redirect(rs, "event/registration_status")
         if self.is_locked(rs.ambience['event']):
             rs.notify("warning", n_("Event locked."))
@@ -2020,7 +2064,8 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, non_trivials, registration)
         return self.render(rs, "amend_registration", {
             'age': age, 'courses': courses, 'course_choices': course_choices,
-            'involved_tracks': involved_tracks,})
+            'involved_tracks': involved_tracks,
+        })
 
     @access("event", modi={"POST"})
     def amend_registration(self, rs, event_id):
@@ -2119,7 +2164,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.questionnaire_form(rs, event_id)
 
         code = self.eventproxy.set_registration(rs, {
-            'id': registration_id, 'fields': data,})
+            'id': registration_id, 'fields': data,
+        })
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/questionnaire_form")
 
@@ -2173,7 +2219,7 @@ class EventFrontend(AbstractUserFrontend):
             for i in range(num) if i not in deletes
         )
         marker = 1
-        while marker < 2**10:
+        while marker < 2 ** 10:
             will_create = unwrap(request_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
@@ -2270,7 +2316,8 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
-            'lodgements': lodgements,})
+            'lodgements': lodgements,
+        })
 
     @access("event")
     @event_guard(check_offline=True)
@@ -2310,11 +2357,11 @@ class EventFrontend(AbstractUserFrontend):
         field_values = {
             "fields.{}".format(key): value
             for key, value in registration['fields'].items()}
-        ## Fix formatting of ID
+        # Fix formatting of ID
         reg_values['reg.real_persona_id'] = cdedbid_filter(
             reg_values['reg.real_persona_id'])
         merge_dicts(rs.values, reg_values, field_values,
-                    *(part_values+track_values))
+                    *(part_values + track_values))
         return self.render(rs, "change_registration", {
             'persona': persona, 'courses': courses,
             'course_choices': course_choices, 'lodgements': lodgements})
@@ -2343,6 +2390,7 @@ class EventFrontend(AbstractUserFrontend):
         :rtype: {str: object}
         :returns: registration data set
         """
+
         # Helper function to filter parameters by `enabled` checkbox
         def filter_parameters(params):
             if not check_enabled:
@@ -2408,7 +2456,7 @@ class EventFrontend(AbstractUserFrontend):
         # Build course choices (but only if all choices are present)
         for track_id, track in tracks.items():
             if not all("track{}.course_choice_{}".format(track_id, i)
-                            in raw_tracks
+                       in raw_tracks
                        for i in range(track['num_choices'])):
                 continue
             extractor = lambda i: raw_tracks["track{}.course_choice_{}".format(
@@ -2474,7 +2522,7 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         defaults = {
             "part{}.status".format(part_id):
-            const.RegistrationPartStati.participant.value
+                const.RegistrationPartStati.participant.value
             for part_id in rs.ambience['event']['parts']
         }
         merge_dicts(rs.values, defaults)
@@ -2575,14 +2623,17 @@ class EventFrontend(AbstractUserFrontend):
         # do the same for registration parts', tracks' and field values
         for part_id in rs.ambience['event']['parts']:
             for key, value in representative['parts'][part_id].items():
-                if all(r['parts'][part_id][key] == value for r in registrations.values()):
+                if all(r['parts'][part_id][key] == value for r in
+                       registrations.values()):
                     reg_values['part{}.{}'.format(part_id, key)] = value
                     reg_values['enable_part{}.{}'.format(part_id, key)] = True
             for track_id in rs.ambience['event']['parts'][part_id]['tracks']:
                 for key, value in representative['tracks'][track_id].items():
-                    if all(r['tracks'][track_id][key] == value for r in registrations.values()):
+                    if all(r['tracks'][track_id][key] == value for r in
+                           registrations.values()):
                         reg_values['track{}.{}'.format(part_id, key)] = value
-                        reg_values['enable_track{}.{}'.format(part_id, key)] = True
+                        reg_values[
+                            'enable_track{}.{}'.format(part_id, key)] = True
 
         for field_id in rs.ambience['event']['fields']:
             key = rs.ambience['event']['fields'][field_id]['field_name']
@@ -2619,7 +2670,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.change_registrations_form(rs, event_id)
 
         code = 1
-        self.logger.info("Updating registrations {} with data {}".format(reg_ids, registration))
+        self.logger.info(
+            "Updating registrations {} with data {}".format(reg_ids,
+                                                            registration))
         for reg_id in reg_ids:
             registration['id'] = reg_id
             code *= self.eventproxy.set_registration(rs, registration)
@@ -2634,7 +2687,8 @@ class EventFrontend(AbstractUserFrontend):
             (("reg.id", QueryOperators.oneof, reg_ids),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
-        return self.redirect(rs, "event/registration_query", querytoparams_filter(query))
+        return self.redirect(rs, "event/registration_query",
+                             querytoparams_filter(query))
 
     @staticmethod
     def calculate_groups(entity_ids, event, registrations, key,
@@ -2660,6 +2714,7 @@ class EventFrontend(AbstractUserFrontend):
             aspect = 'tracks'
         elif key == "lodgement_id":
             aspect = 'parts'
+
         def _check_belonging(entity_id, sub_id, reg_id):
             """The actual check, un-inlined."""
             instance = registrations[reg_id][aspect][sub_id]
@@ -2668,9 +2723,9 @@ class EventFrontend(AbstractUserFrontend):
                 part = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id]['part_id']]
-            return (
-                instance[key] == entity_id
-                and const.RegistrationPartStati(part['status']).is_present())
+            return (instance[key] == entity_id and
+                    const.RegistrationPartStati(part['status']).is_present())
+
         if personas is None:
             sorter = lambda x: x
         else:
@@ -2708,13 +2763,15 @@ class EventFrontend(AbstractUserFrontend):
           id, part id, affected registrations, severeness).
         """
         ret = []
-        ## first some un-inlined code pieces (otherwise nesting is a bitch)
+
+        # first some un-inlined code pieces (otherwise nesting is a bitch)
         def _mixed(group):
             """Un-inlined check whether both genders are present."""
             return any({personas[registrations[a]['persona_id']]['gender'],
                         personas[registrations[b]['persona_id']]['gender']} ==
                        {const.Genders.male, const.Genders.female}
                        for a, b in itertools.combinations(group, 2))
+
         def _mixing_problem(lodgement_id, part_id):
             """Un-inlined code to generate an entry for mixing problems."""
             return (
@@ -2723,12 +2780,14 @@ class EventFrontend(AbstractUserFrontend):
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
                     if not registrations[reg_id]['mixed_lodging']),
                 3)
+
         def _reserve(group, part_id):
             """Un-inlined code to count the number of registrations assigned
             to a lodgement as reserve lodgers."""
             return sum(
                 registrations[reg_id]['parts'][part_id]['is_reserve']
                 for reg_id in group)
+
         def _reserve_problem(lodgement_id, part_id):
             """Un-inlined code to generate an entry for reserve problems."""
             return (
@@ -2738,7 +2797,7 @@ class EventFrontend(AbstractUserFrontend):
                     if registrations[reg_id]['parts'][part_id]['is_reserve']),
                 1)
 
-        ## now the actual work
+        # now the actual work
         for lodgement_id in lodgements:
             for part_id in event['parts']:
                 group = inhabitants[(lodgement_id, part_id)]
@@ -2762,7 +2821,7 @@ class EventFrontend(AbstractUserFrontend):
                     ret.append((n_("Non-Binary Participant."), lodgement_id,
                                 part_id,
                                 tuple(reg_id for reg_id in group), 1))
-                    
+
         return ret
 
     @access("event")
@@ -2782,7 +2841,8 @@ class EventFrontend(AbstractUserFrontend):
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
         inhabitant_nums = {k: len(v) for k, v in inhabitants.items()}
         reserve_inhabitant_nums = {
-            k: sum(1 for r in v if registrations[r]['parts'][k[1]]['is_reserve'])
+            k: sum(
+                1 for r in v if registrations[r]['parts'][k[1]]['is_reserve'])
             for k, v in inhabitants.items()}
         problems = self.check_lodgment_problems(
             rs.ambience['event'], lodgements, registrations, personas,
@@ -2801,7 +2861,8 @@ class EventFrontend(AbstractUserFrontend):
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitant_nums,
             'reserve_inhabitants': reserve_inhabitant_nums,
-            'problems': problems_condensed,})
+            'problems': problems_condensed,
+        })
 
     @access("event")
     @event_guard()
@@ -2809,8 +2870,9 @@ class EventFrontend(AbstractUserFrontend):
         """Display details of one lodgement."""
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = {
-            k: v for k, v in self.eventproxy.get_registrations(
-                rs, registration_ids).items()
+            k: v
+            for k, v in (self.eventproxy.get_registrations(rs, registration_ids)
+                         .items())
             if any(part['lodgement_id'] == lodgement_id
                    for part in v['parts'].values())}
         personas = self.coreproxy.get_event_users(
@@ -2828,7 +2890,8 @@ class EventFrontend(AbstractUserFrontend):
 
         return self.render(rs, "show_lodgement", {
             'registrations': registrations, 'personas': personas,
-            'inhabitants': inhabitants, 'problems': problems,})
+            'inhabitants': inhabitants, 'problems': problems,
+        })
 
     @access("event")
     @event_guard(check_offline=True)
@@ -2914,7 +2977,8 @@ class EventFrontend(AbstractUserFrontend):
         for part_id in rs.ambience['event']['parts']:
             merge_dicts(rs.values, {
                 'reserve_{}_{}'.format(part_id, registration_id):
-                    registrations[registration_id]['parts'][part_id]['is_reserve']
+                    registrations[registration_id]['parts'][part_id][
+                        'is_reserve']
                 for registration_id in inhabitants[(lodgement_id, part_id)]
             })
 
@@ -2923,6 +2987,7 @@ class EventFrontend(AbstractUserFrontend):
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
                     and not part['lodgement_id'])
+
         without_lodgement = {
             part_id: sorted(
                 (registration_id
@@ -2941,10 +3006,12 @@ class EventFrontend(AbstractUserFrontend):
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
                     and part['lodgement_id'] != lodgement_id)
+
         selectize_data = {
             part_id: sorted(
-                [{'name': personas[registration['persona_id']]['given_names'] + " "
-                          + personas[registration['persona_id']]['family_name'],
+                [{'name': (personas[registration['persona_id']]['given_names']
+                           + " " + personas[registration['persona_id']]
+                           ['family_name']),
                   'current': registration['parts'][part_id]['lodgement_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
@@ -2976,19 +3043,18 @@ class EventFrontend(AbstractUserFrontend):
         current_inhabitants = {
             part_id: [reg_id for reg_id, registration in registrations.items()
                       if registration['parts'][part_id]['lodgement_id']
-                          == lodgement_id]
+                      == lodgement_id]
             for part_id in rs.ambience['event']['parts']}
         # Parse request data
         params = tuple(("new_{}".format(part_id), "[id]")
-                       for part_id in rs.ambience['event']['parts']) \
-            + tuple(itertools.chain(
-                *[[("delete_{}_{}".format(part_id, reg_id), "bool")
-                   for reg_id in current_inhabitants[part_id]]
-                  for part_id in rs.ambience['event']['parts']],
-                *[[("reserve_{}_{}".format(part_id, reg_id), "bool")
-                   for reg_id in current_inhabitants[part_id]]
-                  for part_id in rs.ambience['event']['parts']],
-            ))
+                       for part_id in rs.ambience['event']['parts']) + tuple(
+            itertools.chain(*[[("delete_{}_{}".format(part_id, reg_id), "bool")
+                               for reg_id in current_inhabitants[part_id]]
+                              for part_id in rs.ambience['event']['parts']],
+                            *[[("reserve_{}_{}".format(part_id, reg_id), "bool")
+                               for reg_id in current_inhabitants[part_id]]
+                              for part_id in rs.ambience['event']['parts']],
+                            ))
         data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
@@ -3002,19 +3068,26 @@ class EventFrontend(AbstractUserFrontend):
             # Check if registration is new inhabitant or deleted inhabitant
             # in any part
             for part_id in rs.ambience['event']['parts']:
-                new_inhabitant = (registration_id in data["new_{}".format(part_id)])
-                deleted_inhabitant = data.get("delete_{}_{}".format(part_id, registration_id), False)
-                changed_inhabitant = \
-                    registration_id in current_inhabitants[part_id]\
-                    and data.get("reserve_{}_{}".format(part_id, registration_id), False)\
-                        != registration['parts'][part_id]['is_reserve']
+                new_inhabitant = (
+                        registration_id in data["new_{}".format(part_id)])
+                deleted_inhabitant = data.get(
+                    "delete_{}_{}".format(part_id, registration_id), False)
+                is_reserve = registration['parts'][part_id]['is_reserve']
+                changed_inhabitant = (
+                        registration_id in current_inhabitants[part_id]
+                        and data.get("reserve_{}_{}".format(part_id,
+                                                            registration_id),
+                                     False) != is_reserve)
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
-                        'lodgement_id': (lodgement_id if new_inhabitant else None)
+                        'lodgement_id': (
+                            lodgement_id if new_inhabitant else None)
                     }
                 elif changed_inhabitant:
                     new_reg['parts'][part_id] = {
-                        'is_reserve': data.get("reserve_{}_{}".format(part_id, registration_id), False)
+                        'is_reserve': data.get(
+                            "reserve_{}_{}".format(part_id, registration_id),
+                            False)
                     }
             if new_reg['parts']:
                 code *= self.eventproxy.set_registration(rs, new_reg)
@@ -3042,6 +3115,7 @@ class EventFrontend(AbstractUserFrontend):
             track = reg['tracks'][track_id]
             return (part['status'] == const.RegistrationPartStati.participant
                     and not track['course_id'])
+
         without_course = {
             track_id: sorted(
                 (registration_id
@@ -3063,10 +3137,12 @@ class EventFrontend(AbstractUserFrontend):
             return (part['status'] == const.RegistrationPartStati.participant
                     and track['course_id']
                     and track['course_id'] != course_id)
+
         selectize_data = {
             track_id: sorted(
-                [{'name': personas[registration['persona_id']]['given_names'] + " "
-                          + personas[registration['persona_id']]['family_name'],
+                [{'name': (personas[registration['persona_id']]['given_names']
+                           + " " + personas[registration['persona_id']]
+                           ['family_name']),
                   'current': registration['tracks'][track_id]['course_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
@@ -3099,17 +3175,17 @@ class EventFrontend(AbstractUserFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         current_attendees = {
             track_id: [reg_id for reg_id, registration in registrations.items()
-                      if registration['tracks'][track_id]['course_id']
-                      == course_id]
+                       if registration['tracks'][track_id]['course_id']
+                       == course_id]
             for track_id in rs.ambience['course']['segments']}
 
         # Parse request data
-        params = tuple(("new_{}".format(track_id), "[id]")
-                       for track_id in rs.ambience['course']['segments']) \
-                 + tuple(itertools.chain(
-            *[(("delete_{}_{}".format(track_id, reg_id), "bool")
-               for reg_id in current_attendees[track_id])
-              for track_id in rs.ambience['course']['segments']]))
+        params = (tuple(("new_{}".format(track_id), "[id]")
+                        for track_id in rs.ambience['course']['segments'])
+                  + tuple(itertools.chain(
+                    *[(("delete_{}_{}".format(track_id, reg_id), "bool")
+                       for reg_id in current_attendees[track_id])
+                      for track_id in rs.ambience['course']['segments']])))
         data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_attendees_form(rs, event_id, course_id)
@@ -3124,8 +3200,10 @@ class EventFrontend(AbstractUserFrontend):
             # Check if registration is new attendee or deleted attendee
             # in any track of the course
             for track_id in rs.ambience['course']['segments']:
-                new_attendee = (registration_id in data["new_{}".format(track_id)])
-                deleted_attendee = data.get("delete_{}_{}".format(track_id, registration_id), False)
+                new_attendee = (
+                        registration_id in data["new_{}".format(track_id)])
+                deleted_attendee = data.get(
+                    "delete_{}_{}".format(track_id, registration_id), False)
                 if new_attendee or deleted_attendee:
                     new_reg['tracks'][track_id] = {
                         'course_id': (course_id if new_attendee else None)
@@ -3146,7 +3224,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         tracks = event['tracks']
         spec = copy.deepcopy(QUERY_SPECS['qview_registration'])
-        ## note that spec is an ordered dict and we should respect the order
+        # note that spec is an ordered dict and we should respect the order
         for part_id in event['parts']:
             spec["part{0}.status{0}".format(part_id)] = "int"
             spec["part{0}.lodgement_id{0}".format(part_id)] = "id"
@@ -3202,7 +3280,8 @@ class EventFrontend(AbstractUserFrontend):
                 spec["reg_fields.xfield_{}".format(f['field_name'])] = f['kind']
         return spec
 
-    def make_registration_query_aux(self, rs, event, courses,
+    @staticmethod
+    def make_registration_query_aux(rs, event, courses,
                                     lodgements):
         """Un-inlined code to prepare input for template.
 
@@ -3214,7 +3293,7 @@ class EventFrontend(AbstractUserFrontend):
         :returns: Choices for select inputs and titles for columns.
         """
         tracks = event['tracks']
-        ## First we construct the choices
+        # First we construct the choices
         choices = {
             'persona.gender': OrderedDict(
                 enum_entries_filter(const.Genders, rs.gettext))
@@ -3248,9 +3327,9 @@ class EventFrontend(AbstractUserFrontend):
                     course_choices,
                 "track{0}.course_instructor{0}".format(track_id):
                     course_choices})
+            key = "course_fields{0}.xfield_{1}_{0}"
             choices.update({
-                "course_fields{0}.xfield_{1}_{0}".format(
-                    track_id, field['field_name']):
+                key.format(track_id, field['field_name']):
                     OrderedDict(field['entries'])
                 for field in event['fields'].values()
                 if (field['association'] == const.FieldAssociations.course
@@ -3268,12 +3347,11 @@ class EventFrontend(AbstractUserFrontend):
         if len(event['parts']) > 1:
             choices.update({
                 ",".join("part{0}.status{0}".format(part_id)
-                         for part_id in event['parts']):
-                    OrderedDict(enum_entries_filter(const.RegistrationPartStati,
-                                                    rs.gettext)),
+                         for part_id in event['parts']): OrderedDict(
+                    enum_entries_filter(const.RegistrationPartStati,
+                                        rs.gettext)),
                 ",".join("part{0}.lodgement{0}".format(part_id)
-                         for part_id in event['parts']):
-                    lodgement_choices,
+                         for part_id in event['parts']): lodgement_choices,
             })
         choices.update({
             "reg_fields.xfield_{}".format(field['field_name']):
@@ -3282,9 +3360,10 @@ class EventFrontend(AbstractUserFrontend):
             if (field['association'] == const.FieldAssociations.registration
                 and field['entries'])})
 
-        ## Second we construct the titles
+        # Second we construct the titles
         titles = {
-            "reg_fields.xfield_{}".format(field['field_name']): field['field_name']
+            "reg_fields.xfield_{}".format(field['field_name']): field[
+                'field_name']
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration}
         if len(tracks) > 1:
@@ -3293,40 +3372,44 @@ class EventFrontend(AbstractUserFrontend):
                     "track{0}.course_id{0}".format(track_id): rs.gettext(
                         "{title}: course ").format(
                         title=track['title']),
-                    "track{0}.course_instructor{0}".format(track_id): rs.gettext(
+                    "track{0}.course_instructor{0}".format(
+                        track_id): rs.gettext(
                         "{title}: course instructor").format(
                         title=track['title']),
                     "track{0}.is_course_instructor{0}".format(track_id):
-                        rs.gettext("{title}: instructs their course").format(
+                        rs.gettext(
+                            "{title}: instructs their course").format(
                             title=track['title']),
                 })
                 titles.update({
                     "course_fields{0}.xfield_{1}_{0}".format(
-                        track_id, field['field_name']):
-                    rs.gettext("{title} course: {field}")
-                        .format(field=field['field_name'], title=track['title'])
+                        track_id, field['field_name']): rs.gettext(
+                        "{title} course: {field}").format(
+                        field=field['field_name'], title=track['title'])
                     for field in event['fields'].values()
-                    if field['association'] == const.FieldAssociations.course
+                    if (field['association'] ==
+                        const.FieldAssociations.course)
                 })
             titles.update({
                 ",".join("track{0}.course_id{0}".format(track_id)
-                         for track_id in tracks):
-                    rs.gettext("any track: course"),
+                         for track_id in tracks): rs.gettext(
+                    "any track: course"),
                 ",".join("track{0}.course_instructor{0}".format(track_id)
-                         for track_id in tracks):
-                    rs.gettext("any track: course instuctor"),
+                         for track_id in tracks): rs.gettext(
+                    "any track: course instuctor"),
                 ",".join("track{0}.is_course_instructor{0}".format(track_id)
-                         for track_id in tracks):
-                    rs.gettext("any track: instructs their course"),
+                         for track_id in tracks): rs.gettext(
+                    "any track: instructs their course"),
             })
             titles.update({
                 ",".join("course_fields{0}.xfield_{1}_{0}".format(
                     track_id, field['field_name'])
-                         for track_id in tracks):
-                    rs.gettext("any track course: {field}").format(
-                        field=field['field_name'])
+                         for track_id in tracks): rs.gettext(
+                    "any track course: {field}").format(
+                    field=field['field_name'])
                 for field in event['fields'].values()
-                if field['association'] == const.FieldAssociations.course})
+                if field['association'] == const.FieldAssociations.course
+            })
         elif len(tracks) == 1:
             track_id, track = next(iter(tracks.items()))
             titles.update({
@@ -3337,8 +3420,9 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext("instructs their course"),
             })
             titles.update({
-                "course_fields{0}.xfield_{1}_{0}".format(track_id, field['field_name']):
-                    rs.gettext("course: {field}").format(field=field['field_name'])
+                "course_fields{0}.xfield_{1}_{0}".format(
+                    track_id, field['field_name']): rs.gettext(
+                    "course: {field}").format(field=field['field_name'])
                 for field in event['fields'].values()
                 if field['association'] == const.FieldAssociations.course})
         if len(event['parts']) > 1:
@@ -3353,27 +3437,29 @@ class EventFrontend(AbstractUserFrontend):
                         "{title}: reserve lodger").format(title=part['title']),
                 })
                 titles.update({
-                    "lodge_fields{0}.xfield_{1}_{0}".format(part_id, field['field_name']):
-                        rs.gettext("{title} lodgement: {field}")
-                        .format(field=field['field_name'], title=part['title'])
+                    "lodge_fields{0}.xfield_{1}_{0}".format(
+                        part_id, field['field_name']): rs.gettext(
+                        "{title} lodgement: {field}").format(
+                        field=field['field_name'], title=part['title'])
                     for field in event['fields'].values()
                     if field['association'] == const.FieldAssociations.lodgement
                 })
             titles.update({
                 ",".join("part{0}.status{0}".format(part_id)
                          for part_id in event['parts']): rs.gettext(
-                             "any part: registration status"),
+                    "any part: registration status"),
                 ",".join("part{0}.lodgement{0}".format(part_id)
                          for part_id in event['parts']): rs.gettext(
-                             "any part: lodgement"),
+                    "any part: lodgement"),
                 ",".join("part{0}.is_reserve{0}".format(part_id)
                          for part_id in event['parts']): rs.gettext(
-                             "any part: reserve lodger")})
+                    "any part: reserve lodger")})
             titles.update({
-                ",".join("lodge_fields{0}.xfield_{1}_{0}".format(part_id, field['field_name'])
-                         for part_id in event['parts']):
-                    rs.gettext("any part lodgement: {field}")
-                    .format(field=field['field_name'])
+                ",".join("lodge_fields{0}.xfield_{1}_{0}".format(
+                    part_id, field['field_name'])
+                         for part_id in event['parts']): rs.gettext(
+                    "any part lodgement: {field}").format(
+                    field=field['field_name'])
                 for field in event['fields'].values()
                 if field['association'] == const.FieldAssociations.lodgement
             })
@@ -3388,8 +3474,9 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext("reserve lodger"),
             })
             titles.update({
-                "lodge_fields{0}.xfield_{1}_{0}".format(part_id, field['field_name']):
-                rs.gettext("lodgement: {field}").format(field=field['field_name'])
+                "lodge_fields{0}.xfield_{1}_{0}".format(
+                    part_id, field['field_name']): rs.gettext(
+                    "lodgement: {field}").format(field=field['field_name'])
                 for field in event['fields'].values()
                 if field['association'] == const.FieldAssociations.lodgement})
         return choices, titles
@@ -3403,7 +3490,7 @@ class EventFrontend(AbstractUserFrontend):
         This is a pretty versatile method building on the query module.
         """
         spec = self.make_registration_query_spec(rs.ambience['event'])
-        ## mangle the input, so we can prefill the form
+        # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:
             query = check(rs, "query_input", query_input, "query", spec=spec,
@@ -3419,15 +3506,16 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event'], courses, lodgements)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-        
+
         default_queries = \
             self.conf.DEFAULT_QUERIES_REGISTRATION(rs.ambience['event'], spec)
-        
+
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'query': query, 'default_queries': default_queries,
-            'titles': titles, 'has_registrations': has_registrations,}
-        ## Tricky logic: In case of no validation errors we perform a query
+            'titles': titles, 'has_registrations': has_registrations,
+        }
+        # Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_registration"
             result = self.eventproxy.submit_general_query(rs, query,
@@ -3459,7 +3547,7 @@ class EventFrontend(AbstractUserFrontend):
         """Render form."""
         today = now().date()
         for part_id, part in rs.ambience['event']['parts'].items():
-            if part['part_begin'] <= today and part['part_end'] >= today:
+            if part['part_begin'] <= today <= part['part_end']:
                 current_part = part_id
                 if part['part_end'] > today:
                     break
@@ -3467,8 +3555,9 @@ class EventFrontend(AbstractUserFrontend):
             current_part = None
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = {
-            k: v for k, v in self.eventproxy.get_registrations(
-                rs, registration_ids).items()
+            k: v
+            for k, v in (self.eventproxy.get_registrations(rs, registration_ids)
+                         .items())
             if (not v['checkin']
                 and (not current_part or const.RegistrationPartStati(
                     v['parts'][current_part]['status']).is_present()))}
@@ -3530,7 +3619,8 @@ class EventFrontend(AbstractUserFrontend):
                     n_("Wrong associated field."))
             return self.redirect(rs, "event/field_set_form",
                                  {'field_id': field_id,
-                                  'reg_ids': (','.join(str(i) for i in reg_ids) if reg_ids else None)})
+                                  'reg_ids': (','.join(str(i) for i in reg_ids)
+                                              if reg_ids else None)})
 
     @access("event")
     @REQUESTdata(("field_id", "id"),
@@ -3539,7 +3629,7 @@ class EventFrontend(AbstractUserFrontend):
     def field_set_form(self, rs, event_id, field_id, reg_ids):
         """Render form."""
         if field_id not in rs.ambience['event']['fields']:
-            ## also catches field_id validation errors
+            # also catches field_id validation errors
             return werkzeug.exceptions.NotFound(n_("Wrong associated event."))
         field = rs.ambience['event']['fields'][field_id]
         if field['association'] != const.FieldAssociations.registration:
@@ -3557,7 +3647,7 @@ class EventFrontend(AbstractUserFrontend):
                 personas[registrations[anid]['persona_id']]))
         values = {
             "input{}".format(registration_id):
-            registration['fields'].get(field['field_name'])
+                registration['fields'].get(field['field_name'])
             for registration_id, registration in registrations.items()}
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
@@ -3572,7 +3662,7 @@ class EventFrontend(AbstractUserFrontend):
     def field_set(self, rs, event_id, field_id, reg_ids):
         """Modify a specific field on all registrations."""
         if field_id not in rs.ambience['event']['fields']:
-            ## also catches field_id validation errors
+            # also catches field_id validation errors
             return werkzeug.exceptions.NotFound(n_("Wrong associated event."))
         field = rs.ambience['event']['fields'][field_id]
         if field['association'] != const.FieldAssociations.registration:
@@ -3601,7 +3691,7 @@ class EventFrontend(AbstractUserFrontend):
                     'id': registration_id,
                     'fields': {
                         field['field_name']:
-                        data["input{}".format(registration_id)]
+                            data["input{}".format(registration_id)]
                     }
                 }
                 code *= self.eventproxy.set_registration(rs, new)
@@ -3627,7 +3717,7 @@ class EventFrontend(AbstractUserFrontend):
         if event_id != data['id']:
             rs.notify("error", n_("Data from wrong event."))
             return self.show_event(rs, event_id)
-        ## Check for unmigrated personas
+        # Check for unmigrated personas
         current = self.eventproxy.export_event(rs, event_id)
         claimed = {e['persona_id'] for e in data['event.registrations'].values()
                    if not e['real_persona_id']}
@@ -3652,7 +3742,8 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Event already archived."))
             return self.redirect(rs, "event/show_event")
         if not ack_archive:
-            rs.errors.append(("ack_conclude", ValueError(n_("Must be checked."))))
+            rs.errors.append(
+                ("ack_conclude", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_event(rs, event_id)
         new_ids, message = self.pasteventproxy.archive_event(rs, event_id)
@@ -3675,12 +3766,13 @@ class EventFrontend(AbstractUserFrontend):
         """View activities concerning events organized via DB."""
         start = start or 0
         stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
+        # no validation since the input stays valid, even if some options
+        # are lost
         log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop)
         persona_ids = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
+                {entry['submitted_by'] for entry in log if
+                 entry['submitted_by']}
+                | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         event_ids = {entry['event_id'] for entry in log if entry['event_id']}
         events = self.eventproxy.get_events(rs, event_ids)
@@ -3697,12 +3789,14 @@ class EventFrontend(AbstractUserFrontend):
         """View activities concerning one event organized via DB."""
         start = start or 0
         stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
+        # no validation since the input stays valid, even if some options
+        # are lost
         log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop)
         persona_ids = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
+                {entry['submitted_by'] for entry in log if
+                 entry['submitted_by']}
+                | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_event_log", {
-            'log': log, 'personas': personas,})
+            'log': log, 'personas': personas,
+        })

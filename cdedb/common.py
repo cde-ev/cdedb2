@@ -24,12 +24,14 @@ import psycopg2.extras
 import pytz
 import werkzeug.datastructures
 
+
 class RequestState:
     """Container for request info. Besides this and db accesses the python
     code should be state-less. This data structure enables several
     convenient semi-magic behaviours (magic enough to be nice, but non-magic
     enough to not be non-nice).
     """
+
     def __init__(self, sessionkey, user, request, response, notifications,
                  mapadapter, requestargs, urlmap, errors, values, lang, gettext,
                  ngettext, coders, begin, scriptkey):
@@ -97,12 +99,12 @@ class RequestState:
         self._coders = coders
         self.begin = begin
         self.scriptkey = scriptkey
-        ## Visible version of the database connection
+        # Visible version of the database connection
         self.conn = None
-        ## Private version of the database connection, only visible in the
-        ## backends (mediated by the ProxyShim)
+        # Private version of the database connection, only visible in the
+        # backends (mediated by the ProxyShim)
         self._conn = None
-        ## Toggle to disable logging
+        # Toggle to disable logging
         self.is_quiet = False
 
     def notify(self, ntype, message, params=None):
@@ -111,6 +113,7 @@ class RequestState:
         :type ntype: str
         :param ntype: one of :py:data:`NOTIFICATION_TYPES`
         :type message: str
+        :type params: set or None
         """
         if ntype not in NOTIFICATION_TYPES:
             raise ValueError(n_("Invalid notification type {t} found."),
@@ -118,8 +121,10 @@ class RequestState:
         params = params or {}
         self.notifications.append((ntype, message, params))
 
+
 class User:
     """Container for a persona."""
+
     def __init__(self, persona_id=None, roles=None, orga=None, moderator=None,
                  display_name="", given_names="", family_name="", username=""):
         """
@@ -146,6 +151,7 @@ class User:
         self.given_names = given_names
         self.family_name = family_name
 
+
 def do_singularization(fun):
     """Perform singularization on a function.
 
@@ -156,6 +162,7 @@ def do_singularization(fun):
     :returns: singularized function
     """
     hint = fun.singularization_hint
+
     @functools.wraps(fun)
     def new_fun(rs, *args, **kwargs):
         if hint['singular_param_name'] in kwargs:
@@ -165,10 +172,12 @@ def do_singularization(fun):
             param = args[0]
             args = ((param,),) + args[1:]
         data = fun(rs, *args, **kwargs)
-        ## raises KeyError if the requested thing does not exist
+        # raises KeyError if the requested thing does not exist
         return data[param]
+
     new_fun.__name__ = hint['singular_function_name']
     return new_fun
+
 
 def do_batchification(fun):
     """Perform batchification on a function.
@@ -180,8 +189,9 @@ def do_batchification(fun):
     :returns: batchified function
     """
     hint = fun.batchification_hint
-    ## Break cyclic import by importing here
+    # Break cyclic import by importing here
     from cdedb.database.connection import Atomizer
+
     @functools.wraps(fun)
     def new_fun(rs, *args, **kwargs):
         ret = []
@@ -198,8 +208,10 @@ def do_batchification(fun):
                     new_args = (datum,) + args[1:]
                     ret.append(fun(rs, *new_args, **kwargs))
         return ret
+
     new_fun.__name__ = hint['batch_function_name']
     return new_fun
+
 
 class ProxyShim:
     """Wrap a backend for some syntactic sugar.
@@ -210,6 +222,7 @@ class ProxyShim:
     This takes care of the annotations given by the decorators on the
     backend functions.
     """
+
     def __init__(self, backend, internal=False):
         """
         :type backend: :py:class:`AbstractBackend`
@@ -246,12 +259,13 @@ class ProxyShim:
                 access_list = fun.internal_access_list
             else:
                 raise
+
         @functools.wraps(fun)
         def new_fun(rs, *args, **kwargs):
             if rs.user.roles & access_list:
                 try:
                     if not self._internal:
-                        ## Expose database connection for the backends
+                        # Expose database connection for the backends
                         rs.conn = rs._conn
                     return fun(rs, *args, **kwargs)
                 finally:
@@ -259,6 +273,7 @@ class ProxyShim:
                         rs.conn = None
             else:
                 raise PrivilegeError(n_("Not in access list."))
+
         return new_fun
 
     def __getattr__(self, name):
@@ -268,6 +283,7 @@ class ProxyShim:
             return self._funs[name]
         except KeyError as e:
             raise AttributeError from e
+
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
                      console_log_level=None):
@@ -307,6 +323,7 @@ def make_root_logger(name, logfile_path, log_level, syslog_level=None,
     logger.info("Configured logger {}.".format(name))
     return logger
 
+
 def glue(*args):
     """Join overly long strings, adds boundary white space for convenience.
 
@@ -319,6 +336,7 @@ def glue(*args):
     :rtype: str
     """
     return " ".join(args)
+
 
 def merge_dicts(*dicts):
     """Merge all dicts into the first one, but do not overwrite.
@@ -335,7 +353,7 @@ def merge_dicts(*dicts):
 
     :type dicts: [{object: object}]
     """
-    assert(len(dicts) > 0)
+    assert (len(dicts) > 0)
     for adict in dicts[1:]:
         for key in adict:
             if key not in dicts[0]:
@@ -345,6 +363,7 @@ def merge_dicts(*dicts):
                     dicts[0].setlist(key, adict[key])
                 else:
                     dicts[0][key] = adict[key]
+
 
 def now():
     """Return an up to date timestamp.
@@ -356,6 +375,7 @@ def now():
     """
     return datetime.datetime.now(pytz.utc)
 
+
 class QuotaException(RuntimeError):
     """
     Exception for signalling a quota excess. This is thrown in
@@ -365,6 +385,7 @@ class QuotaException(RuntimeError):
     """
     pass
 
+
 class PrivilegeError(RuntimeError):
     """
     Exception for signalling missing privileges. This is thrown in the
@@ -373,12 +394,14 @@ class PrivilegeError(RuntimeError):
     """
     pass
 
+
 class ArchiveError(RuntimeError):
     """
     Exception for signalling an exact error when archiving a persona
     goes awry.
     """
     pass
+
 
 # TODO decide whether we sort by first or last name
 def name_key(entry):
@@ -391,6 +414,7 @@ def name_key(entry):
     :rtype: str
     """
     return (entry['family_name'] + " " + entry['given_names']).lower()
+
 
 def compute_checkdigit(value):
     """Map an integer to the checksum used for UI purposes.
@@ -408,8 +432,9 @@ def compute_checkdigit(value):
     while tmp > 0:
         digits.append(tmp % 10)
         tmp = tmp // 10
-    dsum = sum((i+2)*d for i, d in enumerate(digits))
+    dsum = sum((i + 2) * d for i, d in enumerate(digits))
     return "0123456789X"[-dsum % 11]
+
 
 def lastschrift_reference(persona_id, lastschrift_id):
     """Return an identifier for usage with the bank.
@@ -424,6 +449,7 @@ def lastschrift_reference(persona_id, lastschrift_id):
         persona_id, compute_checkdigit(persona_id), lastschrift_id,
         compute_checkdigit(lastschrift_id))
 
+
 def _small_int_to_words(num, lang):
     """Convert a small integer into a written representation.
 
@@ -437,7 +463,7 @@ def _small_int_to_words(num, lang):
     """
     if num < 0 or num > 999:
         raise ValueError(n_("Out of supported scope."))
-    digits = tuple((num // 10**i) % 10 for i in range(3))
+    digits = tuple((num // 10 ** i) % 10 for i in range(3))
     if lang == "de":
         atoms = ("null", "ein", "zwei", "drei", "vier", "fünf", "sechs",
                  "sieben", "acht", "neun", "zehn", "elf", "zwölf", "dreizehn",
@@ -450,7 +476,7 @@ def _small_int_to_words(num, lang):
             ret += atoms[digits[2]] + "hundert"
         if num % 100 < 20:
             if num % 100:
-                ret += atoms[num %100]
+                ret += atoms[num % 100]
             return ret
         if digits[0]:
             ret += atoms[digits[0]]
@@ -461,6 +487,7 @@ def _small_int_to_words(num, lang):
         return ret
     else:
         raise NotImplementedError(n_("Not supported."))
+
 
 def int_to_words(num, lang):
     """Convert an integer into a written representation.
@@ -492,8 +519,10 @@ def int_to_words(num, lang):
     else:
         raise NotImplementedError(n_("Not supported."))
 
+
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
+
     def default(self, obj):
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
@@ -503,6 +532,7 @@ class CustomJSONEncoder(json.JSONEncoder):
             return tuple(obj)
         return super().default(obj)
 
+
 def json_serialize(data):
     """Do beefed up JSON serialization.
 
@@ -511,14 +541,17 @@ def json_serialize(data):
     """
     return json.dumps(data, indent=4, cls=CustomJSONEncoder)
 
+
 class PsycoJson(psycopg2.extras.Json):
     """Json encoder for consumption by psycopg.
 
     This is the official way of customizing the serialization process by
     subclassing the appropriate class.
     """
+
     def dumps(self, obj):
         return json_serialize(obj)
+
 
 def open_utf8(*args, **kwargs):
     """Wrapper around open() with encoding set to utf8.
@@ -538,6 +571,7 @@ def open_utf8(*args, **kwargs):
         args = (str(args[0]),) + args[1:]
     return open(*args, **kwargs, encoding='UTF-8')
 
+
 def shutil_copy(*args, **kwargs):
     """Wrapper around shutil.copy() converting pathlib.Path to str.
 
@@ -547,6 +581,7 @@ def shutil_copy(*args, **kwargs):
     kwargs = {k: str(v) if isinstance(v, pathlib.Path) else v
               for k, v in kwargs.items()}
     return shutil.copy(*args, **kwargs)
+
 
 def pairwise(iterable):
     """Iterate over adjacent pairs of values of an iterable.
@@ -559,6 +594,7 @@ def pairwise(iterable):
     x, y = itertools.tee(iterable)
     next(y, None)
     return zip(x, y)
+
 
 def _schulze_winners(d, candidates):
     """This is the abstract part of the Schulze method doing the actual work.
@@ -575,7 +611,7 @@ def _schulze_winners(d, candidates):
     :type candidates: [str]
     :rtype: [str]
     """
-    ## First determine the strongst paths
+    # First determine the strongst paths
     p = {(x, y): d[(x, y)] for x in candidates for y in candidates}
     for i in candidates:
         for j in candidates:
@@ -585,12 +621,13 @@ def _schulze_winners(d, candidates):
                 if i == k or j == k:
                     continue
                 p[(j, k)] = max(p[(j, k)], min(p[(j, i)], p[(i, k)]))
-    ## Second determine winners
+    # Second determine winners
     winners = []
     for i in candidates:
         if all(p[(i, j)] >= p[(j, i)] for j in candidates):
             winners.append(i)
     return winners
+
 
 def schulze_evaluate(votes, candidates):
     """Use the Schulze method to cummulate preference list into one list.
@@ -622,6 +659,7 @@ def schulze_evaluate(votes, candidates):
         return '='.join(candidates)
     split_votes = tuple(
         tuple(level.split('=') for level in vote.split('>')) for vote in votes)
+
     def _subindex(alist, element):
         """The element is in the list at which position in the big list.
 
@@ -634,15 +672,17 @@ def schulze_evaluate(votes, candidates):
             if element in sublist:
                 return index
         raise ValueError(n_("Not in list."))
-    ## First we count the number of votes prefering x to y
+
+    # First we count the number of votes prefering x to y
     counts = {(x, y): 0 for x in candidates for y in candidates}
     for vote in split_votes:
         for x in candidates:
             for y in candidates:
                 if _subindex(vote, x) < _subindex(vote, y):
                     counts[(x, y)] += 1
-    ## Second we calculate a numeric link strength abstracting the problem
-    ## into the realm of graphs with one vertex per candidate
+
+    # Second we calculate a numeric link strength abstracting the problem
+    # into the realm of graphs with one vertex per candidate
     def _strength(support, opposition, totalvotes):
         """One thing not specified by the Schulze method is how to asses the
         strength of a link and indeed there are several possibilities. We
@@ -666,33 +706,36 @@ def schulze_evaluate(votes, candidates):
         :type totalvotes: int
         :rtype: int
         """
-        ## the margin strategy would be given by the following line
-        ## return support - opposition
+        # the margin strategy would be given by the following line
+        # return support - opposition
         if support > opposition:
-            return totalvotes*support - opposition
+            return totalvotes * support - opposition
         elif support == opposition:
             return 0
         else:
             return -1
+
     d = {(x, y): _strength(counts[(x, y)], counts[(y, x)], len(votes))
          for x in candidates for y in candidates}
-    ## Third we execute the Schulze method by iteratively determining
-    ## winners
+    # Third we execute the Schulze method by iteratively determining
+    # winners
     result = []
     while True:
         done = {x for level in result for x in level}
-        ## avoid sets to preserve ordering
+        # avoid sets to preserve ordering
         remaining = tuple(c for c in candidates if c not in done)
         if not remaining:
             break
         winners = _schulze_winners(d, remaining)
         result.append(winners)
-    ## Return the aggregate preference list in the same format as the input
-    ## votes are.
+    # Return the aggregate preference list in the same format as the input
+    # votes are.
     return ">".join("=".join(level) for level in result)
+
 
 #: Magic value of moniker of the ballot candidate representing the bar.
 ASSEMBLY_BAR_MONIKER = "_bar_"
+
 
 def unwrap(single_element_list, keys=False):
     """Remove one nesting layer (of lists, etc.).
@@ -720,19 +763,19 @@ def unwrap(single_element_list, keys=False):
             single_element_list = single_element_list.values()
     return next(i for i in single_element_list)
 
+
 @enum.unique
 class AgeClasses(enum.IntEnum):
-
     """Abstraction for encapsulating properties like legal status changing with
     age.
 
     If there is any need for additional detail in differentiating this
     can be centrally added here.
     """
-    full = 1 #: at least 18 years old
-    u18 = 2 #: between 16 and 18 years old
-    u16 = 3 #: between 14 and 16 years old
-    u14 = 4 #: less than 14 years old
+    full = 1  #: at least 18 years old
+    u18 = 2  #: between 16 and 18 years old
+    u16 = 3  #: between 14 and 16 years old
+    u14 = 4  #: less than 14 years old
 
     def is_minor(self):
         """Checks whether a legal guardian is required.
@@ -749,6 +792,7 @@ class AgeClasses(enum.IntEnum):
         """
         return self in {AgeClasses.full, AgeClasses.u18}
 
+
 def deduct_years(date, years):
     """Convenience function to go back in time.
 
@@ -760,12 +804,13 @@ def deduct_years(date, years):
     :rtype: datetime.datetime
     """
     try:
-        return date.replace(year=date.year-years)
+        return date.replace(year=date.year - years)
     except ValueError:
-        ## this can happen in only one situation: we tried to move a leap
-        ## day into a year without leap
-        assert(date.month == 2 and date.day == 29)
-        return date.replace(year=date.year-years, day=28)
+        # this can happen in only one situation: we tried to move a leap
+        # day into a year without leap
+        assert (date.month == 2 and date.day == 29)
+        return date.replace(year=date.year - years, day=28)
+
 
 def determine_age_class(birth, reference):
     """Basically a constructor for :py:class:`AgeClasses`.
@@ -784,15 +829,16 @@ def determine_age_class(birth, reference):
         return AgeClasses.u16
     return AgeClasses.u14
 
+
 @enum.unique
 class LineResolutions(enum.IntEnum):
     """Possible actions during batch admission
     """
-    create = 1 #: Create a new account with this data.
-    skip = 2 #: Do nothing with this line.
-    renew_trial = 3 #: Renew the trial membership of an existing account.
-    update = 4 #: Update an existing account with this data.
-    renew_and_update = 5 #: A combination of renew_trial and update.
+    create = 1  #: Create a new account with this data.
+    skip = 2  #: Do nothing with this line.
+    renew_trial = 3  #: Renew the trial membership of an existing account.
+    update = 4  #: Update an existing account with this data.
+    renew_and_update = 5  #: A combination of renew_trial and update.
 
     def do_trial(self):
         """Whether to grant a trial membership.
@@ -821,8 +867,10 @@ class LineResolutions(enum.IntEnum):
                         LineResolutions.update,
                         LineResolutions.renew_and_update}
 
+
 #: magic number which signals our makeshift algebraic data type
 INFINITE_ENUM_MAGIC_NUMBER = 0
+
 
 def infinite_enum(aclass):
     """Decorator to document infinite enums.
@@ -849,9 +897,11 @@ def infinite_enum(aclass):
     """
     return aclass
 
+
 #: Storage facility for infinite enums with associated data, see
 #: :py:func:`infinite_enum`
 InfiniteEnum = collections.namedtuple('InfiniteEnum', ('enum', 'int'))
+
 
 @infinite_enum
 @enum.unique
@@ -869,6 +919,7 @@ class CourseFilterPositions(enum.IntEnum):
     assigned = -6  #: Being in this course either as participant or instructor.
     anywhere = -7  #: Having chosen the course, being instructor or participant.
 
+
 @infinite_enum
 @enum.unique
 class CourseChoiceToolActions(enum.IntEnum):
@@ -881,13 +932,15 @@ class CourseChoiceToolActions(enum.IntEnum):
     assign_fixed = -4  #: the course is specified separately
     assign_auto = -5  #: somewhat intelligent algorithm
 
+
 @enum.unique
 class SubscriptionStates(enum.IntEnum):
     """Relation to a mailing list.
     """
-    unsubscribed = 1 #:
-    subscribed = 2 #:
-    requested = 10 #: A subscription request is waiting for moderation.
+    unsubscribed = 1  #:
+    subscribed = 2  #:
+    requested = 10  #: A subscription request is waiting for moderation.
+
 
 def n_(x):
     """
@@ -896,6 +949,7 @@ def n_(x):
     adding string to the translated strings.
     """
     return x
+
 
 def asciificator(s):
     """Pacify a string.
@@ -946,6 +1000,7 @@ def asciificator(s):
             ret += ' '
     return ret
 
+
 def diacritic_patterns(s, two_way_replace=False):
     """Replace letters with a pattern matching expressions.
 
@@ -968,13 +1023,13 @@ def diacritic_patterns(s, two_way_replace=False):
     """
     if s is None:
         return s
-    ## if fragile special chars are present do nothing
-    ## all special chars: '_%|*+?{}()[]'
+    # if fragile special chars are present do nothing
+    # all special chars: '_%|*+?{}()[]'
     special_chars = '|*+?{}()[]'
     for char in special_chars:
         if char in s:
             return s
-    ## some of the diacritics in use according to wikipedia
+    # some of the diacritics in use according to wikipedia
     umlaut_map = (
         ("ae", "(ae|ä|æ)"),
         ("oe", "(oe|ö|ø|œ)"),
@@ -990,7 +1045,7 @@ def diacritic_patterns(s, two_way_replace=False):
         ("u", "[uùúûüű]"),
         ("y", "[yýÿ]"),
         ("z", "[zźż]"),
-        )
+    )
     if not two_way_replace:
         for normal, replacement in umlaut_map:
             s = re.sub(normal, replacement, s, flags=re.IGNORECASE)
@@ -998,6 +1053,7 @@ def diacritic_patterns(s, two_way_replace=False):
         for _, regex in umlaut_map:
             s = re.sub(regex, regex, s, flags=re.IGNORECASE)
     return s
+
 
 def extract_roles(session, introspection_only=False):
     """Associate some roles to a data set.
@@ -1036,7 +1092,7 @@ def extract_roles(session, introspection_only=False):
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
-    ## Grant global admin all roles
+    # Grant global admin all roles
     if "admin" in ret:
         for level in ("core", "cde", "event", "assembly", "ml"):
             ret.add("{}_admin".format(level))
@@ -1191,7 +1247,6 @@ PERSONA_DEFAULTS = {
     'foto': None,
 }
 
-
 #: Set of possible values for ``ntype`` in
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
@@ -1221,6 +1276,7 @@ DB_ROLE_MAPPING = collections.OrderedDict((
 
     ("anonymous", "cdb_anonymous"),
 ))
+
 
 def roles_to_db_role(roles):
     """Convert a set of application level roles into a database level role.
@@ -1328,7 +1384,7 @@ REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
 
 #: Fields of a registration which are specific for each course track
 REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
-                            "course_instructor")
+                             "course_instructor")
 
 #: Fields of a lodgement entry (one house/room)
 LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
@@ -1378,7 +1434,7 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
     "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
     "issued_at", "processed_at", "tally")
 
-EPSILON = 10**(-6) #:
+EPSILON = 10 ** (-6)  #:
 
 #: Timestamp which lies in the future. Make a constant so we do not have to
 #: hardcode the value otherwere

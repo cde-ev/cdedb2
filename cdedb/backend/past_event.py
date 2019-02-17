@@ -16,6 +16,7 @@ from cdedb.common import (
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 
+
 class PastEventBackend(AbstractBackend):
     """Handle concluded events.
 
@@ -224,7 +225,8 @@ class PastEventBackend(AbstractBackend):
                                 'institution_id': e['institution_id'],
                                 'institution_moniker': e['moniker'],
                                 'courses': 0,
-                                'participants': 0,}
+                                'participants': 0
+                                }
                for e in data}
         query = glue(
             "SELECT events.id, COUNT(*) AS courses FROM past_event.events",
@@ -454,16 +456,16 @@ class PastEventBackend(AbstractBackend):
         :type pcourse_id: int or None
         :rtype: {(int, int): {str: object}}
         """
-        if pevent_id is None and pcourse_id is None:
-            raise ValueError(n_("No input specified."))
         if pevent_id is not None and pcourse_id is not None:
             raise ValueError(n_("Too many inputs specified."))
-        if pevent_id is not None:
+        elif pevent_id is not None:
             anid = affirm("id", pevent_id)
             entity_key = "pevent_id"
-        if pcourse_id is not None:
+        elif pcourse_id is not None:
             anid = affirm("id", pcourse_id)
             entity_key = "pcourse_id"
+        else:  # pevent_id is None and pcourse_id is None:
+            raise ValueError(n_("No input specified."))
 
         data = self.sql_select(
             rs, "past_event.participants",
@@ -497,8 +499,8 @@ class PastEventBackend(AbstractBackend):
         reference = reference.replace(day=1, month=1)
         ret = self.query_all(rs, query, (moniker, moniker, reference))
         warnings = []
-        ## retry with less restrictive conditions until we find something or
-        ## give up
+        # retry with less restrictive conditions until we find something or
+        # give up
         if len(ret) == 0:
             ret = self.query_all(rs, query,
                                  (moniker, moniker, datetime.date.min))
@@ -540,13 +542,14 @@ class PastEventBackend(AbstractBackend):
                       "WHERE similarity(title, %s) > %s AND pevent_id = %s")
         ret = self.query_all(rs, query, (moniker, pevent_id))
         warnings = []
-        ## retry with less restrictive conditions until we find something or
-        ## give up
+        # retry with less restrictive conditions until we find something or
+        # give up
         if len(ret) == 0:
             warnings.append(("pcourse_id", ValueError(n_("Only fuzzy match."))))
             ret = self.query_all(rs, query2, (moniker, 0.5, pevent_id))
         if len(ret) == 0:
-            return None, [], [("pcourse_id", ValueError(n_("No course found.")))]
+            return None, [], [
+                ("pcourse_id", ValueError(n_("No course found.")))]
         elif len(ret) > 1:
             return None, warnings, [("pcourse_id",
                                      ValueError(n_("Ambiguous course.")))]
@@ -586,14 +589,14 @@ class PastEventBackend(AbstractBackend):
             course_map[course_id] = pcourse_id
         reg_ids = self.event.list_registrations(rs, event['id'])
         regs = self.event.get_registrations(rs, reg_ids.keys())
-        ## we want to later delete empty courses
+        # we want to later delete empty courses
         courses_seen = set()
-        ## we want to add each participant/course combination at
-        ## most once
+        # we want to add each participant/course combination at
+        # most once
         combinations_seen = set()
         for reg in regs.values():
-            cRparticipant = const.RegistrationPartStati.participant
-            if reg['parts'][part_id]['status'] != cRparticipant:
+            participant_status = const.RegistrationPartStati.participant
+            if reg['parts'][part_id]['status'] != participant_status:
                 continue
             is_orga = reg['persona_id'] in event['orgas']
             for track_id, track in part['tracks'].items():
@@ -611,11 +614,11 @@ class PastEventBackend(AbstractBackend):
                         rs, new_id, course_map.get(rtrack['course_id']),
                         reg['persona_id'], is_instructor, is_orga)
             if not part['tracks']:
-                ## parts without courses
+                # parts without courses
                 self.add_participant(
                     rs, new_id, None, reg['persona_id'],
                     is_instructor=False, is_orga=is_orga)
-        ## Delete empty courses because they were cancelled
+        # Delete empty courses because they were cancelled
         for course_id in courses.keys():
             if course_id not in courses_seen:
                 self.delete_past_course(rs, course_map[course_id])

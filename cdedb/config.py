@@ -32,21 +32,21 @@ _git_commit = subprocess.check_output(
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
-    ## Logging level for CdEDBs own log files
+    # Logging level for CdEDBs own log files
     "LOG_LEVEL": logging.INFO,
-    ## Logging level for syslog
+    # Logging level for syslog
     "SYSLOG_LEVEL": logging.WARNING,
-    ## Logging level for stdout
+    # Logging level for stdout
     "CONSOLE_LOG_LEVEL": None,
-    ## Global log for messages unrelated to specific components
+    # Global log for messages unrelated to specific components
     "GLOBAL_LOG": pathlib.Path("/tmp/cdedb.log"),
-    ## file system path to this repository
+    # file system path to this repository
     "REPOSITORY_PATH": _repopath,
-    ## relative path to config file with settings for the test suite
+    # relative path to config file with settings for the test suite
     "TESTCONFIG_PATH": pathlib.Path("test/localconfig.py"),
-    ## default timezone for input and output
+    # default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
-    ## path to log file for recording performance information during test runs
+    # path to log file for recording performance information during test runs
     "TIMING_LOG": pathlib.Path("/tmp/cdedb-timing.log"),
 }
 
@@ -101,21 +101,21 @@ def generate_event_registration_default_queries(event, spec):
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True)), ),
+             ("persona.given_names", True),)),
         n_("06_query_event_registration_u16"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 16)),),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True)), ),
+             ("persona.given_names", True))),
         n_("07_query_event_registration_u14"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 14)),),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True)), ),
+             ("persona.given_names", True))),
         n_("08_query_event_registration_minors_no_consent"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
@@ -123,198 +123,212 @@ def generate_event_registration_default_queries(event, spec):
               deduct_years(event['begin'], 18)),
              ("reg.parental_agreement", QueryOperators.empty, None)),
             (("persona.birthday", True), ("persona.family_name", True),
-             ("persona.given_names", True)), ),
-        }
+             ("persona.given_names", True))),
+    }
 
     return queries
 
 
 #: defaults for :py:class:`Config`
 _DEFAULTS = {
-    ###
-    ### Global stuff
-    ###
+    ################
+    # Global stuff #
+    ################
 
-    ## name of database to use
+    # name of database to use
     "CDB_DATABASE_NAME": "cdb",
 
-    ## port on which the database listens, preferably a pooler like pgbouncer
+    # port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
 
-    ## True for offline versions running on academies
+    # True for offline versions running on academies
     "CDEDB_OFFLINE_DEPLOYMENT": False,
 
-    ## If True only core admins are granted access
+    # If True only core admins are granted access
     "LOCKDOWN": False,
 
-    ## True for development instances
+    # True for development instances
     "CDEDB_DEV": False,
 
-    ## place for uploaded data
+    # place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
 
-    ## hash id of the current HEAD/running version
+    # hash id of the current HEAD/running version
     "GIT_COMMIT": _git_commit,
 
-    ###
-    ### Frontend stuff
-    ###
+    ##################
+    # Frontend stuff #
+    ##################
 
-    ## log for frontend issues
+    # log for frontend issues
     "FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend.log"),
-    ## timeout for protected url parameters to prevent replay
+    # timeout for protected url parameters to prevent replay
     "PARAMETER_TIMEOUT": datetime.timedelta(hours=1),
-    ## timeout for protected parameters, that are not security related
+    # timeout for protected parameters, that are not security related
     "UNCRITICAL_PARAMETER_TIMEOUT": datetime.timedelta(days=1),
-    ## timeoue for parameters, in unsuspected emails (triggered by another user)
+    # timeoue for parameters, in unsuspected emails (triggered by another user)
     "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=2),
-    ## maximum length of rationale for requesting an account
+    # maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
-    ## minimal number of input characters to start a search for personas
-    ## fitting an intelligent input field
+    # minimal number of input characters to start a search for personas
+    # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,
-    ## maximum length of personas presented via select persona API for selection
-    ## in an intelligent input field for core admins
+    # maximum length of personas presented via select persona API for selection
+    # in an intelligent input field for core admins
     "NUM_PREVIEW_PERSONAS_CORE_ADMIN": 12,
-    ## maximum length of personas presented via select persona API for any other
-    ## user
+    # maximum length of personas presented via select persona API for any other
+    # user
     "NUM_PREVIEW_PERSONAS": 3,
-    ## Available languages
+    # Available languages
     "I18N_LANGUAGES": ("de", "en"),
 
-    ###
-    ### email stuff
-    ###
+    ###############
+    # email stuff #
+    ###############
 
-    ## email for administrative notifications
+    # email for administrative notifications
     "MANAGEMENT_ADDRESS": "verwaltung@cde-ev.de",
-    ## default return address for mails
+    # default return address for mails
     "DEFAULT_REPLY_TO": "verwaltung@cde-ev.de",
-    ## default return path for bounced mail
+    # default return path for bounced mail
     "DEFAULT_RETURN_PATH": "bounces@cde-ev.de",
-    ## default sender address for mails
+    # default sender address for mails
     "DEFAULT_SENDER": '"CdE-Mitgliederverwaltung" <verwaltung@cde-ev.de>',
-    ## domain for emails (determines message id)
+    # domain for emails (determines message id)
     "MAIL_DOMAIN": "db.cde-ev.de",
-    ## host to use for sending emails
+    # host to use for sending emails
     "MAIL_HOST": "localhost",
 
-    ## email for event account requests
+    # email for event account requests
     "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
-    ## email for ml account requests
+    # email for ml account requests
     "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
 
-    ## logs
+    # logs
     "CORE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-core.log"),
     "CDE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cde.log"),
     "EVENT_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-event.log"),
     "ML_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-ml.log"),
     "ASSEMBLY_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-assembly.log"),
 
-    ###
-    ### Backend stuff
-    ###
+    #################
+    # Backend stuff #
+    #################
 
-    ## log for backend issues
+    # log for backend issues
     "BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend.log"),
 
-    ### Core stuff
+    #
+    # Core stuff
+    #
 
-    ## log
+    # log
     "CORE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-core.log"),
 
-    ### Session stuff
+    #
+    # Session stuff
+    #
 
-    ## log
+    # log
     "SESSION_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-session.log"),
 
-    ## session parameters
+    # session parameters
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
     "SESSION_LIFESPAN": datetime.timedelta(days=7),
 
-    ### CdE stuff
+    #
+    # CdE stuff
+    #
 
-    ## log
+    # log
     "CDE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-cde.log"),
 
-    ## maximal number of data sets a normal user is allowed to view per day
+    # maximal number of data sets a normal user is allowed to view per day
     "QUOTA_VIEWS_PER_DAY": 42,
-    ## maximal number of results for a member search
+    # maximal number of results for a member search
     "MAX_MEMBER_SEARCH_RESULTS": 42,
-    ## amount deducted from balance each period (semester)
+    # amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
-    ## probably always 1 or 2
+    # probably always 1 or 2
     "PERIODS_PER_YEAR": 2,
 
-    ## Name of the organization where the SEPA transaction originated
+    # Name of the organization where the SEPA transaction originated
     "SEPA_SENDER_NAME": "CdE e.V.",
-    ## Address of the originating organization
-    ## The actual address consists of multiple lines
+    # Address of the originating organization
+    # The actual address consists of multiple lines
     "SEPA_SENDER_ADDRESS": ("Musterstrasse 123", "00000 Teststadt"),
     "SEPA_SENDER_COUNTRY": "DE",
-    ## Bank details of the originator
+    # Bank details of the originator
     "SEPA_SENDER_IBAN": "DE87200500001234567890",
-    ## "Gläubiger-ID" for direct debit transfers
+    # "Gläubiger-ID" for direct debit transfers
     "SEPA_GLAEUBIGERID": "DE00ZZZ00099999999",
-    ## Date at which SEPA was introduced
+    # Date at which SEPA was introduced
     "SEPA_INITIALISATION_DATE": datetime.date(2013, 7, 30),
-    ## Date after which SEPA was used exclusively
+    # Date after which SEPA was used exclusively
     "SEPA_CUTOFF_DATE": datetime.date(2013, 10, 14),
-    ## Timespan to wait between issuing of SEPA order and fulfillment
+    # Timespan to wait between issuing of SEPA order and fulfillment
     "SEPA_PAYMENT_OFFSET": datetime.timedelta(days=17),
-    ## processing fee we incur if a transaction is rolled back
+    # processing fee we incur if a transaction is rolled back
     "SEPA_ROLLBACK_FEE": decimal.Decimal('4.50'),
 
-    ### event stuff
+    #
+    # event stuff
+    #
 
-    ## log
+    # log
     "EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-event.log"),
-    ## Bank accounts. First is shown to participants,
-    ## second is a web label for orgas
+    # Bank accounts. First is shown to participants,
+    # second is a web label for orgas
     "EVENT_BANK_ACCOUNTS": (
-            ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
+        ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
     ),
-    ## Rate limit for orgas adding persons to their event
-    ## number of persons per day
+    # Rate limit for orgas adding persons to their event
+    # number of persons per day
     "ORGA_ADD_LIMIT": 6,
 
-    ### past event stuff
+    #
+    # past event stuff
+    #
 
-    ## log
+    # log
     "PAST_EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-past-event.log"),
 
-    ### ml stuff
+    #
+    # ml stuff
+    #
 
-    ## log
+    # log
     "ML_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-ml.log"),
 
-    ### assembly stuff
+    #
+    # assembly stuff
+    #
 
-    ## log
+    # log
     "ASSEMBLY_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-assembly.log"),
 
-    ###
-    ### Query stuff
-    ###
+    ###############
+    # Query stuff #
+    ###############
 
-    ## dict where the values are dicts mapping titles to queries for "speed
-    ## dialing"
+    # dict where the values are dicts mapping titles to queries for "speed
+    # dialing"
     "DEFAULT_QUERIES": {
         "qview_cde_user": {
             n_("00_query_cde_trial_members"): Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True)), ),
-            },
+                (("family_name", True), ("given_names", True))),
+        },
         "qview_archived_persona": {
             n_("00_query_archived_persona_with_notes"): Query(
                 "qview_archived_persona",
                 QUERY_SPECS['qview_archived_persona'],
                 ("personas.id", "given_names", "family_name", "birth_name"),
                 (("notes", QueryOperators.nonempty, None),),
-                (("family_name", True), ("given_names", True)), ),
-            },
+                (("family_name", True), ("given_names", True))),
+        },
         "qview_event_user": {
             n_("00_query_event_user_minors"): Query(
                 "qview_event_user", QUERY_SPECS['qview_event_user'],
@@ -323,52 +337,52 @@ _DEFAULTS = {
                 (("birthday", QueryOperators.greater,
                   deduct_years(now().date(), 18)),),
                 (("birthday", True), ("family_name", True),
-                 ("given_names", True)), ),
-            },
+                 ("given_names", True))),
+        },
         "qview_core_user": {
             n_("00_query_core_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_core_user'],
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
-                (("personas.id", True),), )
-            },
+                (("personas.id", True),))
+        },
         "qview_persona": {
             n_("00_query_mailinglist_persona_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
                 ("id", "given_names", "family_name"),
                 tuple(),
-                tuple(), )
-            },
+                tuple())
         },
+    },
 
     "DEFAULT_QUERIES_REGISTRATION":
         generate_event_registration_default_queries,
 
-    }
-
+}
 
 #: defaults for :py:class:`SecretsConfig`
 _SECRECTS_DEFAULTS = {
-    ## database users
+    # database users
     "CDB_DATABASE_ROLES": {
         "cdb_anonymous": "012345678901234567890123456789",
         "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
         "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
         "cdb_admin": "9876543210abcdefghijklmnopqrst"
-        },
+    },
 
-    ## salting value used for verifying sensitve url parameters
+    # salting value used for verifying sensitve url parameters
     "URL_PARAMETER_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
-    ## salting value used for verifying password reset authorization
+    # salting value used for verifying password reset authorization
     "RESET_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
-    ## salting value used for verifying tokens for username changes
+    # salting value used for verifying tokens for username changes
     "USERNAME_CHANGE_TOKEN_SALT": "kaoslrcekhvx2387krcoekd983xRKCh309xKX",
 
-    ## key to use by mailing list software for authentification
+    # key to use by mailing list software for authentification
     "ML_SCRIPT_KEY": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
 }
+
 
 class BasicConfig:
     """Global configuration for elementary options.
@@ -379,6 +393,7 @@ class BasicConfig:
     override the values on invocation, so the amount of values handled
     by this should be as small as possible.
     """
+
     def __init__(self):
         try:
             import cdedb.localconfig as primaryconf
@@ -390,6 +405,7 @@ class BasicConfig:
             except AttributeError:
                 setattr(self, param, _BASIC_DEFAULTS[param])
 
+
 class Config(BasicConfig):
     """Main configuration.
 
@@ -397,6 +413,7 @@ class Config(BasicConfig):
     allowing overrides on each invocation. This does not enable
     overriding the values inherited from :py:class:`BasicConfig`.
     """
+
     def __init__(self, configpath):
         """
         :type configpath: str
@@ -406,8 +423,9 @@ class Config(BasicConfig):
         _LOGGER.debug("Initialising Config with path {}".format(configpath))
         self._configpath = configpath
         if configpath:
-            module_id = str(uuid.uuid4()) ## otherwise importlib caches wrongly
-            loader = importlib.machinery.SourceFileLoader(module_id, str(configpath))
+            module_id = str(uuid.uuid4())  # otherwise importlib caches wrongly
+            loader = importlib.machinery.SourceFileLoader(module_id,
+                                                          str(configpath))
             primaryconf = loader.load_module(module_id)
         else:
             primaryconf = None
@@ -431,6 +449,7 @@ class Config(BasicConfig):
             except AttributeError:
                 pass
 
+
 class SecretsConfig:
     """Container for secrets (i.e. passwords).
 
@@ -438,12 +457,14 @@ class SecretsConfig:
     the invocation specific overrides are imperative since passwords
     should not be left in a globally accessible spot.
     """
+
     def __init__(self, configpath):
         _LOGGER.debug("Initialising SecretsConfig with path {}".format(
             configpath))
         if configpath:
-            module_id = str(uuid.uuid4()) ## otherwise importlib caches wrongly
-            loader = importlib.machinery.SourceFileLoader(module_id, str(configpath))
+            module_id = str(uuid.uuid4())  # otherwise importlib caches wrongly
+            loader = importlib.machinery.SourceFileLoader(module_id,
+                                                          str(configpath))
             primaryconf = loader.load_module(module_id)
         else:
             primaryconf = None

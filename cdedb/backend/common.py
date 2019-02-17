@@ -18,6 +18,7 @@ from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
 import cdedb.validation as validate
 
+
 def singularize(singular_function_name, array_param_name="ids",
                 singular_param_name="anid"):
     """This decorator marks a function for singularization.
@@ -40,6 +41,7 @@ def singularize(singular_function_name, array_param_name="ids",
     :type singular_param_name: str
     :type singular_param_name: new name of the singularized parameter
     """
+
     def wrap(fun):
         fun.singularization_hint = {
             'singular_function_name': singular_function_name,
@@ -47,7 +49,9 @@ def singularize(singular_function_name, array_param_name="ids",
             'singular_param_name': singular_param_name,
         }
         return fun
+
     return wrap
+
 
 def batchify(batch_function_name, array_param_name="data",
              singular_param_name="data"):
@@ -71,6 +75,7 @@ def batchify(batch_function_name, array_param_name="data",
     :type singular_param_name: str
     :type singular_param_name: name of the parameter to batchify
     """
+
     def wrap(fun):
         fun.batchification_hint = {
             'batch_function_name': batch_function_name,
@@ -78,7 +83,9 @@ def batchify(batch_function_name, array_param_name="data",
             'singular_param_name': singular_param_name,
         }
         return fun
+
     return wrap
+
 
 def access(*roles):
     """The @access decorator marks a function of a backend for publication.
@@ -89,10 +96,13 @@ def access(*roles):
     :type roles: [str]
     :param roles: required privilege level (any of)
     """
+
     def decorator(fun):
         fun.access_list = set(roles)
         return fun
+
     return decorator
+
 
 def internal_access(*roles):
     """Mark a function of a backend for internal publication.
@@ -103,10 +113,13 @@ def internal_access(*roles):
     :type roles: [str]
     :param roles: required privilege level (any of)
     """
+
     def decorator(fun):
         fun.internal_access_list = set(roles)
         return fun
+
     return decorator
+
 
 class AbstractBackend(metaclass=abc.ABCMeta):
     """Basic template for all backend services.
@@ -127,7 +140,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
           by this backend.
         """
         self.conf = Config(configpath)
-        ## initialize logging
+        # initialize logging
         make_root_logger(
             "cdedb.backend", self.conf.BACKEND_LOG, self.conf.LOG_LEVEL,
             syslog_level=self.conf.SYSLOG_LEVEL,
@@ -137,16 +150,16 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             getattr(self.conf, "{}_BACKEND_LOG".format(self.realm.upper())),
             self.conf.LOG_LEVEL, syslog_level=self.conf.SYSLOG_LEVEL,
             console_log_level=self.conf.CONSOLE_LOG_LEVEL)
-        ## logger are thread-safe!
+        # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
-        ## Everybody needs access to the core backend
+        # Everybody needs access to the core backend
         if is_core:
             self.core = self
         else:
-            ## Import here since we otherwise have a cyclic import.
-            ## I don't see how we can get out of this ...
+            # Import here since we otherwise have a cyclic import.
+            # I don't see how we can get out of this ...
             from cdedb.backend.core import CoreBackend
             self.core = ProxyShim(CoreBackend(configpath), internal=True)
 
@@ -359,7 +372,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         keys = tuple(key for key in data if key != entity_key)
         if not keys:
-            ## no input is an automatic success
+            # no input is an automatic success
             return 1
         if len(keys) == 1:
             query = glue("UPDATE {table} SET {keys} = {placeholders}",
@@ -435,18 +448,18 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         for field, operator, value in query.constraints:
             lowercase = (query.spec[field] == "str")
             if lowercase:
-                ## the following should be used with operators which are allowed
-                ## for str as well as for other types
+                # the following should be used with operators which are allowed
+                # for str as well as for other types
                 sql_param_str = "lower({})"
                 caser = lambda x: x.lower()
             else:
                 sql_param_str = "{}"
                 caser = lambda x: x
             columns = field.split(',')
-            ## Treat containsall and friends special since they want to find
-            ## each value in any column, without caring that the columns are
-            ## the same. All other operators want to find one column
-            ## fulfilling their constraint.
+            # Treat containsall and friends special since they want to find
+            # each value in any column, without caring that the columns are
+            # the same. All other operators want to find one column
+            # fulfilling their constraint.
             if operator in (_ops.containsall, _ops.containsnone,
                             _ops.containssome):
                 values = tuple("%{}%".format(diacritic_patterns(x.lower()))
@@ -455,13 +468,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 phrase = "( ( {} ) )".format(" ) OR ( ".join(
                     subphrase.format(c) for c in columns))
                 for v in values:
-                    params.extend([v]*len(columns))
+                    params.extend([v] * len(columns))
                 connector = " AND " if operator == _ops.containsall else " OR "
                 constraint = connector.join(phrase for _ in range(len(values)))
                 if operator == _ops.containsnone:
                     constraint = "NOT ( {} )".format(constraint)
                 constraints.append(constraint)
-                continue ## skip constraints.append below
+                continue  # skip constraints.append below
             if operator == _ops.empty:
                 if query.spec[field] == "str":
                     phrase = "( {0} IS NULL OR {0} = '' )"
@@ -477,47 +490,47 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     phrase = "{} = %s".format(sql_param_str)
                 else:
                     phrase = "{} != %s".format(sql_param_str)
-                params.extend((caser(value),)*len(columns))
+                params.extend((caser(value),) * len(columns))
             elif operator in (_ops.oneof, _ops.otherthan):
                 if operator == _ops.oneof:
                     phrase = "{} = ANY(%s)".format(sql_param_str)
                 else:
                     phrase = "{} != ANY(%s)".format(sql_param_str)
-                params.extend((tuple(caser(x) for x in value),)*len(columns))
+                params.extend((tuple(caser(x) for x in value),) * len(columns))
             elif operator in (_ops.similar, _ops.dissimilar):
                 if operator == _ops.similar:
                     phrase = "lower({}) SIMILAR TO %s"
                 else:
                     phrase = "lower({}) NOT SIMILAR TO %s"
                 value = "%{}%".format(diacritic_patterns(value.lower()))
-                params.extend((value,)*len(columns))
+                params.extend((value,) * len(columns))
             elif operator in (_ops.regex, _ops.notregex):
                 if operator == _ops.regex:
                     phrase = "{} ~* %s"
                 else:
                     phrase = "{} !~* %s"
-                params.extend((value,)*len(columns))
+                params.extend((value,) * len(columns))
             elif operator == _ops.fuzzy:
                 phrase = "similarity({}, %s) > 0.5"
-                params.extend((value,)*len(columns))
+                params.extend((value,) * len(columns))
             elif operator == _ops.less:
                 phrase = "{} < %s"
-                params.extend((value,)*len(columns))
+                params.extend((value,) * len(columns))
             elif operator == _ops.lessequal:
                 phrase = "{} <= %s"
-                params.extend((value,)*len(columns))
+                params.extend((value,) * len(columns))
             elif operator in (_ops.between, _ops.outside):
                 if operator == _ops.between:
                     phrase = "(%s <= {0} AND {0} <= %s)"
                 else:
                     phrase = "(%s >= {0} OR {0} >= %s)"
-                params.extend((value[0], value[1])*len(columns))
+                params.extend((value[0], value[1]) * len(columns))
             elif operator == _ops.greaterequal:
                 phrase = "{} >= %s"
-                params.extend((value,)*len(columns))
+                params.extend((value,) * len(columns))
             elif operator == _ops.greater:
                 phrase = "{} > %s"
-                params.extend((value,)*len(columns))
+                params.extend((value,) * len(columns))
             else:
                 raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))
@@ -585,7 +598,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             "additional_info {extra_columns} FROM {table} {condition}",
             "ORDER BY id DESC")
         if stop:
-            query = glue(query, "LIMIT {}".format(stop-start))
+            query = glue(query, "LIMIT {}".format(stop - start))
         if start:
             query = glue(query, "OFFSET {}".format(start))
         extra_columns = ", ".join(additional_columns)
@@ -606,18 +619,20 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                              table=table, condition=condition)
         return self.query_all(rs, query, params)
 
+
 class Silencer:
     """Helper to temporarily dissable logging.
 
     This is intended to be used as a context::
 
         with Silencer(rs):
-            ## do lots of stuff
-        ## log what you did
+            # do lots of stuff
+        # log what you did
 
     Note that the logs which were silenced should always be substituted with
     a different higher level log message.
     """
+
     def __init__(self, rs):
         """
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -630,6 +645,7 @@ class Silencer:
     def __exit__(self, atype, value, tb):
         self.rs.is_quiet = False
 
+
 def affirm_validation(assertion, value, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
@@ -639,6 +655,7 @@ def affirm_validation(assertion, value, **kwargs):
     """
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
+
 
 def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
@@ -655,6 +672,7 @@ def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
     checker = getattr(validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
 
+
 def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
 
@@ -669,6 +687,7 @@ def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
         return None
     checker = getattr(validate, "assert_{}".format(assertion))
     return {checker(value, **kwargs) for value in values}
+
 
 def cast_fields(data, spec):
     """Helper to deserialize json fields.
@@ -689,6 +708,7 @@ def cast_fields(data, spec):
         "datetime": parse_datetime,
         "bool": lambda x: x,
     }
+
     def _do_cast(key, val):
         if val is None:
             return None
@@ -697,6 +717,7 @@ def cast_fields(data, spec):
         return val
 
     return {key: _do_cast(key, val) for key, val in data.items()}
+
 
 #: Translate between validator names and sql data types.
 #:
