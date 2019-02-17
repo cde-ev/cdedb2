@@ -24,6 +24,7 @@ from cdedb.database.connection import Atomizer
 #: forbidden characters.
 MAGIC_ABSTAIN = "special: abstain"
 
+
 class AssemblyFrontend(AbstractUserFrontend):
     """Organize congregations and vote on ballots."""
     realm = "assembly"
@@ -98,7 +99,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def user_search(self, rs, download, is_search):
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
-        ## mangle the input, so we can prefill the form
+        # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:
             query = check(rs, "query_input", query_input, "query",
@@ -109,7 +110,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
-        ## Tricky logic: In case of no validation errors we perform a query
+        # Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_persona"
             result = self.assemblyproxy.submit_general_query(rs, query)
@@ -141,13 +142,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         """View activities."""
         start = start or 0
         stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
+        # no validation since the input stays valid, even if some options
+        # are lost
         log = self.assemblyproxy.retrieve_log(rs, codes, assembly_id, start,
                                               stop)
         personas = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
+                {entry['submitted_by'] for entry in log if
+                 entry['submitted_by']}
+                | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, personas)
         assemblies = {entry['assembly_id']
                       for entry in log if entry['assembly_id']}
@@ -296,7 +298,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         This purges stored voting secret.
         """
         if not ack_conclude:
-            rs.errors.append(("ack_conclude", ValueError(n_("Must be checked."))))
+            rs.errors.append(
+                ("ack_conclude", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_assembly(rs, assembly_id)
 
@@ -327,18 +330,21 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/list_ballots")
         future = {k: v for k, v in ballots.items()
                   if v['vote_begin'] > ref}
-        current = {k: v for k, v in ballots.items()
-                   if v['vote_begin'] <= ref and v['vote_end'] > ref}
-        extended = {k: v for k, v in ballots.items()
-                    if (v['vote_end'] <= ref
-                        and v['extended']
-                        and v['vote_extension_end'] > ref)}
+        current = {
+            k: v
+            for k, v in ballots.items()
+            if v['vote_begin'] <= ref < v['vote_end']}
+        extended = {
+            k: v
+            for k, v in ballots.items()
+            if (v['extended']
+                and v['vote_end'] <= ref < v['vote_extension_end'])}
         done = {k: v for k, v in ballots.items()
                 if (v['vote_end'] <= ref
                     and (v['extended'] is False
                          or v['vote_extension_end'] <= ref))}
-        assert(len(ballots)
-               == len(future) + len(current) + len(extended) + len(done))
+        assert (len(ballots)
+                == len(future) + len(current) + len(extended) + len(done))
         votes = {}
         if self.assemblyproxy.does_attend(rs, assembly_id=assembly_id):
             for ballot_id in ballot_ids:
@@ -374,7 +380,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_id})
 
     @access("assembly")
-    ## ballot_id is optional, but comes semantically before attachment_id
+    # ballot_id is optional, but comes semantically before attachment_id
     def get_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
         """Retrieve an attachment."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
@@ -395,7 +401,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("title", "str"), ("filename", "identifier_or_None"))
     @REQUESTfile("attachment")
-    ## ballot_id is optional, but comes semantically after assembly_id
+    # ballot_id is optional, but comes semantically after assembly_id
     def add_attachment(self, rs, assembly_id, title, filename,
                        attachment, ballot_id=None):
         """Create a new attachment.
@@ -430,7 +436,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    ## ballot_id is optional, but comes semantically before attachment_id
+    # ballot_id is optional, but comes semantically before attachment_id
     def remove_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
         """Delete an attachment."""
         with Atomizer(rs):
@@ -462,16 +468,16 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, ballot_id=ballot_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         timestamp = now()
-        ## check whether we need to initiate extension
+        # check whether we need to initiate extension
         if (ballot['extended'] is None
                 and timestamp > ballot['vote_end']):
             self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
             return self.redirect(rs, "assembly/show_ballot")
         finished = (
-            timestamp > ballot['vote_end']
-            and (not ballot['extended']
-                 or timestamp > ballot['vote_extension_end']))
-        ## check whether we need to initiate tallying
+                timestamp > ballot['vote_end']
+                and (not ballot['extended']
+                     or timestamp > ballot['vote_extension_end']))
+        # check whether we need to initiate tallying
         if finished and not ballot['is_tallied']:
             did_tally = self.assemblyproxy.tally_ballot(rs, ballot_id)
             if did_tally:
@@ -495,12 +501,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                      'Subject': n_("CdE Ballot got tallied.")},
                     attachments=(attachment_script, attachment_result,))
             return self.redirect(rs, "assembly/show_ballot")
-        ## initial checks done, present the ballot
+        # initial checks done, present the ballot
         ballot['is_voting'] = (
-            timestamp > ballot['vote_begin']
-            and (timestamp < ballot['vote_end']
-                 or (ballot['extended']
-                     and timestamp < ballot['vote_extension_end'])))
+                timestamp > ballot['vote_begin']
+                and (timestamp < ballot['vote_end']
+                     or (ballot['extended']
+                         and timestamp < ballot['vote_extension_end'])))
         result = None
         if ballot['is_tallied']:
             path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
@@ -513,7 +519,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             lookup = {e['moniker']: e['id']
                       for e in ballot['candidates'].values()}
             for tier in tiers:
-                ## Remove bar if present
+                # Remove bar if present
                 ntier = tuple(lookup[x] for x in tier if x in lookup)
                 if ntier:
                     tmp.append(ntier)
@@ -521,7 +527,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     tmp = losers
             result['winners'] = winners
             result['losers'] = losers
-            result['counts'] = None # Will be used for classical voting
+            result['counts'] = None  # Will be used for classical voting
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
         vote = None
         if attends:
@@ -533,10 +539,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot['votes']:
             if split_vote:
                 if len(split_vote) == 1:
-                    ## abstention
+                    # abstention
                     rs.values['vote'] = MAGIC_ABSTAIN
                 else:
-                    ## select voted options
+                    # select voted options
                     rs.values.setlist('vote', split_vote[0])
             if result:
                 counts = {e['moniker']: 0
@@ -587,7 +593,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     def delete_ballot(self, rs, assembly_id, ballot_id, ack_delete):
         """Remove a ballot."""
         if not ack_delete:
-            rs.errors.append(("ack_conclude", ValueError(n_("Must be checked."))))
+            rs.errors.append(
+                ("ack_conclude", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)
 

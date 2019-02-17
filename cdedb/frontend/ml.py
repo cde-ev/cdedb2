@@ -24,6 +24,7 @@ from cdedb.backend.ml import MlBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.config import SecretsConfig
 
+
 class MlFrontend(AbstractUserFrontend):
     """Manage mailing lists which will be run by an external software."""
     realm = "ml"
@@ -43,10 +44,10 @@ class MlFrontend(AbstractUserFrontend):
     def finalize_session(self, rs, connpool, auxilliary=False):
         super().finalize_session(rs, connpool, auxilliary=auxilliary)
         if self.validate_scriptkey(rs.scriptkey):
-            ## Special case the access of the mailing list software since
-            ## it's not tied to an actual persona.
+            # Special case the access of the mailing list software since
+            # it's not tied to an actual persona.
             rs.user.roles.add("ml_script")
-            ## Upgrade db connection
+            # Upgrade db connection
             rs._conn = connpool["cdb_persona"]
         if "ml" in rs.user.roles:
             rs.user.moderator = self.mlproxy.moderator_info(rs,
@@ -97,7 +98,7 @@ class MlFrontend(AbstractUserFrontend):
     def user_search(self, rs, download, is_search):
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
-        ## mangle the input, so we can prefill the form
+        # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:
             query = check(rs, "query_input", query_input, "query",
@@ -108,7 +109,7 @@ class MlFrontend(AbstractUserFrontend):
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
-        ## Tricky logic: In case of no validation errors we perform a query
+        # Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_persona"
             result = self.mlproxy.submit_general_query(rs, query)
@@ -184,12 +185,13 @@ class MlFrontend(AbstractUserFrontend):
         """View activities."""
         start = start or 0
         stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
+        # no validation since the input stays valid, even if some options
+        # are lost
         log = self.mlproxy.retrieve_log(rs, codes, mailinglist_id, start, stop)
         persona_ids = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
+                {entry['submitted_by'] for entry in log if
+                 entry['submitted_by']}
+                | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         mailinglist_ids = {entry['mailinglist_id']
                            for entry in log if entry['mailinglist_id']}
@@ -224,20 +226,20 @@ class MlFrontend(AbstractUserFrontend):
             event = self.eventproxy.get_event(
                 rs, rs.ambience['mailinglist']['event_id'])
             event['is_visible'] = (
-                "event_admin" in rs.user.roles or
-                rs.user.persona_id in event['orgas'] or
-                (event['is_open'] and event['is_visible']) or
-                bool(self.eventproxy.list_registrations(
-                    rs, event['id'], rs.user.persona_id)))
+                    "event_admin" in rs.user.roles or
+                    rs.user.persona_id in event['orgas'] or
+                    (event['is_open'] and event['is_visible']) or
+                    bool(self.eventproxy.list_registrations(
+                        rs, event['id'], rs.user.persona_id)))
         assembly = {}
         if rs.ambience['mailinglist']['assembly_id']:
             assembly = self.assemblyproxy.get_assembly(
                 rs, rs.ambience['mailinglist']['assembly_id'])
             assembly['is_visible'] = (
-                "assembly_admin" in rs.user.roles or
-                assembly['is_active'] or
-                bool(self.assemblyproxy.does_attend(
-                    rs, assembly_id=assembly['id'])))
+                    "assembly_admin" in rs.user.roles or
+                    assembly['is_active'] or
+                    bool(self.assemblyproxy.does_attend(
+                        rs, assembly_id=assembly['id'])))
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(not is_subscribed)
@@ -291,15 +293,16 @@ class MlFrontend(AbstractUserFrontend):
         """View activities pertaining to one list."""
         start = start or 0
         stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
+        # no validation since the input stays valid, even if some options
+        # are lost
         log = self.mlproxy.retrieve_log(rs, codes, mailinglist_id, start, stop)
         persona_ids = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
+                {entry['submitted_by'] for entry in log if
+                 entry['submitted_by']}
+                | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_ml_log", {
-            'log': log, 'personas': personas,})
+            'log': log, 'personas': personas, })
 
     @access("ml")
     @mailinglist_guard()
@@ -366,7 +369,6 @@ class MlFrontend(AbstractUserFrontend):
         code = self.mlproxy.set_mailinglist(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
-
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("email", "email"))
@@ -476,7 +478,7 @@ class MlFrontend(AbstractUserFrontend):
                 {'To': (email,),
                  'Subject': n_("Confirm email address for CdE mailing list")},
                 {'email': self.encode_parameter(
-                    "ml/do_address_change", "email", email),})
+                    "ml/do_address_change", "email", email), })
             rs.notify("info", n_("Confirmation email sent."))
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -515,7 +517,7 @@ class MlFrontend(AbstractUserFrontend):
         overrides = tuple(e['persona_id'] for e in problems if e['is_override'])
         problems = tuple(e['persona_id'] for e in problems
                          if not e['is_override'])
-        personas = self.coreproxy.get_personas(rs, problems+overrides)
+        personas = self.coreproxy.get_personas(rs, problems + overrides)
         return self.render(rs, "check_states", {
             'problems': problems, 'overrides': overrides, 'personas': personas})
 
@@ -597,4 +599,3 @@ class MlFrontend(AbstractUserFrontend):
             return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
         return self.send_json(rs, self.mlproxy.oldstyle_bounce(rs, address,
                                                                error))
-

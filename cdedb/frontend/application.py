@@ -32,16 +32,18 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.backend.session import SessionBackend
 
+
 class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
     appropriate frontend."""
+
     def __init__(self, configpath):
         """
         :type configpath: str
         """
         super().__init__(configpath)
-        ## do not use a ProxyShim since the only usage here is before the
-        ## RequestState exists
+        # do not use a ProxyShim since the only usage here is before the
+        # RequestState exists
         self.sessionproxy = SessionBackend(configpath)
         self.core = CoreFrontend(configpath)
         self.cde = CdEFrontend(configpath)
@@ -74,11 +76,11 @@ class Application(BaseApp):
                 localedir=str(self.conf.REPOSITORY_PATH / 'i18n'))
             for lang in self.conf.I18N_LANGUAGES}
         if pathlib.Path("/DBVM").is_file():
-            ## Sanity checks for the live instance
+            # Sanity checks for the live instance
             if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
                 raise RuntimeError(n_("Refusing to start in debug mode."))
 
-    def make_error_page(self, error, request, help=None):
+    def make_error_page(self, error, request, message=None):
         """Helper to format an error page.
 
         This is similar to
@@ -88,16 +90,18 @@ class Application(BaseApp):
 
         :type error: :py:class:`werkzeug.exceptions.HTTPException`
         :type request: :py:class:`werkzeug.wrappers.Request`
-        :param help: An additional help string. If given, the default help
+        :param message: An additional help string. If given, the default help
                      string for each HTTP code (below the error description) is
                      prepended by this string (or its translation).
-        :type help: str
+        :type message: str
         :rtype: :py:class:`Response`
         """
         try:
             urls = self.urlmap.bind_to_environ(request.environ)
+
             def _cdedblink(endpoint, params=None):
                 return urls.build(endpoint, params or {})
+
             begin = now()
             lang = self.get_locale(request)
             data = {
@@ -112,7 +116,7 @@ class Application(BaseApp):
                 'user': User(),
                 'values': {},
                 'error': error,
-                'help': help,
+                'help': message,
             }
             t = self.jinja_env.get_template(str(pathlib.Path("web",
                                                              "error.tmpl")))
@@ -131,11 +135,11 @@ class Application(BaseApp):
         """
         :type request: :py:class:`werkzeug.wrappers.Request`
         """
-        ## first try for handling exceptions
+        # first try for handling exceptions
         try:
-            #second try for logging exceptions
+            # second try for logging exceptions
             try:
-                ## note time for performance measurement
+                # note time for performance measurement
                 begin = now()
                 sessionkey = request.cookies.get("sessionkey")
                 scriptkey = request.headers.get("SCRIPTKEY")
@@ -149,7 +153,7 @@ class Application(BaseApp):
                     params = {
                         'wants': self.encode_parameter(
                             "core/index", "wants", request.url,
-                            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT),}
+                            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT), }
                     ret = construct_redirect(request,
                                              urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")
@@ -185,9 +189,9 @@ class Application(BaseApp):
                                 self.logger.info(
                                     "Invalid notification '{}'".format(note))
                     except:
-                        ## Do nothing if we fail to handle a notification,
-                        ## they can be manipulated by the client side, so
-                        ## we can not assume anything.
+                        # Do nothing if we fail to handle a notification,
+                        # they can be manipulated by the client side, so
+                        # we can not assume anything.
                         pass
                 handler = getattr(getattr(self, component), action)
                 if request.method not in handler.modi:
@@ -195,13 +199,13 @@ class Application(BaseApp):
                         handler.modi,
                         "Unsupported request method {}.".format(request.method))
                 rs.user = user
-                ## Store database connection as private attribute.
-                ## It will be made accessible for the backends by the ProxyShim.
+                # Store database connection as private attribute.
+                # It will be made accessible for the backends by the ProxyShim.
                 rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
-                ## Add realm specific infos (mostly to the user object)
+                # Add realm specific infos (mostly to the user object)
                 getattr(self, component).finalize_session(rs, self.connpool)
                 for realm in getattr(handler, 'realm_usage', set()):
-                    ## Add extra information for the cases where it's necessary
+                    # Add extra information for the cases where it's necessary
                     getattr(self, realm).finalize_session(rs, self.connpool,
                                                           auxilliary=True)
                 try:
@@ -210,8 +214,8 @@ class Application(BaseApp):
                     rs._conn.commit()
                     rs._conn.close()
             except werkzeug.exceptions.HTTPException:
-                ## do not log these, since they are not interesting and
-                ## reduce the signal to noise ratio
+                # do not log these, since they are not interesting and
+                # reduce the signal to noise ratio
                 raise
             except Exception as e:
                 self.logger.error(glue(
@@ -224,13 +228,13 @@ class Application(BaseApp):
         except werkzeug.routing.RequestRedirect as e:
             return e.get_response(request.environ)
         except PrivilegeError as e:
-            ## Convert permission errors from the backend to 403
+            # Convert permission errors from the backend to 403
             return self.make_error_page(werkzeug.exceptions.Forbidden(e.args),
                                         request)
         except werkzeug.exceptions.HTTPException as e:
             return self.make_error_page(e, request)
-        except psycopg2.extensions.TransactionRollbackError:
-            ## Serialization error
+        except psycopg2.extensions.TransactionRollbackError as e:
+            # Serialization error
             return self.make_error_page(
                 werkzeug.exceptions.InternalServerError(e.args),
                 request,
@@ -239,7 +243,8 @@ class Application(BaseApp):
                    "again."))
         except QuotaException:
             return self.make_error_page(
-                werkzeug.exceptions.Forbidden("Profile view quota reached."),
+                werkzeug.exceptions.Forbidden(
+                    n_("Profile view quota reached.")),
                 request,
                 n_("You reached the internal limit for user profile views. "
                    "This is a privacy feature to prevent users from cloning "
@@ -247,11 +252,11 @@ class Application(BaseApp):
                    "some false positive restrictions. Your limit will be "
                    "reset in the next days."))
         except Exception as e:
-            ## debug output if applicable
+            # debug output if applicable
             if self.conf.CDEDB_DEV:
                 return Response(cgitb.html(sys.exc_info(), context=7),
                                 mimetype="text/html")
-            ## generic errors
+            # generic errors
             return self.make_error_page(
                 werkzeug.exceptions.InternalServerError(repr(e)),
                 request)

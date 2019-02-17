@@ -35,6 +35,7 @@ from cdedb.validation import (
 import cdedb.database.constants as const
 import cdedb.validation as validate
 
+
 class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
     anonymous access and personas. """
@@ -66,6 +67,7 @@ class CoreFrontend(AbstractFrontend):
     def index(self, rs, wants=None):
         """Basic entry point.
 
+        :type rs: :py:class:`cdedb.common.RequestState`
         :param wants: URL to redirect to upon login
         """
         meta_info = self.coreproxy.get_meta_info(rs)
@@ -82,7 +84,7 @@ class CoreFrontend(AbstractFrontend):
             if wants:
                 return basic_redirect(rs, wants)
 
-            ## genesis cases
+            # genesis cases
             if {"core_admin", "event_admin", "ml_admin"} & rs.user.roles:
                 realms = []
                 if {"core_admin", "event_admin"} & rs.user.roles:
@@ -92,12 +94,12 @@ class CoreFrontend(AbstractFrontend):
                 data = self.coreproxy.genesis_list_cases(
                     rs, stati=(const.GenesisStati.to_review,), realms=realms)
                 dashboard['genesis_cases'] = len(data)
-            ## pending changes
+            # pending changes
             if self.is_admin(rs):
                 data = self.coreproxy.changelog_get_changes(
                     rs, stati=(const.MemberChangeStati.pending,))
                 dashboard['pending_changes'] = len(data)
-            ## events organized
+            # events organized
             orga_info = self.eventproxy.orga_info(rs, rs.user.persona_id)
             if orga_info:
                 orga = {}
@@ -113,7 +115,7 @@ class CoreFrontend(AbstractFrontend):
                         orga[event_id] = event
                 dashboard['orga'] = orga
                 dashboard['present'] = present
-            ## mailinglists moderated
+            # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
@@ -121,7 +123,7 @@ class CoreFrontend(AbstractFrontend):
                     requests = self.mlproxy.list_requests(rs, mailinglist_id)
                     mailinglist['requests'] = len(requests)
                 dashboard['moderator'] = moderator
-            ## visible and open events
+            # visible and open events
             if "event" in rs.user.roles:
                 event_ids = self.eventproxy.list_visible_events(rs)
                 events = self.eventproxy.get_events(rs, event_ids.keys())
@@ -131,21 +133,23 @@ class CoreFrontend(AbstractFrontend):
                         registration = self.eventproxy.list_registrations(
                             rs, event_id, rs.user.persona_id)
                         event['registration'] = bool(registration)
-                        # Skip events, its registration begins more then 2 weeks in future
+                        # Skip event, if the registration begins more than
+                        # 2 weeks in future
                         if event['registration_start'] and \
                                 now() + datetime.timedelta(weeks=2) < \
                                 event['registration_start']:
                             continue
-                        # Skip events, that are over or are not registerable anymore
+                        # Skip events, that are over or are not registerable
+                        # anymore
                         if event['registration_hard_limit'] and \
                                 now() > event['registration_hard_limit'] \
-                                and not event['registration']\
+                                and not event['registration'] \
                                 or now().date() > event['end']:
                             continue
                         final[event_id] = event
                 if final:
                     dashboard['events'] = final
-            ## open assemblies
+            # open assemblies
             if "assembly" in rs.user.roles:
                 assembly_ids = self.assemblyproxy.list_assemblies(
                     rs, is_active=True)
@@ -189,6 +193,9 @@ class CoreFrontend(AbstractFrontend):
     def login(self, rs, username, password, wants):
         """Create session.
 
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type username: printable_ascii
+        :type password: str
         :param wants: URL to redirect to
         """
         if rs.errors:
@@ -230,6 +237,7 @@ class CoreFrontend(AbstractFrontend):
     def change_locale(self, rs, locale, wants):
         """Set 'locale' cookie to override default locale for this user/browser.
 
+        :type rs: :py:class:`cdedb.common.RequestState`
         :param locale: The target locale
         :param wants: URL to redirect to (typically URL of the previous page)
         """
@@ -287,44 +295,43 @@ class CoreFrontend(AbstractFrontend):
         # The basic access level provides only the name (this should only
         # happen in case of un-quoted searchable member access)
         access_levels = {"persona"}
-        ## Let users see themselves
+        # Let users see themselves
         if persona_id == rs.user.persona_id:
             access_levels.update(rs.user.roles)
             access_levels.add("core")
-        ## Core admins see everything
+        # Core admins see everything
         if "core_admin" in rs.user.roles:
             access_levels.update(ALL_ACCESS_LEVELS)
-        ## Other admins see their realm if they are relative admin
+        # Other admins see their realm if they are relative admin
         if is_relative_admin:
-            ## Relative admins can see core data
+            # Relative admins can see core data
             access_levels.add("core")
             for realm in ("ml", "assembly", "event", "cde"):
                 if "{}_admin".format(realm) in rs.user.roles:
                     access_levels.add(realm)
-        ## Members see other members (modulo quota)
+        # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
             if (not rs.ambience['persona']['is_searchable']
-                    and not "cde_admin" in access_levels):
+                    and "cde_admin" not in access_levels):
                 raise PrivilegeError(n_(
                     "Access to non-searchable member data."))
             access_levels.add("cde")
-        ## Orgas see their participants
+        # Orgas see their participants
         if event_id:
-            is_orga = (
-                "event_admin" in rs.user.roles
-                or event_id in self.eventproxy.orga_info(rs,
-                                                         rs.user.persona_id))
+            is_orga = ("event_admin" in rs.user.roles
+                       or event_id in self.eventproxy.orga_info(
+                        rs, rs.user.persona_id))
             is_participant = self.eventproxy.list_registrations(
                 rs, event_id, persona_id)
             if is_orga and is_participant:
                 access_levels.add("event")
                 access_levels.add("orga")
-        ## Mailinglist moderators see their subscribers
+        # Mailinglist moderators see their subscribers
         if ml_id:
             is_moderator = (
-                "ml_admin" in rs.user.roles
-                or ml_id in self.mlproxy.moderator_info(rs,
-                                                        rs.user.persona_id))
+                    "ml_admin" in rs.user.roles
+                    or ml_id in self.mlproxy.moderator_info(rs,
+                                                            rs.user.persona_id))
             is_subscriber = self.mlproxy.is_subscribed(rs, persona_id, ml_id)
             if is_moderator and is_subscriber:
                 access_levels.add("ml")
@@ -332,15 +339,15 @@ class CoreFrontend(AbstractFrontend):
                 # add it anyway to be less confusing
                 access_levels.add("moderator")
 
-        ## Retrieve data
-        ##
-        ## This is the basic mechanism for restricting access, since we only
-        ## add attributes for which an access level is provided.
+        # Retrieve data
+        #
+        # This is the basic mechanism for restricting access, since we only
+        # add attributes for which an access level is provided.
         roles = extract_roles(rs.ambience['persona'])
         data = self.coreproxy.get_persona(rs, persona_id)
-        ## The base version of the data set should only contain the name,
-        ## however the PERSONA_CORE_FIELDS also contain the email address
-        ## which we must delete beforehand.
+        # The base version of the data set should only contain the name,
+        # however the PERSONA_CORE_FIELDS also contain the email address
+        # which we must delete beforehand.
         del data['username']
         if "ml" in access_levels and "ml" in roles:
             data.update(self.coreproxy.get_ml_user(rs, persona_id))
@@ -357,8 +364,8 @@ class CoreFrontend(AbstractFrontend):
         if "admin" in access_levels:
             data.update(self.coreproxy.get_total_persona(rs, persona_id))
 
-        ## Cull unwanted data
-        if not "core" in access_levels:
+        # Cull unwanted data
+        if "core" not in access_levels:
             masks = (
                 "is_active", "is_admin", "is_core_admin", "is_cde_admin",
                 "is_event_admin", "is_ml_admin", "is_assembly_admin",
@@ -369,12 +376,12 @@ class CoreFrontend(AbstractFrontend):
             for key in masks:
                 if key in data:
                     del data[key]
-            if not "orga" in access_levels and "is_member" in data:
+            if "orga" not in access_levels and "is_member" in data:
                 del data["is_member"]
         if not is_relative_admin and "notes" in data:
             del data['notes']
 
-        ## Add past event participation info
+        # Add past event participation info
         past_events = None
         if "cde" in access_levels and {"event", "cde"} & roles:
             participation_info = self.pasteventproxy.participation_info(
@@ -393,11 +400,11 @@ class CoreFrontend(AbstractFrontend):
                         for k in ('pcourse_id', 'course_name', 'nr',
                                   'is_instructor')}
                     for pi in participation_info
-                    if pi['pevent_id'] == past_event_id
-                       and pi['pcourse_id'] is not None
+                    if (pi['pevent_id'] == past_event_id and
+                        pi['pcourse_id'] is not None)
                 }
 
-        ## Check whether we should display an option for using the quota
+        # Check whether we should display an option for using the quota
         quoteable = (not quote_me
                      and "cde" not in access_levels
                      and "searchable" in rs.user.roles
@@ -430,11 +437,11 @@ class CoreFrontend(AbstractFrontend):
             for x, y in pairwise(sorted(history.keys())):
                 if history[x]['change_status'] == stati.committed:
                     already_committed = True
-                ## Somewhat involved determination of a field being constant.
-                ##
-                ## Basically it's done by the following line, except we
-                ## don't want to mask a change that was rejected and then
-                ## resubmitted and accepted.
+                # Somewhat involved determination of a field being constant.
+                #
+                # Basically it's done by the following line, except we
+                # don't want to mask a change that was rejected and then
+                # resubmitted and accepted.
                 is_constant = history[x][f] == history[y][f]
                 if (history[x]['change_status'] == stati.nacked
                         and not already_committed):
@@ -451,12 +458,12 @@ class CoreFrontend(AbstractFrontend):
             constants[f] = total_const
         pending = {i for i in history
                    if history[i]['change_status'] == stati.pending}
-        ## Track the omitted information whether a new value finally got
-        ## committed or not.
-        ##
-        ## This is necessary since we only show those data points, where the
-        ## data (e.g. the name) changes. This does especially not detect
-        ## meta-data changes (e.g. the change-status).
+        # Track the omitted information whether a new value finally got
+        # committed or not.
+        #
+        # This is necessary since we only show those data points, where the
+        # data (e.g. the name) changes. This does especially not detect
+        # meta-data changes (e.g. the change-status).
         eventual_status = {f: {gen: entry['change_status']
                                for gen, entry in history.items()
                                if gen not in constants[f]}
@@ -515,7 +522,7 @@ class CoreFrontend(AbstractFrontend):
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif len(result) > 0:
-            ## TODO make this accessible
+            # TODO make this accessible
             pass
         query = Query(
             "qview_core_user",
@@ -679,10 +686,8 @@ class CoreFrontend(AbstractFrontend):
             # rights, a search term with an @ (and more) matches the mail
             # address, or the mail address is required to distinguish equally
             # named users
-            searched_email = any(t in entry['username']
-                                    and '@' in t and
-                                    len(t) > self.conf.NUM_PREVIEW_CHARS
-                                 for t in terms)
+            searched_email = any(t in entry['username'] and '@' in t and len(
+                t) > self.conf.NUM_PREVIEW_CHARS for t in terms)
             if counter[name(entry)] > 1 or searched_email or \
                     self.coreproxy.is_relative_admin(rs, entry['id']):
                 result['email'] = entry['username']
@@ -736,7 +741,7 @@ class CoreFrontend(AbstractFrontend):
                                              change_note=change_note)
         self.notify_return_code(rs, code)
         if code < 0:
-            ## send a mail since changes needing review should be seldom enough
+            # send a mail since changes needing review should be seldom enough
             self.do_mail(
                 rs, "pending_changes",
                 {'To': (self.conf.MANAGEMENT_ADDRESS,),
@@ -763,7 +768,7 @@ class CoreFrontend(AbstractFrontend):
         if query:
             query = check(rs, "query", query, "query")
         elif is_search:
-            ## mangle the input, so we can prefill the form
+            # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
             query = check(rs, "query_input", query_input, "query",
                           spec=spec, allow_empty=False)
@@ -776,7 +781,7 @@ class CoreFrontend(AbstractFrontend):
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
-        ## Tricky logic: In case of no validation errors we perform a query
+        # Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_core_user"
             result = self.coreproxy.submit_general_query(rs, query)
@@ -810,7 +815,7 @@ class CoreFrontend(AbstractFrontend):
         otherwise.
         """
         spec = copy.deepcopy(QUERY_SPECS['qview_archived_persona'])
-        ## mangle the input, so we can prefill the form
+        # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:
             query = check(rs, "query_input", query_input, "query", spec=spec,
@@ -829,7 +834,7 @@ class CoreFrontend(AbstractFrontend):
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
-        ## Tricky logic: In case of no validation errors we perform a query
+        # Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_archived_persona"
             result = self.coreproxy.submit_general_query(rs, query)
@@ -999,12 +1004,12 @@ class CoreFrontend(AbstractFrontend):
     def promote_user(self, rs, persona_id, target_realm, data):
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
-            ## remove irrelevant keys, due to the possible combinations it is
-            ## rather lengthy to specify the exact set of them
+            # remove irrelevant keys, due to the possible combinations it is
+            # rather lengthy to specify the exact set of them
             del data[key]
         persona = self.coreproxy.get_total_persona(rs, persona_id)
         merge_dicts(data, persona)
-        ## Specific fixes by target realm
+        # Specific fixes by target realm
         if target_realm == "cde":
             reference = CDE_TRANSITION_FIELDS()
             for key in ('trial_member', 'decided_search', 'bub_search'):
@@ -1116,7 +1121,8 @@ class CoreFrontend(AbstractFrontend):
         inputs = (rs.user.username.replace('@', ' ').split() +
                   rs.user.given_names.replace('-', ' ').split() +
                   rs.user.family_name.replace('-', ' ').split())
-        new_password = check(rs, "password_strength", new_password, "new_password",
+        new_password = check(rs, "password_strength", new_password,
+                             "new_password",
                              inputs=inputs)
         if rs.errors:
             if any(name == "new_password" for name, _ in rs.errors):
@@ -1127,7 +1133,8 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code, success=n_("Password changed."),
                                 error=message)
         if not code:
-            rs.errors.append(("old_password", ValueError(n_("Wrong password."))))
+            rs.errors.append(
+                ("old_password", ValueError(n_("Wrong password."))))
             self.logger.info(
                 "Unsuccessful password change for persona {}.".format(
                     rs.user.persona_id))
@@ -1165,7 +1172,7 @@ class CoreFrontend(AbstractFrontend):
                 {'To': (email,), 'Subject': n_('CdEDB password reset')},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email),
-                 'cookie': message})
+                    'cookie': message})
             self.logger.info("Sent password reset mail to {} for IP {}.".format(
                 email, rs.request.remote_addr))
             rs.notify("success", n_("Email sent."))
@@ -1209,7 +1216,7 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
-            ## Redirect so that encoded parameter works.
+            # Redirect so that encoded parameter works.
             params = {
                 'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email),
@@ -1367,8 +1374,8 @@ class CoreFrontend(AbstractFrontend):
             {'To': (data['username'],), 'Subject': n_('CdEDB account request')},
             {'case_id': self.encode_parameter(
                 "core/genesis_verify", "case_id", case_id),
-             'given_names': data['given_names'],
-             'family_name': data['family_name'],})
+                'given_names': data['given_names'],
+                'family_name': data['family_name'], })
         rs.notify(
             "success",
             n_("Email sent. Please follow the link contained in the email."))
@@ -1389,7 +1396,7 @@ class CoreFrontend(AbstractFrontend):
             rs, code,
             error=n_("Verification failed. Please contact the administrators."),
             success=n_("Email verified. Wait for moderation. "
-                      "You will be notified by mail."))
+                       "You will be notified by mail."))
         if not code:
             return self.redirect(rs, "core/genesis_request_form")
         notify = self.conf.MANAGEMENT_ADDRESS
@@ -1484,7 +1491,8 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Failed."))
             return rs.genesis_list_cases(rs)
         if case_status == const.GenesisStati.approved:
-            success, cookie = self.coreproxy.make_reset_cookie(rs, case['username'])
+            success, cookie = self.coreproxy.make_reset_cookie(rs,
+                                                               case['username'])
             self.do_mail(
                 rs, "genesis_approved",
                 {'To': (case['username'],),
@@ -1493,14 +1501,14 @@ class CoreFrontend(AbstractFrontend):
                  'email': self.encode_parameter(
                      "core/do_password_reset_form", "email", case['username'],
                      timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
-                 'cookie': cookie,})
+                 'cookie': cookie, })
             rs.notify("success", n_("Case approved."))
         else:
             self.do_mail(
                 rs, "genesis_declined",
                 {'To': (case['username'],),
                  'Subject': n_('CdEDB account declined')},
-                {'case': case,})
+                {'case': case, })
             rs.notify("info", n_("Case rejected."))
         return self.redirect(rs, "core/genesis_list_cases")
 
@@ -1587,13 +1595,15 @@ class CoreFrontend(AbstractFrontend):
         """View changelog activity."""
         start = start or 0
         stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
+        # no validation since the input stays valid, even if some options
+        # are lost
         log = self.coreproxy.retrieve_changelog_meta(rs, stati, start, stop)
         persona_ids = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['reviewed_by'] for entry in log if entry['reviewed_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
+                {entry['submitted_by'] for entry in log if
+                 entry['submitted_by']}
+                | {entry['reviewed_by'] for entry in log if
+                   entry['reviewed_by']}
+                | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_changelog_meta", {
             'log': log, 'personas': personas})
@@ -1606,12 +1616,13 @@ class CoreFrontend(AbstractFrontend):
         """View activity."""
         start = start or 0
         stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
+        # no validation since the input stays valid, even if some options
+        # are lost
         log = self.coreproxy.retrieve_log(rs, codes, persona_id, start, stop)
         persona_ids = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
+                {entry['submitted_by'] for entry in log if
+                 entry['submitted_by']}
+                | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_log", {'log': log, 'personas': personas})
 
