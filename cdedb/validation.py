@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=undefined-variable
-## we do some setattrs which confuse pylint
+# we do some setattrs which confuse pylint
 
 """User data input mangling.
 
@@ -55,6 +55,7 @@ from cdedb.query import (
     NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS, ENUMS_DICT
+
 _BASICCONF = BasicConfig()
 
 current_module = sys.modules[__name__]
@@ -64,6 +65,8 @@ zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 _LOGGER = logging.getLogger(__name__)
 
 _ALL = []
+
+
 def _addvalidator(fun):
     """Mark a function for processing into validators.
 
@@ -71,6 +74,7 @@ def _addvalidator(fun):
     """
     _ALL.append(fun)
     return fun
+
 
 def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
                                *, allow_superfluous=False, _convert=True):
@@ -118,6 +122,7 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
         retval = None
     return retval, errs
 
+
 def _augment_dict_validator(validator, augmentation, strict=True):
     """Beef up a dict validator.
 
@@ -136,6 +141,7 @@ def _augment_dict_validator(validator, augmentation, strict=True):
       are optional.
     :rtype: callable
     """
+
     @functools.wraps(validator)
     def new_validator(val, argname=None, *, _convert=True):
         mandatory_fields = augmentation if strict else {}
@@ -154,7 +160,9 @@ def _augment_dict_validator(validator, augmentation, strict=True):
         if errs:
             ret = None
         return ret, errs
+
     return new_validator
+
 
 def escaped_split(s, delim, escape='\\'):
     """Helper function for anvanced list splitting.
@@ -186,9 +194,10 @@ def escaped_split(s, delim, escape='\\'):
     ret.append(current)
     return ret
 
-##
-## Below is the real stuff
-##
+
+#
+# Below is the real stuff
+#
 
 @_addvalidator
 def _None(val, argname=None, *, _convert=True):
@@ -205,6 +214,7 @@ def _None(val, argname=None, *, _convert=True):
         return val, []
     return None, [(argname, ValueError(n_("Must be None.")))]
 
+
 @_addvalidator
 def _any(val, argname=None, *, _convert=True):
     """Dummy to allow arbitrary things.
@@ -218,6 +228,7 @@ def _any(val, argname=None, *, _convert=True):
     :rtype: (object or None, [(str or None, exception)])
     """
     return val, []
+
 
 @_addvalidator
 def _int(val, argname=None, *, _convert=True):
@@ -240,6 +251,7 @@ def _int(val, argname=None, *, _convert=True):
     if not isinstance(val, int):
         return None, [(argname, TypeError(n_("Must be an integer.")))]
     return val, []
+
 
 @_addvalidator
 def _non_negative_int(val, argname=None, *, _convert=True):
@@ -272,6 +284,7 @@ def _id(val, argname=None, *, _convert=True):
             errs.append((argname, ValueError(n_("Must be positive."))))
     return val, errs
 
+
 @_addvalidator
 def _float(val, argname=None, *, _convert=True):
     """
@@ -290,6 +303,7 @@ def _float(val, argname=None, *, _convert=True):
                        TypeError(n_("Must be a floating point number.")))]
     return val, []
 
+
 @_addvalidator
 def _decimal(val, argname=None, *, _convert=True):
     """
@@ -307,6 +321,7 @@ def _decimal(val, argname=None, *, _convert=True):
         return None, [(argname, TypeError(n_("Must be a decimal.Decimal.")))]
     return val, []
 
+
 @_addvalidator
 def _non_negative_decimal(val, argname=None, *, _convert=True):
     """
@@ -320,6 +335,7 @@ def _non_negative_decimal(val, argname=None, *, _convert=True):
         val = None
         err.append((argname, ValueError(n_("Transfer saldo is negative."))))
     return val, err
+
 
 @_addvalidator
 def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
@@ -364,6 +380,7 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True):
         errs.append((argname, ValueError(n_("Mustn't be empty."))))
     return val, errs
 
+
 @_addvalidator
 def _mapping(val, argname=None, *, _convert=True):
     """
@@ -377,6 +394,7 @@ def _mapping(val, argname=None, *, _convert=True):
         return None, [(argname, TypeError(n_("Must be a mapping.")))]
     return val, []
 
+
 @_addvalidator
 def _iterable(val, argname=None, *, _convert=True):
     """
@@ -389,6 +407,7 @@ def _iterable(val, argname=None, *, _convert=True):
     if not isinstance(val, collections.abc.Iterable):
         return None, [(argname, TypeError(n_("Must be an iterable.")))]
     return val, []
+
 
 @_addvalidator
 def _bool(val, argname=None, *, _convert=True):
@@ -411,6 +430,7 @@ def _bool(val, argname=None, *, _convert=True):
         return None, [(argname, TypeError(n_("Must be a boolean.")))]
     return val, []
 
+
 @_addvalidator
 def _empty_dict(val, argname=None, *, _convert=True):
     """
@@ -422,6 +442,7 @@ def _empty_dict(val, argname=None, *, _convert=True):
     if val != {}:
         return None, [(argname, ValueError(n_("Must be an empty dict.")))]
     return val, []
+
 
 @_addvalidator
 def _realm(val, argname=None, *, _convert=True):
@@ -438,7 +459,10 @@ def _realm(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError(n_("Not a valid realm."))))
     return val, errs
 
+
 _CDEDBID = re.compile('^DB-([0-9]*)-([0-9X])$')
+
+
 @_addvalidator
 def _cdedbid(val, argname=None, *, _convert=True):
     """
@@ -460,7 +484,10 @@ def _cdedbid(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError(n_("Checksum failure."))))
     return value, errs
 
+
 _PRINTABLE_ASCII = re.compile('^[ -~]*$')
+
+
 @_addvalidator
 def _printable_ascii_type(val, argname=None, *, _convert=True):
     """
@@ -473,6 +500,7 @@ def _printable_ascii_type(val, argname=None, *, _convert=True):
     if not errs and not _PRINTABLE_ASCII.search(val):
         errs.append((argname, ValueError(n_("Must be printable ASCII."))))
     return val, errs
+
 
 @_addvalidator
 def _printable_ascii(val, argname=None, *, _convert=True):
@@ -489,7 +517,10 @@ def _printable_ascii(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError(n_("Mustn't be empty."))))
     return val, errs
 
+
 _ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+$')
+
+
 @_addvalidator
 def _alphanumeric(val, argname=None, *, _convert=True):
     """
@@ -505,7 +536,10 @@ def _alphanumeric(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError(n_("Must be alphanumeric."))))
     return val, errs
 
+
 _CSV_ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$')
+
+
 @_addvalidator
 def _csv_alphanumeric(val, argname=None, *, _convert=True):
     """
@@ -522,7 +556,10 @@ def _csv_alphanumeric(val, argname=None, *, _convert=True):
                      ValueError(n_("Must be comma separated alphanumeric."))))
     return val, errs
 
+
 _IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+$')
+
+
 @_addvalidator
 def _identifier(val, argname=None, *, _convert=True):
     """Identifiers encompass everything from file names to short names for
@@ -542,7 +579,10 @@ def _identifier(val, argname=None, *, _convert=True):
             "(only letters, numbers, underscore, dot and hyphen)."))))
     return val, errs
 
+
 _RESTRICTIVE_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_]+$')
+
+
 @_addvalidator
 def _restrictive_identifier(val, argname=None, *, _convert=True):
     """Restrictive identifiers are for situations, where normal identifiers
@@ -564,7 +604,10 @@ def _restrictive_identifier(val, argname=None, *, _convert=True):
             "(only letters, numbers and underscore)."))))
     return val, errs
 
+
 _CSV_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$')
+
+
 @_addvalidator
 def _csv_identifier(val, argname=None, *, _convert=True):
     """
@@ -581,6 +624,7 @@ def _csv_identifier(val, argname=None, *, _convert=True):
                      ValueError(n_("Must be comma separated identifiers."))))
     return val, errs
 
+
 @_addvalidator
 def _int_csv_list(val, argname=None, *, _convert=True):
     """
@@ -595,7 +639,7 @@ def _int_csv_list(val, argname=None, *, _convert=True):
             val = []
             for entry in vals:
                 if not entry:
-                    ## skip empty entries which can be produced by Javscript
+                    # skip empty entries which can be produced by Javscript
                     continue
                 entry, errs = _int(entry, argname, _convert=_convert)
                 if errs:
@@ -608,8 +652,9 @@ def _int_csv_list(val, argname=None, *, _convert=True):
             return None, [(argname, TypeError(n_("Must contain integers.")))]
     return val, []
 
+
 @_addvalidator
-def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
+def _password_strength(val, argname=None, *, _convert=True, inputs=None):
     """Implement a password policy.
 
     This has the strictly competing goals of security and usability.
@@ -624,6 +669,7 @@ def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
+    inputs = inputs or []
     val, errors = _str(val, argname=argname, _convert=_convert)
     if val:
         results = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
@@ -636,7 +682,10 @@ def _password_strength(val, argname=None, *, _convert=True, inputs=[]):
 
     return val, errors
 
+
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
+
+
 @_addvalidator
 def _email(val, argname=None, *, _convert=True):
     """We accept only a subset of valid email addresses since implementing the
@@ -650,11 +699,12 @@ def _email(val, argname=None, *, _convert=True):
     val, errs = _printable_ascii(val, argname, _convert=_convert)
     if errs:
         return None, errs
-    ## normalize email addresses to lower case
+    # normalize email addresses to lower case
     val = val.strip().lower()
     if not _EMAIL_REGEX.search(val):
         errs.append((argname, ValueError(n_("Must be a valid email address."))))
     return val, errs
+
 
 _PERSONA_TYPE_FIELDS = {
     'is_cde_realm': _bool,
@@ -733,7 +783,7 @@ _PERSONA_CDE_CREATION = lambda: {
     'trial_member': _bool,
     'decided_search': _bool,
     'bub_search': _bool,
-    ## 'foto': _str_or_None, # No foto -- this is another special
+    # 'foto': _str_or_None, # No foto -- this is another special
 }
 _PERSONA_EVENT_CREATION = lambda: {
     'title': _str_or_None,
@@ -797,6 +847,8 @@ _PERSONA_COMMON_FIELDS = lambda: {
     'bub_search': _bool,
     'foto': _str_or_None,
 }
+
+
 @_addvalidator
 def _persona(val, argname=None, *, creation=False, transition=False,
              _convert=True):
@@ -848,7 +900,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
             mandatory_fields.update(_PERSONA_CDE_CREATION())
         if "event" in roles:
             mandatory_fields.update(_PERSONA_EVENT_CREATION())
-        ## ml and assembly define no custom fields
+        # ml and assembly define no custom fields
     elif transition:
         realm_checks = {
             'is_cde_realm': _PERSONA_CDE_CREATION(),
@@ -879,6 +931,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
             errs.extend(e)
     return val, errs
 
+
 def parse_date(val):
     """Make a string into a date.
 
@@ -894,13 +947,14 @@ def parse_date(val):
             return datetime.datetime.strptime(val, fmt).date()
         except ValueError:
             pass
-    ## Shorten strings to allow datetimes as inputs
+    # Shorten strings to allow datetimes as inputs
     for fmt, length in formats:
         try:
             return datetime.datetime.strptime(val[:length], fmt).date()
         except ValueError:
             pass
     raise ValueError(n_("Invalid date string."))
+
 
 @_addvalidator
 def _date(val, argname=None, *, _convert=True):
@@ -918,10 +972,11 @@ def _date(val, argname=None, *, _convert=True):
     if not isinstance(val, datetime.date):
         return None, [(argname, TypeError(n_("Must be a datetime.date.")))]
     if isinstance(val, datetime.datetime):
-        ## necessary, since isinstance(datetime.datetime.now(),
-        ## datetime.date) == True
+        # necessary, since isinstance(datetime.datetime.now(),
+        # datetime.date) == True
         val = val.date()
     return val, []
+
 
 def parse_datetime(val, default_date=None):
     """Make a string into a datetime.
@@ -934,7 +989,8 @@ def parse_datetime(val, default_date=None):
     """
     date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
     connectors = ("T", " ")
-    time_formats = ("%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
+    time_formats = (
+        "%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
     formats = itertools.chain(
         ("{}{}{}".format(d, c, t)
          for d in date_formats for c in connectors for t in time_formats),
@@ -957,11 +1013,11 @@ def parse_datetime(val, default_date=None):
             except ValueError:
                 pass
     if ret is None:
-        ## Fix braindead datetime. The datetime.isoformat() method outputs
-        ## timezone offsets as +HH:MM but the strptime() code %z only
-        ## understand +HHMM. Thus the equivalent of
-        ## datetime.strptime(datetime.isoformat()) is guaranteed to cause an
-        ## exception. *sigh*
+        # Fix braindead datetime. The datetime.isoformat() method outputs
+        # timezone offsets as +HH:MM but the strptime() code %z only
+        # understand +HHMM. Thus the equivalent of
+        # datetime.strptime(datetime.isoformat()) is guaranteed to cause an
+        # exception. *sigh*
         if (len(val) > 5 and val[-6] in '+-' and val[-3] == ':'
                 and val[-5:-3].isdecimal() and val[-2:].isdecimal()):
             new_val = val[:-3] + val[-2:]
@@ -970,6 +1026,7 @@ def parse_datetime(val, default_date=None):
     if ret.tzinfo is None:
         ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
     return ret.astimezone(pytz.utc)
+
 
 @_addvalidator
 def _datetime(val, argname=None, *, _convert=True, default_date=None):
@@ -992,6 +1049,7 @@ def _datetime(val, argname=None, *, _convert=True, default_date=None):
         return None, [(argname, TypeError(n_("Must be a datetime.datetime.")))]
     return val, []
 
+
 @_addvalidator
 def _single_digit_int(val, argname=None, *, _convert=True):
     """Like _int, but between +9 and -9.
@@ -1007,6 +1065,7 @@ def _single_digit_int(val, argname=None, *, _convert=True):
     if val > 9 or val < -9:
         return None, [(argname, ValueError(n_("More than one digit.")))]
     return val, []
+
 
 @_addvalidator
 def _phone(val, argname=None, *, _convert=True):
@@ -1025,11 +1084,11 @@ def _phone(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError(n_("Too short."))))
         return None, errs
 
-    ## This is pretty horrible, but seems to be the best way ...
-    ## It works thanks to the test-suite ;)
+    # This is pretty horrible, but seems to be the best way ...
+    # It works thanks to the test-suite ;)
 
     retval = "+"
-    ## first the international part
+    # first the international part
     if val.startswith(("+", "00")):
         for prefix in ("+", "00"):
             if val.startswith(prefix):
@@ -1040,14 +1099,15 @@ def _phone(val, argname=None, *, _convert=True):
                 val = val[len(code):]
                 break
         else:
-            errs.append((argname, ValueError(n_("Invalid international part."))))
+            errs.append(
+                (argname, ValueError(n_("Invalid international part."))))
         if retval == "+49" and not val.startswith("0"):
             val = "0" + val
     else:
         retval += "49"
-    ## now the national part
+    # now the national part
     if retval == "+49":
-        ## german stuff here
+        # german stuff here
         if not val.startswith("0"):
             errs.append((argname, ValueError(n_("Invalid national part."))))
         else:
@@ -1056,7 +1116,8 @@ def _phone(val, argname=None, *, _convert=True):
             if val[:length] in GERMAN_PHONE_CODES:
                 retval += " ({}) {}".format(val[:length], val[length:])
                 if length + 2 >= len(val):
-                    errs.append((argname, ValueError(n_("Invalid local part."))))
+                    errs.append(
+                        (argname, ValueError(n_("Invalid local part."))))
                 break
         else:
             errs.append((argname, ValueError(n_("Invalid national part."))))
@@ -1065,21 +1126,23 @@ def _phone(val, argname=None, *, _convert=True):
         try:
             index = orig.index(retval[1:]) + len(retval) - 1
         except ValueError:
-            errs.append((argname, ValueError(n_("Invalid international part."))))
-        ## this will terminate since we know that there are sufficient digits
+            errs.append(
+                (argname, ValueError(n_("Invalid international part."))))
+        # this will terminate since we know that there are sufficient digits
         while not orig[index] in string.digits:
             index += 1
         rest = orig[index:]
         sep = ''.join(c for c in rest if c not in string.digits)
         try:
             national = rest[:rest.index(sep)]
-            local = rest[rest.index(sep)+len(sep):]
+            local = rest[rest.index(sep) + len(sep):]
             if not len(national) or not len(local):
                 raise ValueError()
             retval += " ({}) {}".format(national, local)
         except ValueError:
             retval += " " + val
     return retval, errs
+
 
 @_addvalidator
 def _german_postal_code(val, argname=None, *, _convert=True):
@@ -1096,6 +1159,7 @@ def _german_postal_code(val, argname=None, *, _convert=True):
     if val not in GERMAN_POSTAL_CODES:
         errs.append((argname, ValueError(n_("Invalid german postal code."))))
     return val, errs
+
 
 _GENESIS_CASE_COMMON_FIELDS = lambda: {
     'username': _email,
@@ -1130,6 +1194,8 @@ _GENESIS_CASE_STRICT_FIELDS = lambda: {
     'location': _str,
     'country': _str_or_None,
 }
+
+
 @_addvalidator
 def _genesis_case(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1150,7 +1216,7 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         optional_fields = dict(_GENESIS_CASE_OPTIONAL_FIELDS(),
                                **_GENESIS_CASE_LENIENT_FIELDS())
     else:
-        mandatory_fields = {'id': _id,}
+        mandatory_fields = {'id': _id, }
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                **_GENESIS_CASE_OPTIONAL_FIELDS(),
                                **_GENESIS_CASE_LENIENT_FIELDS())
@@ -1159,23 +1225,26 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if 'realm' in val:
-         if val['realm'] == "cde":
-             errs.append(('realm', ValueError(n_("CdE not supported for genesis."))))
-         if val['realm'] == "assembly":
-             errs.append(('realm', ValueError(n_("Assembly not supported for genesis."))))
-         elif val['realm'] =="ml":
-             pass
-         elif val['realm'] == "event":
-             if creation:
-                 interesting = _GENESIS_CASE_STRICT_FIELDS()
-                 uninteresting = dict(_GENESIS_CASE_COMMON_FIELDS(),
-                                      **_GENESIS_CASE_OPTIONAL_FIELDS())
-                 val, e = _examine_dictionary_fields(
-                     val, interesting, uninteresting, _convert=_convert)
-                 errs.extend(e)
-         else:
-             errs.append(('realm', ValueError(n_("Invalid target realm."))))
+        if val['realm'] == "cde":
+            errs.append(
+                ('realm', ValueError(n_("CdE not supported for genesis."))))
+        if val['realm'] == "assembly":
+            errs.append(('realm',
+                         ValueError(n_("Assembly not supported for genesis."))))
+        elif val['realm'] == "ml":
+            pass
+        elif val['realm'] == "event":
+            if creation:
+                interesting = _GENESIS_CASE_STRICT_FIELDS()
+                uninteresting = dict(_GENESIS_CASE_COMMON_FIELDS(),
+                                     **_GENESIS_CASE_OPTIONAL_FIELDS())
+                val, e = _examine_dictionary_fields(
+                    val, interesting, uninteresting, _convert=_convert)
+                errs.extend(e)
+        else:
+            errs.append(('realm', ValueError(n_("Invalid target realm."))))
     return val, errs
+
 
 @_addvalidator
 def _input_file(val, argname=None, *, _convert=True):
@@ -1192,6 +1261,7 @@ def _input_file(val, argname=None, *, _convert=True):
         return None, [(argname, ValueError(n_("Empty FileStorage.")))]
     return blob, []
 
+
 @_addvalidator
 def _profilepic(val, argname=None, *, _convert=True):
     """
@@ -1203,9 +1273,9 @@ def _profilepic(val, argname=None, *, _convert=True):
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    if len(val) < 2**10:
+    if len(val) < 2 ** 10:
         errs.append((argname, ValueError(n_("Too small."))))
-    if len(val) > 2**17:
+    if len(val) > 2 ** 17:
         errs.append((argname, ValueError(n_("Too big."))))
     mime = magic.from_buffer(val, mime=True)
     if mime not in ("image/jpeg", "image/jpg", "image/png"):
@@ -1219,6 +1289,7 @@ def _profilepic(val, argname=None, *, _convert=True):
     if width * height < 5000:
         errs.append((argname, ValueError(n_("Resolution too small."))))
     return val, errs
+
 
 @_addvalidator
 def _pdffile(val, argname=None, *, _convert=True):
@@ -1260,6 +1331,7 @@ def _period(val, argname=None, *, _convert=True):
     return _examine_dictionary_fields(val, {'id': _id}, optional_fields,
                                       _convert=_convert)
 
+
 @_addvalidator
 def _expuls(val, argname=None, *, _convert=True):
     """
@@ -1279,6 +1351,7 @@ def _expuls(val, argname=None, *, _convert=True):
     return _examine_dictionary_fields(val, {'id': _id}, optional_fields,
                                       _convert=_convert)
 
+
 _LASTSCHRIFT_COMMON_FIELDS = lambda: {
     'amount': _non_negative_decimal,
     'iban': _iban,
@@ -1290,6 +1363,8 @@ _LASTSCHRIFT_OPTIONAL_FIELDS = lambda: {
     'granted_at': _datetime,
     'revoked_at': _datetime_or_None,
 }
+
+
 @_addvalidator
 def _lastschrift(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1317,6 +1392,7 @@ def _lastschrift(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     return val, errs
+
 
 @_addvalidator
 def _iban(val, argname=None, *, _convert=True):
@@ -1355,6 +1431,7 @@ def _iban(val, argname=None, *, _convert=True):
             errs.append((argname, ValueError(n_("Invalid checksum."))))
     return val, errs
 
+
 _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
     'amount': _decimal,
     'status': _enum_lastschrifttransactionstati,
@@ -1362,6 +1439,8 @@ _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
     'processed_at': _datetime_or_None,
     'tally': _decimal_or_None,
 }
+
+
 @_addvalidator
 def _lastschrift_transaction(val, argname=None, *, creation=False,
                              _convert=True):
@@ -1392,6 +1471,7 @@ def _lastschrift_transaction(val, argname=None, *, creation=False,
         val, mandatory_fields, optional_fields, _convert=_convert)
     return val, errs
 
+
 _SEPA_TRANSACTIONS_FIELDS = {
     'issued_at': _datetime,
     'lastschrift_id': _id,
@@ -1411,6 +1491,8 @@ _SEPA_TRANSACTIONS_LIMITS = {
     'mandate_reference': 35,
     'unique_id': 35,
 }
+
+
 @_addvalidator
 def _sepa_transactions(val, argname=None, *, _convert=True):
     """
@@ -1449,6 +1531,7 @@ def _sepa_transactions(val, argname=None, *, _convert=True):
         ret.append(entry)
     return ret, errs
 
+
 _SEPA_META_FIELDS = {
     'message_id': _str,
     'total_sum': _decimal,
@@ -1466,10 +1549,12 @@ _SEPA_SENDER_FIELDS = {
 }
 _SEPA_META_LIMITS = {
     'message_id': 35,
-    ## 'name': 70, easier to check by hand
-    ## 'address': 70, has to be checked by hand
+    # 'name': 70, easier to check by hand
+    # 'address': 70, has to be checked by hand
     'glaeubigerid': 35,
 }
+
+
 @_addvalidator
 def _sepa_meta(val, argname=None, *, _convert=True):
     """
@@ -1517,6 +1602,7 @@ def _sepa_meta(val, argname=None, *, _convert=True):
         return None, errs
     return val, errs
 
+
 @_addvalidator
 def _safe_str(val, argname=None, *, _convert=True):
     """This allows alpha-numeric, whitespace and known good others.
@@ -1538,6 +1624,7 @@ def _safe_str(val, argname=None, *, _convert=True):
         return None, errs
     return val, errs
 
+
 @_addvalidator
 def _meta_info(val, keys, argname=None, *, _convert=True):
     """
@@ -1557,10 +1644,13 @@ def _meta_info(val, keys, argname=None, *, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     return val, errs
 
+
 _INSTITUTION_COMMON_FIELDS = lambda: {
     'title': _str,
     'moniker': _str,
 }
+
+
 @_addvalidator
 def _institution(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1580,10 +1670,11 @@ def _institution(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _INSTITUTION_COMMON_FIELDS()
         optional_fields = {}
     else:
-        mandatory_fields = {'id': _id,}
+        mandatory_fields = {'id': _id, }
         optional_fields = _INSTITUTION_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
+
 
 _PAST_EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -1592,6 +1683,8 @@ _PAST_EVENT_COMMON_FIELDS = lambda: {
     'tempus': _date,
     'description': _str_or_None,
 }
+
+
 @_addvalidator
 def _past_event(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1611,10 +1704,11 @@ def _past_event(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _PAST_EVENT_COMMON_FIELDS()
         optional_fields = {}
     else:
-        mandatory_fields = {'id': _id,}
+        mandatory_fields = {'id': _id, }
         optional_fields = _PAST_EVENT_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
+
 
 _EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -1640,6 +1734,8 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'lodge_field': _id_or_None,
     'reserve_field': _id_or_None,
 }
+
+
 @_addvalidator
 def _event(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1666,18 +1762,19 @@ def _event(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    if ('registration_soft_limit' in val and 'registration_hard_limit' in val):
+    if 'registration_soft_limit' in val and 'registration_hard_limit' in val:
         if (val['registration_soft_limit']
                 and val['registration_hard_limit']
                 and (val['registration_soft_limit']
                      > val['registration_hard_limit'])):
             errs.append(("registration_soft_limit",
-                         ValueError(n_("Must be before or equal to hard limit."))))
+                         ValueError(
+                             n_("Must be before or equal to hard limit."))))
         if val.get('registration_start') and (
                 val['registration_soft_limit'] and
-                    val['registration_start'] > val['registration_soft_limit']
+                val['registration_start'] > val['registration_soft_limit']
                 or val['registration_hard_limit'] and
-                    val['registration_start'] > val['registration_hard_limit']):
+                val['registration_start'] > val['registration_hard_limit']):
             errs.append(("registration_start",
                          ValueError(n_("Must be before hard and soft limit."))))
     if 'orgas' in val:
@@ -1735,6 +1832,7 @@ def _event(val, argname=None, *, creation=False, _convert=True):
             val['fields'] = newfields
     return val, errs
 
+
 _EVENT_PART_COMMON_FIELDS = {
     'title': _str,
     'shortname': _str,
@@ -1743,6 +1841,8 @@ _EVENT_PART_COMMON_FIELDS = {
     'fee': _decimal,
     'tracks': _any,
 }
+
+
 @_addvalidator
 def _event_part(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1764,8 +1864,9 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
     else:
         mandatory_fields = {}
         optional_fields = _EVENT_PART_COMMON_FIELDS
-    val, errs = _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    val, errs = _examine_dictionary_fields(val, mandatory_fields,
+                                           optional_fields,
+                                           _convert=_convert)
     if errs:
         return val, errs
     if 'tracks' in val:
@@ -1793,12 +1894,15 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
             val['tracks'] = newtracks
     return val, errs
 
+
 _EVENT_TRACK_COMMON_FIELDS = {
     'title': _str,
     'shortname': _str,
     'num_choices': _int,
     'sortkey': _int,
 }
+
+
 @_addvalidator
 def _event_track(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1826,11 +1930,14 @@ def _event_track(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     return val, errs
 
+
 _EVENT_FIELD_COMMON_FIELDS = lambda extra_suffix: {
     'kind{}'.format(extra_suffix): _str,
     'association{}'.format(extra_suffix): _enum_fieldassociations,
     'entries{}'.format(extra_suffix): _any,
 }
+
+
 @_addvalidator
 def _event_field(val, argname=None, *, creation=False, _convert=True,
                  extra_suffix=''):
@@ -1904,11 +2011,14 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
             val[entries_key] = entries
     return val, errs
 
+
 _PAST_COURSE_COMMON_FIELDS = lambda: {
     'nr': _str,
     'title': _str,
     'description': _str_or_None,
 }
+
+
 @_addvalidator
 def _past_course(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1928,11 +2038,12 @@ def _past_course(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = dict(_PAST_COURSE_COMMON_FIELDS(), pevent_id=_id)
         optional_fields = {}
     else:
-        ## no pevent_id, since the associated event should be fixed
+        # no pevent_id, since the associated event should be fixed
         mandatory_fields = {'id': _id}
         optional_fields = _PAST_COURSE_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
+
 
 _COURSE_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -1948,6 +2059,8 @@ _COURSE_OPTIONAL_FIELDS = {
     'segments': _any,
     'active_segments': _any,
 }
+
+
 @_addvalidator
 def _course(val, argname=None, *, creation=False, _convert=True):
     """
@@ -1967,7 +2080,7 @@ def _course(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = dict(_COURSE_COMMON_FIELDS(), event_id=_id)
         optional_fields = _COURSE_OPTIONAL_FIELDS
     else:
-        ## no event_id, since the associated event should be fixed
+        # no event_id, since the associated event should be fixed
         mandatory_fields = {'id': _id}
         optional_fields = dict(_COURSE_COMMON_FIELDS(), fields=_any,
                                **_COURSE_OPTIONAL_FIELDS)
@@ -1976,7 +2089,8 @@ def _course(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if 'segments' in val:
-        oldsegments, e = _iterable(val['segments'], 'segments', _convert=_convert)
+        oldsegments, e = _iterable(val['segments'], 'segments',
+                                   _convert=_convert)
         if e:
             errs.extend(e)
         else:
@@ -1990,7 +2104,7 @@ def _course(val, argname=None, *, creation=False, _convert=True):
             val['segments'] = segments
     if 'active_segments' in val:
         oldsegments, e = _iterable(val['active_segments'], 'active_segments',
-                                _convert=_convert)
+                                   _convert=_convert)
         if e:
             errs.extend(e)
         else:
@@ -2005,9 +2119,11 @@ def _course(val, argname=None, *, creation=False, _convert=True):
     if 'segments' in val and 'active_segments' in val:
         if not val['active_segments'] <= val['segments']:
             errs.append(('segments',
-                         ValueError(n_("Must be a superset of active segments."))))
-    ## the check of fields is delegated to _event_associated_fields
+                         ValueError(
+                             n_("Must be a superset of active segments."))))
+    # the check of fields is delegated to _event_associated_fields
     return val, errs
+
 
 _REGISTRATION_COMMON_FIELDS = lambda: {
     'mixed_lodging': _bool,
@@ -2023,6 +2139,8 @@ _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'payment': _date_or_None,
     'checkin': _datetime_or_None,
 }
+
+
 @_addvalidator
 def _registration(val, argname=None, *, creation=False, _convert=True):
     """
@@ -2040,12 +2158,12 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        ## creation does not allow fields for sake of simplicity
+        # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(_REGISTRATION_COMMON_FIELDS(),
                                 persona_id=_id, event_id=_id)
         optional_fields = _REGISTRATION_OPTIONAL_FIELDS()
     else:
-        ## no event_id/persona_id, since associations should be fixed
+        # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {'id': _id}
         optional_fields = dict(
             _REGISTRATION_COMMON_FIELDS(), fields=_any,
@@ -2079,15 +2197,16 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
             for anid, track in oldtracks.items():
                 anid, e = _id(anid, 'tracks', _convert=_convert)
                 track, ee = _registration_track_or_None(track, 'tracks',
-                                                      _convert=_convert)
+                                                        _convert=_convert)
                 if e or ee:
                     errs.extend(e)
                     errs.extend(ee)
                 else:
                     newtracks[anid] = track
             val['tracks'] = newtracks
-    ## the check of fields is delegated to _event_associated_fields
+    # the check of fields is delegated to _event_associated_fields
     return val, errs
+
 
 @_addvalidator
 def _registration_part(val, argname=None, *, _convert=True):
@@ -2113,6 +2232,7 @@ def _registration_part(val, argname=None, *, _convert=True):
     return _examine_dictionary_fields(val, {}, optional_fields,
                                       _convert=_convert)
 
+
 @_addvalidator
 def _registration_track(val, argname=None, *, _convert=True):
     """This validator has only optional fields. Normally we would have an
@@ -2135,7 +2255,7 @@ def _registration_track(val, argname=None, *, _convert=True):
         'choices': _any,
     }
     val, errs = _examine_dictionary_fields(val, {}, optional_fields,
-                                      _convert=_convert)
+                                           _convert=_convert)
     if 'choices' in val:
         oldchoices, e = _iterable(val['choices'], 'choices', _convert=_convert)
         if e:
@@ -2151,6 +2271,7 @@ def _registration_track(val, argname=None, *, _convert=True):
                     newchoices.append(choice)
             val['choices'] = newchoices
     return val, errs
+
 
 @_addvalidator
 def _event_associated_fields(val, argname=None, fields=None, association=None,
@@ -2190,8 +2311,10 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
         if fields[field_id]['entries'] is not None and val[field] is not None:
             if not any(str(raw[field]) == x
                        for x, _ in fields[field_id]['entries']):
-                errs.append((field, ValueError(n_("Entry not in definition list."))))
+                errs.append(
+                    (field, ValueError(n_("Entry not in definition list."))))
     return val, errs
+
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
@@ -2199,6 +2322,8 @@ _LODGEMENT_COMMON_FIELDS = lambda: {
     'reserve': _int,
     'notes': _str_or_None
 }
+
+
 @_addvalidator
 def _lodgement(val, argname=None, *, creation=False, _convert=True):
     """
@@ -2218,12 +2343,13 @@ def _lodgement(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = dict(_LODGEMENT_COMMON_FIELDS(), event_id=_id)
         optional_fields = {}
     else:
-        ## no event_id, since the associated event should be fixed
+        # no event_id, since the associated event should be fixed
         mandatory_fields = {'id': _id}
         optional_fields = dict(_LODGEMENT_COMMON_FIELDS(), fields=_any)
-    ## the check of fields is delegated to _event_associated_fields
+    # the check of fields is delegated to _event_associated_fields
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
+
 
 @_addvalidator
 def _questionnaire(val, argname=None, *, _convert=True):
@@ -2258,6 +2384,7 @@ def _questionnaire(val, argname=None, *, _convert=True):
                 ret.append(value)
     return ret, errs
 
+
 @_addvalidator
 def _serialized_event_upload(val, argname=None, *, _convert=True):
     """Check an event data set for import after offline usage.
@@ -2285,7 +2412,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "serialized_event"
-    ## First a basic check
+    # First a basic check
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -2317,10 +2444,10 @@ def _serialized_event(val, argname=None, *, _convert=True):
         val, mandatory_fields, {'core.personas': _mapping}, _convert=_convert)
     if errs:
         return val, errs
-    ## Second a thorough investigation
-    ##
-    ## We reuse the existing validators, but have to augment them since the
-    ## data looks a bit different.
+    # Second a thorough investigation
+    #
+    # We reuse the existing validators, but have to augment them since the
+    # data looks a bit different.
     table_validators = {
         'event.events': _event,
         'event.event_parts': _augment_dict_validator(
@@ -2359,13 +2486,14 @@ def _serialized_event(val, argname=None, *, _convert=True):
             _empty_dict, {'id': _id, 'event_id': _id, 'pos': _int,
                           'field_id': _id_or_None, 'title': _str_or_None,
                           'info': _str_or_None, 'input_size': _int_or_None,
-                          'readonly': _bool_or_None,}),
+                          'readonly': _bool_or_None, }),
     }
     for table, validator in table_validators.items():
         new_table = {}
         for key, entry in val[table].items():
             new_entry, e = validator(entry, table, _convert=_convert)
-            new_key, ee = _int(key, table, _convert=True) # fix JSON key restriction
+            new_key, ee = _int(key, table,
+                               _convert=True)  # fix JSON key restriction
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
@@ -2374,11 +2502,12 @@ def _serialized_event(val, argname=None, *, _convert=True):
         val[table] = new_table
     if errs:
         return None, errs
-    ## Third a consistency check
+    # Third a consistency check
     if len(val['event.events']) != 1:
         errs.append(('event.events',
                      ValueError(n_("Only a single event is supported."))))
-    if len(val['event.events']) and val['id'] != val['event.events'][val['id']]['id']:
+    if (len(val['event.events'])
+            and val['id'] != val['event.events'][val['id']]['id']):
         errs.append(('event.events', ValueError(n_("Wrong event specified."))))
     for k, v in val.items():
         if k not in ('id', 'CDEDB_EXPORT_EVENT_VERSION', 'timestamp', 'kind'):
@@ -2388,6 +2517,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
     if errs:
         val = None
     return val, errs
+
 
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -2410,6 +2540,8 @@ _MAILINGLIST_OPTIONAL_FIELDS = {
     'moderators': _any,
     'whitelist': _any,
 }
+
+
 @_addvalidator
 def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     """
@@ -2440,7 +2572,7 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                                val.get('assembly_id')) if x)
     if specials > 1:
         error = ValueError(n_("Only one allowed of gateway, event_id and "
-                             "assembly_id."))
+                              "assembly_id."))
         errs.append(('gateway', error))
         errs.append(('event_id', error))
         errs.append(('assembly_id', error))
@@ -2472,6 +2604,7 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                 val[key] = newarray
     return val, errs
 
+
 _ASSEMBLY_COMMON_FIELDS = lambda: {
     'title': _str,
     'description': _str_or_None,
@@ -2481,6 +2614,8 @@ _ASSEMBLY_COMMON_FIELDS = lambda: {
 _ASSEMBLY_OPTIONAL_FIELDS = {
     'is_active': _bool,
 }
+
+
 @_addvalidator
 def _assembly(val, argname=None, *, creation=False, _convert=True):
     """
@@ -2500,11 +2635,12 @@ def _assembly(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
         optional_fields = _ASSEMBLY_OPTIONAL_FIELDS
     else:
-        mandatory_fields = {'id': _id,}
+        mandatory_fields = {'id': _id, }
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
+
 
 _BALLOT_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -2522,6 +2658,8 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
     'is_tallied': _bool,
     'candidates': _any
 }
+
+
 @_addvalidator
 def _ballot(val, argname=None, *, creation=False, _convert=True):
     """
@@ -2552,19 +2690,19 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
         if val['vote_begin'] <= now():
             errs.append(
                 ("vote_begin", ValueError(n_("Mustn't be in the past.")))
-                )
+            )
         if 'vote_end' in val:
             if val['vote_end'] <= val['vote_begin']:
                 errs.append(
                     ("vote_end", ValueError(n_(
                         "Mustn't be before start of voting period.")))
-                    )
+                )
             if 'vote_extension_end' in val and val['vote_extension_end']:
                 if val['vote_extension_end'] <= val['vote_end']:
                     errs.append(
                         ("vote_extension_end", ValueError(n_(
                             "Mustn't be before end of voting period.")))
-                        )
+                    )
     if 'candidates' in val:
         oldcandidates, e = _mapping(val['candidates'], 'candidates',
                                     _convert=_convert)
@@ -2588,10 +2726,13 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
             val['candidates'] = newcandidates
     return val, errs
 
+
 _BALLOT_CANDIDATE_COMMON_FIELDS = {
     'description': _str,
     'moniker': _identifier,
 }
+
+
 @_addvalidator
 def _ballot_candidate(val, argname=None, *, creation=False, _convert=True):
     """
@@ -2621,6 +2762,7 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True):
         errs.append(("moniker", ValueError(n_("Mustn't be the bar moniker."))))
     return val, errs
 
+
 _ASSEMBLY_ATTACHMENT_COMMON_FIELDS = {
     "title": _str,
     "filename": _identifier,
@@ -2629,6 +2771,8 @@ _ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS = {
     "assembly_id": _id,
     "ballot_id": _id,
 }
+
+
 @_addvalidator
 def _assembly_attachment(val, argname=None, *, _convert=True):
     """
@@ -2654,6 +2798,7 @@ def _assembly_attachment(val, argname=None, *, _convert=True):
     if errs:
         return None, errs
     return val, errs
+
 
 @_addvalidator
 def _vote(val, argname=None, ballot=None, *, _convert=True):
@@ -2684,8 +2829,8 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
     if errs:
         return None, errs
     if ballot['votes'] and '>' in val:
-        ## ordinary voting has more constraints
-        ## if no strictly greater we have a valid abstention
+        # ordinary voting has more constraints
+        # if no strictly greater we have a valid abstention
         groups = val.split('>')
         if len(groups) > 2:
             errs.append((argname, ValueError(n_("Too many levels."))))
@@ -2698,6 +2843,7 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
         if errs:
             return None, errs
     return val, errs
+
 
 @_addvalidator
 def _regex(val, argname=None, *, _convert=True):
@@ -2716,6 +2862,7 @@ def _regex(val, argname=None, *, _convert=True):
     except Exception as e:
         return None, [(argname, e)]
     return val, errs
+
 
 @_addvalidator
 def _query_input(val, argname=None, *, spec=None, allow_empty=False,
@@ -2751,20 +2898,20 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     constraints = []
     order = []
     for field, validator in spec.items():
-        ## First the selection of fields of interest
+        # First the selection of fields of interest
         selected, e = _bool(val.get("qsel_{}".format(field), "False"), field,
                             _convert=_convert)
         errs.extend(e)
         if selected:
             fields_of_interest.append(field)
 
-        ## Second the constraints (filters)
-        ## Get operator
+        # Second the constraints (filters)
+        # Get operator
         operator, e = _enum_queryoperators_or_None(
             val.get("qop_{}".format(field)), field, _convert=_convert)
         errs.extend(e)
         if e or not operator:
-            ## Skip if invalid or empty operator
+            # Skip if invalid or empty operator
             continue
         if operator not in VALID_QUERY_OPERATORS[validator]:
             errs.append((field,
@@ -2774,21 +2921,21 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
             constraints.append((field, operator, None))
             continue
 
-        ## Get value
+        # Get value
         value = val.get("qval_{}".format(field))
         if value is None or value == "":
-            ## No value supplied means no constraint
-            ## TODO: make empty string a valid constraint
+            # No value supplied means no constraint
+            # TODO: make empty string a valid constraint
             continue
 
         if operator in MULTI_VALUE_OPERATORS:
             values = escaped_split(value, separator, escape)
             value = []
             for v in values:
-                ## Validate every single value
+                # Validate every single value
                 vv, e = getattr(current_module,
                                 "_{}_or_None".format(validator))(
-                                    v, field, _convert=_convert)
+                    v, field, _convert=_convert)
                 errs.extend(e)
                 if e or not vv:
                     continue
@@ -2815,7 +2962,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     if not fields_of_interest and not allow_empty:
         errs.append((argname, ValueError(n_("Selection may not be empty."))))
 
-    ## Third the ordering
+    # Third the ordering
     for postfix in ("primary", "secondary", "tertiary"):
         if "qord_" + postfix not in val:
             continue
@@ -2830,6 +2977,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     if errs:
         return None, errs
     return Query(None, spec, fields_of_interest, constraints, order), errs
+
 
 @_addvalidator
 def _query(val, argname=None, *, _convert=None):
@@ -2847,23 +2995,23 @@ def _query(val, argname=None, *, _convert=None):
     """
     if not isinstance(val, Query):
         return None, [(argname, TypeError(n_("Not a Query.")))]
-    ## scope
+    # scope
     _, errs = _identifier(val.scope, "scope", _convert=False)
     if not val.scope.startswith("qview_"):
         errs.append(("scope", ValueError(n_("Must start with 'qview_'."))))
-    ## spec
+    # spec
     for field, validator in val.spec.items():
         _, e = _csv_identifier(field, "spec", _convert=False)
         errs.extend(e)
         _, e = _printable_ascii(validator, "spec", _convert=False)
         errs.extend(e)
-    ## fields_of_interest
+    # fields_of_interest
     for field in val.fields_of_interest:
         _, e = _csv_identifier(field, "fields_of_interest", _convert=False)
         errs.extend(e)
     if not val.fields_of_interest:
         errs.append(("fields_of_interest", ValueError(n_("Mustn't be empty."))))
-    ## constraints
+    # constraints
     for x in val.constraints:
         try:
             field, operator, value = x
@@ -2894,7 +3042,7 @@ def _query(val, argname=None, *, _convert=None):
             _, e = getattr(current_module, "_{}".format(val.spec[field]))(
                 value, "constraints/{}".format(field), _convert=False)
             errs.extend(e)
-    ## order
+    # order
     for entry in val.order:
         entry, e = _iterable(entry, 'order', _convert=False)
         errs.extend(e)
@@ -2915,18 +3063,20 @@ def _query(val, argname=None, *, _convert=None):
         val = copy.deepcopy(val)
     return val, errs
 
+
 def _enum_validator_maker(anenum, name=None, internal=False):
     """Automate validator creation for enums.
 
     Since this is pretty generic we do this all in one go.
 
-    :type anenum: enum
+    :type anenum: Enum
     :type name: str or None
     :param name: If given determines the name of the validator, otherwise the
       name is inferred from the name of the enum.
     :type internal: bool
     :param internal: If True the validator is not added to the module.
     """
+
     def the_validator(val, argname=None, *, _convert=True):
         """
         :type val: object
@@ -2961,8 +3111,10 @@ def _enum_validator_maker(anenum, name=None, internal=False):
         setattr(current_module, the_validator.__name__, the_validator)
     return the_validator
 
+
 for oneenum in ALL_ENUMS:
     _enum_validator_maker(oneenum)
+
 
 def _infinite_enum_validator_maker(anenum, name=None):
     """Automate validator creation for infinity enums.
@@ -2972,12 +3124,13 @@ def _infinite_enum_validator_maker(anenum, name=None):
     For further information about infinite enums see
     :py:func:`cdedb.common.infinite_enum`.
 
-    :type anenum: enum
+    :type anenum: Enum
     :type name: str or None
     :param name: If given determines the name of the validator, otherwise the
       name is inferred from the name of the enum.
     """
     raw_validator = _enum_validator_maker(anenum, internal=True)
+
     def the_validator(val, argname=None, *, _convert=True):
         """
         :type val: object
@@ -3021,17 +3174,20 @@ def _infinite_enum_validator_maker(anenum, name=None):
     _addvalidator(the_validator)
     setattr(current_module, the_validator.__name__, the_validator)
 
+
 for oneenum in ALL_INFINITE_ENUMS:
     _infinite_enum_validator_maker(oneenum)
-    
-##
-## Above is the real stuff
-##
+
+
+#
+# Above is the real stuff
+#
 
 def _create_assert_valid(fun):
     """
     :type fun: callable
     """
+
     @functools.wraps(fun)
     def new_fun(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
@@ -3040,23 +3196,29 @@ def _create_assert_valid(fun):
             e.args = ("{} ({})".format(e.args[0], errs[0][0]),) + e.args[1:]
             raise e
         return val
+
     return new_fun
+
 
 def _create_is_valid(fun):
     """
     :type fun: callable
     """
+
     @functools.wraps(fun)
     def new_fun(*args, **kwargs):
         kwargs['_convert'] = False
         _, errs = fun(*args, **kwargs)
         return not errs
+
     return new_fun
+
 
 def _create_check_valid(fun):
     """
     :type fun: callable
     """
+
     @functools.wraps(fun)
     def new_fun(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
@@ -3064,8 +3226,10 @@ def _create_check_valid(fun):
             _LOGGER.debug("VALIDATION ERROR for '{}' with input {}, {}.".format(
                 fun.__name__, args, kwargs))
             return None, errs
-        return  val, errs
+        return val, errs
+
     return new_fun
+
 
 def _allow_None(fun):
     """Wrap a validator to allow ``None`` as valid input. This causes falsy
@@ -3073,6 +3237,7 @@ def _allow_None(fun):
 
     :type fun: callable
     """
+
     @functools.wraps(fun)
     def new_fun(val, *args, **kwargs):
         if val is None:
@@ -3080,7 +3245,7 @@ def _allow_None(fun):
         else:
             try:
                 retval, errs = fun(val, *args, **kwargs)
-            except: ## we need to catch everything
+            except:  # we need to catch everything
                 if kwargs.get('_convert', True) and not val:
                     return None, []
                 else:
@@ -3088,7 +3253,9 @@ def _allow_None(fun):
             if errs and kwargs.get('_convert', True) and not val:
                 return None, []
             return retval, errs
+
     return new_fun
+
 
 def _create_validators(funs):
     """This instantiates the validators used in the rest of the code.
@@ -3110,5 +3277,6 @@ def _create_validators(funs):
                 _create_assert_valid(fun_or_None))
         setattr(current_module, "check{}_or_None".format(fun.__name__),
                 _create_check_valid(fun_or_None))
+
 
 _create_validators(_ALL)
