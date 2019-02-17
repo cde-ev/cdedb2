@@ -20,16 +20,35 @@
     <h3>{% trans -%}Printables{%- endtrans %}</h3>
     <table class="table table-slim">
         <tbody>
-            {% for name, endpoint in [(gettext("Nametags"), 'event/download_nametags'),
-                                      (gettext("Course Puzzle"),'event/download_course_puzzle'),
-                                      (gettext("Lodgement Puzzle"),'event/download_lodgement_puzzle'),
-                                      (gettext("Participant List"),'event/download_participant_list'),
-                                      (gettext("Course Attendee Lists"),'event/download_course_lists'),
-                                      (gettext("Lodgement Inhabitant Lists"),'event/download_lodgement_lists')] %}
+            {% for name, endpoint, additional_params in [
+                (gettext("Nametags"), 'event/download_nametags', {}),
+                (gettext("Course Puzzle"),'event/download_course_puzzle', {}),
+                (gettext("Lodgement Puzzle"),'event/download_lodgement_puzzle', {}),
+                (gettext("Participant List"),'event/download_participant_list', {}),
+                (gettext("Participant List (Landscape)"),'event/download_participant_list', {'landscape': True}),
+                (gettext("Participant List (Orgas only)"),'event/download_participant_list', {'orgas_only': True}),
+                (gettext("Participant List (Orgas only) (Landscape)"),'event/download_participant_list',
+                    {'orgas_only': True, 'landscape': True}),
+                (gettext("Course Attendee Lists"),'event/download_course_lists', {}),
+                (gettext("Lodgement Inhabitant Lists"),'event/download_lodgement_lists', {}),
+            ] %}
                 <tr>
-                    <td>{{ name }}</td>
-                    <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
-                    <td>{{ util.href(cdedblink(endpoint, {'runs': 2}), gettext("PDF"), icon='file') }}</td>
+                    <td>
+                        {{ name|e }}
+                        {% if endpoint in landscape %}
+                            <br /> Landscape
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set params = {'runs': 0} %}
+                        {% do params.update(additional_params) %}
+                        {{ util.href(cdedblink(endpoint, params), gettext("LaTeX"), icon='download') }}
+                    </td>
+                    <td>
+                        {% set params = {'runs': 2} %}
+                        {% do params.update(additional_params) %}
+                        {{ util.href(cdedblink(endpoint, params), gettext("PDF"), icon='file') }}
+                    </td>
                 </tr>
             {% endfor %}
 

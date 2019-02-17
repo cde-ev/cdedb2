@@ -1596,9 +1596,11 @@ class EventFrontend(AbstractUserFrontend):
                 n_("lodgement_lists.tex"), runs)
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
+    @REQUESTdata(("runs", "single_digit_int"), ("landscape", "bool"),
+                 ("orgas_only", "bool"))
     @event_guard()
-    def download_participant_list(self, rs, event_id, runs):
+    def download_participant_list(self, rs, event_id, runs, landscape,
+                                  orgas_only):
         """Create list to send to all participants."""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
@@ -1617,7 +1619,10 @@ class EventFrontend(AbstractUserFrontend):
                 personas[registrations[anid]['persona_id']]))
         tex = self.fill_template(rs, "tex", "participant_list", {
             'courses': courses, 'registrations': registrations,
-            'personas': personas, 'ordered': ordered})
+            'personas': personas, 'ordered': ordered,
+            'orientation': "landscape" if landscape else "portrait",
+            'orgas_only': orgas_only,
+        })
         return self.serve_latex_document(rs, tex, "participant_list", runs)
 
     @access("event")
