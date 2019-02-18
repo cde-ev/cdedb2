@@ -12,9 +12,11 @@
 {{ util.breadcrumb_link(cdedblink("assembly/view_log"), gettext("Log"), active=True) }}
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-info btn-sm", icon="search") }}
-    </div>
+    {% if log %}
+        <div class="p">
+            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
+        </div>
+    {% endif %}
     <table class="table table-condensed table-hover">
         <thead>
         <tr>
@@ -53,7 +55,7 @@
                         –
                     {% endif %}
                 </td>
-                <td>{{ entry['additional_info'] }}</td>
+                <td>{{ gettext(entry['additional_info']) }}</td>
             </tr>
         {% endfor %}
         </tbody>

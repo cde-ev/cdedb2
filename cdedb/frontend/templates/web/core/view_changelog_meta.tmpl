@@ -12,9 +12,11 @@
 {{ util.breadcrumb_link(cdedblink("core/view_changelog_meta"), "Userdata Log", active="True") }}
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-info btn-sm", icon="search") }}
-    </div>
+    {% if log %}
+        <div class="p">
+            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
+        </div>
+    {% endif %}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
@@ -63,7 +65,7 @@
                         {% endif %}
                     </td>
                     <td>{{ entry['generation'] }}</td>
-                    <td>{{ entry['change_note'] }}</td>
+                    <td>{{ gettext(entry['change_note']) }}</td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -12,9 +12,11 @@
 {{ util.breadcrumb_link(cdedblink("cde/view_finance_log"), gettext("Finance Log"), active="True") }}
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-info btn-sm", icon="search") }}
-    </div>
+    {% if log %}
+        <div class="p">
+            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
+        </div>
+    {% endif %}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
@@ -50,7 +52,7 @@
                     </td>
                     <td>{{ entry['delta']|money }}</td>
                     <td>{{ entry['new_balance']|money }}</td>
-                    <td>{{ entry['additional_info'] }}</td>
+                    <td>{{ gettext(entry['additional_info']) }}</td>
                     <td>{{ entry['members'] }}</td>
                     <td>{{ entry['total']|money }}</td>
                 </tr>
