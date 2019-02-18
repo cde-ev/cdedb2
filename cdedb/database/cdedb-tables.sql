@@ -683,6 +683,8 @@ CREATE TABLE event.registrations (
         checkin                 timestamp WITH TIME ZONE DEFAULT NULL,
         -- foto consent (documentation, password protected gallery; NULL while unknown)
         foto_consent            boolean,
+        -- consent to information being included in participant list send to all participants.
+        list_consent            boolean,
 
         -- only basic data should be defined here and everything else will
         -- be handeled via additional fields

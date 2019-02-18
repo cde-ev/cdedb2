@@ -1899,7 +1899,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         tracks = event['tracks']
         standard_params = (("mixed_lodging", "bool"), ("foto_consent", "bool"),
-                           ("notes", "str_or_None"))
+                           ("notes", "str_or_None"), ("list_consent", "bool"))
         if parts is None:
             standard_params += (("parts", "[int]"),)
         standard = request_extractor(rs, standard_params)
@@ -1958,6 +1958,7 @@ class EventFrontend(AbstractUserFrontend):
         registration = {
             'mixed_lodging': standard['mixed_lodging'],
             'foto_consent': standard['foto_consent'],
+            'list_consent': standard['list_consent'],
             'notes': standard['notes'],
             'parts': reg_parts,
             'tracks': reg_tracks,
@@ -2412,7 +2413,7 @@ class EventFrontend(AbstractUserFrontend):
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
             ("reg.payment", "date_or_None"), ("reg.parental_agreement", "bool"),
             ("reg.mixed_lodging", "bool"), ("reg.checkin", "datetime_or_None"),
-            ("reg.foto_consent", "bool"))
+            ("reg.foto_consent", "bool"), ("reg.list_consent", "bool"))
         part_params = []
         for part_id in event['parts']:
             part_params.extend((

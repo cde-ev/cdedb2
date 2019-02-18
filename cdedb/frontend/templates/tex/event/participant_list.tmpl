@@ -53,7 +53,7 @@
 			\hline
 		\endhead
     <<% set participant = enums['RegistrationPartStati'].participant -%>>
-    <<% for registration_id in ordered if orgas_only or registrations[registration_id]['foto_consent'] -%>>
+    <<% for registration_id in ordered if orgas_only or registrations[registration_id]['list_consent'] -%>>
         <<% with registration = registrations[registration_id] %>>
             % Vorname
             <<< personas[registration['persona_id']]['given_names']|te >>> &

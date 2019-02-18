@@ -160,6 +160,12 @@
                                        label=gettext("Foto Consent")) }}
             </div>
         {% endcall %}
+        {% call form_input_optional("reg.list_consent", anid="input_reg_list_consent") %}
+            <div class="checkbox">
+                {{ util.input_checkbox(name="reg.list_consent", anid="input_reg_list_consent",
+                                       label=gettext("Participant List Consent")) }}
+            </div>
+        {% endcall %}
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% set course_entries = courses|xdictsort('nr', pad=True)
                                     |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}

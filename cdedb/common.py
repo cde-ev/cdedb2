@@ -1376,7 +1376,7 @@ COURSE_SEGMENT_FIELDS = ("course_id", "track_id", "is_active")
 REGISTRATION_FIELDS = (
     "id", "persona_id", "event_id", "notes", "orga_notes", "payment",
     "parental_agreement", "mixed_lodging", "checkin", "foto_consent",
-    "fields", "real_persona_id")
+    "list_consent", "fields", "real_persona_id")
 
 #: Fields of a registration which are specific for each part of the event
 REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
