@@ -771,7 +771,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, 'event/show_course')
         code = self.eventproxy.delete_course(rs, course_id)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/course_list")
+        return self.redirect(rs, "event/course_stats")
 
     @access("event")
     @event_guard()
