@@ -5059,7 +5059,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:486
 msgid ""
-"This is the interactive voting form. It is not supposed to be used with a"
+"This is the interactive voting form. It is inconvenient to used with a"
 " Keyboard only.\n"
 "                                Use the link above to switch to the text-"
 "based form."
