@@ -320,15 +320,15 @@
         {% if past_events %}
             <h4 class="heading-underline">{% trans -%}Past Events{%- endtrans %}</h4>
             {% for pevent_id, pevent in past_events|xdictsort('tempus') %}
-                <span class="row">
-                    <div class="col-sm-3">
+                <div class="row">
+                    <div class="col-md-3">
                         {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
                                      pevent['event_name'], readonly='cde' not in user.roles) -}}
-                        {% if pevent['is_orga'] %}
-                            {% trans -%}(Orga){%- endtrans %}
-                        {%- endif -%}
                     </div>
-                    <div class="col-lg-9">
+                    <div class="col-md-9">
+                        {% if pevent['is_orga'] %}
+                            (Orga) <br />
+                        {% endif %}
                         {% if pevent['courses'] -%}
                             {% for pcourse_id, pcourse in pevent['courses']|xdictsort('nr', pad=True) %}
                                 {{ pcourse['nr'] }}.
@@ -342,7 +342,7 @@
                             {% endfor %}
                         {% endif %}
                     </div>
-                </span>
+                </div>
             {% endfor %}
         {% endif %}
 
