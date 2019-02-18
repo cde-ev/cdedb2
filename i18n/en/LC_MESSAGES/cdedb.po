@@ -780,7 +780,7 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:202
 msgid "[<class 'decimal.ConversionSyntax'>]"
-msgstr ""
+msgstr "No decimal number found."
 
 #: cdedb/i18n_additional.py:205
 msgid "Consent decision (is False)."
