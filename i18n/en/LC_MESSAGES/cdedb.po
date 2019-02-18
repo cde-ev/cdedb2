@@ -108,19 +108,19 @@ msgstr "All Users"
 
 #: cdedb/i18n_additional.py:11
 msgid "AgeClasses.full"
-msgstr ""
+msgstr "of age"
 
 #: cdedb/i18n_additional.py:12
 msgid "AgeClasses.u18"
-msgstr ""
+msgstr "U18"
 
 #: cdedb/i18n_additional.py:13
 msgid "AgeClasses.u16"
-msgstr ""
+msgstr "U16"
 
 #: cdedb/i18n_additional.py:14
 msgid "AgeClasses.u14"
-msgstr ""
+msgstr "U14"
 
 #: cdedb/i18n_additional.py:16
 msgid "AssemblyLogCodes.assembly_created"
@@ -192,23 +192,23 @@ msgstr "No Attachments allowed"
 
 #: cdedb/i18n_additional.py:35
 msgid "AudiencePolicy.everybody"
-msgstr ""
+msgstr "Everybody"
 
 #: cdedb/i18n_additional.py:36
 msgid "AudiencePolicy.require_assembly"
-msgstr ""
+msgstr "Assembly-Users only"
 
 #: cdedb/i18n_additional.py:37
 msgid "AudiencePolicy.require_cde"
-msgstr ""
+msgstr "CdE-Users only"
 
 #: cdedb/i18n_additional.py:38
 msgid "AudiencePolicy.require_event"
-msgstr ""
+msgstr "Event-Users only"
 
 #: cdedb/i18n_additional.py:39
 msgid "AudiencePolicy.require_member"
-msgstr ""
+msgstr "CdE-Members only"
 
 #: cdedb/i18n_additional.py:41
 msgid "CdeLogCodes.advance_semester"
@@ -288,107 +288,107 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:64
 msgid "EventLogCodes.event_created"
-msgstr ""
+msgstr "Event created"
 
 #: cdedb/i18n_additional.py:65
 msgid "EventLogCodes.event_changed"
-msgstr ""
+msgstr "Event changed"
 
 #: cdedb/i18n_additional.py:66
 msgid "EventLogCodes.orga_added"
-msgstr ""
+msgstr "Orga added"
 
 #: cdedb/i18n_additional.py:67
 msgid "EventLogCodes.orga_removed"
-msgstr ""
+msgstr "Orga removed"
 
 #: cdedb/i18n_additional.py:68
 msgid "EventLogCodes.part_created"
-msgstr ""
+msgstr "Event-Part created"
 
 #: cdedb/i18n_additional.py:69
 msgid "EventLogCodes.part_changed"
-msgstr ""
+msgstr "Event-Part changed"
 
 #: cdedb/i18n_additional.py:70
 msgid "EventLogCodes.part_deleted"
-msgstr ""
+msgstr "Event-Part deleted"
 
 #: cdedb/i18n_additional.py:71
 msgid "EventLogCodes.field_added"
-msgstr ""
+msgstr "Field added"
 
 #: cdedb/i18n_additional.py:72
 msgid "EventLogCodes.field_updated"
-msgstr ""
+msgstr "Field updated"
 
 #: cdedb/i18n_additional.py:73
 msgid "EventLogCodes.field_removed"
-msgstr ""
+msgstr "Field removed"
 
 #: cdedb/i18n_additional.py:74
 msgid "EventLogCodes.lodgement_created"
-msgstr ""
+msgstr "Lodgement created"
 
 #: cdedb/i18n_additional.py:75
 msgid "EventLogCodes.lodgement_changed"
-msgstr ""
+msgstr "Lodgement changed"
 
 #: cdedb/i18n_additional.py:76
 msgid "EventLogCodes.lodgement_deleted"
-msgstr ""
+msgstr "Lodgement deleted"
 
 #: cdedb/i18n_additional.py:77
 msgid "EventLogCodes.questionnaire_changed"
-msgstr ""
+msgstr "Questionanire changed"
 
 #: cdedb/i18n_additional.py:78
 msgid "EventLogCodes.track_added"
-msgstr ""
+msgstr "Track added"
 
 #: cdedb/i18n_additional.py:79
 msgid "EventLogCodes.track_updated"
-msgstr ""
+msgstr "Track updated"
 
 #: cdedb/i18n_additional.py:80
 msgid "EventLogCodes.track_removed"
-msgstr ""
+msgstr "Track removed"
 
 #: cdedb/i18n_additional.py:81
 msgid "EventLogCodes.course_created"
-msgstr ""
+msgstr "Course created"
 
 #: cdedb/i18n_additional.py:82
 msgid "EventLogCodes.course_changed"
-msgstr ""
+msgstr "Course changed"
 
 #: cdedb/i18n_additional.py:83
 msgid "EventLogCodes.course_segments_changed"
-msgstr ""
+msgstr "Course segments changed"
 
 #: cdedb/i18n_additional.py:84
 msgid "EventLogCodes.course_segment_activity_changed"
-msgstr ""
+msgstr "Active Course segments changed"
 
 #: cdedb/i18n_additional.py:85
 msgid "EventLogCodes.registration_created"
-msgstr ""
+msgstr "Registration created"
 
 #: cdedb/i18n_additional.py:86
 msgid "EventLogCodes.registration_changed"
-msgstr ""
+msgstr "Registration changed"
 
 #: cdedb/i18n_additional.py:87
 msgid "EventLogCodes.registration_deleted"
-msgstr ""
+msgstr "Registration deleted"
 
 #: cdedb/i18n_additional.py:88
 msgid "EventLogCodes.event_locked"
-msgstr ""
+msgstr "Event locked"
 
 #: cdedb/i18n_additional.py:89
 msgid "EventLogCodes.event_unlocked"
-msgstr ""
+msgstr "Event unlocked"
 
 #: cdedb/i18n_additional.py:91
 msgid "FinanceLogCodes.new_member"
@@ -472,23 +472,23 @@ msgstr "not specified"
 
 #: cdedb/i18n_additional.py:113
 msgid "LineResolutions.create"
-msgstr ""
+msgstr "Create Account"
 
 #: cdedb/i18n_additional.py:114
 msgid "LineResolutions.skip"
-msgstr ""
+msgstr "Skip Entry"
 
 #: cdedb/i18n_additional.py:115
 msgid "LineResolutions.renew_trial"
-msgstr ""
+msgstr "Renew Trialmembership"
 
 #: cdedb/i18n_additional.py:116
 msgid "LineResolutions.update"
-msgstr ""
+msgstr "Update Data"
 
 #: cdedb/i18n_additional.py:117
 msgid "LineResolutions.renew_and_update"
-msgstr ""
+msgstr "Renew Trialmembership and Update Data"
 
 #: cdedb/i18n_additional.py:119
 msgid "MemberChangeStati.pending"
@@ -512,75 +512,75 @@ msgstr "Change displaced"
 
 #: cdedb/i18n_additional.py:125
 msgid "MlLogCodes.list_created"
-msgstr ""
+msgstr "List created"
 
 #: cdedb/i18n_additional.py:126
 msgid "MlLogCodes.list_changed"
-msgstr ""
+msgstr "List changed"
 
 #: cdedb/i18n_additional.py:127
 msgid "MlLogCodes.list_deleted"
-msgstr ""
+msgstr "List deleted"
 
 #: cdedb/i18n_additional.py:128
 msgid "MlLogCodes.moderator_added"
-msgstr ""
+msgstr "Moderator added"
 
 #: cdedb/i18n_additional.py:129
 msgid "MlLogCodes.moderator_removed"
-msgstr ""
+msgstr "Moderator removed"
 
 #: cdedb/i18n_additional.py:130
 msgid "MlLogCodes.whitelist_added"
-msgstr ""
+msgstr "Whitelist added"
 
 #: cdedb/i18n_additional.py:131
 msgid "MlLogCodes.whitelist_removed"
-msgstr ""
+msgstr "Whitelist removed"
 
 #: cdedb/i18n_additional.py:132
 msgid "MlLogCodes.subscription_requested"
-msgstr ""
+msgstr "Subscription requested"
 
 #: cdedb/i18n_additional.py:133
 msgid "MlLogCodes.subscribed"
-msgstr ""
+msgstr "Subscribed"
 
 #: cdedb/i18n_additional.py:134
 msgid "MlLogCodes.subscription_changed"
-msgstr ""
+msgstr "Subcription changed"
 
 #: cdedb/i18n_additional.py:135
 msgid "MlLogCodes.unsubscribed"
-msgstr ""
+msgstr "Unsubscribed"
 
 #: cdedb/i18n_additional.py:136
 msgid "MlLogCodes.marked_override"
-msgstr ""
+msgstr "Marked as exception"
 
 #: cdedb/i18n_additional.py:137
 msgid "MlLogCodes.request_approved"
-msgstr ""
+msgstr "Request approved"
 
 #: cdedb/i18n_additional.py:138
 msgid "MlLogCodes.request_denied"
-msgstr ""
+msgstr "Request denied"
 
 #: cdedb/i18n_additional.py:139
 msgid "MlLogCodes.request_cancelled"
-msgstr ""
+msgstr "Request cancelled"
 
 #: cdedb/i18n_additional.py:141
 msgid "ModerationPolicy.unmoderated"
-msgstr ""
+msgstr "Everyone may write"
 
 #: cdedb/i18n_additional.py:142
 msgid "ModerationPolicy.non_subscribers"
-msgstr ""
+msgstr "Subscribers may write"
 
 #: cdedb/i18n_additional.py:143
 msgid "ModerationPolicy.fully_moderated"
-msgstr ""
+msgstr "Fully moderated"
 
 #: cdedb/i18n_additional.py:145
 msgid "PastEventLogCodes.event_created"
@@ -652,47 +652,47 @@ msgstr "Rejected"
 
 #: cdedb/i18n_additional.py:164
 msgid "SubscriptionPolicy.mandatory"
-msgstr ""
+msgstr "Mandatory"
 
 #: cdedb/i18n_additional.py:165
 msgid "SubscriptionPolicy.opt_out"
-msgstr ""
+msgstr "Opt-Out"
 
 #: cdedb/i18n_additional.py:166
 msgid "SubscriptionPolicy.opt_in"
-msgstr ""
+msgstr "Opt-In"
 
 #: cdedb/i18n_additional.py:167
 msgid "SubscriptionPolicy.moderated_opt_in"
-msgstr ""
+msgstr "Moderated Opt-In"
 
 #: cdedb/i18n_additional.py:168
 msgid "SubscriptionPolicy.invitation_only"
-msgstr ""
+msgstr "Invitation only"
 
 #: cdedb/i18n_additional.py:170
 msgid "LastschriftTransactionStati.issued"
-msgstr ""
+msgstr "Pending"
 
 #: cdedb/i18n_additional.py:171
 msgid "LastschriftTransactionStati.skipped"
-msgstr ""
+msgstr "Skipped"
 
 #: cdedb/i18n_additional.py:172
 msgid "LastschriftTransactionStati.success"
-msgstr ""
+msgstr "Successful"
 
 #: cdedb/i18n_additional.py:173
 msgid "LastschriftTransactionStati.failure"
-msgstr ""
+msgstr "Failed"
 
 #: cdedb/i18n_additional.py:174
 msgid "LastschriftTransactionStati.cancelled"
-msgstr ""
+msgstr "Cancelled"
 
 #: cdedb/i18n_additional.py:175
 msgid "LastschriftTransactionStati.rollback"
-msgstr ""
+msgstr "Rollback"
 
 #: cdedb/i18n_additional.py:177
 msgid "QueryOperators.empty"

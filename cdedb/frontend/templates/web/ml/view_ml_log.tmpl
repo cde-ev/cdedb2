@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['mailinglist']['title'] -%}
-        {{ title }} – Log
+        {{ title }} Log
     {%- endtrans %}
     [{{ values['start']|int }}–{{ (values['start']|int + log|length) }}]
 {% endblock %}
