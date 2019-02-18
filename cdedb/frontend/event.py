@@ -2859,7 +2859,7 @@ class EventFrontend(AbstractUserFrontend):
                              if p[1] == lodgement_id and p[2] == part_id]
             problems_condensed[(lodgement_id, part_id)] = (
                 max(p[4] for p in problems_here) if len(problems_here) else 0,
-                "; ".join(p[0] for p in problems_here),)
+                "; ".join(rs.gettext(p[0]) for p in problems_here),)
 
         return self.render(rs, "lodgements", {
             'lodgements': lodgements,
