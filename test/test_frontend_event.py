@@ -621,7 +621,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['deletecourseform']
         f['ack_delete'].checked = True
         self.submit(f)
-        self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertTitle("Kurse verwalten (Große Testakademie 2222)")
         self.assertNonPresence("Abstract Nonsense")
 
     @as_users("berta")
@@ -1243,11 +1243,13 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/expuls')
         self.assertPresence('\\kurs')
         self.assertPresence('Planetenretten für Anfänger')
-        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0')
+        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0',
+                                   index=0)
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
         self.assertPresence('Emilia E.')
-        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=2')
+        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=2',
+                                   index=0)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertTrue(len(self.response.body) > 1000)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=0')
