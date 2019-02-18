@@ -325,7 +325,7 @@
                 </ul>
                 {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                     <script type="text/javascript">
-                        $('.remove-candiate-form').cdedbProtectAction({{ gettext("The Candidate will be removed.") }});
+                        $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The Candidate will be removed.") }}");
                     </script>
                 {% endif %}
             {% endif %}
@@ -357,7 +357,7 @@
             </ul>
             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                 <script type="text/javascript">
-                    $('.remove-candiate-form').cdedbProtectAction({{ gettext("The Candidate will be removed.") }});
+                    $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The Candidate will be removed.") }}");
                 </script>
             {% endif %}
 
