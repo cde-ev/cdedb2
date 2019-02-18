@@ -248,6 +248,7 @@ Um den Fragebogen für die Teilnehmer sichtbar zu machen, aktiviere die Checkbox
 
 Wie du den Fragebogen vor der Anmeldung sinnvoll konfigurieren kannst, findest du :ref:`hier <handbuch_ablaufplan_vor_fragebogen>`, Beispiele zur Änderung der Abfragen nach Anmeldeschluss findest du :ref:`hier <handbuch_ablaufplan_nach_fragebogen>`.
 
+.. attention:: Das Hauswünsche-Feld muss vom Typ "Text" und das Isomatten-Feld vom Typ "Ja/Nein" sein!
 
 
 .. _handbuch_ablaufplan_vor_fragebogen:
