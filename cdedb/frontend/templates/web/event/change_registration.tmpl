@@ -93,7 +93,7 @@
                                          entries=course_entries, nulloption="") }}
                 {% for i in range(track['num_choices']) %}
                     {{ util.form_input_select(name="track{}.course_choice_{}".format(track_id, i),
-                                              label=gettext("{}. choice").format(i + 1), entries=course_entries, nulloption="") }}
+                                              label=gettext("{}. Choice").format(i + 1), entries=course_entries, nulloption="") }}
                 {% endfor %}
             {% endif %}
         {% endfor %}
