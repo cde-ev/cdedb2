@@ -504,7 +504,7 @@
                             /* Initialize JS Fancy form */
                             $('#prefvote_container').cdedbPrefVote(
                                 {{ ambience['ballot']['candidates']|dictsort|json|s }},
-                                {{ "'"+ASSEMBLY_BAR_MONIKER+"'" if ambience['ballot']['use_bar'] else "null" }},
+                                {{ "'"|s+ASSEMBLY_BAR_MONIKER+"'"|s if ambience['ballot']['use_bar'] else "null" }},
                                 $('#input-preferencelist'),
                                 {{ {'bar_name': gettext('neutral'),
                                     'box': gettext('Box {0}'),
