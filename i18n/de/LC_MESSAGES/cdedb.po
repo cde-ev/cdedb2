@@ -8163,10 +8163,10 @@ msgstr "Filter: Kursschiene"
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:71
 #, python-format
 msgid ""
-"Show participants who %(select3)s %(select2)s %(select1)s,\n"
+"Show participants who %(select3)s the course %(select2)s %(select1)s,\n"
 "                    with one of these participant IDs: %(select4)s"
 msgstr ""
-"Teilnehmer, die %(select1)s %(select2)s %(select3)s, mit einer der "
+"Teilnehmer, die %(select1)s den Kurs %(select2)s %(select3)s, mit einer der "
 "folgenden Teilnehmer-IDs: %(select4)s"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:73

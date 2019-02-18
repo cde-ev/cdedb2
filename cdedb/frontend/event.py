@@ -1060,19 +1060,25 @@ class EventFrontend(AbstractUserFrontend):
 
         This allows flexible filtering of the displayed registrations.
         """
-        if rs.errors:
-            return self.course_choices_form(rs, event_id)
         tracks = rs.ambience['event']['tracks']
-        registration_ids = self.eventproxy.registrations_by_course(
-            rs, event_id, course_id, track_id, position, ids)
-        registrations = self.eventproxy.get_registrations(
-            rs, registration_ids.keys())
-        personas = self.coreproxy.get_personas(rs, registration_ids.values())
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-
         all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
         all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
+
+        if rs.errors:
+            registration_ids = all_reg_ids
+            registrations = all_regs
+            personas = self.coreproxy.get_personas(rs, (r['persona_id'] for r in
+                                                        registrations.values()))
+        else:
+            registration_ids = self.eventproxy.registrations_by_course(
+                rs, event_id, course_id, track_id, position, ids)
+            registrations = self.eventproxy.get_registrations(
+                rs, registration_ids.keys())
+            personas = self.coreproxy.get_personas(
+                rs, registration_ids.values())
+
         course_infos = {}
         stati = const.RegistrationPartStati
         reg_part = lambda registration, track_id: \
