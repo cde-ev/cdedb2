@@ -8849,7 +8849,7 @@ msgstr "einzeilig"
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:50
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:51
 msgid "multiline"
-msgstr "mehzeilig"
+msgstr "mehrzeilig"
 
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:57
 msgid "read-only"

@@ -84,7 +84,7 @@ msgstr "U14"
 
 #: cdedb/config.py:119
 msgid "08_query_event_registration_minors_no_consent"
-msgstr "U18 without Parental Agreement"
+msgstr "U18 without Parental Consent"
 
 #: cdedb/config.py:304
 msgid "00_query_cde_trial_members"
@@ -9493,7 +9493,3 @@ msgstr ""
 #, python-format
 msgid "%(title)s – Log"
 msgstr ""
-
-#~ msgid "Idee Schülerakademie"
-#~ msgstr ""
-
