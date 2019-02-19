@@ -2744,9 +2744,7 @@ class EventFrontend(AbstractUserFrontend):
                 personas[registrations[anid]['persona_id']])
         sub_ids = None
         if aspect == 'tracks':
-            sub_ids = (track_id
-                       for part in event['parts'].values()
-                       for track_id in part['tracks'])
+            sub_ids = tracks.keys()
         elif aspect == 'parts':
             sub_ids = event['parts'].keys()
         return {
