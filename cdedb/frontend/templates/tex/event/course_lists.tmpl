@@ -1,37 +1,61 @@
 <<% extends "tex/event/base_article.tmpl" %>>
+<<% block documentclass %>>
+    \documentclass[12pt,portrait,parskip=half+,a5paper]{scrartcl}
+<<% endblock %>>
+
 <<% block extra_preamble %>>
-    \usepackage{wrapfig}
+
     \parindent 0pt\relax
     \pagestyle{empty}
+    \usepackage{calc}
+    \newcommand{\debugbox}{}
+    \newcommand{\logosize}{0.2}
+
 <<% endblock %>>
 <<% block content %>>
-    <<% for course_id, course in courses|dictsort %>>
+    <<% for course_id, course in courses|dictsort('nr') %>>
         <<% for track_id in course['active_segments']|sort %>>
-            \begin{wrapfigure}{r}{3.1cm}
-                \vspace{-2\baselineskip}
-                \begin{center}
-                    \includegraphics[keepaspectratio=true, width=3cm,height=3cm]{./logo-<<< course_id|te >>>}
-                \end{center}
-                \vspace{-2\baselineskip}
-            \end{wrapfigure}
-            \section*{<<< course['title']|te >>> (<<< ambience['event']['tracks'][track_id]['title']|te >>>)}
+        <<% set key = (course_id, track_id) %>>
+            \begin{minipage}[c][\logosize\linewidth][c]{0.8\linewidth}
+                \raggedright
+                \Huge\textbf{<<< course['shortname']|te >>>}\\
+                \normalsize <<< course['title']|te >>>\\
+                \emph{<<< ambience['event']['tracks'][track_id]['shortname']|te >>>}\\
+                <<< (attendees[key]|length - instructors[key]|length)|te >>> Teilnehmer
+                , <<< instructors[key]|length|te >>> Kursleiter
+            \end{minipage}
+            \begin{minipage}[c][\logosize\textwidth][t]{\logosize\linewidth}
+                \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./logo-<<< course_id|te >>>}
+            \end{minipage}
             \begin{itemize}
                 <<% for registration_id in attendees[(course_id, track_id)] %>>
-                    \item
-                        <<% if (registrations[registration_id]['tracks'][track_id]['course_instructor']
-                                == course_id) %>>
-                            \emph{%
-                                <<< personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
-                                <<< personas[registrations[registration_id]['persona_id']]['family_name']|te >>>
-                            }
-                        <<% else %>>
-                            <<< personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
-                            <<< personas[registrations[registration_id]['persona_id']]['family_name']|te >>>
-                        <<% endif %>>
+                    <<% with p = personas[registrations[registration_id]['persona_id']] %>>
+                        \item
+                            <<% if registration_id in instructors[(course_id, track_id)] %>>
+                                \emph{
+                                    <<<- personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
+                                    <<< personas[registrations[registration_id]['persona_id']]['family_name']|te ->>>
+                                }
+                            <<% else %>>
+                                <<<- personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
+                                <<< personas[registrations[registration_id]['persona_id']]['family_name']|te ->>>
+                                <<% if p['age'].is_minor() %>>
+                                    \fbox{<<< p['age'].name|upper|te >>>}
+                                <<% endif %>>
+                            <<% endif %>>
+                    <<% endwith %>>
                 <<% else %>>
-                    \item niemand
+                    \item \emph{niemand}
                 <<% endfor %>>
             \end{itemize}
+            \vspace{\fill}
+            \begin{minipage}[t]{\textwidth}
+                <<% if course['fields'] %>>
+                    <<% for key, value in course['fields'].items() %>>
+                        <<< key|te >>>: <<< value|te >>>\\
+                    <<% endfor %>>
+                <<% endif %>>
+            \end{minipage}
             \clearpage
         <<% endfor %>>
     <<% endfor %>>

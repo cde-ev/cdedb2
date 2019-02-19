@@ -8,8 +8,10 @@
 #>>
 
 <<% block preamble %>>
-    \documentclass[12pt]{scrartcl}
-    \KOMAoptions{paper=A4,pagesize,DIV=16}
+    <<% block documentclass %>>
+        \documentclass[12pt]{scrartcl}
+        \KOMAoptions{paper=A4,pagesize,DIV=16}
+    <<% endblock %>>
 
     \usepackage[T1]{fontenc}
     \usepackage[utf8]{inputenc}

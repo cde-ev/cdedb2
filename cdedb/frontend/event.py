@@ -1551,14 +1551,30 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
+        for p_id, p in personas.items():
+            p['age'] = determine_age_class(
+                p['birthday'], rs.ambience['event']['begin'])
         attendees = self.calculate_groups(
             courses, rs.ambience['event'], registrations, key="course_id",
             personas=personas)
+        instructors = {}
+        for c_id, course in courses.items():
+            for t_id in course['active_segments']:
+                instructors[(c_id, t_id)] = [
+                    r_id
+                    for r_id in attendees[(c_id, t_id)]
+                    if (registrations[r_id]['tracks'][t_id]['course_instructor']
+                        == c_id)
+                ]
+            if 'course_id' in course['fields']:
+                del course['fields']['course_id']
         tex = self.fill_template(rs, "tex", "course_lists", {
             'courses': courses, 'registrations': registrations,
-            'personas': personas, 'attendees': attendees})
+            'personas': personas, 'attendees': attendees,
+            'instructors': instructors,
+        })
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
