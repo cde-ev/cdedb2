@@ -14,10 +14,10 @@ veranstaltungsspezifische Beträge auf folgendes Konto.
 Achte bitte bei internationalen Überweisungen darauf, dass der
 Empfänger keine Gebühren zahlen muss.
 
-Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber']|e }}
+Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:             {{ ambience['event']['iban'] }}
-BIC:              {{ meta_info['CdE_Konto_BIC']|e }}
-Kreditinstitut:   {{ meta_info['CdE_Konto_Institut']|e }}
+BIC:              {{ meta_info['CdE_Konto_BIC'] }}
+Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
 Verwendungszweck: {{ user['given_names'] }} {{ user['family_name'] }}, {{ user['persona_id']|cdedbid }}
                   {{ ambience['event']['title'] }}
 {% else %}
