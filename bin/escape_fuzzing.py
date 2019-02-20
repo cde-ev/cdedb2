@@ -32,12 +32,15 @@ this script, as follows:
 import itertools
 import queue
 import logging
+import pathlib
 
 import webtest
 
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
 _BASICCONF = BasicConfig()
+
+outdir = pathlib.Path('./out')
 
 app = Application(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
 wt_app = webtest.TestApp(app, extra_environ={
@@ -83,9 +86,17 @@ while True:
     if "<script>abcdef" in response.text:
         print(">>> Found unescaped marker <script> in {}, reached from {}"
               .format(url, referer))
+        if outdir.exists():
+            outfile = outdir / str(len(list(outdir.iterdir())))
+            with open(outfile, 'wb') as f:
+                f.write(response.body)
     if "&amp;lt;" in response.text:
         print(">>> Found double escaped '<' in {}, reached from {}"
               .format(url, referer))
+        if outdir.exists():
+            outfile = outdir / str(len(list(outdir.iterdir())))
+            with open(outfile, 'wb') as f:
+                f.write(response.body)
 
     # Follow all links to unvisited page urls
     for link_element in response.html.find_all('a'):
