@@ -93,7 +93,7 @@ Kurse
 
 Wenn deine Veranstaltung eine Kursschiene hat, kannst du unter "Kurse" ebendiese in die Datenbank eintragen.
 
-.. hint:: Du kannst potentiellen Teilnehmern bereits vor Anmeldebeginn die Kursliste zur Verfügung stellen, indem du unter "Konfiguration" die Checkbox "Sichtbarkeit der Kursliste" aktivierst und den Link zur Verfügung stellst. Wenn du außerdem die Checkbox "Sichtbarkeit der Veranstaltung aktivierst, kann die Veranstaltung in der Datenbank gefunden werden.
+.. hint:: Du kannst potentiellen Teilnehmern bereits vor Anmeldebeginn die Kursliste zur Verfügung stellen, indem du unter "Konfiguration" die Checkbox "Sichtbarkeit der Kursliste" aktivierst und den Link zur Verfügung stellst. Wenn du außerdem die Checkbox "Sichtbarkeit der Veranstaltung" aktivierst, kann die Veranstaltung in der Datenbank gefunden werden.
 	  
 
 
@@ -284,9 +284,9 @@ Der "Titel" gibt hierbei die Bezeichnung für diese Abfrage an, mit "Text" kanns
 Anordnung ändern
 ''''''''''''''''
 
-Klickst du diesen Button oben links auf der Seite, erscheint eine graphische Oberfläche des konfigurierten Fragebogens.
+Klickst du diesen Button oben links auf der Seite, erscheint eine grafische Oberfläche des konfigurierten Fragebogens.
 
-Hier kannst du die Felder per Drag N Drop verschieben und in die gewünschte Reihenfolge bringen. Mit einem einfachen Klick auf ein Feld werden die Feldgrenzen angezeigt..
+Hier kannst du die Felder per Drag N Drop verschieben und in die gewünschte Reihenfolge bringen. Mit einem einfachen Klick auf ein Feld werden die Feldgrenzen angezeigt.
 
 .. hint :: Mit diesem Button kannst du dir eine Vorschau eures Fragebogens anzeigen lassen, ohne diesen dafür unter :ref:`Konfigurationen <handbuch_ablaufplan_vor_konfiguration_extrafelder>` sichtbar zu machen.
 
@@ -311,7 +311,7 @@ Einige Beispiele für Abfragen, die während der Anmeldung sinnvoll sein können
 Anmeldung eröffnen
 ^^^^^^^^^^^^^^^^^^
    
-Vor Beginn Anmeldung sollten noch ein paar letzte Punkte geprüft werden:
+Vor Beginn der Anmeldung sollten noch ein paar letzte Punkte geprüft werden:
    
 - Minderjährige können sich **nur dann** für eure Veranstaltung anmelden, wenn ein Minderjährigenformular in der DB hochgeladen ist!
 - Ist für **jeden** Veranstaltungsteil der richtige Teilnehmerbeitrag eingetragen? Teilnehmerbeiträge kannst du unter :ref:`Veranstaltungsteile <handbuch_ablaufplan_vor_veranstaltungsteile_veranstaltungsteile>` konfigurieren.
