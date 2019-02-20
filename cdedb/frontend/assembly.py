@@ -561,7 +561,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
                 "bar (options below this are declined)")
         return self.render(rs, "show_ballot", {
-            'attachments': attachments, 'split_vote': split_vote,
+            'attachments': attachments, 'split_vote': split_vote, 'voted': vote,
             'result': result, 'candidates': candidates, 'attends': attends,
             'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER})
 
@@ -648,7 +648,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             vote = unwrap(request_extractor(rs, (("vote", "str"),)))
         vote = check(rs, "vote", vote, "vote", ballot=ballot)
         if rs.errors:
-            return self.show_ballot(rs, assembly_id, ballot_id)
+            return self.redirect(rs, "assembly/show_ballot")
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")

@@ -77,7 +77,7 @@
                 {%- endtrans %}
             {% elif ambience['ballot']['is_voting'] %}
                 <strong>{% trans -%}This Ballot is currently open for voting.{%- endtrans %}</strong><br />
-                {% if values['vote'] %}
+                {% if voted %}
                     {% if split_vote|length == 1 %}
                         <span class='text-warning'>{% trans -%}You have abstained.{%- endtrans %}</span>
                         {% trans -%}You can make your choice below, during the voting period.{%- endtrans %}
@@ -227,7 +227,7 @@
             {% if not attends %}
                 {% trans -%}You are not participating in this assembly.{%- endtrans %}
             {% elif ambience['ballot']['votes'] %}
-                {% if not values['vote'] %}
+                {% if not voted %}
                     {% if ambience['assembly']['is_active'] %}
                         {% trans -%}You have not voted yet.{%- endtrans %}
                     {% endif %}
@@ -244,10 +244,10 @@
                     {% endif %}
                 {% endif %}
 
-            {# Show own vote under result: Classical vote #}
+            {# Show own vote under result: Preferential vote #}
             {% else %}
-                {% if values['vote'] %}
-                    {%- trans vote="<code>%(vote)s</code>"|s|format(vote=values['vote']) -%}
+                {% if voted %}
+                    {%- trans vote="<code>%(vote)s</code>"|s|format(vote=voted) -%}
                         You voted {{ vote }}.
                     {%- endtrans -%}
                 {% elif ambience['assembly']['is_active'] %}
