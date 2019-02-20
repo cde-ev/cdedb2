@@ -93,7 +93,7 @@ WHITELIST.add(20109)
 WHITELIST.add(21011)
 
 # disable
-#WHITELIST = None
+WHITELIST = None
 
 ##
 ## Fixes for real world data
@@ -752,17 +752,17 @@ EXPLICIT_ORGA_COURSES = {
     2778: 820,
     2779: 824,
     ## WA201617H1
-    3055:  923,
-    3056:  955,
-    3057:  962,
-    3058:  963,
-    3059:  967,
+    3055: 923,
+    3056: 955,
+    3057: 962,
+    3058: 963,
+    3059: 967,
     ## WA201617H2
-    3070:  924,
-    3071:  956,
-    3072:  964,
-    3073:  965,
-    3074:  969,
+    3070: 924,
+    3071: 956,
+    3072: 964,
+    3073: 965,
+    3074: 969,
     ## WA201718H1
     3291: 1091,
     3292: 1163,
@@ -775,6 +775,24 @@ EXPLICIT_ORGA_COURSES = {
     3308: 1113,
     3309: 1118,
     3310: 1142,
+    ## WA201819H1
+    3547: 1302,
+    3548: 1307,
+    3549: 1318,
+    3550: 1321,
+    3551: 1338,
+    3552: 1390,
+    3553: 1397,
+    3554: 1399,
+    ## WA201819H2
+    3567: 1303,
+    3568: 1306,
+    3569: 1319,
+    3570: 1322,
+    3571: 1339,
+    3572: 1391,
+    3573: 1398,
+    3574: 1400,
 }
 for event_id in EVENT_MAP:
     query = "SELECT * FROM veranstaltungen WHERE id = %s"
@@ -1062,6 +1080,9 @@ for persona_id in persona_ids:
                  " ORDER BY id")
         transactions = query_all(cdedbxy, query, (lastschrift['id'],))
         for transaction in transactions:
+            if transaction['auftrag'] not in LASTSCHRIFT_MAP:
+                print("#", end="")
+                continue
             if transaction['erfolg'] > 0:
                 status = 10 ## success
             elif transaction['erfolg'] < 0:
