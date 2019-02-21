@@ -27,7 +27,7 @@ example the following things not taken into account:
 To avoid confusion by the error output of the cdedb, you may want to execute
 this script, as follows:
 
-   python3 -m test.check_escaping 2>/dev/null
+   python3 -m bin.escape_fuzzing 2>/dev/null
 """
 import itertools
 import queue
@@ -82,7 +82,7 @@ while True:
         continue
 
     # Do checks
-    print("Checking {} ...".format(url))
+    # print("Checking {} ...".format(url))
     if "<script>abcdef" in response.text:
         print(">>> Found unescaped marker <script> in {}, reached from {}"
               .format(url, referer))

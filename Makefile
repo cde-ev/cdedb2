@@ -51,6 +51,9 @@ sample-data-test-shallow:
 	make storage-test
 	make sql-test-shallow
 
+sample-data-xss:
+	make sql-xss
+
 storage-test:
 	rm -rf "/tmp/cdedb-store/"
 	mkdir -p "/tmp/cdedb-store/foto/"
@@ -83,6 +86,20 @@ sql-test:
 sql-test-shallow:
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
+
+sql-xss:
+ifeq ($(wildcard /DBVM),/DBVM)
+	$(error Refusing to touch live instance)
+endif
+	sudo systemctl stop pgbouncer
+	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
+	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
+	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data_escaping.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql
+	sudo systemctl start pgbouncer
 
 lint:
 	@echo ""
@@ -126,6 +143,14 @@ new-single-check:
 	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || true
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	${PYTHONBIN} -m test.singular "${TESTNAME}" "${TESTFILE}"
+	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
+
+xss-check:
+	make sample-data-test &>/dev/null
+	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql
+	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
+	python3 -m bin.escape_fuzzing 2>/dev/null
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 quick-check:
