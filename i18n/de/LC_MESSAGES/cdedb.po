@@ -9152,7 +9152,7 @@ msgstr "ID, Name, E-Mail"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:147
 msgid "Minor Form"
-msgstr "Mindejährigenformular"
+msgstr "Minderjährigenformular"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:150
 msgid "current Form"
@@ -9210,8 +9210,8 @@ msgid ""
 "                                Offline-Mode without causing conflicts."
 msgstr ""
 "Durch die Sperrung sind keine Veränderungen an der Veranstaltung mehr "
-"möglich. So kann die Veranstaltung ohne Konflijte in einer Offline-"
-"Instanz der DAtenbank verwendet werden."
+"möglich. So kann die Veranstaltung ohne Konflikte in einer Offline-"
+"Instanz der Datenbank verwendet werden."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:234
 msgid ""
