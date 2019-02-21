@@ -2175,7 +2175,7 @@ class CdEFrontend(AbstractUserFrontend):
     def remove_participant(self, rs, pevent_id, persona_id, pcourse_id):
         """Remove participant."""
         if rs.errors:
-            return self.show_event(rs, pevent_id)
+            return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(
             rs, pevent_id, pcourse_id, persona_id)
         self.notify_return_code(rs, code)
