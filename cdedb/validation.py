@@ -242,8 +242,9 @@ def _int(val, argname=None, *, _convert=True):
         if isinstance(val, str):
             try:
                 val = int(val)
-            except ValueError as e:
-                return None, [(argname, e)]
+            except ValueError:
+                return None, [(argname,
+                               ValueError(n_("Invalid input for integer.")))]
         elif isinstance(val, float):
             if abs(val - int(val)) > EPSILON:
                 return None, [(argname, ValueError(n_("Precision loss.")))]
@@ -296,8 +297,9 @@ def _float(val, argname=None, *, _convert=True):
     if _convert:
         try:
             val = float(val)
-        except (ValueError, TypeError) as e:
-            return None, [(argname, e)]
+        except (ValueError, TypeError):
+            return None, [(argname,
+                           ValueError(n_("Invalid input for float.")))]
     if not isinstance(val, float):
         return None, [(argname,
                        TypeError(n_("Must be a floating point number.")))]
@@ -315,8 +317,9 @@ def _decimal(val, argname=None, *, _convert=True):
     if _convert and isinstance(val, str):
         try:
             val = decimal.Decimal(val)
-        except (ValueError, TypeError, decimal.InvalidOperation) as e:
-            return None, [(argname, e)]
+        except (ValueError, TypeError, decimal.InvalidOperation):
+            return None, [(
+                argname, ValueError(n_("Invalid input for decimal number.")))]
     if not isinstance(val, decimal.Decimal):
         return None, [(argname, TypeError(n_("Must be a decimal.Decimal.")))]
     return val, []
@@ -352,8 +355,9 @@ def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
     if _convert and val is not None:
         try:
             val = str(val)
-        except (ValueError, TypeError) as e:
-            return None, [(argname, e)]
+        except (ValueError, TypeError):
+            return None, [(argname,
+                           ValueError(n_("Invalid input for string.")))]
     if not isinstance(val, str):
         return None, [(argname, TypeError(n_("Must be a string.")))]
     if zap:
@@ -424,8 +428,9 @@ def _bool(val, argname=None, *, _convert=True):
             return False, []
         try:
             val = bool(val)
-        except (ValueError, TypeError) as e:
-            return None, [(argname, e)]
+        except (ValueError, TypeError):
+            return None, [(argname,
+                           ValueError(n_("Invalid input for boolean.")))]
     if not isinstance(val, bool):
         return None, [(argname, TypeError(n_("Must be a boolean.")))]
     return val, []
@@ -967,8 +972,8 @@ def _date(val, argname=None, *, _convert=True):
     if _convert and isinstance(val, str) and len(val.strip()) >= 6:
         try:
             val = parse_date(val)
-        except (ValueError, TypeError) as e:
-            return None, [(argname, e)]
+        except (ValueError, TypeError):
+            return None, [(argname, ValueError(n_("Invalid input for date.")))]
     if not isinstance(val, datetime.date):
         return None, [(argname, TypeError(n_("Must be a datetime.date.")))]
     if isinstance(val, datetime.datetime):
@@ -1043,8 +1048,9 @@ def _datetime(val, argname=None, *, _convert=True, default_date=None):
     if _convert and isinstance(val, str) and len(val.strip()) >= 5:
         try:
             val = parse_datetime(val, default_date)
-        except (ValueError, TypeError) as e:
-            return None, [(argname, e)]
+        except (ValueError, TypeError):
+            return None, [(argname,
+                           ValueError(n_("Invalid input for datetime.")))]
     if not isinstance(val, datetime.datetime):
         return None, [(argname, TypeError(n_("Must be a datetime.datetime.")))]
     return val, []
@@ -1985,11 +1991,13 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
             errs.extend(e)
         else:
             entries = []
-            for entry in oldentries:
+            for idx, entry in enumerate(oldentries):
                 try:
                     value, description = entry
-                except (ValueError, TypeError) as e:
-                    errs.append((entries_key, e))
+                except (ValueError, TypeError):
+                    msg = n_("Invalid entry in line %(line)s.")
+                    errs.append((entries_key,
+                                 ValueError(msg, {'line': idx + 1})))
                 else:
                     value, e = _str(value, entries_key, _convert=_convert)
                     if not e and kind_key in val:
@@ -2860,8 +2868,8 @@ def _regex(val, argname=None, *, _convert=True):
     try:
         re.compile(val)
     # TODO Is there something more specific we can catch? This is bad style.
-    except Exception as e:
-        return None, [(argname, e)]
+    except Exception:
+        return None, [(argname, ValueError(n_("Invalid input for regex.")))]
     return val, errs
 
 
@@ -3013,11 +3021,12 @@ def _query(val, argname=None, *, _convert=None):
     if not val.fields_of_interest:
         errs.append(("fields_of_interest", ValueError(n_("Mustn't be empty."))))
     # constraints
-    for x in val.constraints:
+    for idx, x in enumerate(val.constraints):
         try:
             field, operator, value = x
-        except ValueError as e:
-            errs.append(("constraints", e))
+        except ValueError:
+            msg = n_("Invalid constraint number %(index)s")
+            errs.append(("constraints", ValueError(msg, {"index": idx})))
             continue
         field, e = _csv_identifier(field, "constraints", _convert=False)
         errs.extend(e)
@@ -3044,15 +3053,16 @@ def _query(val, argname=None, *, _convert=None):
                 value, "constraints/{}".format(field), _convert=False)
             errs.extend(e)
     # order
-    for entry in val.order:
+    for idx, entry in enumerate(val.order):
         entry, e = _iterable(entry, 'order', _convert=False)
         errs.extend(e)
         if e:
             continue
         try:
             field, ascending = entry
-        except ValueError as e:
-            errs.append(('order', e))
+        except ValueError:
+            msg = n_("Invalid ordering condition number %(index)s")
+            errs.append(('order', ValueError(msg, {'index': idx})))
         else:
             _, e = _csv_identifier(field, "order", _convert=False)
             _, ee = _bool(ascending, "order", _convert=False)
@@ -3077,6 +3087,7 @@ def _enum_validator_maker(anenum, name=None, internal=False):
     :type internal: bool
     :param internal: If True the validator is not added to the module.
     """
+    error_msg = n_("Invalid input for the enumeration %(enum)s")
 
     def the_validator(val, argname=None, *, _convert=True):
         """
@@ -3091,15 +3102,17 @@ def _enum_validator_maker(anenum, name=None, internal=False):
                 return val, errs
             try:
                 val = anenum(val)
-            except ValueError as e:
-                return None, [(argname, e)]
+            except ValueError:
+                return None, [(argname,
+                               ValueError(error_msg, {'enum': anenum}))]
         else:
             if not isinstance(val, anenum):
                 if isinstance(val, int):
                     try:
                         val = anenum(val)
-                    except ValueError as e:
-                        return None, [(argname, e)]
+                    except ValueError:
+                        return None, [(
+                            argname, ValueError(error_msg, {'enum': anenum}))]
                 else:
                     return None, [
                         (argname, TypeError(n_("Must be a %(type)s."),
@@ -3131,6 +3144,7 @@ def _infinite_enum_validator_maker(anenum, name=None):
       name is inferred from the name of the enum.
     """
     raw_validator = _enum_validator_maker(anenum, internal=True)
+    error_msg = n_("Invalid input for the enumeration %(enum)s")
 
     def the_validator(val, argname=None, *, _convert=True):
         """
@@ -3160,8 +3174,9 @@ def _infinite_enum_validator_maker(anenum, name=None):
                 if val < 0:
                     try:
                         val_enum = anenum(val)
-                    except ValueError as e:
-                        return None, [(argname, e)]
+                    except ValueError:
+                        return None, [
+                            (argname, ValueError(error_msg, {'enum': anenum}))]
                 else:
                     val_enum = anenum(INFINITE_ENUM_MAGIC_NUMBER)
                     val_int = val
