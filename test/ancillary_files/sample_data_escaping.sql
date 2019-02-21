@@ -104,8 +104,8 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 -- events
 --
 INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, iban, mail_text, notes, offline_lock, lodge_field, reserve_field) VALUES
-    (1, 'Große Testakademie 2222<script>abcdef</script>', 1, 'Everybody come!<script>abcdef</script>', 'TestAka<script>abcdef</script>', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96 3702 0500 0008 0689 01<script>abcdef</script>', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.<script>abcdef</script>', 'Todoliste ... just kidding ;)<script>abcdef</script>', False, NULL, NULL),
-    (2, 'CdE-Party 2050<script>abcdef</script>', 1, 'Let''s have a party!<script>abcdef</script>', 'Party50<script>abcdef</script>', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96 3702 0500 0008 0689 01<script>abcdef</script>', '<script>abcdef</script>', 'Wird anstrengend …<script>abcdef</script>', False, NULL, NULL);
+    (1, 'Große Testakademie 2222<script>abcdef</script>', 1, 'Everybody come!<script>abcdef</script>', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96 3702 0500 0008 0689 01<script>abcdef</script>', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.<script>abcdef</script>', 'Todoliste ... just kidding ;)<script>abcdef</script>', False, NULL, NULL),
+    (2, 'CdE-Party 2050<script>abcdef</script>', 1, 'Let''s have a party!<script>abcdef</script>', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96 3702 0500 0008 0689 01<script>abcdef</script>', '<script>abcdef</script>', 'Wird anstrengend …<script>abcdef</script>', False, NULL, NULL);
 INSERT INTO event.event_parts (id, event_id, title, shortname, part_begin, part_end, fee) VALUES
     (1, 1, 'Warmup<script>abcdef</script>', 'Wu<script>abcdef</script>', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte<script>abcdef</script>', '1.H.<script>abcdef</script>', date '2222-11-01', date '2222-11-11', 123.00),
@@ -238,30 +238,30 @@ INSERT INTO assembly.ballots (id, assembly_id, title, description, vote_begin, v
     (5, 1, 'Lieblingszahl<script>abcdef</script>', NULL, now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, False, 0, NULL, False, NULL);
 
 INSERT INTO assembly.candidates (id, ballot_id, description, moniker) VALUES
-    (2, 1, 'Ich<script>abcdef</script>', '1<script>abcdef</script>'),
-    (3, 1, '23<script>abcdef</script>', '2<script>abcdef</script>'),
-    (4, 1, '42<script>abcdef</script>', '3<script>abcdef</script>'),
-    (5, 1, 'Philosophie<script>abcdef</script>', '4<script>abcdef</script>'),
-    (6, 2, 'Rot<script>abcdef</script>', 'rot<script>abcdef</script>'),
-    (7, 2, 'Gelb<script>abcdef</script>', 'gelb<script>abcdef</script>'),
-    (8, 2, 'Grün<script>abcdef</script>', 'gruen<script>abcdef</script>'),
-    (9, 2, 'Blau<script>abcdef</script>', 'blau<script>abcdef</script>'),
-    (10, 3, 'Lischert<script>abcdef</script>', 'Li<script>abcdef</script>'),
-    (11, 3, 'Steinsgebiss<script>abcdef</script>', 'St<script>abcdef</script>'),
-    (12, 3, 'Fichte<script>abcdef</script>', 'Fi<script>abcdef</script>'),
-    (13, 3, 'Buchwald<script>abcdef</script>', 'Bu<script>abcdef</script>'),
-    (14, 3, 'Löscher<script>abcdef</script>', 'Lo<script>abcdef</script>'),
-    (15, 3, 'Goldborn<script>abcdef</script>', 'Go<script>abcdef</script>'),
-    (17, 4, 'Wackelpudding<script>abcdef</script>', 'W<script>abcdef</script>'),
-    (18, 4, 'Salat<script>abcdef</script>', 'S<script>abcdef</script>'),
-    (19, 4, 'Eis<script>abcdef</script>', 'E<script>abcdef</script>'),
-    (20, 4, 'Joghurt<script>abcdef</script>', 'J<script>abcdef</script>'),
-    (21, 4, 'Nichts<script>abcdef</script>', 'N<script>abcdef</script>'),
-    (23, 5, 'e<script>abcdef</script>', 'e<script>abcdef</script>'),
-    (24, 5, 'pi<script>abcdef</script>', 'pi<script>abcdef</script>'),
-    (25, 5, 'i<script>abcdef</script>', 'i<script>abcdef</script>'),
-    (26, 5, '1<script>abcdef</script>', '1<script>abcdef</script>'),
-    (27, 5, '0<script>abcdef</script>', '0<script>abcdef</script>');
+    (2, 1, 'Ich<script>abcdef</script>', '1'),
+    (3, 1, '23<script>abcdef</script>', '2'),
+    (4, 1, '42<script>abcdef</script>', '3'),
+    (5, 1, 'Philosophie<script>abcdef</script>', '4'),
+    (6, 2, 'Rot<script>abcdef</script>', 'rot'),
+    (7, 2, 'Gelb<script>abcdef</script>', 'gelb'),
+    (8, 2, 'Grün<script>abcdef</script>', 'gruen'),
+    (9, 2, 'Blau<script>abcdef</script>', 'blau'),
+    (10, 3, 'Lischert<script>abcdef</script>', 'Li'),
+    (11, 3, 'Steinsgebiss<script>abcdef</script>', 'St'),
+    (12, 3, 'Fichte<script>abcdef</script>', 'Fi'),
+    (13, 3, 'Buchwald<script>abcdef</script>', 'Bu'),
+    (14, 3, 'Löscher<script>abcdef</script>', 'Lo'),
+    (15, 3, 'Goldborn<script>abcdef</script>', 'Go'),
+    (17, 4, 'Wackelpudding<script>abcdef</script>', 'W'),
+    (18, 4, 'Salat<script>abcdef</script>', 'S'),
+    (19, 4, 'Eis<script>abcdef</script>', 'E'),
+    (20, 4, 'Joghurt<script>abcdef</script>', 'J'),
+    (21, 4, 'Nichts<script>abcdef</script>', 'N'),
+    (23, 5, 'e<script>abcdef</script>', 'e'),
+    (24, 5, 'pi<script>abcdef</script>', 'pi'),
+    (25, 5, 'i<script>abcdef</script>', 'i'),
+    (26, 5, '1<script>abcdef</script>', '1'),
+    (27, 5, '0<script>abcdef</script>', '0');
 
 INSERT INTO assembly.attendees (assembly_id, persona_id, secret) VALUES
     (1, 1, 'aoeuidhtns'),
