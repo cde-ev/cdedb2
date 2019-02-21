@@ -3627,6 +3627,8 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def field_set_select(self, rs, event_id, field_id, reg_ids):
         """Select a field for manipulation across all registrations."""
+        if rs.errors:
+            return self.render(rs, "field_set_select")
         if field_id is None:
             registrations = self.eventproxy.get_registrations(rs, reg_ids)
             personas = self.coreproxy.get_personas(
