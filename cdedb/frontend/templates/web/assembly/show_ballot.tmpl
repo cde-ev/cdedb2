@@ -192,7 +192,7 @@
             {# info box for preferential votes #}
             {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                 <p>
-                    {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
+                    {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
                         This vote was a Preferential Vote. Voters arranged the candidates according to their preference.
                         The preferences of all participants were evaluated using the {{ link }},
                         to determine the winner.
@@ -394,7 +394,7 @@
                         </script>
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
-                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
+                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
                                     This vote is an Preferential Vote. You can arrange the Candidates in the field above
                                     according to Your personal preference. The preferences of all participants will be
                                     evaluated using the {{ link }}, to determine the winner.
@@ -421,14 +421,15 @@
                                 </p>
                             {% endif %}
                             <p>
-                                {% trans  -%}
-                                    <strong>Examples:</strong> Take the following examplatory Candidate list:
+                                <strong>{% trans -%}Examples{%- endtrans %}:</strong>
+                                {% trans -%}
+                                    Take the following examplatory Candidate list:
                                 {%- endtrans %}
                             </p>
                             <ul>
-                                <li>{% trans  -%}Luke Skywalker, short: [Luke]{%- endtrans %}</li>
-                                <li>{% trans  -%}Princess Leia Organa of Alderaan, short: [Leia]{%- endtrans %}</li>
-                                <li>{% trans  -%}Han Solo, short: [Han]{%- endtrans %}</li>
+                                <li>{% trans -%}Luke Skywalker, short: [Luke]{%- endtrans %}</li>
+                                <li>{% trans -%}Princess Leia Organa of Alderaan, short: [Leia]{%- endtrans %}</li>
+                                <li>{% trans -%}Han Solo, short: [Han]{%- endtrans %}</li>
                                 <li>{% trans -%}Obi-Wan "Ben" Kenobi, short: [ObiWan]{%- endtrans %}</li>
                             </ul>
                             <p>
@@ -525,7 +526,7 @@
 
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
-                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
+                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
                                     This vote is an Preferential Vote. You can arrange the Candidates in the field above
                                     according to Your personal preference. The preferences of all participants will be
                                     evaluated using the {{ link }}, to determine the winner.
@@ -539,11 +540,13 @@
                                 {%- endtrans %}
                             </p>
                             <p>
-                                {% trans -%}
+                                {% trans tab="<kbd>{key}</kbd>"|s|format(key=gettext("TAB")),
+                                         enter="<kbd>{key}</kbd>"|s|format(key=gettext("ENTER")),
+                                         space="<kbd>{key}</kbd>"|s|format(key=gettext("Space")) -%}
                                     There are three ways of moving Candidates: Drag'n'Drop them into a different box or
-                                    click on a Candidate and then on a box. Or You can select a Candidate with <kbd>TAB</kbd>,
-                                    confirm it with <kbd>Enter</kbd> or <kbd>Space</kbd>, then select a box with <kbd>TAB</kbd>
-                                    and confirm the selection with <kbd>ENTER</kbd> or <kbd>Space</kbd>.
+                                    click on a Candidate and then on a box. Or You can select a Candidate with {{ tab }},
+                                    confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
+                                    and confirm the selection with {{ enter }} or {{ space }}.
                                 {%- endtrans %}
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
