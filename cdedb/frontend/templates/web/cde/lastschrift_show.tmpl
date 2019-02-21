@@ -70,7 +70,7 @@
                 <dd>{{ lastschrift['account_owner'] }}</dd>
 
                 <dt>{% trans -%}Acc. holder's address{%- endtrans %}</dt>
-                <dd>{{ lastschrift['account_address']|e|linebreaks }}</dd>
+                <dd>{{ lastschrift['account_address']|e|linebreaks|s }}</dd>
 
                 <dt>{% trans -%}Granted{%- endtrans %}</dt>
                 <dd>{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
