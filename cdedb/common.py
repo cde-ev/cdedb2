@@ -106,6 +106,8 @@ class RequestState:
         self._conn = None
         # Toggle to disable logging
         self.is_quiet = False
+        # Is true, if the application detected an invalid (or no) CSRF token
+        self.csrf_alert = False
 
     def notify(self, ntype, message, params=None):
         """Store a notification for later delivery to the user.
@@ -1251,6 +1253,11 @@ PERSONA_DEFAULTS = {
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
 NOTIFICATION_TYPES = {"success", "info", "question", "warning", "error"}
+
+#: The form field name used for the anti CSRF token.
+#: It should be added to all data modifying form using the
+#: util.anti_csrf_token template macro and is check by the application.
+ANTI_CSRF_TOKEN_NAME = "_anti_csrf"
 
 #: Map of available privilege levels to those present in the SQL database
 #: (where we have less differentiation for the sake of simplicity).
