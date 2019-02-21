@@ -342,8 +342,9 @@ class CdEFrontend(AbstractUserFrontend):
             "2": str(const.Genders.female.value),
             "3": str(const.Genders.not_specified.value),
         }
-        persona['gender'] = GENDER_CONVERT.get(persona.get('gender').strip(),
-                                               persona.get('gender'))
+        gender = persona.get('gender') or "3"
+        persona['gender'] = GENDER_CONVERT.get(
+            gender.strip(), str(const.Genders.not_specified.value))
         del persona['event']
         del persona['course']
         persona.update({
