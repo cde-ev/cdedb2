@@ -2136,11 +2136,12 @@ class EventFrontend(AbstractUserFrontend):
     def questionnaire_form(self, rs, event_id, preview=False):
         """Render form."""
         if not preview:
-            registration_id = unwrap(self.eventproxy.list_registrations(
-                rs, event_id, persona_id=rs.user.persona_id), keys=True)
+            registration_id = self.eventproxy.list_registrations(
+                rs, event_id, persona_id=rs.user.persona_id)
             if not registration_id:
                 rs.notify("warning", n_("Not registered for event."))
                 return self.redirect(rs, "event/show_event")
+            registration_id = unwrap(registration_id, keys=True)
             registration = self.eventproxy.get_registration(rs, registration_id)
             if not rs.ambience['event']['use_questionnaire']:
                 rs.notify("warning", n_("Questionnaire disabled."))
