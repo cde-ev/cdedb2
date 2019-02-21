@@ -214,7 +214,7 @@
     {%- if error.args|length == 1 %}
         {{- gettext(error.args[0]|string) }}<br />
     {%- elif error.args|length == 2 %}
-        {{- gettext(error.args[0]|string).format(**error.args[1]) }}<br />
+        {{- gettext(error.args[0]|string)|format(**error.args[1]) }}<br />
     {%- elif error.args|length == 0 %}
         {#- Display nothing if no message was supplied. #}
     {%- else %}

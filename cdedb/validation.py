@@ -1619,7 +1619,7 @@ def _safe_str(val, argname=None, *, _convert=True):
     for char in val:
         if not (char.isalnum() or char.isspace() or char in ALLOWED):
             errs.append((argname, ValueError(
-                n_("Forbidden character ({char})."), {'char': char})))
+                n_("Forbidden character (%(char)s)."), {'char': char})))
     if errs:
         return None, errs
     return val, errs
@@ -3102,7 +3102,7 @@ def _enum_validator_maker(anenum, name=None, internal=False):
                         return None, [(argname, e)]
                 else:
                     return None, [
-                        (argname, TypeError(n_("Must be a {type}."),
+                        (argname, TypeError(n_("Must be a %(type)s."),
                                             {'type': anenum}))]
         return val, []
 
@@ -3166,7 +3166,7 @@ def _infinite_enum_validator_maker(anenum, name=None):
                     val_enum = anenum(INFINITE_ENUM_MAGIC_NUMBER)
                     val_int = val
             else:
-                return None, [(argname, TypeError(n_("Must be a {type}."),
+                return None, [(argname, TypeError(n_("Must be a %(type)s."),
                                                   {'type': anenum}))]
         return InfiniteEnum(val_enum, val_int), []
 
