@@ -2144,6 +2144,9 @@ msgstr "Datenbank-Transaktions-Fehler."
 msgid "Unexpected error on line {num}."
 msgstr "Unerwarteter Fehler in Zeile {num}."
 
+msgid "Line {lineno} does not have the correct number of columns."
+msgstr "Zeile {lineno} hat nicht die erforderliche Anzahl an Spalten."
+
 #: cdedb/frontend/cde.py:893 cdedb/frontend/event.py:1302
 msgid "No Member with ID {p_id} found."
 msgstr "Kein Account mit ID {p_id} gefunden."

@@ -718,8 +718,10 @@ class CdEFrontend(AbstractUserFrontend):
                 problems.append("Line {} does not have the correct "
                                 "number of columns".format(i + 1))
                 rs.errors.append(("statement",
-                                  ValueError("Line {} does not have the correct"
-                                             " number of columns".format(i + 1)
+                                  ValueError(n_("Line {lineno} does not have "
+                                                "the correct number of "
+                                                "columns."),
+                                             {'lineno': format(i + 1)}
                                              )))
                 continue
             line["id"] = i
