@@ -434,7 +434,7 @@ class CoreBackend(AbstractBackend):
             ret = 0
             if len(udata) > 1:
                 ret = self.commit_persona(
-                    rs, udata, change_note=n_("Change committed."))
+                    rs, udata, change_note="Änderung eingetragen.")
                 if not ret:
                     raise RuntimeError(n_("Modification failed."))
         return ret
@@ -713,7 +713,7 @@ class CoreBackend(AbstractBackend):
                     data['balance'] = tmp['balance']
             return self.set_persona(
                 rs, data, may_wait=False,
-                change_note=n_("Realms modified."),
+                change_note="Bereiche geändert.",
                 allow_specials=("realms", "finance"))
 
     @access("persona")
@@ -732,7 +732,7 @@ class CoreBackend(AbstractBackend):
             'id': persona_id,
             'foto': foto}
         return self.set_persona(
-            rs, data, may_wait=False, change_note=n_("Foto modified."),
+            rs, data, may_wait=False, change_note="Profilbild geändert.",
             allow_specials=("foto",))
 
     @access("admin")
@@ -747,7 +747,7 @@ class CoreBackend(AbstractBackend):
         data = affirm("persona", data)
         return self.set_persona(
             rs, data, may_wait=False,
-            change_note=n_("Admin bits modified."),
+            change_note="Admin-Privilegien geändert.",
             allow_specials=("admins",))
 
     @access("core_admin", "cde_admin")
@@ -821,7 +821,7 @@ class CoreBackend(AbstractBackend):
                 code = const.FinanceLogCodes.gain_membership
             ret = self.set_persona(
                 rs, update, may_wait=False,
-                change_note=n_("Membership change."),
+                change_note="Mitgliedschaftsstatus geändert.",
                 allow_specials=("membership", "finance"))
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
@@ -935,7 +935,7 @@ class CoreBackend(AbstractBackend):
             }
             self.set_persona(
                 rs, update, generation=None, may_wait=False,
-                change_note=n_("Prepare for archiving."),
+                change_note="Archivierung vorbereitet.",
                 allow_specials=("admins", "username", "realms", "finance"))
             #
             # 4. Delete all sessions and quotas
@@ -1012,7 +1012,7 @@ class CoreBackend(AbstractBackend):
             }
             self.set_persona(
                 rs, update, generation=None, may_wait=False,
-                change_note=n_("Archiving persona."),
+                change_note="Benutzer archiviert.",
                 allow_specials=("archive",))
             #
             # 11. Clear changelog
@@ -1049,7 +1049,7 @@ class CoreBackend(AbstractBackend):
             }
             return self.set_persona(
                 rs, update, generation=None, may_wait=False,
-                change_note=n_("Reinstating persona from the archive."),
+                change_note="Benutzer aus dem Archiv wiederhergestellt.",
                 allow_specials=("archive",))
 
     @access("core_admin", "cde_admin")
@@ -1087,14 +1087,14 @@ class CoreBackend(AbstractBackend):
             }
             ret = self.set_persona(
                 rs, update, generation=None, may_wait=False,
-                change_note=n_("Purging persona."),
+                change_note="Benutzer gelöscht.",
                 allow_specials=("admins", "username", "purge"))
             #
             # 2. Clear changelog
             #
             query = glue(
                 "SELECT id FROM core.changelog WHERE persona_id = %s",
-                "ORDER BY ctime DESC LIMIT 1")
+                "ORDER BY generation DESC LIMIT 1")
             newest = self.query_one(rs, query, (persona_id,))
             query = glue(
                 "DELETE FROM core.changelog",

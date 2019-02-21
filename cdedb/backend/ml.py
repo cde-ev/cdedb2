@@ -941,11 +941,11 @@ class MlBackend(AbstractBackend):
             data = self.query_all(rs, query, (address,))
             if not data:
                 return None
-            reasons = {1: "Invalid E-Mail.",
-                       2: "Mailbox full.",
-                       3: "Other problem."}
-            line = "E-Mail Address '{}' is making problems - {} - {}".format(
-                address, reasons.get(error, "Unknown problem."),
+            reasons = {1: "Ungültige E-Mail",
+                       2: "Postfach voll.",
+                       3: "Anderes Problem."}
+            line = "E-Mail-Adresse '{}' macht Probleme - {} - {}".format(
+                address, reasons.get(error, "Unbekanntes Problem."),
                 now().date().isoformat())
             self.ml_log(rs, const.MlLogCodes.email_trouble, None,
                         persona_id=unwrap(data)['id'], additional_info=line)
