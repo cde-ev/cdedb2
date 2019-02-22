@@ -444,7 +444,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             self.notify_return_code(rs, code)
             path = (self.conf.STORAGE_DIR / 'assembly_attachment'
                     / str(attachment_id))
-            os.remove(str(path))
+            if path.exists():
+                path.unlink()
         if ballot_id:
             return self.redirect(rs, "assembly/show_ballot")
         else:

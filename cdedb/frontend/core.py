@@ -1112,7 +1112,8 @@ class CoreFrontend(AbstractFrontend):
             if previous:
                 if not self.coreproxy.foto_usage(rs, previous):
                     path = self.conf.STORAGE_DIR / 'foto' / previous
-                    os.remove(str(path))
+                    if path.exists():
+                        path.unlink()
         self.notify_return_code(rs, code, success=n_("Foto updated."))
         return self.redirect_show_user(rs, persona_id)
 
