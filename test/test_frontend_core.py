@@ -576,6 +576,12 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
         f = self.response.forms['promotionform']
+        # First check error handling by entering an invalid birthday
+        f['birthday'] = "foobar"
+        self.submit(f, check_notification=False)
+        self.assertPresence('Validierung ', 'notifications')
+        self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
+        # Now, do it right
         f['birthday'] = "21.6.1977"
         f['gender'] = 1
         self.submit(f)

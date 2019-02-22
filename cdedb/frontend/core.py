@@ -984,8 +984,6 @@ class CoreFrontend(AbstractFrontend):
         admin choose one. If it is present we present a mask to promote
         the user.
         """
-        if rs.errors:
-            return self.index(rs)
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
@@ -1028,7 +1026,7 @@ class CoreFrontend(AbstractFrontend):
             data['is_{}_realm'.format(realm)] = True
         data = check(rs, "persona", data, transition=True)
         if rs.errors:
-            return self.promote_user_form(rs, persona_id, target_realm)
+            return self.promote_user_form(rs, persona_id)
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
