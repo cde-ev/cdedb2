@@ -3073,14 +3073,15 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in rs.ambience['event']['parts']}
         # Parse request data
         params = tuple(("new_{}".format(part_id), "[id]")
-                       for part_id in rs.ambience['event']['parts']) + tuple(
-            itertools.chain(*[[("delete_{}_{}".format(part_id, reg_id), "bool")
-                               for reg_id in current_inhabitants[part_id]]
-                              for part_id in rs.ambience['event']['parts']],
-                            *[[("reserve_{}_{}".format(part_id, reg_id), "bool")
-                               for reg_id in current_inhabitants[part_id]]
-                              for part_id in rs.ambience['event']['parts']],
-                            ))
+                       for part_id in rs.ambience['event']['parts']) \
+            + tuple(itertools.chain(
+                (("delete_{}_{}".format(part_id, reg_id), "bool")
+                 for part_id in rs.ambience['event']['parts']
+                 for reg_id in current_inhabitants[part_id]),
+
+                (("reserve_{}_{}".format(part_id, reg_id), "bool")
+                 for part_id in rs.ambience['event']['parts']
+                 for reg_id in current_inhabitants[part_id])))
         data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
@@ -3207,10 +3208,10 @@ class EventFrontend(AbstractUserFrontend):
         # Parse request data
         params = (tuple(("new_{}".format(track_id), "[id]")
                         for track_id in rs.ambience['course']['segments'])
-                  + tuple(itertools.chain(
-                    *[(("delete_{}_{}".format(track_id, reg_id), "bool")
-                       for reg_id in current_attendees[track_id])
-                      for track_id in rs.ambience['course']['segments']])))
+                  + tuple(
+                    ("delete_{}_{}".format(track_id, reg_id), "bool")
+                    for track_id in rs.ambience['course']['segments']
+                    for reg_id in current_attendees[track_id]))
         data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_attendees_form(rs, event_id, course_id)
