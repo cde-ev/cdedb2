@@ -3161,7 +3161,6 @@ class EventFrontend(AbstractUserFrontend):
             part = reg['parts'][tracks[track_id]['part_id']]
             track = reg['tracks'][track_id]
             return (part['status'] == const.RegistrationPartStati.participant
-                    and track['course_id']
                     and track['course_id'] != course_id)
 
         selectize_data = {
