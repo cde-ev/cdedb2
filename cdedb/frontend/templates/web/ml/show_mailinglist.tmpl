@@ -59,7 +59,7 @@
         </dd>
     </dl>
 
-    {{ ambience['mailinglist']['description']|rst }}
+    {{ ambience['mailinglist']['description']|md }}
 
     {% if is_admin and ambience['mailinglist']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}

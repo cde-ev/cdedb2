@@ -24,7 +24,7 @@
         </div>
     {% endif %}
     
-    {{ ambience['event']['description']|rst }}
+    {{ ambience['event']['description']|md }}
 
     <dl class="dl-horizontal">
         {% if ambience['event']['parts']|length > 0 %}
@@ -92,7 +92,7 @@
         {% if ambience['event']['notes'] %}
             {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['notes']|rst }}
+                {{ ambience['event']['notes']|md }}
             {% endcall %}
         {% endif %}
         

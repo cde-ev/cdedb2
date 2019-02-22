@@ -25,7 +25,7 @@
     {% endif %}
 
     {# General information about ballot and personalized state info #}
-    {{ ambience['ballot']['description']|rst }}
+    {{ ambience['ballot']['description']|md }}
 
     <dl class="dl-horizontal">
         <dt>{% trans -%}Voting Period{%- endtrans %}</dt>

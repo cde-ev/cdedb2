@@ -19,8 +19,10 @@
             {{ util.form_input_text(name=key, label=gettext(key)) }}
         {% endfor %}
         {% for key in ("banner_before_login", "banner_after_login") %}
-            {{ util.form_input_textarea(name=key, label=gettext(key), info=gettext("Supports reStructuredText"), rows=5,
-                                        infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+            {{ util.form_input_textarea(name=key, label=gettext(key), rows=5,
+                                        info=gettext("Supports Markdown %(infolink)s")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"),
+                                                           gettext("Short Markdown summary")))|s) }}
         {% endfor %}
         <div>
             {{ util.form_input_submit(value=gettext("Save")) }}

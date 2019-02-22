@@ -73,7 +73,7 @@
             <div class="col-md-6">
                 {% call util.bootstrap_panel(gettext("Orga-Notes"), icon='tag',
                                              aclass='panel panel-default panel-condensed') %}
-                    {{ ambience['lodgement']['notes']|rst }}
+                    {{ ambience['lodgement']['notes']|md }}
                 {% endcall %}
             </div>
         {% endif %}

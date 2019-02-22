@@ -65,8 +65,9 @@
             {{ util.form_input_checkbox(name="bub_search", label=gettext("Searchable for BuB"), anid="input_checkbox_bub_search") }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7",
-                                    info=gettext("Supports reStructuredText"),
-				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+                                    info=gettext("Supports Markdown %(infolink)s")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"),
+                                    gettext("Short Markdown summary")))|s) }}
 
 
         {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}

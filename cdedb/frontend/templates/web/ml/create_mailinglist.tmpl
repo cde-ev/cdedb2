@@ -22,11 +22,11 @@
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="address", label=gettext("Address")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports reStructuredText"),
-                                    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+                                    info=gettext("Supports Markdown %(infolink)s")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
-                                    info=gettext("Supports reStructuredText"),
-                                    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+                                    info=gettext("Supports Markdown %(infolink)s")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
 
         <h4 class="heading-underline">{% trans -%}Moderation &amp; Subscribers{%- endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
