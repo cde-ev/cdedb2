@@ -38,3 +38,32 @@ class TestApplication(FrontendTest):
 
     def test_basics(self):
         self.get("/")
+
+    @as_users("anton")
+    def test_csrf_mitigation(self, user):
+        self.get("/core/self/change")
+        f = self.response.forms['changedataform']
+        # Try submitting with missing anti CSRF token
+        f['_anti_csrf'] = None
+        f['postal_code2'] = "22337"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Dieses Formular benötigt einen Anti-CSRF-Token.", 'notifications')
+        self.get("/core/self/show")
+        self.follow()
+        self.assertNonPresence("22337")
+
+        # Try submitting with invalid anti CSRF token hash
+        self.get("/core/self/change")
+        f = self.response.forms['changedataform']
+        f['_anti_csrf'] = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000--2200-01-01 00:00:00+0000--1"
+        f['postal_code2'] = "abcd"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Der Anti-CSRF-Token wurde gefälscht oder ist abgelaufen. Probiere es erneut.", 'notifications')
+        # Try re-submitting with valid anti CSRF token, but validation errors
+        f = self.response.forms['changedataform']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", 'notifications')
+        f = self.response.forms['changedataform']
+        f['postal_code2'] = "22337"
+        self.submit(f)
+        self.assertPresence("22337")
