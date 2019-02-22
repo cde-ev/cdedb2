@@ -41,7 +41,7 @@
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
                     {<<% if ambience['event']['reserve_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['reserve_field']]['name']) -%>>
-                        Reserveplatz
+                        Isomattenplatz
                      <<%- endif %>>}
                     {<<% if ambience['event']['lodge_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['lodge_field']]['name']) -%>>
                         Wunsch: <<< registration['fields'].get(ambience['event']['fields'][ambience['event']['lodge_field']]['name']) >>>\par

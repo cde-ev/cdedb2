@@ -2724,16 +2724,16 @@ msgid "Mixed lodgement with non-mixing participants."
 msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmern."
 
 #: cdedb/frontend/event.py:2820
-msgid "Too many reserve lodgers used."
-msgstr "Zu viele Isomattenplätze belegt."
+msgid "Too many camping mats used."
+msgstr "Zu viele Isomattenplätze genutzt."
 
 #: cdedb/frontend/event.py:2833
 msgid "Overful lodgement."
 msgstr "Überfüllte Unterkunft"
 
 #: cdedb/frontend/event.py:2836
-msgid "Too few reserve lodgers used."
-msgstr "Zu wenige Isomattenplätze belegt."
+msgid "Too few camping mats used."
+msgstr "Zu wenige Isomattenplätze genutzt."
 
 #: cdedb/frontend/event.py:2847
 msgid "Non-Binary Participant."
@@ -2796,8 +2796,8 @@ msgid "{title}: lodgement"
 msgstr "{title}: Unterkunft"
 
 #: cdedb/frontend/event.py:3462
-msgid "{title}: reserve lodger"
-msgstr "{title}: Isomattenplatz"
+msgid "{title}: camping mat user"
+msgstr "{title}: Isomattenschläfer"
 
 #: cdedb/frontend/event.py:3467
 msgid "{title} lodgement: {field}"
@@ -2812,8 +2812,8 @@ msgid "any part: lodgement"
 msgstr "Bel. Teil: Unterkunft"
 
 #: cdedb/frontend/event.py:3481
-msgid "any part: reserve lodger"
-msgstr "Bel. Teil: Isomattenplatz"
+msgid "any part: camping mat user"
+msgstr "Bel. Teil: Isomattenschläfer"
 
 #: cdedb/frontend/event.py:3486
 msgid "any part lodgement: {field}"
@@ -2828,8 +2828,8 @@ msgid "lodgement"
 msgstr "Unterkunft"
 
 #: cdedb/frontend/event.py:3500
-msgid "reserve lodger"
-msgstr "Isomattenplatz"
+msgid "camping mat user"
+msgstr "Isomattenschläfer"
 
 #: cdedb/frontend/event.py:3504
 msgid "lodgement: {field}"
@@ -8076,8 +8076,8 @@ msgstr ""
 "Feldtyp: Text"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:68
-msgid "Field for Reserve"
-msgstr "Datenfeld für Isomattenschläfer"
+msgid "Field for Camping Mat"
+msgstr "Feld für Isomatte"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:69
 msgid ""
@@ -8111,8 +8111,8 @@ msgstr "Reguläre Kapazität"
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:29
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:28
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:37
-msgid "Reserve Capacity"
-msgstr "Überbelegungs-Kapazität"
+msgid "Camping Mat Capacity"
+msgstr "Isomattenplätze"
 
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:37
 msgid "No custom fields for lodgements available."
@@ -8134,8 +8134,8 @@ msgstr "Name"
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:63
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:132
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:163
-msgid "Is Reserve"
-msgstr "Ist Isomattenschläfer"
+msgid "Uses Camping Mat"
+msgstr "Isomattenschläfer"
 
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:7
 #, python-format
@@ -8235,14 +8235,6 @@ msgid ""
 msgstr ""
 "Teilnehmer, die %(select1)s den Kurs %(select2)s %(select3)s, mit einer der "
 "folgenden Teilnehmer-IDs: %(select4)s"
-
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:71
-msgid "in Track {}"
-msgstr "in Kursschiene {}"
-
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:73
-msgid "Filter: Course"
-msgstr "Filter: Kurs"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:75
 msgid "— no Filter —"
@@ -8761,8 +8753,8 @@ msgstr "Regulär"
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:48
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:43
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:123
-msgid "Reserve"
-msgstr "Überbelegung"
+msgid "Camping Mat"
+msgstr "Isomatte"
 
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:78
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:16
@@ -10048,6 +10040,32 @@ msgstr ""
 #~ "Leider gibt es das Einzugsermächtigungsformular nur auf Deutsch. "
 #~ "Lastschrifteinzug ist nur von deutschen Konten möglich."
 
+#~ msgid "{title}: reserve lodger"
+#~ msgstr "{title}: Isomattenplatz"
+
+#~ msgid "any part: reserve lodger"
+#~ msgstr "Bel. Teil: Isomattenplatz"
+
+#~ msgid "reserve lodger"
+#~ msgstr "Isomattenplatz"
+
+#~ msgid "Field for Reserve"
+#~ msgstr "Datenfeld für Isomattenschläfer"
+
+#~ msgid "Reserve Capacity"
+#~ msgstr "Überbelegungs-Kapazität"
+
+#~ msgid "Is Reserve"
+#~ msgstr "Ist Isomattenschläfer"
+
+#~ msgid "in Track {}"
+#~ msgstr "in Kursschiene {}"
+
+#~ msgid "Reserve"
+#~ msgstr "Überbelegung"
+
+#~ msgid "in the course …"
+#~ msgstr "in den Kurs …"
 #~ msgid "{count} Requests"
 #~ msgstr "{count} Anfragen"
 

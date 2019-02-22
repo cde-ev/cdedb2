@@ -25,7 +25,7 @@
           class="form-horizontal">
         {{ util.form_input_text(name="moniker", label=gettext("Moniker")) }}
         {{ util.form_input_text(name="capacity", label=gettext("Regular Capacity"), type="number") }}
-        {{ util.form_input_text(name="reserve", label=gettext("Reserve Capacity"), type="number") }}
+        {{ util.form_input_text(name="reserve", label=gettext("Camping Mat Capacity"), type="number") }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/lodgements")) }}
     </form>

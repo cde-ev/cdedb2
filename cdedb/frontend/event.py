@@ -2873,7 +2873,7 @@ class EventFrontend(AbstractUserFrontend):
         def _reserve_problem(lodgement_id, part_id):
             """Un-inlined code to generate an entry for reserve problems."""
             return (
-                n_("Too many reserve lodgers used."), lodgement_id,
+                n_("Too many camping mats used."), lodgement_id,
                 part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
                     if registrations[reg_id]['parts'][part_id]['is_reserve']),
@@ -2889,7 +2889,7 @@ class EventFrontend(AbstractUserFrontend):
                     ret.append((n_("Overful lodgement."), lodgement_id, part_id,
                                 tuple(), 2))
                 elif len(group) - num_reserve > lodgement['capacity']:
-                    ret.append((n_("Too few reserve lodgers used."),
+                    ret.append((n_("Too few camping mats used."),
                                 lodgement_id, part_id, tuple(), 2))
                 if num_reserve > lodgement['reserve']:
                     ret.append(_reserve_problem(lodgement_id, part_id))
@@ -3516,7 +3516,7 @@ class EventFrontend(AbstractUserFrontend):
                     "part{0}.lodgement_id{0}".format(part_id): rs.gettext(
                         "{title}: lodgement").format(title=part['title']),
                     "part{0}.is_reserve{0}".format(part_id): rs.gettext(
-                        "{title}: reserve lodger").format(title=part['title']),
+                        "{title}: camping mat user").format(title=part['title']),
                 })
                 titles.update({
                     "lodge_fields{0}.xfield_{1}_{0}".format(
@@ -3535,7 +3535,7 @@ class EventFrontend(AbstractUserFrontend):
                     "any part: lodgement"),
                 ",".join("part{0}.is_reserve{0}".format(part_id)
                          for part_id in event['parts']): rs.gettext(
-                    "any part: reserve lodger")})
+                    "any part: camping mat user")})
             titles.update({
                 ",".join("lodge_fields{0}.xfield_{1}_{0}".format(
                     part_id, field['field_name'])
@@ -3553,7 +3553,7 @@ class EventFrontend(AbstractUserFrontend):
                 "part{0}.lodgement_id{0}".format(part_id):
                     rs.gettext("lodgement"),
                 "part{0}.is_reserve{0}".format(part_id):
-                    rs.gettext("reserve lodger"),
+                    rs.gettext("camping mat user"),
             })
             titles.update({
                 "lodge_fields{0}.xfield_{1}_{0}".format(

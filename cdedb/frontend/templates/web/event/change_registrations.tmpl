@@ -129,7 +129,7 @@
             {% call form_input_optional("part{}.is_reserve".format(part_id),
                                         anid="part{}_is_reserve".format(part_id)) %}
                 <div class="checkbox">
-                    {{ util.input_checkbox(name="part{}.is_reserve".format(part_id), label=gettext("Is Reserve"),
+                    {{ util.input_checkbox(name="part{}.is_reserve".format(part_id), label=gettext("Uses Camping Mat"),
                                            anid="part{}_is_reserve".format(part_id)) }}
                 </div>
             {% endcall %}
