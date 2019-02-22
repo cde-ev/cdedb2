@@ -2225,11 +2225,12 @@ class EventFrontend(AbstractUserFrontend):
         additional information. What exactly is queried is configured on a
         per event basis.
         """
-        registration_id = unwrap(self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id), keys=True)
+        registration_id = self.eventproxy.list_registrations(
+            rs, event_id, persona_id=rs.user.persona_id)
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
+        registration_id = unwrap(registration_id, keys=True)
         if not rs.ambience['event']['use_questionnaire']:
             rs.notify("error", n_("Questionnaire disabled."))
             return self.redirect(rs, "event/registration_status")

@@ -40,8 +40,10 @@
     </h1>
 {% endblock %}
 {% block content %}
+    {% if not preview %}
     <form action="{{ cdedblink('event/questionnaire') }}" method="POST" id="questionnaireform"
           class="form-horizontal">
+    {% endif %}
         {% for entry in questionnaire %}
             {# Field entry #}
             {% if entry['field_id'] %}
@@ -88,7 +90,9 @@
             {{ util.form_input_submit(value="Abschicken", cancellink=cdedblink("event/registration_status"),
                                       readonly=is_locked) }}
         {% endif %}
+    {% if not preview %}
     </form>
+    {% endif %}
     <script type="text/javascript">
         $('#questionnaireform').cdedbProtectChanges();
     </script>
