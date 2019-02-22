@@ -501,6 +501,21 @@ def bleach_filter(val):
     return safe_filter(get_bleach_cleaner().clean(val))
 
 
+import markdown
+md = markdown.Markdown()
+
+
+def md_filter(val):
+    """Custom jinja filter to convert rst to html.
+
+    :type val: str
+    :rtype: str
+    """
+    if val is None:
+        return None
+    return bleach_filter(md.convert(val))
+
+
 def rst_filter(val):
     """Custom jinja filter to convert rst to html.
 
@@ -638,6 +653,7 @@ JINJA_FILTERS = {
     'querytoparams': querytoparams_filter,
     'genus': genus_filter,
     'linebreaks': linebreaks_filter,
+    'md': md_filter,
     'rst': rst_filter,
     'enum': enum_filter,
     'xdictsort': xdictsort_filter,
