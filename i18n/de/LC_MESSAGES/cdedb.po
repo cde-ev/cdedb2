@@ -8210,6 +8210,11 @@ msgid "%(count)s Att."
 msgstr "%(count)s TN."
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:63
+#, python-format
+msgid "in Track %s"
+msgstr "in Kursschiene %s"
+
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:64
 msgid "— any —"
 msgstr "– egal –"
 

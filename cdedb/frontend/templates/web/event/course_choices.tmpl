@@ -60,15 +60,16 @@
               aria-label="{% trans -%}Filter{%- endtrans %}">
             <p>
                 {% if ambience['event']['tracks']|length > 1 %}
-                    {% set select1 = util.input_select(name="track_id", nulloption=gettext("— any —"),
-                    entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
-                    aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Coursetrack")) %}
+                    {% set select1 = gettext("in Track %s")|e|format(util.input_select(
+                        name="track_id", nulloption=gettext("— any —"),
+                        entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
+                        aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Coursetrack"))) %}
                 {% else %}
                     {% set select1 = "" %}
                     {{ util.input_hidden(name="track_id", value=(ambience['event']['tracks']|list)[0]) }}
                 {% endif %}
 
-                {% trans select1=gettext("in Track {}").format(select1) if select1 else "",
+                {% trans select1=select1,
                         select2=util.input_select(name="course_id", entries=course_entries, nulloption="",
                                 aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Course")),
                         select3=util.input_select(name="position", entries=filter_entries,
