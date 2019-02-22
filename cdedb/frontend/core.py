@@ -1051,6 +1051,24 @@ class CoreFrontend(AbstractFrontend):
             return self.modify_membership_form(rs, persona_id)
         code = self.coreproxy.change_membership(rs, persona_id, is_member)
         self.notify_return_code(rs, code)
+
+        if not is_member:
+            lastschrift_ids = self.cdeproxy.list_lastschrift(
+                rs, persona_ids=(persona_id,), active=None)
+            lastschrifts = self.cdeproxy.get_lastschrifts(
+                rs, lastschrift_ids.keys())
+            active_permit = None
+            for lastschrift in lastschrifts.values():
+                if not lastschrift['revoked_at']:
+                    active_permit = lastschrift['id']
+            if active_permit:
+                data = {
+                    'id': active_permit,
+                    'revoked_at': now(),
+                }
+                code = self.cdeproxy.set_lastschrift(rs, data)
+                self.notify_return_code(rs, code, success=n_("Permit revoked."))
+
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde")
