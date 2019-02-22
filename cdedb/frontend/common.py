@@ -902,7 +902,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         params = params or {}
         # handy, should probably survive in a commented HTML portion
-        if 'debugstring' not in params:
+        if 'debugstring' not in params and self.conf.CDEDB_DEV:
             debugstring = glue(
                 "We have is_multithreaded={}; is_multiprocess={};",
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
