@@ -7739,6 +7739,11 @@ msgstr "Anmeldung für %(title)s ändern"
 msgid "My Registration"
 msgstr "Meine Anmeldung"
 
+#: cdedb/frontend/templates/web/event/amend_registration.tmpl:16
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:89
+msgid "Change"
+msgstr "Ändern"
+
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:19
 msgid "Edit Registration"
 msgstr "Anmeldung bearbeiten"
@@ -7810,7 +7815,7 @@ msgstr "Teilnehmer-Statistik"
 #: cdedb/frontend/templates/web/event/base.tmpl:39
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:77
 msgid "Course Assignment"
-msgstr "Kurszuteilung"
+msgstr "Kurseinteilung"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:42
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:14
@@ -8262,7 +8267,7 @@ msgstr "Alle Anzeigen"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:93
 msgid "Assignment"
-msgstr "Zuteilung"
+msgstr "Einteilung"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:94
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:105

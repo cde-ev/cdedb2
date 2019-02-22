@@ -26,7 +26,7 @@
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), gettext("Configure Questionnaire")) }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
-                            gettext("Questionnaire Preview"), active=True) }}
+                            gettext("Preview Questionnaire"), active=True) }}
 {% endif %}
 {% endblock %}
 {% block heading %}
