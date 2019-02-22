@@ -3757,7 +3757,7 @@ class EventFrontend(AbstractUserFrontend):
                             for registration_id in registration_ids)
         data = request_extractor(rs, data_params)
         if rs.errors:
-            return self.field_set_form(rs, event_id, field_id, reg_ids)
+            return self.field_set_form(rs, event_id)
 
         # If no list of registration_ids is given as parameter get all
         # registrations

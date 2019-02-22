@@ -36,7 +36,7 @@
                     force_label=True) }}
             {% endfor %}
             {{ util.input_hidden(name="field_id") }}
-            {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
+            {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',') if reg_ids else "") }}
             {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/registration_query')) }}
         </form>
     {% else %}
