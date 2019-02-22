@@ -52,7 +52,10 @@ visited_urls = set()
 posted_urls = set()
 response_queue = queue.Queue()
 
-# exclude some forms wich do some undesired behaviour
+# URL parameters to ignore when checking for unique urls
+IGNORE_URL_PARAMS = ('confirm_id',)
+
+# exclude some forms which do some undesired behaviour
 posted_urls.add('/core/logout')
 posted_urls.add('/core/locale')
 posted_urls.add('/event/event/1/lock')
@@ -106,12 +109,18 @@ while True:
         if target.startswith(('http://', 'https://', 'mailto:', '/doc/')):
             continue
         target = target.split('#')[0]
-        # in the CdEdb2, URL parameters are typically not required to unleash
-        # the templates' power. Sometimes they are even redundant (profile
-        # verification id)
-        target = target.split('?')[0]
 
-        if not target or target in visited_urls:
+        # Strip ambiguous parameters from the url to check if it has already
+        # been visited
+        l = target.split('?', maxsplit=1)
+        if len(l) == 1:
+            unique_target = l[0]
+        else:
+            unique_target = l[0] + "?" + "&".join(
+                p for p in l[1].split('&')
+                if p.split('=')[0] not in IGNORE_URL_PARAMS)
+
+        if not target or unique_target in visited_urls:
             continue
 
         try:
@@ -120,7 +129,7 @@ while True:
         except webtest.app.AppError as e:
             print("Got error when following {}: {}".format(target, str(e)[:70]))
             continue
-        visited_urls.add(target)
+        visited_urls.add(unique_target)
         response_queue.put((new_response, target, url), True)
 
     # Submit all forms to unvisited action urls
