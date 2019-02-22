@@ -1129,8 +1129,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     self.logger.info("Invoking {}".format(args))
                     subprocess.check_call(args, stdout=subprocess.DEVNULL,
                                           cwd=tmp_dir)
-                with open("{}.pdf".format(tmp_file.name), 'rb') as pdf:
-                    return pdf.read()
+                path = pathlib.Path("{}.pdf".format(tmp_file.name))
+                self.logger.debug(path)
+                if path.exists():
+                    with open("{}.pdf".format(tmp_file.name), 'rb') as pdf:
+                        return pdf.read()
+                else:
+                    return None
 
     def serve_latex_document(self, rs, data, filename, runs=2):
         """Generate a response from a LaTeX document.
@@ -1153,6 +1158,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 filename=rs.gettext("{}.tex".format(filename)))
         else:
             pdf = self.latex_compile(data, runs=runs)
+            if not pdf:
+                return None
             return self.send_file(
                 rs, mimetype="application/pdf", data=pdf,
                 filename=rs.gettext("{}.pdf".format(filename)))
@@ -1213,10 +1220,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 self.logger.info("Invoking {}".format(args))
                 subprocess.check_call(args, stdout=subprocess.DEVNULL,
                                       cwd=str(work_dir))
-            return self.send_file(
-                rs, mimetype="application/pdf",
-                path=(work_dir / pdf_file),
-                filename=rs.gettext(pdf_file))
+            path = work_dir / pdf_file
+            if path.exists():
+                return self.send_file(
+                    rs, mimetype="application/pdf",
+                    path=(work_dir / pdf_file),
+                    filename=rs.gettext(pdf_file))
+            else:
+                return None
 
 
 class Worker(threading.Thread):
