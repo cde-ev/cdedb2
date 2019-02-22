@@ -1477,9 +1477,14 @@ class EventFrontend(AbstractUserFrontend):
             shutil_copy(src, work_dir / "multicourse-logo.png")
             for course_id in courses:
                 shutil_copy(src, work_dir / "logo-{}.png".format(course_id))
-            return self.serve_complex_latex_document(
+            file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 n_("nametags.tex"), runs)
+            if file:
+                return file
+            else:
+                rs.notify("info", n_("Empty PDF."))
+                return self.redirect(rs, "event/downloads")
 
     @access("event")
     @REQUESTdata(("runs", "single_digit_int"))
@@ -1514,7 +1519,12 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "course_puzzle", {
             'courses': courses, 'counts': counts,
             'registrations': registrations, 'personas': personas})
-        return self.serve_latex_document(rs, tex, "course_puzzle", runs)
+        file = self.serve_latex_document(rs, tex, "course_puzzle", runs)
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty PDF."))
+            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @REQUESTdata(("runs", "single_digit_int"))
@@ -1540,7 +1550,12 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas})
-        return self.serve_latex_document(rs, tex, "lodgement_puzzle", runs)
+        file = self.serve_latex_document(rs, tex, "lodgement_puzzle", runs)
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty PDF."))
+            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @REQUESTdata(("runs", "single_digit_int"))
@@ -1584,9 +1599,14 @@ class EventFrontend(AbstractUserFrontend):
                 shutil_copy(
                     self.conf.REPOSITORY_PATH / "misc/logo.png",
                     work_dir / "logo-{}.png".format(course_id))
-            return self.serve_complex_latex_document(
+            file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 n_("course_lists.tex"), runs)
+            if file:
+                return file
+            else:
+                rs.notify("info", n_("Empty PDF."))
+                return self.redirect(rs, "event/downloads")
 
     @access("event")
     @REQUESTdata(("runs", "single_digit_int"))
@@ -1613,9 +1633,14 @@ class EventFrontend(AbstractUserFrontend):
             shutil_copy(
                 self.conf.REPOSITORY_PATH / "misc/logo.png",
                 work_dir / "aka-logo.png")
-            return self.serve_complex_latex_document(
+            file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 n_("lodgement_lists.tex"), runs)
+            if file:
+                return file
+            else:
+                rs.notify("info", n_("Empty PDF."))
+                return self.redirect(rs, "event/downloads")
 
     @access("event")
     @REQUESTdata(("runs", "single_digit_int"), ("landscape", "bool"),
@@ -1645,7 +1670,12 @@ class EventFrontend(AbstractUserFrontend):
             'orientation': "landscape" if landscape else "portrait",
             'orgas_only': orgas_only,
         })
-        return self.serve_latex_document(rs, tex, "participant_list", runs)
+        file = self.serve_latex_document(rs, tex, "participant_list", runs)
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty PDF."))
+            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
