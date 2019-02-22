@@ -3072,7 +3072,7 @@ class EventFrontend(AbstractUserFrontend):
                       == lodgement_id]
             for part_id in rs.ambience['event']['parts']}
         # Parse request data
-        params = tuple(("new_{}".format(part_id), "[id]")
+        params = tuple(("new_{}".format(part_id), "[id_or_None]")
                        for part_id in rs.ambience['event']['parts']) \
             + tuple(itertools.chain(
                 (("delete_{}_{}".format(part_id, reg_id), "bool")
@@ -3206,7 +3206,7 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in rs.ambience['course']['segments']}
 
         # Parse request data
-        params = (tuple(("new_{}".format(track_id), "[id]")
+        params = (tuple(("new_{}".format(track_id), "[id_or_None]")
                         for track_id in rs.ambience['course']['segments'])
                   + tuple(
                     ("delete_{}_{}".format(track_id, reg_id), "bool")
