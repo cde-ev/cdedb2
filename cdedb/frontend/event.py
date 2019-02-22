@@ -1684,8 +1684,13 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "expuls", {'courses': courses})
-        return self.send_file(rs, data=tex, inline=False,
+        file = self.send_file(rs, data=tex, inline=False,
                               filename=rs.gettext("expuls.tex"))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
@@ -1716,8 +1721,13 @@ class EventFrontend(AbstractUserFrontend):
                 if field['association'] == const.FieldAssociations.course})
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
-        return self.send_file(
+        file = self.send_file(
             rs, data=csv_data, inline=False, filename=rs.gettext("courses.csv"))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
@@ -1740,9 +1750,14 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(lodgements.values(),
                                      key=lambda c: c['id']),
                               columns)
-        return self.send_file(
+        file = self.send_file(
             rs, data=csv_data, inline=False,
             filename=rs.gettext("lodgements.csv"))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
@@ -1877,9 +1892,14 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(registrations.values(),
                                      key=lambda c: c['id']),
                               columns)
-        return self.send_file(
+        file = self.send_file(
             rs, data=csv_data, inline=False,
             filename=rs.gettext("registrations.csv"))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
@@ -1888,8 +1908,13 @@ class EventFrontend(AbstractUserFrontend):
         instance."""
         data = self.eventproxy.export_event(rs, event_id)
         json = json_serialize(data)
-        return self.send_file(rs, data=json, inline=False,
+        file = self.send_file(rs, data=json, inline=False,
                               filename=rs.gettext("export_event.json"))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
 
     @access("event")
     def register_form(self, rs, event_id):
