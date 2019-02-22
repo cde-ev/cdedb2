@@ -94,10 +94,11 @@
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
                         <div class="pull-right">
-                            {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
-                                                                            'course_id': ambience['course']['id'],
-                                                                            'position': -6,
-                                                                            'submitform': True}),
+                            {{ util.href(cdedblink('event/course_choices', {
+                                             'track_id': track_id,
+                                             'course_id': ambience['course']['id'],
+                                             'position': enums.CourseFilterPositions.assigned.value,
+                                             'submitform': True}),
                                          num_track_attendees,
                                          title=gettext("Participants' Course Choices")) }}
                         </div>
