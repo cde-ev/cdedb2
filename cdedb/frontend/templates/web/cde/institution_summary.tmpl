@@ -16,19 +16,19 @@
     <tr class="{{ aclass }}" role="group" aria-label="Institution {{ institution_id }}">
         <td {% if 'title_{}'.format(institution_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text('title_{}'.format(institution_id), aclass='drow-input form-control',
-                    attributes=('data-basename="title_"' if newrow else ''), arialabel=gettext("Name")) }}
+                    attributes=('data-basename="title_"'|s if newrow else ''), arialabel=gettext("Name")) }}
             {{ util.output_errors('title_{}'.format(institution_id)) }}
         </td>
         <td {% if 'moniker_{}'.format(institution_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text('moniker_{}'.format(institution_id), aclass='drow-input form-control',
-                    attributes=('data-basename="moniker_"' if newrow else ''), arialabel=gettext("Shortname")) }}
+                    attributes=('data-basename="moniker_"'|s if newrow else ''), arialabel=gettext("Shortname")) }}
             {{ util.output_errors('moniker_{}'.format(institution_id)) }}
         </td>
         <td>
             <span class="drow-buttonspace">
                 {% if newrow %}
                     {{ util.input_checkbox("create_{}".format(institution_id), label=gettext("Add"),
-                                           attributes='data-basename="create_"', aclass='drow-indicator') }}
+                                           attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
                 {% else %}
                     {{ util.input_checkbox("delete_{}".format(institution_id), label=gettext("Delete"),
                                            readonly=not deletable, aclass='drow-indicator') }}
