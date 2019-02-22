@@ -30,12 +30,8 @@
                 <form action="{{ cdedblink('cde/parse_download') }}" method="POST" id="{{ key }}">
                     {# These class tags are not supposed to do anything,
                     they are a hack to ensure the data is preserved. #}
-                    <div class="<pre>">
-                        {{- util.input_hidden("data", value=value) -}}
-                    </div>
-                    <div class="</pre>">
+                    {{- util.input_hidden("data", value=value) -}}
                     {{- util.input_hidden("filename", value="{}.csv".format(key)) -}}
-                    </div>
                     {%- trans count=(value.split("\n")|length - 1) -%}
                         {{ count }} entries.
                     {%- endtrans -%}
