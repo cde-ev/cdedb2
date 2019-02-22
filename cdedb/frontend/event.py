@@ -1716,7 +1716,7 @@ class EventFrontend(AbstractUserFrontend):
                    'persona.mobile', 'persona.address',
                    'persona.address_supplement', 'persona.postal_code',
                    'persona.location', 'persona.country', 'payment',
-                   'parental_agreement', 'mixed_lodging', 'foto_consent',
+                   'parental_agreement', 'mixed_lodging', 'list_consent',
                    'notes', 'orga_notes', 'checkin',
                    # 'creation_time', 'modification_time',
                    ]
@@ -1898,8 +1898,8 @@ class EventFrontend(AbstractUserFrontend):
         :returns: registration data set
         """
         tracks = event['tracks']
-        standard_params = (("mixed_lodging", "bool"), ("foto_consent", "bool"),
-                           ("notes", "str_or_None"), ("list_consent", "bool"))
+        standard_params = (("mixed_lodging", "bool"), ("notes", "str_or_None"),
+                           ("list_consent", "bool"))
         if parts is None:
             standard_params += (("parts", "[int]"),)
         standard = request_extractor(rs, standard_params)
@@ -1932,10 +1932,6 @@ class EventFrontend(AbstractUserFrontend):
                         ("course_choice{}_{}".format(track_id, i),
                          ValueError(n_("Must choose different courses.")))
                         for i in range(track['num_choices']))
-        if not standard['foto_consent']:
-            rs.errors.append(("foto_consent",
-                              ValueError(
-                                  n_("Must consent for participation."))))
         reg_parts = {part_id: {} for part_id in event['parts']}
         if parts is None:
             for part_id in reg_parts:
@@ -1957,7 +1953,6 @@ class EventFrontend(AbstractUserFrontend):
                 for i in range(tracks[track_id]['num_choices']))
         registration = {
             'mixed_lodging': standard['mixed_lodging'],
-            'foto_consent': standard['foto_consent'],
             'list_consent': standard['list_consent'],
             'notes': standard['notes'],
             'parts': reg_parts,
@@ -2413,7 +2408,7 @@ class EventFrontend(AbstractUserFrontend):
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
             ("reg.payment", "date_or_None"), ("reg.parental_agreement", "bool"),
             ("reg.mixed_lodging", "bool"), ("reg.checkin", "datetime_or_None"),
-            ("reg.foto_consent", "bool"), ("reg.list_consent", "bool"))
+            ("reg.list_consent", "bool"))
         part_params = []
         for part_id in event['parts']:
             part_params.extend((

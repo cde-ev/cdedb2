@@ -67,8 +67,7 @@
 
         <h3 class="heading-underline">Registration Data</h3>
         {{ util.form_input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging"), defaultvalue=True) }}
-        {{ util.form_input_checkbox(name="reg.foto_consent", label=gettext("Foto Consent"), defaultvalue=True) }}
-        {{ util.form_input_checkbox(name="list_consent", label=gettext("Participant List Consent"), defaultvalue=True) }}
+        {{ util.form_input_checkbox(name="reg.list_consent", label=gettext("Participant List Consent"), defaultvalue=True) }}
         {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% if course_choices[track_id]|length > 0 %}

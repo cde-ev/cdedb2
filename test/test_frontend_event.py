@@ -633,7 +633,6 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['registerform']
         f['parts'] = ['1', '3']
         f['mixed_lodging'] = 'True'
-        f['foto_consent'].checked = True
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
         f['course_choice3_0'] = 2
         f['course_choice3_1'] = 4
@@ -693,7 +692,6 @@ etc;anything else""", f['entries_2'].value)
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
         f['parts'] = ['1']
         f['mixed_lodging'] = 'True'
-        f['foto_consent'].checked = True
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]

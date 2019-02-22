@@ -124,7 +124,6 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 5,
-            "foto_consent": true,
             "list_consent": true,
             "fields": {
                 "brings_balls": true,
@@ -143,7 +142,6 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 1,
-            "foto_consent": true,
             "list_consent": true,
             "fields": {
                 "registration_id": 1,
@@ -161,7 +159,6 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 7,
-            "foto_consent": true,
             "list_consent": false,
             "fields": {
                 "transportation": "car",
@@ -179,7 +176,6 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 9,
-            "foto_consent": true,
             "list_consent": true,
             "fields": {
                 "brings_balls": false,
