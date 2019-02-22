@@ -37,6 +37,7 @@
     </p>
 
     <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/register') }}
         <h3 class="heading-underline">{% trans -%}My Data{%- endtrans %}</h3>
         <dl class="dl-horizontal">
             <dt>{% trans -%}Full Name{%- endtrans %}</dt>

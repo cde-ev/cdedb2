@@ -29,6 +29,7 @@
                            "This is only possible within the application deadline.") }}
             </p>
             <form action="{{ cdedblink('assembly/external_signup') }}" method="POST" id="addattendeeform">
+                {{ util.anti_csrf_token('assembly/external_signup') }}
                 <div class="row">
                     <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
                         {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",

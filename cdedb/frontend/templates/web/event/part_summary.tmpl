@@ -156,6 +156,7 @@
 
 {% block content %}
     <form action="{{ cdedblink('event/part_summary') }}" method="POST" id="partsummaryform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/part_summary') }}
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}

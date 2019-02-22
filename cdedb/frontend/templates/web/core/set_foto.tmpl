@@ -30,6 +30,7 @@
                     });
                 </script>
                 <form action="{{ cdedblink('core/set_foto') }}" method="POST" id="resetfotoform">
+                    {{ util.anti_csrf_token('core/set_foto') }}
                     <div class="form-group">
                         {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash") }}
                     </div>
@@ -51,6 +52,7 @@
             </ul>
             <form action="{{ cdedblink('core/set_foto') }}" method="POST" enctype="multipart/form-data"
                     id="setfotoform">
+                {{ util.anti_csrf_token('core/set_foto') }}
                 <div class="form-group {% if 'foto' in errors %}has-error{% endif %}">
                     <div class="input-group">
                         {{ util.input_file(name="foto", accept="image/*", arialabel=gettext("Picture-File")) }}

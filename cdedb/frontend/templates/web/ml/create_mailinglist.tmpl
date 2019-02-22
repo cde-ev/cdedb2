@@ -17,6 +17,7 @@
         });
     </script>
     <form action="{{ cdedblink('ml/create_mailinglist') }}" method="POST" id="createlistform" class="form-horizontal">
+        {{ util.anti_csrf_token('ml/create_mailinglist') }}
         <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), defaultvalue='True') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}

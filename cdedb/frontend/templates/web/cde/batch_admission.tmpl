@@ -22,6 +22,7 @@
 {% endmacro %}
 {% block content %}
     <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform">
+        {{ util.anti_csrf_token('cde/batch_admission') }}
         {{ util.input_hidden("finalized") }}
         <div class="row">
             <div class="col-md-6">

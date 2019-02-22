@@ -79,6 +79,7 @@
 
     <form action="{{ cdedblink('event/change_registrations') }}" method="POST" id="changeregistrationform"
           class="form-horizontal">
+        {{ util.anti_csrf_token('event/change_registrations') }}
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
         <h3 class="heading-underline">{% trans -%}Registrations{%- endtrans %}</h3>
         {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}

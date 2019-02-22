@@ -26,6 +26,7 @@
     </script>
     <form action="{{ cdedblink('cde/change_past_course') }}" method="POST" id="changecourseform"
             class="form-horizontal">
+        {{ util.anti_csrf_token('cde/change_past_course') }}
         {{ util.form_input_text(name="nr", label=gettext("Number")) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",

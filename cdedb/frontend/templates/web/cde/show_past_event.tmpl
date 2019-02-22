@@ -60,6 +60,7 @@
             </div>
             <div class="panel-body">
                 <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('cde/add_participant') }}
                     {{ util.input_hidden(name="pcourse_id", value="") }}
                     {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
@@ -116,6 +117,7 @@
                     {% if is_admin and None in participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
                          id="removeparticipantform{{ anid }}" style="display: inline;" class="delete-participant-form">
+                            {{ util.anti_csrf_token('cde/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger",

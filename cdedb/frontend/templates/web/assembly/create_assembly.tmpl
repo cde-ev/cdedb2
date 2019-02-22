@@ -11,6 +11,7 @@
 {% block content %}
     <form action="{{ cdedblink('assembly/create_assembly') }}" method="POST" id="createassemblyform"
             class="form-horizontal">
+        {{ util.anti_csrf_token('assembly/create_assembly') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports reStructuredText"),

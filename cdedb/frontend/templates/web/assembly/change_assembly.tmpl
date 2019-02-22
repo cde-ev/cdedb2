@@ -22,6 +22,7 @@
 {% block content %}
     <form action="{{ cdedblink('assembly/change_assembly') }}" method="POST" id="changeassemblyform"
             class="form-horizontal">
+        {{ util.anti_csrf_token('assembly/change_assembly') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports reStructuredText"),

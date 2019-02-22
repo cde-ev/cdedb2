@@ -25,6 +25,7 @@
 {% block content %}
     <form action="{{ cdedblink('event/add_registration') }}" method="POST" id="addregistrationform"
           class="form-horizontal">
+        {{ util.anti_csrf_token('event/add_registration') }}
         <h3 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h3>
         {{ util.form_input_text(name="persona.persona_id", label=gettext("CdEDB-ID"), anid="input-persona-persona_id",
                                 placeholder=gettext("DB-XXXX-X")) }}

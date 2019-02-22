@@ -20,6 +20,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/batch_fees') }}" method="POST" id="batchfeesform">
+        {{ util.anti_csrf_token('event/batch_fees') }}
         {{ util.form_input_checkbox(name="force", horizontal=False, label=gettext("Ignore Warnings")) }}
         {{ util.form_input_textarea(name="fee_data", horizontal=False, label=gettext("Transfers"), rows="10",
                                     anid="input-data") }}

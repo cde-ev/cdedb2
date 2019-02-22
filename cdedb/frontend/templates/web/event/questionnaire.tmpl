@@ -42,6 +42,7 @@
 {% block content %}
     <form action="{{ cdedblink('event/questionnaire') }}" method="POST" id="questionnaireform"
           class="form-horizontal">
+        {{ util.anti_csrf_token('event/questionnaire') }}
         {% for entry in questionnaire %}
             {# Field entry #}
             {% if entry['field_id'] %}

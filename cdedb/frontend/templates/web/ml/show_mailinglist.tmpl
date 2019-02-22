@@ -91,6 +91,7 @@
                             {% if sub_address %}
                                 <form action="{{ cdedblink('ml/change_address') }}" method="POST"
                                   id="resetaddressform" style="display: inline;">
+                                    {{ util.anti_csrf_token('ml/change_address') }}
                                     {{ util.input_hidden(name="email", value="") }}
                                     {{ util.input_submit(value=gettext("Reset E-Mail adress"), icon="share-alt",
                                             aclass="btn btn-warning btn-sm") }}
@@ -98,6 +99,7 @@
                             {% endif %}
                             <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
                                     id="unsubscribeform" style="display: inline;">
+                                {{ util.anti_csrf_token('ml/subscribe_or_unsubscribe') }}
                                 {{ util.input_hidden(name="subscribe", value=False) }}
                                 {{ util.input_submit(value=gettext("Unsubscribe"), aclass="btn btn-danger btn-sm",
                                         icon="remove") }}
@@ -114,6 +116,7 @@
                         </p>
                         <form action="{{ cdedblink('ml/change_address') }}" method="POST" id="changeaddressform"
                               {% if 'email' in errors %}class="has-error"{% endif %}>
+                            {{ util.anti_csrf_token('ml/change_address') }}
                             <label for="input-new-adress" class="sr-only">
                                 {% trans -%}New Subsciption Address{%- endtrans %}
                             </label>
@@ -147,6 +150,7 @@
                             </strong></p>
                             <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
                                     id="subscribeform">
+                                {{ util.anti_csrf_token('ml/subscribe_or_unsubscribe') }}
                                 {{ util.input_hidden(name="subscribe", value=False) }}
                                 {{ util.input_submit(value=gettext("Cancel"), aclass="btn btn-sm btn-danger",
                                         icon="remove") }}
@@ -157,6 +161,7 @@
                             </strong></p>
                             <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
                               id="subscribeform">
+                                {{ util.anti_csrf_token('ml/subscribe_or_unsubscribe') }}
                                 <div>
                                     {{ util.input_hidden(name="subscribe", value=True) }}
                                     {{ util.input_submit(value=gettext("Subscribe"), aclass="btn btn-sm btn-success") }}

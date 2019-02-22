@@ -24,6 +24,7 @@
 {% block content %}
     <form action="{{ cdedblink('event/amend_registration') }}" method="POST" id="amendregistrationform"
           class="form-horizontal">
+        {{ util.anti_csrf_token('event/amend_registration') }}
 
         {% if not age.may_mix() %}
             {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}

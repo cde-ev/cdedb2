@@ -64,6 +64,7 @@
     </div>
     <form action="{{ cdedblink('event/reorder_questionnaire') }}" method="POST" id="reorderquestionnaireform"
           class="form-horizontal">
+        {{ util.anti_csrf_token('event/reorder_questionnaire') }}
         {{ util.form_input_text(name="order", anid="input-roworder", label=gettext("Order"),
                                 placeholder=gettext("Nr,Nr,Nr,…"), defaultvalue=range(0,questionnaire|length)|join(','),
                                 small=True) }}

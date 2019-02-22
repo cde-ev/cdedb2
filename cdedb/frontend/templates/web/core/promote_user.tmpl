@@ -50,6 +50,7 @@
 
             <form action="{{ cdedblink('core/promote_user') }}" method="POST" id="promotionform"
                     class="form-horizontal">
+                {{ util.anti_csrf_token('core/promote_user') }}
                 {{ util.form_input_static(gettext("User"), value="{} {}".format(p['given_names'], p['family_name'])) }}
                 {{ util.form_input_static(gettext("New Realm"), value=realms[values['target_realm']]) }}
 
@@ -71,7 +72,6 @@
 
             <h3 class="heading-underline">{% trans -%}Additional Data{%- endtrans %}</h3>
                 {{ util.input_hidden(name="target_realm") }}
-                {{ util.anti_csrf_token('core/promote_user') }}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
                     {{ util.form_input_text(name="title", label=gettext("Title")) }}
                     {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}

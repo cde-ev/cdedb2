@@ -12,6 +12,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/change_meta_info') }}" method="POST" id="changeinfoform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/change_meta_info') }}
         {% for key in ("Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
                        "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
                        "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",

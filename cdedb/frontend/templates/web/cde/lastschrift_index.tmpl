@@ -47,6 +47,7 @@
                 <td>
                     <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
                             id="generatetransactionform{{ lastschrift_id }}" class="generatetransactionform">
+                        {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
                         {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
                         {{ util.input_submit(gettext("Perform Direct Debit"), icon='download', aclass='btn btn-xs btn-primary') }}
                     </form>
@@ -54,6 +55,7 @@
                 <td>
                     <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id}) }}"
                             method="POST" id="skiptransactionform{{ lastschrift_id }}" class="skip-form">
+                        {{ util.anti_csrf_token('cde/lastschrift_skip') }}
                         {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
                         {{ util.input_submit(gettext("Skip Direct Debit"), icon='step-forward', aclass='btn btn-xs btn-warning') }}
                     </form>
@@ -67,6 +69,7 @@
 
     <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
       id="generatetransactionsform">
+        {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
         {{ util.input_submit(gettext("Perform all Direct Debits"), icon='download', aclass='btn btn-primary') }}
     </form>
 
@@ -81,6 +84,7 @@
         </p>
 
         <form action="{{ cdedblink('cde/lastschrift_finalize_transactions') }}" method="POST" id="finalizationform">
+            {{ util.anti_csrf_token('cde/lastschrift_finalize_transactions') }}
             <table class="table table-condensed">
                 <thead>
                     <tr>

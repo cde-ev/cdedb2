@@ -113,6 +113,7 @@
                             {% if is_admin or anid != user.persona_id %}
                                 <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
                                         id="removeorgaform{{ anid }}" style="display: inline;">
+                                    {{ util.anti_csrf_token('event/remove_orga') }}
                                     {{ util.input_hidden(name="orga_id", value=anid) }}
                                     {{ util.input_submit(value="", readonly=is_locked, title=gettext("Remove Orga"),
                                                          icon='minus', aclass='btn btn-xs btn-danger') }}
@@ -122,6 +123,7 @@
                     {% endfor %}
                 </ul>
                 <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
+                    {{ util.anti_csrf_token('event/add_orga') }}
                     <div class="input-group has-success">
                         <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
                         {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
@@ -159,6 +161,7 @@
                     </p>
                     <form action="{{ cdedblink('event/change_minor_form') }}" method="POST" enctype="multipart/form-data"
                      id="changeminorformform" {% if 'minor_form' in errors %}class="has-error"{% endif %}>
+                        {{ util.anti_csrf_token('event/change_minor_form') }}
                         <div class="input-group">
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel=gettext("PDF of the new Minor Form")) }}
@@ -184,6 +187,7 @@
                             <form action="{{ cdedblink('event/unlock_event') }}" method="POST"
                                   enctype="multipart/form-data" id="unlockform"
                                   {% if 'json' in errors %}class="has-error"{% endif %}>
+                                {{ util.anti_csrf_token('event/unlock_event') }}
                                 <div class="input-group">
                                     {{ util.input_file(name="json", accept="text/json",
                                                        arialabel=gettext("Export of the Offline-DB")) }}
@@ -199,6 +203,7 @@
                         <p>{% trans -%}The event is not locked.{%- endtrans %}</p>
                         <div class="p">
                             <form action="{{ cdedblink('event/lock_event') }}" method="POST" id="lockform">
+                                {{ util.anti_csrf_token('event/lock_event') }}
                                 {{ util.input_submit(value=gettext("Lock"), icon='lock', aclass="btn btn-danger") }}
                             </form>
                         </div>
@@ -223,6 +228,7 @@
                     <div class="p">
                         <form action="{{ cdedblink('event/archive_event') }}" method="POST" id="archiveeventform"
                                 style="display: inline;">
+                            {{ util.anti_csrf_token('event/archive_event') }}
                             {{ util.input_submit(value=gettext("Archive"), readonly=is_locked,
                                                  aclass="btn btn-danger", icon="folder-close") }}
                             {{ util.input_checkbox(name="ack_archive", label=gettext("Are you sure?")) }}

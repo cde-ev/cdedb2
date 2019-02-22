@@ -22,6 +22,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/change_event') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5") }}

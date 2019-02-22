@@ -20,6 +20,7 @@
     </script>
     <form action="{{ cdedblink('cde/lastschrift_change') }}" method="POST" id="changelastschriftform"
 	    class="form-horizontal">
+        {{ util.anti_csrf_token('cde/lastschrift_change') }}
 	{{ util.form_input_static(label=gettext("Member"),
 		value="{} {}".format(persona['given_names'], persona['family_name'])) }}
 	{{ util.form_input_text(name="amount", label=gettext("Amount"), type="number",

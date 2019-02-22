@@ -5,6 +5,7 @@
 {% macro create_user(realm) %}
     <form action="{{ cdedblink('{}/create_user'.format(realm)) }}" method="POST" id="newuserform"
       class="form-horizontal">
+        {{ util.anti_csrf_token('{}/create_user'.format(realm)) }}
         <h4 class="heading-underline">{{ gettext("Personal Information") }}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
