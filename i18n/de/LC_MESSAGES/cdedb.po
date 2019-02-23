@@ -3626,8 +3626,8 @@ msgstr "Notizen"
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:39
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:25
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:28
-msgid "Supports reStructuredText"
-msgstr "Unterstützt reStructuredText"
+msgid "Supports Markdown"
+msgstr "Unterstützt Markdown"
 
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:28
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:33
@@ -3655,8 +3655,8 @@ msgstr "Unterstützt reStructuredText"
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:40
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:26
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:29
-msgid "Short reST summary"
-msgstr "Kurze reST-Zusammenfassung"
+msgid "Short Markdown summary"
+msgstr "Kurze Markdown-Zusammenfassung"
 
 #: cdedb/frontend/templates/web/assembly/create_user.tmpl:11
 #: cdedb/frontend/templates/web/cde/create_user.tmpl:11
@@ -6689,8 +6689,8 @@ msgid "Changenotes"
 msgstr "Änderungs-Kommentar"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:48
-msgid "Visible to all Admins, supports reStructuredText"
-msgstr "Für alle Admins sichtbar, unterstützt reStructuredText"
+msgid "Visible to all Admins, supports Murkdown"
+msgstr "Für alle Admins sichtbar, unterstützt Markdown"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
