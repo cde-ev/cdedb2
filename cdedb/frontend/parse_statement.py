@@ -43,6 +43,10 @@ STATEMENT_REFERENCE_MEMBERSHIP = (r"Mitglied(schaft)?(sbeitrag)?"
 STATEMENT_REFERENCE_EXTERNAL = r"\d\d\d\d-\d\d-\d\d[,-.\s]*Extern"
 STATEMENT_DB_ID_PATTERN = r"(DB-[0-9]+-[0-9X])"
 STATEMENT_DB_ID_SIMILAR = r"(DB[-.\s]*[0-9]+[-.\s0-9]*[0-9X])"
+STATEMENT_DB_ID_REMOVE = (
+    re.compile(r"DB", flags=re.I),
+    re.compile(r"[-.\s]", flags=re.I),
+)
 
 
 def get_event_name_pattern(event):
@@ -321,25 +325,31 @@ class Transaction:
         try:
             self.account = Accounts(int(raw["myAccNr"]))
         except ValueError:
-            problems.append("Unknown Account {} in Transaction {}"
-                            .format(raw["myAccNr"], raw["id"]))
+            problems.append(
+                ("MyAccNr",
+                 ValueError("Unknown Account %(acc)s in Transaction %(t_id)s",
+                            {"acc": raw["myAccNr"], "t_id": self.t_id})))
             self.account = Accounts.Unknown
 
         try:
             self.statement_date = datetime.datetime.strptime(
                 raw["statementDate"], STATEMENT_DATEFORMAT).date()
         except ValueError:
-            problems.append("Incorrect Date Format in Transaction {}"
-                            .format(raw["id"]))
+            problems.append(
+                ("statementDate",
+                 ValueError("Incorrect Date Format in Transaction %(t_id)s",
+                            {"t_id": self.t_id})))
             self.statement_date = datetime.datetime.now().date()
 
         try:
             self.cents = parse_cents(raw["amount"])
         except ValueError as e:
             if e.args == ("Could not parse",):
-                problems.append("Could not parse Transaction Amount ({})"
-                                "for Transaction {}".format(raw["amount"],
-                                                            raw["id"]))
+                problems.append(
+                    ("amount",
+                     ValueError("Could not parse Transaction Amount (%(amt)s)"
+                                "for Transaction %(t_id)s",
+                                {"amt": raw["amount"], "t_id": self.t_id})))
                 self.cents = 0
             else:
                 raise
@@ -347,10 +357,13 @@ class Transaction:
             if raw["amount"] not in (self.amount_simplified, self.amount):
                 # Check whether the original input can be reconstructed
                 problems.append(
-                    "Problem in line {}: {} != {}. Cents: {}"
-                        .format(self.t_id,
-                                self.amount_simplified,
-                                raw["amount"], self.cents))
+                    ("amount",
+                     ValueError("Problem in line %(t_id)s: "
+                                "%(amt_s)s != %(amt)s. Cents: %(cents)s",
+                                {"t_id": self.t_id,
+                                 "amt_s": self.amount_simplified,
+                                 "amt": raw["amount"],
+                                 "cents": self.cents})))
 
         if STATEMENT_CSV_RESTKEY in raw:
             self.reference = "".join(raw[STATEMENT_CSV_RESTKEY])
@@ -571,8 +584,11 @@ class Transaction:
         if result:
             if len(result.groups()) > 1:
                 # Multiple DB-IDs found, where only one is expected.
-                p = "Multiple ({}) DB-IDs found in line {}!"
-                p = p.format(len(result.groups()), self.t_id)
+                p = ("reference",
+                     ValueError("Multiple (%(count)s) DB-IDs found "
+                                "in line %(t_id)s!",
+                                {"count": len(result.groups()),
+                                 "t_id": self.t_id}))
                 self.problems.append(p)
                 confidence = confidence.decrease()
 
@@ -582,24 +598,30 @@ class Transaction:
                     confidence.value)
 
                 # Reconstruct DB-ID
-                value = int(db_id[:-1].replace("DB", "")
-                            .replace(" ", "-").replace("-", ""))
+                value = db_id[:-1]
+                for pattern in STATEMENT_DB_ID_REMOVE:
+                    value = re.sub(pattern, "", value)
                 checkdigit = db_id[-1]
 
+                # Check the DB-ID
                 p_id, p = validate.check_cdedbid(
                     "DB-{}-{}".format(value, checkdigit), "persona_id")
-                persona_id = cdedbid_filter(p_id)
                 self.problems.extend(p)
+
+                persona_id = cdedbid_filter(p_id)
 
                 if not p:
                     try:
                         persona = get_persona(rs, p_id)
                     except KeyError as e:
-                        if value in e.args:
-                            p = "No Member with ID {} found.".format(p_id)
+                        if p_id in e.args:
+                            p = ("persona_id",
+                                 KeyError("No Member with ID %(p_id)s found.",
+                                          {"p_id": p_id}))
                             self.problems.append(p)
                         else:
-                            self.problems.append(str((e, db_id)))
+                            p = ("persona_id", e)
+                            self.problems.append(p)
 
                         members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
                                               STATEMENT_FAMILY_NAME_UNKNOWN,
@@ -617,25 +639,35 @@ class Transaction:
                         try:
                             if not re.search(gn_pattern, self.reference,
                                              flags=re.IGNORECASE):
-                                p = "({}) not found in ({})".format(
-                                    gn_pattern, self.reference)
+                                p = ("given_names",
+                                     KeyError(
+                                         "(%(gnp)s) not found in (%(ref)s)",
+                                         {"gnp": given_names,
+                                          "ref": self.reference}))
                                 self.problems.append(p)
                                 temp_confidence = temp_confidence.decrease()
                         except re.error as e:
-                            p = "{} is not a valid regEx ({})".format(
-                                gn_pattern, e)
+                            p = ("given_names",
+                                 TypeError(
+                                     "(%(gnp)s) is not a valid regEx (%(e)s)",
+                                     {"gnp": gn_pattern, "e": e}))
                             self.problems.append(p)
                             temp_confidence = temp_confidence.decrease()
                         try:
                             if not re.search(fn_pattern, self.reference,
                                              flags=re.IGNORECASE):
-                                p = "({}) not found in ({})".format(
-                                    fn_pattern, self.reference)
+                                p = ("family_name",
+                                     KeyError(
+                                         "(%(fnp)s) not found in (%(ref)s)",
+                                         {"fnp": family_name,
+                                          "ref": self.reference}))
                                 self.problems.append(p)
                                 temp_confidence = temp_confidence.decrease()
                         except re.error as e:
-                            p = "{} is not a valid regEx ({})".format(
-                                fn_pattern, e)
+                            p = ("family_name",
+                                 TypeError(
+                                     "(%(fnp)s) is not a valid regEx (%(e)s)",
+                                     {"fnp": fn_pattern, "e": e}))
                             self.problems.append(p)
                             temp_confidence = temp_confidence.decrease()
 
@@ -645,7 +677,9 @@ class Transaction:
                                               temp_confidence))
 
                 else:
-                    p = "Invalid checkdigit: {}".format(db_id)
+                    p = ("persona_id",
+                         ValueError("Invalid checkdigit: %(db_id)s",
+                                    {"db_id": db_id}))
                     self.problems.append(p)
 
         elif self.type in {TransactionType.EventFee}:
@@ -662,14 +696,16 @@ class Transaction:
                                       STATEMENT_FAMILY_NAME_UNKNOWN,
                                       STATEMENT_DB_ID_UNKNOWN,
                                       ConfidenceLevel.Low))
-                self.problems.append("No DB-ID found.")
+                self.problems.append(("reference",
+                                      ValueError("No DB-ID found.")))
         else:
             m = Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
                        STATEMENT_FAMILY_NAME_UNKNOWN,
                        STATEMENT_DB_ID_UNKNOWN,
                        ConfidenceLevel.Low)
             members.append(m)
-            self.problems.append("No DB-ID found.")
+            self.problems.append(("reference",
+                                  ValueError("No DB-ID found.")))
 
         if members:
             # Save all matched members
@@ -779,7 +815,10 @@ class Transaction:
             if self.type == TransactionType.EventFee and self.best_event_match
             else self.type,
             "type_confidence": self.type_confidence,
-            "problems": self.problems,
+            "problems": ", ".join(["{}: {}".format(
+                     key, error.args[0] % error.args[1]
+                     if len(error.args) == 2 else error)
+                     for key, error in self.problems]),
         }
         return ret
 
@@ -836,4 +875,9 @@ class Transaction:
              "Event:\t\t\t {}".format(str(self.best_event_match)),
              "Events:\t\t\t {}".format(self.event_matches),
              "Event-Conf.:\t {}".format(self.best_event_confidence),
+             "Problems:\t\t {}".format(
+                 ["{}: {}".format(
+                     key, error.args[0] % error.args[1]
+                     if len(error.args) == 2 else error)
+                     for key, error in self.problems]),
              ])

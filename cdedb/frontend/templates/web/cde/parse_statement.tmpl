@@ -60,8 +60,8 @@
     {% if problems %}
         {% trans -%}Problems:{%- endtrans %}
         <ul>
-        {% for problem in problems %}
-            <li>{{ problem }}</li>
+        {% for key, error in problems %}
+            <li>{{ key }}: {{ util.format_error(error) }}</li>
         {% endfor %}
         </ul>
     {% endif %}
