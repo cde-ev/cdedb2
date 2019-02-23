@@ -2124,12 +2124,12 @@ msgid "CdE admission"
 msgstr "Aufnahme in den CdE"
 
 #: cdedb/frontend/cde.py:596
-msgid "Lines {first} and {second} are the same."
-msgstr "Zeilen {first} und {second} sind identisch."
+msgid "Lines %(first)s and %(second)s are the same."
+msgstr "Zeilen %(first)s und %(second)s sind identisch."
 
 #: cdedb/frontend/cde.py:602
 msgid "Lines {first} and {second} look the same."
-msgstr "Zeilen {first} und {second} sehen gleich aus."
+msgstr "Zeilen %(first)s und %(second)s sehen gleich aus."
 
 #: cdedb/frontend/cde.py:621 cdedb/frontend/cde.py:1021
 #: cdedb/frontend/event.py:1417 cdedb/frontend/cde.py:1019
@@ -2188,7 +2188,7 @@ msgstr "Überweisung beim CdE eingetroffen"
 #: cdedb/frontend/cde.py:1014 cdedb/frontend/cde.py:1012
 msgid "More than one transfer for this account (lines {first} and {second})."
 msgstr ""
-"Mehrere Überweisungen für diesen Account (Zeilen {first} und {second})."
+"Mehrere Überweisungen für diesen Account (Zeilen %(first)s und %(second)s)."
 
 #: cdedb/frontend/cde.py:1035 cdedb/frontend/cde.py:1033
 msgid "Committed {num} transfers. There were {new_members} new members."

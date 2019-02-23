@@ -593,7 +593,7 @@ class CdEFrontend(AbstractUserFrontend):
             similarity = self.similarity_score(ds1, ds2)
             if similarity == "high":
                 problem = (None, ValueError(
-                    n_("Lines {first} and {second} are the same."),
+                    n_("Lines %(first)s and %(second)s are the same."),
                     {'first': ds1['lineno'], 'second': ds2['lineno']}))
                 ds1['problems'].append(problem)
                 ds2['problems'].append(problem)
