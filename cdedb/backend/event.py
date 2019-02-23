@@ -1728,19 +1728,10 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
             if cascade:
-                reg_ids = self.list_registrations(rs, event_id)
-                registrations = self.get_registrations(rs, reg_ids)
-                for registration_id, registration in registrations.items():
-                    update = {}
-                    for part_id, part in registration['parts'].items():
-                        if part['lodgement_id'] == lodgement_id:
-                            update[part_id] = {'lodgement_id': None}
-                    if update:
-                        new_registration = {
-                            'id': registration_id,
-                            'parts': update
-                        }
-                        self.set_registration(rs, new_registration)
+                query = glue("UPDATE event.registration_parts",
+                             "SET lodgement_id = NULL",
+                             "WHERE lodgement_id = %s")
+                self.query_exec(rs, query, (lodgement_id,))
             ret = self.sql_delete_one(rs, "event.lodgements", lodgement_id)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_deleted, event_id,
