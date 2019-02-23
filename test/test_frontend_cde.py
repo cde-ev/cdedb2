@@ -849,8 +849,8 @@ class TestCdEFrontend(FrontendTest):
         
         self.assertTitle("Kontoauszug parsen")
         self.assertPresence("3 Transaktionen für event_fees gefunden.")
-        self.assertPresence("4 Transaktionen für membership_fees gefunden.")
-        self.assertPresence("2 Transaktionen für other_transactions gefunden.")
+        self.assertPresence("2 Transaktionen für membership_fees gefunden.")
+        self.assertPresence("4 Transaktionen für other_transactions gefunden.")
         self.assertPresence("9 Transaktionen für transactions gefunden.")
         
         save = self.response
@@ -899,12 +899,6 @@ class TestCdEFrontend(FrontendTest):
                                      delimiter=";",
                                      fieldnames=MEMBERSHIP_FEE_FIELDS))
 
-        self.assertEqual("DB-1-9", result[0]["db_id"])
-        self.assertEqual("Administrator", result[0]["family_name"])
-        self.assertEqual("Anton Armin A.", result[0]["given_names"])
-        self.assertEqual("10.00", result[0]["amount_export"])
-        self.assertIn("not found in", result[0]["problems"])
-
         self.assertEqual("DB-2-7", result[1]["db_id"])
         self.assertEqual("Beispiel", result[1]["family_name"])
         self.assertEqual("Bertålotta", result[1]["given_names"])
@@ -916,14 +910,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Garcia G.", result[2]["given_names"])
         self.assertEqual("2.50", result[2]["amount_export"])
         self.assertIn("not found in", result[2]["problems"])
-        
-        self.assertEqual("2.50", result[3]["amount_export"])
-        self.assertEqual(STATEMENT_DB_ID_UNKNOWN, result[3]["db_id"])
-        self.assertEqual(STATEMENT_FAMILY_NAME_UNKNOWN,
-                         result[3]["family_name"])
-        self.assertEqual(STATEMENT_GIVEN_NAMES_UNKNOWN,
-                         result[3]["given_names"])
-        self.assertIn("No DB-ID found.", result[3]["problems"])
         
         # check other_transactions
         f = save.forms["other_transactions"]
@@ -949,6 +935,24 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Sonstiges", result[1]["type"])
         self.assertEqual("ConfidenceLevel.Full", result[1]["type_confidence"])
         self.assertEqual("[]", result[1]["problems"])
+
+        self.assertEqual("8068900", result[2]["account"])
+        self.assertEqual("26.12.2018", result[2]["account"])
+        self.assertEqual("10.00", result[2]["amount_export"])
+        self.assertEqual("DB-1-9", result[2]["db_id"])
+        self.assertEqual("Administrator", result[2]["family_name"])
+        self.assertEqual("Anton Armin A.", result[2]["given_names"])
+        self.assertIn("not found in", result[2]["problems"])
+
+        self.assertEqual("8068900", result[3]["account"])
+        self.assertEqual("23.12.2018", result[3]["account"])
+        self.assertEqual("2.50", result[3]["amount_export"])
+        self.assertEqual(STATEMENT_DB_ID_UNKNOWN, result[3]["db_id"])
+        self.assertEqual(STATEMENT_FAMILY_NAME_UNKNOWN,
+                         result[3]["family_name"])
+        self.assertEqual(STATEMENT_GIVEN_NAMES_UNKNOWN,
+                         result[3]["given_names"])
+        self.assertIn("No DB-ID found.", result[3]["problems"])
         
         # check transactions files
         # check account 00

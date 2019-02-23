@@ -738,7 +738,8 @@ class CdEFrontend(AbstractUserFrontend):
                     and t.best_member_match):
                 event_fees.append(t)
             elif (t.type in {TransactionType.MembershipFee}
-                  and t.best_member_match):
+                  and t.best_member_match
+                    and t.best_member_confidence > 2):
                 membership_fees.append(t)
             else:
                 other_transactions.append(t)
@@ -817,7 +818,7 @@ class CdEFrontend(AbstractUserFrontend):
 
             if rows:
                 csv_data = csv_output(rows, OTHER_TRANSACTION_FIELDS,
-                                      writeheader=False)
+                                      writeheader=True)
                 data["files"]["other_transactions"] = csv_data
 
         rows = defaultdict(list)

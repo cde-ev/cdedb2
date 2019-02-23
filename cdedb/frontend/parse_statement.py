@@ -12,14 +12,15 @@ STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
                         "transaction", "posting", "primanota",
                         "textKey2", "BLZ", "KontoNr", "BIC", "IBAN",
                         "accHolder", "accHolder2")
-MEMBERSHIP_FEE_FIELDS = ("db_id", "family_name", "given_names", "amount_export",
-                         "date", "db_id_value", "reference", "account_holder",
-                         "problems")
-EVENT_FEE_FIELDS = ("date", "amount_export", "db_id", "family_name",
-                    "given_names", "member_confidence", "event_shortname",
+MEMBERSHIP_FEE_FIELDS = ("amount_export", "db_id", "family_name", "given_names",
+                         "date", "member_confidence", "db_id_value",
+                         "reference", "account_holder", "problems")
+EVENT_FEE_FIELDS = ("amount_export", "db_id", "family_name", "given_names",
+                    "date", "member_confidence", "event_shortname",
                     "event_confidence", "reference", "account_holder",
                     "problems")
-OTHER_TRANSACTION_FIELDS = ("account", "date", "amount_export", "type",
+OTHER_TRANSACTION_FIELDS = ("account", "amount_export", "db_id", "family_name",
+                            "given_names", "date", "member_confidence", "type",
                             "type_confidence", "reference", "account_holder",
                             "iban", "bic", "problems")
 ACCOUNT_FIELDS = ("date", "amount", "db_id", "name_or_holder",
