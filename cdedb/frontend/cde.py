@@ -593,13 +593,13 @@ class CdEFrontend(AbstractUserFrontend):
             similarity = self.similarity_score(ds1, ds2)
             if similarity == "high":
                 problem = (None, ValueError(
-                    n_("Lines {first} and {second} are the same."),
+                    n_("Lines %(first)s and %(second)s are the same."),
                     {'first': ds1['lineno'], 'second': ds2['lineno']}))
                 ds1['problems'].append(problem)
                 ds2['problems'].append(problem)
             elif similarity == "medium":
                 warning = (None, ValueError(
-                    n_("Lines {first} and {second} look the same."),
+                    n_("Lines %(first)s and %(second)s look the same."),
                     {'first': ds1['lineno'], 'second': ds2['lineno']}))
                 ds1['warnings'].append(warning)
                 ds2['warnings'].append(warning)
@@ -1012,7 +1012,7 @@ class CdEFrontend(AbstractUserFrontend):
             if ds1['persona_id'] and ds1['persona_id'] == ds2['persona_id']:
                 warning = (None, ValueError(
                     n_("More than one transfer for this account "
-                       "(lines {first} and {second})."),
+                       "(lines %(first)s and %(second)s)."),
                     {'first': ds1['lineno'], 'second': ds2['lineno']}))
                 ds1['warnings'].append(warning)
                 ds2['warnings'].append(warning)

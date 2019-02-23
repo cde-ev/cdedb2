@@ -1305,7 +1305,7 @@ class EventFrontend(AbstractUserFrontend):
             except KeyError:
                 problems.append(('persona_id',
                                  ValueError(
-                                     n_("No Member with ID {p_id} found."),
+                                     n_("No Member with ID %(p_id)s found."),
                                      {"p_id": persona_id})))
             else:
                 registration_id = tuple(self.eventproxy.list_registrations(
