@@ -35,14 +35,20 @@ STATEMENT_FAMILY_NAME_UNKNOWN = "NACHNAME"
 STATEMENT_DATEFORMAT = "%d.%m.%y"
 STATEMENT_DB_ID_EXTERN = "DB-EXTERN"
 STATEMENT_DB_ID_UNKNOWN = "DB-UNKNOWN"
-STATEMENT_POSTING_OTHER = r"BUCHUNGSPOSTENGEBUEHREN|KONTOFUEHRUNGSGEBUEHREN"
-STATEMENT_POSTING_REFUND = r"(Sammel-?)?(ü|ue|u| )berweisung"
-STATEMENT_REFERENCE_REFUND = r"(R(ü|ue|u|\s)ck)?erstattung"
-STATEMENT_REFERENCE_MEMBERSHIP = (r"Mitglied(schaft)?(sbeitrag)?"
-                                  r"|(Halb)?Jahresbeitrag")
-STATEMENT_REFERENCE_EXTERNAL = r"\d\d\d\d-\d\d-\d\d[,-.\s]*Extern"
-STATEMENT_DB_ID_PATTERN = r"(DB-[0-9]+-[0-9X])"
-STATEMENT_DB_ID_SIMILAR = r"(DB[-.\s]*[0-9]+[-.\s0-9]*[0-9X])"
+STATEMENT_POSTING_OTHER = re.compile(
+    r"BUCHUNGSPOSTENGEBUEHREN|KONTOFUEHRUNGSGEBUEHREN", flags=re.I)
+STATEMENT_POSTING_REFUND = re.compile(
+    r"(Sammel-?)?(ü|ue|u| )berweisung", flags=re.I)
+STATEMENT_REFERENCE_REFUND = re.compile(
+    r"(R(ü|ue|u|\s)ck)?erstattung", flags=re.I)
+STATEMENT_REFERENCE_MEMBERSHIP = re.compile(
+    r"Mitglied(schaft)?(sbeitrag)?|(Halb)?Jahresbeitrag", flags=re.I)
+STATEMENT_REFERENCE_EXTERNAL = re.compile(
+    r"\d{4}-\d{2}-\d{2}[,-.\s]*Extern", flags=re.I)
+STATEMENT_DB_ID_PATTERN = re.compile(
+    r"(DB-[0-9]+-[0-9X])", flags=re.I)
+STATEMENT_DB_ID_SIMILAR = re.compile(
+    r"(DB[-.\s]*[0-9]+[-.\s0-9]*[0-9X])", flags=re.I)
 STATEMENT_DB_ID_REMOVE = (
     re.compile(r"DB", flags=re.I),
     re.compile(r"[-.\s]", flags=re.I),
@@ -416,16 +422,14 @@ class Transaction:
         confidence = ConfidenceLevel.Full
 
         if self.account == Accounts.Account0:
-            if re.search(STATEMENT_DB_ID_PATTERN, self.reference,
-                         flags=re.IGNORECASE):
+            if re.search(STATEMENT_DB_ID_PATTERN, self.reference):
                 # Correct ID found, so we assume this is a
                 # Membership Fee Transaction
                 self.type = TransactionType.MembershipFee
                 self.type_confidence = confidence
                 return
 
-            elif re.search(STATEMENT_DB_ID_SIMILAR, self.reference,
-                           flags=re.IGNORECASE):
+            elif re.search(STATEMENT_DB_ID_SIMILAR, self.reference):
                 # Semi-Correct ID found, so we decrease confidence
                 # but still assume this to be a Membership Fee
                 self.type = TransactionType.MembershipFee
@@ -433,18 +437,15 @@ class Transaction:
                 self.type_confidence = confidence
                 return
 
-            elif re.search(STATEMENT_POSTING_OTHER, self.posting,
-                           flags=re.IGNORECASE):
+            elif re.search(STATEMENT_POSTING_OTHER, self.posting):
                 # Posting reserved for administrative fees found
                 self.type = TransactionType.Other
                 self.type_confidence = confidence
                 return
 
-            elif re.search(STATEMENT_POSTING_REFUND, self.posting,
-                           flags=re.IGNORECASE):
+            elif re.search(STATEMENT_POSTING_REFUND, self.posting):
                 # Posting used for refunds found
-                if re.search(STATEMENT_REFERENCE_REFUND, self.reference,
-                             flags=re.IGNORECASE):
+                if re.search(STATEMENT_REFERENCE_REFUND, self.reference):
                     # Reference mentions a refund
                     self.type = TransactionType.Refund
                     self.type_confidence = confidence
@@ -458,8 +459,7 @@ class Transaction:
                     self.type_confidence = confidence
                     return
 
-            elif re.search(STATEMENT_REFERENCE_MEMBERSHIP,
-                           self.reference, flags=re.IGNORECASE):
+            elif re.search(STATEMENT_REFERENCE_MEMBERSHIP, self.reference):
                 # No DB-ID found, but membership mentioned in reference
                 self.type = TransactionType.MembershipFee
                 confidence = confidence.decrease()
@@ -475,16 +475,14 @@ class Transaction:
                 return
 
         elif self.account == Accounts.Account1:
-            if re.search(STATEMENT_DB_ID_PATTERN, self.reference,
-                         flags=re.IGNORECASE):
+            if re.search(STATEMENT_DB_ID_PATTERN, self.reference):
                 # Correct DB-ID found, so we assume this to be an
                 # Event Fee
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence
                 return
 
-            elif re.search(STATEMENT_DB_ID_SIMILAR, self.reference,
-                           flags=re.IGNORECASE):
+            elif re.search(STATEMENT_DB_ID_SIMILAR, self.reference):
                 # Semi-Correct DB-ID found, so we decrease confidence
                 # but still assume this is an Event Fee
                 self.type = TransactionType.EventFee
@@ -492,18 +490,15 @@ class Transaction:
                 self.type_confidence = confidence
                 return
 
-            elif re.search(STATEMENT_POSTING_OTHER, self.posting,
-                           flags=re.IGNORECASE):
+            elif re.search(STATEMENT_POSTING_OTHER, self.posting):
                 # Reserved Posting for administrative fees
                 self.type = TransactionType.Other
                 self.type_confidence = confidence
                 return
 
-            elif re.search(STATEMENT_POSTING_REFUND, self.posting,
-                           flags=re.IGNORECASE):
+            elif re.search(STATEMENT_POSTING_REFUND, self.posting):
                 # Posting used for refunds found
-                if re.search(STATEMENT_REFERENCE_REFUND, self.reference,
-                             flags=re.IGNORECASE):
+                if re.search(STATEMENT_REFERENCE_REFUND, self.reference):
                     # Refund mentioned in reference
                     self.type = TransactionType.Refund
                     self.type_confidence = confidence
@@ -573,10 +568,8 @@ class Transaction:
                              TransactionType.EventFee}:
             return
 
-        result = re.search(STATEMENT_DB_ID_PATTERN, self.reference,
-                           flags=re.IGNORECASE)
-        result2 = re.search(STATEMENT_DB_ID_SIMILAR, self.reference,
-                            flags=re.IGNORECASE)
+        result = re.search(STATEMENT_DB_ID_PATTERN, self.reference)
+        result2 = re.search(STATEMENT_DB_ID_SIMILAR, self.reference)
         if not result and result2:
             confidence = confidence.decrease()
             result = result2
