@@ -1447,6 +1447,8 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
+            courses = self.get_courses(
+                rs, self.list_db_courses(rs, data['event_id']))
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
@@ -1459,14 +1461,23 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_("Missing track dataset."))
             rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
             new_id = self.sql_insert(rs, "event.registrations", rdata)
-            with Silencer(rs):
-                for aspect in ('parts', 'tracks'):
-                    if aspect in data:
-                        adata = {
-                            'id': new_id,
-                            aspect: data[aspect]
-                        }
-                        self.set_registration(rs, adata)
+
+            # insert parts
+            for part_id, part in data['parts'].items():
+                new_part = copy.deepcopy(part)
+                new_part['registration_id'] = new_id
+                new_part['part_id'] = part_id
+                self.sql_insert(rs, "event.registration_parts", new_part)
+
+            # insert tracks
+            for track_id, track in data['tracks'].items():
+                new_track = copy.deepcopy(track)
+                choices = new_track.pop('choices', None)
+                self._set_course_choices(rs, new_id, track_id, choices, courses)
+                new_track['registration_id'] = new_id
+                new_track['track_id'] = track_id
+                self.sql_insert(rs, "event.registration_tracks", new_track)
+
             # fix fields to contain registration id
             fdata = {
                 'id': new_id,
