@@ -99,7 +99,7 @@
         {% if ambience['event']['mail_text'] %}
             {% call util.bootstrap_panel(title=gettext("Registration mail free text"), icon="envelope",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['mail_text']|e|linebreaks|s }}
+                {{ ambience['event']['mail_text']|linebreaks }}
             {% endcall %}
         {% endif %}
 

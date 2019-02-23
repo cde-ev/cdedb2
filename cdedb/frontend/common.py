@@ -188,7 +188,8 @@ def safe_filter(val):
     """Custom jinja filter to mark a string as safe.
 
     This prevents autoescaping of this entity. To be used for dynamically
-    generated code we insert into the templates.
+    generated code we insert into the templates. It is basically equal to
+    Jinja's builtin |safe-Filter, but additionally takes care about None values.
 
     :type val: str
     :rtype: jinja2.Markup
@@ -445,15 +446,20 @@ def querytoparams_filter(val):
 def linebreaks_filter(val, replacement="<br>"):
     """Custom jinja filter to convert line breaks to <br>.
 
-    :type val: str
-    :type replacement: str
+    This filter escapes the input value (if required), replaces the linebreaks
+    and marks the output as safe html.
+
+    :type val: str or jinja2.Markup
+    :type replacement: jinja2.Markup
     :rtype: str
     """
     if val is None:
         return None
-    # because val is probably a jinja specific 'safe string'
-    val = str(val)
-    return val.replace('\n', replacement)
+    # escape the input. This function consumes an unescaped string or a
+    # jinja2.Markup safe html object and returns an escaped string.
+    val = jinja2.escape(val)
+    val = val.replace('\n', replacement)
+    return jinja2.Markup(val)
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
@@ -498,7 +504,7 @@ def bleach_filter(val):
     """
     if val is None:
         return None
-    return safe_filter(get_bleach_cleaner().clean(val))
+    return jinja2.Markup(get_bleach_cleaner().clean(val))
 
 
 def rst_filter(val):
