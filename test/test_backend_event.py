@@ -77,13 +77,13 @@ class TestEventBackend(BackendTest):
                 -1: {
                     'association': 1,
                     'field_name': "instrument",
-                    'kind': "str",
+                    'kind': 1,
                     'entries': None,
                 },
                 -2: {
                     'association': 1,
                     'field_name': "preferred_excursion_date",
-                    'kind': "date",
+                    'kind': 5,
                     'entries': [["2109-8-16", "In the first coming"],
                                 ["2110-8-16", "During the second coming"]],
                 },
@@ -166,12 +166,12 @@ class TestEventBackend(BackendTest):
         newfield = {
             'association': 3,
             'field_name': "kuea",
-            'kind': "str",
+            'kind': 1,
             'entries': None,
         }
         changed_field = {
             'association': 2,
-            'kind': "date",
+            'kind': 5,
             'entries': [["2110-8-15", "early second coming"],
                         ["2110-8-17", "late second coming"],],
         }
@@ -273,7 +273,7 @@ class TestEventBackend(BackendTest):
                 -1: {
                     'association': 1,
                     'field_name': "arrival",
-                    'kind': "datetime",
+                    'kind': 6,
                     'entries': None,
                 }
             }
@@ -1398,7 +1398,7 @@ class TestEventBackend(BackendTest):
                                             'event_id': 1,
                                             'field_name': 'brings_balls',
                                             'id': 1,
-                                            'kind': 'bool'},
+                                            'kind': 2},
                                         2: {'association': 1,
                                             'entries': [['pedes', 'by feet'],
                                                         ['car', 'own car available'],
@@ -1406,25 +1406,25 @@ class TestEventBackend(BackendTest):
                                             'event_id': 1,
                                             'field_name': 'transportation',
                                             'id': 2,
-                                            'kind': 'str'},
+                                            'kind': 1},
                                         3: {'association': 1,
                                             'entries': None,
                                             'event_id': 1,
                                             'field_name': 'lodge',
                                             'id': 3,
-                                            'kind': 'str'},
+                                            'kind': 1},
                                         4: {'association': 1,
                                             'entries': None,
                                             'event_id': 1,
                                             'field_name': 'may_reserve',
                                             'id': 4,
-                                            'kind': 'bool'},
+                                            'kind': 2},
                                         5: {'association': 2,
                                             'entries': None,
                                             'event_id': 1,
                                             'field_name': 'room',
                                             'id': 5,
-                                            'kind': 'str'},
+                                            'kind': 1},
                                         6: {'association': 3,
                                             'entries': [['high', 'lots of radiation'],
                                                         ['medium',
@@ -1434,7 +1434,7 @@ class TestEventBackend(BackendTest):
                                             'event_id': 1,
                                             'field_name': 'contamination',
                                             'id': 6,
-                                            'kind': 'str'}},
+                                            'kind': 1}},
             'event.lodgements': {1: {'capacity': 5,
                                      'event_id': 1,
                                      'fields': {'contamination': 'high',
@@ -1846,7 +1846,7 @@ class TestEventBackend(BackendTest):
             'event_id': 1,
             'field_name': 'behaviour',
             'id': 11000,
-            'kind': 'str'}
+            'kind': 1}
         ## questionnaire rows
         new_data['event.questionnaire_rows'][12000] = {
             'event_id': 1,
@@ -1948,7 +1948,7 @@ class TestEventBackend(BackendTest):
             'event_id': 1,
             'field_name': 'behaviour',
             'id': 7,
-            'kind': 'str'}
+            'kind': 1}
         stored_data['event.questionnaire_rows'][7] = {
             'event_id': 1,
             'field_id': 7,
@@ -2020,13 +2020,13 @@ class TestEventBackend(BackendTest):
                 -1: {
                     'association': 1,
                     'field_name': "instrument",
-                    'kind': "str",
+                    'kind': 1,
                     'entries': None,
                 },
                 -2: {
                     'association': 1,
                     'field_name': "preferred_excursion_date",
-                    'kind': "date",
+                    'kind': 5,
                     'entries': [["2109-8-16", "In the first coming"],
                                 ["2110-8-16", "During the second coming"]],
                 },
@@ -2084,12 +2084,12 @@ class TestEventBackend(BackendTest):
         newfield = {
             'association': 1,
             'field_name': "kuea",
-            'kind': "str",
+            'kind': 1,
             'entries': None,
         }
         changed_field = {
             'association': 1,
-            'kind': "date",
+            'kind': 5,
             'entries': [["2110-8-15", "early second coming"],
                         ["2110-8-17", "late second coming"],],
         }
