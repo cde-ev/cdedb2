@@ -929,6 +929,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         html = self.fill_template(rs, "web", templatename, params)
         rs.response = Response(html, mimetype='text/html')
         rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
+
+        # Add CSP header to disallow scripts, styles, images and objects from
+        # other domains. This is part of XSS mitigation
+        # TODO use 'nonce-...' eventually, when browser support (CSP L2) is
+        #  sufficient
+        rs.response.headers.add(
+            'Content-Security-Policy',
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; img-src *")
         return rs.response
 
     def do_mail(self, rs, templatename, headers, params=None, attachments=None):
