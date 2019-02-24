@@ -557,13 +557,15 @@ class EventFrontend(AbstractUserFrontend):
         deletes = {field_id for field_id in fields
                    if delete_flags['delete_{}'.format(field_id)]}
         ret = {}
-        params = lambda anid: (("kind_{}".format(anid), "str"),
+        params = lambda anid: (("kind_{}".format(anid), "enum_fielddatatypes"),
                                ("association_{}".format(anid),
                                 "enum_fieldassociations"),
                                ("entries_{}".format(anid), "str_or_None"))
         for field_id in fields:
             if field_id not in deletes:
                 tmp = request_extractor(rs, params(field_id))
+                if rs.errors:
+                    break
                 tmp = check(rs, "event_field", tmp,
                             extra_suffix="_{}".format(field_id))
                 if tmp:
@@ -576,7 +578,7 @@ class EventFrontend(AbstractUserFrontend):
             ret[field_id] = None
         marker = 1
         params = lambda anid: (("field_name_-{}".format(anid), "str"),
-                               ("kind_-{}".format(anid), "str"),
+                               ("kind_-{}".format(anid), "enum_fielddatatypes"),
                                ("association_-{}".format(anid),
                                 "enum_fieldassociations"),
                                ("entries_-{}".format(anid), "str_or_None"))
@@ -585,6 +587,9 @@ class EventFrontend(AbstractUserFrontend):
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
                 tmp = request_extractor(rs, params(marker))
+                if rs.errors:
+                    marker += 1
+                    break
                 tmp = check(rs, "event_field", tmp, creation=True,
                             extra_suffix="_-{}".format(marker))
                 if tmp:
