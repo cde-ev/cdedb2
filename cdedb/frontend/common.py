@@ -929,7 +929,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         rs.response.headers.add(
             'Content-Security-Policy',
             "default-src 'self'; script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline'")
+            "style-src 'self' 'unsafe-inline'; img-src *")
         return rs.response
 
     def do_mail(self, rs, templatename, headers, params=None, attachments=None):
