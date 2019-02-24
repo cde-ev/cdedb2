@@ -715,14 +715,14 @@ class CdEFrontend(AbstractUserFrontend):
 
         for i, line in enumerate(reversed(list(reader))):
             if not len(line) == 23:
-                problems.append("Line {} does not have the correct "
-                                "number of columns".format(i + 1))
-                rs.errors.append(("statement",
-                                  ValueError(n_("Line {lineno} does not have "
-                                                "the correct number of "
-                                                "columns."),
-                                             {'lineno': format(i + 1)}
-                                             )))
+                p = ("statement",
+                     ValueError(n_("Line %(lineno)s does not have "
+                                   "the correct number of "
+                                   "columns."),
+                                {'lineno': i + 1}
+                                ))
+                problems.append(p)
+                rs.errors.append(p)
                 continue
             line["id"] = i
             t = Transaction(line)
@@ -739,7 +739,7 @@ class CdEFrontend(AbstractUserFrontend):
                 event_fees.append(t)
             elif (t.type in {TransactionType.MembershipFee}
                   and t.best_member_match
-                    and t.best_member_confidence > 2):
+                  and t.best_member_confidence > 2):
                 membership_fees.append(t)
             else:
                 other_transactions.append(t)
