@@ -7,6 +7,7 @@ the secrets module, which is not available in Python 3.5.
 import string
 
 try:
+    # TODO buster contains a python with the secrets module
     from secrets import choice, token_hex
 except ImportError:
     import random

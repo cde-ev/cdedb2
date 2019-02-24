@@ -56,6 +56,7 @@ class Application(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets, self.conf.DB_PORT)
+        # TODO With buster we can activate the trimming of the trans env
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
                 str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),

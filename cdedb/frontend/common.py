@@ -666,6 +666,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type configpath: str
         """
         super().__init__(configpath, *args, **kwargs)
+        # TODO With buster we can activate the trimming of the trans env
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
                 str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),

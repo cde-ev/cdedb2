@@ -374,6 +374,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if not keys:
             # no input is an automatic success
             return 1
+        # TODO buster contains postgres 11 with the new ROW syntax
+        # simplifying the query below
         if len(keys) == 1:
             query = glue("UPDATE {table} SET {keys} = {placeholders}",
                          "WHERE {entity_key} = %s")
