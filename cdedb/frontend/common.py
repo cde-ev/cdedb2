@@ -32,6 +32,7 @@ import tempfile
 import threading
 import urllib.parse
 
+import markdown
 import babel.dates
 import bleach
 import docutils.core
@@ -501,10 +502,6 @@ def bleach_filter(val):
     return safe_filter(get_bleach_cleaner().clean(val))
 
 
-import markdown
-md = markdown.Markdown()
-
-
 class HeadingDiminisher(markdown.treeprocessors.Treeprocessor):
     """ A custom Python-markdown Treeprocessor to reduce heading levels by 3 """
     levels = 3
@@ -523,11 +520,27 @@ class HeadingDiminisher(markdown.treeprocessors.Treeprocessor):
                 self._diminish_headings(child)
 
 
-# TODO remove this workaround when we finally switched to Debian Buster
-if markdown.version_info[0] == 2:
-    md.treeprocessors['headingDiminisher'] = HeadingDiminisher(md)
-else:
-    md.treeprocessors.register(HeadingDiminisher(md), 'headingDiminisher', 20)
+#: The Markdown parser has internal state, so we have to be a bit defensive
+#: w.r.t. threads
+MARKDOWN_PARSER = threading.local()
+
+
+def get_markdown_parser():
+    md = getattr(MARKDOWN_PARSER, 'md', None)
+
+    if md is None:
+        md = markdown.Markdown()
+
+        # TODO remove this workaround when we finally switched to Debian Buster
+        if markdown.version_info[0] == 2:
+            md.treeprocessors['headingDiminisher'] = HeadingDiminisher(md)
+        else:
+            md.treeprocessors.register(HeadingDiminisher(md),
+                                       'headingDiminisher', 20)
+        MARKDOWN_PARSER.md = md
+    else:
+        md.reset()
+    return md
 
 
 def md_filter(val):
@@ -538,6 +551,7 @@ def md_filter(val):
     """
     if val is None:
         return None
+    md = get_markdown_parser()
     return bleach_filter(md.convert(val))
 
 
