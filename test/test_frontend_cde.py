@@ -222,11 +222,11 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_given_names'].checked = True
         f['qord_primary'] = "personas.id"
         self.response = f.submit("download", value="csv")
-        expectation = '''id;given_names;birthday;decided_search;free_form
-2;Bertålotta;1981-02-11;True;Jede Menge Gefasel               Gut verteilt              Über mehrere Zeilen
-3;Charly C.;1984-05-13;True;
-4;Daniel D.;1963-02-19;False;
-6;Ferdinand F.;1988-01-01;True;
+        expectation = '''id;given_names;family_name;username;birthday;decided_search;free_form
+2;Bertålotta;Beispiel;berta@example.cde;1981-02-11;True;Jede Menge Gefasel               Gut verteilt              Über mehrere Zeilen
+3;Charly C.;Clown;charly@example.cde;1984-05-13;True;
+4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;
+6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;
 '''.encode('utf-8')
         self.assertEqual(expectation, self.response.body)
 
@@ -245,35 +245,34 @@ class TestCdEFrontend(FrontendTest):
         f['qord_primary'] = "personas.id"
         self.response = f.submit("download", value="json")
         expectation = [
-            {
-                "birthday": "1981-02-11",
-                "decided_search": True,
-                "id": 2,
-                "given_names": "Bertålotta",
-                "free_form": "Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen"
-            },
-            {
-                "birthday": "1984-05-13",
-                "decided_search": True,
-                "id": 3,
-                "given_names": "Charly C.",
-                "free_form": None
-            },
-            {
-                "birthday": "1963-02-19",
-                "decided_search": False,
-                "id": 4,
-                "given_names": "Daniel D.",
-                "free_form": None
-            },
-            {
-                "birthday": "1988-01-01",
-                "decided_search": True,
-                "id": 6,
-                "given_names": "Ferdinand F.",
-                "free_form": None
-            }
-        ]
+            {'birthday': '1981-02-11',
+             'decided_search': True,
+             'family_name': 'Beispiel',
+             'free_form': 'Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen',
+             'given_names': 'Bertålotta',
+             'id': 2,
+             'username': 'berta@example.cde'},
+            {'birthday': '1984-05-13',
+             'decided_search': True,
+             'family_name': 'Clown',
+             'free_form': None,
+             'given_names': 'Charly C.',
+             'id': 3,
+             'username': 'charly@example.cde'},
+            {'birthday': '1963-02-19',
+             'decided_search': False,
+             'family_name': 'Dino',
+             'free_form': None,
+             'given_names': 'Daniel D.',
+             'id': 4,
+             'username': 'daniel@example.cde'},
+            {'birthday': '1988-01-01',
+             'decided_search': True,
+             'family_name': 'Findus',
+             'free_form': None,
+             'given_names': 'Ferdinand F.',
+             'id': 6,
+             'username': 'ferdinand@example.cde'}]
         self.assertEqual(expectation, json.loads(self.response.body.decode('utf-8')))
 
     @as_users("anton")
@@ -1068,7 +1067,7 @@ class TestCdEFrontend(FrontendTest):
             (r"persona_id:\W*Darf nicht leer sein.",
              r"family_name:\W*Darf nicht leer sein.",
              r"given_names:\W*Darf nicht leer sein.",
-             r"amount:.*\W*Keine Zahl gefunden.",),
+             r"amount:.*\W*Ungültige Eingabe für eine Dezimalzahl.",),
             (r"persona_id:\W*Falsches Format.",),
             (r"family_name:\W*Nachname passt nicht.",),
             (r"persona_id:\W*Falsches Format.",),
