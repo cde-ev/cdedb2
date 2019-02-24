@@ -78,8 +78,9 @@ class SessionBackend:
                     if cur.rowcount == 1:
                         data = cur.fetchone()
                     else:
-                        self.logger.info("Got invalid session key '{}'.".format(
-                            sessionkey))
+                        # log message to be picked up by fail2ban
+                        msg = "CdEDB invalid session key from {}".format(ip)
+                        self.logger.warning(msg)
         if data:
             deactivate = False
             if data["is_active"]:

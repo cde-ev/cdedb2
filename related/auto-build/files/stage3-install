@@ -112,7 +112,10 @@ echo ""
 echo "Set up the fail2ban..."
 echo "--------------------------------------------"
 
-cp /cdedb2/related/auto-build/files/stage3/cdedb.conf /etc/fail2ban/filter.d/
+cp /cdedb2/related/auto-build/files/stage3/fail2ban-filter-cdedb-login.conf \
+   /etc/fail2ban/filter.d/cdedb-login.conf
+cp /cdedb2/related/auto-build/files/stage3/fail2ban-filter-cdedb-sessionkey.conf \
+   /etc/fail2ban/filter.d/cdedb-sessionkey.conf
 cp /cdedb2/related/auto-build/files/stage3/jail.local /etc/fail2ban/
 
 if [ -e /media/cdrom0/vdi ]; then

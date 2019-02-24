@@ -1,6 +1,13 @@
-[cdedb]
+[cdedb-login]
 enabled = true
-port    = all
-filter  = cdedb
+port    = http,https
+filter  = cdedb-login
 logpath  = /log/cdedb-backend-core.log
+maxretry = 42
+
+[cdedb-sessionkey]
+enabled = true
+port    = http,https
+filter  = cdedb-sessionkey
+logpath  = /log/cdedb-backend-session.log
 maxretry = 5
