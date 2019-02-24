@@ -31,6 +31,7 @@
                 <p><strong class="text-muted">{% trans -%}You are not participating.{%- endtrans %}</strong></p>
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
+                        {{ util.anti_csrf_token('assembly/signup') }}
                         {{ util.input_submit(value=gettext("Participate"), icon="log-in") }}
                     </form>
                 {% endif %}
@@ -60,6 +61,7 @@
                                                                {'attachment_id': attachment_id}) }}"
                                             method="POST" id="removeattachmentform{{ attachment_id }}",
                                             style="display: inline;">
+                                        {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                         {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
                                                 title=gettext("Delete File")) }}
                                     </form>
@@ -108,6 +110,7 @@
                         <div class="p">
                             <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST"
                                   id="concludeassemblyform" style="display: inline;">
+                                {{ util.anti_csrf_token('assembly/conclude_assembly') }}
                                 {{ util.input_submit(value=gettext("Archive"), readonly=has_activity, aclass="btn btn-danger",
                                                      icon="folder-close") }}
                                 {{ util.input_checkbox(name="ack_conclude", label=gettext("Are you sure?")) }}

@@ -73,6 +73,7 @@
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_bill') }}" method="POST" id="billform"
                                 class="strip-space">
+                            {{ util.anti_csrf_token('cde/semester_bill') }}
                             <div class="checkbox">
                                 {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
                             </div>
@@ -113,6 +114,7 @@
                             </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_eject') }}" method="POST" id="ejectform">
+                            {{ util.anti_csrf_token('cde/semester_eject') }}
                             {{ util.input_submit(value=gettext("Remove inactive Members")) }}
                         </form>
                     {% else %}
@@ -150,6 +152,7 @@
                             </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_balance_update') }}" method="POST" id="balanceform">
+                            {{ util.anti_csrf_token('cde/semester_balance_update') }}
                             {{ util.input_submit(value=gettext("Update Balances")) }}
                         </form>
                     {% else %}
@@ -171,6 +174,7 @@
                     </p>
                     {% if period['balance_done'] %}
                         <form action="{{ cdedblink('cde/semester_advance') }}" method="POST" id="proceedform">
+                            {{ util.anti_csrf_token('cde/semester_advance') }}
                             {{ util.input_submit(value=gettext("Next Semester")) }}
                         </form>
                     {% else %}
@@ -212,6 +216,7 @@
                         {% endif %}
                         <form action="{{ cdedblink('cde/expuls_addresscheck') }}" method="POST" id="addresscheckform"
                                 class="strip-space">
+                            {{ util.anti_csrf_token('cde/expuls_addresscheck') }}
                             <div class="checkbox">
                                 {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
                             </div>
@@ -221,6 +226,7 @@
                         </form>
                         <form action="{{ cdedblink('cde/expuls_addresscheck') }}" method="POST"
                           id="noaddresscheckform">
+                            {{ util.anti_csrf_token('cde/expuls_addresscheck') }}
                             {{ util.input_hidden("skip", value=True) }}
                             {{ util.input_submit(value=gettext("Mark as done"), aclass="btn btn-warning",
                                     icon="check") }}
@@ -237,6 +243,7 @@
                 <div class="panel-body">
                     {% if expuls['addresscheck_done'] %}
                         <form action="{{ cdedblink('cde/expuls_advance') }}" method="POST" id="proceedexpulsform">
+                            {{ util.anti_csrf_token('cde/expuls_advance') }}
                             {{ util.input_submit(value=gettext("Next exPuls")) }}
                         </form>
                     {% else %}

@@ -37,6 +37,7 @@
             <h2>{% trans -%}Moderators{%- endtrans %}</h2>
             <form action="{{ cdedblink('ml/add_moderator') }}" method="POST"
                   id="addmoderatorform" class="p">
+                {{ util.anti_csrf_token('ml/add_moderator') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
                     {{ util.input_text(name="moderator_id", anid="input-add-moderator", placeholder="DB-XXXX-X",
@@ -64,6 +65,7 @@
                                   method="POST"
                                   id="removemoderatorform{{ moderator }}"
                                   style="display: inline;">
+                                {{ util.anti_csrf_token('ml/remove_moderator') }}
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
                                 {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
                                         title=gettext("Remove {given_names} {family_name} as moderator").format(
@@ -89,6 +91,7 @@
                                       method="POST"
                                       id="nackrequestform{{ request }}"
                                       style="display: inline;">
+                                    {{ util.anti_csrf_token('ml/decide_request') }}
                                     {{ util.input_hidden(name="ack", value=False) }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
                                     {{ util.input_submit(icon="remove", value=gettext("Reject"), 
@@ -98,6 +101,7 @@
                                       method="POST"
                                       id="ackrequestform{{ request }}"
                                       style="display: inline;">
+                                    {{ util.anti_csrf_token('ml/decide_request') }}
                                     {{ util.input_hidden(name="ack", value=True) }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
                                     {{ util.input_submit(value=gettext("Accept"), aclass="btn btn-xs btn-success") }}
@@ -117,6 +121,7 @@
     <h2>{% trans -%}Whitelist{%- endtrans %}</h2>
     <form action="{{ cdedblink('ml/add_whitelist') }}" method="POST"
           id="addwhitelistform" class="p">
+        {{ util.anti_csrf_token('ml/add_whitelist') }}
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
             {{ util.input_text(name="email", type="email", placeholder="mail@example.com",
@@ -135,6 +140,7 @@
                       method="POST"
                       id="removewhitelistform{{ loop.index }}"
                       style="display: inline;">
+                    {{ util.anti_csrf_token('ml/remove_whitelist') }}
                     {{ util.input_hidden(name="email", value=email) }}
                     {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="minus",
                             title=gettext("Remove {} from Whitelist").format(email)) }}
@@ -145,6 +151,7 @@
     <h2>{% trans -%}Subscribers{%- endtrans %}</h2>
     <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
           id="addsubscriberform" class="p">
+        {{ util.anti_csrf_token('ml/add_subscriber') }}
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
             {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
@@ -174,6 +181,7 @@
                                   method="POST"
                                   id="removesubscriberform{{ anid }}"
                                   style="display: inline;">
+                                {{ util.anti_csrf_token('ml/remove_subscriber') }}
                                 {{ util.input_hidden(name="subscriber_id", value=anid) }}
                                 {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger",
                                         title=gettext("Remove {given_names} {family_name} as subscriber").format(

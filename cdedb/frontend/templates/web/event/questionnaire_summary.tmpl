@@ -86,6 +86,7 @@
                      aclass="btn btn-info btn-sm", icon='edit') }}
     </div>
     <form action="{{ cdedblink('event/questionnaire_summary') }}" method="POST" id="questionnairesummaryform">
+        {{ util.anti_csrf_token('event/questionnaire_summary') }}
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for entry in questionnaire %}

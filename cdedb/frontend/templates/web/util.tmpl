@@ -543,3 +543,15 @@
         {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
     {%- endcall %}
 {%- endmacro %}
+
+{# Generate an anti CSRF (Cross-Site Request Forgery) token and add it as hidden input to an HTML form.
+
+   The frontend application checks the anti CSRF token for every called endpoint which is marked for this check, which
+   is the default for every POST-enabled endpoint. It validates the hash and checks the value against the login user's
+   persona_id. This should prevent people from performing an CSRF attack, as they are unable to reproduce the hashed
+   token.
+
+   For protection against replay attacks, we use the default timeout of config.PARAMETER_TIMEOUT #}
+{% macro anti_csrf_token(target) %}
+    {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, user.persona_id)) }}
+{% endmacro %}

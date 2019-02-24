@@ -90,6 +90,7 @@
 
 {% block content %}
     <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/field_summary') }}
         {% set associations = ((gettext("Registration Fields"), enums['FieldAssociations'].registration, 'user'),
                                (gettext("Course Fields"), enums['FieldAssociations'].course, 'book'),
                                (gettext("Lodgement Fields"), enums['FieldAssociations'].lodgement, 'home')) %}

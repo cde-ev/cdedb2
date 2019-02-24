@@ -39,6 +39,7 @@
                 icon="pencil", aclass="btn btn-warning btn-sm") }}
             <form action="{{ cdedblink('cde/lastschrift_revoke', {'lastschrift_id': active_permit}) }}"
                 method="POST" id="revokeform" style="display: inline;">
+                {{ util.anti_csrf_token('cde/lastschrift_revoke') }}
                 {{ util.input_submit(value=gettext("Revoke Direct Debit Authorization"), icon="remove",
                     aclass="btn btn-sm btn-danger") }}
             </form>
@@ -87,12 +88,14 @@
             <div class="p">
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
                     id="generatetransactionform" style="display: inline;">
+                    {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
                     {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
                     {{ util.input_submit(value=gettext("Perform Direct Debit"), icon="download",
                                          aclass="btn btn-sm btn-primary") }}
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': active_permit}) }}"
                     method="POST" id="skiptransactionform" style="display: inline;">
+                    {{ util.anti_csrf_token('cde/lastschrift_skip') }}
                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
                     {{ util.input_submit(value=gettext("Skip Direct Debit"), icon="step-forward",
                                          aclass="btn btn-sm btn-warning") }}
@@ -131,6 +134,7 @@
                                                 'transaction_id': transaction_id}) }}" method="POST"
                                     id="transactionsuccessform{{ transaction_id }}" style="display: inline;"
                                     class="success-form">
+                                    {{ util.anti_csrf_token('cde/lastschrift_finalize_transaction') }}
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status",
                                                          value=enums['LastschriftTransactionStati'].success.value) }}
@@ -141,6 +145,7 @@
                                                 'transaction_id': transaction_id}) }}" method="POST"
                                     id="transactionfailureform{{ transaction_id }}" style="display: inline;"
                                     class="failure-form">
+                                    {{ util.anti_csrf_token('cde/lastschrift_finalize_transaction') }}
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
                                     {{ util.input_submit(value=gettext("Failed"), aclass="btn btn-xs btn-danger", icon="exclamation-sign") }}
@@ -149,6 +154,7 @@
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id}) }}" method="POST"
                                     id="transactioncancelform{{ transaction_id }}" style="display: inline;">
+                                    {{ util.anti_csrf_token('cde/lastschrift_finalize_transaction') }}
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status",
                                                          value=enums['LastschriftTransactionStati'].cancelled.value) }}
@@ -169,6 +175,7 @@
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id}) }}"
                                     method="POST" id="transactionrollbackform{{ transaction_id }}">
+                                    {{ util.anti_csrf_token('cde/lastschrift_rollback_transaction') }}
                                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
                                     {{ util.input_submit(value=gettext("Reverse"), aclass="btn btn-xs btn-warning",
                                                          icon='transfer') }}

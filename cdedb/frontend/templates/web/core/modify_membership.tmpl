@@ -26,6 +26,7 @@
         </ul>
 
         <form action="{{ cdedblink('core/modify_membership') }}" method="POST" id="modifymembershipform">
+            {{ util.anti_csrf_token('core/modify_membership') }}
             <div>
                 {{ util.input_hidden(name="is_member", value=False) }}
                 {{ util.input_submit(value=gettext("Terminate Membership"), aclass="btn btn-warning") }}&emsp;
@@ -35,6 +36,7 @@
         </form>
    {% else %}
         <form action="{{ cdedblink('core/modify_membership') }}" method="POST" id="modifymembershipform">
+            {{ util.anti_csrf_token('core/modify_membership') }}
             <div>
                 {{ util.input_hidden(name="is_member", value=True) }}
                 {{ util.input_submit(value=gettext("Make a Member")) }}&emsp;

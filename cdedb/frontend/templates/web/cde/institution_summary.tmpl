@@ -49,6 +49,7 @@
         });
     </script>
     <form action="{{ cdedblink('cde/institution_summary') }}" method="POST" id="institutionsummaryform">
+        {{ util.anti_csrf_token('cde/institution_summary') }}
         <table class="table table-condensed" id="drow-table">
             <thead>
                 <tr><th>{% trans -%}Name{%- endtrans %}</th><th>{% trans -%}Shortname{%- endtrans %}</th><th></th></tr>

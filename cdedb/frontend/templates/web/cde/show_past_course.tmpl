@@ -35,6 +35,7 @@
         {% call util.bootstrap_panel(title=gettext("Add Participant to this Course"),
                 aclass="panel-success panel-condensed", icon='plus') %}
                 <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('cde/add_participant') }}
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                     <div class="row">
                         <div class="col-sm-5 {% if 'persona_id' in errors %}has-error{% endif %}">
@@ -81,6 +82,7 @@
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
                               id="removeparticipantform{{ anid }}" style="display: inline;"
                               class="delete-participant-form">
+                            {{ util.anti_csrf_token('cde/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
@@ -122,6 +124,7 @@
                     <div class="p">
                         <form action="{{ cdedblink('cde/delete_past_course') }}" method="POST"
                                 id="deletecourseform" style="display: inline;">
+                            {{ util.anti_csrf_token('cde/delete_past_course') }}
                             {{ util.input_submit(value=gettext("Delete Course"), icon="trash", aclass="btn btn-danger") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>

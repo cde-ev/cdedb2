@@ -26,6 +26,7 @@
 
 {% block content %}
     <form action="{{ cdedblink('event/change_course') }}" method="POST" id="changecourseform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/change_course') }}
         <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
         {{ util.form_input_text(name="nr", label=gettext("Coursenumer")) }}
         {{ util.form_input_text(name="title", label=gettext("Long Title")) }}

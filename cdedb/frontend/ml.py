@@ -593,7 +593,7 @@ class MlFrontend(AbstractUserFrontend):
         return self.send_json(rs, self.mlproxy.oldstyle_modlist_export(
             rs, address))
 
-    @access("ml_script", modi={"POST"})
+    @access("ml_script", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata(("address", "email"), ("error", "int"))
     def oldstyle_bounce(self, rs, address, error):
         """Provide specific infos for comptability mailinglist software"""

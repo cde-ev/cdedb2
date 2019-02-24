@@ -25,6 +25,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/manage_attendees') }}" method="POST" id="manageattendeesform">
+        {{ util.anti_csrf_token('event/manage_attendees') }}
         <div class="row">
             {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
                     if track_id in ambience['course']['segments'] %}

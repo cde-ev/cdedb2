@@ -22,6 +22,7 @@
     </script>
     <form action="{{ cdedblink('core/admin_change_user') }}" method="POST" id="changedataform"
         class="form-horizontal">
+        {{ util.anti_csrf_token('core/admin_change_user') }}
         {{ util.input_hidden(name="generation") }}
         {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
         <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>

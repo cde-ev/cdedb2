@@ -40,6 +40,7 @@
 {% block content %}
     <form action="{{ cdedblink('assembly/add_attachment') }}" method="POST" enctype="multipart/form-data"
             id="addattachmentform" class="form-horizontal">
+        {{ util.anti_csrf_token('assembly/add_attachment') }}
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}
         {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}

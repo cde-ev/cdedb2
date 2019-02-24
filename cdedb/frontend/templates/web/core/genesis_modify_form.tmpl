@@ -18,6 +18,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/genesis_modify') }}" method="POST" id="genesismodifyform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/genesis_modify') }}
         <div>
             {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
             {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}

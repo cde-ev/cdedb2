@@ -46,7 +46,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, open_utf8)
+    json_serialize, open_utf8, ANTI_CSRF_TOKEN_NAME)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -685,6 +685,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'docurl': docurl,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
             'CDEDB_DEV': self.conf.CDEDB_DEV,
+            'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
             'GIT_COMMIT': self.conf.GIT_COMMIT,
             'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
         })
@@ -1371,7 +1372,7 @@ def reconnoitre_ambience(obj, rs):
     return ambience
 
 
-def access(*roles, modi=None):
+def access(*roles, modi=None, check_anti_csrf=None):
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
@@ -1379,6 +1380,10 @@ def access(*roles, modi=None):
     :param roles: privilege required (any of the passed)
     :type modi: {str}
     :param modi: HTTP methods allowed for this invocation
+    :type check_anti_csrf: bool or None
+    :param check_anti_csrf: Control if the anti csrf check should be enabled
+        on this endpoint. If not specified, it will be enabled, if "POST" is in
+        the allowed methods.
     """
     modi = modi or {"GET", "HEAD"}
     access_list = set(roles)
@@ -1408,6 +1413,10 @@ def access(*roles, modi=None):
 
         new_fun.access_list = access_list
         new_fun.modi = modi
+        new_fun.check_anti_csrf =\
+            (check_anti_csrf
+             if check_anti_csrf is not None
+             else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
         return new_fun
 
     return decorator

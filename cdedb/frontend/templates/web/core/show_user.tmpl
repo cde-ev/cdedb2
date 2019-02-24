@@ -358,12 +358,14 @@
                                 {% if data['is_active'] %}
                                     <form action="{{ cdedblink('core/toggle_activity', {'activity': False}) }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
+                                        {{ util.anti_csrf_token('core/toggle_activity') }}
                                         {{ util.input_submit(value=gettext("Deactivate Account"), icon="ban-circle",
                                                 aclass="btn btn-danger btn-sm") }}
                                     </form>
                                 {% else %}
                                     <form action="{{ cdedblink('core/toggle_activity', {'activity': True}) }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
+                                        {{ util.anti_csrf_token('core/toggle_activity') }}
                                         {{ util.input_submit(value=gettext("Reactivate Account"), icon="ok-circle",
                                                 aclass="btn btn-success btn-sm") }}
                                     </form>
@@ -390,6 +392,7 @@
                             <div class="p">
                                 <form action="{{ cdedblink('core/archive_persona') }}" method="POST"
                                  id="archivepersonaform" style="display: inline;">
+                                    {{ util.anti_csrf_token('core/archive_persona') }}
                                     {{ util.input_submit(value=gettext("Archive Account"), icon="erase",
                                             aclass="btn btn-danger btn-sm") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
@@ -422,6 +425,7 @@
                             <div class="p">
                                 <form action="{{ cdedblink('core/dearchive_persona') }}" method="POST"
                                       id="dearchivepersonaform" style="display: inline;">
+                                    {{ util.anti_csrf_token('core/dearchive_persona') }}
                                     {{ util.input_submit(value=gettext("Restore Account"), icon="open-file",
                                                          aclass="btn btn-success btn-sm") }}
                                 </form>
@@ -440,6 +444,7 @@
                             <div class="p">
                                 <form action="{{ cdedblink('core/purge_persona') }}" method="POST"
                                  id="purgepersonaform" style="display: inline;">
+                                    {{ util.anti_csrf_token('core/purge_persona') }}
                                     {{ util.input_submit(value=gettext("Delete Account"), icon="fire",
                                             aclass="btn btn-danger btn-sm") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}

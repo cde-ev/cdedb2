@@ -13,6 +13,7 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform">
+        {{ util.anti_csrf_token('cde/parse_statement') }}
         {{ util.form_input_textarea(name="statement", label=gettext("Statement"), horizontal=False,
                 rows=8, anid="input-data") }}
 
@@ -28,6 +29,7 @@
         {% if "files" in data %}
             {% for key, value in data["files"]|dictsort %}
                 <form action="{{ cdedblink('cde/parse_download') }}" method="POST" id="{{ key }}">
+                    {{ util.anti_csrf_token('cde/parse_download') }}
                     {# These class tags are not supposed to do anything,
                     they are a hack to ensure the data is preserved. #}
                     {{- util.input_hidden("data", value=value) -}}

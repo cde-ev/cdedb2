@@ -22,10 +22,10 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
     n_, glue, QuotaException, PrivilegeError, now,
-    roles_to_db_role, RequestState, User, extract_roles)
+    roles_to_db_role, RequestState, User, extract_roles, ANTI_CSRF_TOKEN_NAME)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
-    docurl, JINJA_FILTERS)
+    docurl, JINJA_FILTERS, check_validation)
 from cdedb.config import SecretsConfig, Config
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -201,6 +201,16 @@ class Application(BaseApp):
                         handler.modi,
                         "Unsupported request method {}.".format(request.method))
                 rs.user = user
+
+                # Check anti CSRF token (if required by the endpoint)
+                if handler.check_anti_csrf:
+                    okay, error = check_anti_csrf(rs, component, action)
+                    if not okay:
+                        rs.csrf_alert = True
+                        rs.errors.append((ANTI_CSRF_TOKEN_NAME,
+                                          ValueError(error)))
+                        rs.notify('error', error)
+
                 # Store database connection as private attribute.
                 # It will be made accessible for the backends by the ProxyShim.
                 rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
@@ -282,3 +292,39 @@ class Application(BaseApp):
                     return lang_code
 
         return 'de'
+
+
+def check_anti_csrf(rs, component, action):
+    """
+    A helper function to check the anti CSRF token
+
+    The anti CSRF token is a signed userid, added as hidden input to most forms,
+    used to mitigate Cross Site Request Forgery (CSRF) attacks. It is checked
+    before calling the handler function, if the handler function is marked to
+    be protected against CSRF attacks, which is the default for all POST
+    endpoints.
+
+    The anti CSRF token should be created using the util.anti_csrf_token
+    template macro.
+
+    :param action: The name of the endpoint, checked by 'decode_parameter'
+    :type component: str
+    :param component: The name of the realm, checked by 'decode_parameter'
+    :type action: str
+    :rtype: (bool, str)
+    :return: The status of the CSRF token (True if okay, False if not) and the
+         error pertaining to it)
+    """
+    val = rs.request.values.get(ANTI_CSRF_TOKEN_NAME, "").strip()
+    if not val:
+        return False, n_("Anti CSRF token is required for this form.")
+    val = rs._coders['decode_parameter'](
+        "{}/{}".format(component, action), ANTI_CSRF_TOKEN_NAME, val)
+    if not val:
+        return False, n_("Anti CSRF token is forged or expired. Try again.")
+    val = check_validation(rs, 'id', val, ANTI_CSRF_TOKEN_NAME)
+    if not val:
+        return False, n_("Anti CSRF token is no valid user id.")
+    if val != rs.user.persona_id:
+        return False, n_("Anti CSRF token is forged.")
+    return True, None

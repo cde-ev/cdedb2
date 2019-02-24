@@ -159,6 +159,7 @@
                     <div class="p">
                         <form action="{{ cdedblink('event/delete_course') }}" method="POST" id="deletecourseform"
                                 style="display: inline;">
+                            {{ util.anti_csrf_token('event/delete_course') }}
                             {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
                                                  aclass="btn btn-danger", icon="folder-close") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
