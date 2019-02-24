@@ -682,7 +682,7 @@ CREATE TABLE event.registrations (
         mixed_lodging           boolean NOT NULL,
         checkin                 timestamp WITH TIME ZONE DEFAULT NULL,
         -- consent to information being included in participant list send to all participants.
-        list_consent            boolean,
+        list_consent            boolean NOT NULL,
 
         -- only basic data should be defined here and everything else will
         -- be handeled via additional fields
