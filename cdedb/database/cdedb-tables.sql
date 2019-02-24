@@ -587,7 +587,7 @@ CREATE TABLE event.field_definitions (
         event_id                integer NOT NULL REFERENCES event.events(id),
         field_name              varchar NOT NULL,
         -- anything allowed as type in a query spec
-        kind                    varchar NOT NULL,
+        kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
         -- the following array describes the available selections

@@ -21,7 +21,8 @@
                     $container.addClass('shaded-info');
                 } else {
                     $input_readonly.show();
-                    if (field_list[val] && (field_list[val]['kind'] != 'str' || field_list[val]['entries'])) {
+                    // TODO replace magic value 1 with FieldDatatypes.str
+                    if (field_list[val] && (field_list[val]['kind'] != 1 || field_list[val]['entries'])) {
                         $input_size.hide();
                     } else {
                         $input_size.show();

@@ -105,6 +105,17 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.lastschrift_transaction_revoked"),
     n_("FinanceLogCodes.other"),
 
+    n_("FieldAssociations.registration"),
+    n_("FieldAssociations.course"),
+    n_("FieldAssociations.lodgement"),
+
+    n_("FieldDatatypes.str"),
+    n_("FieldDatatypes.bool"),
+    n_("FieldDatatypes.int"),
+    n_("FieldDatatypes.decimal"),
+    n_("FieldDatatypes.date"),
+    n_("FieldDatatypes.datetime"),
+
     n_("Genders.female"),
     n_("Genders.male"),
     n_("Genders.other"),

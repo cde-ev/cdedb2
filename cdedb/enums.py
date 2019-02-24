@@ -18,7 +18,7 @@ ALL_ENUMS = (
     const.LastschriftTransactionStati, const.CoreLogCodes,
     const.CdeLogCodes, const.FinanceLogCodes, const.EventLogCodes,
     const.PastEventLogCodes, const.AssemblyLogCodes, const.MlLogCodes,
-    const.FieldAssociations,
+    const.FieldAssociations, const.FieldDatatypes,
     QueryOperators, AgeClasses, LineResolutions, SubscriptionStates)
 
 #: The list of infinite enums

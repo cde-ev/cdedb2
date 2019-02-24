@@ -715,7 +715,8 @@ def cast_fields(data, spec):
         if val is None:
             return None
         if key in spec:
-            return casters[spec[key]](val)
+            datatype, _ = getattr(validate, "_enum_fielddatatypes")(spec[key])
+            return casters[datatype.name](val)
         return val
 
     return {key: _do_cast(key, val) for key, val in data.items()}

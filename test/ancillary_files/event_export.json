@@ -209,7 +209,7 @@
                     "anything else"
                 ]
             ],
-            "kind": "str",
+            "kind": 1,
             "id": 2,
             "field_name": "transportation",
             "association": 1
@@ -234,7 +234,7 @@
                     "no radiation"
                 ]
             ],
-            "kind": "str",
+            "kind": 1,
             "id": 6,
             "field_name": "contamination",
             "association": 3
@@ -242,7 +242,7 @@
         "4": {
             "event_id": 1,
             "entries": null,
-            "kind": "bool",
+            "kind": 2,
             "id": 4,
             "field_name": "may_reserve",
             "association": 1
@@ -250,7 +250,7 @@
         "1": {
             "event_id": 1,
             "entries": null,
-            "kind": "bool",
+            "kind": 2,
             "id": 1,
             "field_name": "brings_balls",
             "association": 1
@@ -258,7 +258,7 @@
         "3": {
             "event_id": 1,
             "entries": null,
-            "kind": "str",
+            "kind": 1,
             "id": 3,
             "field_name": "lodge",
             "association": 1
@@ -266,7 +266,7 @@
         "5": {
             "event_id": 1,
             "entries": null,
-            "kind": "str",
+            "kind": 1,
             "id": 5,
             "field_name": "room",
             "association": 2

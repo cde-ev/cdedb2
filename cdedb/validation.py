@@ -1938,7 +1938,7 @@ def _event_track(val, argname=None, *, creation=False, _convert=True):
 
 
 _EVENT_FIELD_COMMON_FIELDS = lambda extra_suffix: {
-    'kind{}'.format(extra_suffix): _str,
+    'kind{}'.format(extra_suffix): _enum_fielddatatypes,
     'association{}'.format(extra_suffix): _enum_fieldassociations,
     'entries{}'.format(extra_suffix): _any,
 }
@@ -2002,8 +2002,9 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                     value, e = _str(value, entries_key, _convert=_convert)
                     if not e and kind_key in val:
                         # just validate, but in the end we store the string
-                        validator = getattr(current_module,
-                                            "_{}_or_None".format(val[kind_key]))
+                        validator = getattr(
+                            current_module,
+                            "_{}_or_None".format(val[kind_key].name))
                         _, e = validator(value, entries_key, _convert=_convert)
                     description, ee = _str(description, entries_key,
                                            _convert=_convert)
@@ -2304,9 +2305,17 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
     if errs:
         return val, errs
     raw = copy.deepcopy(val)
+    datatypes = {}
+    for field in fields.values():
+        if field['association'] == association:
+            dt, errs = _enum_fielddatatypes(field['kind'], field['field_name'],
+                                            _convert=_convert)
+            if errs:
+                return val, errs
+            datatypes[field['field_name']] = getattr(
+                current_module, "_{}_or_None".format(dt.name))
     optional_fields = {
-        field['field_name']: getattr(current_module,
-                                     "_{}_or_None".format(field['kind']))
+        field['field_name']: datatypes[field['field_name']]
         for field in fields.values() if field['association'] == association
     }
     val, errs = _examine_dictionary_fields(val, {}, optional_fields,

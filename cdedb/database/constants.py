@@ -70,6 +70,25 @@ class FieldAssociations(enum.IntEnum):
     course = 2  #:
     lodgement = 3  #:
 
+    def get_icon(self):
+        icons = {
+            FieldAssociations.registration: "user",
+            FieldAssociations.course: "book",
+            FieldAssociations.lodgement: "home",
+        }
+        return icons.get(self, repr(self))
+
+
+@enum.unique
+class FieldDatatypes(enum.IntEnum):
+    """Spec for the datatypes available as custom data fields."""
+    str = 1  #:
+    bool = 2  #:
+    int = 3  #:
+    decimal = 4  #:
+    date = 5  #:
+    datetime = 6  #:
+
 
 @enum.unique
 class GenesisStati(enum.IntEnum):

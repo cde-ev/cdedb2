@@ -347,7 +347,8 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             lodgement_fields = {
-                e['field_name']: PYTHON_TO_SQL_MAP[e['kind']]
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.lodgement
             }
@@ -378,7 +379,8 @@ class EventBackend(AbstractBackend):
                 "{col} AS {col}{part_id}".format(col=col, part_id=part_id)
                 for col in part_atoms)
             course_fields = {
-                e['field_name']: PYTHON_TO_SQL_MAP[e['kind']]
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.course
             }
@@ -432,7 +434,8 @@ class EventBackend(AbstractBackend):
                 event_id=event_id,
                 reg_mod_code=const.EventLogCodes.registration_changed)
             reg_fields = {
-                e['field_name']: PYTHON_TO_SQL_MAP[e['kind']]
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.registration
             }
@@ -672,20 +675,22 @@ class EventBackend(AbstractBackend):
                         ("id", "event_id", "kind", "association"),
                         indirect_fields)
                     correct_assoc = const.FieldAssociations.registration
+                    correct_datatype = const.FieldDatatypes.str
                     if edata.get('lodge_field'):
                         lodge_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['lodge_field']])
                         if (lodge_data['event_id'] != data['id']
-                                or lodge_data['kind'] != "str"
+                                or lodge_data['kind'] != correct_datatype
                                 or lodge_data['association'] != correct_assoc):
                             raise ValueError(n_("Unfit field for lodge_field"))
+                    correct_datatype = const.FieldDatatypes.bool
                     if edata.get('reserve_field'):
                         reserve_data = unwrap(
                             [x for x in indirect_data
                              if x['id'] == edata['reserve_field']])
                         if (reserve_data['event_id'] != data['id']
-                                or reserve_data['kind'] != "bool"
+                                or reserve_data['kind'] != correct_datatype
                                 or reserve_data[
                                     'association'] != correct_assoc):
                             raise ValueError(

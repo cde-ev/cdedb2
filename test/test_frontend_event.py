@@ -9,6 +9,7 @@ from test.common import as_users, USER_DICT, FrontendTest, nearly_now
 
 from cdedb.query import QueryOperators
 from cdedb.common import now
+from cdedb.database.constants import FieldDatatypes, FieldAssociations
 
 class TestEventFrontend(FrontendTest):
     @as_users("emilia")
@@ -422,8 +423,8 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn('field_name_10', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
-        f['association_-1'] = "1"
-        f['kind_-1'] = "str"
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'] = FieldDatatypes.str.value
         f['entries_-1'] = """all;everything goes
         vegetarian;no meat
         vegan;plants only"""
@@ -449,6 +450,26 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         self.assertNotIn('field_name_7', f.fields)
 
+    @as_users("anton")
+    def test_event_fields_datatype(self, user):
+        self.get("/event/event/1/field/summary")
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "invalid"
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'].force_value("invalid")
+        self.submit(f, check_notification=False)
+        self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertPresence("Ungültige Eingabe für eine Ganzzahl.")
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "invalid"
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'].force_value(sum(x for x in FieldDatatypes))
+        self.submit(f, check_notification=False)
+        self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertPresence("Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
 
     @as_users("anton")
     def test_event_fields_boolean(self, user):
@@ -458,8 +479,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
-        f['association_-1'] = "1"
-        f['kind_-1'] = "bool"
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'] = FieldDatatypes.bool.value
         f['entries_-1'] = """True;definitely
         False;no way!"""
         self.submit(f)
@@ -489,8 +510,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
-        f['association_-1'] = "1"
-        f['kind_-1'] = "date"
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'] = FieldDatatypes.date.value
         f['entries_-1'] = """2018-01-01;new year
         2018-10-03;party!
         2018-04-01;April fools"""

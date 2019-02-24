@@ -557,13 +557,15 @@ class EventFrontend(AbstractUserFrontend):
         deletes = {field_id for field_id in fields
                    if delete_flags['delete_{}'.format(field_id)]}
         ret = {}
-        params = lambda anid: (("kind_{}".format(anid), "str"),
+        params = lambda anid: (("kind_{}".format(anid), "enum_fielddatatypes"),
                                ("association_{}".format(anid),
                                 "enum_fieldassociations"),
                                ("entries_{}".format(anid), "str_or_None"))
         for field_id in fields:
             if field_id not in deletes:
                 tmp = request_extractor(rs, params(field_id))
+                if rs.errors:
+                    break
                 tmp = check(rs, "event_field", tmp,
                             extra_suffix="_{}".format(field_id))
                 if tmp:
@@ -576,7 +578,7 @@ class EventFrontend(AbstractUserFrontend):
             ret[field_id] = None
         marker = 1
         params = lambda anid: (("field_name_-{}".format(anid), "str"),
-                               ("kind_-{}".format(anid), "str"),
+                               ("kind_-{}".format(anid), "enum_fielddatatypes"),
                                ("association_-{}".format(anid),
                                 "enum_fieldassociations"),
                                ("entries_-{}".format(anid), "str_or_None"))
@@ -585,6 +587,9 @@ class EventFrontend(AbstractUserFrontend):
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
                 tmp = request_extractor(rs, params(marker))
+                if rs.errors:
+                    marker += 1
+                    break
                 tmp = check(rs, "event_field", tmp, creation=True,
                             extra_suffix="_-{}".format(marker))
                 if tmp:
@@ -715,7 +720,7 @@ class EventFrontend(AbstractUserFrontend):
         data['active_segments'] = active_segments
         field_params = tuple(
             ("fields.{}".format(field['field_name']),
-             "{}_or_None".format(field['kind']))
+             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course)
         raw_fields = request_extractor(rs, field_params)
@@ -2236,7 +2241,8 @@ class EventFrontend(AbstractUserFrontend):
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params = tuple(
-            (f(entry)['field_name'], "{}_or_None".format(f(entry)['kind']))
+            (f(entry)['field_name'],
+             "{}_or_None".format(const.FieldDatatypes(f(entry)['kind']).name))
             for entry in questionnaire
             if entry['field_id'] and not entry['readonly'])
         data = request_extractor(rs, params)
@@ -2504,7 +2510,7 @@ class EventFrontend(AbstractUserFrontend):
                 for i in range(track['num_choices']))
         field_params = tuple(
             ("fields.{}".format(field['field_name']),
-             "{}_or_None".format(field['kind']))
+             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration)
 
@@ -3013,7 +3019,7 @@ class EventFrontend(AbstractUserFrontend):
         data['id'] = lodgement_id
         field_params = tuple(
             ("fields.{}".format(field['field_name']),
-             "{}_or_None".format(field['kind']))
+             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement)
         raw_fields = request_extractor(rs, field_params)
@@ -3311,7 +3317,7 @@ class EventFrontend(AbstractUserFrontend):
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.lodgement:
                     temp = "lodge_fields{0}.xfield_{1}_{0}"
-                    spec[temp.format(part_id, f['field_name'])] = f['kind']
+                    spec[temp.format(part_id, f['field_name'])] = str(f['kind'])
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.course_id{0}".format(track_id)] = "id"
                 spec["track{0}.course_instructor{0}".format(track_id)] = "id"
@@ -3321,7 +3327,7 @@ class EventFrontend(AbstractUserFrontend):
                                 key=lambda f: f['field_name']):
                     if f['association'] == const.FieldAssociations.course:
                         temp = "course_fields{0}.xfield_{1}_{0}"
-                        spec[temp.format(track_id, f['field_name'])] = f['kind']
+                        spec[temp.format(track_id, f['field_name'])] = str(f['kind'])
         if len(event['parts']) > 1:
             spec[",".join("part{0}.status{0}".format(part_id)
                           for part_id in event['parts'])] = "int"
@@ -3336,7 +3342,7 @@ class EventFrontend(AbstractUserFrontend):
                         "lodge_fields{0}.xfield_{1}_{0}".format(
                             part_id, f['field_name'])
                         for part_id in event['parts'])
-                    spec[key] = f['kind']
+                    spec[key] = str(f['kind'])
         if len(tracks) > 1:
             spec[",".join("track{0}.course_id{0}".format(track_id)
                           for track_id in tracks)] = "id"
@@ -3351,11 +3357,11 @@ class EventFrontend(AbstractUserFrontend):
                         "course_fields{0}.xfield_{1}_{0}".format(
                             track_id, f['field_name'])
                         for track_id in tracks)
-                    spec[key] = f['kind']
+                    spec[key] = str(f['kind'])
         for f in sorted(event['fields'].values(),
                         key=lambda f: f['field_name']):
             if f['association'] == const.FieldAssociations.registration:
-                spec["reg_fields.xfield_{}".format(f['field_name'])] = f['kind']
+                spec["reg_fields.xfield_{}".format(f['field_name'])] = str(f['kind'])
         return spec
 
     @staticmethod
@@ -3748,7 +3754,7 @@ class EventFrontend(AbstractUserFrontend):
         if field['association'] != const.FieldAssociations.registration:
             return werkzeug.exceptions.NotFound(n_("Wrong associated field."))
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        kind = "{}_or_None".format(field['kind'])
+        kind = "{}_or_None".format(const.FieldDatatypes(field['kind']).name)
         data_params = tuple(("input{}".format(registration_id), kind)
                             for registration_id in registration_ids)
         data = request_extractor(rs, data_params)

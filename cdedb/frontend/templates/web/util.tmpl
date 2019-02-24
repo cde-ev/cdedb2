@@ -511,21 +511,22 @@
         {{- input_select(name=name, entries=fields['entries'], nulloption="",
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
     {%- else %}
-        {%- if fields['kind'] == "bool" %}
+        {% set datatypes = enums['FieldDatatypes'] %}
+        {%- if fields['kind'] == datatypes.bool %}
             <div class="checkbox">
                 {{- input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, label=fields['field_name']) -}}
             </div>
-        {%- elif fields['kind'] == "str" %}
+        {%- elif fields['kind'] == datatypes.str %}
             {{- input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, rows=3) }}
-        {%- elif fields['kind'] == "int" %}
+        {%- elif fields['kind'] == datatypes.int %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="number",
                           placeholder="0") }}
-        {%- elif fields['kind'] == "float" %}
+        {%- elif fields['kind'] == datatypes.decimal %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, placeholder="0.0") }}
-        {%- elif fields['kind'] == "date" %}
+        {%- elif fields['kind'] == datatypes.date %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="date",
                           placeholder="YYYY-MM-DD") }}
-        {%- elif fields['kind'] == "datetime" %}
+        {%- elif fields['kind'] == datatypes.datetime %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="datetime-local",
                           placeholder="YYYY-MM-DDThh:ii:ss") }}
         {%- else %}
@@ -538,7 +539,7 @@
                                 defaultvalue='', anid='', force_label=False, infolink='') %}
     {%- if label is none %}{% set label = fields['field_name'] %}{% endif %}
     {%- if not anid %}{% set anid = "event-input-{}".format(name) %}{% endif %}
-    {%- call form_input_general(name, (None if fields['kind'] == "bool" and not force_label else label), anid, False,
+    {%- call form_input_general(name, (None if fields['kind'] == enums['FieldDatatypes'].bool and not force_label else label), anid, False,
                                info, displayerrors, True, infolink=infolink) %}
         {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
     {%- endcall %}
