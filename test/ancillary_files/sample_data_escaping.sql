@@ -116,12 +116,12 @@ INSERT INTO event.course_tracks (id, part_id, title, shortname, num_choices, sor
     (2, 2, 'Kaffeekränzchen (Erste Hälfte)<script>abcdef</script>', 'Kaffee<script>abcdef</script>', 1, 2),
     (3, 3, 'Arbeitssitzung (Zweite Hälfte)<script>abcdef</script>', 'Sitzung<script>abcdef</script>', 2, 3);
 INSERT INTO event.field_definitions (id, event_id, field_name, kind, association, entries) VALUES
-    (1, 1, 'brings_balls', 'bool', 1, NULL),
-    (2, 1, 'transportation', 'str', 1, '{{"pedes<script>abcdef</script>", "by feet<script>abcdef</script>"}, {"car<script>abcdef</script>", "own car available<script>abcdef</script>"}, {"etc<script>abcdef</script>", "anything else<script>abcdef</script>"}}'),
-    (3, 1, 'lodge', 'str', 1, NULL),
-    (4, 1, 'may_reserve', 'bool', 1, NULL),
-    (5, 1, 'room', 'str', 2, NULL),
-    (6, 1, 'contamination', 'str', 3, '{{"high<script>abcdef</script>", "lots of radiation<script>abcdef</script>"}, {"medium<script>abcdef</script>", "elevated level of radiation<script>abcdef</script>"}, {"low<script>abcdef</script>", "some radiation<script>abcdef</script>"}, {"none<script>abcdef</script>", "no radiation<script>abcdef</script>"}}');
+    (1, 1, 'brings_balls', 2, 1, NULL),
+    (2, 1, 'transportation', 1, 1, '{{"pedes<script>abcdef</script>", "by feet<script>abcdef</script>"}, {"car<script>abcdef</script>", "own car available<script>abcdef</script>"}, {"etc<script>abcdef</script>", "anything else<script>abcdef</script>"}}'),
+    (3, 1, 'lodge', 1, 1, NULL),
+    (4, 1, 'may_reserve', 2, 1, NULL),
+    (5, 1, 'room', 1, 2, NULL),
+    (6, 1, 'contamination', 1, 3, '{{"high<script>abcdef</script>", "lots of radiation<script>abcdef</script>"}, {"medium<script>abcdef</script>", "elevated level of radiation<script>abcdef</script>"}, {"low<script>abcdef</script>", "some radiation<script>abcdef</script>"}, {"none<script>abcdef</script>", "no radiation<script>abcdef</script>"}}');
 UPDATE event.events SET lodge_field = 3, reserve_field = 4 WHERE id = 1;
 INSERT INTO event.courses (id, event_id, title, description, nr, shortname, instructors, max_size, min_size, notes, fields) VALUES
     (1, 1, 'Planetenretten für Anfänger<script>abcdef</script>', 'Wir werden die Bäume drücken.<script>abcdef</script>', 'α<script>abcdef</script>', 'Heldentum<script>abcdef</script>', 'ToFi & Co<script>abcdef</script>', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.<script>abcdef</script>', '{"course_id": 1, "room": "Wald"}'::jsonb),
