@@ -441,6 +441,8 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdata(("subscribe", "bool"))
     def subscribe_or_unsubscribe(self, rs, mailinglist_id, subscribe):
         """Change own subscription state."""
+        if rs.errors:
+            return self.show_mailinglist(rs, mailinglist_id)
         code = self.mlproxy.change_subscription_state(
             rs, mailinglist_id, rs.user.persona_id, subscribe)
         self.notify_return_code(

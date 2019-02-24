@@ -266,6 +266,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/show_assembly")
+        if rs.errors:
+            return self.show_assembly(rs, assembly_id)
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
 
@@ -439,6 +441,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     # ballot_id is optional, but comes semantically before attachment_id
     def remove_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
         """Delete an attachment."""
+        if rs.errors:
+            if ballot_id:
+                return self.show_ballot(rs, assembly_id, ballot_id)
+            else:
+                return self.show_assembly(rs, assembly_id)
         with Atomizer(rs):
             code = self.assemblyproxy.remove_attachment(rs, attachment_id)
             self.notify_return_code(rs, code)
@@ -695,6 +702,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin", modi={"POST"})
     def remove_candidate(self, rs, assembly_id, ballot_id, candidate_id):
         """Delete an option from a ballot."""
+        if rs.errors:
+            return self.show_ballot(rs, assembly_id, ballot_id)
         data = {
             'id': ballot_id,
             'candidates': {
