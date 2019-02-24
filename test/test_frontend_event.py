@@ -633,7 +633,6 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['registerform']
         f['parts'] = ['1', '3']
         f['mixed_lodging'] = 'True'
-        f['foto_consent'].checked = True
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
         f['course_choice3_0'] = 2
         f['course_choice3_1'] = 4
@@ -693,7 +692,6 @@ etc;anything else""", f['entries_2'].value)
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
         f['parts'] = ['1']
         f['mixed_lodging'] = 'True'
-        f['foto_consent'].checked = True
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
@@ -1248,6 +1246,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
         self.assertPresence('Emilia E.')
+        self.assertNonPresence('Garcia G.')
+        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0&orgas_only=True',
+                                   index=0)
+        self.assertPresence('documentclass')
+        self.assertPresence('Heldentum')
+        self.assertPresence('Emilia E.')
+        self.assertPresence('Garcia G.')
         self.response = save.click(href='/event/event/1/download/participantlist\\?runs=2',
                                    index=0)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
