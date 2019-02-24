@@ -66,7 +66,8 @@
             "ctime.creation_time": gettext("Registration Time"),
             "mtime.modification_time": gettext("Last Modification Time"),}) %}
 
-    {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
+    {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query'),
+                            selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
     {% if values['is_search'] %}
         <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>

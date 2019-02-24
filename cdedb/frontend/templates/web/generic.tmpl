@@ -203,7 +203,8 @@
             {% else %}
                 {% set target=cdedblink('{}/user_search'.format(realm)) %}
             {% endif %}
-            {{ format_query(spec, TITLES, choices, target, selection_blacklist=selection_blacklist) }}
+            {{ format_query(spec, TITLES, choices, target, selection_blacklist=selection_blacklist,
+                            selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
 
     {% endwith %}
 {% endmacro %}
@@ -269,7 +270,8 @@
 
 
 
-{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[]) %}
+{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
+                      selection_default=[]) %}
     <form action="{{ target }}" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary">
@@ -316,6 +318,8 @@
                                                     {% if output_selection %}
                                                         {{ util.input_checkbox(name, aclass='outputSelector',
                                                                 value=True,
+                                                                defaultvalue=('True' if field in selection_default
+                                                                                     else ''),
                                                                 arialabel=(gettext("show %s")
                                                                            |format(titles.get(field, field)))) }}
                                                     {% else %}
