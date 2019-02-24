@@ -51,16 +51,6 @@ I18N_STRINGS = (
     n_("CoreLogCodes.genesis_approved"),
     n_("CoreLogCodes.genesis_rejected"),
 
-    n_("CourseFilterPositions.specific_rank"),
-    n_("CourseFilterPositions.instructor"),
-    n_("CourseFilterPositions.any_choice"),
-    n_("CourseFilterPositions.assigned"),
-    n_("CourseFilterPositions.anywhere"),
-
-    n_("CourseChoiceToolActions.specific_rank"),
-    n_("CourseChoiceToolActions.assign_fixed"),
-    n_("CourseChoiceToolActions.assign_auto"),
-
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),
     n_("EventLogCodes.orga_added"),

@@ -93,7 +93,7 @@
     <form action="{{ cdedblink('event/course_choices') }}" method="POST" id="choiceactionform"
           aria-label="{% trans -%}Assignment{%- endtrans %}">
         {{ util.anti_csrf_token('event/course_choices') }}
-        {% call util.bootstrap_panel(title=gettext("Assign"), icon="screenshot", aclass='panel-warning',
+        {% call util.bootstrap_panel(title=gettext("Assignment"), icon="screenshot", aclass='panel-warning',
                                      anid="assignment-options") %}
             {% if ambience['event']['tracks']|length == 1 %}
                 {% set tracks=util.input_hidden(name="track_ids", value=(ambience['event']['tracks']|list)[0]) %}
