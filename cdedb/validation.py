@@ -2135,7 +2135,7 @@ def _course(val, argname=None, *, creation=False, _convert=True):
 
 _REGISTRATION_COMMON_FIELDS = lambda: {
     'mixed_lodging': _bool,
-    'foto_consent': _bool,
+    'list_consent': _bool,
     'notes': _str_or_None,
     'parts': _any,
     'tracks': _any,

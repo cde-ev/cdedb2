@@ -74,14 +74,14 @@
             {% endfor %}
         {% endfor %}
 
-        <h3 class="heading-underline">Anmeldedaten</h3>
-        {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
-        {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
-        {{ util.form_input_textarea(name="reg.notes", label="Anmerkungen", rows="5") }}
+        <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
+        {{ util.form_input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging")) }}
+        {{ util.form_input_checkbox(name="reg.list_consent", label=gettext("Participant List Consent")) }}
+        {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% if course_choices[track_id]|length > 0 %}
                 <h4>
-                    Kurswahl
+                    {% trans -%}Course Choices{%- endtrans %}
                     {% if ambience['event']['tracks']|length > 1 %}
                     {{ track['title'] }}
                     {% endif %}
@@ -89,11 +89,11 @@
 
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
-                {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label="Kursleiter von",
+                {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label=gettext("Instructor of"),
                                          entries=course_entries, nulloption="") }}
                 {% for i in range(track['num_choices']) %}
                     {{ util.form_input_select(name="track{}.course_choice_{}".format(track_id, i),
-                                              label="{}. Wahl".format(i + 1), entries=course_entries, nulloption="") }}
+                                              label=gettext("{}. Choice").format(i + 1), entries=course_entries, nulloption="") }}
                 {% endfor %}
             {% endif %}
         {% endfor %}

@@ -254,7 +254,7 @@ QUERY_SPECS = {
             ("reg.payment", "date"),
             ("reg.parental_agreement", "bool"),
             ("reg.mixed_lodging", "bool"),
-            ("reg.foto_consent", "bool"),
+            ("reg.list_consent", "bool"),
             ("reg.notes", "str"),
             ("reg.orga_notes", "str"),
             ("reg.checkin", "datetime"),

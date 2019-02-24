@@ -40,11 +40,9 @@
                 (False, gettext("I want to be lodged seperated by gender."))),
                 label=gettext("Mixed Lodging"), info=mix_info, readonly=readonly) }}
         {% endif %}
-        {{ util.form_input_checkbox(name="foto_consent", readonly=readonly, label=gettext(
-                "I agree, that photos and recordings of myself, that are made in the context "
-                "of this event, may be used for the event-documentation and a CdE-internal, "
-                "password protected media collection. Individual photos and recordings can "
-                "be excluded from this by my request.")) }}
+        {{ util.form_input_checkbox(name="list_consent", label=gettext(
+                "I agree, that my data, including my name, address and my email, may be sent "
+                "to other participants of this event beforehand.")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", readonly=readonly) }}
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') if track_id in involved_tracks %}
             {% set course_list = course_choices[track_id] %}

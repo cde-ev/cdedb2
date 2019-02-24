@@ -155,10 +155,10 @@
                                        anid="input_reg_mixed_lodging") }}
             </div>
         {% endcall %}
-        {% call form_input_optional("reg.foto_consent", anid="input_reg_foto_consent") %}
+        {% call form_input_optional("reg.list_consent", anid="input_reg_list_consent") %}
             <div class="checkbox">
-                {{ util.input_checkbox(name="reg.foto_consent", anid="input_reg_foto_consent",
-                                       label=gettext("Foto Consent")) }}
+                {{ util.input_checkbox(name="reg.list_consent", anid="input_reg_list_consent",
+                                       label=gettext("Participant List Consent")) }}
             </div>
         {% endcall %}
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}

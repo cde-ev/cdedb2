@@ -124,7 +124,7 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 5,
-            "foto_consent": true,
+            "list_consent": true,
             "fields": {
                 "brings_balls": true,
                 "transportation": "pedes",
@@ -142,7 +142,7 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 1,
-            "foto_consent": true,
+            "list_consent": true,
             "fields": {
                 "registration_id": 1,
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)"
@@ -159,7 +159,7 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 7,
-            "foto_consent": true,
+            "list_consent": false,
             "fields": {
                 "transportation": "car",
                 "registration_id": 3
@@ -176,7 +176,7 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 9,
-            "foto_consent": true,
+            "list_consent": true,
             "fields": {
                 "brings_balls": false,
                 "may_reserve": true,

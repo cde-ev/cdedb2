@@ -163,8 +163,6 @@ def register_for_event(registration: RegistrationConfiguration, config: TestConf
             choicebox_element.select_by_index(i)
 
     # assume everything is already selected
-    # express consent
-    driver.find_element_by_id("input-checkbox-foto_consent").click()
     # send form
     if not registration.dry_run:
         driver.find_element_by_name("submitform").click()
