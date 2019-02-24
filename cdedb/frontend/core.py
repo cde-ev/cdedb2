@@ -224,7 +224,8 @@ class CoreFrontend(AbstractFrontend):
                                secure=True)
         return rs.response
 
-    @access("persona", modi={"POST"})
+    # We don't check anti CSRF tokens here, since logging does not harm anyone.
+    @access("persona", modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs):
         """Invalidate session."""
         self.coreproxy.logout(rs)
