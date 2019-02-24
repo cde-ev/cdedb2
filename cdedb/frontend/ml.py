@@ -45,7 +45,8 @@ class MlFrontend(AbstractUserFrontend):
         super().finalize_session(rs, connpool, auxilliary=auxilliary)
         if self.validate_scriptkey(rs.scriptkey):
             # Special case the access of the mailing list software since
-            # it's not tied to an actual persona.
+            # it's not tied to an actual persona. Note that this is not
+            # affected by the LOCKDOWN configuration.
             rs.user.roles.add("ml_script")
             # Upgrade db connection
             rs._conn = connpool["cdb_persona"]
