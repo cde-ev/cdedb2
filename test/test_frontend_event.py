@@ -621,7 +621,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['deletecourseform']
         f['ack_delete'].checked = True
         self.submit(f)
-        self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertTitle("Kurse verwalten (Große Testakademie 2222)")
         self.assertNonPresence("Abstract Nonsense")
 
     @as_users("berta")
