@@ -35,7 +35,7 @@
                                     → [{{ FIELD['field_name'] }}]
                                 </div>
                             {% else %}
-                                {% if FIELD['kind'] == "bool" %}
+                                {% if FIELD['kind'] == enums['FieldDatatypes'].bool %}
                                     <div class="miniature-checkbox">
                                         {{ util.make_icon('check') }} → [{{ FIELD['field_name'] }}]
                                     </div>

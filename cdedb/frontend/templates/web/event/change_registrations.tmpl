@@ -179,7 +179,7 @@
                    if field['association'] == enums['FieldAssociations'].registration %}
                 {% call form_input_optional("fields.{}".format(field['field_name']),
                                             anid="input_fields_{}".format(field['field_name']),
-                                            label=field['field_name'] if field['kind'] != "bool" else '') %}
+                                            label=field['field_name'] if field['kind'] != enums['FieldDatatypes'].bool else '') %}
                     {{ util.event_field_input(field, anid="input_fields_{}".format(field['field_name'])) }}
                 {% endcall %}
             {% endfor %}

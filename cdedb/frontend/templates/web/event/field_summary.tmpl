@@ -42,10 +42,7 @@
                         {% trans -%}Datatype{%- endtrans %}
                     </label>
                     <div class="col-sm-5 {% if "kind_{}".format(field_id) in errors %}has-error{% endif %}">
-                        {{ util.input_select(name="kind_{}".format(field_id), entries=(
-                                ("str", gettext("Text")), ("bool", gettext("Yes/No")), ("int", gettext("Int")),
-                                ("float", gettext("Decimal")), ("date", gettext("Date")),
-                                ("datetime", gettext("Date and Time"))),
+                        {{ util.input_select(name="kind_{}".format(field_id), entries=enums['FieldDatatypes']|enum_entries(processing=gettext),
                             attributes=('data-basename="kind_"'|s if newrow else ''), aclass='drow-input form-control',
                             anid="input-select-kind_{}".format(field_id)) }}
                         {{ util.output_errors("kind_{}".format(field_id)) }}
@@ -68,10 +65,7 @@
                     <div class="association-input-container">
                         {{ util.form_input_select(label=gettext("Fields for"),
                                                   name="association_{}".format(field_id),
-                                                  entries=(
-                                                      (enums['FieldAssociations'].registration.value, gettext("Registration")),
-                                                      (enums['FieldAssociations'].course.value, gettext("Course")),
-                                                      (enums['FieldAssociations'].lodgement.value, gettext("Lodgement")),),
+                                                  entries=enums['FieldAssociations']|enum_entries(processing=gettext),
                                                   attributes=('data-basename="association_"'|s if newrow else ''),
                                                   aclass='drow-input form-control association-input')
                         }}
@@ -90,22 +84,19 @@
 
 {% block content %}
     <form action="{{ cdedblink('event/field_summary') }}" method="POST" id="fieldsummaryform" class="form-horizontal">
-        {% set associations = ((gettext("Registration Fields"), enums['FieldAssociations'].registration, 'user'),
-                               (gettext("Course Fields"), enums['FieldAssociations'].course, 'book'),
-                               (gettext("Lodgement Fields"), enums['FieldAssociations'].lodgement, 'home')) %}
         <ul class="nav nav-tabs mosp softhide" role="tablist" id="associations_tablist">
-            {% for title, association, icon in associations -%}
+            {% for association in enums['FieldAssociations'] -%}
                 <li role="presentation"{% if loop.first %} class="active"{% endif %}>
                     <a href="#tab_{{ association.name }}" data-toggle="tab" aria-controls="tab_{{ association.name }}"
-                            role="tab">{{ util.make_icon(icon) }} {{ title }}</a>
+                            role="tab">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</a>
                 </li>
             {%- endfor %}
         </ul>
         <div class="tab-content" id="associations_tabcontent">
-            {% for title, association, icon in associations %}
+            {% for association in enums['FieldAssociations'] %}
                 <div class="tab-pane active" role="tabpanel" id="tab_{{ association.name }}"
                         data-association-id="{{ association.value }}">
-                    <h3 class="heading-underline">{{ util.make_icon(icon) }} {{ title }}</h3>
+                    <h3 class="heading-underline">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
                     <div class="row">
                         {# Old items, already stored in the database #}
                         {% for field_id, entry in ambience['event']['fields']|dictsort %}
@@ -125,7 +116,7 @@
             {% endfor %}
         </div>
 
-        <h3 class="heading-underline">Neues Feld</h3>
+        <h3 class="heading-underline">{% trans -%}New Field{%- endtrans %}</h3>
         {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
         <div class="row">
             {{ print_field(-values.get('create_last_index', 0) - 1, None, False, 'drow-prototype', newrow=True) }}

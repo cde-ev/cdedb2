@@ -53,11 +53,12 @@
                                                   label=entry['title'], info=entry['info'],
                                                   readonly=(entry['readonly'] or is_locked)) }}
                     {% else %}
-                        {% if FIELD['kind'] == "bool" %}
+                        {% set datatypes = enums['FieldDatatypes'] %}
+                        {% if FIELD['kind'] == datatypes.bool %}
                             {{ util.form_input_checkbox(
                                 name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                 readonly=(entry['readonly'] or is_locked)) }}
-                        {% elif FIELD['kind'] == "str"  %}
+                        {% elif FIELD['kind'] == datatypes.str  %}
                             {% if entry['input_size'] %}
                                 {{ util.form_input_textarea(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
