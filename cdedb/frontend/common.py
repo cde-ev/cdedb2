@@ -505,6 +505,31 @@ import markdown
 md = markdown.Markdown()
 
 
+class HeadingDiminisher(markdown.treeprocessors.Treeprocessor):
+    """ A custom Python-markdown Treeprocessor to reduce heading levels by 3 """
+    levels = 3
+    h_tags = ('h1', 'h2', 'h3', 'h4', 'h5', 'h6')
+
+    def run(self, root):
+        self._diminish_headings(root)
+
+    def _diminish_headings(self, element):
+        for child in element:
+            if child.tag in self.h_tags[:6-self.levels]:
+                child.tag = child.tag[0] + str(int(child.tag[1])+self.levels)
+            elif child.tag in self.h_tags[6-self.levels:]:
+                child.tag = 'p'
+            elif child.tag not in ('p',):
+                self._diminish_headings(child)
+
+
+# TODO remove this workaround when we finally switched to Debian Buster
+if markdown.version_info[0] == 2:
+    md.treeprocessors['headingDiminisher'] = HeadingDiminisher(md)
+else:
+    md.treeprocessors.register(HeadingDiminisher(md), 'headingDiminisher', 20)
+
+
 def md_filter(val):
     """Custom jinja filter to convert rst to html.
 
