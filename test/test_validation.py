@@ -92,7 +92,7 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test("_float", (
             (0.0, 0.0, None, True),
             (12.3, 12.3, None, True),
-            (None, None, TypeError, False),
+            (None, None, ValueError, False),
             ("12", 12.0, None, False),
             ("-12.3", -12.3, None, False),
             ("garbage", None, ValueError, False),
@@ -106,7 +106,7 @@ class TestValidation(unittest.TestCase):
             (None, None, TypeError, False),
             ("12", decimal.Decimal((0, (1, 2), 0)), None, False),
             ("-12.3", decimal.Decimal((1, (1, 2, 3), -1)), None, False),
-            ("garbage", None, decimal.InvalidOperation, False),
+            ("garbage", None, ValueError, False),
             (12, None, TypeError, False),
             (12.3, None, TypeError, False),
             ))
