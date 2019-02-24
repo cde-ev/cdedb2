@@ -1398,7 +1398,7 @@ def access(*roles, modi=None, check_anti_csrf=None):
         new_fun.check_anti_csrf =\
             (check_anti_csrf
              if check_anti_csrf is not None
-             else "POST" in modi and "anonymous" not in roles)
+             else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
         return new_fun
 
     return decorator
