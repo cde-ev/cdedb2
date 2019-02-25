@@ -93,9 +93,9 @@
                 </li>
             {% endfor %}
             {% if extra_participants %}
-                <li>{% trans count=extra_participants, extra_participants=extra_participants -%}
+                <li>{% trans count=extra_participants -%}
                     extra_participants_singular
-                {%- pluralize extra_participants-%}
+                {%- pluralize count -%}
                     extra_participants_plural
                 {%- endtrans %} …</li>
             {% endif %}
@@ -103,9 +103,9 @@
     {% elif extra_participants %}
         <p>
             <i>
-                {% trans count=extra_participants, extra_participants=extra_participants -%}
+                {% trans count=extra_participants -%}
                     {{ count }} Participant
-                {%- pluralize extra_participants -%}
+                {%- pluralize count -%}
                     {{ count }} Participants
                 {%- endtrans %}
             </i>

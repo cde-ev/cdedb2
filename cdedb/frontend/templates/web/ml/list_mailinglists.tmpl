@@ -71,14 +71,14 @@
             {% endif %}
         </div>
         <div class="col-sm-3 small">
-            {% trans count=ml['num_subscribers'], number=ml['num_subscribers'] -%}
+            {% trans count=ml['num_subscribers'] -%}
                 {{ count }} subscriber.
-            {%- pluralize number -%}
+            {%- pluralize count -%}
                 {{ count }} subscribers.
             {%- endtrans %}
-            {% trans count=ml['moderators']|length, number=ml['moderators']|length -%}
+            {% trans count=ml['moderators']|length -%}
                 {{ count }} moderator.
-            {%- pluralize number -%}
+            {%- pluralize count -%}
                 {{ count }} moderators.
             {%- endtrans %}
         </div>

@@ -30,9 +30,9 @@
                 	{{ count }} Registrations
                 {%- endtrans %}
             </a>,
-            {% trans count=event['orgas']|length, number=event['orgas']|length -%}
+            {% trans count=event['orgas']|length -%}
                 {{ count }} Orga
-            {%- pluralize number -%}
+            {%- pluralize count -%}
                 {{ count }} Orgas
             {%- endtrans %}
         </div>
