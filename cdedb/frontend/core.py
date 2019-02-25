@@ -366,6 +366,8 @@ class CoreFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_total_persona(rs, persona_id))
 
         # Cull unwanted data
+        if not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data:
+            del data['foto']
         if "core" not in access_levels:
             masks = (
                 "is_active", "is_admin", "is_core_admin", "is_cde_admin",

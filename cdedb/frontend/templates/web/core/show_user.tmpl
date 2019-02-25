@@ -62,7 +62,7 @@
     {% endif %}
 
     {# Profile photo/avatar #}
-    {% if data['is_cde_realm'] %}
+    {% if 'foto' in data %}
         <div class="pull-right-responsive text-right-responsive">
             {% if data['foto'] %}
                 <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
