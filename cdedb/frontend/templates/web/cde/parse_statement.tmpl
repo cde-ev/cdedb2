@@ -37,7 +37,7 @@
                     {%- trans count=(value.split("\n")|length - 1) -%}
                         {{ count }} entries.
                     {%- endtrans -%}
-                    {{- util.form_input_submit(value=gettext("Download {}.csv ").format(key),
+                    {{- util.form_input_submit(value=gettext("Download %s.csv ")|format(key),
                         aclass="btn btn-info btn-sm", icon="download", horizontal=False) -}}
                 </form>
             {% endfor %}

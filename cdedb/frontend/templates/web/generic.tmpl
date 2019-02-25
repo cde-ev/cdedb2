@@ -391,13 +391,13 @@
                                             {%- endfor %}
                                             {{ util.input_select(name, entries=myentries, nulloption="",
                                                                  aclass="form-control input-sm sort-field",
-                                                                 arialabel=gettext("{} sort key").format(title)) }}
+                                                                 arialabel=gettext("%s sort key")|format(title)) }}
                                         </td>
                                         <td>
                                             {{ util.input_select(name + "_ascending", defaultvalue=True,
                                                                  aclass="form-control input-sm sort-order",
                                                                  entries=((True, "A→Z"), (False, "Z→A")),
-                                                                 arialabel=gettext("{} sort order").format(title)) }}
+                                                                 arialabel=gettext("%s sort order")|format(title)) }}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -610,7 +610,7 @@
                 <tr class="ls-item" data-id="{{ row[primary_field] }}">
                     <td>
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
-                                               aclass="rowSelector", arialabel=gettext("row {}").format(outerloopindex)) }}
+                                               aclass="rowSelector", arialabel=gettext("row %s")|format(outerloopindex)) }}
                     </td>
                     <td>
                         {%- if query.scope == 'qview_registration' -%}

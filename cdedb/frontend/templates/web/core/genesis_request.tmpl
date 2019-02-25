@@ -31,7 +31,7 @@
                 ("ml", gettext("CdE-Mailinglist"))),
                 label=gettext("Rationale"), anid="realm-select") }}
             {{ util.form_input_textarea(name="notes",
-                                        label=gettext("Rationale (max. {} Characters)").format(max_rationale),
+                                        label=gettext("Rationale (max. %s Characters)")|format(max_rationale),
                                         small=True, maxlength=max_rationale) }}
             <div id="event-field-container">
                 <p class="text-muted">{{ util.make_icon('info-sign') }}

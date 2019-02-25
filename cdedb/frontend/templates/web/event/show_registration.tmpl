@@ -201,7 +201,7 @@
                                 {% endif %}
                             </dd>
                             {% for i in range(track['num_choices']) %}
-                                <dt>{{ gettext("{}. Choice").format(i + 1) }}</dt>
+                                <dt>{{ gettext("%s. Choice")|format(i + 1) }}</dt>
                                 <dd>
                                     {% if ambience['registration']['tracks'][track_id]['choices']|length > i  %}
                                         {{ courses[ambience['registration']['tracks'][track_id]['choices'][i]]['nr'] }}.

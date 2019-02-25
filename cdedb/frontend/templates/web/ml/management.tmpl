@@ -68,7 +68,7 @@
                                 {{ util.anti_csrf_token('ml/remove_moderator') }}
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
                                 {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
-                                        title=gettext("Remove {given_names} {family_name} as moderator").format(
+                                        title=gettext("Remove %(given_names)s %(family_name)s as moderator")|format(
                                             given_names=personas[moderator]['given_names'],
                                             family_name=personas[moderator]['family_name'])) }}
                             </form>
@@ -143,7 +143,7 @@
                     {{ util.anti_csrf_token('ml/remove_whitelist') }}
                     {{ util.input_hidden(name="email", value=email) }}
                     {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="minus",
-                            title=gettext("Remove {} from Whitelist").format(email)) }}
+                            title=gettext("Remove %s from Whitelist")|format(email)) }}
                 </form>
             </li>
         {% endfor %}
@@ -184,7 +184,7 @@
                                 {{ util.anti_csrf_token('ml/remove_subscriber') }}
                                 {{ util.input_hidden(name="subscriber_id", value=anid) }}
                                 {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger",
-                                        title=gettext("Remove {given_names} {family_name} as subscriber").format(
+                                        title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
                                             given_names=personas[anid]['given_names'],
                                             family_name=personas[anid]['family_name'])) }}
                             </form>

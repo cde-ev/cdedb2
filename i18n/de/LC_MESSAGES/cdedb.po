@@ -1149,8 +1149,8 @@ msgid "Must be a datetime.date."
 msgstr "Kein Datum gefunden."
 
 #: cdedb/validation.py:1030
-msgid "Invalid datetime string ({})."
-msgstr "Ungültige Datumsangabe ({})."
+msgid "Invalid datetime string (%s)."
+msgstr "Ungültige Datumsangabe (%s)."
 
 #: cdedb/validation.py:1053
 msgid "Invalid input for datetime."
@@ -2365,12 +2365,12 @@ msgid "Change failed."
 msgstr "Änderung fehlgeschlagen."
 
 #: cdedb/frontend/common.py:1175
-msgid "{}.tex"
-msgstr "{}.tex"
+msgid "%s.tex"
+msgstr "%s.tex"
 
 #: cdedb/frontend/common.py:1182
-msgid "{}.pdf"
-msgstr "{}.pdf"
+msgid "%s.pdf"
+msgstr "%s.pdf"
 
 #: cdedb/frontend/common.py:1304
 msgid "Inconsistent request."
@@ -2603,12 +2603,12 @@ msgid "chose"
 msgstr "gewählt haben"
 
 #: cdedb/frontend/event.py:1134
-msgid "have as {}. choice"
-msgstr "als {}. Wahl haben"
+msgid "have as %s. choice"
+msgstr "als %s. Wahl haben"
 
 #: cdedb/frontend/event.py:1137
-msgid "into their {}. choice"
-msgstr "in ihre {}. Wahl"
+msgid "into their %s. choice"
+msgstr "in ihre %s. Wahl"
 
 #: cdedb/frontend/event.py:1141
 msgid "in the course …"
@@ -3953,12 +3953,12 @@ msgid "compare value for %s"
 msgstr "Vergleichswert für %s"
 
 #: cdedb/frontend/templates/web/generic.tmpl:394
-msgid "{} sort key"
-msgstr "{} Sortierkriterium"
+msgid "%s sort key"
+msgstr "%s Sortierkriterium"
 
 #: cdedb/frontend/templates/web/generic.tmpl:400
-msgid "{} sort order"
-msgstr "{} Sortierreihenfolge"
+msgid "%s sort order"
+msgstr "%s Sortierreihenfolge"
 
 #: cdedb/frontend/templates/web/generic.tmpl:415
 msgid "add filter"
@@ -4126,8 +4126,8 @@ msgid "sorted column"
 msgstr "Sortierte Spalte"
 
 #: cdedb/frontend/templates/web/generic.tmpl:613
-msgid "row {}"
-msgstr "Zeile {}"
+msgid "row %s"
+msgstr "Zeile %s"
 
 #: cdedb/frontend/templates/web/event/course_list.tmpl:37
 #: cdedb/frontend/templates/web/generic.tmpl:618
@@ -4163,16 +4163,16 @@ msgid "from"
 msgstr "von"
 
 #: cdedb/frontend/templates/web/util.tmpl:495
-msgid "{} from"
-msgstr "{} von"
+msgid "%s from"
+msgstr "%s von"
 
 #: cdedb/frontend/templates/web/util.tmpl:496
 msgid "to"
 msgstr "bis"
 
 #: cdedb/frontend/templates/web/util.tmpl:497
-msgid "{} to"
-msgstr "{} bis"
+msgid "%s to"
+msgstr "%s bis"
 
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:6
 #, python-format
@@ -6396,8 +6396,8 @@ msgid "%(count)s entries."
 msgstr "%(count)s Einträge."
 
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:40
-msgid "Download {}.csv "
-msgstr "{}.csv herunterladen"
+msgid "Download %s.csv "
+msgstr "%s.csv herunterladen"
 
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:53
 #, python-format
@@ -6989,8 +6989,8 @@ msgstr "CdE-Mailingliste"
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:39
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:34
-msgid "Rationale (max. {} Characters)"
-msgstr "Begründung (max. {} Zeichen)"
+msgid "Rationale (max. %s Characters)"
+msgstr "Begründung (max. %s Zeichen)"
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:43
 msgid "The following fields are only relevant for Event-Account Requests."
@@ -7694,8 +7694,8 @@ msgstr "Unterkunft"
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:62
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:70
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:142
-msgid "Course {}"
-msgstr "Kurs {}"
+msgid "Course %s"
+msgstr "Kurs %s"
 
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:70
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:30
@@ -7743,8 +7743,8 @@ msgstr "Kursleiter von"
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:96
 #: cdedb/frontend/templates/web/event/register.tmpl:106
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:204
-msgid "{}. Choice"
-msgstr "{}. Wahl"
+msgid "%s. Choice"
+msgstr "%s. Wahl"
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:7
 #, python-format
@@ -8191,8 +8191,8 @@ msgstr ""
 "jetzt bei allen Anmeldungen übereinstimmen, sind vorausgewählt."
 
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:168
-msgid "{}: Instructor of"
-msgstr "{}: Kursleiter von"
+msgid "%s: Instructor of"
+msgstr "%s: Kursleiter von"
 
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:178
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:224
@@ -8341,8 +8341,8 @@ msgid "Instr."
 msgstr "KL"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:206
-msgid "Select {} {}"
-msgstr "{} {} auswählen"
+msgid "Select %s %s"
+msgstr "%s %s auswählen"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:263
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:114
@@ -9583,13 +9583,13 @@ msgstr "Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe."
 #: cdedb/frontend/templates/web/ml/global_check_states.tmpl:33
 #: cdedb/frontend/templates/web/ml/global_check_states.tmpl:64
 #: cdedb/frontend/templates/web/ml/management.tmpl:187
-msgid "Remove {given_names} {family_name} as subscriber"
-msgstr "{given_names} {family_name} als Abonnent entfernen"
+msgid "Remove %(given_names)s %(family_name)s as subscriber"
+msgstr "%(given_names)s %(family_name)s als Abonnent entfernen"
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:47
 #: cdedb/frontend/templates/web/ml/global_check_states.tmpl:42
-msgid "Mark {given_names} {family_name} as an exception."
-msgstr "{given_names} {family_name} als Ausnahme markieren."
+msgid "Mark %(given_names)s %(family_name)s as an exception."
+msgstr "%(given_names)s %(family_name)s als Ausnahme markieren."
 
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:59
 msgid "Remove all the above as subscribers."
@@ -9795,8 +9795,8 @@ msgid "Add Entry"
 msgstr "Eintrag hinzufügen"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:146
-msgid "Remove {} from Whitelist"
-msgstr "{} von der Whitelist entfernen."
+msgid "Remove %s from Whitelist"
+msgstr "%s von der Whitelist entfernen."
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:151
 msgid "Subscribers"

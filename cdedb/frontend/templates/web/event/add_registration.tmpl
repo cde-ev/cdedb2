@@ -59,7 +59,7 @@
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
-                                          label=gettext("Course {}").format(track['title'])
+                                          label=gettext("Course %s")|format(track['title'])
                                                 if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                           entries=course_entries,
                                           nulloption="") }}
@@ -85,7 +85,7 @@
                                          entries=course_entries, nulloption="") }}
                 {% for i in range(track['num_choices']) %}
                     {{ util.form_input_select(name="track{}.course_choice_{}".format(track_id, i),
-                                              label=gettext("{}. Choice").format(i + 1), entries=course_entries, nulloption="") }}
+                                              label=gettext("%s. Choice")|format(i + 1), entries=course_entries, nulloption="") }}
                 {% endfor %}
             {% endif %}
         {% endfor %}

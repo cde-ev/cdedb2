@@ -174,7 +174,7 @@
                                 <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
                                     <span class="glyphicon glyphicon-{{ icontypes[ntype]|s }}" aria-hidden="true"></span>
                                     <strong>{{ messagetypes[ntype]|s }}</strong>
-                                    <span class="notificationMessage">{{ gettext(message).format(**params) }}</span>
+                                    <span class="notificationMessage">{{ gettext(message)|format(**params) }}</span>
                                 </div>
                             {% endfor %}
                         {% endwith %}
