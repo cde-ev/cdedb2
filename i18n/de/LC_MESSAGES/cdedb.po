@@ -9835,7 +9835,7 @@ msgstr "Diese Mailingliste ist nicht mehr aktiv."
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:77
 msgid "You are subscribed to this mailinglist."
-msgstr "Du hast diese Mailinglsite abonniert."
+msgstr "Du hast diese Mailingliste abonniert."
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:80
 msgid "Your E-Mail address"
@@ -9896,7 +9896,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:147
 msgid "Your subscription request is currently pending review by a moderator."
 msgstr ""
-"Deine Anfrage für diese Mailinglsite wartet auf Bestätigung durch einen "
+"Deine Anfrage für diese Mailingliste wartet auf Bestätigung durch einen "
 "Moderator."
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:160
@@ -9912,7 +9912,7 @@ msgid ""
 "You cannot subscribe to this mailinglist, because you are not\n"
 "                                part of the configured audience."
 msgstr ""
-"Du kannst diese Mailinglsite nicht abonnieren, da Du nicht Teil ihres "
+"Du kannst diese Mailingliste nicht abonnieren, da Du nicht Teil ihres "
 "Empfängerkreises bist."
 
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:8
