@@ -23,8 +23,8 @@ msgid "Initial import."
 msgstr "Ursprünglicher Import."
 
 #: cdedb/common.py:121
-msgid "Invalid notification type {t} found."
-msgstr "Unzulässiger Notifikationstyp {t} gefunden."
+msgid "Invalid notification type %(t)s found."
+msgstr "Unzulässiger Notifikationstyp %(t)s gefunden."
 
 #: cdedb/common.py:277
 msgid "Not in access list."
@@ -1951,8 +1951,8 @@ msgid "Needs both admin privileges."
 msgstr "Mehr Adminprivilegien benötigt."
 
 #: cdedb/database/connection.py:93
-msgid "role {role} not available"
-msgstr "Rolle {role} ist nicht verfügbar"
+msgid "role %(role)s not available"
+msgstr "Rolle %(role)s ist nicht verfügbar"
 
 #: cdedb/database/connection.py:100 cdedb/database/connection.py:103
 #: cdedb/database/connection.py:106
@@ -2088,10 +2088,6 @@ msgstr "Abstimmung noch nicht ausgezählt."
 msgid "Duplicate moniker."
 msgstr "Option doppelt gefunden."
 
-#: cdedb/frontend/cde.py:151
-msgid "Consent decision (is {ack})."
-msgstr "Datenschutz-Einwilligung entschieden (ist {ack})."
-
 #: cdedb/frontend/cde.py:155
 msgid "Consent noted."
 msgstr "Zustimmung gespeichert."
@@ -2164,8 +2160,8 @@ msgid "Only member admission supported."
 msgstr "Nur Aufnahme von Mitglieder unterstützt."
 
 #: cdedb/frontend/cde.py:640
-msgid "Created {num} accounts."
-msgstr "{num} Accounts erstellt."
+msgid "Created %(num)s accounts."
+msgstr "%(num)s Accounts erstellt."
 
 #: cdedb/frontend/cde.py:644 cdedb/frontend/cde.py:1042
 #: cdedb/frontend/event.py:1437
@@ -2174,8 +2170,8 @@ msgstr "Datenbank-Transaktions-Fehler."
 
 #: cdedb/frontend/cde.py:646 cdedb/frontend/cde.py:1044
 #: cdedb/frontend/event.py:1439
-msgid "Unexpected error on line {num}."
-msgstr "Unerwarteter Fehler in Zeile {num}."
+msgid "Unexpected error on line %(num)s."
+msgstr "Unerwarteter Fehler in Zeile %(num)s."
 
 #: cdedb/frontend/cde.py:719
 #, python-format
@@ -2183,8 +2179,8 @@ msgid "Line %(lineno)s does not have the correct number of columns."
 msgstr "Zeile %(lineno)s hat nicht die korrekte Anzahl Spalten."
 
 #: cdedb/frontend/cde.py:897
-msgid "No Member with ID {p_id} found."
-msgstr "Kein Account mit ID {p_id} gefunden."
+msgid "No Member with ID %(p_id)s found."
+msgstr "Kein Account mit ID %(p_id)s gefunden."
 
 #: cdedb/frontend/cde.py:902 cdedb/frontend/core.py:423
 #: cdedb/frontend/core.py:887 cdedb/frontend/core.py:948
@@ -2214,8 +2210,8 @@ msgstr ""
 "%(second)s)."
 
 #: cdedb/frontend/cde.py:1036
-msgid "Committed {num} transfers. There were {new_members} new members."
-msgstr "{num} Überweisungen gebucht. {new_members} neue Mitglieder."
+msgid "Committed %(num)s transfers. There were %(new_members)s new members."
+msgstr "%(num)s Überweisungen gebucht. %(new_members)s neue Mitglieder."
 
 #: cdedb/frontend/cde.py:1178 cdedb/frontend/core.py:1069
 msgid "Permit revoked."
@@ -2314,8 +2310,8 @@ msgid "New expuls started."
 msgstr "Nächster Expuls initialisiert."
 
 #: cdedb/frontend/cde.py:2081
-msgid "Line {lineno} is faulty."
-msgstr "Zeile {lineno} ist fehlerhaft."
+msgid "Line %(lineno)s is faulty."
+msgstr "Zeile %(lineno)s ist fehlerhaft."
 
 #: cdedb/frontend/cde.py:2090 cdedb/frontend/event.py:665
 msgid "Event created."
@@ -2348,8 +2344,8 @@ msgid "Subject"
 msgstr "Betreff"
 
 #: cdedb/frontend/common.py:975
-msgid "Stored email to hard drive at {path}"
-msgstr "E-Mail als {path} auf der Festplatte gespeichert."
+msgid "Stored email to hard drive at %(path)s"
+msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
 #: cdedb/frontend/common.py:1103 cdedb/frontend/core.py:1571
 msgid "Change committed."
@@ -2490,10 +2486,6 @@ msgstr "CdEDB Neue E-Mail-Adresse verifizieren"
 #: cdedb/frontend/core.py:1294 cdedb/frontend/core.py:1324
 msgid "Username changed."
 msgstr "E-Mail-Adresse geändert."
-
-#: cdedb/frontend/core.py:1348
-msgid "Toggling activity to {activity}."
-msgstr "Aktivierungsstatus auf {activity} geändert."
 
 #: cdedb/frontend/core.py:1373
 msgid "Rationale too long."
@@ -2644,8 +2636,8 @@ msgid "No registration found."
 msgstr "Keine Anmeldung gefunden."
 
 #: cdedb/frontend/event.py:1433
-msgid "Committed {num} fees."
-msgstr "Betrag {num} übernommen."
+msgid "Committed %(num)s fees."
+msgstr "Betrag %(num)s übernommen."
 
 #: cdedb/frontend/event.py:1487
 msgid "nametags.tex"
@@ -6974,8 +6966,8 @@ msgid "Edit Account Request"
 msgstr "Accountanfrage bearbeiten"
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:15
-msgid "Edit Account Request from {given_names} {family_name}"
-msgstr "Accountanfrage von {given_names} {family_name} bearbeiten"
+msgid "Edit Account Request from %(given_names)s %(family_name)s"
+msgstr "Accountanfrage von %(given_names)s %(family_name)s bearbeiten"
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:28
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:30
@@ -9767,8 +9759,8 @@ msgid "Add Moderator"
 msgstr "Moderator hinzufügen"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:71
-msgid "Remove {given_names} {family_name} as moderator"
-msgstr "{given_names} {family_name} als Moderator entfernen"
+msgid "Remove %(given_names)s %(family_name)s as moderator"
+msgstr "%(given_names)s %(family_name)s als Moderator entfernen"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:82
 msgid "Subscription Requests"

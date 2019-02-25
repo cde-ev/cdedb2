@@ -90,7 +90,7 @@ def connection_pool_factory(dbname, roles, secrets, port,
 
         def __getitem__(self, role):
             if role not in self.roles:
-                raise ValueError(n_("role {role} not available"),
+                raise ValueError(n_("role %(role)s not available"),
                                  {'role': role})
             return _create_connection(
                 dbname, role, secrets.CDB_DATABASE_ROLES[role], port,

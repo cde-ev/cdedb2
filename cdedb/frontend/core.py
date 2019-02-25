@@ -1348,8 +1348,8 @@ class CoreFrontend(AbstractFrontend):
             'id': persona_id,
             'is_active': activity,
         }
-        change_note = n_("Toggling activity to {activity}.").format(
-            activity=activity)
+        change_note = "Aktivierungsstatus auf {activity} geändert.".format(
+            activity="aktiv" if activity else "inaktiv")
         code = self.coreproxy.change_persona(rs, data, may_wait=False,
                                              change_note=change_note)
         self.notify_return_code(rs, code)

@@ -972,7 +972,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         ret = self._send_mail(msg)
         if ret:
             # This is mostly intended for the test suite.
-            rs.notify("info", n_("Stored email to hard drive at {path}"),
+            rs.notify("info", n_("Stored email to hard drive at %(path)s"),
                       {'path': ret})
         return ret
 

@@ -148,7 +148,8 @@ class CdEFrontend(AbstractUserFrontend):
             'decided_search': True,
             'is_searchable': ack,
         }
-        change_note = rs.gettext("Consent decision (is {ack}).").format(ack=ack)
+        change_note = "Datenschutz-Einwilligung entschieden ({ack}).".format(
+            ack="akzeptiert" if ack else "abgelehnt")
         code = self.coreproxy.change_persona(
             rs, new, generation=None, may_wait=False,
             change_note=change_note)
@@ -637,13 +638,13 @@ class CdEFrontend(AbstractUserFrontend):
         success, num = self.perform_batch_admission(rs, data, trial_membership,
                                                     consent, sendmail)
         if success:
-            rs.notify("success", n_("Created {num} accounts."), {'num': num})
+            rs.notify("success", n_("Created %(num)s accounts."), {'num': num})
             return self.redirect(rs, "cde/index")
         else:
             if num is None:
                 rs.notify("warning", n_("DB serialization error."))
             else:
-                rs.notify("error", n_("Unexpected error on line {num}."),
+                rs.notify("error", n_("Unexpected error on line %(num)s."),
                           {'num': num})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
@@ -894,7 +895,7 @@ class CdEFrontend(AbstractUserFrontend):
             except KeyError:
                 problems.append(('persona_id',
                                  ValueError(
-                                     n_("No Member with ID {p_id} found."),
+                                     n_("No Member with ID %(p_id)s found."),
                                      persona_id)))
             else:
                 if persona['is_archived']:
@@ -1033,15 +1034,15 @@ class CdEFrontend(AbstractUserFrontend):
         success, num, new_members = self.perform_money_transfers(
             rs, data, sendmail)
         if success:
-            rs.notify("success", n_("Committed {num} transfers. "
-                                    "There were {new_members} new members."),
+            rs.notify("success", n_("Committed %(num)s transfers. "
+                                    "There were %(new_members)s new members."),
                       {'num': num, 'new_members': new_members})
             return self.redirect(rs, "cde/index")
         else:
             if num is None:
                 rs.notify("warning", n_("DB serialization error."))
             else:
-                rs.notify("error", n_("Unexpected error on line {num}."),
+                rs.notify("error", n_("Unexpected error on line %(num)s."),
                           {'num': num})
             return self.money_transfers_form(rs, data=data, csvfields=fields)
 
@@ -2097,7 +2098,7 @@ class CdEFrontend(AbstractUserFrontend):
                 if entry:
                     thecourses.append(entry)
                 else:
-                    rs.notify("warning", n_("Line {lineno} is faulty."),
+                    rs.notify("warning", n_("Line %(lineno)s is faulty."),
                               {'lineno': lineno})
         if rs.errors:
             return self.create_past_event_form(rs)

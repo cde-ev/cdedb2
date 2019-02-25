@@ -118,7 +118,7 @@ class RequestState:
         :type params: set or None
         """
         if ntype not in NOTIFICATION_TYPES:
-            raise ValueError(n_("Invalid notification type {t} found."),
+            raise ValueError(n_("Invalid notification type %(t)s found."),
                              {'t': ntype})
         params = params or {}
         self.notifications.append((ntype, message, params))

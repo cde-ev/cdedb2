@@ -1430,7 +1430,7 @@ class EventFrontend(AbstractUserFrontend):
         # Here validation is finished
         success, num = self.book_fees(rs, data)
         if success:
-            rs.notify("success", n_("Committed {num} fees."), {'num': num})
+            rs.notify("success", n_("Committed %(num)s fees."), {'num': num})
             return self.redirect(rs, "event/show_event")
         else:
             if num is None:
