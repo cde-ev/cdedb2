@@ -319,13 +319,14 @@
 
         {% if past_events %}
             <h4 class="heading-underline">{% trans -%}Past Events{%- endtrans %}</h4>
+            <table class="table table-hover ">
             {% for pevent_id, pevent in past_events|xdictsort('tempus') %}
-                <div class="row">
-                    <div class="col-md-3">
+                <tr>
+                    <td class="col-xs-3">
                         {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
                                      pevent['event_name'], readonly='cde' not in user.roles) -}}
-                    </div>
-                    <div class="col-md-9">
+                    </td>
+                    <td class="col-xs-9">
                         {% if pevent['is_orga'] %}
                             (Orga) <br />
                         {% endif %}
@@ -341,9 +342,10 @@
                                 {% if not loop.last %}<br />{% endif %}
                             {% endfor %}
                         {% endif %}
-                    </div>
-                </div>
+                    </td>
+                </tr>
             {% endfor %}
+            </table>
         {% endif %}
 
     </div>
