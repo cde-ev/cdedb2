@@ -236,3 +236,4 @@ Some things still need to be mixed manually after migration. this includes:
 
 * Limit `cde-all` and `cde-info` lists to members only.
 * Add the quick-hack for downloadable files.
+* Touch `/DBVM` to mark the live instance.

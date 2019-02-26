@@ -189,10 +189,12 @@ def safe_filter(val):
 
     This prevents autoescaping of this entity. To be used for dynamically
     generated code we insert into the templates. It is basically equal to
-    Jinja's builtin |safe-Filter, but additionally takes care about None values.
+    Jinja's builtin ``|safe``-Filter, but additionally takes care about None
+    values.
 
     :type val: str
     :rtype: jinja2.Markup
+
     """
     if val is None:
         return None

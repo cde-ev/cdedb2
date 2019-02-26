@@ -891,7 +891,7 @@ def infinite_enum(aclass):
     negative values. In case of an additional enum state, the int is
     None.
 
-    In the code they are stored as an :py:var:`InfiniteEnum`.
+    In the code they are stored as an :py:data:`InfiniteEnum`.
 
     :type aclass: obj
     :rtype: obj

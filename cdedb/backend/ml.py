@@ -826,7 +826,7 @@ class MlBackend(AbstractBackend):
         for autoconfiguration. See the description of table mailinglist
         for the meaning of the entries in the dict returned.
 
-        @rtype: [{'address' : unicode, 'inactive' : bool,
+        :rtype: [{'address' : unicode, 'inactive' : bool,
                   'maxsize' : int or None, 'mime' : bool or None}]
         """
         # FIXME this has a hardcoded value for 'mime'
@@ -844,9 +844,9 @@ class MlBackend(AbstractBackend):
         for the mailinglist software to run the list with the list
         address @address.
 
-        @type rs: :py:class:`cdedb.common.RequestState`
-        @type address: unicode
-        @rtype: {'listname' : unicode, 'address' : unicode,
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type address: unicode
+        :rtype: {'listname' : unicode, 'address' : unicode,
                  'sender' : unicode, 'list-unsubscribe' : unicode,
                  'list-subscribe' : unicode, 'list-owner' : unicode,
                  'moderators' : [unicode, ...],
@@ -892,9 +892,9 @@ class MlBackend(AbstractBackend):
         for the mailinglist software to run a list for the moderators
         of the list with address @address.
 
-        @type rs: :py:class:`cdedb.common.RequestState`
-        @type address: unicode
-        @rtype: {'listname' : unicode, 'address' : unicode,
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type address: unicode
+        :rtype: {'listname' : unicode, 'address' : unicode,
                  'sender' : unicode, 'list-unsubscribe' : unicode,
                  'list-subscribe' : unicode, 'list-owner' : unicode,
                  'moderators' : [unicode, ...],

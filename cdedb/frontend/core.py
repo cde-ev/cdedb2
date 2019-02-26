@@ -559,14 +559,16 @@ class CoreFrontend(AbstractFrontend):
         the privilege level required and the basic search paramaters.
 
         Allowed kinds:
-        * admin_persona: Search for users as core_admin
-        * past_event_user: Search for an event user to add to a past event as
-                           cde_admin
-        * pure_assembly_user: Search for an assembly only user as assembly_admin
-        * mod_ml_user: Search for a mailinglist user as a moderator
-        * event_admin_user: Search an event user as event_admin (for creating
-                            events)
-        * orga_event_user: Search for an event user as event orga
+
+        - ``admin_persona``: Search for users as core_admin
+        - ``past_event_user``: Search for an event user to add to a past
+          event as cde_admin
+        - ``pure_assembly_user``: Search for an assembly only user as
+          assembly_admin
+        - ``mod_ml_user``: Search for a mailinglist user as a moderator
+        - ``event_admin_user``: Search an event user as event_admin (for
+          creating events)
+        - ``orga_event_user``: Search for an event user as event orga
 
         The aux parameter allows to supply an additional id for example
         in the case of a moderator this would be the relevant
