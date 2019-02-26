@@ -1794,6 +1794,9 @@ msgstr "Verifizierung für Zurücksetzen fehlgeschlagen."
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
+msgid "Password too weak for admin account."
+msgstr "Passwort ist zu schwach für Admin-Account."
+
 #: cdedb/backend/core.py:1677
 msgid "Privileged user may not reset."
 msgstr "Administratoraccounts können nicht zurückgesetzt werden."
