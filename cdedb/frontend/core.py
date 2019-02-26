@@ -1143,8 +1143,10 @@ class CoreFrontend(AbstractFrontend):
         inputs = (rs.user.username.replace('@', ' ').split() +
                   rs.user.given_names.replace('-', ' ').split() +
                   rs.user.family_name.replace('-', ' ').split())
+        admin = bool({"core_admin", "cde_admin", "event_admin", "assembly_admin",
+                 "ml_admin", "admin"} & rs.user.roles)
         new_password = check(rs, "password_strength", new_password,
-                             "new_password",
+                             "new_password", admin=admin,
                              inputs=inputs)
         if rs.errors:
             if any(name == "new_password" for name, _ in rs.errors):

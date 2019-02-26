@@ -243,6 +243,33 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence('Passwort geändert.')
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
 
+    @as_users("anton", "ferdinand")
+    def test_change_password_zxcvbn_admin(self, user):
+        self.traverse({'href': '/core/self/show'})
+        self.traverse({'href': '/core/self/password/change'})
+        # Strong enough for normal users, but not for admins
+        new_password = 'phonebookbread'
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+
+    @as_users("berta", "emilia")
+    def test_change_password_zxcvbn_noadmin(self, user):
+        self.traverse({'href': '/core/self/show'})
+        self.traverse({'href': '/core/self/password/change'})
+        # Strong enough for normal users, but not for admins
+        new_password = 'phonebookbread'
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f)
+        self.assertPresence('Passwort geändert.')
+
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
         new_password = 'krce84#(=kNO3xb'
