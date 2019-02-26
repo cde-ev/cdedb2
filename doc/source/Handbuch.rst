@@ -13,4 +13,4 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
 
    Handbuch_Orga_Hinweise
    Handbuch_Veranstaltungsleitfaden
-   Handbuch_reStructuredText
+   Handbuch_Markdown

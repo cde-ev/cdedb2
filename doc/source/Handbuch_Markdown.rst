@@ -1,15 +1,17 @@
-Crashkurs reStructuredText
-==========================
+Crashkurs Markdown
+==================
 
-+-----------------------------------------------------+-------------------------------------------------+
-| Eingabe                                             | Ausgabe                                         |
-+=====================================================+=================================================+
-| ``*kursiver Text* mit einfachen Sternen``           | *kursiver Text* mit einfachen Sternen           |
-+-----------------------------------------------------+-------------------------------------------------+
-| ``**fetter Text** mit doppelten Sternen``           | **fetter Text** mit doppelten Sternen           |
-+-----------------------------------------------------+-------------------------------------------------+
-| ``Links direkt im Text bspw. http://www.cde-ev.de`` |	Links direkt im Text bspw. http://www.cde-ev.de	|  
-+-----------------------------------------------------+-------------------------------------------------+
++-------------------------------------------------------+-------------------------------------------------+
+| Eingabe                                               | Ausgabe                                         |
++=======================================================+=================================================+
+| ``*kursiver Text* mit einfachen Sternen``             | *kursiver Text* mit einfachen Sternen           |
++-------------------------------------------------------+-------------------------------------------------+
+| ``**fetter Text** mit doppelten Sternen``             | **fetter Text** mit doppelten Sternen           |
++-------------------------------------------------------+-------------------------------------------------+
+| ``Links mit spitzen Klammern. <http://www.cde-ev.de>``| Links direkt im Text bspw. http://www.cde-ev.de |
++-------------------------------------------------------+-------------------------------------------------+
+| ``[Link mit eigenem Text](http://www.cde-ev.de)``     | `Link mit eigenem Text <http://www.cde-ev.de>`_ |
++-------------------------------------------------------+-------------------------------------------------+
 
 Absätze durch eine Leerzeile trennen::
 
@@ -49,52 +51,21 @@ ergibt
 
 ----
 
-Tabellen analog folgenden Beispiels::
+Überschriften mit ``#``, Unterüberschriften mit ``##``::
 
-    ======  ======  ========
-       Eingang      Ausgang 
-    --------------  -------- 
-      A       B     A oder B 
-    ======  ======  ======== 
-    Falsch  Falsch  Falsch 
-    Wahr    Falsch  Wahr 
-    Falsch  Wahr    Wahr 
-    Wahr    Wahr    Wahr 
-    ======  ======  ========  
-
-ergibt
-
-======  ======  ========
-   Eingang      Ausgang 
---------------  -------- 
-  A       B     A oder B 
-======  ======  ======== 
-Falsch  Falsch  Falsch 
-Wahr    Falsch  Wahr 
-Falsch  Wahr    Wahr 
-Wahr    Wahr    Wahr 
-======  ======  ========  
-
-----
-
-Überschriften indem in der nächsten Zeile mit ``=`` oder ``-``
-unterschrichen wird::
-
-    Überschrift
-    ===========
-    Unterüberschrift
-    ----------------
+    # Überschrift
+    ## Unterüberschrift
     und etwas Text.
 
 ergibt
 
 Überschrift
-===========
+-----------
 Unterüberschrift
-----------------
+^^^^^^^^^^^^^^^^
 und etwas Text.
 
 ----
 
-Eine längere Einführung gibt es im `reStructuredText Primer
-<http://docutils.sourceforge.net/docs/user/rst/quickstart.html>`_.
+Eine längere Einführung gibt es im `Markdwon Guide
+<https://www.markdownguide.org/basic-syntax/>`_.
