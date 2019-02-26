@@ -1305,7 +1305,7 @@ class EventBackend(AbstractBackend):
                 for row in self.query_all(rs, query, (event_id,))}
 
     def _set_course_choices(self, rs, registration_id, track_id, choices,
-                            course_segments):
+                            course_segments, new_registration=False):
         """Helper for handling of course choices.
 
         This is basically uninlined code from ``set_registration()``.
@@ -1319,6 +1319,8 @@ class EventBackend(AbstractBackend):
         :param course_segments: Dict, course segments, as returned by
             _get_event_course_segments()
         :type course_segments: {int: [int]}
+        :param new_registration: Performance optimization for creating
+            registrations: If true, the delition of existing choices is skipped.
         :rtype: int
         :returns: default return code
         """
@@ -1329,9 +1331,10 @@ class EventBackend(AbstractBackend):
         for course_id in choices:
             if track_id not in course_segments[course_id]:
                 raise ValueError(n_("Wrong track for course."))
-        query = glue("DELETE FROM event.course_choices",
-                     "WHERE registration_id = %s AND track_id = %s")
-        self.query_exec(rs, query, (registration_id, track_id))
+        if not new_registration:
+            query = glue("DELETE FROM event.course_choices",
+                         "WHERE registration_id = %s AND track_id = %s")
+            self.query_exec(rs, query, (registration_id, track_id))
         for rank, course_id in enumerate(choices):
             new_choice = {
                 "registration_id": registration_id,
@@ -1512,7 +1515,7 @@ class EventBackend(AbstractBackend):
                 new_track = copy.deepcopy(track)
                 choices = new_track.pop('choices', None)
                 self._set_course_choices(rs, new_id, track_id, choices,
-                                         course_segments)
+                                         course_segments, new_registration=True)
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
