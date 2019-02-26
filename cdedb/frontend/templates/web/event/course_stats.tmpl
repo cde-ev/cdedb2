@@ -83,7 +83,7 @@
                                     {# FIXME position does not work for arbitrary number of choices #}
                                     {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                                     'course_id': course_id,
-                                                                                    'position': i + 2,
+                                                                                    'position': i,
                                                                                     'submitform': True}),
                                              choice_counts[course_id][(track_id, i)]) }}
                             {% endfor %}
