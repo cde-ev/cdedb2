@@ -2595,12 +2595,12 @@ msgid "chose"
 msgstr "gewählt haben"
 
 #: cdedb/frontend/event.py:1134
-msgid "have as %s. choice"
-msgstr "als %s. Wahl haben"
+msgid "have as {}. choice"
+msgstr "als {}. Wahl haben"
 
 #: cdedb/frontend/event.py:1137
-msgid "into their %s. choice"
-msgstr "in ihre %s. Wahl"
+msgid "into their {}. choice"
+msgstr "in ihre {}. Wahl"
 
 #: cdedb/frontend/event.py:1141
 msgid "in the course …"
