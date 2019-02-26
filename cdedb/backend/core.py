@@ -1543,29 +1543,39 @@ class CoreBackend(AbstractBackend):
         :type salt: str
         :rtype: bool
         """
-        correct = self._generate_reset_cookie(rs, persona_id, salt, verify=True)
+        correct = self._generate_reset_cookie(rs, persona_id, salt,
+                                              verify=True)
         return hmac.compare_digest(correct, cookie)
 
-    def modify_password(self, rs, persona_id, new_password, old_password=None,
-                        reset_cookie=None):
-        """Helper for manipulationg password entries.
+    def modify_password(self, rs, new_password, old_password=None,
+                        reset_cookie=None, persona_id=None):
+        """Helper for manipulating password entries.
 
-        If ``new_password`` is ``None``, a new password is generated
-        automatically. An authorization must be provided, either by
-        ``old_password``, ``reset_cookie`` or being an admin.
+        The persona_id parameter is only for the password reset case. We
+        intentionally only allow to change the own password.
+
+         An authorization must be provided, either by ``old_password`` or
+        ``reset_cookie``.
 
         This escalates database connection privileges in the case of a
-        password reset (which is in its nature by anonymous).
+        password reset (which is by its nature anonymous).
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
-        :type new_password: str or None
+        :type new_password: str
         :type old_password: str or None
         :type reset_cookie: str or None
+        :type persona_id: int or None
+        :param persona_id: Must be provided only in case of reset.
         :returns: The ``bool`` indicates success and the ``str`` is
           either the new password or an error message.
         :rtype: (bool, str)
         """
+        if persona_id and not reset_cookie:
+            return False, n_("Selecting persona allowed for reset only.")
+        persona_id = persona_id or rs.user.persona_id
+        if not persona_id:
+            return False, n_("Could not determine persona to reset.")
         #
         # BEGIN
         #
@@ -1595,10 +1605,10 @@ class CoreBackend(AbstractBackend):
         if reset_cookie:
             if not self.verify_reset_cookie(rs, persona_id, reset_cookie):
                 return False, n_("Reset verification failed.")
-        if new_password and (not self.is_admin(rs)
-                             or persona_id == rs.user.persona_id):
-            if not validate.is_password_strength(new_password):
-                return False, n_("Password too weak.")
+        if not new_password:
+            return False, n_("No new password provided.")
+        if not validate.is_password_strength(new_password):
+            return False, n_("Password too weak.")
         # escalate db privilige role in case of resetting passwords
         orig_conn = None
         try:
@@ -1608,10 +1618,6 @@ class CoreBackend(AbstractBackend):
                         n_("Atomized -- impossible to escalate."))
                 orig_conn = rs.conn
                 rs.conn = self.connpool['cdb_persona']
-            if not new_password:
-                new_password = secure_random_ascii(
-                    chars=("abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
-                           "23456789!@#$%&*()[]-=<>"))
             # do not use set_persona since it doesn't operate on password
             # hashes by design
             query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
@@ -1628,25 +1634,20 @@ class CoreBackend(AbstractBackend):
         return ret, new_password
 
     @access("persona")
-    def change_password(self, rs, persona_id, old_password, new_password):
+    def change_password(self, rs, old_password, new_password):
         """
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
         :type old_password: str
         :type new_password: str
         :rtype: (bool, str)
         :returns: see :py:meth:`modify_password`
         """
-        persona_id = affirm("id", persona_id)
         old_password = affirm("str", old_password)
         new_password = affirm("str", new_password)
-        if rs.user.persona_id == persona_id or self.is_admin(rs):
-            ret = self.modify_password(rs, persona_id, new_password,
-                                       old_password=old_password)
-            self.core_log(rs, const.CoreLogCodes.password_change, persona_id)
-            return ret
-        else:
-            raise PrivilegeError(n_("Not privileged."))
+        ret = self.modify_password(rs, new_password, old_password=old_password)
+        self.core_log(rs, const.CoreLogCodes.password_change,
+                      rs.user.persona_id)
+        return ret
 
     @access("anonymous")
     def make_reset_cookie(self, rs, email):
@@ -1659,24 +1660,18 @@ class CoreBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type email: str
         :rtype: (bool, str)
-        :returns: see :py:meth:`modify_password`
+        :returns: The ``bool`` indicates success and the ``str`` is
+          either the reset cookie or an error message.
         """
         email = affirm("email", email)
-        data = self.sql_select_one(
-            rs, "core.personas", ("id",), email,
-            entity_key="username")
+        data = self.sql_select_one(rs, "core.personas", ("id", "is_active"),
+                                   email, entity_key="username")
         if not data:
             return False, n_("Nonexistant user.")
-        persona_id = unwrap(data)
-        if not self.is_admin(rs):
-            roles = unwrap(self.get_roles_multi(rs, (persona_id,)))
-            if any("admin" in role for role in roles):
-                # do not allow password reset by anonymous for privileged
-                # users, otherwise we incur a security degradation on the
-                # RPC-interface
-                return False, n_("Privileged user may not reset.")
-        ret = self.generate_reset_cookie(rs, persona_id)
-        self.core_log(rs, const.CoreLogCodes.password_reset_cookie, persona_id)
+        if not data['is_active']:
+            return False, n_("Inactive user.")
+        ret = self.generate_reset_cookie(rs, data['id'])
+        self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
         return True, ret
 
     @access("anonymous")
@@ -1695,40 +1690,16 @@ class CoreBackend(AbstractBackend):
         email = affirm("email", email)
         new_password = affirm("str", new_password)
         cookie = affirm("str", cookie)
-        data = self.sql_select_one(
-            rs, "core.personas", ("id",), email,
-            entity_key="username")
+        data = self.sql_select_one(rs, "core.personas", ("id",), email,
+                                   entity_key="username")
         if not data:
             return False, n_("Nonexistant user.")
-        if self.conf.LOCKDOWN and not self.is_admin(rs):
+        if self.conf.LOCKDOWN:
             return False, n_("Lockdown active.")
         persona_id = unwrap(data)
-        ret = self.modify_password(rs, persona_id, new_password,
-                                   reset_cookie=cookie)
+        ret = self.modify_password(rs, new_password, reset_cookie=cookie,
+                                   persona_id=persona_id)
         self.core_log(rs, const.CoreLogCodes.password_reset, persona_id)
-        return ret
-
-    @access("core_admin")
-    def new_password(self, rs, email, cookie):
-        """Generate a new password
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type email: str
-        :type cookie: str
-        :rtype: (bool, str)
-        :returns: see :py:meth:`modify_password`
-        """
-        email = affirm("email", email)
-        cookie = affirm("str", cookie)
-        data = self.sql_select_one(
-            rs, "core.personas", ("id",), email,
-            entity_key="username")
-        if not data:
-            return False, n_("Nonexistant user.")
-        persona_id = unwrap(data)
-        ret = self.modify_password(rs, persona_id, new_password=None,
-                                   reset_cookie=cookie)
-        self.core_log(rs, const.CoreLogCodes.password_generated, persona_id)
         return ret
 
     @access("anonymous")

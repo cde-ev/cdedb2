@@ -259,7 +259,6 @@ class CoreLogCodes(enum.IntEnum):
     password_change = 10  #:
     password_reset_cookie = 11  #:
     password_reset = 12  #:
-    password_generated = 13  #:
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:

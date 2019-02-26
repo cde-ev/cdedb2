@@ -1151,7 +1151,7 @@ class CoreFrontend(AbstractFrontend):
                 rs.notify("error", n_("Password too weak."))
             return self.change_password_form(rs)
         code, message = self.coreproxy.change_password(
-            rs, rs.user.persona_id, old_password, new_password)
+            rs, old_password, new_password)
         self.notify_return_code(rs, code, success=n_("Password changed."),
                                 error=message)
         if not code:
@@ -1185,6 +1185,42 @@ class CoreFrontend(AbstractFrontend):
         if not exists:
             rs.errors.append(("email", ValueError(n_("Nonexistant user."))))
             return self.reset_password_form(rs)
+        admin_exception = False
+        try:
+            success, message = self.coreproxy.make_reset_cookie(rs, email)
+        except PrivilegeError:
+            admin_exception = True
+        if admin_exception:
+            self.do_mail(
+                rs, "admin_no_reset_password",
+                {'To': (email,), 'Subject': n_('CdEDB password reset')})
+            msg = "Sent password reset denial mail to admin {} for IP {}."
+            self.logger.info(msg.format(email, rs.request.remote_addr))
+            rs.notify("success", n_("Email sent."))
+        elif not success:
+            rs.notify("error", message)
+        else:
+            self.do_mail(
+                rs, "reset_password",
+                {'To': (email,), 'Subject': n_('CdEDB password reset')},
+                {'email': self.encode_parameter(
+                    "core/do_password_reset_form", "email", email),
+                    'cookie': message})
+            msg = "Sent password reset mail to {} for IP {}."
+            self.logger.info(msg.format(email, rs.request.remote_addr))
+            rs.notify("success", n_("Email sent."))
+        return self.redirect(rs, "core/index")
+
+    @access("core_admin")
+    def admin_send_password_reset_link(self, rs, persona_id):
+        """Generate a password reset email for an arbitrary persona.
+
+        This is the only way to reset the password of an administrator (for
+        security reasons).
+        """
+        if rs.errors:
+            return self.redirect_show_user(rs, persona_id)
+        email = rs.ambience['persona']['username']
         success, message = self.coreproxy.make_reset_cookie(rs, email)
         if not success:
             rs.notify("error", message)
@@ -1195,10 +1231,10 @@ class CoreFrontend(AbstractFrontend):
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email),
                     'cookie': message})
-            self.logger.info("Sent password reset mail to {} for IP {}.".format(
-                email, rs.request.remote_addr))
+            msg = "Sent password reset mail to {} for admin {}."
+            self.logger.info(msg.format(email, rs.user.persona_id))
             rs.notify("success", n_("Email sent."))
-        return self.redirect(rs, "core/index")
+        return self.redirect_show_user(rs, persona_id)
 
     @access("anonymous")
     @REQUESTdata(("email", "#email"), ("cookie", "str"))

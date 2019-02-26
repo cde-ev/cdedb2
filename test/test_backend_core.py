@@ -7,7 +7,8 @@ import subprocess
 
 import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
-from cdedb.common import PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS
+from cdedb.common import (
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError)
 
 PERSONA_TEMPLATE = {
     'username': "zelda@example.cde",
@@ -86,10 +87,12 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton", "berta")
     def test_change_password(self, user):
-        ret, _ = self.core.change_password(self.key, user['id'], user['password'], "weakpass")
+        ret, _ = self.core.change_password(self.key, user['password'],
+                                           "weakpass")
         self.assertFalse(ret)
         newpass = "er3NQ_5bkrc#"
-        ret, message = self.core.change_password(self.key, user['id'], user['password'], newpass)
+        ret, message = self.core.change_password(self.key, user['password'],
+                                                 newpass)
         self.assertTrue(ret)
         self.assertEqual(newpass, message)
         self.core.logout(self.key)
@@ -133,8 +136,8 @@ class TestCoreBackend(BackendTest):
         ret, effective = self.core.reset_password(self.key, "berta@example.cde", new_pass, cookie)
         self.assertTrue(ret)
         self.assertEqual(new_pass, effective)
-        ret, _ = self.core.make_reset_cookie(self.key, "anton@example.cde")
-        self.assertFalse(ret)
+        with self.assertRaises(PrivilegeError):
+            self.core.make_reset_cookie(self.key, "anton@example.cde")
         ret, _ = self.core.make_reset_cookie(self.key, "nonexistant@example.cde")
         self.assertFalse(ret)
 
@@ -650,7 +653,7 @@ class TestCoreBackend(BackendTest):
         }
         self.core.genesis_modify_case(self.key, update)
         newpass = "er3NQ_5bkrc#"
-        self.core.change_password(self.key, user['id'], user['password'], newpass)
+        self.core.change_password(self.key, user['password'], newpass)
 
         ## now check it
         expectation = (
