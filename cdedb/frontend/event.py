@@ -494,6 +494,10 @@ class EventFrontend(AbstractUserFrontend):
         # Handle deleted parts
         for part_id in deletes:
             ret[part_id] = None
+        if not any(ret.values()):
+            rs.errors.append((None, ValueError(n_(
+                "At least one event part required."))))
+            rs.notify("error", n_("At least one event part required."))
         return ret
 
     @access("event", modi={"POST"})
