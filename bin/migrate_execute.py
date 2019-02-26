@@ -1173,8 +1173,11 @@ for list_id in MAILINGLIST_MAP:
     query = "SELECT * FROM mailinglist_subscriber WHERE ml_id = %s"
     subs = query_all(cdedbxy, query, (list_id,))
     subs = tuple(sorted(subs, key=lambda s: (s['user_id'] or 1)))
+    moderators = []
     print("Adding subscribers for {} -- ".format(alist['address']), end="")
     if alist['event_id']:
+        moderators = tuple(filter(None, (
+            sub['user_id'] for sub in subs if sub['user_is_mod'])))
         query = (
             "SELECT users.cdedb_id AS user_id, FALSE as is_request, "
             " FALSE as is_whitelist, FALSE as user_is_mod, NULL as address "
@@ -1196,7 +1199,7 @@ for list_id in MAILINGLIST_MAP:
             rs(DEFAULT_ID), MAILINGLIST_MAP[list_id], sub['user_id'],
             subscribe=True, address=sub['address'])
         print(" {}".format(sub['user_id']), end="")
-        if sub['user_is_mod']:
+        if sub['user_is_mod'] or sub['user_id'] in moderators:
             new_id = MAILINGLIST_MAP[list_id]
             current = ml.get_mailinglists(rs(DEFAULT_ID), (new_id,))[new_id]
             update = {
