@@ -659,7 +659,8 @@ def _int_csv_list(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _password_strength(val, argname=None, *, _convert=True, inputs=None):
+def _password_strength(val, argname=None, *, _convert=True, admin=False,
+                       inputs=None):
     """Implement a password policy.
 
     This has the strictly competing goals of security and usability.
@@ -678,12 +679,21 @@ def _password_strength(val, argname=None, *, _convert=True, inputs=None):
     val, errors = _str(val, argname=argname, _convert=_convert)
     if val:
         results = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
-
+        # if user is admin in any realm, require a score of 4. After
+        # migration, everyone must change their password, so this is
+        # actually enforced for admins of the old db. Afterwards,
+        # super admins are intended to do a password reset.
         if results['score'] < 2:
             feedback = [results['feedback']['warning']]
             feedback.extend(results['feedback']['suggestions'][0:2])
             for fb in filter(None, feedback):
                 errors.append((argname, ValueError(fb)))
+                if not errors:
+                    errors.append(
+                        (argname, ValueError(n_("Password too weak."))))
+        if admin and results['score'] < 4:
+            errors.append((argname, ValueError(n_("Password too weak for "
+                                                  "admin account."))))
 
     return val, errors
 
