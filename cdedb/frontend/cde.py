@@ -998,7 +998,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         transfers = transfers or ''
         transferlines = transfers.splitlines()
-        fields = ('persona_id', 'family_name', 'given_names', 'amount', 'note')
+        fields = ('amount', 'persona_id', 'family_name', 'given_names', 'note')
         reader = csv.DictReader(
             transferlines, fieldnames=fields, delimiter=';',
             quoting=csv.QUOTE_MINIMAL, quotechar='"', doublequote=False,

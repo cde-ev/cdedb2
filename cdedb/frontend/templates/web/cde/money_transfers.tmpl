@@ -24,7 +24,7 @@
             {% trans -%}Use the following format:{%- endtrans %}
         </p>
         <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
-                format(_("ID"), _("Family Name"), _("Given Names"), _("Amount"), _("Comment"))|s }}</pre>
+                format(_("Amount"), _("ID"), _("Family Name"), _("Given Names"), _("Comment"))|s }}</pre>
         <p class="help-block">
             {{ util.make_icon('info-sign') }} {% trans -%}The Comment is optional.{%- endtrans %}
         </p>
