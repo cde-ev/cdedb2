@@ -757,16 +757,18 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/batchfee'})
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] = """01.04.2018;570.99;DB-1-9;Admin;Anton
-01.04.2018;461.49;DB-5-1;Eventis;Emilia
-01.04.2018;570.99;DB-11-6;K;Kalif
-77.04.2018;0.0;DB-666-1;Y;Z;stuff
+        f['fee_data'] ="""
+570.99;DB-1-9;Admin;Anton;01.04.2018
+461.49;DB-5-1;Eventis;Emilia;01.04.2018
+570.99;DB-11-6;K;Kalif;01.04.2018
+0.0;DB-666-1;Y;Z;77.04.2018;stuff
 """
         self.submit(f, check_notification=False)
         self.assertPresence("Kein Account mit ID 666 gefunden.")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] = """01.04.2018;573.99;DB-1-9;Admin;Anton
-04.01.2018;461.49;DB-5-1;Eventis;Emilia
+        f['fee_data'] = """
+573.99;DB-1-9;Admin;Anton;01.04.2018
+461.49;DB-5-1;Eventis;Emilia;04.01.2018
 """
         self.submit(f, check_notification=False)
         f = self.response.forms['batchfeesform']

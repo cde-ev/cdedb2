@@ -1409,7 +1409,7 @@ class EventFrontend(AbstractUserFrontend):
         """Allow orgas to add lots paid of participant fee at once."""
         fee_data = fee_data or ''
         fee_data_lines = fee_data.splitlines()
-        fields = ('date', 'amount', 'id', 'family_name', 'given_names')
+        fields = ('amount', 'id', 'family_name', 'given_names', 'date')
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, delimiter=';',
             quoting=csv.QUOTE_MINIMAL, quotechar='"', doublequote=False,
