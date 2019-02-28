@@ -555,10 +555,13 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(r"Gen 1\W*11.02.1981", regex=True)
 
     @as_users("anton")
-    def test_rst(self, user):
+    def test_markdown(self, user):
         self.admin_view_profile('inga')
-        self.assertIn('<div class="section" id="CDEDB_RST_inga">',
-                      self.response.text)
+        self.assertIn('<h4 id="inga">', self.response.text)
+        self.assertIn('<div class="toc">', self.response.text)
+        self.assertIn('<li><a href="#musik">Musik</a></li>', self.response.text)
+        self.assertIn('<a href="http://www.cde-ev.de">', self.response.text)
+
 
     @as_users("anton")
     def test_trivial_promotion(self, user):
