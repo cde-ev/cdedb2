@@ -677,8 +677,7 @@ class Transaction:
                     self.problems.append(p)
 
         elif self.type in {TransactionType.EventFee}:
-            result = re.search(STATEMENT_REFERENCE_EXTERNAL,
-                               self.reference, flags=re.IGNORECASE)
+            result = re.search(STATEMENT_REFERENCE_EXTERNAL, self.reference)
             if result:
                 # Reference matches External Event Fee
                 members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
