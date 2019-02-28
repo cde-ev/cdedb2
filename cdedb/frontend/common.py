@@ -471,7 +471,8 @@ def get_bleach_cleaner():
         'ol', 'strong', 'ul',
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
-        'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt']
+        'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
+        'sup']
     ATTRIBUTES = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -485,6 +486,9 @@ def get_bleach_cleaner():
         'tr': ['colspan'],
         'th': ['colspan'],
         'div': ['id'],
+        'h4': ['id'],
+        'h5': ['id'],
+        'h6': ['id'],
     }
     cleaner = bleach.sanitizer.Cleaner(tags=TAGS, attributes=ATTRIBUTES)
     BLEACH_CLEANER.cleaner = cleaner
@@ -502,24 +506,6 @@ def bleach_filter(val):
     return safe_filter(get_bleach_cleaner().clean(val))
 
 
-class HeadingDiminisher(markdown.treeprocessors.Treeprocessor):
-    """ A custom Python-markdown Treeprocessor to reduce heading levels by 3 """
-    levels = 3
-    h_tags = ('h1', 'h2', 'h3', 'h4', 'h5', 'h6')
-
-    def run(self, root):
-        self._diminish_headings(root)
-
-    def _diminish_headings(self, element):
-        for child in element:
-            if child.tag in self.h_tags[:6-self.levels]:
-                child.tag = child.tag[0] + str(int(child.tag[1])+self.levels)
-            elif child.tag in self.h_tags[6-self.levels:]:
-                child.tag = 'p'
-            elif child.tag not in ('p',):
-                self._diminish_headings(child)
-
-
 #: The Markdown parser has internal state, so we have to be a bit defensive
 #: w.r.t. threads
 MARKDOWN_PARSER = threading.local()
@@ -529,14 +515,13 @@ def get_markdown_parser():
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:
-        md = markdown.Markdown()
+        md = markdown.Markdown(extensions=["footnotes", "toc", "fenced_code"],
+                               extension_configs={
+                                   "toc": {
+                                       "baselevel": 4,
+                                       "anchorlink": True,
+                                   }})
 
-        # TODO remove this workaround when we finally switched to Debian Buster
-        if markdown.version_info[0] == 2:
-            md.treeprocessors['headingDiminisher'] = HeadingDiminisher(md)
-        else:
-            md.treeprocessors.register(HeadingDiminisher(md),
-                                       'headingDiminisher', 20)
         MARKDOWN_PARSER.md = md
     else:
         md.reset()
