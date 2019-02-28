@@ -567,10 +567,13 @@ def open_utf8(*args, **kwargs):
 
     :rtype: file handle
     """
+    # TODO with Buster this is no longer necessary, because of newer python
     if 'file' in kwargs:
         kwargs['file'] = str(kwargs['file'])
     elif len(args) > 0:
         args = (str(args[0]),) + args[1:]
+    # TODO this should also be obsolete with Buster (however I'm unsure
+    # where this comes from)
     return open(*args, **kwargs, encoding='UTF-8')
 
 
