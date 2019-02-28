@@ -95,7 +95,7 @@
 
     {% if is_admin and ambience['ballot']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
-            {{ ambience['ballot']['notes']|rst }}
+            {{ ambience['ballot']['notes']|md }}
         {% endcall %}
     {% endif %}
 

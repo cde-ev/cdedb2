@@ -8,7 +8,7 @@ Crashkurs Markdown
 +-------------------------------------------------------+-------------------------------------------------+
 | ``**fetter Text** mit doppelten Sternen``             | **fetter Text** mit doppelten Sternen           |
 +-------------------------------------------------------+-------------------------------------------------+
-| ``Links mit spitzen Klammern. <http://www.cde-ev.de>``| Links direkt im Text bspw. http://www.cde-ev.de |
+| ``Links mit spitzen Klammern. <http://www.cde-ev.de>``| Links mit spitzen Klammern http://www.cde-ev.de |
 +-------------------------------------------------------+-------------------------------------------------+
 | ``[Link mit eigenem Text](http://www.cde-ev.de)``     | `Link mit eigenem Text <http://www.cde-ev.de>`_ |
 +-------------------------------------------------------+-------------------------------------------------+
@@ -44,7 +44,7 @@ Nummerierte Listen mit Zahl plus Punkt am Anfang::
     1. erster Punkt,
     2. zweiter Punkt.
 
-ergibt 
+ergibt
 
 1. erster Punkt,
 2. zweiter Punkt.

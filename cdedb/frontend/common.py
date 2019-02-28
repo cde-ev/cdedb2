@@ -548,25 +548,6 @@ def md_filter(val):
     return bleach_filter(md.convert(val))
 
 
-def rst_filter(val):
-    """Custom jinja filter to convert rst to html.
-
-    :type val: str
-    :rtype: str
-    """
-    if val is None:
-        return None
-    defaults = {'file_insertion_enabled': 0,
-                'raw_enabled': 0,
-                'id_prefix': "CDEDB_RST_",
-                'initial_header_level': 4,
-                'doctitle_xform': False,
-                }
-    ret = docutils.core.publish_parts(val, writer_name='html',
-                                      settings_overrides=defaults)
-    return bleach_filter(ret['html_body'])
-
-
 def xdictsort_filter(value, attribute, pad=False, reverse=False):
     """Allow sorting by an arbitrary attribute of the value.
 
@@ -686,7 +667,6 @@ JINJA_FILTERS = {
     'genus': genus_filter,
     'linebreaks': linebreaks_filter,
     'md': md_filter,
-    'rst': rst_filter,
     'enum': enum_filter,
     'xdictsort': xdictsort_filter,
     's': safe_filter,

@@ -28,7 +28,7 @@
         </div>
     {% endif %}
     
-    {{ ambience['pcourse']['description']|rst }}
+    {{ ambience['pcourse']['description']|md }}
 
     <h2>{% trans -%}Participants{%- endtrans %}</h2>
     {% if is_admin %}

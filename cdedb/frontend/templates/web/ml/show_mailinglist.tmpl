@@ -63,7 +63,7 @@
 
     {% if is_admin and ambience['mailinglist']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
-            {{ ambience['mailinglist']['notes']|rst }}
+            {{ ambience['mailinglist']['notes']|md }}
         {% endcall %}
     {% endif %}
 
