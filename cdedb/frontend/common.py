@@ -20,7 +20,6 @@ import email.mime.image
 import email.mime.multipart
 import email.mime.text
 import functools
-import hmac
 import io
 import json
 import logging
@@ -47,7 +46,8 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, open_utf8, ANTI_CSRF_TOKEN_NAME)
+    json_serialize, open_utf8, ANTI_CSRF_TOKEN_NAME, encode_parameter,
+    decode_parameter)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -1798,87 +1798,6 @@ def mailinglist_guard(argname="mailinglist_id"):
         return new_fun
 
     return wrap
-
-
-def encode_parameter(salt, target, name, param,
-                     timeout=datetime.timedelta(seconds=60)):
-    """Crypographically secure a parameter. This allows two things:
-
-    * trust user submitted data (which we beforehand gave to the user in
-      signed form and which he is echoing back at us); this is used for
-      example to preserve notifications during redirecting a POST-request,
-      and
-    * verify the origin of the data (since only we have the key for
-      signing), this is convenient since we are mostly state-less (except
-      the SQL layer) and thus the user can obtain a small amount of state
-      where necessary; this is for example used by the password reset path
-      to generate a short-lived reset link to be sent via mail, without
-      storing a challenge in the database.
-
-    All ingredients used here are necessary for security. The timestamp
-    guarantees a short lifespan via the decoding function.
-
-    The message format is A--B--C, where
-
-    * A is 128 chars sha512 checksum of 'X--Y--Z--B--C' where X == salt, Y
-      == target, Z == name
-    * B is 24 chars timestamp of format '%Y-%m-%d %H:%M:%S%z' or 24 dots
-      describing when the parameter expires (and the latter meaning never)
-    * C is an arbitrary amount chars of payload
-
-    :type salt: str
-    :param salt: secret used for signing the parameter
-    :type target: str
-    :param target: The endpoint the parameter is designated for. If this is
-      omitted, there are nasty replay attacks.
-    :type name: str
-    :param name: name of parameter, same security implications as ``target``
-    :type param: str
-    :param timeout: time until parameter expires, if this is None, the
-      parameter never expires
-    :type timeout: datetime.timedelta or None
-    :rtype: str
-    """
-    h = hmac.new(salt.encode('ascii'), digestmod="sha512")
-    if timeout is None:
-        timestamp = 24 * '.'
-    else:
-        ttl = now() + timeout
-        timestamp = ttl.strftime("%Y-%m-%d %H:%M:%S%z")
-    message = "{}--{}".format(timestamp, param)
-    tohash = "{}--{}--{}".format(target, name, message)
-    h.update(tohash.encode("utf-8"))
-    return "{}--{}".format(h.hexdigest(), message)
-
-
-def decode_parameter(salt, target, name, param):
-    """Inverse of :py:func:`encode_parameter`. See there for
-    documentation.
-
-    :type salt: str
-    :type target: str
-    :type name: str
-    :type param: str
-    :rtype: str or None
-    :returns: decoded message, ``None`` if decoding or verification fails
-    """
-    h = hmac.new(salt.encode('ascii'), digestmod="sha512")
-    mac, message = param[0:128], param[130:]
-    tohash = "{}--{}--{}".format(target, name, message)
-    h.update(tohash.encode("utf-8"))
-    if not hmac.compare_digest(h.hexdigest(), mac):
-        _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
-            h.hexdigest(), mac, tohash))
-        return None
-    timestamp = message[:24]
-    if timestamp == 24 * '.':
-        pass
-    else:
-        ttl = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S%z")
-        if ttl <= now():
-            _LOGGER.debug("Expired protected parameter {}".format(tohash))
-            return None
-    return message[26:]
 
 
 def check_validation(rs, assertion, value, name=None, **kwargs):

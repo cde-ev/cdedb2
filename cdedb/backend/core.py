@@ -7,10 +7,9 @@ accesses.
 """
 import collections
 import copy
+import datetime
 import decimal
 import hmac
-import subprocess
-import tempfile
 
 from passlib.hash import sha512_crypt
 
@@ -24,8 +23,8 @@ from cdedb.common import (
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
     privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
     merge_dicts, PERSONA_DEFAULTS, ArchiveError, extract_realms,
-    implied_realms)
-from cdedb.security import secure_random_ascii, secure_token_hex
+    implied_realms, encode_parameter, decode_parameter)
+from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
@@ -50,8 +49,8 @@ class CoreBackend(AbstractBackend):
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets, self.conf.DB_PORT)
         self.generate_reset_cookie = (
-            lambda rs, persona_id: self._generate_reset_cookie(
-                rs, persona_id, secrets.RESET_SALT))
+            lambda rs, persona_id, timeout: self._generate_reset_cookie(
+                rs, persona_id, secrets.RESET_SALT, timeout=timeout))
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, secrets.RESET_SALT, cookie))
@@ -1509,7 +1508,10 @@ class CoreBackend(AbstractBackend):
         data = self.query_one(rs, query, (email,))
         return bool(data['num'])
 
-    def _generate_reset_cookie(self, rs, persona_id, salt, verify=False):
+    RESET_COOKIE_PAYLOAD = "X"
+
+    def _generate_reset_cookie(self, rs, persona_id, salt,
+                               timeout=datetime.timedelta(seconds=60)):
         """Create a cookie which authorizes a specific reset action.
 
         The cookie depends on the inputs as well as a server side secret.
@@ -1521,18 +1523,22 @@ class CoreBackend(AbstractBackend):
         :param verify: Signal, that we are invoked by
           :py:meth:`_verify_reset_cookie`, which means, that we have to skip
           some checks.
+        :type timeout: datetime.timedelta
         :rtype: str
         """
         with Atomizer(rs):
-            if not verify and not self.is_admin(rs):
+            if not self.is_admin(rs):
                 roles = unwrap(self.get_roles_multi(rs, (persona_id,)))
                 if any("admin" in role for role in roles):
                     raise PrivilegeError(n_("Preventing reset of admin."))
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
-            plain = "{}-{}".format(password_hash, persona_id)
-            h = hmac.new(salt.encode(), msg=plain.encode(), digestmod="sha512")
-            return h.hexdigest()
+            # This uses the encode_parameter function in a somewhat sloppy
+            # manner, but the security guarantees still keep
+            cookie = encode_parameter(
+                salt, persona_id, password_hash, self.RESET_COOKIE_PAYLOAD,
+                timeout=datetime.timedelta(seconds=60))
+            return cookie
 
     def _verify_reset_cookie(self, rs, persona_id, salt, cookie):
         """Check a provided cookie for correctness.
@@ -1543,9 +1549,11 @@ class CoreBackend(AbstractBackend):
         :type salt: str
         :rtype: bool
         """
-        correct = self._generate_reset_cookie(rs, persona_id, salt,
-                                              verify=True)
-        return hmac.compare_digest(correct, cookie)
+        with Atomizer(rs):
+            password_hash = unwrap(self.sql_select_one(
+                rs, "core.personas", ("password_hash",), persona_id))
+            msg = decode_parameter(salt, persona_id, password_hash, cookie)
+            return msg == self.RESET_COOKIE_PAYLOAD
 
     def modify_password(self, rs, new_password, old_password=None,
                         reset_cookie=None, persona_id=None):
@@ -1670,7 +1678,10 @@ class CoreBackend(AbstractBackend):
             return False, n_("Nonexistant user.")
         if not data['is_active']:
             return False, n_("Inactive user.")
-        ret = self.generate_reset_cookie(rs, data['id'])
+        timeout = self.conf.PARAMETER_TIMEOUT
+        if self.is_admin(rs):
+            timeout = self.conf.EMAIL_PARAMETER_TIMEOUT
+        ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
         self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
         return True, ret
 
