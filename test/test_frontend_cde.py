@@ -617,7 +617,7 @@ class TestCdEFrontend(FrontendTest):
             (r"pevent_id:\W*Keine Veranstaltung gefunden.",
              r"course:\W*Kein Kurs verfügbar.",),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
-            (r"birthday:\W*Notwendige Angabe fehlt.",
+            (r"birthday:\W*Ungültige Eingabe für ein Datum.",
              r"birthday:\W*Notwendige Angabe fehlt."),
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             (r"Zeilen 13 und 14 sind identisch.",),

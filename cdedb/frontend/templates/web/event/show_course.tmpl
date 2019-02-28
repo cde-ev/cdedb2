@@ -79,7 +79,7 @@
             <div class="col-md-6">
                 {% call util.bootstrap_panel(gettext("Orga-Notes"), icon='tag',
                                              aclass='panel panel-default panel-condensed') %}
-                    {{ ambience['course']['notes']|rst }}
+                    {{ ambience['course']['notes']|md }}
                 {% endcall %}
             </div>
         {% endif %}
@@ -150,7 +150,7 @@
         {% endfor %}
     </div>
     {% call util.bootstrap_panel(title=gettext("Description"), icon="pushpin", aclass="panel-default panel-condensed") %}
-        {{ ambience['course']['description']|rst }}
+        {{ ambience['course']['description']|md }}
     {% endcall %}
     {% if is_removable %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}

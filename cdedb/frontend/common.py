@@ -32,6 +32,7 @@ import tempfile
 import threading
 import urllib.parse
 
+import markdown
 import babel.dates
 import bleach
 import docutils.core
@@ -478,7 +479,8 @@ def get_bleach_cleaner():
         'ol', 'strong', 'ul',
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
-        'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt']
+        'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
+        'sup']
     ATTRIBUTES = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -492,6 +494,9 @@ def get_bleach_cleaner():
         'tr': ['colspan'],
         'th': ['colspan'],
         'div': ['id'],
+        'h4': ['id'],
+        'h5': ['id'],
+        'h6': ['id'],
     }
     cleaner = bleach.sanitizer.Cleaner(tags=TAGS, attributes=ATTRIBUTES)
     BLEACH_CLEANER.cleaner = cleaner
@@ -507,6 +512,40 @@ def bleach_filter(val):
     if val is None:
         return None
     return jinja2.Markup(get_bleach_cleaner().clean(val))
+
+
+#: The Markdown parser has internal state, so we have to be a bit defensive
+#: w.r.t. threads
+MARKDOWN_PARSER = threading.local()
+
+
+def get_markdown_parser():
+    md = getattr(MARKDOWN_PARSER, 'md', None)
+
+    if md is None:
+        md = markdown.Markdown(extensions=["footnotes", "toc", "fenced_code"],
+                               extension_configs={
+                                   "toc": {
+                                       "baselevel": 4,
+                                       "anchorlink": True,
+                                   }})
+
+        MARKDOWN_PARSER.md = md
+    else:
+        md.reset()
+    return md
+
+
+def md_filter(val):
+    """Custom jinja filter to convert rst to html.
+
+    :type val: str
+    :rtype: str
+    """
+    if val is None:
+        return None
+    md = get_markdown_parser()
+    return bleach_filter(md.convert(val))
 
 
 def rst_filter(val):
@@ -646,6 +685,7 @@ JINJA_FILTERS = {
     'querytoparams': querytoparams_filter,
     'genus': genus_filter,
     'linebreaks': linebreaks_filter,
+    'md': md_filter,
     'rst': rst_filter,
     'enum': enum_filter,
     'xdictsort': xdictsort_filter,

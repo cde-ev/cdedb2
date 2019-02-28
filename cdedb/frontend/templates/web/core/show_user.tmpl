@@ -167,7 +167,7 @@
 
                 {% if data['notes'] and is_relative_admin %}
                     <dt>{% trans -%}Admin-Notes{%- endtrans %}</dt>
-                    <dd>{{ data['notes']|rst }}</dd>
+                    <dd>{{ data['notes']|md }}</dd>
                 {% endif %}
             </dl>
 
@@ -300,23 +300,23 @@
             <dl class="dl-horizontal">
                 {% if data['specialisation'] %}
                     <dt>{% trans -%}Specialisation{%- endtrans %}</dt>
-                    <dd>{{ data['specialisation']|rst }}</dd>
+                    <dd>{{ data['specialisation']|md }}</dd>
                 {% endif %}
                 {% if data['affiliation'] %}
                     <dt>{% trans -%}School, University, …{%- endtrans %}</dt>
-                    <dd>{{ data['affiliation']|rst }}</dd>
+                    <dd>{{ data['affiliation']|md }}</dd>
                 {% endif %}
                 {% if data['timeline'] %}
                     <dt>{% trans -%}Year(s) of Graduation{%- endtrans %}</dt>
-                    <dd>{{ data['timeline']|rst }}</dd>
+                    <dd>{{ data['timeline']|md }}</dd>
                 {% endif %}
                 {% if data['interests'] %}
                     <dt>{% trans -%}Interests{%- endtrans %}</dt>
-                    <dd>{{ data['interests']|rst }}</dd>
+                    <dd>{{ data['interests']|md }}</dd>
                 {% endif %}
                 {% if data['free_form'] %}
                     <dt>{% trans -%}Miscellaneous{%- endtrans %}</dt>
-                    <dd>{{ data['free_form']|rst }}</dd>
+                    <dd>{{ data['free_form']|md }}</dd>
                 {% endif %}
             </dl>
         {% endif %}

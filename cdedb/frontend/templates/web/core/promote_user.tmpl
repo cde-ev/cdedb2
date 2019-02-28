@@ -91,8 +91,8 @@
                 {% endif %}
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                            info=gettext("Supports reStructuredText"),
-                            infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+                            info=gettext("Supports Markdown %(infolink)s")|format(
+                            infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
                 {% endif %}
                 {{ util.form_input_submit(value=gettext("Add Realm"),
                         cancellink=show_user_link(ambience['persona']['id'])) }}

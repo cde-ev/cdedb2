@@ -30,7 +30,7 @@
         <dd>{{ institutions[ambience['pevent']['institution']] }}</dd>
     </dl>
     
-    {{ ambience['pevent']['description']|rst }}
+    {{ ambience['pevent']['description']|md }}
 
     {% if courses or is_admin %}
         <h2>{% trans -%}Courses{%- endtrans %}</h2>

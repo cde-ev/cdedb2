@@ -28,8 +28,8 @@
         {{ util.form_input_text(name="nr", label=gettext("Number")) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports reStructuredText"),
-				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+                                    info=gettext("Supports Markdown %(infolink)s")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="form-control-static text-info">

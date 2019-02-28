@@ -78,7 +78,7 @@
 
     {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
                                  aclass="panel-default panel-condensed") %}
-        {{ ambience['registration']['orga_notes']|rst }}
+        {{ ambience['registration']['orga_notes']|md }}
     {% endcall %}
 
     <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
@@ -217,7 +217,7 @@
             </div>
         {% endif %}
     {% call util.bootstrap_panel(title=gettext("Notes"), aclass="panel-default panel-condensed") %}
-        {{ ambience['registration']['notes']|rst }}
+        {{ ambience['registration']['notes']|md }}
     {% endcall %}
 
     {% if ambience['event']['fields']|length > 0 %}

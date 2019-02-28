@@ -129,7 +129,7 @@
         <dl class="dl-horizontal">
             <dt>{% trans -%}Notes{%- endtrans %}</dt>
             <dd>
-                {{ registration['notes']|rst }}
+                {{ registration['notes']|md }}
             </dd>
         </dl>
     {% endif %}

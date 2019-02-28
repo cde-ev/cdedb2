@@ -84,7 +84,7 @@
                     <h3 class="heading-underline">{{ entry['title'] }}</h3>
                 {% endif %}
                 {% if entry['info'] %}
-                    {{ entry['info']|rst }}
+                    {{ entry['info']|md }}
                 {% endif %}
             {% endif %}
         {% endfor %}

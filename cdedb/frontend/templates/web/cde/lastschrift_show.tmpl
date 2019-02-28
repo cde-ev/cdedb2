@@ -57,7 +57,7 @@
                 <dd>{{ util.persona_anchor(personas[lastschrift['submitted_by']]) }}</dd>
 
                 <dt>{% trans -%}Notes{%- endtrans %}</dt>
-                <dd>{{ lastschrift['notes']|rst }}</dd>
+                <dd>{{ lastschrift['notes']|md }}</dd>
             {% endif %}
             </dl>
             <dl class="dl-horizontal">

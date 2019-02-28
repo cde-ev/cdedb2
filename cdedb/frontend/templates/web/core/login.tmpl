@@ -47,7 +47,7 @@
     </p>
     {% if meta_info.get('banner_before_login') %}
         {% call util.bootstrap_panel() %}
-            {{ meta_info.get('banner_before_login')|rst }}
+            {{ meta_info.get('banner_before_login')|md }}
         {% endcall %}
     {% endif %}
 {% endblock %}

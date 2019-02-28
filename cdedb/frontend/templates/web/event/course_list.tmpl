@@ -68,7 +68,7 @@
                         – <span class="text-info">{% trans -%}cancelled{%- endtrans %}</span>
                     {% endif %}
                 </p>
-                {{ entry['description']|rst }}
+                {{ entry['description']|md }}
             </div>
         {% endfor %}
     {% elif ambience['event']['tracks'] %}

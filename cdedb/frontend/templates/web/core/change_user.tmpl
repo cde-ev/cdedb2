@@ -65,13 +65,21 @@
             {{ util.form_input_text(name="country2", label=gettext("Country")) }}
 
             <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
-            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
-            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
-            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation")) }}
-            {{ util.form_input_textarea(name="interests", label=gettext("Interests")) }}
+            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
+                                        info=gettext("Supports Markdown %(infolink)s")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"),
+                                        info=gettext("Supports Markdown %(infolink)s")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"),
+                                        info=gettext("Supports Markdown %(infolink)s")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+            {{ util.form_input_textarea(name="interests", label=gettext("Interests"),
+                                        info=gettext("Supports Markdown %(infolink)s")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
             {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                                        info=gettext("Supports reStructuredText"),
-                                        infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+                                        info=gettext("Supports Markdown %(infolink)s")|format(
+                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
         {% endif %}
 
         {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user.persona_id)) }}

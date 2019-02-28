@@ -22,8 +22,8 @@
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports reStructuredText"),
-				    infolink=util.href(docurl("Handbuch_reStructuredText"), gettext("Short reST summary"))) }}
+                                    info=gettext("Supports Markdown %(infolink)s")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="tempus", label=gettext("Cutoff date"), type="date", placeholder="YYYY-MM-DD") }}
         {{ util.form_input_textarea(name="courses", label=gettext("Courses"),
                                info=gettext('Enter one Course per line in the format: "%(number)s";"%(title)s";"%(desc)s".')|

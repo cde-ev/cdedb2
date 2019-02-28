@@ -18,7 +18,7 @@
         {% endif %}
     </div>
 
-    {{ ambience['assembly']['description']|rst }}
+    {{ ambience['assembly']['description']|md }}
 
     <dl class="dl-horizontal">
         <dt>Anmeldeschluss</dt>
@@ -41,7 +41,7 @@
 
     {% if is_admin and ambience['assembly']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
-            {{ ambience['assembly']['notes']|rst }}
+            {{ ambience['assembly']['notes']|md }}
         {% endcall %}
     {% endif %}
     
