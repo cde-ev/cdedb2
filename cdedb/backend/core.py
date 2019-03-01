@@ -1562,7 +1562,7 @@ class CoreBackend(AbstractBackend):
         The persona_id parameter is only for the password reset case. We
         intentionally only allow to change the own password.
 
-         An authorization must be provided, either by ``old_password`` or
+        An authorization must be provided, either by ``old_password`` or
         ``reset_cookie``.
 
         This escalates database connection privileges in the case of a
