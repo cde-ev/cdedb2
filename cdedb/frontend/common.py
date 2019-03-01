@@ -519,6 +519,22 @@ def bleach_filter(val):
 MARKDOWN_PARSER = threading.local()
 
 
+def md_id_wrapper(val, sep):
+    """
+    Wrap the markdown toc slugify function to attach an ID prefix.
+
+    :param val: String to be made URL friendly.
+    :type val: str
+    :param sep: String to be used instead of Whitespace.
+    :type sep: str
+    :rtype: str
+    """
+
+    id_prefix = "CDEDB_ID_PREFIX_"
+
+    return id_prefix + markdown.extensions.toc.slugify(val, sep)
+
+
 def get_markdown_parser():
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
@@ -528,6 +544,7 @@ def get_markdown_parser():
                                    "toc": {
                                        "baselevel": 4,
                                        "anchorlink": True,
+                                       "slugify": md_id_wrapper,
                                    }})
 
         MARKDOWN_PARSER.md = md
