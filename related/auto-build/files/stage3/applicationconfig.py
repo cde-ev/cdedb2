@@ -1,6 +1,5 @@
 URL_PARAMETER_SALT = "aoeuidhtns9KT6AOR2kNjq2zO"
 RESET_SALT = "aoeuidhtns9KT6AOR2kNjq2zO"
-USERNAME_CHANGE_TOKEN_SALT = "kaoslrcekhvx2387krcoekd983xRKCh309xKX"
 CDB_DATABASE_ROLES = {
     "cdb_anonymous": "012345678901234567890123456789",
     "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",

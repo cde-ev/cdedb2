@@ -376,9 +376,6 @@ _SECRECTS_DEFAULTS = {
     # salting value used for verifying password reset authorization
     "RESET_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
-    # salting value used for verifying tokens for username changes
-    "USERNAME_CHANGE_TOKEN_SALT": "kaoslrcekhvx2387krcoekd983xRKCh309xKX",
-
     # key to use by mailing list software for authentification
     "ML_SCRIPT_KEY": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
 }
