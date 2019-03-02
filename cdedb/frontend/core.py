@@ -1094,11 +1094,14 @@ class CoreFrontend(AbstractFrontend):
 
     @access("cde", modi={"POST"})
     @REQUESTfile("foto")
-    def set_foto(self, rs, persona_id, foto):
+    @REQUESTdata(("delete", "bool"))
+    def set_foto(self, rs, persona_id, foto, delete):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         foto = check(rs, 'profilepic_or_None', foto, "foto")
+        if not foto and not delete:
+            rs.errors.append(("foto", ValueError("Mustn't be empty.")))
         if rs.errors:
             return self.set_foto_form(rs, persona_id)
         previous = self.coreproxy.get_cde_user(rs, persona_id)['foto']
