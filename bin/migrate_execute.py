@@ -1009,7 +1009,7 @@ for i in range(last_semester):
 insert(cdb, "cde.org_period", {
     'id': last_semester + 1,
     'billing_state': None,
-    'billing_done': None,
+    'billing_done': now(),
     'ejection_state': None,
     'ejection_done': None,
     'balance_state': None,
