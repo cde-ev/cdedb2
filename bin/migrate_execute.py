@@ -996,9 +996,9 @@ for persona_id in persona_ids:
 query = "SELECT * FROM semester"
 semesters = query_all(cdedbxy, query, tuple())
 last_semester = max(s['next_expuls'] for s in semesters)
-for i in range(last_semester):
+for i in range(1, last_semester):
     insert(cdb, "cde.org_period", {
-        'id': i + 1,
+        'id': i,
         'billing_state': None,
         'billing_done': now(),
         'ejection_state': None,
@@ -1007,7 +1007,7 @@ for i in range(last_semester):
         'balance_done': now(),
     })
 insert(cdb, "cde.org_period", {
-    'id': last_semester + 1,
+    'id': last_semester,
     'billing_state': None,
     'billing_done': now(),
     'ejection_state': None,
@@ -1366,24 +1366,11 @@ query_exec(cdb, query, tuple())
 ##
 ## grant admin privileges and reset password
 ##
-PASSWORD_LIST = {
-    51: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    1475: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    2158: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    4463: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    5124: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    5843: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    7311: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    8586: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    8737: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    10705: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    12925: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    16231: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    16563: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    17476: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    20109: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-    21011: '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
-}
+
+INIT_PASSWORD = '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/'
+
+query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+query_exec(cdb, query, (INIT_PASSWORD, DEFAULT_ID))
 
 for superadmin in (2158, 5124, 10705, 17476):
     core.change_admin_bits(rs(DEFAULT_ID), {
@@ -1395,8 +1382,6 @@ for superadmin in (2158, 5124, 10705, 17476):
         'is_ml_admin': True,
         'is_assembly_admin': True,
         })
-    query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-    query_exec(cdb, query, (PASSWORD_LIST[superadmin], superadmin))
 
 for admin in (1475, 4463, 8586, 5843, 51, 7311, 12925, 8737, 16231, 20109,
               21011, 16563):
@@ -1409,8 +1394,6 @@ for admin in (1475, 4463, 8586, 5843, 51, 7311, 12925, 8737, 16231, 20109,
         'is_ml_admin': True,
         'is_assembly_admin': True,
         })
-    query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-    query_exec(cdb, query, (PASSWORD_LIST[admin], admin))
 
 ##
 ## consistency checks
