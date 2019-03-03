@@ -242,6 +242,23 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        # Password six+seven: CdE-specific passwords
+        new_password = "cdeakademie"
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+        new_password = "duschorgie"
+        f = self.response.forms['passwordchangeform']
+        f['old_password'] = user['password']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertNonPresence('Passwort geändert.')
+        self.assertPresence('Passwort ist zu schwach.', div="notifications")
 
     @as_users("anton", "ferdinand")
     def test_change_password_zxcvbn_admin(self, user):
