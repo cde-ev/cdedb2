@@ -460,9 +460,8 @@ def linebreaks_filter(val, replacement="<br>"):
         return None
     # escape the input. This function consumes an unescaped string or a
     # jinja2.Markup safe html object and returns an escaped string.
-    val = jinja2.escape(val)
-    val = val.replace('\n', replacement)
-    return jinja2.Markup(val)
+    val = jinja2.Markup(val)
+    return val.replace('\n', jinja2.Markup(replacement))
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
