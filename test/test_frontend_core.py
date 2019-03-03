@@ -67,8 +67,16 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton")
     def test_adminshowuser(self, user):
         self.admin_view_profile('berta')
-        berta = USER_DICT['berta']
         self.assertTitle("Bertålotta Beispiel")
+        self.assertPresence("Überweisungen aus dem Ausland achte")
+
+        self.admin_view_profile('emilia')
+        self.assertNonPresence("Überweisungen aus dem Ausland achte")
+
+    @as_users("berta")
+    def test_cppaymentinformation(self, user):
+        self.traverse({'href': '/core/self/show'})
+        self.assertNonPresence("Überweisungen aus dem Ausland achte")
 
     @as_users("anton")
     def test_selectpersona(self, user):

@@ -412,8 +412,11 @@ class CoreFrontend(AbstractFrontend):
                      and "cde" not in access_levels
                      and "searchable" in rs.user.roles
                      and rs.ambience['persona']['is_searchable'])
+
+        meta_info = self.coreproxy.get_meta_info(rs)
+
         return self.render(rs, "show_user", {
-            'data': data, 'past_events': past_events,
+            'data': data, 'past_events': past_events, 'meta_info': meta_info,
             'is_relative_admin': is_relative_admin, 'quoteable': quoteable})
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",

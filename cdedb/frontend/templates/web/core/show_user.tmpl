@@ -347,7 +347,25 @@
             {% endfor %}
             </table>
         {% endif %}
+        {%  if is_admin and data["is_cde_realm"] %}
+            <h4 class="heading-underline">{% trans -%}Copy-Paste Template{%- endtrans %}</h4>
+            <pre>
+Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
+IBAN:               {{ meta_info['CdE_Konto_IBAN'] }}
+BIC:                {{ meta_info['CdE_Konto_BIC'] }}
+Kreditinstitut:     {{ meta_info['CdE_Konto_Institut'] }}
+Verwendungszweck:   {{ data['id']|cdedbid }}, {{ data['family_name'] }}, {{ data['given_names'] }}
 
+Bei Überweisungen aus dem Ausland achte bitte darauf, dass der
+Empfänger keine Gebühren bezahlen muss.
+
+Nähere Informationen gibt es auf:
+https://www.cde-ev.de/node/7
+
+Sobald deine Überweisung angekommen ist und eingetragen wurde, erhältst
+du automatisch eine Bestätigung per E-Mail und bist dann sofort wieder
+Mitglied.</pre>
+        {% endif %}
     </div>
 
     {% if data['id'] != user.persona_id and (is_relative_admin or "core_admin" in user.roles) %}
