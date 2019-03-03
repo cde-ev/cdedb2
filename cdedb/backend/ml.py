@@ -871,12 +871,19 @@ class MlBackend(AbstractBackend):
             moderators = tuple(filter(None, (e['username'] for e in tmp)))
             subscribers = tuple(filter(
                 None, self.subscribers(rs, mailinglist_id).values()))
+            mod_policy = const.ModerationPolicy
+            if mailinglist['mod_policy'] == mod_policy.unmoderated:
+                whitelist = ['*']
+            else:
+                whitelist = list(mailinglist['whitelist'])
+                if mailinglist['mod_policy'] == mod_policy.non_subscribers:
+                    whitelist.append('.')
             return {
                 'listname': mailinglist['subject_prefix'],
                 'address': mailinglist['address'],
                 'moderators': moderators,
                 'subscribers': subscribers,
-                'whitelist': tuple(mailinglist['whitelist']),
+                'whitelist': whitelist,
                 'sender': envelope,
                 'list-unsubscribe': u"https://db.cde-ev.de/",
                 'list-subscribe': u"https://db.cde-ev.de/",
