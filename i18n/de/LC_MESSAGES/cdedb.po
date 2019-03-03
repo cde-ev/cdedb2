@@ -2442,7 +2442,7 @@ msgstr "Nicht genug Adminprivilegien für diesen Account."
 
 #: cdedb/frontend/core.py:546
 msgid "No account found."
-msgstr "Kein Account gefundend."
+msgstr "Kein Account gefunden."
 
 #: cdedb/frontend/core.py:744
 msgid "Normal dataset change."
