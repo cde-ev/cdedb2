@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans givennames=current['given_names'], family_name=current['family_name'] -%}
+    {% trans given_names=current['given_names'], family_name=current['family_name'] -%}
     	Inspect Changes for {{ given_names }} {{ family_name }}
     {%- endtrans %}
 {% endblock %}
