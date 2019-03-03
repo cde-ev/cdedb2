@@ -6728,8 +6728,8 @@ msgstr "Änderungs-Kommentar"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:49
 #, python-format
-msgid "Visible to all Admins, supports Markdown %(infolink)s"
-msgstr "Für alle Admins sichtbar, unterstützt Markdown %(infolink)s"
+msgid "Visible to all Admins, supports Markdown with auto linebreaks %(infolink)s"
+msgstr "Für alle Admins sichtbar, unterstützt Markdown mit Zeilenumbrüchen %(infolink)s"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format

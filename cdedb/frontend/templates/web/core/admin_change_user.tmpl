@@ -46,7 +46,7 @@
             {{ util.form_input_checkbox(name="bub_search", label=gettext("Searchable for BuB")) }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7",
-                                    info=gettext("Visible to all Admins, supports Markdown %(infolink)s")|format(
+                                    info=gettext("Visible to all Admins, supports Markdown with auto linebreaks %(infolink)s")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
 
         <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>

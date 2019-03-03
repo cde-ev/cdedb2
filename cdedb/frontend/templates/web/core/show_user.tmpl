@@ -167,7 +167,7 @@
 
                 {% if data['notes'] and is_relative_admin %}
                     <dt>{% trans -%}Admin-Notes{%- endtrans %}</dt>
-                    <dd>{{ data['notes']|md }}</dd>
+                    <dd>{{ data['notes']|md|linebreaks }}</dd>
                 {% endif %}
             </dl>
 
