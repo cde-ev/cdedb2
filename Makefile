@@ -54,6 +54,18 @@ sample-data-test-shallow:
 sample-data-xss:
 	make sql-xss
 
+storage:
+ifeq ($(wildcard /DBVM),/DBVM)
+	$(error Refusing to touch live instance)
+endif
+	sudo rm -rf "/var/lib/cdedb/"
+	sudo mkdir -p "/var/lib/cdedb/foto/"
+	sudo mkdir -p "/var/lib/cdedb/minor_form/"
+	sudo mkdir -p "/var/lib/cdedb/ballot_result/"
+	sudo mkdir -p "/var/lib/cdedb/assembly_attachment/"
+	sudo cp test/ancillary_files/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9 /var/lib/cdedb/foto/
+	sudo chown --recursive www-data:www-data /var/lib/cdedb
+
 storage-test:
 	rm -rf "/tmp/cdedb-store/"
 	mkdir -p "/tmp/cdedb-store/foto/"
@@ -76,6 +88,7 @@ endif
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
+	make storage
 	sudo systemctl start pgbouncer
 
 sql-test:
