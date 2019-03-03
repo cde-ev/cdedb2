@@ -21,18 +21,20 @@
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
                     ({{ stats[pevent_id]['institution_moniker'] }})&emsp;
-                    <small class="text-muted nowrap">
-                        {% trans count=stats[pevent_id]['courses'] -%}
-                            {{ count }} Course
-                        {%- pluralize count -%}
-                            {{ count }} Courses
-                        {%- endtrans %},
-                        {% trans count=stats[pevent_id]['participants'] -%}
-                            {{ count }} Participant
-                        {%- pluralize count -%}
-                            {{ count }} Participants
-                        {%- endtrans %}
-                    </small>
+                    {% if is_admin %}
+                        <small class="text-muted nowrap">
+                            {% trans count=stats[pevent_id]['courses'] -%}
+                                {{ count }} Course
+                            {%- pluralize count -%}
+                                {{ count }} Courses
+                            {%- endtrans %},
+                            {% trans count=stats[pevent_id]['participants'] -%}
+                                {{ count }} Participant
+                            {%- pluralize count -%}
+                                {{ count }} Participants
+                            {%- endtrans %}
+                        </small>
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
