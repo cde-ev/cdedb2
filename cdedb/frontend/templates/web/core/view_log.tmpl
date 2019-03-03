@@ -3,13 +3,13 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans -%}
-    	Core Log
+    	Account Log
     {%- endtrans %}
     [{{ values['start']|int }}–{{ (values['start']|int + log|length) }}]
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/view_log"), gettext("Core Log"), active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/view_log"), gettext("Account Log"), active="True") }}
 {% endblock %}
 {% block content %}
     {%  if log %}
