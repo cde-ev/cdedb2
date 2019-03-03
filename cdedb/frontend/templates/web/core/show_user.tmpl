@@ -58,8 +58,8 @@
                             icon="time") }}
                 {% endif %}
                 {% if "core_admin" in user.roles and data['id'] != user.persona_id %}
-                    {{ util.href(cdedblink("core/admin_send_password_reset_link"), gettext("Send Password Reset Link"), icon="gift",
-                                 aclass="btn btn-xs btn-warning") }}
+                    {{ util.href(cdedblink("core/admin_send_password_reset_link"), gettext("Send Password Reset Link"),
+                                 icon="send", aclass="btn btn-sm btn-warning") }}
                 {% endif %}
             {% endif %}
         </div>
