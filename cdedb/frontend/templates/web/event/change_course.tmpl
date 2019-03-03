@@ -32,8 +32,8 @@
         {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports Markdown %(infolink)s")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         <h4 class="heading-underline">{% trans -%}Course{%- endtrans %}</h4>
         {{ util.form_input_text(name="instructors", label=gettext("Instructur")) }}
         {{ util.form_input_text(name="min_size", label=gettext("Minimum Size")) }}

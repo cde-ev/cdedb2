@@ -29,8 +29,8 @@
 	{{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
 	{{ util.form_input_textarea(name="account_address", label=gettext("Account holder's address (if different)")) }}
 	{{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5",
-				    info=gettext("Supports Markdown %(infolink)s")|format(
-				    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+				    info=gettext("Supports %(infolink)s.")|format(
+				    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
 	{{ util.form_input_submit(value=gettext("Save"),
 		cancellink=cdedblink("cde/lastschrift_show", {'persona_id': ambience['lastschrift']['persona_id']})) }}

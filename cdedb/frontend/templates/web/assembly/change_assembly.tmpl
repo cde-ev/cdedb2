@@ -25,13 +25,13 @@
         {{ util.anti_csrf_token('assembly/change_assembly') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports Markdown %(infolink)s")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), placeholder="YYYY-MM-DDThh:ii",
                                 type="datetime-local") }}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
-                                    info=gettext("Supports Markdown %(infolink)s")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="form-control-static text-info">

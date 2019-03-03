@@ -17,8 +17,8 @@
         {{ util.anti_csrf_token('assembly/create_ballot') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports Markdown %(infolink)s")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="vote_begin", label=gettext("Start of voting period"), type="datetime-local",
                                 placeholder="YYYY-MM-DDThh:ii:ss") }}
         {{ util.form_input_text(name="vote_end", label=gettext("End of voting period"), type="datetime-local",
@@ -30,8 +30,8 @@
                                info=gettext("Leave empty for Preferential Vote.")) }}
         {{ util.form_input_checkbox(name="use_bar", label=gettext("Allow rejection")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
-                                    info=gettext("Supports Markdown %(infolink)s")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="form-control-static text-info">
