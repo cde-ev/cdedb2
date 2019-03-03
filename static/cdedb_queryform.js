@@ -681,7 +681,7 @@
             var parameters = {};
             for (var i = 0; i < parts.length; i++) {
                 var s = parts[i].split('=');
-                parameters[s[0]] = s[1];
+                parameters[decodeURIComponent(s[0])] = decodeURIComponent(s[1]);
             }
 
             // Now clear formular
