@@ -85,6 +85,10 @@
             </script>
         {% endif %}
 
+        {% if saldo %}
+            {% trans -%}Saldo{%- endtrans %}: {{ saldo|money }}
+        {% endif %}
+
         {% if values['checksum'] %}
             <p class="help-block">
                 {{ util.make_icon('info-sign') }}

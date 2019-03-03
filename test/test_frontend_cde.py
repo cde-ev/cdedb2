@@ -1086,6 +1086,7 @@ class TestCdEFrontend(FrontendTest):
 
         ## second round
         self.assertPresence("Bestätigen")
+        self.assertPresence("Saldo: 151.09 €")
         self.assertNonPresence("Validieren")
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)

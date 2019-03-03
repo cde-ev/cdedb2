@@ -850,7 +850,7 @@ class CdEFrontend(AbstractUserFrontend):
                               filename=filename)
 
     @access("cde_admin")
-    def money_transfers_form(self, rs, data=None, csvfields=None):
+    def money_transfers_form(self, rs, data=None, csvfields=None, saldo=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -862,7 +862,9 @@ class CdEFrontend(AbstractUserFrontend):
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         return self.render(rs, "money_transfers",
-                           {'data': data, 'csvfields': csv_position})
+                           {'data': data, 'csvfields': csv_position,
+                            'saldo': saldo,
+                            })
 
     def examine_money_transfer(self, rs, datum):
         """Check one line specifying a money transfer.
@@ -1022,13 +1024,16 @@ class CdEFrontend(AbstractUserFrontend):
             rs.errors.append(("transfers",
                               ValueError(n_("Lines didn't match up."))))
         open_issues = any(e['problems'] for e in data)
+        saldo = sum(e['amount'] for e in data if e['amount'])
         if rs.errors or not data or open_issues:
             rs.values['checksum'] = None
-            return self.money_transfers_form(rs, data=data, csvfields=fields)
+            return self.money_transfers_form(rs, data=data, csvfields=fields,
+                                             saldo=saldo)
         current_checksum = hashlib.md5(transfers.encode()).hexdigest()
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
-            return self.money_transfers_form(rs, data=data, csvfields=fields)
+            return self.money_transfers_form(rs, data=data, csvfields=fields,
+                                             saldo=saldo)
 
         # Here validation is finished
         success, num, new_members = self.perform_money_transfers(
@@ -1044,7 +1049,8 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 rs.notify("error", n_("Unexpected error on line %(num)s."),
                           {'num': num})
-            return self.money_transfers_form(rs, data=data, csvfields=fields)
+            return self.money_transfers_form(rs, data=data, csvfields=fields,
+                                             saldo=saldo)
 
     def determine_open_permits(self, rs, lastschrift_ids=None):
         """Find ids, which to debit this period.
