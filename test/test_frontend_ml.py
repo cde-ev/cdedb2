@@ -350,6 +350,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Witz des Tages – Konsistenzcheck")
         self.assertPresence("Janis Jalapeño")
         f = self.response.forms['removeallproblemsform']
+        f['ack_delete'] = True
         self.submit(f)
         # make sure it worked
         self.traverse({'href': '/ml/$'},
@@ -485,17 +486,17 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("Mailinglisten Log [0–7]")
+        self.assertTitle("Mailinglisten-Log [0–7]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Mailinglisten Log [1–3]")
+        self.assertTitle("Mailinglisten-Log [1–3]")
 
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
-        self.assertTitle("Klatsch und Tratsch Log [0–6]")
+        self.assertTitle("Klatsch und Tratsch: Log [0–6]")

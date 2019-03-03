@@ -1598,7 +1598,7 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen Log [0–10]")
+        self.assertTitle("Veranstaltungen-Log [0–10]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
@@ -1610,4 +1610,4 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("Große Testakademie 2222 Log [0–6]")
+        self.assertTitle("Große Testakademie 2222: Log [0–6]")
