@@ -19,7 +19,7 @@
 {% endblock %}
 {% block content %}
     {% if not registration['payment'] %}
-        <h3 class="heading-underline">Überweisung</h3>
+        <h3 class="heading-underline">{% trans -%}Bank Transfer{%- endtrans %}</h3>
         <p>
             {% trans fee=fee|money -%}
             	Please keep in mind, that your Registration will only be complete, once
@@ -138,9 +138,9 @@
         {% set reg_track = registration['tracks'][track_id] %}
         {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
             <h4>
-                {% trans -%}Course Choices{%- endtrans %}
+                {% trans -%}Course Choices for{%- endtrans %}
                 {% if ambience['event']['tracks']|length > 1 %}
-                    für {{ track['title'] }}
+                    {{ track['title'] }}
                 {% endif %}
             </h4>
 
@@ -150,7 +150,7 @@
                     <dd><em>{{ courses[reg_track['course_instructor']]['title'] }}</em>.</dd>
                 {% endif %}
                 {% for i in range(track['num_choices']) %}
-                    <dt>{{ "{}. Wahl".format(i + 1) }}</dt>
+                    <dt>{{ gettext("{}. choice").format(i + 1) }}</dt>
                     <dd>
                         {% if reg_track['choices']|length > i %}
                             {{ courses[reg_track['choices'][i]]['nr'] }}.
