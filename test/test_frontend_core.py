@@ -819,4 +819,4 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'description': 'Index', 'href': '^/d?b?/?$'},
                       {'href': '/core/log'})
-        self.assertTitle("Core Log [0–1]")
+        self.assertTitle("Account Log [0–1]")
