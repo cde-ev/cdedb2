@@ -1,6 +1,7 @@
 {% set sidenav_active='ml_manage' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}
     {% trans title=ambience['mailinglist']['title'] -%}
         {{ title }} – Consistency-Check
@@ -55,9 +56,16 @@
                 id="removeallproblemsform" style="display: inline;">
             {{ util.anti_csrf_token('ml/remove_subscribers') }}
             {{ util.input_hidden(name="subscriber_ids", value=problems|join(",")) }}
-            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+            {{ util.input_submit(value=gettext("Remove All"), aclass="btn btn-danger", icon="minus",
                     title=gettext("Remove all the above as subscribers.")) }}
+            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
         </form>
+        <script type="text/javascript">
+            $('#removeallproblemsform').cdedbProtectAction(
+                "{{ gettext("All problematic subscribers will be removed.") }}");
+            $('#removeallproblemsform').find('[name="ack_delete"]').prop('checked', true)
+                .parent().hide();
+        </script>
     {% endif %}
     {% if overrides %}
         <h2>{% trans -%}Exceptions{%- endtrans %}</h2>

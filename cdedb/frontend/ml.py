@@ -437,10 +437,13 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_ids", "int_csv_list"))
+    @REQUESTdata(("subscriber_ids", "int_csv_list"), ("ack_delete", "bool"))
     @mailinglist_guard()
-    def remove_subscribers(self, rs, mailinglist_id, subscriber_ids):
+    def remove_subscribers(self, rs, mailinglist_id, subscriber_ids,
+                           ack_delete):
         """Administratively unsubscribe many people."""
+        if not ack_delete:
+            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.management(rs, mailinglist_id)
         with Atomizer(rs):
