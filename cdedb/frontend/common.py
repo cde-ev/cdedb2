@@ -530,7 +530,7 @@ def md_id_wrapper(val, sep):
     :rtype: str
     """
 
-    id_prefix = "CDEDB_ID_PREFIX_"
+    id_prefix = "CDEDB_MD_"
 
     return id_prefix + markdown.extensions.toc.slugify(val, sep)
 
