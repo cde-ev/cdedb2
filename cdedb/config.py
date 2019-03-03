@@ -74,49 +74,49 @@ def generate_event_registration_default_queries(event, spec):
             ("persona.given_names", "persona.family_name"),
             tuple(),
             (("reg.id", True),)),
-        n_("01_query_event_registration_not_paid"): Query(
+        n_("10_query_event_registration_not_paid"): Query(
             "qview_registraion", spec,
             ("persona.given_names", "persona.family_name"),
             (("reg.payment", QueryOperators.empty, None),),
             default_sort),
-        n_("02_query_event_registration_paid"): Query(
+        n_("12_query_event_registration_paid"): Query(
             "qview_registraion", spec,
             ("persona.given_names", "persona.family_name", "reg.payment"),
             (("reg.payment", QueryOperators.nonempty, None),),
             (("reg.payment", False), ("persona.family_name", True),
              ("persona.given_names", True),)),
-        n_("03_query_event_registration_non_members"): Query(
+        n_("20_query_event_registration_non_members"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name"),
             (("persona.is_member", QueryOperators.equal, False),),
             default_sort),
-        n_("04_query_event_registration_orga_notes"): Query(
+        n_("30_query_event_registration_orga_notes"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "reg.orga_notes"),
             (("reg.orga_notes", QueryOperators.nonempty, None),),
             default_sort),
-        n_("05_query_event_registration_u18"): Query(
+        n_("40_query_event_registration_u18"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True),)),
-        n_("06_query_event_registration_u16"): Query(
+        n_("42_query_event_registration_u16"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 16)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
-        n_("07_query_event_registration_u14"): Query(
+        n_("44_query_event_registration_u14"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 14)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
-        n_("08_query_event_registration_minors_no_consent"): Query(
+        n_("50_query_event_registration_minors_no_consent"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
