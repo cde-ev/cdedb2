@@ -1537,7 +1537,7 @@ class CoreBackend(AbstractBackend):
             # manner, but the security guarantees still keep
             cookie = encode_parameter(
                 salt, persona_id, password_hash, self.RESET_COOKIE_PAYLOAD,
-                timeout=datetime.timedelta(seconds=60))
+                timeout=timeout)
             return cookie
 
     def _verify_reset_cookie(self, rs, persona_id, salt, cookie):
