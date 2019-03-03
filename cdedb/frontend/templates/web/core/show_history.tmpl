@@ -21,7 +21,7 @@
                 enums["MemberChangeStati"].displaced: ('displaced', 'refresh', gettext("displaced")),
                 -1: ('complicated','question-sign',gettext("complicated")),} %}
 {% macro print_history(f) %}
-    {% for c in entries %}
+    {% for c in entries|sort %}
         {% if c not in constants[f] %}
             <div class="row history-row {{ STATUS[eventual_status[f][c]][0] }}">
                 <div class="col-xs-3">
@@ -39,7 +39,7 @@
     {% endfor %}
 {% endmacro %}
 {% macro print_multifield_history(fields=[]) %}
-    {% for c in entries %}
+    {% for c in entries|sort %}
         {% set vars = {'has_nonconstant' : False, 'eventual_status': None} %}
         {% for f in fields %}
             {% if c not in constants[f] %}
