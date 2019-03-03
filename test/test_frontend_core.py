@@ -362,7 +362,8 @@ class TestCoreFrontend(FrontendTest):
         user = USER_DICT['anton']
         self.login(user)
         self.admin_view_profile('ferdinand')
-        self.traverse({'href': '/password/reset'})
+        f = self.response.forms['sendpasswordresetform']
+        self.submit(f)
         mail = self.fetch_mail()[0]
         self.logout()
         link = None

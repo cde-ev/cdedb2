@@ -7649,6 +7649,18 @@ msgid "(Instructor)"
 msgstr "(Kursleiter)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:368
+
+#: cdedb/frontend/templates/web/core/show_user.tmpl:371
+msgid ""
+"Sends an email to this user, which contains a password reset link. This "
+"is\n"
+"                                        basically the same as any non-"
+"admin user can achieve using the \"Reset Password\"\n"
+"                                        form on the login page."
+msgstr ""
+"Sendet eine E-Mail mit einem Passwort-Reset-Link an den Benutzer. Das kommt "
+"auf's gleiche raus, wie wenn der Benutzer das \"Passwort zurücksetzen\"-"
+"Formular auf der Login-Seite nutzt."
 msgid "Deactivate Account"
 msgstr "Account deaktivieren"
 

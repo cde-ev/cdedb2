@@ -1217,7 +1217,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
-    @access("core_admin")
+    @access("core_admin", modi={"POST"})
     def admin_send_password_reset_link(self, rs, persona_id):
         """Generate a password reset email for an arbitrary persona.
 

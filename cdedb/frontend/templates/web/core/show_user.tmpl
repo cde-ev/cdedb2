@@ -57,10 +57,6 @@
                     {{ util.href(cdedblink("core/show_history"), gettext("History"), aclass="btn btn-info btn-sm",
                             icon="time") }}
                 {% endif %}
-                {% if "core_admin" in user.roles and data['id'] != user.persona_id %}
-                    {{ util.href(cdedblink("core/admin_send_password_reset_link"), gettext("Send Password Reset Link"),
-                                 icon="send", aclass="btn btn-sm btn-warning") }}
-                {% endif %}
             {% endif %}
         </div>
     {% endif %}
@@ -357,6 +353,31 @@
     {% if data['id'] != user.persona_id and (is_relative_admin or "core_admin" in user.roles) %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
+                {% if data['id'] != user.persona_id %}
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="p">
+                                <form action="{{ cdedblink('core/admin_send_password_reset_link') }}"
+                                      method="POST" id="sendpasswordresetform" style="display: inline;">
+                                    {{ util.anti_csrf_token('core/admin_send_password_reset_link') }}
+                                    {{ util.input_submit(value=gettext("Send Password Reset Link"), icon="send",
+                                            aclass="btn btn-sm btn-warning") }}
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <p class="text-muted">
+                                {% if data['is_active'] %}
+                                    {% trans -%}
+                                    	Sends an email to this user, which contains a password reset link. This is
+                                        basically the same as any non-admin user can achieve using the "Reset Password"
+                                        form on the login page.
+                                    {%- endtrans %}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
                 {% if is_relative_admin %}
                     <div class="row">
                         <div class="col-sm-4">
