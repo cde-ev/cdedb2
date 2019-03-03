@@ -506,10 +506,12 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
         anid, errs = validate.check_cdedbid(phrase, "phrase")
         if not errs:
-            return self.redirect_show_user(rs, anid)
+            if self.coreproxy.verify_ids(rs, (anid,)):
+                return self.redirect_show_user(rs, anid)
         anid, errs = validate.check_id(phrase, "phrase")
         if not errs:
-            return self.redirect_show_user(rs, anid)
+            if self.coreproxy.verify_ids(rs, (anid,)):
+                return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         search = [("username,family_name,given_names,display_name",
                    QueryOperators.similar, t) for t in terms]
