@@ -70,6 +70,7 @@ I18N_STRINGS = (
     n_("EventLogCodes.track_removed"),
     n_("EventLogCodes.course_created"),
     n_("EventLogCodes.course_changed"),
+    n_("EventLogCodes.course_deleted"),
     n_("EventLogCodes.course_segments_changed"),
     n_("EventLogCodes.course_segment_activity_changed"),
     n_("EventLogCodes.registration_created"),
@@ -119,10 +120,11 @@ I18N_STRINGS = (
 
     n_("MemberChangeStati.pending"),
     n_("MemberChangeStati.committed"),
-    n_("MemberChangeStati.superseeded"),
+    n_("MemberChangeStati.superseded"),
     n_("MemberChangeStati.nacked"),
     n_("MemberChangeStati.displaced"),
 
+    n_("MlLogCodes.email_trouble"),
     n_("MlLogCodes.list_created"),
     n_("MlLogCodes.list_changed"),
     n_("MlLogCodes.list_deleted"),

@@ -11,6 +11,7 @@
     <h1 class="title">
         {% trans -%}Log{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        [{{ values['start']|int }}–{{ (values['start']|int + log|length) }}]
     </h1>
 {% endblock %}
 {% block breadcrumb %}

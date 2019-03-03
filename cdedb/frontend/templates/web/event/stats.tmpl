@@ -79,7 +79,7 @@
         </table>
     {% endwith %}
     {% if ambience['event']['tracks'] %}
-        <h3>Kursteilnehmer-Statistik</h3>
+        <h3>{% trans -%}Course Attendees Statistics{%- endtrans %}</h3>
         {% with HEADINGS = {
             'all instructors': gettext("(potential) Instructor"),
             'instructors': gettext("Instructor"),

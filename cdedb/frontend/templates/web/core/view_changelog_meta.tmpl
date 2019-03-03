@@ -76,7 +76,7 @@
           class="form-horizontal">
             {{ util.form_input_checkboxes("stati", label=gettext("Status"),
                     info=gettext("No selection means everything."),
-                    entries=enums['MemberChangeStati1']|enum_entries(processing=gettext), small=True) }}
+                    entries=enums['MemberChangeStati']|enum_entries(processing=gettext), small=True) }}
             {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
             {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
         </form>
