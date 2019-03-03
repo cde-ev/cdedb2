@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-03-03 12:41+0100\n"
+"POT-Creation-Date: 2019-03-03 16:39+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.6.0\n"
+"Generated-By: Babel 2.3.4\n"
 
 #: bin/migrate_execute.py:393
 msgid "Initial import."
@@ -910,7 +910,7 @@ msgstr "Abbrechen"
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:35
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:77
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:35
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:98
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:102
 #: cdedb/frontend/templates/web/core/change_user.tmpl:85
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:70
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:29
@@ -939,7 +939,7 @@ msgstr "Finanzvorstand Vorname"
 
 #: cdedb/i18n_additional.py:246
 msgid "Finanzvorstand_Ort"
-msgstr "Finanzorstand Ort"
+msgstr "Finanzvorstand Ort"
 
 #: cdedb/i18n_additional.py:247
 msgid "Finanzvorstand_Adresse_Einzeiler"
@@ -974,10 +974,14 @@ msgid "CdE_Konto_Institut"
 msgstr "CdE Konto Kreditinstitut"
 
 #: cdedb/i18n_additional.py:255
+msgid "Vorstand"
+msgstr ""
+
+#: cdedb/i18n_additional.py:256
 msgid "banner_before_login"
 msgstr "Banner bevor Login"
 
-#: cdedb/i18n_additional.py:256
+#: cdedb/i18n_additional.py:257
 msgid "banner_after_login"
 msgstr "Banner nach Login"
 
@@ -1427,7 +1431,7 @@ msgstr "Unzulässiger Bereich."
 
 #: cdedb/backend/assembly.py:216 cdedb/backend/assembly.py:956
 #: cdedb/backend/event.py:160 cdedb/backend/event.py:192
-#: cdedb/backend/past_event.py:468 cdedb/frontend/common.py:900
+#: cdedb/backend/past_event.py:468 cdedb/frontend/common.py:899
 msgid "No input specified."
 msgstr "Keine Eingabe gemacht."
 
@@ -1564,7 +1568,7 @@ msgstr "Kein Saldo für fehlgeschlagene Transaktion angegeben."
 #: cdedb/backend/cde.py:383 cdedb/backend/common.py:537
 #: cdedb/database/constants.py:212 cdedb/database/constants.py:230
 #: cdedb/frontend/cde.py:475 cdedb/frontend/cde.py:610
-#: cdedb/frontend/common.py:1166
+#: cdedb/frontend/common.py:1165
 msgid "Impossible."
 msgstr "Unmöglich."
 
@@ -2327,83 +2331,83 @@ msgstr "Kurs erstellt"
 msgid "Participant already present."
 msgstr "Teilnehmer bereits vorhanden."
 
-#: cdedb/frontend/common.py:163 cdedb/frontend/common.py:964
+#: cdedb/frontend/common.py:163 cdedb/frontend/common.py:963
 msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:902
+#: cdedb/frontend/common.py:901
 msgid "Ambiguous input."
 msgstr "Uneindeutige Eingabe."
 
-#: cdedb/frontend/common.py:966
+#: cdedb/frontend/common.py:965
 msgid "The database currently undergoes maintenance and is unavailable."
 msgstr ""
 "Es werden derzeit Wartungsarbeiten an der Datenbank vorgenommen und diese"
 " ist daher leider nicht verfügbar."
 
-#: cdedb/frontend/common.py:1009
+#: cdedb/frontend/common.py:1008
 msgid "Subject"
 msgstr "Betreff"
 
-#: cdedb/frontend/common.py:1014
+#: cdedb/frontend/common.py:1013
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1142 cdedb/frontend/core.py:1616
+#: cdedb/frontend/common.py:1141 cdedb/frontend/core.py:1616
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
-#: cdedb/frontend/common.py:1143 cdedb/frontend/core.py:710
+#: cdedb/frontend/common.py:1142 cdedb/frontend/core.py:710
 #: cdedb/frontend/core.py:902
 msgid "Change pending."
 msgstr "Die Änderung wartet auf Bestätigung."
 
-#: cdedb/frontend/common.py:1144
+#: cdedb/frontend/common.py:1143
 msgid "Change failed."
 msgstr "Änderung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:1214
+#: cdedb/frontend/common.py:1213
 msgid "{}.tex"
 msgstr "{}.tex"
 
-#: cdedb/frontend/common.py:1221
+#: cdedb/frontend/common.py:1220
 msgid "{}.pdf"
 msgstr "{}.pdf"
 
-#: cdedb/frontend/common.py:1343
+#: cdedb/frontend/common.py:1342
 msgid "Inconsistent request."
 msgstr "Inkonsistenter Request."
 
-#: cdedb/frontend/common.py:1414
+#: cdedb/frontend/common.py:1413
 msgid "Object {param}={value} not found"
 msgstr "Objekt {param}={value} wurde nicht gefunden."
 
-#: cdedb/frontend/common.py:1455
+#: cdedb/frontend/common.py:1454
 msgid "You must login."
 msgstr "Login benötigt."
 
-#: cdedb/frontend/common.py:1459
+#: cdedb/frontend/common.py:1458
 msgid "Access denied to {realm}/{endpoint}."
 msgstr "Zugriff auf {realm}/{endpoint} verweigert."
 
-#: cdedb/frontend/common.py:1520
+#: cdedb/frontend/common.py:1519
 msgid "Magic URL parameter replacement failed."
 msgstr "Ersetzung magischer URL-Parameter fehlgeschlagen."
 
-#: cdedb/frontend/common.py:1646
+#: cdedb/frontend/common.py:1645
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
 
-#: cdedb/frontend/common.py:1779
+#: cdedb/frontend/common.py:1778
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
 
-#: cdedb/frontend/common.py:1784
+#: cdedb/frontend/common.py:1783
 msgid "This event is locked for offline usage."
 msgstr "Diese Veranstaltung ist für die Offline-Nutzung gesperrt."
 
-#: cdedb/frontend/common.py:1810
+#: cdedb/frontend/common.py:1809
 msgid "This page can only be accessed by the mailinglist's moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen"
 
@@ -2418,7 +2422,7 @@ msgstr "Nicht unterstützte Sprache"
 #: cdedb/frontend/core.py:285 cdedb/frontend/core.py:1252
 #: cdedb/frontend/core.py:1264 cdedb/frontend/core.py:1323
 #: cdedb/frontend/core.py:1335 cdedb/frontend/core.py:1457
-#: cdedb/frontend/ml.py:497
+#: cdedb/frontend/ml.py:511
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
@@ -2608,8 +2612,8 @@ msgid "into their {}. choice"
 msgstr "in ihre {}. Wahl"
 
 #: cdedb/frontend/event.py:1145
-msgid "in the course …"
-msgstr "in den Kurs …"
+msgid "in the course â¦"
+msgstr ""
 
 #: cdedb/frontend/event.py:1147
 msgid "automatically"
@@ -2906,27 +2910,27 @@ msgstr "Veranstaltung archiviert."
 msgid "Created multiple past events."
 msgstr "Mehrere vergangene Veranstaltungen erstellt."
 
-#: cdedb/frontend/ml.py:349
+#: cdedb/frontend/ml.py:363
 msgid "Not allowed to remove yourself as moderator."
 msgstr "Du kannst Dich nicht selbst als moderator entfernen."
 
-#: cdedb/frontend/ml.py:449
+#: cdedb/frontend/ml.py:463
 msgid "Subscription request awaits moderation."
 msgstr "Abonnement wird durch einen Moderator geprüft."
 
-#: cdedb/frontend/ml.py:464 cdedb/frontend/ml.py:502
+#: cdedb/frontend/ml.py:478 cdedb/frontend/ml.py:516
 msgid "Not subscribed."
 msgstr "Nicht abonniert."
 
-#: cdedb/frontend/ml.py:470 cdedb/frontend/ml.py:508
+#: cdedb/frontend/ml.py:484 cdedb/frontend/ml.py:522
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
-#: cdedb/frontend/ml.py:483
+#: cdedb/frontend/ml.py:497
 msgid "Confirm email address for CdE mailing list"
 msgstr "E-Mail-Adresse für Mailingliste bestätigen"
 
-#: cdedb/frontend/ml.py:486
+#: cdedb/frontend/ml.py:500
 msgid "Confirmation email sent."
 msgstr "Verifizierungsemail verschickt."
 
@@ -3166,7 +3170,7 @@ msgstr ""
 "geändert, bevor der Fehler aufgetreten ist?"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:21
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:28
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:27
 #: cdedb/frontend/templates/web/core/change_user.tmpl:27
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:51
 #: cdedb/frontend/templates/web/core/show_user.tmpl:87
@@ -3188,7 +3192,7 @@ msgstr "Person"
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:29
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:21
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:30
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:29
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:28
 #: cdedb/frontend/templates/web/core/change_user.tmpl:28
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:52
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:76
@@ -3208,7 +3212,7 @@ msgstr "Titel"
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:44
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:27
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:30
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:29
 #: cdedb/frontend/templates/web/core/change_user.tmpl:29
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:23
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:26
@@ -3223,8 +3227,9 @@ msgid "Given Names"
 msgstr "Vorname(n)"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:46
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:27
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:31
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:30
 #: cdedb/frontend/templates/web/core/change_user.tmpl:30
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:24
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:27
@@ -3238,7 +3243,7 @@ msgid "Family Name"
 msgstr "Nachname"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:33
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:32
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:57
 #: cdedb/frontend/templates/web/core/show_history.tmpl:119
 #: cdedb/frontend/templates/web/core/show_user.tmpl:95
@@ -3249,7 +3254,7 @@ msgid "Birth Name"
 msgstr "Geburtsname"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:35
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:34
 #: cdedb/frontend/templates/web/core/change_user.tmpl:31
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:55
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:77
@@ -3261,7 +3266,7 @@ msgstr "Geburtsname"
 msgid "Name Affix"
 msgstr "Namenszusatz"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:36
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:35
 #: cdedb/frontend/templates/web/core/change_user.tmpl:32
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:56
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:54
@@ -3272,7 +3277,7 @@ msgstr "Namenszusatz"
 msgid "First Given Name"
 msgstr "Rufname"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:81
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:80
 #: cdedb/frontend/templates/web/core/change_user.tmpl:68
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:94
 #: cdedb/frontend/templates/web/core/show_history.tmpl:256
@@ -3283,7 +3288,7 @@ msgstr "Rufname"
 msgid "Specialisation"
 msgstr "Fachgebiet"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:84
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:83
 #: cdedb/frontend/templates/web/core/change_user.tmpl:71
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:95
 #: cdedb/frontend/templates/web/core/show_history.tmpl:257
@@ -3294,7 +3299,7 @@ msgstr "Fachgebiet"
 msgid "School, University, …"
 msgstr "Schule, Uni, …"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:87
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:86
 #: cdedb/frontend/templates/web/core/change_user.tmpl:74
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:96
 #: cdedb/frontend/templates/web/core/show_history.tmpl:258
@@ -3306,7 +3311,7 @@ msgid "Year(s) of Graduation"
 msgstr "Jahrgang, Matrikel, …"
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:50
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:90
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:89
 #: cdedb/frontend/templates/web/core/change_user.tmpl:77
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:97
 #: cdedb/frontend/templates/web/core/show_history.tmpl:259
@@ -3317,8 +3322,8 @@ msgstr "Jahrgang, Matrikel, …"
 msgid "Interests"
 msgstr "Interessen"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:80
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:93
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:79
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:92
 #: cdedb/frontend/templates/web/core/change_user.tmpl:67
 #: cdedb/frontend/templates/web/core/change_user.tmpl:80
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:93
@@ -3335,7 +3340,7 @@ msgid "Miscellaneous"
 msgstr "Sonstiges"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:39
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:38
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:45
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:40
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:61
@@ -3356,7 +3361,7 @@ msgid "Gender"
 msgstr "Geschlecht"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:50
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:40
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:39
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:46
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:42
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:58
@@ -3374,7 +3379,7 @@ msgstr "Geschlecht"
 msgid "Birthday"
 msgstr "Geburtstag"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:52
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:51
 #: cdedb/frontend/templates/web/core/change_user.tmpl:39
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:73
 #: cdedb/frontend/templates/web/core/show_history.tmpl:216
@@ -3407,7 +3412,7 @@ msgid "E-Mail"
 msgstr "E-Mail"
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:67
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:55
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:54
 #: cdedb/frontend/templates/web/core/change_user.tmpl:44
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:48
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:44
@@ -3425,7 +3430,7 @@ msgstr "E-Mail"
 msgid "Phone"
 msgstr "Telefon"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:56
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:55
 #: cdedb/frontend/templates/web/core/change_user.tmpl:45
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:49
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:45
@@ -3443,7 +3448,7 @@ msgstr "Telefon"
 msgid "Mobilephone"
 msgstr "Mobiltelefon"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:59
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:58
 #: cdedb/frontend/templates/web/core/change_user.tmpl:48
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:77
 #: cdedb/frontend/templates/web/core/show_history.tmpl:221
@@ -3458,7 +3463,7 @@ msgstr "WWW"
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:46
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:48
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:69
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:63
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:62
 #: cdedb/frontend/templates/web/core/change_user.tmpl:52
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:79
 #: cdedb/frontend/templates/web/core/show_history.tmpl:228
@@ -3476,8 +3481,8 @@ msgid "Address"
 msgstr "Adresse"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:64
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:72
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:63
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:71
 #: cdedb/frontend/templates/web/core/change_user.tmpl:53
 #: cdedb/frontend/templates/web/core/change_user.tmpl:61
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:50
@@ -3494,8 +3499,8 @@ msgstr "Straße"
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:30
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:47
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:65
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:73
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:64
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:72
 #: cdedb/frontend/templates/web/core/change_user.tmpl:54
 #: cdedb/frontend/templates/web/core/change_user.tmpl:62
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:51
@@ -3515,8 +3520,8 @@ msgid "Address Supplement"
 msgstr "Adresszusatz"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:66
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:74
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:65
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:73
 #: cdedb/frontend/templates/web/core/change_user.tmpl:55
 #: cdedb/frontend/templates/web/core/change_user.tmpl:63
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:52
@@ -3532,8 +3537,8 @@ msgstr "Postleitzahl"
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:36
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:50
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:72
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:67
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:75
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:66
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:74
 #: cdedb/frontend/templates/web/core/change_user.tmpl:56
 #: cdedb/frontend/templates/web/core/change_user.tmpl:64
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:53
@@ -3554,8 +3559,8 @@ msgstr "Ort"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:50
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:74
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:68
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:76
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:67
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:75
 #: cdedb/frontend/templates/web/core/change_user.tmpl:57
 #: cdedb/frontend/templates/web/core/change_user.tmpl:65
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:54
@@ -3574,7 +3579,7 @@ msgstr "Ort"
 msgid "Country"
 msgstr "Land"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:71
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:70
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:86
 #: cdedb/frontend/templates/web/core/show_history.tmpl:241
 #: cdedb/frontend/templates/web/core/show_user.tmpl:286
@@ -3600,7 +3605,7 @@ msgstr "Account"
 msgid "CdE-Member"
 msgstr "CdE-Mitglied"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:45
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:44
 #: cdedb/frontend/templates/web/core/show_history.tmpl:197
 #: cdedb/frontend/templates/web/generic.tmpl:62
 #: cdedb/frontend/templates/web/generic.tmpl:190
@@ -3614,7 +3619,7 @@ msgstr "Sichtbarkeit (falls Einwilligung vorhanden)"
 msgid "Trial Member"
 msgstr "Probemitgliedschaft"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:46
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:45
 #: cdedb/frontend/templates/web/core/change_user.tmpl:36
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:71
 #: cdedb/frontend/templates/web/core/show_history.tmpl:208
@@ -3655,11 +3660,11 @@ msgstr "Notizen"
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:25
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:32
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:45
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:82
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:85
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:88
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:91
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:94
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:81
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:84
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:87
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:90
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:93
 #: cdedb/frontend/templates/web/core/change_user.tmpl:69
 #: cdedb/frontend/templates/web/core/change_user.tmpl:72
 #: cdedb/frontend/templates/web/core/change_user.tmpl:75
@@ -3694,12 +3699,12 @@ msgstr "Unterstützt Markdown %(infolink)s"
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:26
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:33
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:46
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:50
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:83
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:86
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:89
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:92
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:95
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:49
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:82
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:85
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:88
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:91
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:94
 #: cdedb/frontend/templates/web/core/change_user.tmpl:70
 #: cdedb/frontend/templates/web/core/change_user.tmpl:73
 #: cdedb/frontend/templates/web/core/change_user.tmpl:76
@@ -3846,7 +3851,7 @@ msgstr "Suchbarkeit entschieden"
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:32
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:43
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:97
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:48
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:47
 #: cdedb/frontend/templates/web/core/show_history.tmpl:209
 #: cdedb/frontend/templates/web/core/show_user.tmpl:169
 #: cdedb/frontend/templates/web/generic.tmpl:188
@@ -5216,10 +5221,6 @@ msgstr ""
 "mit %(tab)s fokussieren und so zunächst den Kandidaten und dann die Ziel-"
 "Box mit %(enter)s oder %(space)s auswählen."
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:549
-msgid "TAB"
-msgstr "TAB"
-
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:550
 msgid "ENTER"
 msgstr "Enter"
@@ -5227,6 +5228,10 @@ msgstr "Enter"
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:551
 msgid "Space"
 msgstr "Leertaste"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:549
+msgid "TAB"
+msgstr "TAB"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:560
 msgid ""
@@ -6366,10 +6371,6 @@ msgid_plural "%(count)s Members found"
 msgstr[0] "%(count)s Mitglied gefunden"
 msgstr[1] "%(count)s Mitglieder gefunden"
 
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:46
-msgid "Family/Birth Name"
-msgstr "Nachname/Geburtsname"
-
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:60
 msgid "Course choices will be displayed after first search."
 msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
@@ -6722,14 +6723,16 @@ msgstr "%(given_names)s %(family_name)s bearbeiten"
 msgid "Edit Userdata"
 msgstr "Daten bearbeiten"
 
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:27
-msgid "Changenotes"
-msgstr "Änderungs-Kommentar"
-
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:49
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:48
 #, python-format
 msgid "Visible to all Admins, supports Markdown with auto linebreaks %(infolink)s"
-msgstr "Für alle Admins sichtbar, unterstützt Markdown mit Zeilenumbrüchen %(infolink)s"
+msgstr ""
+"Für alle Admins sichtbar, unterstützt Markdown mit Zeilenumbrüchen "
+"%(infolink)s"
+
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:99
+msgid "Changenotes"
+msgstr "Änderungs-Kommentar"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
@@ -8339,10 +8342,6 @@ msgstr "in Kurschienen"
 msgid "%(assign)s %(participants)s %(course)s %(tracks)s %(submit)s"
 msgstr "%(participants)s %(tracks)s %(course)s %(assign)s %(submit)s"
 
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:107
-msgid "Assign"
-msgstr "einteilen."
-
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:108
 msgid "selected participants"
 msgstr "Die ausgewählten Teilnehmer"
@@ -8350,6 +8349,10 @@ msgstr "Die ausgewählten Teilnehmer"
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:111
 msgid "Assignment Method"
 msgstr "Einteilungsverfahren"
+
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:107
+msgid "Assign"
+msgstr "einteilen."
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:137
 msgid "View Registrations"
@@ -9974,4 +9977,10 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:5
 msgid "Mailinglists Log"
 msgstr "Mailinglisten Log"
+
+#~ msgid "in the course …"
+#~ msgstr "in den Kurs …"
+
+#~ msgid "Family/Birth Name"
+#~ msgstr "Nachname/Geburtsname"
 

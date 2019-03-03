@@ -252,6 +252,7 @@ I18N_STRINGS = (
     n_("CdE_Konto_IBAN"),
     n_("CdE_Konto_BIC"),
     n_("CdE_Konto_Institut"),
+    n_("Vorstand"),
     n_("banner_before_login"),
     n_("banner_after_login")
 )
