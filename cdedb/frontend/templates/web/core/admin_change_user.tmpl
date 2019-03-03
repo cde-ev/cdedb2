@@ -24,7 +24,6 @@
         class="form-horizontal">
         {{ util.anti_csrf_token('core/admin_change_user') }}
         {{ util.input_hidden(name="generation") }}
-        {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
         <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
@@ -95,6 +94,11 @@
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Short Markdown summary")))|s) }}
         {% endif %}
 
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
+            </div>
+        </div>
         {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(values['persona_id'])) }}
     </form>
 {% endblock %}
