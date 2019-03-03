@@ -511,7 +511,7 @@ class TestMlBackend(BackendTest):
                                         'inga@example.cde',
                                         'janis@example.cde',
                                         'kalif@example.cde'),
-                        'whitelist': ('honeypot@example.cde',)}
+                        'whitelist': ['honeypot@example.cde']}
         self.assertEqual(
             expectation,
             self.ml.oldstyle_mailinglist_export("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
