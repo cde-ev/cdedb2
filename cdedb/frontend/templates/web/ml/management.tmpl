@@ -46,11 +46,11 @@
                         $('#input-add-moderator').cdedbSearchPerson(
                             '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
-                            false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                            false, false, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Add Moderator"), aclass="btn btn-success") }}
+                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
                 {{ util.output_errors('moderator_id', wrapper=True) }}

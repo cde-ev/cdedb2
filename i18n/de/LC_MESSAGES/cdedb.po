@@ -9250,7 +9250,7 @@ msgid "ID of the new Orga"
 msgstr "ID des neuen Orgas"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:136
-msgid "ID, Name, E-Mail"
+msgid "ID, name, email"
 msgstr "ID, Name, E-Mail"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:149

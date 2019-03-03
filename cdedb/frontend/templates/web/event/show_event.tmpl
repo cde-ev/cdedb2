@@ -133,7 +133,7 @@
                                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=orga_event_user&phrase=%s&aux='|s) + 
                                     (ambience['event']['id']|string|e) }}',
                                 {{ ambience['event']['orgas']|list|json|s }}, false, false,
-                                "{{ gettext("ID, Name, E-Mail") }}"
+                                "{{ gettext("ID, name, email") }}"
                             );
                         </script>
                         <div class="input-group-btn">
