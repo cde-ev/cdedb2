@@ -155,11 +155,18 @@ class MlFrontend(AbstractUserFrontend):
     def create_mailinglist_form(self, rs):
         """Render form."""
         mailinglists = self.mlproxy.list_mailinglists(rs)
+        sorted_mailinglists = sorted([(k, v) for k, v in mailinglists.items()],
+                                     key=lambda x: x[1])
         events = self.eventproxy.list_db_events(rs)
+        sorted_events = sorted([(k, v) for k, v in events.items()],
+                               key=lambda x: x[1])
         assemblies = self.assemblyproxy.list_assemblies(rs)
+        sorted_assemblies = sorted([(k, v["title"]) for k, v in assemblies.items()],
+                                   key=lambda x: x[1])
         return self.render(rs, "create_mailinglist", {
-            "mailinglists": mailinglists, "events": events,
-            "assemblies": assemblies})
+            'sorted_mailinglists': sorted_mailinglists,
+            'sorted_events': sorted_events,
+            'sorted_assemblies': sorted_assemblies})
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdatadict(
@@ -259,12 +266,19 @@ class MlFrontend(AbstractUserFrontend):
     def change_mailinglist_form(self, rs, mailinglist_id):
         """Render form."""
         mailinglists = self.mlproxy.list_mailinglists(rs)
+        sorted_mailinglists = sorted([(k, v) for k, v in mailinglists.items()],
+                                     key=lambda x: x[1])
         events = self.eventproxy.list_db_events(rs)
+        sorted_events = sorted([(k, v) for k, v in events.items()],
+                               key=lambda x: x[1])
         assemblies = self.assemblyproxy.list_assemblies(rs)
+        sorted_assemblies = sorted([(k, v["title"]) for k, v in assemblies.items()],
+                                   key=lambda x: x[1])
         merge_dicts(rs.values, rs.ambience['mailinglist'])
         return self.render(rs, "change_mailinglist", {
-            'mailinglists': mailinglists, 'events': events,
-            'assemblies': assemblies})
+            'sorted_mailinglists': sorted_mailinglists,
+            'sorted_events': sorted_events,
+            'sorted_assemblies': sorted_assemblies})
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdata(("audience_policy", "enum_audiencepolicy"),
