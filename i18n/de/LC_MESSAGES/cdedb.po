@@ -6217,7 +6217,7 @@ msgstr "Aktuell befinden sich keine Einzüge in der Schwebe."
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:125
 msgid "All active Authorizations"
-msgstr "Alle aktiven Einzugsermöchtigungen"
+msgstr "Alle aktiven Einzugsermächtigungen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:6
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:12
