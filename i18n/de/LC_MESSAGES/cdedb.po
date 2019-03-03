@@ -9162,6 +9162,9 @@ msgstr "Verwendungszweck"
 msgid "here"
 msgstr "hier"
 
+msgid "Any"
+msgstr "bel."
+
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:65
 #, python-format
 msgid ""

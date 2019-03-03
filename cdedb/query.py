@@ -282,6 +282,8 @@ QUERY_SPECS = {
             ("is_cde_admin", "bool"),
             ("is_core_admin", "bool"),
             ("is_admin", "bool"),
+            ("is_ml_admin,is_event_admin,is_assembly_admin,is_cde_admin,"
+             "is_core_admin,is_admin", "bool"),
             ("pevent_id", "id"),
             ("notes", "str"),
             ("fulltext", "str"),
