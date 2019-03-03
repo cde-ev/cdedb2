@@ -1,6 +1,7 @@
 {% set sidenav_active='core_meta' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}
     {% trans -%}
     	Metadata
@@ -11,6 +12,11 @@
 {{ util.breadcrumb_link(cdedblink("core/meta_info_form"), gettext("Metadata"), active="True") }}
 {% endblock %}
 {% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#changeinfoform').cdedbProtectChanges();
+        });
+    </script>
     <form action="{{ cdedblink('core/change_meta_info') }}" method="POST" id="changeinfoform" class="form-horizontal">
         {{ util.anti_csrf_token('core/change_meta_info') }}
         {% for key in ("Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
