@@ -12,6 +12,9 @@
     {% trans -%}
         Unfortunately the Direct Debit Authorization Form is only available in German.
     {%- endtrans %}
+    {% trans -%}
+        Direct Debit is only available for Accounts within the Single Euro Payments Area (SEPA).
+    {%- endtrans %}
     <form action="{{ cdedblink('cde/lastschrift_subscription_form') }}" method="GET"
           id="filllastschriftform" class="form-horizontal">
 

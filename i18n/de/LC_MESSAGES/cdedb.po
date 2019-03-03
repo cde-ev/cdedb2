@@ -6295,8 +6295,16 @@ msgid ""
 "German."
 msgstr "Leider gibt es das Einzugsermächtigungsformular nur auf Deutsch."
 
-#: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:22
-#: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:39
+#: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:15
+msgid ""
+"Direct Debit is only available for Accounts within the Single Euro "
+"Payments Area (SEPA)."
+msgstr ""
+"Lastschrifteinzug ist nur innerhalb des Europäischen Zahlungsraums (SEPA)"
+" möglich."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:25
+#: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:42
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:66
 #: cdedb/frontend/templates/web/core/show_user.tmpl:112
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:30
