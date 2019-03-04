@@ -397,8 +397,16 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
-        new_username = "zelda@example.cde"
+        # First test with current username
+        current_username = user['username']
         self.traverse({'href': '/core/self/show'}, {'href': '/core/self/username/change'})
+        f = self.response.forms['usernamechangeform']
+        f['new_username'] = current_username
+        self.submit(f, check_notification=False)
+        self.assertPresence("Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
+        self.assertNonPresence("E-Mail abgeschickt!", div="notifications")
+        # Now with new username
+        new_username = "zelda@example.cde"
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username
         self.submit(f)
