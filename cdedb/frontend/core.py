@@ -1300,6 +1300,10 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("new_username", "email"))
     def send_username_change_link(self, rs, new_username):
         """First verify new name with test email."""
+        if new_username == rs.user.username:
+            rs.errors.append(("new_username", ValueError(n_("Must be different "
+                                                            "from current "
+                                                            "username."))))
         if rs.errors:
             return self.change_username_form(rs)
         self.do_mail(rs, "change_username",
@@ -1337,7 +1341,7 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code, success=n_("Username changed."),
                                 error=message)
         if not code:
-            return self.redirect(rs, "core/username_change_form")
+            return self.redirect(rs, "core/change_username_form")
         else:
             return self.redirect(rs, "core/index")
 
