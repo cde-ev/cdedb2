@@ -21,7 +21,7 @@
     {{ ambience['assembly']['description']|md }}
 
     <dl class="dl-horizontal">
-        <dt>Anmeldeschluss</dt>
+        <dt>{% trans -%}Participation Deadline{%- endtrans %}</dt>
         <dd>{{ ambience['assembly']['signup_end']|datetime(lang=lang) }}</dd>
         <dt>{% trans -%}Participationstatus{%- endtrans %}</dt>
         <dd>

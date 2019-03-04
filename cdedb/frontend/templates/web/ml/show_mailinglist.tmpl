@@ -70,7 +70,7 @@
     {% if not ambience['mailinglist']['is_active'] %}
         <p class="text-warning"><strong>{% trans -%}This mailinglist is inactive.{%- endtrans %}</strong></p>
     {% else %}
-        {% call util.bootstrap_panel(title="Dein Abonnement",
+        {% call util.bootstrap_panel(title=gettext("Your Subscription"),
                                      aclass=("panel-success" if is_subscribed else "panel-default")) %}
                 {% if is_subscribed %}
                     <p class="text-success"><strong>
