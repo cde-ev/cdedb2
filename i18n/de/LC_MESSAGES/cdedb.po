@@ -9487,7 +9487,7 @@ msgstr "Kurs %(track)s"
 
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:269
 msgid "The registration will be permanently deleted."
-msgstr "Die Anmeldung wir dirreversibel gelöscht."
+msgstr "Die Anmeldung wird irreversibel gelöscht."
 
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:276
 msgid "Deletes the registration including all information shown here."

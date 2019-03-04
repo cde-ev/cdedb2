@@ -124,8 +124,8 @@
                 {% set mix_info = "" %}
             {% endif %}
             {{ util.form_input_select(name="mixed_lodging", entries=(
-                (True, "I agree to mixed lodging."),
-                (False, "I want to be lodged seperated by gender.")),
+                (True, gettext("I agree to mixed lodging.")),
+                (False, gettext("I want to be lodged seperated by gender."))),
                 label=gettext("Mixed Lodging"), info=mix_info) }}
         {% endif %}
         {{ util.form_input_static(value=gettext("In the context of this event, photos and recordings will be made to "
