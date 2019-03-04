@@ -56,7 +56,7 @@
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|dictsort
-                if field['kind'] == "str" and field['association'] == enums['FieldAssociations'].registration %}
+                if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
@@ -65,7 +65,7 @@
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|dictsort
-                if field['kind'] == "bool" and field['association'] == enums['FieldAssociations'].registration %}
+                if field['kind'] == enums['FieldDatatypes'].bool and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="reserve_field", label=gettext("Field for Camping Mat"), entries=myentries,
