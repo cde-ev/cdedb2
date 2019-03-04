@@ -321,7 +321,7 @@
             <h4 class="heading-underline">{% trans -%}Past Events{%- endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
-                {% for pevent_id, pevent in past_events|xdictsort('tempus') %}
+                {% for pevent_id, pevent in past_events|xdictsort('tempus', reverse=True) %}
                     <tr>
                         <td>
                             {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
