@@ -6430,6 +6430,9 @@ msgid_plural "%(count)s Members found"
 msgstr[0] "%(count)s Mitglied gefunden"
 msgstr[1] "%(count)s Mitglieder gefunden"
 
+msgid "Only the first %(cutoff)s results are displayed"
+msgstr "Nur die ersten %(cutoff)s Ergebnisse werden angezeigt"
+
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:60
 msgid "Course choices will be displayed after first search."
 msgstr "Kursauswahl wird nach der ersten Suche angezeigt."

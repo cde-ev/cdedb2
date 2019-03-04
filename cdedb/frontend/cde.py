@@ -203,12 +203,16 @@ class CdEFrontend(AbstractUserFrontend):
             if len(result) == 1:
                 return self.redirect_show_user(rs, result[0]['id'],
                                                quote_me=True)
-            if (len(result) > self.conf.MAX_MEMBER_SEARCH_RESULTS
-                    and not self.is_admin(rs)):
-                result = result[:self.conf.MAX_MEMBER_SEARCH_RESULTS]
+            count = len(result)
+            cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
+            if count > cutoff and not self.is_admin(rs):
+                result = result[:cutoff]
                 rs.notify("info", n_("Too many query results."))
         return self.render(rs, "member_search", {
-            'spec': spec, 'choices': choices, 'result': result})
+            'spec': spec, 'choices': choices, 'result': result,
+            'cutoff': 0 if self.is_admin(rs) else cutoff,
+            'count': count,
+        })
 
     @access("cde_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
