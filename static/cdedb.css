@@ -518,6 +518,15 @@ tr.drow-delete>td, tr.drow-delete1>td {
     text-decoration: line-through;
 }
 
+/* Profile's past event table */
+.past-event-table>tbody>tr:first-child>td {
+    border-top: none;
+}
+@media (min-width: 510px) {
+    .past-event-table > tbody > tr > td:first-child {
+        min-width: 240px;
+    }
+}
 
 /* Profile history */
 .history-row {

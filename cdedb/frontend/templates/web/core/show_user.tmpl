@@ -319,32 +319,34 @@
 
         {% if past_events %}
             <h4 class="heading-underline">{% trans -%}Past Events{%- endtrans %}</h4>
-            <table class="table table-hover ">
-            {% for pevent_id, pevent in past_events|xdictsort('tempus') %}
-                <tr>
-                    <td class="col-xs-3">
-                        {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
-                                     pevent['event_name'], readonly='cde' not in user.roles) -}}
-                    </td>
-                    <td class="col-xs-9">
-                        {% if pevent['is_orga'] %}
-                            (Orga) <br />
-                        {% endif %}
-                        {% if pevent['courses'] -%}
-                            {% for pcourse_id, pcourse in pevent['courses']|xdictsort('nr', pad=True) %}
-                                {{ pcourse['nr'] }}.
-                                {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent_id,
-                                                                                "pcourse_id": pcourse_id}),
-                                             pcourse['course_name'], readonly='cde' not in user.roles) }}
-                                {%- if pcourse['is_instructor'] %}
-                                    {% trans -%}(Instructor){%- endtrans %}
-                                {%- endif -%}
-                                {% if not loop.last %}<br />{% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
+            <table class="table table-hover past-event-table">
+            <tbody>
+                {% for pevent_id, pevent in past_events|xdictsort('tempus') %}
+                    <tr>
+                        <td>
+                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
+                                         pevent['event_name'], readonly='cde' not in user.roles) -}}
+                        </td>
+                        <td>
+                            {% if pevent['is_orga'] %}
+                                (Orga) <br />
+                            {% endif %}
+                            {% if pevent['courses'] -%}
+                                {% for pcourse_id, pcourse in pevent['courses']|xdictsort('nr', pad=True) %}
+                                    {{ pcourse['nr'] }}.
+                                    {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent_id,
+                                                                                    "pcourse_id": pcourse_id}),
+                                                 pcourse['course_name'], readonly='cde' not in user.roles) }}
+                                    {%- if pcourse['is_instructor'] %}
+                                        {% trans -%}(Instructor){%- endtrans %}
+                                    {%- endif -%}
+                                    {% if not loop.last %}<br />{% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
             </table>
         {% endif %}
         {%  if is_admin and data["is_cde_realm"] %}
