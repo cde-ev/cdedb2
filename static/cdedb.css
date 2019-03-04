@@ -29,7 +29,7 @@ body{
     position: absolute;
     height: 420px;
     width: 50px;
-    top: 40px;
+    top: 65px;
     left: -60px;
     content: " ";
     background: url(dots.png);
