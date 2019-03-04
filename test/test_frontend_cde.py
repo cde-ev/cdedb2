@@ -1514,7 +1514,7 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/past/log'})
-        self.assertTitle("Verg. -Veranstaltungen-Log [0–8]")
+        self.assertTitle("Verg.-Veranstaltungen-Log [0–8]")
         f = self.response.forms['logshowform']
         f['codes'] = [1, 10, 21]
         f['start'] = 1

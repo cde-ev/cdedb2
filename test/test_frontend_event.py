@@ -1605,7 +1605,7 @@ etc;anything else""", f['entries_2'].value)
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Veranstaltungen Log [1–2]")
+        self.assertTitle("Veranstaltungen-Log [1–2]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
