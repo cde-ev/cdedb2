@@ -373,7 +373,7 @@ class CoreBackend(AbstractBackend):
                     "generation": next_generation + 1,
                     "change_status": const.MemberChangeStati.pending,
                     "persona_id": data['id'],
-                    "change_note": n_("Displaced change."),
+                    "change_note": "Verdrängte Änderung.",
                 })
                 del insert['id']
                 self.sql_insert(rs, "core.changelog", insert)
@@ -601,7 +601,7 @@ class CoreBackend(AbstractBackend):
         if not change_note:
             self.logger.info("No change note specified (persona_id={}).".format(
                 data['id']))
-            change_note = n_("Unspecified change.")
+            change_note = "Allgemeine Änderung"
 
         current = self.sql_select_one(
             rs, "core.personas", ("is_archived", "decided_search"), data['id'])
@@ -1136,7 +1136,7 @@ class CoreBackend(AbstractBackend):
                     'id': persona_id,
                     'username': new_username,
                 }
-                change_note = n_("Username change.")
+                change_note = "E-Mail-Adresse geändert."
                 if self.set_persona(
                         rs, new, change_note=change_note, may_wait=False,
                         allow_specials=("username",)):
@@ -1333,7 +1333,7 @@ class CoreBackend(AbstractBackend):
                 "generation": 1,
                 "change_status": const.MemberChangeStati.committed,
                 "persona_id": new_id,
-                "change_note": n_("Persona creation."),
+                "change_note": "Account erstellt.",
             })
             # remove unlogged attributes
             del data['password_hash']
