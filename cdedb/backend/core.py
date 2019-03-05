@@ -1694,10 +1694,11 @@ class CoreBackend(AbstractBackend):
         if self.conf.LOCKDOWN:
             return False, n_("Lockdown active.")
         persona_id = unwrap(data)
-        ret = self.modify_password(rs, new_password, reset_cookie=cookie,
-                                   persona_id=persona_id)
-        self.core_log(rs, const.CoreLogCodes.password_reset, persona_id)
-        return ret
+        success, msg = self.modify_password(
+            rs, new_password, reset_cookie=cookie, persona_id=persona_id)
+        if success:
+            self.core_log(rs, const.CoreLogCodes.password_reset, persona_id)
+        return success, msg
 
     @access("anonymous")
     def genesis_request(self, rs, data):
@@ -1708,7 +1709,8 @@ class CoreBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: id of the new request or None if the username is already taken
+        :returns: id of the new request or None if the username is already
+          taken
         """
         data = affirm("genesis_case", data, creation=True)
         if self.verify_existence(rs, data['username']):
