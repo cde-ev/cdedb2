@@ -513,7 +513,7 @@ class CdEFrontend(AbstractUserFrontend):
                     meta_info = self.coreproxy.get_meta_info(rs)
                     self.do_mail(rs, "welcome",
                                  {'To': (datum['raw']['username'],),
-                                  'Subject': n_('CdE admission'),
+                                  'Subject': "Aufnahme in den CdE",
                                   },
                                  {'data': datum['persona'],
                                   'email': email if success else "",
@@ -984,7 +984,7 @@ class CdEFrontend(AbstractUserFrontend):
                                + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
-                              'Subject': n_('CdE money transfer received'),
+                              'Subject': "Überweisung beim CdE eingetroffen",
                               },
                              {'persona': persona, 'address': address,
                               'new_balance': new_balance})
@@ -1585,7 +1585,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.do_mail(
                     rrs, "billing",
                     {'To': (persona['username'],),
-                     'Subject': n_('Renew your CdE membership')},
+                     'Subject': "CdE-Mitgliedschaft verlängern"},
                     {'persona': persona,
                      'fee': self.conf.MEMBERSHIP_FEE,
                      'lastschrift': lastschrift,
@@ -1648,7 +1648,7 @@ class CdEFrontend(AbstractUserFrontend):
                     self.do_mail(
                         rrs, "ejection",
                         {'To': (persona['username'],),
-                         'Subject': n_('Ejection from CdE')},
+                         'Subject': "Austritt aus dem CdE e.V."},
                         {'persona': persona,
                          'fee': self.conf.MEMBERSHIP_FEE,
                          'transaction_subject': transaction_subject,
@@ -1790,7 +1790,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.do_mail(
                     rrs, "addresscheck",
                     {'To': (persona['username'],),
-                     'Subject': n_('Address check mail for exPuls')},
+                     'Subject': "Adressabfrage für exPuls"},
                     {'persona': persona,
                      'lastschrift': lastschrift,
                      'fee': self.conf.MEMBERSHIP_FEE,

@@ -2081,7 +2081,7 @@ class EventFrontend(AbstractUserFrontend):
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
-             'Subject': n_('Registered for CdE event')},
+             'Subject': "Anmeldung für CdE Veranstaltung"},
             {'fee': fee, 'age': age, 'meta_info': meta_info})
         self.notify_return_code(rs, new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")

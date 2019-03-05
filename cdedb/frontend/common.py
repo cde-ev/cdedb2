@@ -1022,7 +1022,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
         # do i18n here, so _create_mail needs to know less context
-        headers['Subject'] = rs.gettext(headers['Subject'])
+        headers['Subject'] = headers['Subject']
         msg = self._create_mail(text, headers, attachments)
         ret = self._send_mail(msg)
         if ret:

@@ -72,7 +72,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             meta_info = self.coreproxy.get_meta_info(rs)
             self.do_mail(rs, "welcome",
                          {'To': (data['username'],),
-                          'Subject': n_('CdEDB account creation'),
+                          'Subject': "CdEDB Account erstellt",
                           },
                          {'data': data,
                           'email': email if success else "",

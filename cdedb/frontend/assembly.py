@@ -254,7 +254,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             self.do_mail(
                 rs, "signup",
                 {'To': (persona['username'],),
-                 'Subject': n_('Signed up for assembly')},
+                 'Subject': "Teilnahme an CdE Versammlung"},
                 {'secret': secret, 'persona': persona},
                 attachments=(attachment,))
         else:
@@ -506,7 +506,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     rs, "ballot_tallied",
                     {'To': (self.conf.MANAGEMENT_ADDRESS,),
                      'Bcc': mails,
-                     'Subject': n_("CdE Ballot got tallied.")},
+                     'Subject': "Abstimmung wurde ausgezählt."},
                     attachments=(attachment_script, attachment_result,))
             return self.redirect(rs, "assembly/show_ballot")
         # initial checks done, present the ballot

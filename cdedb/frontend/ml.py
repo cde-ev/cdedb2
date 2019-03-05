@@ -497,7 +497,7 @@ class MlFrontend(AbstractUserFrontend):
             self.do_mail(
                 rs, "confirm_address",
                 {'To': (email,),
-                 'Subject': n_("Confirm email address for CdE mailing list")},
+                 'Subject': "E-Mail-Adresse für Mailingliste bestätigen"},
                 {'email': self.encode_parameter(
                     "ml/do_address_change", "email", email)})
             rs.notify("info", n_("Confirmation email sent."))

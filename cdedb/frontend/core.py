@@ -1196,7 +1196,7 @@ class CoreFrontend(AbstractFrontend):
         if admin_exception:
             self.do_mail(
                 rs, "admin_no_reset_password",
-                {'To': (email,), 'Subject': n_('CdEDB password reset')})
+                {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"})
             msg = "Sent password reset denial mail to admin {} for IP {}."
             self.logger.info(msg.format(email, rs.request.remote_addr))
             rs.notify("success", n_("Email sent."))
@@ -1205,7 +1205,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             self.do_mail(
                 rs, "reset_password",
-                {'To': (email,), 'Subject': n_('CdEDB password reset')},
+                {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
                     timeout=self.conf.PARAMETER_TIMEOUT),
@@ -1232,7 +1232,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             self.do_mail(
                 rs, "reset_password",
-                {'To': (email,), 'Subject': n_('CdEDB password reset')},
+                {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"},
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
                     timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
@@ -1312,7 +1312,7 @@ class CoreFrontend(AbstractFrontend):
             return self.change_username_form(rs)
         self.do_mail(rs, "change_username",
                      {'To': (new_username,),
-                      'Subject': n_('CdEDB username change')},
+                      'Subject': "CdEDB Neue E-Mail-Adresse verifizieren"},
                      {'new_username': self.encode_parameter(
                          "core/do_username_change_form", "new_username",
                          new_username)})
@@ -1439,7 +1439,7 @@ class CoreFrontend(AbstractFrontend):
             return self.genesis_request_form(rs)
         self.do_mail(rs, "genesis_verify",
                      {'To': (data['username'],),
-                      'Subject': n_('CdEDB account request'),
+                      'Subject': "CdEDB Accountanfrage verifizieren",
                       },
                      {
                          'case_id': self.encode_parameter(
@@ -1478,7 +1478,7 @@ class CoreFrontend(AbstractFrontend):
         self.do_mail(
             rs, "genesis_request",
             {'To': (notify,),
-             'Subject': n_('CdEDB account request'),
+             'Subject': "CdEDB Accountanfrage verifizieren",
              })
         return self.redirect(rs, "core/index")
 
@@ -1568,7 +1568,7 @@ class CoreFrontend(AbstractFrontend):
             self.do_mail(
                 rs, "genesis_approved",
                 {'To': (case['username'],),
-                 'Subject': n_('CdEDB account created'),
+                 'Subject': "CdEDB-Account erstellt",
                  },
                 {'case': case,
                  'email': self.encode_parameter(
@@ -1581,7 +1581,7 @@ class CoreFrontend(AbstractFrontend):
             self.do_mail(
                 rs, "genesis_declined",
                 {'To': (case['username'],),
-                 'Subject': n_('CdEDB account declined')},
+                 'Subject': "CdEDB Accountanfrage abgelehnt"},
                 {'case': case,
                  })
             rs.notify("info", n_("Case rejected."))
