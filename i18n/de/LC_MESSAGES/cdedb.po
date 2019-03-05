@@ -1783,43 +1783,47 @@ msgstr "Fehler bei verschachtelten Transaktionen."
 msgid "Preventing reset of admin."
 msgstr "Zurücksetzen von Admin-Account verhindert."
 
-#: cdedb/backend/core.py:1583
+#: cdedb/backend/core.py:1557
+msgid "Link invalid or expired."
+msgstr "Link ungültig oder ausgelaufen."
+
+#: cdedb/backend/core.py:1559
+msgid "Link already used."
+msgstr "Link wurde bereits verwendet."
+
+#: cdedb/backend/core.py:1587
 msgid "Selecting persona allowed for reset only."
 msgstr "Passwörter anderer Accounts können nur zurückgesetzt werden."
 
-#: cdedb/backend/core.py:1586
+#: cdedb/backend/core.py:1590
 msgid "Could not determine persona to reset."
 msgstr "Konnte Account für Zurücksetzen nicht finden."
 
-#: cdedb/backend/core.py:1588
+#: cdedb/backend/core.py:1592
 msgid "No authorization provided."
 msgstr "Kein Authentifizierung geliefert."
 
-#: cdedb/backend/core.py:1593
+#: cdedb/backend/core.py:1597
 msgid "Password verification failed."
 msgstr "Passwort ist falsch."
 
-#: cdedb/backend/core.py:1596
-msgid "Reset verification failed."
-msgstr "Verifizierung für Zurücksetzen fehlgeschlagen."
-
-#: cdedb/backend/core.py:1598
+#: cdedb/backend/core.py:1604
 msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
-#: cdedb/backend/core.py:1663
+#: cdedb/backend/core.py:1669
 msgid "Inactive user."
 msgstr "Inaktiver Account."
 
-#: cdedb/backend/core.py:1689
+#: cdedb/backend/core.py:1695
 msgid "Lockdown active."
 msgstr "Datenbank für Wartungsarbeiten gesperrt."
 
-#: cdedb/backend/core.py:1881
+#: cdedb/backend/core.py:1887
 msgid "Invalid genesis state."
 msgstr "Ungültiger Zustand für Accountantrag."
 
-#: cdedb/backend/core.py:1885
+#: cdedb/backend/core.py:1891
 msgid "Wrong target realm."
 msgstr "Falscher Zielbereich."
 
@@ -10119,4 +10123,7 @@ msgstr "Mailinglisten-Log"
 
 #~ msgid "in the course â¦"
 #~ msgstr "in den Kurs …"
+
+#~ msgid "Reset verification failed."
+#~ msgstr "Verifizierung für Zurücksetzen fehlgeschlagen."
 

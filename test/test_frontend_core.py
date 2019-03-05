@@ -364,6 +364,39 @@ class TestCoreFrontend(FrontendTest):
                         self.assertNonPresence('Passwort zurückgesetzt.')
                         self.assertPresence('Passwort ist zu schwach.', div="notifications")
 
+    def test_repeated_password_reset(self):
+        new_password = "krce63koLe#$e"
+        new_password2 = "krce63koLe#$e"
+        user = USER_DICT["berta"]
+        self.get('/')
+        self.traverse({'href': '/core/password/reset'})
+        f = self.response.forms['passwordresetform']
+        f['email'] = user['username']
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = None
+        for line in mail.split('\n'):
+            if line.startswith('[1] '):
+                link = line[4:]
+        link = quopri.decodestring(link).decode('utf-8')
+        # First reset should work
+        self.get(link)
+        self.follow()
+        self.assertTitle("Neues Passwort setzen")
+        f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f)
+        # Second reset with same link should fail
+        self.get(link)
+        self.follow()
+        self.assertTitle("Neues Passwort setzen")
+        f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f, check_notification=False)
+        self.assertPresence("Link ungültig oder ausgelaufen.", div="notifications")
+
     def test_admin_reset_password(self):
         new_password = "krce63koLe#$e"
         self.setUp()

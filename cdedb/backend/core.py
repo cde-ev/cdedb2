@@ -1547,13 +1547,17 @@ class CoreBackend(AbstractBackend):
         :type persona_id: int
         :type cookie: str
         :type salt: str
-        :rtype: bool
+        :rtype: bool, str
         """
         with Atomizer(rs):
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
             msg = decode_parameter(salt, persona_id, password_hash, cookie)
-            return msg == self.RESET_COOKIE_PAYLOAD
+            if msg is None:
+                return False, n_("Link invalid or expired.")
+            if msg != self.RESET_COOKIE_PAYLOAD:
+                return False, n_("Link already used.")
+            return True, None
 
     def modify_password(self, rs, new_password, old_password=None,
                         reset_cookie=None, persona_id=None):
@@ -1592,8 +1596,10 @@ class CoreBackend(AbstractBackend):
             if not self.verify_password(old_password, password_hash):
                 return False, n_("Password verification failed.")
         if reset_cookie:
-            if not self.verify_reset_cookie(rs, persona_id, reset_cookie):
-                return False, n_("Reset verification failed.")
+             success, msg = self.verify_reset_cookie(
+                 rs, persona_id, reset_cookie)
+             if not success:
+                return False, msg
         if not new_password:
             return False, n_("No new password provided.")
         if not validate.is_password_strength(new_password):
