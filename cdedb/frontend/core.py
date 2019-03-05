@@ -696,8 +696,10 @@ class CoreFrontend(AbstractFrontend):
             # rights, a search term with an @ (and more) matches the mail
             # address, or the mail address is required to distinguish equally
             # named users
-            searched_email = any(t in entry['username'] and '@' in t and len(
-                t) > self.conf.NUM_PREVIEW_CHARS for t in terms)
+            searched_email = any(
+                '@' in t and len(t) > self.conf.NUM_PREVIEW_CHARS
+                and entry['username'] and t in entry['username']
+                for t in terms)
             if counter[name(entry)] > 1 or searched_email or \
                     self.coreproxy.is_relative_admin(rs, entry['id']):
                 result['email'] = entry['username']
