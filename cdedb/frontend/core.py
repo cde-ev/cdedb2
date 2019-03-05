@@ -1308,6 +1308,8 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_username", ValueError(n_("Must be different "
                                                             "from current "
                                                             "username."))))
+        if not rs.errors and self.coreproxy.verify_existance(rs, new_username):
+            rs.errors.append(("new_usernam", ValueError(n_("Name collision."))))
         if rs.errors:
             return self.change_username_form(rs)
         self.do_mail(rs, "change_username",
@@ -1347,6 +1349,10 @@ class CoreFrontend(AbstractFrontend):
         if not code:
             return self.redirect(rs, "core/change_username_form")
         else:
+            self.do_mail(rs, "username_change_info",
+                         {'To': rs.user.username,
+                          'Subject': "Deine E-Mail-Adresse wurde geändert"},
+                         {'new_username': new_username})
             return self.redirect(rs, "core/index")
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
