@@ -243,6 +243,8 @@
                             {% elif field['kind'] == enums['FieldDatatypes'].datetime %}
                                 {{ ambience['registration']['fields'].get(field['field_name'])
                                    |datetime(lang=lang, passthrough=True) }}
+                            {% elif field['kind'] == enums['FieldDatatypes'].float %}
+                                {{ ambience['registration']['fields'].get(field['field_name'])|decimal(lang=lang) }}
                             {% else %}
                                 {{ ambience['registration']['fields'].get(field['field_name'])|linebreaks }}
                             {% endif %}

@@ -21,7 +21,7 @@
     {% if not registration['payment'] %}
         <h3 class="heading-underline">{% trans -%}Bank Transfer{%- endtrans %}</h3>
         <p>
-            {% trans fee=fee|money -%}
+            {% trans fee=fee|money(lang=lang) -%}
             	Please keep in mind, that your Registration will only be complete, once
                 you pay your participation fee. Please transfer {{ fee }} to the following
                 Account. Please make sure, the recipient does not have to pay any fees,
@@ -48,7 +48,7 @@
                 </tr>
                 <tr>
                     <td>{% trans -%}Amount{%- endtrans %}</td>
-                    <td>{{ fee|money }}</td>
+                    <td>{{ fee|money(lang=lang) }}</td>
                 </tr>
                 <tr>
                     <td>{% trans -%}Reference{%- endtrans %}</td>

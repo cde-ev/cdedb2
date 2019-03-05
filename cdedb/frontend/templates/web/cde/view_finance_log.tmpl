@@ -50,11 +50,11 @@
                             –
                         {% endif %}
                     </td>
-                    <td>{{ entry['delta']|money }}</td>
-                    <td>{{ entry['new_balance']|money }}</td>
+                    <td>{{ entry['delta']|money(lang=lang) }}</td>
+                    <td>{{ entry['new_balance']|money(lang=lang) }}</td>
                     <td>{{ gettext(entry['additional_info']) }}</td>
                     <td>{{ entry['members'] }}</td>
-                    <td>{{ entry['total']|money }}</td>
+                    <td>{{ entry['total']|money(lang=lang) }}</td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -12,14 +12,14 @@
     <h2>{% trans -%}Initiative 25+ – What's that?{%- endtrans %}</h2>
 
     <p>
-        {% trans amount=25|money -%}
+        {% trans amount=25|money(lang=lang) -%}
         	If you give the authorization, the CdE will withdraw {{ amount }}
             or more annually via Direct Debit.
         {%- endtrans %}
     </p>
 
     <p>
-        {% trans amount=25|money, fee=5|money, dsa=
+        {% trans amount=25|money(lang=lang), fee=5|money(lang=lang), dsa=
                 gettext("Deutsche SchülerAkademie"), idea=gettext("Idee SchülerAkademie")-%}
         	These {{ amount }} will be used to pay the annual membership fee
             currently in force, currently {{ fee }}. The remainder is a donation

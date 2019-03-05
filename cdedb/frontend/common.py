@@ -33,6 +33,7 @@ import urllib.parse
 
 import markdown
 import babel.dates
+import babel.numbers
 import bleach
 import docutils.core
 import jinja2
@@ -258,18 +259,33 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
         return val.strftime(formatstr)
 
 
-def money_filter(val, currency="€"):
+def money_filter(val, currency="EUR", lang="de"):
     """Custom jinja filter to format ``decimal.Decimal`` objects.
 
     This is for values representing monetary amounts.
 
     :type val: decimal.Decimal
     :type currency: str
+    :type lang: str
     :rtype: str
     """
     if val is None:
         return None
-    return "{:.2f} {}".format(val, currency)
+
+    return babel.numbers.format_currency(val, currency, locale=lang)
+
+
+def decimal_filter(val, lang="de"):
+    """Cutom jinja filter to format floating point numbers.
+
+    :type val: float
+    :type lang: str
+    :rtype: str
+    """
+    if val is None:
+        return None
+
+    return babel.numbers.format_decimal(val, locale=lang)
 
 
 def cdedbid_filter(val):
@@ -674,6 +690,7 @@ JINJA_FILTERS = {
     'date': date_filter,
     'datetime': datetime_filter,
     'money': money_filter,
+    'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
     'escape': escape_filter,
     'e': escape_filter,

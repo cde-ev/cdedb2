@@ -185,7 +185,7 @@
                     <dt>{% trans -%}Balance{%- endtrans %}</dt>
                     {% if data['has_lastschrift'] %}
                         <dd>
-                            {{ data['balance']|money }} {% trans -%}and{%- endtrans %}
+                            {{ data['balance']|money(lang=lang) }} {% trans -%}and{%- endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("Direct Debit Authorization"), icon="euro") }}
                         </dd>
