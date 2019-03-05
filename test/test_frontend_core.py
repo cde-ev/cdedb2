@@ -451,6 +451,28 @@ class TestCoreFrontend(FrontendTest):
         self.assertLogin(new_berta['display_name'])
 
     @as_users("anton")
+    def test_any_admin_query(self, user):
+        self.admin_view_profile('garcia')
+        self.traverse({'href': '/persona/7/privileges'})
+        f = self.response.forms['privilegechangeform']
+        f['is_ml_admin'].checked = True
+        self.submit(f)
+        self.admin_view_profile('berta')
+        self.traverse({'href': '/persona/2/privileges'})
+        f = self.response.forms['privilegechangeform']
+        f['is_assembly_admin'].checked = True
+        self.submit(f)
+        self.get('/core/search/user')
+        save = self.response
+        self.response = save.click(description="Alle Admins")
+        self.assertPresence("Ergebnis [4]")
+        self.assertPresence("Anton Armin A.")
+        self.assertPresence("Beispiel")
+        self.assertPresence("Findus")
+        self.assertPresence("Generalis")
+
+
+    @as_users("anton")
     def test_privilege_change(self,  user):
         self.admin_view_profile('berta')
         self.traverse({'href': '/persona/2/privileges'})
