@@ -9090,7 +9090,7 @@ msgid "Reorder Questionnaire"
 msgstr "Anordnung ändern"
 
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:108
-msgid "Add part"
+msgid "Add Part"
 msgstr "Teil hinzufügen"
 
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:122
