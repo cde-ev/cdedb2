@@ -438,14 +438,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
-        self.assertPresence("17.50 €")
+        self.assertPresence("17,50 €")
         self.traverse({'href': '/cde/user/2/lastschrift'})
         f = self.response.forms['transactionrollbackform4']
         self.submit(f)
         self.assertPresence("Keine aktive Einzugsermächtigung")
         self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
-        self.assertPresence("12.50€")
+        self.assertPresence("12,50€")
 
     @as_users("anton")
     def test_lastschrift_transaction_cancel(self, user):
@@ -1086,7 +1086,7 @@ class TestCdEFrontend(FrontendTest):
 
         ## second round
         self.assertPresence("Bestätigen")
-        self.assertPresence("Saldo: 151.09 €")
+        self.assertPresence("Saldo: 151,09 €")
         self.assertNonPresence("Validieren")
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
