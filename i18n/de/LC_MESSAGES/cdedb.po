@@ -9988,3 +9988,9 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:5
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
+
+msgid "*Nothing here yet.*"
+msgstr "*Hier gibt es noch nichts.*"
+
+msgid "cde_misc"
+msgstr "Linksammlung Mitgliederbereich"

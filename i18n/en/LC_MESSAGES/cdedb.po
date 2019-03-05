@@ -9617,3 +9617,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:5
 msgid "Mailinglists Log"
 msgstr ""
+
+msgid "cde_misc"
+msgstr "Link Collection Memberarea"

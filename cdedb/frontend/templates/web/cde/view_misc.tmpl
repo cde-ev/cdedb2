@@ -1,0 +1,13 @@
+{% set sidenav_active = 'cde_misc' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans -%}Miscellaneous{%- endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/view_misc"), gettext("Miscellaneous"), active=True) }}
+{% endblock %}
+{% block content %}
+    {{ cde_misc|md }}
+{% endblock %}

@@ -2219,6 +2219,13 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/show_past_event")
 
+    @access("cde")
+    def view_misc(self, rs):
+        """View miscellaneos things."""
+        meta_data = self.coreproxy.get_meta_info(rs)
+        cde_misc = meta_data.get("cde_misc", rs.gettext("*Nothing here yet.*"))
+        return self.render(rs, "view_misc", {"cde_misc": cde_misc})
+
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("start", "non_negative_int_or_None"),
