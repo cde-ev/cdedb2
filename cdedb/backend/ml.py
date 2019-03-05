@@ -829,10 +829,16 @@ class MlBackend(AbstractBackend):
         :rtype: [{'address' : unicode, 'inactive' : bool,
                   'maxsize' : int or None, 'mime' : bool or None}]
         """
-        # FIXME this has a hardcoded value for 'mime'
         query = glue("SELECT address, NOT is_active AS inactive, maxsize,",
-                     "NULL AS mime FROM ml.mailinglists")
+                     "attachment_policy AS mime FROM ml.mailinglists")
         data = self.query_all(rs, query, tuple())
+        COMPAT_MAP = {
+            const.AttachmentPolicy.allow: False,
+            const.AttachmentPolicy.pdf_only: None,
+            const.AttachmentPolicy.forbid: True,
+        }
+        for entry in data:
+            entry['mime'] = COMPAT_MAP[entry['mime']]
         return data
 
     @access("ml_script")
