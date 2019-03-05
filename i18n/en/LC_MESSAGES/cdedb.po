@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-03-05 15:21+0100\n"
+"POT-Creation-Date: 2019-03-05 16:07+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -925,6 +925,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:69
 #: cdedb/frontend/templates/web/event/change_course.tmpl:74
 #: cdedb/frontend/templates/web/event/change_event.tmpl:75
+#: cdedb/frontend/templates/web/event/change_lodgement.tmpl:40
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:189
 #: cdedb/frontend/templates/web/event/field_set.tmpl:41
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:130
@@ -3936,6 +3937,7 @@ msgstr ""
 msgid "show field"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/change_course.tmpl:67
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:33
 #: cdedb/frontend/templates/web/generic.tmpl:309
 msgid "Fields"
@@ -8769,6 +8771,10 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:15
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:19
 msgid "Reorder Questionnaire"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:108
+msgid "Add part"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:122
