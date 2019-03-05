@@ -637,11 +637,11 @@ class CoreFrontend(AbstractFrontend):
         if {"core_admin", "admin"} & rs.user.roles:
             anid, errs = validate.check_cdedbid(phrase, "phrase")
             if not errs:
-                data = self.coreproxy.get_persona(rs, anid)
+                data = self.coreproxy.get_personas(rs, (anid,))
             else:
                 anid, errs = validate.check_id(phrase, "phrase")
                 if not errs:
-                    data = self.coreproxy.get_persona(rs, anid)
+                    data = self.coreproxy.get_personas(rs, (anid,))
 
         # Don't query, if search phrase is too short
         if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
