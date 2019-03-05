@@ -817,6 +817,7 @@ class CoreBackend(AbstractBackend):
             else:
                 delta = None
                 new_balance = None
+                update['is_active'] = True
                 code = const.FinanceLogCodes.gain_membership
             ret = self.set_persona(
                 rs, update, may_wait=False,
