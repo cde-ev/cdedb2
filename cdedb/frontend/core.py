@@ -1563,8 +1563,8 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Failed."))
             return rs.genesis_list_cases(rs)
         if case_status == const.GenesisStati.approved:
-            success, cookie = self.coreproxy.make_reset_cookie(rs,
-                                                               case['username'])
+            success, cookie = self.coreproxy.make_reset_cookie(
+                rs, case['username'], timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
             self.do_mail(
                 rs, "genesis_approved",
                 {'To': (case['username'],),
