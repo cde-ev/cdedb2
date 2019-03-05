@@ -1193,24 +1193,25 @@ class CoreFrontend(AbstractFrontend):
                 rs, email, self.conf.PARAMETER_TIMEOUT)
         except PrivilegeError:
             admin_exception = True
+        else:
+            if not success:
+                rs.notify("error", message)
+            else:
+                self.do_mail(
+                    rs, "reset_password",
+                    {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"},
+                    {'email': self.encode_parameter(
+                        "core/do_password_reset_form", "email", email,
+                        timeout=self.conf.PARAMETER_TIMEOUT),
+                        'cookie': message})
+                msg = "Sent password reset mail to {} for IP {}."
+                self.logger.info(msg.format(email, rs.request.remote_addr))
+                rs.notify("success", n_("Email sent."))
         if admin_exception:
             self.do_mail(
                 rs, "admin_no_reset_password",
                 {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"})
             msg = "Sent password reset denial mail to admin {} for IP {}."
-            self.logger.info(msg.format(email, rs.request.remote_addr))
-            rs.notify("success", n_("Email sent."))
-        elif not success:
-            rs.notify("error", message)
-        else:
-            self.do_mail(
-                rs, "reset_password",
-                {'To': (email,), 'Subject': "CdEDB Passwort zurücksetzen"},
-                {'email': self.encode_parameter(
-                    "core/do_password_reset_form", "email", email,
-                    timeout=self.conf.PARAMETER_TIMEOUT),
-                    'cookie': message})
-            msg = "Sent password reset mail to {} for IP {}."
             self.logger.info(msg.format(email, rs.request.remote_addr))
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
