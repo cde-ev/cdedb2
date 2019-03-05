@@ -195,16 +195,17 @@ class CdEFrontend(AbstractUserFrontend):
                 rs, pevent_id).items()}
         choices = {"pevent_id": events, 'pcourse_id': courses}
         result = None
+        count = 0
+        cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
         if is_search and not rs.errors:
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
             result = sorted(result, key=name_key)
-            if len(result) == 1:
+            count = len(result)
+            if count == 1:
                 return self.redirect_show_user(rs, result[0]['id'],
                                                quote_me=True)
-            count = len(result)
-            cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
             if count > cutoff and not self.is_admin(rs):
                 result = result[:cutoff]
                 rs.notify("info", n_("Too many query results."))
