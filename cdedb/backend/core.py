@@ -1639,7 +1639,7 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("anonymous")
-    def make_reset_cookie(self, rs, email):
+    def make_reset_cookie(self, rs, email, timeout=None):
         """Perform preparation for a recovery.
 
         This generates a reset cookie which can be used in a second step
@@ -1648,10 +1648,12 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type email: str
+        :type timeout: datetime.timedelta or None
         :rtype: (bool, str)
         :returns: The ``bool`` indicates success and the ``str`` is
           either the reset cookie or an error message.
         """
+        timeout = timeout or self.conf.PARAMETER_TIMEOUT
         email = affirm("email", email)
         data = self.sql_select_one(rs, "core.personas", ("id", "is_active"),
                                    email, entity_key="username")
@@ -1659,9 +1661,6 @@ class CoreBackend(AbstractBackend):
             return False, n_("Nonexistant user.")
         if not data['is_active']:
             return False, n_("Inactive user.")
-        timeout = self.conf.PARAMETER_TIMEOUT
-        if self.is_admin(rs):
-            timeout = self.conf.EMAIL_PARAMETER_TIMEOUT
         ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
         self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
         return True, ret

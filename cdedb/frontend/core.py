@@ -1189,7 +1189,8 @@ class CoreFrontend(AbstractFrontend):
             return self.reset_password_form(rs)
         admin_exception = False
         try:
-            success, message = self.coreproxy.make_reset_cookie(rs, email)
+            success, message = self.coreproxy.make_reset_cookie(
+                rs, email, self.conf.PARAMETER_TIMEOUT)
         except PrivilegeError:
             admin_exception = True
         if admin_exception:
@@ -1206,7 +1207,8 @@ class CoreFrontend(AbstractFrontend):
                 rs, "reset_password",
                 {'To': (email,), 'Subject': n_('CdEDB password reset')},
                 {'email': self.encode_parameter(
-                    "core/do_password_reset_form", "email", email),
+                    "core/do_password_reset_form", "email", email,
+                    timeout=self.conf.PARAMETER_TIMEOUT),
                     'cookie': message})
             msg = "Sent password reset mail to {} for IP {}."
             self.logger.info(msg.format(email, rs.request.remote_addr))
@@ -1223,7 +1225,8 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
         email = rs.ambience['persona']['username']
-        success, message = self.coreproxy.make_reset_cookie(rs, email)
+        success, message = self.coreproxy.make_reset_cookie(
+            rs, email, timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
         if not success:
             rs.notify("error", message)
         else:
@@ -1231,7 +1234,8 @@ class CoreFrontend(AbstractFrontend):
                 rs, "reset_password",
                 {'To': (email,), 'Subject': n_('CdEDB password reset')},
                 {'email': self.encode_parameter(
-                    "core/do_password_reset_form", "email", email),
+                    "core/do_password_reset_form", "email", email,
+                    timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
                     'cookie': message})
             msg = "Sent password reset mail to {} for admin {}."
             self.logger.info(msg.format(email, rs.user.persona_id))
