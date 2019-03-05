@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-03-05 19:41+0100\n"
+"POT-Creation-Date: 2019-03-05 22:40+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -1132,7 +1132,7 @@ msgid "Must contain integers."
 msgstr "Darf nur Ganzzahlen enthalten."
 
 #: cdedb/backend/core.py:1606 cdedb/frontend/core.py:1153
-#: cdedb/frontend/core.py:1282 cdedb/validation.py:693
+#: cdedb/frontend/core.py:1283 cdedb/validation.py:693
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
@@ -1438,7 +1438,7 @@ msgid "No vote found."
 msgstr "Konnte keine Eintrag finden."
 
 #: cdedb/backend/assembly.py:195 cdedb/backend/cde.py:687
-#: cdedb/backend/core.py:1994 cdedb/backend/event.py:490
+#: cdedb/backend/core.py:1996 cdedb/backend/event.py:490
 #: cdedb/backend/ml.py:137
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
@@ -1459,9 +1459,9 @@ msgstr "Zu viele Eingaben gemacht."
 #: cdedb/backend/assembly.py:352 cdedb/backend/assembly.py:830
 #: cdedb/backend/assembly.py:961 cdedb/backend/cde.py:165
 #: cdedb/backend/core.py:491 cdedb/backend/core.py:648
-#: cdedb/backend/core.py:1772 cdedb/backend/core.py:1775
-#: cdedb/backend/core.py:1807 cdedb/backend/core.py:1827
-#: cdedb/backend/core.py:1831 cdedb/backend/event.py:277
+#: cdedb/backend/core.py:1774 cdedb/backend/core.py:1777
+#: cdedb/backend/core.py:1809 cdedb/backend/core.py:1829
+#: cdedb/backend/core.py:1833 cdedb/backend/event.py:277
 #: cdedb/backend/event.py:347 cdedb/backend/event.py:663
 #: cdedb/backend/event.py:909 cdedb/backend/event.py:1019
 #: cdedb/backend/event.py:1061 cdedb/backend/event.py:1085
@@ -1483,8 +1483,8 @@ msgstr "Zu viele Eingaben gemacht."
 #: cdedb/frontend/core.py:601 cdedb/frontend/core.py:606
 #: cdedb/frontend/core.py:615 cdedb/frontend/core.py:620
 #: cdedb/frontend/core.py:627 cdedb/frontend/core.py:1086
-#: cdedb/frontend/core.py:1099 cdedb/frontend/core.py:1507
-#: cdedb/frontend/core.py:1528 cdedb/frontend/core.py:1548
+#: cdedb/frontend/core.py:1099 cdedb/frontend/core.py:1514
+#: cdedb/frontend/core.py:1535 cdedb/frontend/core.py:1555
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -1622,10 +1622,6 @@ msgstr "Prioritätsänderung wurde nicht vollzogen."
 msgid "Conflicting pending change."
 msgstr "Eine bestehende Änderung ist im Konflikt."
 
-#: cdedb/backend/core.py:376
-msgid "Displaced change."
-msgstr "Verdrängte Änderung."
-
 #: cdedb/backend/core.py:438
 msgid "Modification failed."
 msgstr "Modifikation fehlgeschlagen."
@@ -1634,10 +1630,6 @@ msgstr "Modifikation fehlgeschlagen."
 #: cdedb/backend/core.py:1693 cdedb/frontend/core.py:1188
 msgid "Nonexistant user."
 msgstr "Nutzer existiert nicht."
-
-#: cdedb/backend/core.py:604
-msgid "Unspecified change."
-msgstr "Allgemeine Änderung."
 
 #: cdedb/backend/core.py:610
 msgid "Non-waiting change without generation override."
@@ -1723,16 +1715,12 @@ msgstr "Benutzer ist nicht archiviert."
 msgid "Only admins may unset a username."
 msgstr "Löschen von E-Mail-Adressen nur durch Admins."
 
-#: cdedb/backend/core.py:1125
+#: cdedb/backend/core.py:1125 cdedb/frontend/core.py:1313
 msgid "Name collision."
 msgstr "E-Mail-Adresse bereits vorhanden. "
 
-#: cdedb/backend/core.py:1139
-msgid "Username change."
-msgstr "E-Mail-Adresse geändert."
-
-#: cdedb/backend/core.py:1144 cdedb/frontend/core.py:1438
-#: cdedb/frontend/core.py:1563
+#: cdedb/backend/core.py:1144 cdedb/frontend/core.py:1445
+#: cdedb/frontend/core.py:1570
 msgid "Failed."
 msgstr "Aktion fehlgeschlagen."
 
@@ -1771,10 +1759,6 @@ msgstr "Zugriffsberechtigung benötigt."
 #: cdedb/backend/core.py:1318
 msgid "Unable to create this sort of persona."
 msgstr "Unzulässige Accountart für Erstellung ausgewählt."
-
-#: cdedb/backend/core.py:1336
-msgid "Persona creation."
-msgstr "Account erstellt."
 
 #: cdedb/backend/core.py:1400 cdedb/backend/core.py:1613
 msgid "Atomized -- impossible to escalate."
@@ -1820,11 +1804,11 @@ msgstr "Inaktiver Account."
 msgid "Lockdown active."
 msgstr "Datenbank für Wartungsarbeiten gesperrt."
 
-#: cdedb/backend/core.py:1887
+#: cdedb/backend/core.py:1889
 msgid "Invalid genesis state."
 msgstr "Ungültiger Zustand für Accountantrag."
 
-#: cdedb/backend/core.py:1891
+#: cdedb/backend/core.py:1893
 msgid "Wrong target realm."
 msgstr "Falscher Zielbereich."
 
@@ -2060,17 +2044,13 @@ msgstr "Ergebnis.json"
 msgid "Signed up."
 msgstr "Angemeldet."
 
-#: cdedb/frontend/assembly.py:257
-msgid "Signed up for assembly"
-msgstr "Anmeldung zur CdE Versammlung"
-
 #: cdedb/frontend/assembly.py:261
 msgid "Already signed up."
 msgstr "Bereits angemeldet."
 
 #: cdedb/frontend/assembly.py:304 cdedb/frontend/assembly.py:605
-#: cdedb/frontend/cde.py:2167 cdedb/frontend/core.py:1631
-#: cdedb/frontend/core.py:1658 cdedb/frontend/event.py:775
+#: cdedb/frontend/cde.py:2167 cdedb/frontend/core.py:1638
+#: cdedb/frontend/core.py:1665 cdedb/frontend/event.py:775
 #: cdedb/frontend/event.py:2666 cdedb/frontend/event.py:3046
 #: cdedb/frontend/event.py:3836 cdedb/frontend/ml.py:446
 msgid "Must be checked."
@@ -2083,10 +2063,6 @@ msgstr "Die Abstimmung hat bereits begonnen."
 #: cdedb/frontend/assembly.py:434
 msgid "Attachment added."
 msgstr "Anhang hinzugefügt."
-
-#: cdedb/frontend/assembly.py:509
-msgid "CdE Ballot got tallied."
-msgstr "Abstimmung wurde ausgezählt."
 
 #: cdedb/frontend/assembly.py:569
 msgid "bar (options below this are declined)"
@@ -2156,10 +2132,6 @@ msgstr "Probemitgliedschaft erneuert."
 msgid "Imported recent data."
 msgstr "Aktualisierte Daten aufgenommen."
 
-#: cdedb/frontend/cde.py:516
-msgid "CdE admission"
-msgstr "Aufnahme in den CdE"
-
 #: cdedb/frontend/cde.py:602
 #, python-format
 msgid "Lines %(first)s and %(second)s are the same."
@@ -2207,8 +2179,8 @@ msgstr "Kein Account mit ID %(p_id)s gefunden."
 #: cdedb/frontend/cde.py:910 cdedb/frontend/core.py:429
 #: cdedb/frontend/core.py:890 cdedb/frontend/core.py:951
 #: cdedb/frontend/core.py:990 cdedb/frontend/core.py:1040
-#: cdedb/frontend/core.py:1088 cdedb/frontend/core.py:1359
-#: cdedb/frontend/core.py:1393
+#: cdedb/frontend/core.py:1088 cdedb/frontend/core.py:1366
+#: cdedb/frontend/core.py:1400
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
@@ -2219,10 +2191,6 @@ msgstr "Nachname passt nicht."
 #: cdedb/frontend/cde.py:920 cdedb/frontend/event.py:1353
 msgid "Given names don't match."
 msgstr "Vornamen passen nicht zusammen."
-
-#: cdedb/frontend/cde.py:987
-msgid "CdE money transfer received"
-msgstr "Überweisung beim CdE eingetroffen"
 
 #: cdedb/frontend/cde.py:1023
 #, python-format
@@ -2268,10 +2236,6 @@ msgstr "Keine Transaktionen ausgewählt."
 msgid "Billing already done."
 msgstr "Zahlungserinnerung bereits erledigt."
 
-#: cdedb/frontend/cde.py:1588
-msgid "Renew your CdE membership"
-msgstr "CdE-Mitgliedschaft verlängern"
-
 #: cdedb/frontend/cde.py:1608 cdedb/frontend/cde.py:1819
 msgid "Started sending mail."
 msgstr "E-Mail-Versand hat begonnen."
@@ -2279,10 +2243,6 @@ msgstr "E-Mail-Versand hat begonnen."
 #: cdedb/frontend/cde.py:1617
 msgid "Wrong timing for ejection."
 msgstr "Falscher Zeitpunkt für Bereinigung."
-
-#: cdedb/frontend/cde.py:1651
-msgid "Ejection from CdE"
-msgstr "Austritt aus dem CdE e.V."
 
 #: cdedb/frontend/cde.py:1666
 msgid "Started ejection."
@@ -2315,10 +2275,6 @@ msgstr "Nächstes Semester initialisiert."
 #: cdedb/frontend/cde.py:1754
 msgid "Addresscheck already done."
 msgstr "Adressabfrage bereits erledigt."
-
-#: cdedb/frontend/cde.py:1793
-msgid "Address check mail for exPuls"
-msgstr "Adressabfrage für exPuls"
 
 #: cdedb/frontend/cde.py:1815
 msgid "Not sending mail."
@@ -2363,16 +2319,12 @@ msgstr ""
 "Es werden derzeit Wartungsarbeiten an der Datenbank vorgenommen und diese"
 " ist daher leider nicht verfügbar."
 
-#: cdedb/frontend/common.py:1025
-msgid "Subject"
-msgstr "Betreff"
-
 #: cdedb/frontend/common.py:1030
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1158 cdedb/frontend/core.py:1622
+#: cdedb/frontend/common.py:1158 cdedb/frontend/core.py:1629
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
@@ -2384,14 +2336,6 @@ msgstr "Die Änderung wartet auf Bestätigung."
 #: cdedb/frontend/common.py:1160
 msgid "Change failed."
 msgstr "Änderung fehlgeschlagen."
-
-#: cdedb/frontend/common.py:1230
-msgid "{}.tex"
-msgstr "{}.tex"
-
-#: cdedb/frontend/common.py:1237
-msgid "{}.pdf"
-msgstr "{}.pdf"
 
 #: cdedb/frontend/common.py:1359
 msgid "Inconsistent request."
@@ -2437,9 +2381,9 @@ msgstr "Login fehlgeschlagen."
 msgid "Unsupported locale"
 msgstr "Nicht unterstützte Sprache"
 
-#: cdedb/frontend/core.py:285 cdedb/frontend/core.py:1254
-#: cdedb/frontend/core.py:1266 cdedb/frontend/core.py:1329
-#: cdedb/frontend/core.py:1341 cdedb/frontend/core.py:1463
+#: cdedb/frontend/core.py:285 cdedb/frontend/core.py:1255
+#: cdedb/frontend/core.py:1267 cdedb/frontend/core.py:1332
+#: cdedb/frontend/core.py:1344 cdedb/frontend/core.py:1470
 #: cdedb/frontend/ml.py:514
 msgid "Link expired."
 msgstr "Link abgelaufen."
@@ -2453,18 +2397,14 @@ msgid "Access to non-searchable member data."
 msgstr "Zugriff auf Mitgliedsdatensatz ohne Datenschutz-Einwilligung."
 
 #: cdedb/frontend/core.py:427 cdedb/frontend/core.py:888
-#: cdedb/frontend/core.py:910 cdedb/frontend/core.py:1357
-#: cdedb/frontend/core.py:1370 cdedb/frontend/core.py:1388
+#: cdedb/frontend/core.py:910 cdedb/frontend/core.py:1364
+#: cdedb/frontend/core.py:1377 cdedb/frontend/core.py:1395
 msgid "Not a relative admin."
 msgstr "Nicht genug Adminprivilegien für diesen Account."
 
 #: cdedb/frontend/core.py:551
 msgid "No account found."
 msgstr "Kein Account gefunden."
-
-#: cdedb/frontend/core.py:749
-msgid "Normal dataset change."
-msgstr "Normale Änderung."
 
 #: cdedb/frontend/core.py:995
 msgid "No promotion necessary."
@@ -2475,8 +2415,8 @@ msgid "Foto updated."
 msgstr "Bild aktualisiert."
 
 #: cdedb/frontend/core.py:1137 cdedb/frontend/core.py:1139
-#: cdedb/frontend/core.py:1140 cdedb/frontend/core.py:1270
-#: cdedb/frontend/core.py:1272 cdedb/frontend/core.py:1273
+#: cdedb/frontend/core.py:1140 cdedb/frontend/core.py:1271
+#: cdedb/frontend/core.py:1273 cdedb/frontend/core.py:1274
 msgid "Passwords don't match."
 msgstr "Passwörter stimmen nicht überein."
 
@@ -2488,84 +2428,63 @@ msgstr "Passwort geändert."
 msgid "Wrong password."
 msgstr "Passwort falsch."
 
-#: cdedb/frontend/core.py:1199 cdedb/frontend/core.py:1208
-#: cdedb/frontend/core.py:1235
-msgid "CdEDB password reset"
-msgstr "CdEDB Passwort zurücksetzen"
-
-#: cdedb/frontend/core.py:1202 cdedb/frontend/core.py:1215
-#: cdedb/frontend/core.py:1242
+#: cdedb/frontend/core.py:1209 cdedb/frontend/core.py:1216
+#: cdedb/frontend/core.py:1243
 msgid "Email sent."
 msgstr "E-Mail abgeschickt."
 
-#: cdedb/frontend/core.py:1291
+#: cdedb/frontend/core.py:1292
 msgid "Password reset."
 msgstr "Passwort zurückgesetzt."
 
-#: cdedb/frontend/core.py:1308
+#: cdedb/frontend/core.py:1309
 msgid "Must be different from current username."
 msgstr "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
 
-#: cdedb/frontend/core.py:1315
-msgid "CdEDB username change"
-msgstr "CdEDB Neue E-Mail-Adresse verifizieren"
-
-#: cdedb/frontend/core.py:1345 cdedb/frontend/core.py:1375
+#: cdedb/frontend/core.py:1348 cdedb/frontend/core.py:1382
 msgid "Username changed."
 msgstr "E-Mail-Adresse geändert."
 
-#: cdedb/frontend/core.py:1424
+#: cdedb/frontend/core.py:1431
 msgid "Rationale too long."
 msgstr "Begründung zu lang."
 
-#: cdedb/frontend/core.py:1429
+#: cdedb/frontend/core.py:1436
 msgid "Email address already in DB. Reset password."
 msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."
 
-#: cdedb/frontend/core.py:1442 cdedb/frontend/core.py:1481
-msgid "CdEDB account request"
-msgstr "CdEDB Accountanfrage verifizieren"
-
-#: cdedb/frontend/core.py:1452
+#: cdedb/frontend/core.py:1459
 msgid "Email sent. Please follow the link contained in the email."
 msgstr "E-Mail verschickt. Bitte den enthaltenen Link besuchen."
 
-#: cdedb/frontend/core.py:1468
+#: cdedb/frontend/core.py:1475
 msgid "Verification failed. Please contact the administrators."
 msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 
-#: cdedb/frontend/core.py:1469
+#: cdedb/frontend/core.py:1476
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 "E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet werden und"
 " Du dann per E-Mail informiert werden."
 
-#: cdedb/frontend/core.py:1509 cdedb/frontend/core.py:1530
-#: cdedb/frontend/core.py:1550
+#: cdedb/frontend/core.py:1516 cdedb/frontend/core.py:1537
+#: cdedb/frontend/core.py:1557
 msgid "Case not to review."
 msgstr "Anfrage befindet sich nicht in der Begutachtung."
 
-#: cdedb/frontend/core.py:1571
-msgid "CdEDB account created"
-msgstr "CdEDB-Account erstellt"
-
-#: cdedb/frontend/core.py:1579
+#: cdedb/frontend/core.py:1586
 msgid "Case approved."
 msgstr "Antrag genehmigt."
 
-#: cdedb/frontend/core.py:1584
-msgid "CdEDB account declined"
-msgstr "CdEDB Accountanfrage abgelehnt"
-
-#: cdedb/frontend/core.py:1587
+#: cdedb/frontend/core.py:1594
 msgid "Case rejected."
 msgstr "Anfrage abgewiesen."
 
-#: cdedb/frontend/core.py:1604
+#: cdedb/frontend/core.py:1611
 msgid "Persona has no pending change."
 msgstr "Account hat keine zu begutachtenden Änderungen."
 
-#: cdedb/frontend/core.py:1622
+#: cdedb/frontend/core.py:1629
 msgid "Change dropped."
 msgstr "Änderung unterdrückt."
 
@@ -2666,49 +2585,17 @@ msgstr "Betrag %(num)s übernommen."
 msgid "Unexpected error on line {num}."
 msgstr "Unerwarteter Fehler in Zeile {num}."
 
-#: cdedb/frontend/event.py:1491
-msgid "nametags.tex"
-msgstr "Namenschilder.tex"
-
 #: cdedb/frontend/event.py:1495 cdedb/frontend/event.py:1535
 #: cdedb/frontend/event.py:1566 cdedb/frontend/event.py:1617
 #: cdedb/frontend/event.py:1651 cdedb/frontend/event.py:1686
 msgid "Empty PDF."
 msgstr "Leeres PDF."
 
-#: cdedb/frontend/event.py:1613
-msgid "course_lists.tex"
-msgstr "Kursliste.tex"
-
-#: cdedb/frontend/event.py:1647
-msgid "lodgement_lists.tex"
-msgstr "Unterkunftsliste.tex"
-
-#: cdedb/frontend/event.py:1697
-msgid "expuls.tex"
-msgstr "ExPuls.tex"
-
 #: cdedb/frontend/event.py:1701 cdedb/frontend/event.py:1738
 #: cdedb/frontend/event.py:1768 cdedb/frontend/event.py:1910
 #: cdedb/frontend/event.py:1925
 msgid "Empty File."
 msgstr "Leere Datei."
-
-#: cdedb/frontend/event.py:1734
-msgid "courses.csv"
-msgstr "courses.csv"
-
-#: cdedb/frontend/event.py:1764
-msgid "lodgements.csv"
-msgstr "lodgements.csv"
-
-#: cdedb/frontend/event.py:1906
-msgid "registrations.csv"
-msgstr "registrations.csv"
-
-#: cdedb/frontend/event.py:1921
-msgid "export_event.json"
-msgstr "Veranstaltungsexport.json"
 
 #: cdedb/frontend/event.py:1935 cdedb/frontend/event.py:2642
 msgid "Already registered."
@@ -2735,10 +2622,6 @@ msgstr "Mindestens ein Teil muss ausgewählt werden."
 #: cdedb/frontend/event.py:2019 cdedb/frontend/event.py:2561
 msgid "Must choose different courses."
 msgstr "Bitte verschiedene Kurse wählen."
-
-#: cdedb/frontend/event.py:2084
-msgid "Registered for CdE event"
-msgstr "Anmeldung für CdE Veranstaltung"
 
 #: cdedb/frontend/event.py:2086
 msgid "Registered for event."
@@ -2944,17 +2827,9 @@ msgstr "Nicht abonniert."
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
-#: cdedb/frontend/ml.py:500
-msgid "Confirm email address for CdE mailing list"
-msgstr "E-Mail-Adresse für Mailingliste bestätigen"
-
 #: cdedb/frontend/ml.py:503
 msgid "Confirmation email sent."
 msgstr "Verifizierungsemail verschickt."
-
-#: cdedb/frontend/uncommon.py:75
-msgid "CdEDB account creation"
-msgstr "CdEDB Account erstellt"
 
 #: cdedb/frontend/uncommon.py:83
 msgid "User created."
@@ -10113,19 +9988,3 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:5
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
-
-#~ msgid "CdEDB pending changes"
-#~ msgstr "CdEDB Änderungen zu begutachten"
-
-#~ msgid "History"
-#~ msgstr "Änderungs-Historie"
-
-#~ msgid "in the course …"
-#~ msgstr "in den Kurs …"
-
-#~ msgid "in the course â¦"
-#~ msgstr "in den Kurs …"
-
-#~ msgid "Reset verification failed."
-#~ msgstr "Verifizierung für Zurücksetzen fehlgeschlagen."
-

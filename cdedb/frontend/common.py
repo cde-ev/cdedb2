@@ -1227,14 +1227,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not runs:
             return self.send_file(
                 rs, data=data, inline=False,
-                filename=rs.gettext("{}.tex".format(filename)))
+                filename="{}.tex".format(filename))
         else:
             pdf = self.latex_compile(data, runs=runs)
             if not pdf:
                 return None
             return self.send_file(
                 rs, mimetype="application/pdf", data=pdf,
-                filename=rs.gettext("{}.pdf".format(filename)))
+                filename="{}.pdf".format(filename))
 
     def serve_complex_latex_document(self, rs, tmp_dir, work_dir_name,
                                      tex_file_name, runs=2):
@@ -1297,7 +1297,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 return self.send_file(
                     rs, mimetype="application/pdf",
                     path=(work_dir / pdf_file),
-                    filename=rs.gettext(pdf_file))
+                    filename=pdf_file)
             else:
                 return None
 

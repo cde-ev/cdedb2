@@ -1488,7 +1488,7 @@ class EventFrontend(AbstractUserFrontend):
                 shutil_copy(src, work_dir / "logo-{}.png".format(course_id))
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                n_("nametags.tex"), runs)
+                "nametags.tex", runs)
             if file:
                 return file
             else:
@@ -1610,7 +1610,7 @@ class EventFrontend(AbstractUserFrontend):
                     work_dir / "logo-{}.png".format(course_id))
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                n_("course_lists.tex"), runs)
+                "course_lists.tex", runs)
             if file:
                 return file
             else:
@@ -1644,7 +1644,7 @@ class EventFrontend(AbstractUserFrontend):
                 work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                n_("lodgement_lists.tex"), runs)
+                "lodgement_lists.tex", runs)
             if file:
                 return file
             else:
@@ -1694,7 +1694,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "expuls", {'courses': courses})
         file = self.send_file(rs, data=tex, inline=False,
-                              filename=rs.gettext("expuls.tex"))
+                              filename="expuls.tex")
         if file:
             return file
         else:
@@ -1731,7 +1731,7 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
         file = self.send_file(
-            rs, data=csv_data, inline=False, filename=rs.gettext("courses.csv"))
+            rs, data=csv_data, inline=False, filename="courses.csv")
         if file:
             return file
         else:
@@ -1761,7 +1761,7 @@ class EventFrontend(AbstractUserFrontend):
                               columns)
         file = self.send_file(
             rs, data=csv_data, inline=False,
-            filename=rs.gettext("lodgements.csv"))
+            filename="lodgements.csv")
         if file:
             return file
         else:
@@ -1903,7 +1903,7 @@ class EventFrontend(AbstractUserFrontend):
                               columns)
         file = self.send_file(
             rs, data=csv_data, inline=False,
-            filename=rs.gettext("registrations.csv"))
+            filename="registrations.csv")
         if file:
             return file
         else:
@@ -1918,7 +1918,7 @@ class EventFrontend(AbstractUserFrontend):
         data = self.eventproxy.export_event(rs, event_id)
         json = json_serialize(data)
         file = self.send_file(rs, data=json, inline=False,
-                              filename=rs.gettext("export_event.json"))
+                              filename="export_event.json")
         if file:
             return file
         else:
