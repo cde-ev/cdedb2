@@ -37,7 +37,11 @@
                                             horizontal=false) }}
                     {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"), aclass='drow-input',
                                                 attributes=('data-basename="info_"'|s if newrow else ''),
-                                                horizontal=false) }}
+                                                horizontal=false,
+                                                info=gettext("Supports %(infolink)s for \"Text-Only\" fields.")|format(
+                                                    infolink=util.href(docurl("Handbuch_Markdown"),
+                                                                       gettext("Markdown"),
+                                                                       title=gettext("Short Markdown summary")))|s) }}
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
