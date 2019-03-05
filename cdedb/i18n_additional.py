@@ -103,7 +103,7 @@ I18N_STRINGS = (
     n_("FieldDatatypes.str"),
     n_("FieldDatatypes.bool"),
     n_("FieldDatatypes.int"),
-    n_("FieldDatatypes.decimal"),
+    n_("FieldDatatypes.float"),
     n_("FieldDatatypes.date"),
     n_("FieldDatatypes.datetime"),
 

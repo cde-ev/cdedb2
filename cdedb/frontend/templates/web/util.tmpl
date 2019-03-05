@@ -521,7 +521,7 @@
         {%- elif fields['kind'] == datatypes.int %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="number",
                           placeholder="0") }}
-        {%- elif fields['kind'] == datatypes.decimal %}
+        {%- elif fields['kind'] == datatypes.float %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, placeholder="0.0") }}
         {%- elif fields['kind'] == datatypes.date %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="date",

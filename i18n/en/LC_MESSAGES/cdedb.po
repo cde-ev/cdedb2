@@ -456,7 +456,7 @@ msgid "FieldDatatypes.int"
 msgstr "Integer"
 
 #: cdedb/i18n_additional.py:106
-msgid "FieldDatatypes.decimal"
+msgid "FieldDatatypes.float"
 msgstr "Decimal"
 
 #: cdedb/i18n_additional.py:107

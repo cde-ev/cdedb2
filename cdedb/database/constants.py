@@ -85,7 +85,7 @@ class FieldDatatypes(enum.IntEnum):
     str = 1  #:
     bool = 2  #:
     int = 3  #:
-    decimal = 4  #:
+    float = 4  #:
     date = 5  #:
     datetime = 6  #:
 
