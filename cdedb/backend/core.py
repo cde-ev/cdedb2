@@ -1596,9 +1596,9 @@ class CoreBackend(AbstractBackend):
             if not self.verify_password(old_password, password_hash):
                 return False, n_("Password verification failed.")
         if reset_cookie:
-             success, msg = self.verify_reset_cookie(
-                 rs, persona_id, reset_cookie)
-             if not success:
+            success, msg = self.verify_reset_cookie(
+                rs, persona_id, reset_cookie)
+            if not success:
                 return False, msg
         if not new_password:
             return False, n_("No new password provided.")
