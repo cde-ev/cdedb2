@@ -759,6 +759,14 @@ class EventFrontend(AbstractUserFrontend):
         """Create a new course associated to an event organized via DB."""
         data['event_id'] = event_id
         data['segments'] = segments
+        field_params = tuple(
+            ("fields.{}".format(field['field_name']),
+             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
+            for field in rs.ambience['event']['fields'].values()
+            if field['association'] == const.FieldAssociations.course)
+        raw_fields = request_extractor(rs, field_params)
+        data['fields'] = {
+            key.split('.', 1)[1]: value for key, value in raw_fields.items()}
         data = check(rs, "course", data, creation=True)
         if rs.errors:
             return self.create_course_form(rs, event_id)
