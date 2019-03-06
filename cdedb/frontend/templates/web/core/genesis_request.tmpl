@@ -35,7 +35,10 @@
                                         small=True, maxlength=max_rationale) }}
             <div id="event-field-container">
                 <p class="text-muted">{{ util.make_icon('info-sign') }}
-                    The following fields are only relevant, if You are requesting an Account for an Event.</p>
+                    {% trans -%}
+                        The following fields are only relevant, if you are requesting an account for an event.
+                    {%- endtrans %}
+                </p>
                 {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
                                           label=gettext("Gender"), small=True,
                                           defaultvalue=enums['Genders'].not_specified.value) }}
