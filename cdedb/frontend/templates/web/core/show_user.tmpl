@@ -190,7 +190,7 @@
                                     gettext("Direct Debit Authorization"), icon="euro") }}
                         </dd>
                     {% else %}
-                        <dd>{{ data['balance'] }}€</dd>
+                        <dd>{{ data['balance']|money(lang=lang) }}</dd>
                         {% if 'cde_admin' in user.roles %}
                             <dd>
                                 {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),

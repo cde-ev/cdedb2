@@ -170,7 +170,7 @@ class TestCoreBackend(BackendTest):
                 'birth_name': None,
                 'birthday': None,
                 'bub_search': None,
-                'change_note': 'Persona creation.',
+                'change_note': 'Account erstellt.',
                 'change_status': 2,
                 'country': None,
                 'country2': None,

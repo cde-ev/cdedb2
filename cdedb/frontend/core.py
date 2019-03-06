@@ -1311,7 +1311,7 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_username", ValueError(n_("Must be different "
                                                             "from current "
                                                             "username."))))
-        if not rs.errors and self.coreproxy.verify_existance(rs, new_username):
+        if not rs.errors and self.coreproxy.verify_existence(rs, new_username):
             rs.errors.append(("new_usernam", ValueError(n_("Name collision."))))
         if rs.errors:
             return self.change_username_form(rs)

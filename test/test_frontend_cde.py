@@ -445,7 +445,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Keine aktive Einzugsermächtigung")
         self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
-        self.assertPresence("12,50€")
+        self.assertPresence("12,50 €")
 
     @as_users("anton")
     def test_lastschrift_transaction_cancel(self, user):
