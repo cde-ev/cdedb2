@@ -765,13 +765,21 @@ class EventFrontend(AbstractUserFrontend):
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course)
         raw_fields = request_extractor(rs, field_params)
-        data['fields'] = {
-            key.split('.', 1)[1]: value for key, value in raw_fields.items()}
         data = check(rs, "course", data, creation=True)
+        field_data = {
+            "id": 1,  # placeholder, course_id is only known after creation.
+            "fields": {key.split('.', 1)[1]: value
+                       for key, value in raw_fields.items()},
+        }
+        field_data = check(rs, "course", field_data)
         if rs.errors:
             return self.create_course_form(rs, event_id)
         new_id = self.eventproxy.create_course(rs, data)
         self.notify_return_code(rs, new_id, success=n_("Course created."))
+        if new_id and any(value for value in field_data["fields"].values()):
+            field_data["id"] = new_id
+            code = self.eventproxy.set_course(rs, field_data)
+            self.notify_return_code(rs, code, success=n_("Course fields set."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
