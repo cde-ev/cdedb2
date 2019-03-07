@@ -6684,7 +6684,7 @@ msgstr "%(given_names)s %(family_name)s bearbeiten"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:15
 msgid "Edit Userdata"
-msgstr "Daten bearbeiten"
+msgstr "Nutzerdaten bearbeiten"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:48
 #, python-format

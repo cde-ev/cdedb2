@@ -12,7 +12,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(values['id']), values['given_names'] + " " + values['family_name'],
             icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/change_user_form"), "Edit Data", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/change_user_form"), gettext("Edit Your Data"), active=True) }}
 {% endblock %}
 {% block content %}
     <script type="text/javascript">

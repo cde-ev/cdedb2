@@ -9,7 +9,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/view_changelog_meta"), "Userdata Log", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), active="True") }}
 {% endblock %}
 {% block content %}
     {% if log %}

@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Event")) }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
         ambience['pevent']['title'], icon="calendar", active=True) }}
 {% endblock %}
