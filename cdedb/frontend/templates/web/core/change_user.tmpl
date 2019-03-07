@@ -50,6 +50,11 @@
 
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
             <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
+            <p>
+            {% trans -%}
+                Diese Adresse sollte deine aktuelle Anschrift sein, an diese wird auch der exPuls geliefert.
+            {%- endtrans %}
+            </p>
             {{ util.form_input_text(name="address", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
@@ -58,6 +63,13 @@
         {% endif %}
         {% if values['is_cde_realm'] %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
+            <p>
+            {% trans -%}
+                Diese Adresse ist dazu gedacht, eine "Notfalladresse" zu haben, falls die erste Anschrift nicht mehr
+                funktionieren sollte. Gib hier bitte eine Adresse an, unter der Du längerfristig erreichbar sein wirst,
+                z. B. die Heimatanschrift bei den Eltern.
+            {%- endtrans %}
+            </p>
             {{ util.form_input_text(name="address2", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
