@@ -62,7 +62,9 @@
                                           info=gettext("Cancelled courses are no longer choosable by participants and "
                                                        "are marked in the courselist and the course assignment.")) }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5",
+                                    info=gettext("Supports %(infolink)s.")|format(
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
         <h4 class="heading-underline">{% trans -%}Fields{%- endtrans %}</h4>
         {% for field_id, field in ambience['event']['fields']|dictsort
