@@ -346,6 +346,15 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
+            # Fix for custom fields with uppercase letters so they do not
+            # get misinterpreted by postgres
+            query.fields_of_interest = [
+                ",".join(
+                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                             for atom in moniker.split("."))
+                    for moniker in column.split(","))
+                for column in query.fields_of_interest]
+
             lodgement_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
@@ -357,7 +366,7 @@ class EventBackend(AbstractBackend):
                 '"{}" {}'.format(name, kind)
                 for name, kind in lodgement_fields.items())
             json_lodge_fields_alias_gen = lambda part_id: ", ".join(
-                '"{}" AS xfield_{}_{}'.format(name, name, part_id)
+                '"{}" AS "xfield_{}_{}"'.format(name, name, part_id)
                 for name in lodgement_fields)
             part_table_template = glue(
                 # first the per part table
@@ -389,7 +398,7 @@ class EventBackend(AbstractBackend):
                 '"{}" {}'.format(name, kind)
                 for name, kind in course_fields.items())
             json_course_fields_alias_gen = lambda track_id: ", ".join(
-                '"{}" AS xfield_{}_{}'.format(name, name, track_id)
+                '"{}" AS "xfield_{}_{}"'.format(name, name, track_id)
                 for name in course_fields)
             track_table_template = glue(
                 # first the per track table
@@ -444,7 +453,7 @@ class EventBackend(AbstractBackend):
                 '"{}" {}'.format(name, kind)
                 for name, kind in reg_fields.items())
             json_reg_fields_alias = ", ".join(
-                '"{}" AS xfield_{}'.format(name, name)
+                '"{}" AS "xfield_{}"'.format(name, name)
                 for name in reg_fields)
             part_table_gen = lambda part_id: part_table_template.format(
                 part_columns=part_columns_gen(part_id), part_id=part_id,

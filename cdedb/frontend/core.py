@@ -1308,9 +1308,8 @@ class CoreFrontend(AbstractFrontend):
     def send_username_change_link(self, rs, new_username):
         """First verify new name with test email."""
         if new_username == rs.user.username:
-            rs.errors.append(("new_username", ValueError(n_("Must be different "
-                                                            "from current "
-                                                            "username."))))
+            rs.errors.append(("new_username", ValueError(n_(
+                "Must be different from current username."))))
         if not rs.errors and self.coreproxy.verify_existence(rs, new_username):
             rs.errors.append(("new_usernam", ValueError(n_("Name collision."))))
         if rs.errors:
