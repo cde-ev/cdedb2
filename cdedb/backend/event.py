@@ -558,6 +558,20 @@ class EventBackend(AbstractBackend):
                          or ret[anid]['registration_hard_limit'] >= now()))
         return ret
 
+    def _get_event_fields(self, rs, event_id):
+        """
+        Helper function to retrieve the custom field definitions of an event.
+        This is required by multiple backend functions.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :return: A dict mapping each event id to the dict of its fields
+        :rtype: {int: {str: object}}
+        """
+        data = self.sql_select(rs, "event.field_definitions",
+            FIELD_DEFINITION_FIELDS, [event_id], entity_key="event_id")
+        return {d['id']: d for d in data}
+
     def _set_tracks(self, rs, event_id, part_id, data, cautious=False):
         """Helper for handling of course tracks.
 
@@ -837,13 +851,12 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
-            for aspect in ('parts', 'orgas', 'fields'):
-                if aspect in data:
-                    adata = {
-                        'id': new_id,
-                        aspect: data[aspect],
-                    }
-                    self.set_event(rs, adata)
+            update_data = {aspect: data[aspect]
+                           for aspect in ('parts', 'orgas', 'fields')
+                           if aspect in data}
+            if update_data:
+                update_data['id'] = new_id
+                self.set_event(rs, update_data)
         self.event_log(rs, const.EventLogCodes.event_created, new_id)
         return new_id
 
@@ -869,7 +882,7 @@ class EventBackend(AbstractBackend):
             if len(events) > 1:
                 raise ValueError(n_(
                     "Only courses from one event allowed!"))
-            event = self.get_event(rs, unwrap(events))
+            event_fields = self._get_event_fields(rs, unwrap(events))
             data = self.sql_select(
                 rs, "event.course_segments", COURSE_SEGMENT_FIELDS, ids,
                 entity_key="course_id")
@@ -883,7 +896,7 @@ class EventBackend(AbstractBackend):
                 assert ('active_segments' not in ret[anid])
                 ret[anid]['active_segments'] = active_segments
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
-                                                  event['fields'])
+                                                  event_fields)
         return ret
 
     @access("event")
@@ -912,11 +925,11 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             current = self.sql_select_one(rs, "event.courses",
                                           ("title", "event_id"), data['id'])
-            event = self.get_event(rs, current['event_id'])
+            event_fields = self._get_event_fields(rs, current['event_id'])
             if 'fields' in data:
                 data['fields'] = affirm(
                     "event_associated_fields", data['fields'],
-                    fields=event['fields'],
+                    fields=event_fields,
                     association=const.FieldAssociations.course)
 
             cdata = {k: v for k, v in data.items()
@@ -1228,7 +1241,7 @@ class EventBackend(AbstractBackend):
 
             ret = {e['id']: e for e in self.sql_select(
                 rs, "event.registrations", REGISTRATION_FIELDS, ids)}
-            event = self.get_event(rs, event_id)
+            event_fields = self._get_event_fields(rs, event_id)
             pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS, ids,
                 entity_key="registration_id")
@@ -1255,7 +1268,7 @@ class EventBackend(AbstractBackend):
                                                          key=tmp.get)
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
-                                                  event['fields'])
+                                                  event_fields)
         return ret
 
     @access("event")
@@ -1274,8 +1287,30 @@ class EventBackend(AbstractBackend):
                          "WHERE event_id = %s LIMIT 1")
             return bool(unwrap(self.query_one(rs, query, (event_id,))))
 
+    def _get_event_course_segments(self, rs, event_id):
+        """
+        Helper function to get course segments of all courses of an event.
+
+        Required for _set_course_choices().
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :returns: A dict mapping each course id (of the event) to a list of
+            track ids (which correspond to its segments)
+        :rtype {int: [int]}
+        """
+        query = glue("SELECT courses.id,",
+                     "    array_agg(segments.track_id) AS segments",
+                     "FROM event.courses as courses",
+                     "    LEFT JOIN event.course_segments AS segments",
+                     "    ON courses.id = segments.course_id",
+                     "WHERE courses.event_id = %s",
+                     "GROUP BY courses.id")
+        return {row['id']: row['segments']
+                for row in self.query_all(rs, query, (event_id,))}
+
     def _set_course_choices(self, rs, registration_id, track_id, choices,
-                            courses):
+                            course_segments, new_registration=False):
         """Helper for handling of course choices.
 
         This is basically uninlined code from ``set_registration()``.
@@ -1286,7 +1321,11 @@ class EventBackend(AbstractBackend):
         :type registration_id: int
         :type track_id: int
         :type choices: [int]
-        :type courses: {str: object}
+        :param course_segments: Dict, course segments, as returned by
+            _get_event_course_segments()
+        :type course_segments: {int: [int]}
+        :param new_registration: Performance optimization for creating
+            registrations: If true, the delition of existing choices is skipped.
         :rtype: int
         :returns: default return code
         """
@@ -1295,11 +1334,12 @@ class EventBackend(AbstractBackend):
             # Nothing specified, hence nothing to do
             return ret
         for course_id in choices:
-            if track_id not in courses[course_id]['segments']:
+            if track_id not in course_segments[course_id]:
                 raise ValueError(n_("Wrong track for course."))
-        query = glue("DELETE FROM event.course_choices",
-                     "WHERE registration_id = %s AND track_id = %s")
-        self.query_exec(rs, query, (registration_id, track_id))
+        if not new_registration:
+            query = glue("DELETE FROM event.course_choices",
+                         "WHERE registration_id = %s AND track_id = %s")
+            self.query_exec(rs, query, (registration_id, track_id))
         for rank, course_id in enumerate(choices):
             new_choice = {
                 "registration_id": registration_id,
@@ -1347,7 +1387,7 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
-            courses = self.get_courses(rs, self.list_db_courses(rs, event_id))
+            course_segments = self._get_event_course_segments(rs, event_id)
 
             if 'fields' in data:
                 data['fields'] = affirm(
@@ -1412,7 +1452,7 @@ class EventBackend(AbstractBackend):
                     new_track = copy.deepcopy(tracks[x])
                     choices = new_track.pop('choices', None)
                     self._set_course_choices(rs, data['id'], x, choices,
-                                             courses)
+                                             course_segments)
                     new_track['registration_id'] = data['id']
                     new_track['track_id'] = x
                     ret *= self.sql_insert(rs, "event.registration_tracks",
@@ -1421,7 +1461,7 @@ class EventBackend(AbstractBackend):
                     update = copy.deepcopy(tracks[x])
                     choices = update.pop('choices', None)
                     self._set_course_choices(rs, data['id'], x, choices,
-                                             courses)
+                                             course_segments)
                     update['id'] = existing[x]
                     ret *= self.sql_update(rs, "event.registration_tracks",
                                            update)
@@ -1452,6 +1492,8 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
+            course_segments = self._get_event_course_segments(rs,
+                                                              data['event_id'])
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
@@ -1464,14 +1506,26 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_("Missing track dataset."))
             rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
             new_id = self.sql_insert(rs, "event.registrations", rdata)
-            with Silencer(rs):
-                for aspect in ('parts', 'tracks'):
-                    if aspect in data:
-                        adata = {
-                            'id': new_id,
-                            aspect: data[aspect]
-                        }
-                        self.set_registration(rs, adata)
+
+            # Uninlined code from set_registration to make this more
+            # performant.
+            #
+            # insert parts
+            for part_id, part in data['parts'].items():
+                new_part = copy.deepcopy(part)
+                new_part['registration_id'] = new_id
+                new_part['part_id'] = part_id
+                self.sql_insert(rs, "event.registration_parts", new_part)
+            # insert tracks
+            for track_id, track in data['tracks'].items():
+                new_track = copy.deepcopy(track)
+                choices = new_track.pop('choices', None)
+                self._set_course_choices(rs, new_id, track_id, choices,
+                                         course_segments, new_registration=True)
+                new_track['registration_id'] = new_id
+                new_track['track_id'] = track_id
+                self.sql_insert(rs, "event.registration_tracks", new_track)
+
             # fix fields to contain registration id
             fdata = {
                 'id': new_id,
@@ -1581,10 +1635,10 @@ class EventBackend(AbstractBackend):
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
-            event = self.get_event(rs, event_id)
+            event_fields = self._get_event_fields(rs, event_id)
             ret = {e['id']: e for e in data}
             for entry in ret.values():
-                entry['fields'] = cast_fields(entry['fields'], event['fields'])
+                entry['fields'] = cast_fields(entry['fields'], event_fields)
         return {e['id']: e for e in data}
 
     @access("event")
@@ -1605,11 +1659,11 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
-            event = self.get_event(rs, event_id)
+            event_fields = self._get_event_fields(rs, event_id)
             if 'fields' in data:
                 data['fields'] = affirm(
                     "event_associated_fields", data['fields'],
-                    fields=event['fields'],
+                    fields=event_fields,
                     association=const.FieldAssociations.lodgement)
 
             # now we get to do the actual work
