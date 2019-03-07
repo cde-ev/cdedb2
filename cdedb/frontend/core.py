@@ -1353,7 +1353,7 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect(rs, "core/change_username_form")
         else:
             self.do_mail(rs, "username_change_info",
-                         {'To': rs.user.username,
+                         {'To': (rs.user.username,),
                           'Subject': "Deine E-Mail-Adresse wurde geändert"},
                          {'new_username': new_username})
             return self.redirect(rs, "core/index")
