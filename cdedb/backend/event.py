@@ -1383,7 +1383,6 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             course_segments = self._get_event_course_segments(rs, event_id)
-            self.logger.debug(course_segments)
 
             if 'fields' in data:
                 data['fields'] = affirm(
@@ -1503,13 +1502,15 @@ class EventBackend(AbstractBackend):
             rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
             new_id = self.sql_insert(rs, "event.registrations", rdata)
 
+            # Uninlined code from set_registration to make this more
+            # performant.
+            #
             # insert parts
             for part_id, part in data['parts'].items():
                 new_part = copy.deepcopy(part)
                 new_part['registration_id'] = new_id
                 new_part['part_id'] = part_id
                 self.sql_insert(rs, "event.registration_parts", new_part)
-
             # insert tracks
             for track_id, track in data['tracks'].items():
                 new_track = copy.deepcopy(track)
@@ -1731,10 +1732,19 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
             if cascade:
-                query = glue("UPDATE event.registration_parts",
-                             "SET lodgement_id = NULL",
-                             "WHERE lodgement_id = %s")
-                self.query_exec(rs, query, (lodgement_id,))
+                reg_ids = self.list_registrations(rs, event_id)
+                registrations = self.get_registrations(rs, reg_ids)
+                for registration_id, registration in registrations.items():
+                    update = {}
+                    for part_id, part in registration['parts'].items():
+                        if part['lodgement_id'] == lodgement_id:
+                            update[part_id] = {'lodgement_id': None}
+                    if update:
+                        new_registration = {
+                            'id': registration_id,
+                            'parts': update
+                        }
+                        self.set_registration(rs, new_registration)
             ret = self.sql_delete_one(rs, "event.lodgements", lodgement_id)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_deleted, event_id,
