@@ -3337,7 +3337,8 @@ class EventFrontend(AbstractUserFrontend):
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.lodgement:
                     temp = "lodge_fields{0}.xfield_{1}_{0}"
-                    spec[temp.format(part_id, f['field_name'])] = str(f['kind'])
+                    kind = const.FieldDatatypes(f['kind']).name
+                    spec[temp.format(part_id, f['field_name'])] = kind
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.course_id{0}".format(track_id)] = "id"
                 spec["track{0}.course_instructor{0}".format(track_id)] = "id"
@@ -3347,7 +3348,8 @@ class EventFrontend(AbstractUserFrontend):
                                 key=lambda f: f['field_name']):
                     if f['association'] == const.FieldAssociations.course:
                         temp = "course_fields{0}.xfield_{1}_{0}"
-                        spec[temp.format(track_id, f['field_name'])] = str(f['kind'])
+                        kind = const.FieldDatatypes(f['kind']).name
+                        spec[temp.format(track_id, f['field_name'])] = kind
         if len(event['parts']) > 1:
             spec[",".join("part{0}.status{0}".format(part_id)
                           for part_id in event['parts'])] = "int"
@@ -3362,7 +3364,8 @@ class EventFrontend(AbstractUserFrontend):
                         "lodge_fields{0}.xfield_{1}_{0}".format(
                             part_id, f['field_name'])
                         for part_id in event['parts'])
-                    spec[key] = str(f['kind'])
+                    kind = const.FieldDatatypes(f['kind']).name
+                    spec[key] = kind
         if len(tracks) > 1:
             spec[",".join("track{0}.course_id{0}".format(track_id)
                           for track_id in tracks)] = "id"
@@ -3377,11 +3380,13 @@ class EventFrontend(AbstractUserFrontend):
                         "course_fields{0}.xfield_{1}_{0}".format(
                             track_id, f['field_name'])
                         for track_id in tracks)
-                    spec[key] = str(f['kind'])
+                    kind = const.FieldDatatypes(f['kind']).name
+                    spec[key] = kind
         for f in sorted(event['fields'].values(),
                         key=lambda f: f['field_name']):
             if f['association'] == const.FieldAssociations.registration:
-                spec["reg_fields.xfield_{}".format(f['field_name'])] = str(f['kind'])
+                kind = const.FieldDatatypes(f['kind']).name
+                spec["reg_fields.xfield_{}".format(f['field_name'])] = kind
         return spec
 
     @staticmethod
