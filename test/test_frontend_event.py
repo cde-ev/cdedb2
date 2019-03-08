@@ -190,6 +190,8 @@ class TestEventFrontend(FrontendTest):
             self.submit(f)
             self.assertTitle("Große Testakademie 2222")
             self.assertNonPresence("Bertålotta")
+        f = self.response.forms['addorgaform']
+        f['orga_id'] = "DB-2-7"
         self.submit(f, check_notification=False)
         self.assertTitle("Große Testakademie 2222")
         self.assertNonPresence("Bertålotta")
@@ -261,7 +263,6 @@ class TestEventFrontend(FrontendTest):
         self.follow()
         self.assertPresence("Die Kursliste ist noch nicht öffentlich",
                             'notifications')
-
 
     @as_users("anton", "garcia")
     def test_part_summary_trivial(self, user):
