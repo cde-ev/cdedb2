@@ -535,6 +535,33 @@ etc;anything else""", f['entries_2'].value)
         f['notevil'] = "2018-10-03"
         self.submit(f)
 
+    @as_users("garcia")
+    def test_event_fields_query(self, user):
+        self.get("/event/event/1/field/summary")
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "CapitalLetters"
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'] = FieldDatatypes.str.value
+        self.submit(f)
+        self.get("/event/event/1/field/setselect")
+        f = self.response.forms['selectfieldform']
+        f['field_id'] = 7
+        self.submit(f)
+        f = self.response.forms['fieldform']
+        f['input1'] = "Example Text"
+        f['input2'] = ""
+        f['input3'] = "Other Text"
+        self.submit(f)
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        f = self.response.forms['queryform']
+        f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
+        f['qop_reg_fields.xfield_CapitalLetters'] = 2  # 2: is not empty
+        self.submit(f)
+        self.assertPresence("Anton Armin A.")
+        self.assertPresence("Garcia G.")
+        #self.assertPresence("Other Text")
+
     @as_users("anton", "garcia")
     def test_change_minor_form(self, user):
         self.traverse({'href': '/event/$'},
