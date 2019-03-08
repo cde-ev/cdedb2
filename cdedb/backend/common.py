@@ -508,9 +508,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 params.extend((value,) * len(columns))
             elif operator in (_ops.regex, _ops.notregex):
                 if operator == _ops.regex:
-                    phrase = "{} ~* %s"
+                    phrase = "{} ~ %s"
                 else:
-                    phrase = "{} !~* %s"
+                    phrase = "{} !~ %s"
                 params.extend((value,) * len(columns))
             elif operator == _ops.fuzzy:
                 phrase = "similarity({}, %s) > 0.5"
