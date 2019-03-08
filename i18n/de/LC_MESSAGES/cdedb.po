@@ -10017,6 +10017,9 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
 
+msgid "Only Admins may change mailinglist configuration."
+msgstr "Nur Administratoren dürfen die Mailinglisten-Konfiguration ändern."
+
 #~ msgid "cde_misc"
 #~ msgstr "Linksammlung Mitgliederbereich"
 

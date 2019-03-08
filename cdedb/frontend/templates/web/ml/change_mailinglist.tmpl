@@ -27,43 +27,54 @@
             $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist();
         });
     </script>
-    <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
-        {{ util.anti_csrf_token('ml/change_mailinglist') }}
+    {% if is_admin %}
+        <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
+            {{ util.anti_csrf_token('ml/change_mailinglist') }}
+    {% else %}
+        <div id="changelistform">
+    {% endif %}
         <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
-        {{ util.form_input_checkbox(name="is_active", label=gettext("Active")) }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_text(name="address", label=gettext("Address")) }}
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+            {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=not is_admin) }}
+            {{ util.form_input_text(name="title", label=gettext("Title"), readonly=not is_admin) }}
+            {{ util.form_input_text(name="address", label=gettext("Address"), readonly=not is_admin) }}
+            {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", readonly=not is_admin,
+                                        info=gettext("Supports %(infolink)s.")|format(
+                                            infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
+                                                               title=gettext("Short Markdown summary")))|s) }}
+            {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", readonly=not is_admin,
+                                        info=gettext("Supports %(infolink)s.")|format(
+                                            infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
+                                                               title=gettext("Short Markdown summary")))|s) }}
 
         <h4 class="heading-underline">{% trans -%}Moderation &amp; Subscribers{%- endtrans %}</h4>
-        {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
-                entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="audience_policy", label=gettext("Audience"),
-                entries=enums['AudiencePolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="sub_policy", label=gettext("Subscription"),
-                entries=enums['SubscriptionPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=sorted_events,
-                info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
-        {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
-                entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
-                info=gettext("No selection results in an orga-list.")) }}
-        {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
-                entries=sorted_assemblies,
-                info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
-        {{ util.form_input_select(name="gateway", label=gettext("Gateway"), nulloption="",
-                entries=sorted_mailinglists,
-                info=gettext("Subscribers of this list can always subscribe. (Opt-In)")) }}
+            {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"), readonly=not is_admin,
+                    entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
+            {{ util.form_input_select(name="audience_policy", label=gettext("Audience"), readonly=not is_admin,
+                    entries=enums['AudiencePolicy']|enum_entries(processing=gettext)) }}
+            {{ util.form_input_select(name="sub_policy", label=gettext("Subscription"), readonly=not is_admin,
+                    entries=enums['SubscriptionPolicy']|enum_entries(processing=gettext)) }}
+            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=sorted_events,
+                    readonly=not is_admin,
+                    info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
+            {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=not is_admin,
+                    entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
+                    info=gettext("No selection results in an orga-list.")) }}
+            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="", readonly=not is_admin,
+                    entries=sorted_assemblies,
+                    info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
+            {{ util.form_input_select(name="gateway", label=gettext("Gateway"), nulloption="", readonly=not is_admin,
+                    entries=sorted_mailinglists,
+                    info=gettext("Subscribers of this list can always subscribe. (Opt-In)")) }}
 
         <h4 class="heading-underline">{% trans -%}Mails{%- endtrans %}</h4>
-        {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix")) }}
-        {{ util.form_input_select(name="attachment_policy", label=gettext("Attachments"),
-                entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)")) }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
-    </form>
+            {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix"), readonly=not is_admin) }}
+            {{ util.form_input_select(name="attachment_policy", label=gettext("Attachments"), readonly=not is_admin,
+                    entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
+            {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), readonly=not is_admin) }}
+    {% if is_admin %}
+            {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
+        </form>
+    {% else %}
+        </div>
+    {% endif %}
 {% endblock %}

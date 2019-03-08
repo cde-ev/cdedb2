@@ -9,13 +9,9 @@
             {% if data['id'] in user.moderator or is_admin %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Manage"),
                         aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
-            {% endif %}
-            {% if is_admin %}
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
-            {% endif %}
-            {% if data['id'] in user.moderator or is_admin %}
                 {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), gettext("Log"),
                              aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}

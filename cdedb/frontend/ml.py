@@ -262,7 +262,7 @@ class MlFrontend(AbstractUserFrontend):
             'may_toggle': may_toggle, 'personas': personas,
             'pending': is_pending})
 
-    @access("ml_admin")
+    @access("ml")
     def change_mailinglist_form(self, rs, mailinglist_id):
         """Render form."""
         mailinglists = self.mlproxy.list_mailinglists(rs)
@@ -275,6 +275,9 @@ class MlFrontend(AbstractUserFrontend):
         sorted_assemblies = sorted([(k, v["title"]) for k, v in assemblies.items()],
                                    key=lambda x: x[1])
         merge_dicts(rs.values, rs.ambience['mailinglist'])
+        if not self.is_admin(rs):
+            rs.notify("info",
+                      n_("Only Admins may change mailinglist configuration."))
         return self.render(rs, "change_mailinglist", {
             'sorted_mailinglists': sorted_mailinglists,
             'sorted_events': sorted_events,
