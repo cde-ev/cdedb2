@@ -287,26 +287,26 @@ class TestCdEBackend(BackendTest):
         query = Query(
             scope="qview_cde_member",
             spec=dict(QUERY_SPECS["qview_cde_member"]),
-            fields_of_interest=("personas.id", "family_name",
-                                   "birthday"),
-            constraints=[("given_names,display_name", QueryOperators.regex, '[ae]'),
-                            ("country,country2", QueryOperators.empty, None)],
+            fields_of_interest=("personas.id", "family_name", "birthday"),
+            constraints=[
+                ("given_names,display_name", QueryOperators.regex, '[ae]'),
+                ("country,country2", QueryOperators.empty, None)],
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({1, 2, 6, 9, 12}, {e['id'] for e in result})
+        self.assertEqual({2, 6, 9, 12}, {e['id'] for e in result})
 
     @as_users("anton")
     def test_user_search(self, user):
         query = Query(
             scope="qview_cde_user",
             spec=dict(QUERY_SPECS["qview_cde_user"]),
-            fields_of_interest=("personas.id", "family_name",
-                                   "birthday"),
-            constraints=[("given_names", QueryOperators.regex, '[ae]'),
-                            ("birthday", QueryOperators.less, datetime.datetime.now())],
+            fields_of_interest=("personas.id", "family_name", "birthday"),
+            constraints=[
+                ("given_names", QueryOperators.regex, '[ae]'),
+                ("birthday", QueryOperators.less, datetime.datetime.now())],
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({1, 2, 3, 4, 6, 7}, {e['id'] for e in result})
+        self.assertEqual({2, 3, 4, 6, 7}, {e['id'] for e in result})
 
     @as_users("anton")
     def test_user_search_operators(self, user):

@@ -214,7 +214,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("CdE-Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.regex.value
-        f['qval_address'] = 'a[rm]'
+        f['qval_address'] = '[aA][rm]'
         f['qsel_personas.id'].checked = True
         f['qsel_birthday'].checked = True
         f['qsel_decided_search'].checked = True
@@ -236,7 +236,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("CdE-Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.regex.value
-        f['qval_address'] = 'a[rm]'
+        f['qval_address'] = '[aA][rm]'
         f['qsel_personas.id'].checked = True
         f['qsel_birthday'].checked = True
         f['qsel_decided_search'].checked = True
