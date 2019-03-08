@@ -452,6 +452,36 @@ etc;anything else""", f['entries_2'].value)
         self.assertNotIn('field_name_7', f.fields)
 
     @as_users("anton")
+    def test_event_fields_unique_name(self, user):
+        self.get("/event/event/1/field/summary")
+        f = self.response.forms['fieldsummaryform']
+        f['delete_1'].checked = True
+        f['create_-1'].checked = True
+        f['field_name_-1'] = f['field_name_1'].value
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'] = FieldDatatypes.str.value
+        self.submit(f, check_notification=False)
+        self.assertPresence("Feldname nicht eindeutig.")
+        f = self.response.forms['fieldsummaryform']
+        self.assertIn('field_name_1', f.fields)
+        self.assertNotIn('field_name_7', f.fields)
+
+        # TODO test creating two new fields with the same name.
+        # This doesn't seem possible with the Non-JS form
+        #  which is all we can use here :/
+        # f = self.response.forms['fieldsummaryform']
+        # f['create_-1'].checked = True
+        # f['field_name_-1'] = "food_stuff"
+        # f['association_-1'] = FieldAssociations.registration.value
+        # f['kind_-1'] = FieldDatatypes.str.value
+        # f['create_-2'].checked = True
+        # f['field_name_-2'] = "food_stuff"
+        # f['association_-2'] = FieldAssociations.registration.value
+        # f['kind_-2'] = FieldDatatypes.str.value
+        # self.submit(f, check_notification=False)
+        # self.assertPresence("Feldname nicht eindeutig.")
+
+    @as_users("anton")
     def test_event_fields_datatype(self, user):
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
