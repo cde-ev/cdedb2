@@ -3,7 +3,7 @@
 """Services for the event realm."""
 
 import cgitb
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 import copy
 import csv
 import decimal
@@ -552,7 +552,7 @@ class EventFrontend(AbstractUserFrontend):
         statically. This takes care of validation too.
 
         :type rs: :py:class:`FrontendRequestState`
-        :type fields: [int]
+        :type fields: {int: {str: object}}
         :param fields: ids of fields
         :rtype: {int: {str: object}}
         """
@@ -606,11 +606,13 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 break
             marker += 1
-        count = collections.Counter(field['field_name']
-                                    for field in ret.values())
+        count = Counter(
+            field['field_name'] if field and 'field_name' in field
+            else fields[f_id]['field_name']
+            for f_id, field in ret.items())
         for field_id, field in ret.items():
-            if count[field['field_name']] > 1:
-                rs.errors.append(("event_field_{}".format(field_id),
+            if field and 'field_name' in field and count[field['field_name']] > 1:
+                rs.errors.append(("field_name_{}".format(field_id),
                                   ValueError(n_("Field name not unique."))))
         rs.values['create_last_index'] = marker - 1
         return ret
@@ -620,7 +622,7 @@ class EventFrontend(AbstractUserFrontend):
     def field_summary(self, rs, event_id):
         """Manipulate the fields of an event."""
         fields = self.process_field_input(
-            rs, rs.ambience['event']['fields'].keys())
+            rs, rs.ambience['event']['fields'])
         if rs.errors:
             return self.field_summary_form(rs, event_id)
         for field_id, field in rs.ambience['event']['fields'].items():
