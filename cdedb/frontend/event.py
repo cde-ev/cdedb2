@@ -611,7 +611,7 @@ class EventFrontend(AbstractUserFrontend):
         for field_id, field in ret.items():
             if count[field['field_name']] > 1:
                 rs.errors.append(("event_field_{}".format(field_id),
-                                  ValueError(n_("Field name not unique.")))
+                                  ValueError(n_("Field name not unique."))))
         rs.values['create_last_index'] = marker - 1
         return ret
 
