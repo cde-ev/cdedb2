@@ -12,6 +12,8 @@ import tempfile
 import datetime
 import operator
 
+import magic
+
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, request_extractor, REQUESTfile,
@@ -1079,7 +1081,8 @@ class CoreFrontend(AbstractFrontend):
     def get_foto(self, rs, foto):
         """Retrieve profile picture."""
         path = self.conf.STORAGE_DIR / "foto" / foto
-        return self.send_file(rs, path=path)
+        mimetype = magic.from_file(str(path), mime=True)
+        return self.send_file(rs, path=path, mimetype=mimetype)
 
     @access("cde")
     def set_foto_form(self, rs, persona_id):
