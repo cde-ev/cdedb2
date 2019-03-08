@@ -2219,7 +2219,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/show_past_event")
 
-    @access("cde")
+    @access("member")
     def view_misc(self, rs):
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
