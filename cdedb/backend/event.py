@@ -661,6 +661,30 @@ class EventBackend(AbstractBackend):
                     additional_info=current[x]['title'])
         return ret
 
+    def _delete_field_values(self, rs, field_data):
+        """
+        Helper function for ``set_event()`` to clean up all the JSON data, when
+        removing a field definition.
+
+        :param field_data: The data of the field definition to be deleted
+        :type field_data: dict
+        """
+        if field_data['association'] == const.FieldAssociations.registration:
+            table = 'event.registrations'
+        elif field_data['association'] == const.FieldAssociations.course:
+            table = 'event.courses'
+        elif field_data['association'] == const.FieldAssociations.lodgement:
+            table = 'event.lodgements'
+        else:
+            # This should not happen
+            return
+
+        query = glue("UPDATE {table}",
+                     "SET fields = fields - %s",
+                     "WHERE event_id = %s").format(table=table)
+        self.query_exec(rs, query, (field_data['field_name'],
+                                    field_data['event_id']))
+
     @access("event")
     def set_event(self, rs, data):
         """Update some keys of an event organized via DB.
@@ -826,9 +850,9 @@ class EventBackend(AbstractBackend):
                 deleted = {x for x in fields
                            if x > 0 and fields[x] is None}
                 current = self.sql_select(
-                    rs, "event.field_definitions", ("id", "field_name"),
+                    rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
                     updated | deleted)
-                field_names = {e['id']: e['field_name'] for e in current}
+                field_data = {e['id']: e for e in current}
                 # new
                 for x in new:
                     new_field = copy.deepcopy(fields[x])
@@ -846,16 +870,17 @@ class EventBackend(AbstractBackend):
                                            update)
                     self.event_log(
                         rs, const.EventLogCodes.field_updated, data['id'],
-                        additional_info=field_names[x])
+                        additional_info=field_data[x]['field_name'])
 
                 # deleted
                 if deleted:
                     ret *= self.sql_delete(rs, "event.field_definitions",
                                            deleted)
                     for x in deleted:
+                        self._delete_field_values(rs, field_data[x])
                         self.event_log(
                             rs, const.EventLogCodes.field_removed, data['id'],
-                            additional_info=field_names[x])
+                            additional_info=field_data[x]['field_name'])
         return ret
 
     @access("event_admin")
