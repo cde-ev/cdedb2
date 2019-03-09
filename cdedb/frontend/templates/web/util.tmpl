@@ -504,9 +504,6 @@
 {% endmacro %}
 
 {% macro event_field_input(fields, name='', readonly=False, defaultvalue='', anid='') %}
-    {%- if not name %}
-        {%- set name = "fields.{}".format(fields['field_name']) %}
-    {%- endif %}
     {%- if fields['entries'] %}
         {{- input_select(name=name, entries=fields['entries'], nulloption="",
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
@@ -537,6 +534,9 @@
 
 {% macro form_event_field_input(fields, name='', label=None, info='', displayerrors=True, readonly=False,
                                 defaultvalue='', anid='', force_label=False, infolink='') %}
+    {%- if not name %}
+        {%- set name = "fields.{}".format(fields['field_name']) %}
+    {%- endif %}
     {%- if label is none %}{% set label = fields['field_name'] %}{% endif %}
     {%- if not anid %}{% set anid = "event-input-{}".format(name) %}{% endif %}
     {%- call form_input_general(name, (None if fields['kind'] == enums['FieldDatatypes'].bool and not force_label else label), anid, False,
