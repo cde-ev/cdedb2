@@ -110,5 +110,6 @@
         {{ util.input_hidden(name="generation", value=pending['generation']) }}
         {{ util.input_submit(value=gettext("Reject Changes"), aclass="btn btn-danger", icon="ban-circle") }}
     </form>
+    {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit Changes"), icon="pencil", aclass="btn btn-warning") }}
     {{ util.href(cdedblink('core/list_pending_changes'), gettext("Cancel"), icon="remove", aclass="btn btn-default") }}
 {% endblock %}

@@ -7275,6 +7275,9 @@ msgstr "Änderungen bestätigen"
 msgid "Reject Changes"
 msgstr "Änderungen verwerfen"
 
+msgid "Edit Changes"
+msgstr "Änderungen bearbeiten"
+
 #: cdedb/frontend/templates/web/core/list_pending_changes.tmpl:5
 #, python-format
 msgid "Pending Profilechanges [%(count)s]"

@@ -675,6 +675,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '^/$'}, {'href': '/core/changelog/list'})
         self.assertTitle("Zu prüfende Profiländerungen [1]")
         self.traverse({'href': '/core/persona/2/changelog/inspect'})
+        self.traverse({'description': 'Änderungen bearbeiten'})
+        self.assertTitle("Bertålotta Ganondorf bearbeiten")
+        self.get('/core/persona/2/changelog/inspect')
         f = self.response.forms['ackchangeform']
         self.submit(f)
         self.assertTitle("Zu prüfende Profiländerungen [0]")
