@@ -466,20 +466,28 @@ etc;anything else""", f['entries_2'].value)
         self.assertIn('field_name_1', f.fields)
         self.assertNotIn('field_name_7', f.fields)
 
-        # TODO test creating two new fields with the same name.
-        # This doesn't seem possible with the Non-JS form
-        #  which is all we can use here :/
-        # f = self.response.forms['fieldsummaryform']
-        # f['create_-1'].checked = True
-        # f['field_name_-1'] = "food_stuff"
-        # f['association_-1'] = FieldAssociations.registration.value
-        # f['kind_-1'] = FieldDatatypes.str.value
-        # f['create_-2'].checked = True
-        # f['field_name_-2'] = "food_stuff"
-        # f['association_-2'] = FieldAssociations.registration.value
-        # f['kind_-2'] = FieldDatatypes.str.value
-        # self.submit(f, check_notification=False)
-        # self.assertPresence("Feldname nicht eindeutig.")
+        f = self.response.forms['fieldsummaryform']
+        # If the form would be valid in the first turn, we would need the
+        # following (hacky) code to add the fields, which are normally added by
+        # Javascript.
+        # for field in (webtest.forms.Checkbox(f, 'input', 'create_-2', 100,
+        #                                      value='True'),
+        #               webtest.forms.Text(f, 'input', 'field_name_-2', 101),
+        #               webtest.forms.Text(f, 'input', 'association_-2', 102),
+        #               webtest.forms.Text(f, 'input', 'kind_-2', 103)):
+        #     f.fields.setdefault(field.name, []).append(field)
+        #     f.field_order.append((field.name, field))
+
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "food_stuff"
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'] = FieldDatatypes.str.value
+        f['create_-2'].checked = True
+        f['field_name_-2'] = "food_stuff"
+        f['association_-2'] = FieldAssociations.registration.value
+        f['kind_-2'] = FieldDatatypes.str.value
+        self.submit(f, check_notification=False)
+        self.assertPresence("Feldname nicht eindeutig.")
 
     @as_users("anton")
     def test_event_fields_datatype(self, user):
