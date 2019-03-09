@@ -1181,13 +1181,22 @@ class EventFrontend(AbstractUserFrontend):
             'action_entries': action_entries})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("registration_ids", "[int]"), ("track_ids", "[int]"),
-                 ("action", "infinite_enum_coursechoicetoolactions"),
-                 ("course_id", "id_or_None"))
+    @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
+                 ("position", "infinite_enum_coursefilterpositions_or_None"),
+                 ("ids", "int_csv_list_or_None"),
+                 ("registration_ids", "[int]"), ("assign_track_ids", "[int]"),
+                 ("assign_action", "infinite_enum_coursechoicetoolactions"),
+                 ("assign_course_id", "id_or_None"))
     @event_guard(check_offline=True)
-    def course_choices(self, rs, event_id, registration_ids, track_ids, action,
-                       course_id):
+    def course_choices(self, rs, event_id, course_id, track_id, position, ids,
+                       registration_ids, assign_track_ids, assign_action,
+                       assign_course_id):
         """Manipulate course choices.
+
+        The first four parameters (course_id, track_id, position, ids) are the
+        filter parameters for the course_choices_form used for displaying
+        an equally filtered form on validation errors or after successful
+        submit.
 
         Allow assignment of multiple people in multiple tracks to one of
         their choices or a specific course.
@@ -1198,7 +1207,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         courses = None
-        if action.enum == CourseChoiceToolActions.assign_auto:
+        if assign_action.enum == CourseChoiceToolActions.assign_auto:
             course_ids = self.eventproxy.list_db_courses(rs, event_id)
             courses = self.eventproxy.get_courses(rs, course_ids)
 
@@ -1208,19 +1217,19 @@ class EventFrontend(AbstractUserFrontend):
                 'id': registration_id,
                 'tracks': {}
             }
-            for track_id in track_ids:
+            for track_id in assign_track_ids:
                 reg_part = registrations[registration_id]['parts'][
                     tracks[track_id]['part_id']]
                 reg_track = registrations[registration_id]['tracks'][track_id]
                 if (reg_part['status']
                         != const.RegistrationPartStati.participant):
                     continue
-                if action.enum == CourseChoiceToolActions.specific_rank:
-                    choice = reg_track['choices'][action.int]
+                if assign_action.enum == CourseChoiceToolActions.specific_rank:
+                    choice = reg_track['choices'][assign_action.int]
                     tmp['tracks'][track_id] = {'course_id': choice}
-                elif action.enum == CourseChoiceToolActions.assign_fixed:
-                    tmp['tracks'][track_id] = {'course_id': course_id}
-                elif action.enum == CourseChoiceToolActions.assign_auto:
+                elif assign_action.enum == CourseChoiceToolActions.assign_fixed:
+                    tmp['tracks'][track_id] = {'course_id': assign_course_id}
+                elif assign_action.enum == CourseChoiceToolActions.assign_auto:
                     cid = reg_track['course_id']
                     if cid and track_id in courses[cid]['active_segments']:
                         # Do not modify a valid assignment
@@ -1244,7 +1253,9 @@ class EventFrontend(AbstractUserFrontend):
             if tmp['tracks']:
                 code *= self.eventproxy.set_registration(rs, tmp)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/course_choices_form")
+        return self.redirect(rs, "event/course_choices_form",
+                             {'course_id': course_id, 'track_id': track_id,
+                              'position': position.value, 'ids': ids})
 
     @access("event")
     @event_guard()
