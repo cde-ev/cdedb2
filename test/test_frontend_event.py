@@ -1256,8 +1256,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 2]
-        f['track_ids'] = [3]
-        f['action'] = 0
+        f['assign_track_ids'] = [3]
+        f['assign_action'] = 0
         self.submit(f)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 1
@@ -1284,9 +1284,9 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [3]
-        f['track_ids'] = [2, 3]
-        f['action'] = -4
-        f['course_id'] = 5
+        f['assign_track_ids'] = [2, 3]
+        f['assign_action'] = -4
+        f['assign_course_id'] = 5
         self.submit(f)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 5
@@ -1310,8 +1310,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Inga")
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 2, 3, 4]
-        f['track_ids'] = [1,2, 3]
-        f['action'] = -5
+        f['assign_track_ids'] = [1, 2, 3]
+        f['assign_action'] = -5
         self.submit(f)
 
     @as_users("garcia")
