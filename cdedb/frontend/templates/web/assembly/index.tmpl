@@ -23,7 +23,7 @@
     </ul>
     <h3>{{ gettext("Inactive Assemblies") }}</h3>
     <ul>
-        {% for assembly_id, data in assemblies|dictsort(reverse=True) %}
+        {% for assembly_id, data in assemblies|dictsort|reverse %}
             {% if not data['is_active'] %}
                 <li>
                     {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
