@@ -1255,7 +1255,9 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/course_choices_form",
                              {'course_id': course_id, 'track_id': track_id,
-                              'position': position.value, 'ids': ids})
+                              'position': position.value
+                                          if position is not None else None,
+                              'ids': ids})
 
     @access("event")
     @event_guard()
