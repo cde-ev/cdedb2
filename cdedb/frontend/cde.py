@@ -15,6 +15,7 @@ import string
 import sys
 import tempfile
 import operator
+import datetime
 
 import psycopg2.extensions
 import werkzeug
@@ -30,7 +31,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
-    enum_entries_filter)
+    enum_entries_filter, money_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 from cdedb.backend.event import EventBackend
@@ -41,7 +42,7 @@ from cdedb.frontend.parse_statement import (
     STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
     STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_DB_ID_EXTERN,
     STATEMENT_DB_ID_UNKNOWN, MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS,
-    OTHER_TRANSACTION_FIELDS, ACCOUNT_FIELDS)
+    OTHER_TRANSACTION_FIELDS, ACCOUNT_FIELDS, STATEMENT_DATEFORMAT)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -894,6 +895,16 @@ class CdEFrontend(AbstractUserFrontend):
         problems.extend(p)
         note, p = validate.check_str_or_None(datum['raw']['note'], "note")
         problems.extend(p)
+        try:
+            date = datetime.datetime.strptime(note, STATEMENT_DATEFORMAT)
+        except ValueError:
+            pass
+        else:
+            note = ("Guthabenänderung um {amount} auf {new_balance} "
+                    "(Überwiesen am {date})").format(
+                        amount=money_filter(amount),
+                        new_balance="{new_balance}",
+                        date=date.strftime(STATEMENT_DATEFORMAT))
 
         persona = None
         if persona_id:
@@ -952,10 +963,15 @@ class CdEFrontend(AbstractUserFrontend):
                 for index, datum in enumerate(data):
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
+                    note = datum['note']
+                    if "{new_balance}" in datum['note']:
+                        note = note.format(
+                            new_balance=money_filter(new_balance))
+
                     count += self.coreproxy.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
-                        change_note=datum['note'])
+                        change_note=note)
                     if new_balance > 0:
                         memberships_gained += self.coreproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)

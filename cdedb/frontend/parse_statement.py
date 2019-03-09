@@ -778,7 +778,7 @@ class Transaction:
             "account": self.account,
             "amount_export": self.amount_export,
             "amount": self.amount,
-            "date": self.statement_date.strftime("%d.%m.%Y"),
+            "date": self.statement_date.strftime(STATEMENT_DATEFORMAT),
             "db_id": self.best_member_match.db_id
             if self.best_member_match else STATEMENT_DB_ID_UNKNOWN,
             "db_id_value": self.best_member_match.db_id.split("-")[1] if
