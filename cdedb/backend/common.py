@@ -13,6 +13,7 @@ import logging
 
 from cdedb.common import (
     n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns)
+from cdedb.database.constants import FieldDatatypes
 from cdedb.validation import parse_date, parse_datetime
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
@@ -703,20 +704,19 @@ def cast_fields(data, spec):
     """
     spec = {v['field_name']: v['kind'] for v in spec.values()}
     casters = {
-        "int": lambda x: x,
-        "str": lambda x: x,
-        "float": lambda x: x,
-        "date": parse_date,
-        "datetime": parse_datetime,
-        "bool": lambda x: x,
+        FieldDatatypes.int: lambda x: x,
+        FieldDatatypes.str: lambda x: x,
+        FieldDatatypes.float: lambda x: x,
+        FieldDatatypes.date: parse_date,
+        FieldDatatypes.datetime: parse_datetime,
+        FieldDatatypes.bool: lambda x: x,
     }
 
     def _do_cast(key, val):
         if val is None:
             return None
         if key in spec:
-            datatype, _ = getattr(validate, "_enum_fielddatatypes")(spec[key])
-            return casters[datatype.name](val)
+            return casters[spec[key]](val)
         return val
 
     return {key: _do_cast(key, val) for key, val in data.items()}
