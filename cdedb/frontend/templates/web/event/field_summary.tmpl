@@ -150,6 +150,13 @@
     </script>
 
     <hr />
+    <p class="text-warning">{{ util.make_icon('warning-sign') }}
+        {% trans -%}
+            Deleting a field includes deletion of all data, which is stored
+            in this field in any registration/course/lodgement. Changing
+            the datatype of a field deletes all data, that cannot be casted
+            to the new type, upon saving.
+        {%- endtrans %}</p>
     <p class="help-block">
         {{ util.make_icon('info-sign') }}
         {% trans format="<br /><code style='padding: 2px 0;'>%(value_one)s1;%(desc_one)s<br />%(value_two)s2;%(desc_two)s<br />…</code><br />"|s|format(

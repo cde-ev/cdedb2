@@ -8730,6 +8730,17 @@ msgstr "Feld hinzufügen"
 msgid "Remove Field"
 msgstr "Feld entfernen"
 
+msgid ""
+"Deleting a field includes deletion of all data, which is stored\n"
+"            in this field in any registration/course/lodgement. Changing\n"
+"            the datatype of a field deletes all data, that cannot be casted\n"
+"            to the new type, upon saving."
+msgstr ""
+"Beim Löschen eines Feldes werden auch alle Daten gelöscht, die in einer "
+"Anmeldung/einem Course/einer Unterkunft in diesem Feld gespeichert sind. "
+"Das Ändern des Datentyps führt beim Speichern zur Löschung aller Daten, die "
+"nicht in den neuen Datentyp konvertiert werden können."
+
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:155
 #, python-format
 msgid ""
