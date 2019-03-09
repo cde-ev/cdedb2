@@ -21,6 +21,7 @@ from cdedb.common import (
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
+from cdedb.validation import parse_date, parse_datetime
 
 # This is used for generating the table for general queries for
 # registrations. We moved this rather huge blob here, so it doesn't
@@ -685,6 +686,54 @@ class EventBackend(AbstractBackend):
         self.query_exec(rs, query, (field_data['field_name'],
                                     field_data['event_id']))
 
+    def _cast_field_values(self, rs, field_data, new_kind):
+        """
+        Helper function for ``set_event()`` to cast the existing JSON data to
+        a new datatype (or set it to None, if casting fails), when a field
+        defintion is updated with a new datatype.
+
+        :param field_data: The data of the field definition to be updated
+        :type field_data: dict
+        :param new_kind: The new kind/datatype of the field.
+        :type new_kind: const.FieldDatatypes
+        """
+        if field_data['association'] == const.FieldAssociations.registration:
+            table = 'event.registrations'
+        elif field_data['association'] == const.FieldAssociations.course:
+            table = 'event.courses'
+        elif field_data['association'] == const.FieldAssociations.lodgement:
+            table = 'event.lodgements'
+        else:
+            # This should not happen
+            return
+
+        casters = {
+            const.FieldDatatypes.int: int,
+            const.FieldDatatypes.str: str,
+            const.FieldDatatypes.float: float,
+            const.FieldDatatypes.date: parse_date,
+            const.FieldDatatypes.datetime: parse_datetime,
+            const.FieldDatatypes.bool: bool,
+        }
+
+        data = self.sql_select(rs, table, ("id", "fields",),
+                               (field_data['event_id'],), entity_key='event_id')
+        for entry in data:
+            fdata = entry['fields']
+            value = fdata.get(field_data['field_name'], None)
+            if value is None:
+                continue
+            try:
+                new_value = casters[new_kind](value)
+            except ValueError:
+                new_value = None
+            fdata[field_data['field_name']] = new_value
+            new = {
+                'id': entry['id'],
+                'fields': PsycoJson(fdata),
+            }
+            self.sql_update(rs, table, new)
+
     @access("event")
     def set_event(self, rs, data):
         """Update some keys of an event organized via DB.
@@ -866,6 +915,10 @@ class EventBackend(AbstractBackend):
                 for x in updated:
                     update = copy.deepcopy(fields[x])
                     update['id'] = x
+                    if ('kind' in update
+                            and update['kind'] != field_data[x]['kind']):
+                        self._cast_field_values(rs, field_data[x],
+                                                update['kind'])
                     ret *= self.sql_update(rs, "event.field_definitions",
                                            update)
                     self.event_log(
