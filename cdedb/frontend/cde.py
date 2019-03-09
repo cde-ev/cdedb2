@@ -895,16 +895,17 @@ class CdEFrontend(AbstractUserFrontend):
         problems.extend(p)
         note, p = validate.check_str_or_None(datum['raw']['note'], "note")
         problems.extend(p)
-        try:
-            date = datetime.datetime.strptime(note, STATEMENT_DATEFORMAT)
-        except ValueError:
-            pass
-        else:
-            note = ("Guthabenänderung um {amount} auf {new_balance} "
-                    "(Überwiesen am {date})").format(
-                        amount=money_filter(amount),
-                        new_balance="{new_balance}",
-                        date=date.strftime(STATEMENT_DATEFORMAT))
+        if note:
+            try:
+                date = datetime.datetime.strptime(note, STATEMENT_DATEFORMAT)
+            except ValueError:
+                pass
+            else:
+                note = ("Guthabenänderung um {amount} auf {new_balance} "
+                        "(Überwiesen am {date})").format(
+                            amount=money_filter(amount),
+                            new_balance="{new_balance}",
+                            date=date.strftime(STATEMENT_DATEFORMAT))
 
         persona = None
         if persona_id:
@@ -964,7 +965,7 @@ class CdEFrontend(AbstractUserFrontend):
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
                     note = datum['note']
-                    if "{new_balance}" in datum['note']:
+                    if note and "{new_balance}" in note:
                         note = note.format(
                             new_balance=money_filter(new_balance))
 
