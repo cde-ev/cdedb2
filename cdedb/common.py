@@ -919,6 +919,21 @@ class InfiniteEnum:
             return self.int
         return self.enum.value
 
+    def __str__(self):
+        if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
+            return "{}({})".format(self.enum, self.int)
+        return str(self.enum)
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.value == other
+        return self.value == other.value
+
+    def __lt__(self, other):
+        if isinstance(other, int):
+            return self.value < other
+        return self.value < other.value
+
 
 @infinite_enum
 @enum.unique
