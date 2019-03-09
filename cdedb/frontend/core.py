@@ -728,7 +728,7 @@ class CoreFrontend(AbstractFrontend):
         REALM_ATTRIBUTES = {
             'persona': {
                 "display_name", "family_name", "given_names", "title",
-                "name_supplement"},
+                "name_supplement", "birth_name"},
             'ml': set(),
             'assembly': set(),
             'event': {

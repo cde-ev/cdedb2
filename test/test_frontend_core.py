@@ -666,8 +666,10 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['family_name'] = "Ganondorf"
+        f['birth_name'] = ""
         self.submit(f, check_notification=False)
         self.assertPresence(user['family_name'])
+        self.assertPresence("Gemeinser")
         self.assertNonPresence('Ganondorf')
         self.logout()
         user = USER_DICT["anton"]
@@ -686,6 +688,7 @@ class TestCoreFrontend(FrontendTest):
         self.login(user)
         self.traverse({'href': '/core/self/show'})
         self.assertNonPresence(user['family_name'])
+        self.assertNonPresence("Gemeinser")
         self.assertPresence('Ganondorf')
 
     @as_users("anton")
