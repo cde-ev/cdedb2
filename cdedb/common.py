@@ -908,7 +908,16 @@ def infinite_enum(aclass):
 
 #: Storage facility for infinite enums with associated data, see
 #: :py:func:`infinite_enum`
-InfiniteEnum = collections.namedtuple('InfiniteEnum', ('enum', 'int'))
+class InfiniteEnum:
+    def __init__(self, enum, int):
+        self.enum = enum
+        self.int = int
+
+    @property
+    def value(self):
+        if self.enum == INFINITE_ENUM_MAGIC_NUMBER:
+            return self.int
+        return self.enum.value
 
 
 @infinite_enum
