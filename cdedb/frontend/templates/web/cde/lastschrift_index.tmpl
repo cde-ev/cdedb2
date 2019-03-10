@@ -72,6 +72,13 @@
         {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
         {{ util.input_submit(gettext("Perform all Direct Debits"), icon='download', aclass='btn btn-primary') }}
     </form>
+    {% if errors %}
+        <ul>
+        {% for name, error in errors %}
+            <ul>{{ name }}: {{ util.format_error(error) }}</ul>
+        {% endfor %}
+        </ul>
+    {% endif %}
 
     <h2>{% trans -%}Open Direct Debits{%- endtrans %}</h2>
     {% if transactions|length > 0 %}
