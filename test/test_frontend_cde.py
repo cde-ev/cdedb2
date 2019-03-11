@@ -395,6 +395,25 @@ class TestCdEFrontend(FrontendTest):
             self.assertNotIn("receiptform3", self.response.forms)
 
     @as_users("anton")
+    def test_lastschrift_subject_limit(self, user):
+        self.get("/core/persona/1/adminchange")
+        f = self.response.forms["changedataform"]
+        f["given_names"] = "Anton Armin ÄÖÜ"
+        self.submit(f)
+        self.get("/cde/user/1/lastschrift/create")
+        f = self.response.forms["createlastschriftform"]
+        f["amount"] = 100.00
+        f["iban"] = "DE12500105170648489890"
+        self.submit(f)
+        f = self.response.forms["generatetransactionform"]
+        self.submit(f, check_notification=False)
+        self.assertNonPresence("Erstellung der SEPA-PAIN-Datei fehlgeschlagen.",
+                               div="notifications")
+        self.submit(f, check_notification=False)
+        self.assertPresence("Es liegen noch unbearbeitete Transaktionen vor.",
+                            div="notifications")
+
+    @as_users("anton")
     def test_lastschrift_generate_transactions(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift/$'})
