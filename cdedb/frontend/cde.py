@@ -895,17 +895,6 @@ class CdEFrontend(AbstractUserFrontend):
         problems.extend(p)
         note, p = validate.check_str_or_None(datum['raw']['note'], "note")
         problems.extend(p)
-        if note:
-            try:
-                date = datetime.datetime.strptime(note, STATEMENT_DATEFORMAT)
-            except ValueError:
-                pass
-            else:
-                note = ("Guthabenänderung um {amount} auf {new_balance} "
-                        "(Überwiesen am {date})").format(
-                            amount=money_filter(amount),
-                            new_balance="{new_balance}",
-                            date=date.strftime(STATEMENT_DATEFORMAT))
 
         persona = None
         if persona_id:
@@ -955,6 +944,8 @@ class CdEFrontend(AbstractUserFrontend):
             None as second number.
         """
         index = 0
+        note_template = ("Guthabenänderung um {amount} auf {new_balance} "
+                         "(Überwiesen am {date})")
         try:
             with Atomizer(rs):
                 count = 0
@@ -965,10 +956,18 @@ class CdEFrontend(AbstractUserFrontend):
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
                     note = datum['note']
-                    if note and "{new_balance}" in note:
-                        note = note.format(
-                            new_balance=money_filter(new_balance))
-
+                    if note:
+                        try:
+                            date = datetime.datetime.strptime(
+                                note, STATEMENT_DATEFORMAT)
+                        except ValueError:
+                            pass
+                        else:
+                            # This is the default case and makes it pretty
+                            note = note_template.format(
+                                amount=money_filter(amount),
+                                new_balance=money_filter(new_balance),
+                                date=date.strftime(STATEMENT_DATEFORMAT))
                     count += self.coreproxy.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
