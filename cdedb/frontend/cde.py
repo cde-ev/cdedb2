@@ -1323,9 +1323,9 @@ class CdEFrontend(AbstractUserFrontend):
             transaction['subject'] = asciificator(glue(
                 "{}, {}, {} I25+ Mitgliedsbeitrag u. Spende CdE e.V.",
                 "z. Foerderung der Volks- u. Berufsbildung u.",
-                "Studentenhilfe")).format(
+                "Studentenhilfe").format(
                 cdedbid_filter(persona['id']), persona['family_name'],
-                persona['given_names'])[:140]  # cut off bc of limit
+                persona['given_names']))[:140]  # cut off bc of limit
             previous = self.cdeproxy.list_lastschrift_transactions(
                 rs, lastschrift_ids=(lastschrift['id'],),
                 stati=(stati.success,))
