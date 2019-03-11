@@ -728,7 +728,7 @@ class CoreFrontend(AbstractFrontend):
         REALM_ATTRIBUTES = {
             'persona': {
                 "display_name", "family_name", "given_names", "title",
-                "name_supplement", "birth_name"},
+                "name_supplement"},
             'ml': set(),
             'assembly': set(),
             'event': {
@@ -739,7 +739,8 @@ class CoreFrontend(AbstractFrontend):
                 "postal_code", "location", "country",
                 "address_supplement2", "address2", "postal_code2", "location2",
                 "country2", "weblink", "specialisation", "affiliation",
-                "timeline", "interests", "free_form", "bub_search"}
+                "timeline", "interests", "free_form", "bub_search",
+                "birth_name"}
         }
         attributes = REALM_ATTRIBUTES['persona']
         for realm in ('ml', 'assembly', 'event', 'cde'):

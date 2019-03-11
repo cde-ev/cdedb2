@@ -311,11 +311,11 @@ class CoreBackend(AbstractBackend):
                 return 1
 
             # Determine if something requiring a review changed.
-            fields_requiring_review = {'birthday', 'family_name', 'given_names',
-                                       'gender', 'address_supplement',
-                                       'address',
-                                       'postal_code', 'location', 'country',
-                                       }
+            fields_requiring_review = {
+                "birthday", "family_name", "given_names", "birth_name",
+                "gender", "address_supplement", "address", "postal_code",
+                "location", "country",
+            }
             all_changed_fields = {key for key, value in data.items()
                                   if value != committed_state[key]}
             requires_review = (
