@@ -908,6 +908,7 @@ def infinite_enum(aclass):
 
 #: Storage facility for infinite enums with associated data, see
 #: :py:func:`infinite_enum`
+@functools.total_ordering
 class InfiniteEnum:
     def __init__(self, enum, int):
         self.enum = enum
@@ -925,14 +926,18 @@ class InfiniteEnum:
         return str(self.enum)
 
     def __eq__(self, other):
+        if isinstance(other, InfiniteEnum):
+            return self.value == other.value
         if isinstance(other, int):
             return self.value == other
-        return self.value == other.value
+        return NotImplemented
 
     def __lt__(self, other):
+        if isinstance(other, InfiniteEnum):
+            return self.value < other.value
         if isinstance(other, int):
             return self.value < other
-        return self.value < other.value
+        return NotImplemented
 
 
 @infinite_enum
