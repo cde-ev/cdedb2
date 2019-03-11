@@ -346,6 +346,7 @@ class CoreBackend(AbstractBackend):
                 "generation": next_generation,
                 "change_note": change_note,
                 "change_status": const.MemberChangeStati.pending,
+                "persona_id": data['id'],
             })
             del insert['id']
             if 'ctime' in insert:
