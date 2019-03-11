@@ -342,10 +342,10 @@ class CoreBackend(AbstractBackend):
             insert.update(data)
             insert.update({
                 "submitted_by": rs.user.persona_id,
+                "reviewed_by": None,
                 "generation": next_generation,
-                "change_status": const.MemberChangeStati.pending,
-                "persona_id": data['id'],
                 "change_note": change_note,
+                "change_status": const.MemberChangeStati.pending,
             })
             del insert['id']
             if 'ctime' in insert:
