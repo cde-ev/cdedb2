@@ -26,7 +26,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.common import (
     n_, merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
     int_to_words, determine_age_class, LineResolutions, PERSONA_DEFAULTS,
-    ProxyShim, diacritic_patterns, open_utf8, shutil_copy)
+    ProxyShim, diacritic_patterns, open_utf8, shutil_copy, asciificator)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -1318,10 +1318,10 @@ class CdEFrontend(AbstractUserFrontend):
             timestamp = "{:.6f}".format(now().timestamp())
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:])
-            transaction['subject'] = glue(
+            transaction['subject'] = asciificator(glue(
                 "{}, {}, {} I25+ Mitgliedsbeitrag u. Spende CdE e.V.",
                 "z. Foerderung der Volks- u. Berufsbildung u.",
-                "Studentenhilfe").format(
+                "Studentenhilfe")).format(
                 cdedbid_filter(persona['id']), persona['family_name'],
                 persona['given_names'])[:140]  # cut off bc of limit
             previous = self.cdeproxy.list_lastschrift_transactions(
