@@ -75,7 +75,7 @@
     {% if errors %}
         <ul>
         {% for name, error in errors %}
-            <ul>{{ name }}: {{ util.format_error(error) }}</ul>
+            <li>{{ name }}: {{ util.format_error(error) }}</li>
         {% endfor %}
         </ul>
     {% endif %}
