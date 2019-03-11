@@ -16,9 +16,8 @@ class TestCdEBackend(BackendTest):
     def test_basics(self, user):
         data = self.core.get_cde_user(self.key, user['id'])
         data['display_name'] = "Zelda"
-        data['birth_name'] = "Hylia"
         setter = {k: v for k, v in data.items() if k in
-                  {'id', 'birth_name', 'display_name', 'telephone'}}
+                  {'id', 'display_name', 'telephone'}}
         num = self.core.change_persona(self.key, setter, 1, change_note='note')
         self.assertEqual(1, num)
         new_data = self.core.get_cde_user(self.key, user['id'])
