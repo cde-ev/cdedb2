@@ -1033,6 +1033,8 @@ def parse_datetime(val, default_date=None):
         # understand +HHMM. Thus the equivalent of
         # datetime.strptime(datetime.isoformat()) is guaranteed to cause an
         # exception. *sigh*
+        #
+        # TODO With buster we can finally use datetime.fromisoformat
         if (len(val) > 5 and val[-6] in '+-' and val[-3] == ':'
                 and val[-5:-3].isdecimal() and val[-2:].isdecimal()):
             new_val = val[:-3] + val[-2:]
