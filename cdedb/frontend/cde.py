@@ -1999,10 +1999,9 @@ class CdEFrontend(AbstractUserFrontend):
                     'is_orga': any(x['is_orga'] for x in base_set),
                 }
                 entry['pcourse_ids'] = tuple(x['pcourse_id'] for x in base_set)
-                entry['is_instructor'] = any(x['is_instructor']
-                                             for x in base_set
-                                             if (x['pcourse_id'] == pcourse_id
-                                                 or not pcourse_id))
+                entry['is_instructor'] = any(
+                    x['is_instructor'] for x in base_set
+                    if (x['pcourse_id'] == pcourse_id or not pcourse_id))
                 if pcourse_id and pcourse_id not in entry['pcourse_ids']:
                     # remove non-participants with respect to the relevant
                     # course if there is a relevant course
@@ -2015,8 +2014,7 @@ class CdEFrontend(AbstractUserFrontend):
         # Delete unsearchable participants if we are not privileged
         if participants and not privileged:
             for anid, persona in personas.items():
-                if not persona['is_searchable'] or not persona['is_member'] \
-                        or not persona['is_active']:
+                if not persona['is_searchable'] or not persona['is_member']:
                     del participants[anid]
                     extra_participants += 1
         # Flag linkable user profiles (own profile + all searchable profiles
@@ -2026,9 +2024,8 @@ class CdEFrontend(AbstractUserFrontend):
                                               or anid == rs.user.persona_id)
         if "searchable" in rs.user.roles:
             for anid in participants:
-                if personas[anid]['is_searchable'] \
-                        and personas[anid]['is_member'] \
-                        and personas[anid]['is_active']:
+                if (personas[anid]['is_searchable']
+                        and personas[anid]['is_member']):
                     participants[anid]['viewable'] = True
         return participants, personas, extra_participants
 
