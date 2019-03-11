@@ -1283,6 +1283,9 @@ class CdEFrontend(AbstractUserFrontend):
                 rs, all_lids.keys()))
         else:
             lastschrift_ids = (lastschrift_id,)
+            if not self.determine_open_permits(rs, lastschrift_ids):
+                rs.notify("error", n_("Existing pending transaction."))
+                return self.lastschrift_index(rs)
         lastschrifts = self.cdeproxy.get_lastschrifts(
             rs, lastschrift_ids)
         personas = self.coreproxy.get_personas(
