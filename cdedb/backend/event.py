@@ -677,8 +677,7 @@ class EventBackend(AbstractBackend):
         elif field_data['association'] == const.FieldAssociations.lodgement:
             table = 'event.lodgements'
         else:
-            # This should not happen
-            return
+            raise RuntimeError(n_("This should not happen."))
 
         query = glue("UPDATE {table}",
                      "SET fields = fields - %s",
@@ -704,8 +703,7 @@ class EventBackend(AbstractBackend):
         elif field_data['association'] == const.FieldAssociations.lodgement:
             table = 'event.lodgements'
         else:
-            # This should not happen
-            return
+            raise RuntimeError(n_("This should not happen."))
 
         casters = {
             const.FieldDatatypes.int: int,
