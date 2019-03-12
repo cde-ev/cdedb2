@@ -13,10 +13,14 @@
             {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
         {% elif error.code == 500 %}
             {% trans %}An internal error occured:{% endtrans %}
-            {{ error.description }}
+            {% if error.description %}
+               {{ error.description.split()[0] }}
+            {% endif %}
         {% else %}
-             {% trans %}An unknown error occurred.{% endtrans %}
-            {{ error.description }}
+            {% trans %}An unknown error occurred.{% endtrans %}
+            {% if error.description %}
+               {{ error.description.split()[0] }}
+            {% endif %}
         {% endif %}
     </div>
 
