@@ -511,6 +511,51 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
 
     @as_users("anton")
+    def test_event_fields_change_datatype(self, user):
+        # First, remove the "lodge" field from the questionaire and the event's,
+        # so it can be deleted
+        self.get("/event/event/1/questionnaire/summary")
+        f = self.response.forms['questionnairesummaryform']
+        f['delete_5'].checked = True
+        self.submit(f)
+        self.get("/event/event/1/change")
+        f = self.response.forms['changeeventform']
+        f['lodge_field'] = ''
+        self.submit(f)
+
+        # Change datatype of "transportation" field to datetime and delete
+        # options, delete and recreate "lodge" field with int type.
+        self.get("/event/event/1/field/summary")
+        f = self.response.forms['fieldsummaryform']
+        f['kind_2'] = FieldDatatypes.datetime.value
+        f['entries_2'] = ""
+        f['delete_3'].checked = True
+        self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "lodge"
+        f['association_-1'] = FieldAssociations.registration.value
+        f['kind_-1'] = FieldDatatypes.int.value
+        self.submit(f)
+
+        # No page of the orga area should be broken by this
+        self.traverse({'href': '/event/event/1/course/choices'},
+                      {'href': '/event/event/1/stats'},
+                      {'href': '/event/event/1/course/stats'},
+                      {'href': '/event/event/1/checkin'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'})
+        f = self.response.forms['queryform']
+        f['qsel_reg_fields.xfield_lodge'].checked = True
+        f['qsel_reg_fields.xfield_transportation'].checked = True
+        self.submit(f)
+        f = self.response.forms['queryform']
+        f['qop_reg_fields.xfield_transportation'] = QueryOperators.empty.value
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/1/show'},
+                      {'href': '/event/event/1/registration/1/change'})
+
+    @as_users("anton")
     def test_event_fields_boolean(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
