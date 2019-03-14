@@ -1135,7 +1135,8 @@ class EventBackend(AbstractBackend):
             if not event['tracks']:
                 raise RuntimeError(n_("Event without tracks forbids courses"))
 
-            cdata = {k: v for k, v in data.items() if k in COURSE_FIELDS}
+            cdata = {k: v for k, v in data.items()
+                     if k in COURSE_FIELDS and k != "fields"}
             new_id = self.sql_insert(rs, "event.courses", cdata)
             if 'segments' in data or 'active_segments' in data:
                 pdata = {
@@ -1147,11 +1148,19 @@ class EventBackend(AbstractBackend):
                     pdata['active_segments'] = data['active_segments']
                 self.set_course(rs, pdata)
             # fix fields to contain course id
-            fdata = {
+            fdata = {'course_id': new_id}
+            if 'fields' in data:
+                event_fields = self._get_event_fields(rs, data['event_id'])
+                data['fields'] = affirm(
+                    "event_associated_fields", data['fields'],
+                    fields=event_fields,
+                    association=const.FieldAssociations.course)
+                fdata.update(data['fields'])
+            new = {
                 'id': new_id,
-                'fields': PsycoJson({'course_id': new_id})
+                'fields': PsycoJson(fdata)
             }
-            self.sql_update(rs, "event.courses", fdata)
+            self.sql_update(rs, "event.courses", new)
         self.event_log(rs, const.EventLogCodes.course_created,
                        data['event_id'], additional_info=data['title'])
         return new_id
