@@ -48,7 +48,7 @@ import zxcvbn
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
-from cdedb.validationdata import (
+from cdedb.validationdata import ( IBAN_LENGTHS,
     FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
@@ -1441,7 +1441,16 @@ def _iban(val, argname=None, *, _convert=True):
         if char not in string.digits + string.ascii_uppercase:
             errs.append((argname,
                          ValueError(n_("Invalid character in IBAN."))))
+    if tmp[:2] not in IBAN_LENGTHS:
+        errs.append((argname,
+                     ValueError(n_("Unknown or unsupported Country Code."))))
     if not errs:
+        if len(tmp) != IBAN_LENGTHS[tmp[:2]]:
+            errs.append((argname, ValueError(
+                n_("Invalid length %(len)s for Country Code %(code)s. "
+                   "Expexted length %(exp)s."),
+                {"len": len(tmp), "code": tmp[:2], "exp": IBAN_LENGTHS[tmp[:2]]}
+            )))
         temp = tmp[4:] + tmp[:4]
         temp = ''.join(c if c in string.digits else str(ord(c) - 55)
                        for c in temp)

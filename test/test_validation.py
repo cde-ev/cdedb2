@@ -446,3 +446,18 @@ class TestValidation(unittest.TestCase):
             ("A>B=C=D=E>_bar_", None, ValueError, False),
             ("E=C>A>_bar_=D=B",  None, ValueError, False),
             ), extraparams={'ballot': classical_ballot})
+
+    def test_iban(self):
+        self.do_validator_test("_iban", (
+            ("DE75512108001245126199", "DE75512108001245126199", None, True),
+            ("DE75 5121 0800 1245 1261 99", "DE75 5121 0800 1245 1261 99", None, True),
+            ("IT60X0542811101000000123456", "IT60X0542811101000000123456", None, True),
+            ("123", None, ValueError, False),  # Too short
+            ("1234567890", None, ValueError, False),  # Missing Country Code
+            ("DEFG1234567890", None, ValueError, False),  # Digits in checksum
+            ("DE1234+-567890", None, ValueError, False),  # Invalid Characters
+            ("XX75512108001245126199", None, ValueError, False),  # Wrong Country Code
+            ("FR75512108001245126199", None, ValueError, False),  # Wrong length
+            ("DE0651210800124512619", None, ValueError, False),  # Wrong length
+            ("DE00512108001245126199", None, ValueError, False),  # Wrong Checksum
+        ))
