@@ -2088,6 +2088,7 @@ _COURSE_COMMON_FIELDS = lambda: {
 _COURSE_OPTIONAL_FIELDS = {
     'segments': _any,
     'active_segments': _any,
+    'fields': _any,
 }
 
 
@@ -2112,7 +2113,7 @@ def _course(val, argname=None, *, creation=False, _convert=True):
     else:
         # no event_id, since the associated event should be fixed
         mandatory_fields = {'id': _id}
-        optional_fields = dict(_COURSE_COMMON_FIELDS(), fields=_any,
+        optional_fields = dict(_COURSE_COMMON_FIELDS(),
                                **_COURSE_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
