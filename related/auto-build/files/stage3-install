@@ -57,12 +57,17 @@ echo ""
 echo "Setting up the database..."
 echo "--------------------------------------------"
 
+# This is a bit heavy-handed on stopping/restarting stuff to debug some obscure hangs
+systemctl stop pgbouncer
 cp /cdedb2/related/auto-build/files/stage3/postgresql.conf /etc/postgresql/11/main/
 cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/11/main/
-/etc/init.d/postgresql restart
-sleep 3
+
+systemctl restart postgresql
+sleep 10
 
 make sql
+
+systemctl stop pgbouncer
 
 cp /cdedb2/related/auto-build/files/stage3/pgbouncer.ini /etc/pgbouncer/
 cp /cdedb2/related/pgbouncer_users.txt /etc/pgbouncer/userlist.txt
@@ -70,6 +75,8 @@ chmod 640 /etc/pgbouncer/userlist.txt
 chown postgres:postgres /etc/pgbouncer/userlist.txt
 
 cp /cdedb2/related/auto-build/files/stage3/pgbouncer /etc/default/
+
+systemctl start pgbouncer
 
 echo ""
 echo "Create local config files..."
@@ -106,7 +113,7 @@ a2ensite cdedb-site
 
 echo "" > /etc/apache2/ports.conf
 
-/etc/init.d/apache2 restart
+systemctl restart apache2
 
 echo ""
 echo "Set up the fail2ban..."
