@@ -762,9 +762,6 @@ etc;anything else""", f['entries_2'].value)
         self.get("/event/event/1/course/create")
         self.assertTitle("Kurs hinzufügen (Große Testakademie 2222)")
         f = self.response.forms['createcourseform']
-        self.assertEqual("1", f.get('segments', index=0).value)
-        self.assertEqual("2", f.get('segments', index=1).value)
-        self.assertEqual("3", f.get('segments', index=2).value)
         f['title'] = "Abstract Nonsense"
         f['nr'] = "ω"
         f['shortname'] = "math"
@@ -772,7 +769,6 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertPresence("Outside")
-        self.assertPresence("Kursfelder gesetzt.", div="notifications")
 
     @as_users("berta")
     def test_register(self, user):
