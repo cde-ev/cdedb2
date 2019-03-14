@@ -1,6 +1,7 @@
 {% set sidenav_active='core_log' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
 {% block title %}
     {% trans -%}
     	Account Log
@@ -52,15 +53,5 @@
         </tbody>
     </table>
 
-    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
-        <form action="{{ cdedblink('core/view_log') }}" method="GET" id="logshowform" class="form-horizontal">
-            {{ util.form_input_checkboxes("codes", label=gettext("Categories"),
-                    info=gettext("No selection means everything."),
-                    entries=enums['CoreLogCodes']|enum_entries(processing=gettext), small=True) }}
-            {{ util.form_input_text(name="persona_id", label=gettext("Account"), small=True, placeholder="DB-XXXX-X") }}
-
-            {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
-            {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
-        </form>
-    {% endcall %}
+    {{ generic.log_filter(cdedblink('core/view_log'), enums['CoreLogCodes'], 'persona_id') }}
 {% endblock %}

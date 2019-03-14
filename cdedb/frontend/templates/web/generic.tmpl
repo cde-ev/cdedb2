@@ -655,3 +655,29 @@
         </div>
     {% endif %}
 {% endmacro %}
+
+{% macro log_filter(endpoint, enum, filter_name=None) %}
+    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
+        <form action="{{ endpoint }}" method="GET" id="logshowform" class="form-horizontal">
+            {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
+                    entries=enum|enum_entries(processing=gettext), small=True) }}
+            {% if filter_name == "persona_id" %}
+                {{ util.form_input_text(name="persona_id", label=gettext("Account"), small=True, placeholder="DB-XXXX-X") }}
+            {% elif filter_name == "assembly_id" %}
+                {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
+                        entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
+            {% elif filter_name == "pevent_id" %}
+                {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="",
+                        entries=pevents|dictsort|dict_entries('id', 'title'), small=True) }}
+            {% elif filter_name == "event_id" %}
+                {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
+                        entries=all_events|dictsort, small=True) }}
+            {% elif filter_name == "mailinglist_id" %}
+                {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
+                        entries=all_mailinglists|dictsort, small=True) }}
+            {% endif %}
+            {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
+            {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
+        </form>
+    {% endcall %}
+{% endmacro %}
