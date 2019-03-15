@@ -676,6 +676,7 @@
                 {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
                         entries=all_mailinglists|dictsort, small=True) }}
             {% endif %}
+            {{ util.form_input_text("additional_info", label=gettext("Additional Info"), small=True) }}
             {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
             {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
         </form>
