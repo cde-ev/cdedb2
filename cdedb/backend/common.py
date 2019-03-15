@@ -548,7 +548,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     def generic_retrieve_log(self, rs, code_validator, entity_name, table,
                              codes=None, entity_id=None, start=None, stop=None,
-                             additional_columns=None):
+                             additional_columns=None, additional_info=None):
         """Get recorded activity.
 
         Each realm has it's own log as well as potentially additional
@@ -584,6 +584,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
           entries (works like python sequence slices).
         :type additional_columns: [str] or None
         :param additional_columns: Extra values to retrieve.
+        :type additional_info: str or None
+        :param additional_info: Filter for additional_info column
         :rtype: [{str: object}]
         """
         codes = affirm_set_validation(code_validator, codes, allow_None=True)
@@ -592,6 +594,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         stop = affirm_validation("int_or_None", stop)
         additional_columns = affirm_set_validation(
             "restrictive_identifier", additional_columns, allow_None=True)
+        additional_info = affirm_validation("str_or_None", additional_info)
         start = start or 0
         additional_columns = additional_columns or tuple()
         if stop:
@@ -611,13 +614,21 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         condition = ""
         params = []
         if codes:
+            condition = glue(condition, "{} code = ANY(%s)").format(connector)
             connector = "AND"
-            condition = glue(condition, "WHERE code = ANY(%s)")
             params.append(codes)
         if entity_id:
             condition = glue(
                 condition, "{} {}_id = %s").format(connector, entity_name)
+            connector = "AND"
             params.append(entity_id)
+        if additional_info:
+            condition = glue(
+                condition, "{} lower(additional_info) SIMILAR to %s").format(
+                connector)
+            connector = "AND"
+            value = "%{}%".format(diacritic_patterns(additional_info.lower()))
+            params.append(value)
         query = query.format(entity=entity_name, extra_columns=extra_columns,
                              table=table, condition=condition)
         return self.query_all(rs, query, params)
