@@ -63,7 +63,7 @@ class CdEBackend(AbstractBackend):
 
     @access("cde_admin")
     def retrieve_cde_log(self, rs, codes=None, persona_id=None, start=None,
-                         stop=None):
+                         stop=None, additional_info=None):
         """Get recorded activity.
 
         See
@@ -74,11 +74,12 @@ class CdEBackend(AbstractBackend):
         :type persona_id: int or None
         :type start: int or None
         :type stop: int or None
+        :type additional_info: str or None
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
             rs, "enum_cdelogcodes", "persona", "cde.log", codes, persona_id,
-            start, stop)
+            start, stop, additional_info=additional_info)
 
     @access("core_admin", "cde_admin")
     def retrieve_finance_log(self, rs, codes=None, persona_id=None, start=None,

@@ -185,7 +185,7 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin")
     def retrieve_log(self, rs, codes=None, persona_id=None, start=None,
-                     stop=None):
+                     stop=None, additional_info=None):
         """Get recorded activity.
 
         See
@@ -196,14 +196,16 @@ class CoreBackend(AbstractBackend):
         :type persona_id: int or None
         :type start: int or None
         :type stop: int or None
+        :type additional_info: str or None
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
             rs, "enum_corelogcodes", "persona", "core.log", codes, persona_id,
-            start, stop)
+            start, stop, additional_info=additional_info)
 
     @access("core_admin")
-    def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None):
+    def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None,
+                                additional_info=None):
         """Get changelog activity.
 
         Similar to
@@ -213,6 +215,7 @@ class CoreBackend(AbstractBackend):
         :type stati: [int] or None
         :type start: int or None
         :type stop: int or None
+        :type additional_info: str or None
         :rtype: [{str: object}]
         """
         stati = affirm_set("enum_memberchangestati", stati, allow_None=True)

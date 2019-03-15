@@ -150,7 +150,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def retrieve_log(self, rs, codes=None, assembly_id=None,
-                     start=None, stop=None):
+                     start=None, stop=None, additional_info=None):
         """Get recorded activity.
 
         See
@@ -161,12 +161,13 @@ class AssemblyBackend(AbstractBackend):
         :type assembly_id: int or None
         :type start: int or None
         :type stop: int or None
+        :type additional_info: str or None
         :rtype: [{str: object}]
         """
         assembly_id = affirm("id_or_None", assembly_id)
         return self.generic_retrieve_log(
             rs, "enum_assemblylogcodes", "assembly", "assembly.log", codes,
-            assembly_id, start, stop)
+            assembly_id, start, stop, additional_info=additional_info)
 
     @access("assembly_admin")
     def submit_general_query(self, rs, query):
