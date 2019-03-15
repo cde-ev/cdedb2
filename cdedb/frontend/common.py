@@ -558,7 +558,7 @@ def get_markdown_parser():
                                extension_configs={
                                    "toc": {
                                        "baselevel": 4,
-                                       "anchorlink": True,
+                                       "permalink": True,
                                        "slugify": md_id_wrapper,
                                    }})
 
