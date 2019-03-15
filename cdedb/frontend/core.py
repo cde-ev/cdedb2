@@ -1681,14 +1681,16 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("stati", "[int]"), ("start", "non_negative_int_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_changelog_meta(self, rs, stati, start, stop):
+    def view_changelog_meta(self, rs, stati, start, stop, additional_info):
         """View changelog activity."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.coreproxy.retrieve_changelog_meta(rs, stati, start, stop)
+        log = self.coreproxy.retrieve_changelog_meta(rs, stati, start, stop,
+                                                     additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -1701,15 +1703,17 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_log(self, rs, codes, persona_id, start, stop):
+    def view_log(self, rs, codes, persona_id, start, stop, additional_info):
         """View activity."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.coreproxy.retrieve_log(rs, codes, persona_id, start, stop)
+        log = self.coreproxy.retrieve_log(rs, codes, persona_id, start, stop,
+                                          additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}

@@ -136,16 +136,17 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly_admin")
     @REQUESTdata(("codes", "[int]"), ("assembly_id", "id_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_log(self, rs, codes, assembly_id, start, stop):
+    def view_log(self, rs, codes, assembly_id, start, stop, additional_info):
         """View activities."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.assemblyproxy.retrieve_log(rs, codes, assembly_id, start,
-                                              stop)
+                                              stop, additional_info)
         personas = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}

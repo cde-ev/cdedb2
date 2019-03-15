@@ -2244,15 +2244,17 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_cde_log(self, rs, codes, persona_id, start, stop):
+    def view_cde_log(self, rs, codes, persona_id, start, stop, additional_info):
         """View general activity."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.cdeproxy.retrieve_cde_log(rs, codes, persona_id, start, stop)
+        log = self.cdeproxy.retrieve_cde_log(rs, codes, persona_id, start, stop,
+                                             additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -2263,16 +2265,18 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_finance_log(self, rs, codes, persona_id, start, stop):
+    def view_finance_log(self, rs, codes, persona_id, start, stop,
+                         additional_info):
         """View financial activity."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.cdeproxy.retrieve_finance_log(
-            rs, codes, persona_id, start, stop)
+            rs, codes, persona_id, start, stop, additioanl_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -2283,16 +2287,17 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_past_log(self, rs, codes, pevent_id, start, stop):
+    def view_past_log(self, rs, codes, pevent_id, start, stop, additional_info):
         """View activities concerning concluded events."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.pasteventproxy.retrieve_past_log(
-            rs, codes, pevent_id, start, stop)
+            rs, codes, pevent_id, start, stop, additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}

@@ -187,15 +187,17 @@ class MlFrontend(AbstractUserFrontend):
 
     @access("ml_admin")
     @REQUESTdata(("codes", "[int]"), ("mailinglist_id", "id_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_log(self, rs, codes, mailinglist_id, start, stop):
+    def view_log(self, rs, codes, mailinglist_id, start, stop, additional_info):
         """View activities."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.mlproxy.retrieve_log(rs, codes, mailinglist_id, start, stop)
+        log = self.mlproxy.retrieve_log(rs, codes, mailinglist_id, start, stop,
+                                        additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -305,15 +307,18 @@ class MlFrontend(AbstractUserFrontend):
 
     @access("ml")
     @REQUESTdata(("codes", "[int]"), ("start", "non_negative_int_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("stop", "non_negative_int_or_None"))
     @mailinglist_guard()
-    def view_ml_log(self, rs, mailinglist_id, codes, start, stop):
+    def view_ml_log(self, rs, mailinglist_id, codes, start, stop,
+                    additional_info):
         """View activities pertaining to one list."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.mlproxy.retrieve_log(rs, codes, mailinglist_id, start, stop)
+        log = self.mlproxy.retrieve_log(rs, codes, mailinglist_id, start, stop,
+                                        additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}

@@ -3889,15 +3889,17 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_log(self, rs, codes, event_id, start, stop):
+    def view_log(self, rs, codes, event_id, start, stop, additional_info):
         """View activities concerning events organized via DB."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop)
+        log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop,
+                                           additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -3913,14 +3915,16 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     @REQUESTdata(("codes", "[int]"), ("start", "non_negative_int_or_None"),
+                 ("additional_info", "str_or_None"),
                  ("stop", "non_negative_int_or_None"))
-    def view_event_log(self, rs, event_id, codes, start, stop):
+    def view_event_log(self, rs, event_id, codes, start, stop, additional_info):
         """View activities concerning one event organized via DB."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop)
+        log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop,
+                                           additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
