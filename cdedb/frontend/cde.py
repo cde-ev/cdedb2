@@ -2276,7 +2276,7 @@ class CdEFrontend(AbstractUserFrontend):
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.cdeproxy.retrieve_finance_log(
-            rs, codes, persona_id, start, stop, additioanl_info)
+            rs, codes, persona_id, start, stop, additional_info)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}

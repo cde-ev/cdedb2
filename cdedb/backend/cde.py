@@ -82,7 +82,7 @@ class CdEBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin")
     def retrieve_finance_log(self, rs, codes=None, persona_id=None, start=None,
-                             stop=None):
+                             stop=None, additional_info=None):
         """Get financial activity.
 
         Similar to
@@ -93,30 +93,13 @@ class CdEBackend(AbstractBackend):
         :type persona_id: int or None
         :type start: int or None
         :type stop: int or None
+        :type additional_info: str or None
         :rtype: [{str: object}]
         """
-        codes = affirm_set("enum_financelogcodes", codes, allow_None=True)
-        persona_id = affirm("id_or_None", persona_id)
-        start = affirm("int_or_None", start)
-        stop = affirm("int_or_None", stop)
-        start = start or 0
-        if stop:
-            stop = max(start, stop)
-        query = glue(
-            "SELECT ctime, code, submitted_by, persona_id, delta, new_balance,",
-            "additional_info, members, total FROM cde.finance_log {}",
-            "ORDER BY id DESC")
-        if stop:
-            query = glue(query, "LIMIT {}".format(stop - start))
-        if start:
-            query = glue(query, "OFFSET {}".format(start))
-        condition = ""
-        params = []
-        if codes:
-            condition = glue(condition, "WHERE code = ANY(%s)")
-            params.append(codes)
-        query = query.format(condition)
-        return self.query_all(rs, query, params)
+        additional_columns = ["delta", "new_balance", "members", "total"]
+        return self.generic_retrieve_log(
+            rs, "enum_financelogcodes", "persona", "cde.finance_log", codes,
+            persona_id, start, stop, additional_columns, additional_info)
 
     @access("member")
     def list_lastschrift(self, rs, persona_ids=None, active=True):
