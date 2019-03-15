@@ -15,7 +15,7 @@ from passlib.hash import sha512_crypt
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
-    access, internal_access, singularize,
+    access, internal_access, singularize, diacritic_patterns,
     affirm_validation as affirm, affirm_set_validation as affirm_set)
 from cdedb.common import (
     n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
@@ -205,7 +205,8 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin")
     def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None,
-                                additional_info=None):
+                                submitted_by=None, reviewed_by=None,
+                                persona_id=None, additional_info=None):
         """Get changelog activity.
 
         Similar to
@@ -215,12 +216,19 @@ class CoreBackend(AbstractBackend):
         :type stati: [int] or None
         :type start: int or None
         :type stop: int or None
+        :type submitted_by: id or None
+        :type reviewed_by: id or None
+        :type persona_id: id or None
         :type additional_info: str or None
         :rtype: [{str: object}]
         """
         stati = affirm_set("enum_memberchangestati", stati, allow_None=True)
         start = affirm("int_or_None", start)
         stop = affirm("int_or_None", stop)
+        submitted_by = affirm("id_or_None", submitted_by)
+        reviewed_by = affirm("id_or_None", reviewed_by)
+        persona_id = affirm("id_or_None", persona_id)
+        additional_info = affirm("str_or_None", additional_info)
         start = start or 0
         if stop:
             stop = max(start, stop)
@@ -231,11 +239,34 @@ class CoreBackend(AbstractBackend):
             query = glue(query, "LIMIT {}".format(stop - start))
         if start:
             query = glue(query, "OFFSET {}".format(start))
+        connector = "WHERE"
         condition = ""
         params = []
         if stati:
-            condition = glue(condition, "WHERE change_status = ANY(%s)")
+            condition = glue(
+                condition, "{} change_status = ANY(%s)".format(connector))
+            connector = "AND"
             params.append(stati)
+        if submitted_by:
+            condition = glue(
+                condition, "{} submitted_by = %s".format(connector))
+            connector = "AND"
+            params.append(submitted_by)
+        if reviewed_by:
+            condition = glue(condition, "{} reviewed_by = %s".format(connector))
+            connector = "AND"
+            params.append(reviewed_by)
+        if persona_id:
+            condition = glue(condition, "{} persona_id = %s".format(connector))
+            connector = "AND"
+            params.append(persona_id)
+        if additional_info:
+            condition = glue(condition,
+                             "{} lower(change_note) SIMILAR to %s".format(
+                                 connector))
+            connector = "AND"
+            value = "%{}%".format(diacritic_patterns(additional_info.lower()))
+            params.append(value)
         query = query.format(condition)
         return self.query_all(rs, query, params)
 
