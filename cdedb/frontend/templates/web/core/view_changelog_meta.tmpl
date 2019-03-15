@@ -1,6 +1,7 @@
 {% set sidenav_active='core_change_log' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
 {% block title %}
     {% trans -%}
     	Userdata Log
@@ -71,14 +72,5 @@
         </tbody>
     </table>
 
-    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
-        <form action="{{ cdedblink('core/view_changelog_meta') }}" method="GET" id="logshowform"
-          class="form-horizontal">
-            {{ util.form_input_checkboxes("stati", label=gettext("Status"),
-                    info=gettext("No selection means everything."),
-                    entries=enums['MemberChangeStati']|enum_entries(processing=gettext), small=True) }}
-            {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
-            {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
-        </form>
-    {% endcall %}
+    {{ generic.log_filter(cdedblink('core/view_changelog_meta'), enums['MemberChangeStati'], "persona_id") }}
 {% endblock %}
