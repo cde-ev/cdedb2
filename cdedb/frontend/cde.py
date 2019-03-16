@@ -883,7 +883,7 @@ class CdEFrontend(AbstractUserFrontend):
         :returns: The processed input datum.
         """
         persona_id, problems = validate.check_cdedbid(
-            datum['raw']['persona_id'], "persona_id")
+            datum['raw']['persona_id'].strip(), "persona_id")
         family_name, p = validate.check_str(
             datum['raw']['family_name'], "family_name")
         problems.extend(p)
