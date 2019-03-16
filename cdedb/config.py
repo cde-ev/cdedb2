@@ -20,6 +20,7 @@ import pytz
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
 from cdedb.common import n_, deduct_years, now
+import cdedb.database.constants as const
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,6 +68,18 @@ def generate_event_registration_default_queries(event, spec):
     default_sort = (("persona.family_name", True),
                     ("persona.given_names", True),
                     ("reg.id", True))
+
+
+    dokuteam_fields_of_interest = [
+        "persona.given_names", "persona.family_name", "persona.username"]
+    for part_id in event['parts']:
+        dokuteam_fields_of_interest.append(
+            "part{}.status{}".format(part_id, part_id))
+    for track_id in event['tracks']:
+        dokuteam_fields_of_interest.append(
+            "track{}.course_id{}".format(track_id, track_id))
+    dokuteam_selector = ",".join("part{}.status{}".format(part_id, part_id)
+                                 for part_id in event['parts'])
 
     queries = {
         n_("00_query_event_registration_all"): Query(
@@ -124,6 +137,11 @@ def generate_event_registration_default_queries(event, spec):
              ("reg.parental_agreement", QueryOperators.empty, None)),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
+        n_("60_query_dokuteam_export"): Query(
+            "qview_registration", spec, dokuteam_fields_of_interest,
+            ((dokuteam_selector, QueryOperators.equal,
+              const.RegistrationPartStati.participant.value),),
+            default_sort),
     }
 
     return queries
