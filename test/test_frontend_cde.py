@@ -1116,6 +1116,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertTrue(f['checksum'].value)
         self.submit(f)
         self.assertPresence("4 Überweisungen gebucht. 1 neue Mitglieder.", div="notifications")
+        self.admin_view_profile("daniel")
+        self.traverse({"description": "Änderungs-Historie"})
+        self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € (Überwiesen am 17.03.19)")
 
     @as_users("anton")
     def test_semester(self, user):
