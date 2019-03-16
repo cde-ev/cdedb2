@@ -965,7 +965,7 @@ class CdEFrontend(AbstractUserFrontend):
                         else:
                             # This is the default case and makes it pretty
                             note = note_template.format(
-                                amount=money_filter(amount),
+                                amount=money_filter(datum['amount']),
                                 new_balance=money_filter(new_balance),
                                 date=date.strftime(STATEMENT_DATEFORMAT))
                     count += self.coreproxy.change_persona_balance(
