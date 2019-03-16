@@ -15,7 +15,3 @@ ls -lht /log/
 
 # reset database (DESTROYS ALL DATA)
 cd /cdedb2 && make sample-data
-
-# access ldap
-ldapsearch -Y EXTERNAL -H ldapi:/// <filter>
-ldapmodify -Y EXTERNAL -H ldapi:/// -f /path/to/ldif
