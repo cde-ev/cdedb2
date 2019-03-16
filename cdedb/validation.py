@@ -1425,34 +1425,33 @@ def _iban(val, argname=None, *, _convert=True):
     val, errs = _str(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    val = val.upper()
-    tmp = val.replace(' ', '')
-    if len(tmp) < 5:
+    val = val.upper().replace(' ', '')
+    if len(val) < 5:
         errs.append((argname, ValueError(n_("Too short."))))
         return None, errs
-    for char in tmp[:2]:
+    for char in val[:2]:
         if char not in string.ascii_uppercase:
             errs.append((argname,
                          ValueError(n_("Must start with country code."))))
-    for char in tmp[2:4]:
+    for char in val[2:4]:
         if char not in string.digits:
             errs.append((argname,
                          ValueError(n_("Must have digits for checksum."))))
-    for char in tmp[4:]:
+    for char in val[4:]:
         if char not in string.digits + string.ascii_uppercase:
             errs.append((argname,
                          ValueError(n_("Invalid character in IBAN."))))
-    if tmp[:2] not in IBAN_LENGTHS:
+    if val[:2] not in IBAN_LENGTHS:
         errs.append((argname,
                      ValueError(n_("Unknown or unsupported Country Code."))))
     if not errs:
-        if len(tmp) != IBAN_LENGTHS[tmp[:2]]:
+        if len(val) != IBAN_LENGTHS[val[:2]]:
             errs.append((argname, ValueError(
                 n_("Invalid length %(len)s for Country Code %(code)s. "
                    "Expexted length %(exp)s."),
-                {"len": len(tmp), "code": tmp[:2], "exp": IBAN_LENGTHS[tmp[:2]]}
+                {"len": len(val), "code": val[:2], "exp": IBAN_LENGTHS[val[:2]]}
             )))
-        temp = tmp[4:] + tmp[:4]
+        temp = val[4:] + val[:4]
         temp = ''.join(c if c in string.digits else str(ord(c) - 55)
                        for c in temp)
         if int(temp) % 97 != 1:

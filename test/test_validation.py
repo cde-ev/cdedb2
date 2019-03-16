@@ -450,7 +450,7 @@ class TestValidation(unittest.TestCase):
     def test_iban(self):
         self.do_validator_test("_iban", (
             ("DE75512108001245126199", "DE75512108001245126199", None, True),
-            ("DE75 5121 0800 1245 1261 99", "DE75 5121 0800 1245 1261 99", None, True),
+            ("DE75 5121 0800 1245 1261 99", "DE75512108001245126199", None, True),
             ("IT60X0542811101000000123456", "IT60X0542811101000000123456", None, True),
             ("123", None, ValueError, False),  # Too short
             ("1234567890", None, ValueError, False),  # Missing Country Code
