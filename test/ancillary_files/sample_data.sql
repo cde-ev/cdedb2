@@ -116,11 +116,11 @@ INSERT INTO event.field_definitions (id, event_id, field_name, kind, association
     (6, 1, 'contamination', 1, 3, '{{"high", "lots of radiation"}, {"medium", "elevated level of radiation"}, {"low", "some radiation"}, {"none", "no radiation"}}');
 UPDATE event.events SET lodge_field = 3, reserve_field = 4 WHERE id = 1;
 INSERT INTO event.courses (id, event_id, title, description, nr, shortname, instructors, max_size, min_size, notes, fields) VALUES
-    (1, 1, 'Planetenretten für Anfänger', 'Wir werden die Bäume drücken.', 'α', 'Heldentum', 'ToFi & Co', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.', '{"course_id": 1, "room": "Wald"}'::jsonb),
-    (2, 1, 'Lustigsein für Fortgeschrittene', 'Inklusive Post, Backwaren und frühzeitigem Ableben.', 'β', 'Kabarett', 'Bernd Lucke', 20, 10, 'Kursleiter hat Sekt angefordert.', '{"course_id": 2, "room": "Theater"}'::jsonb),
-    (3, 1, 'Kurzer Kurs', 'mit hoher Leistung.', 'γ', 'Kurz', 'Heinrich und Thomas Mann', 14, 5, NULL, '{"course_id": 3, "room": "Seminarraum 42"}'::jsonb),
-    (4, 1, 'Langer Kurs', 'mit hohem Umsatz.', 'δ', 'Lang', 'Stephen Hawking und Richard Feynman', NULL, NULL, NULL, '{"course_id": 4, "room": "Seminarraum 23"}'::jsonb),
-    (5, 1, 'Backup-Kurs', 'damit wir Auswahl haben', 'ε', 'Backup', 'TBA', NULL, NULL, NULL, '{"course_id": 5, "room": "Nirwana"}'::jsonb);
+    (1, 1, 'Planetenretten für Anfänger', 'Wir werden die Bäume drücken.', 'α', 'Heldentum', 'ToFi & Co', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.', '{"room": "Wald"}'::jsonb),
+    (2, 1, 'Lustigsein für Fortgeschrittene', 'Inklusive Post, Backwaren und frühzeitigem Ableben.', 'β', 'Kabarett', 'Bernd Lucke', 20, 10, 'Kursleiter hat Sekt angefordert.', '{"room": "Theater"}'::jsonb),
+    (3, 1, 'Kurzer Kurs', 'mit hoher Leistung.', 'γ', 'Kurz', 'Heinrich und Thomas Mann', 14, 5, NULL, '{"room": "Seminarraum 42"}'::jsonb),
+    (4, 1, 'Langer Kurs', 'mit hohem Umsatz.', 'δ', 'Lang', 'Stephen Hawking und Richard Feynman', NULL, NULL, NULL, '{"room": "Seminarraum 23"}'::jsonb),
+    (5, 1, 'Backup-Kurs', 'damit wir Auswahl haben', 'ε', 'Backup', 'TBA', NULL, NULL, NULL, '{"room": "Nirwana"}'::jsonb);
 INSERT INTO event.course_segments (course_id, track_id, is_active) VALUES
     (1, 1, True),
     (1, 3, True),
@@ -139,15 +139,15 @@ INSERT INTO event.orgas (persona_id, event_id) VALUES
     (1, 2),
     (2, 2);
 INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, fields) VALUES
-    (1, 1, 'Warme Stube', 5, 1, NULL, '{"lodgement_id": 1, "contamination": "high"}'::jsonb),
-    (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.', '{"lodgement_id": 2, "contamination": "none"}'::jsonb),
-    (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.', '{"lodgement_id": 3, "contamination": "low"}'::jsonb),
-    (4, 1, 'Einzelzelle', 1, 0, NULL, '{"lodgement_id": 4, "contamination": "high"}'::jsonb);
+    (1, 1, 'Warme Stube', 5, 1, NULL, '{"contamination": "high"}'::jsonb),
+    (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.', '{"contamination": "none"}'::jsonb),
+    (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.', '{"contamination": "low"}'::jsonb),
+    (4, 1, 'Einzelzelle', 1, 0, NULL, '{"contamination": "high"}'::jsonb);
 INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, payment, parental_agreement, mixed_lodging, checkin, list_consent, fields) VALUES
-    (1, 1, 1, NULL, NULL, NULL, NULL, True, NULL, True, '{"registration_id": 1, "lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
-    (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', NULL, True, NULL, True, '{"registration_id": 2, "brings_balls": true, "transportation": "pedes"}'::jsonb),
-    (3, 7, 1, NULL, NULL, date '2014-03-03', NULL, True, NULL, False, '{"registration_id": 3, "transportation": "car"}'::jsonb),
-    (4, 9, 1, NULL, NULL, date '2014-04-04', NULL, False, NULL, True, '{"registration_id": 4, "brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb);
+    (1, 1, 1, NULL, NULL, NULL, NULL, True, NULL, True, '{"lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
+    (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', NULL, True, NULL, True, '{"brings_balls": true, "transportation": "pedes"}'::jsonb),
+    (3, 7, 1, NULL, NULL, date '2014-03-03', NULL, True, NULL, False, '{"transportation": "car"}'::jsonb),
+    (4, 9, 1, NULL, NULL, date '2014-04-04', NULL, False, NULL, True, '{"brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb);
 INSERT INTO event.registration_parts (registration_id, part_id, status, lodgement_id, is_reserve) VALUES
     (1, 1, -1, NULL, False),
     (1, 2, 1, NULL, False),

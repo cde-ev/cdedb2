@@ -260,7 +260,7 @@ class TestEventBackend(BackendTest):
         new_course_id = self.event.create_course(self.key, cdata)
         cdata['id'] = new_course_id
         cdata['active_segments'] = cdata['segments']
-        cdata['fields'] = {'course_id': new_course_id}
+        cdata['fields'] = {}
         self.assertEqual(cdata, self.event.get_course(
             self.key, new_course_id))
 
@@ -291,7 +291,6 @@ class TestEventBackend(BackendTest):
         expectation = {
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
             'lodge': 'Die üblichen Verdächtigen :)',
-            'registration_id': 1
         }
         self.assertEqual(expectation, data['fields'])
 
@@ -316,7 +315,7 @@ class TestEventBackend(BackendTest):
         }
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
-        data['fields'] = {'course_id': new_id}
+        data['fields'] = {}
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
         data['title'] = "Alternate Universes"
@@ -376,7 +375,7 @@ class TestEventBackend(BackendTest):
         expectation = {
             'checkin': None,
             'event_id': 1,
-            'fields': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
+            'fields': {'brings_balls': True, 'transportation': 'pedes'},
             'list_consent': True,
             'id': 2,
             'mixed_lodging': True,
@@ -475,7 +474,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
-        new_reg['fields'] = {'registration_id': new_id}
+        new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
         new_reg['parts'][2]['part_id'] = 2
@@ -501,8 +500,7 @@ class TestEventBackend(BackendTest):
         expectation = {
             1: {'checkin': None,
                 'event_id': 1,
-                'fields': {'registration_id': 1,
-                               'lodge': 'Die üblichen Verdächtigen :)'},
+                'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
                 'list_consent': True,
                 'id': 1,
                 'mixed_lodging': True,
@@ -546,7 +544,7 @@ class TestEventBackend(BackendTest):
                 'real_persona_id': None},
             2: {'checkin': None,
                 'event_id': 1,
-                'fields': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
+                'fields': {'brings_balls': True, 'transportation': 'pedes'},
                 'list_consent': True,
                 'id': 2,
                 'mixed_lodging': True,
@@ -590,10 +588,9 @@ class TestEventBackend(BackendTest):
                 'real_persona_id': None},
             4: {'checkin': None,
                 'event_id': 1,
-                'fields': {'registration_id': 4,
-                               'brings_balls': False,
-                               'may_reserve': True,
-                               'transportation': 'etc'},
+                'fields': {'brings_balls': False,
+                           'may_reserve': True,
+                           'transportation': 'etc'},
                 'list_consent': True,
                 'id': 4,
                 'mixed_lodging': False,
@@ -717,7 +714,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
-        new_reg['fields'] = {'registration_id': new_id}
+        new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
         new_reg['parts'][1]['is_reserve'] = False
@@ -776,7 +773,7 @@ class TestEventBackend(BackendTest):
             1: {
                 'capacity': 5,
                 'event_id': 1,
-                'fields': {'contamination': 'high', 'lodgement_id': 1},
+                'fields': {'contamination': 'high'},
                 'id': 1,
                 'moniker': 'Warme Stube',
                 'notes': None,
@@ -784,7 +781,7 @@ class TestEventBackend(BackendTest):
             4: {
                 'capacity': 1,
                 'event_id': 1,
-                'fields': {'contamination': 'high', 'lodgement_id': 4},
+                'fields': {'contamination': 'high'},
                 'id': 4,
                 'moniker': 'Einzelzelle',
                 'notes': None,
@@ -801,7 +798,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_lodgement(self.key, new)
         self.assertLess(0, new_id)
         new['id'] = new_id
-        new['fields'] = {'lodgement_id': new_id}
+        new['fields'] = {}
         self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
         update = {
             'capacity': 21,
@@ -918,6 +915,7 @@ class TestEventBackend(BackendTest):
                            ("part2.status2", QueryOperators.nonempty, None),
                            ("reg_fields.xfield_transportation", QueryOperators.oneof, ['pedes', 'etc'])],
             order=(("reg.id", True),),)
+
         ## fix query spec (normally done by frontend)
         query.spec.update({
             'part1.lodgement_id1': "int",
@@ -1294,7 +1292,7 @@ class TestEventBackend(BackendTest):
                                         'title': 'Arbeitssitzung (Zweite Hälfte)'}},
             'event.courses': {1: {'description': 'Wir werden die Bäume drücken.',
                                   'event_id': 1,
-                                  'fields': {'course_id': 1, 'room': 'Wald'},
+                                  'fields': {'room': 'Wald'},
                                   'id': 1,
                                   'instructors': 'ToFi & Co',
                                   'max_size': 10,
@@ -1307,7 +1305,7 @@ class TestEventBackend(BackendTest):
                               2: {'description': 'Inklusive Post, Backwaren und '
                                   'frühzeitigem Ableben.',
                                   'event_id': 1,
-                                  'fields': {'course_id': 2, 'room': 'Theater'},
+                                  'fields': {'room': 'Theater'},
                                   'id': 2,
                                   'instructors': 'Bernd Lucke',
                                   'max_size': 20,
@@ -1318,7 +1316,7 @@ class TestEventBackend(BackendTest):
                                   'title': 'Lustigsein für Fortgeschrittene'},
                               3: {'description': 'mit hoher Leistung.',
                                   'event_id': 1,
-                                  'fields': {'course_id': 3, 'room': 'Seminarraum 42'},
+                                  'fields': {'room': 'Seminarraum 42'},
                                   'id': 3,
                                   'instructors': 'Heinrich und Thomas Mann',
                                   'max_size': 14,
@@ -1329,7 +1327,7 @@ class TestEventBackend(BackendTest):
                                   'title': 'Kurzer Kurs'},
                               4: {'description': 'mit hohem Umsatz.',
                                   'event_id': 1,
-                                  'fields': {'course_id': 4, 'room': 'Seminarraum 23'},
+                                  'fields': {'room': 'Seminarraum 23'},
                                   'id': 4,
                                   'instructors': 'Stephen Hawking und Richard Feynman',
                                   'max_size': None,
@@ -1340,7 +1338,7 @@ class TestEventBackend(BackendTest):
                                   'title': 'Langer Kurs'},
                               5: {'description': 'damit wir Auswahl haben',
                                   'event_id': 1,
-                                  'fields': {'course_id': 5, 'room': 'Nirwana'},
+                                  'fields': {'room': 'Nirwana'},
                                   'id': 5,
                                   'instructors': 'TBA',
                                   'max_size': None,
@@ -1437,31 +1435,28 @@ class TestEventBackend(BackendTest):
                                             'kind': 1}},
             'event.lodgements': {1: {'capacity': 5,
                                      'event_id': 1,
-                                     'fields': {'contamination': 'high',
-                                                'lodgement_id': 1},
+                                     'fields': {'contamination': 'high'},
                                      'id': 1,
                                      'moniker': 'Warme Stube',
                                      'notes': None,
                                      'reserve': 1},
                                  2: {'capacity': 10,
                                      'event_id': 1,
-                                     'fields': {'contamination': 'none',
-                                                'lodgement_id': 2},
+                                     'fields': {'contamination': 'none'},
                                      'id': 2,
                                      'moniker': 'Kalte Kammer',
                                      'notes': 'Dafür mit Frischluft.',
                                      'reserve': 2},
                                  3: {'capacity': 0,
                                      'event_id': 1,
-                                     'fields': {'contamination': 'low', 'lodgement_id': 3},
+                                     'fields': {'contamination': 'low'},
                                      'id': 3,
                                      'moniker': 'Kellerverlies',
                                      'notes': 'Nur für Notfälle.',
                                      'reserve': 100},
                                  4: {'capacity': 1,
                                      'event_id': 1,
-                                     'fields': {'contamination': 'high',
-                                                'lodgement_id': 4},
+                                     'fields': {'contamination': 'high'},
                                      'id': 4,
                                      'moniker': 'Einzelzelle',
                                      'notes': None,
@@ -1678,8 +1673,7 @@ class TestEventBackend(BackendTest):
                                                'track_id': 3}},
             'event.registrations': {1: {'checkin': None,
                                         'event_id': 1,
-                                        'fields': {'lodge': 'Die üblichen Verdächtigen :)',
-                                                   'registration_id': 1},
+                                        'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
                                         'list_consent': True,
                                         'id': 1,
                                         'mixed_lodging': True,
@@ -1692,7 +1686,6 @@ class TestEventBackend(BackendTest):
                                     2: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'brings_balls': True,
-                                                   'registration_id': 2,
                                                    'transportation': 'pedes'},
                                         'list_consent': True,
                                         'id': 2,
@@ -1706,8 +1699,7 @@ class TestEventBackend(BackendTest):
                                         'real_persona_id': None},
                                     3: {'checkin': None,
                                         'event_id': 1,
-                                        'fields': {'registration_id': 3,
-                                                   'transportation': 'car'},
+                                        'fields': {'transportation': 'car'},
                                         'list_consent': False,
                                         'id': 3,
                                         'mixed_lodging': True,
@@ -1721,7 +1713,6 @@ class TestEventBackend(BackendTest):
                                         'event_id': 1,
                                         'fields': {'brings_balls': False,
                                                    'may_reserve': True,
-                                                   'registration_id': 4,
                                                    'transportation': 'etc'},
                                         'list_consent': True,
                                         'id': 4,
