@@ -224,8 +224,8 @@ class MlFrontend(AbstractUserFrontend):
                 rs, rs.user.persona_id, (mailinglist_id,)))
         audience_check = const.AudiencePolicy(
             rs.ambience['mailinglist']['audience_policy']).check(rs.user.roles)
-        if not (audience_check or is_subscribed
-                or self.is_moderator(rs, mailinglist_id) or self.is_admin(rs)):
+        if not (audience_check or is_subscribed or self.is_admin(rs)
+                or mailinglist_id in rs.user.moderator):
             return werkzeug.exceptions.Forbidden()
         gateway = {}
         if rs.ambience['mailinglist']['gateway']:

@@ -264,6 +264,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona")
     @event_usage
+    @ml_usage
     @REQUESTdata(("confirm_id", "#int"), ("quote_me", "bool"),
                  ("event_id", "id_or_None"), ("ml_id", "id_or_None"))
     def show_user(self, rs, persona_id, confirm_id, quote_me, event_id, ml_id):
@@ -333,8 +334,8 @@ class CoreFrontend(AbstractFrontend):
         if ml_id:
             is_moderator = (
                     "ml_admin" in rs.user.roles
-                    or ml_id in self.mlproxy.moderator_info(rs,
-                                                            rs.user.persona_id))
+                    or ml_id in self.mlproxy.moderator_info(
+                        rs, rs.user.persona_id))
             is_subscriber = self.mlproxy.is_subscribed(rs, persona_id, ml_id)
             if is_moderator and is_subscriber:
                 access_levels.add("ml")
