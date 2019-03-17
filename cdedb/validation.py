@@ -2170,6 +2170,7 @@ _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
     'checkin': _datetime_or_None,
+    'fields': _any
 }
 
 
@@ -2198,7 +2199,7 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
         # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {'id': _id}
         optional_fields = dict(
-            _REGISTRATION_COMMON_FIELDS(), fields=_any,
+            _REGISTRATION_COMMON_FIELDS(),
             **_REGISTRATION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
@@ -2360,7 +2361,10 @@ _LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
     'capacity': _int,
     'reserve': _int,
-    'notes': _str_or_None
+    'notes': _str_or_None,
+}
+_LODGEMENT_OPTIONAL_FIELDS = {
+    'fields': _any,
 }
 
 
@@ -2381,11 +2385,12 @@ def _lodgement(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = dict(_LODGEMENT_COMMON_FIELDS(), event_id=_id)
-        optional_fields = {}
+        optional_fields = _LODGEMENT_OPTIONAL_FIELDS
     else:
         # no event_id, since the associated event should be fixed
         mandatory_fields = {'id': _id}
-        optional_fields = dict(_LODGEMENT_COMMON_FIELDS(), fields=_any)
+        optional_fields = dict(_LODGEMENT_COMMON_FIELDS(),
+                               **_LODGEMENT_OPTIONAL_FIELDS)
     # the check of fields is delegated to _event_associated_fields
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)

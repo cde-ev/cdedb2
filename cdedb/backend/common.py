@@ -12,7 +12,8 @@ import enum
 import logging
 
 from cdedb.common import (
-    n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns)
+    n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns,
+    PsycoJson)
 from cdedb.database.constants import FieldDatatypes
 from cdedb.validation import parse_date, parse_datetime
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
@@ -387,6 +388,33 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             table=table, keys=", ".join(keys),
             placeholders=", ".join(("%s",) * len(keys)), entity_key=entity_key)
         params = tuple(data[key] for key in keys) + (data[entity_key],)
+        return self.query_exec(rs, query, params)
+
+    def sql_json_inplace_update(self, rs, table, data, entity_key="id"):
+        """Generic SQL update query for JSON fields storing a dict.
+
+        This leaves missing keys unmodified.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :type rs: :py:class:`BackendRequestState`
+        :type table: str
+        :type data: {str: object}
+        :type entity_key: str
+        :rtype: int
+        :returns: number of affected rows
+        """
+        keys = tuple(key for key in data if key != entity_key)
+        if not keys:
+            # no input is an automatic success
+            return 1
+        query = glue("UPDATE {table} SET {commands} WHERE {entity_key} = %s")
+        commands = ", ".join("{key} = {key} || %s".format(key=key)
+                             for key in keys)
+        query = query.format(
+            table=table, commands=commands, entity_key=entity_key)
+        params = tuple(PsycoJson(data[key]) for key in keys)
+        params += (data[entity_key],)
         return self.query_exec(rs, query, params)
 
     def sql_delete(self, rs, table, entities, entity_key="id"):

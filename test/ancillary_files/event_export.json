@@ -71,7 +71,6 @@
             "event_id": 1,
             "notes": "Daf\u00fcr mit Frischluft.",
             "fields": {
-                "lodgement_id": 2,
                 "contamination": "none"
             }
         },
@@ -83,7 +82,6 @@
             "event_id": 1,
             "notes": null,
             "fields": {
-                "lodgement_id": 1,
                 "contamination": "high"
             }
         },
@@ -95,7 +93,6 @@
             "event_id": 1,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
             "fields": {
-                "lodgement_id": 3,
                 "contamination": "low"
             }
         },
@@ -107,7 +104,6 @@
             "event_id": 1,
             "notes": null,
             "fields": {
-                "lodgement_id": 4,
                 "contamination": "high"
             }
         }
@@ -127,8 +123,7 @@
             "list_consent": true,
             "fields": {
                 "brings_balls": true,
-                "transportation": "pedes",
-                "registration_id": 2
+                "transportation": "pedes"
             },
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "payment": "2014-02-02",
@@ -144,7 +139,6 @@
             "persona_id": 1,
             "list_consent": true,
             "fields": {
-                "registration_id": 1,
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)"
             },
             "orga_notes": null,
@@ -161,8 +155,7 @@
             "persona_id": 7,
             "list_consent": false,
             "fields": {
-                "transportation": "car",
-                "registration_id": 3
+                "transportation": "car"
             },
             "orga_notes": null,
             "payment": "2014-03-03",
@@ -180,7 +173,6 @@
             "fields": {
                 "brings_balls": false,
                 "may_reserve": true,
-                "registration_id": 4,
                 "transportation": "etc"
             },
             "orga_notes": null,
@@ -465,8 +457,7 @@
             "description": "Inklusive Post, Backwaren und fr\u00fchzeitigem Ableben.",
             "shortname": "Kabarett",
             "fields": {
-                "room": "Theater",
-                "course_id": 2
+                "room": "Theater"
             },
             "id": 2,
             "title": "Lustigsein f\u00fcr Fortgeschrittene",
@@ -481,8 +472,7 @@
             "description": "Wir werden die B\u00e4ume dr\u00fccken.",
             "shortname": "Heldentum",
             "fields": {
-                "room": "Wald",
-                "course_id": 1
+                "room": "Wald"
             },
             "id": 1,
             "title": "Planetenretten f\u00fcr Anf\u00e4nger",
@@ -497,8 +487,7 @@
             "description": "damit wir Auswahl haben",
             "shortname": "Backup",
             "fields": {
-                "room": "Nirwana",
-                "course_id": 5
+                "room": "Nirwana"
             },
             "id": 5,
             "title": "Backup-Kurs",
@@ -513,8 +502,7 @@
             "description": "mit hoher Leistung.",
             "shortname": "Kurz",
             "fields": {
-                "room": "Seminarraum 42",
-                "course_id": 3
+                "room": "Seminarraum 42"
             },
             "id": 3,
             "title": "Kurzer Kurs",
@@ -529,8 +517,7 @@
             "description": "mit hohem Umsatz.",
             "shortname": "Lang",
             "fields": {
-                "room": "Seminarraum 23",
-                "course_id": 4
+                "room": "Seminarraum 23"
             },
             "id": 4,
             "title": "Langer Kurs",
