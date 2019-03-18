@@ -50,7 +50,7 @@ INSERT INTO core.meta_info (info) VALUES
        "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
        "Finanzvorstand_Ort": "Utopia",
        "CdE_Konto_Inhaber": "CdE e.V.",
-       "CdE_Konto_IBAN": "DE26 3702 0500 0008 0689 00",
+       "CdE_Konto_IBAN": "DE26370205000008068900",
        "CdE_Konto_BIC": "BFSWDE33XXX",
        "CdE_Konto_Institut": "Bank für Sozialwirtschaft",
        "banner_before_login": "Das Passwort ist secret!",
@@ -96,8 +96,8 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 -- events
 --
 INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, iban, mail_text, notes, offline_lock, lodge_field, reserve_field) VALUES
-    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96 3702 0500 0008 0689 01', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL),
-    (2, 'CdE-Party 2050', 1, 'Let''s have a party!', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96 3702 0500 0008 0689 01', '', 'Wird anstrengend …', False, NULL, NULL);
+    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96370205000008068901', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL),
+    (2, 'CdE-Party 2050', 1, 'Let''s have a party!', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96370205000008068901', '', 'Wird anstrengend …', False, NULL, NULL);
 INSERT INTO event.event_parts (id, event_id, title, shortname, part_begin, part_end, fee) VALUES
     (1, 1, 'Warmup', 'Wu', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte', '1.H.', date '2222-11-01', date '2222-11-11', 123.00),

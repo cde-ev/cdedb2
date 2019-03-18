@@ -1369,7 +1369,7 @@ class TestEventBackend(BackendTest):
                                       'shortname': '2.H.',
                                       'title': 'Zweite Hälfte'}},
             'event.events': {1: {'description': 'Everybody come!',
-                                 'iban': 'DE96 3702 0500 0008 0689 01',
+                                 'iban': 'DE96370205000008068901',
                                  'id': 1,
                                  'institution': 1,
                                  'is_archived': False,

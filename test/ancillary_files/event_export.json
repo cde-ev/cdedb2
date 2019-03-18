@@ -996,7 +996,7 @@
     "event.events": {
         "1": {
             "is_visible": true,
-            "iban": "DE96 3702 0500 0008 0689 01",
+            "iban": "DE96370205000008068901",
             "shortname": "TestAka",
             "use_questionnaire": false,
             "is_archived": false,
