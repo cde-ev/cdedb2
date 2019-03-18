@@ -65,7 +65,7 @@
                 <dd>{{ lastschrift['amount']|money(lang=lang) }}</dd>
 
                 <dt>{% trans -%}IBAN{%- endtrans %}</dt>
-                <dd>{{ lastschrift['iban'] }}</dd>
+                <dd>{{ lastschrift['iban']|iban }}</dd>
 
                 <dt>{% trans -%}Account holder{%- endtrans %}</dt>
                 <dd>{{ lastschrift['account_owner'] }}</dd>

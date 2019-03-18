@@ -90,7 +90,7 @@
                 <<% endif %>>
             IBAN &
                 <<% if data["iban"] %>>
-                    <<< data["iban"]|te >>>\\
+                    <<< data["iban"]|iban|te >>>\\
                 <<% else %>>
                     \makebox[10cm]{\dotfill}\\
                 <<% endif %>>

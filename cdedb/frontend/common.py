@@ -302,6 +302,20 @@ def cdedbid_filter(val):
     return "DB-{}-{}".format(val, compute_checkdigit(val))
 
 
+def iban_filter(val):
+    """
+    Custom jinja filter for displaying IBANs in nice to read blocks.
+
+    :type val: str or None
+    :rtype: str or None
+    """
+    if val is None:
+        return None
+    else:
+        val = val.strip().replace(" ", "")
+        return " ".join(val[x:x + 4] for x in range(0, len(val), 4))
+
+
 def escape_filter(val):
     """Custom jinja filter to reconcile escaping with the finalize method
     (which suppresses all ``None`` values and thus mustn't be converted to
@@ -692,6 +706,7 @@ JINJA_FILTERS = {
     'money': money_filter,
     'decimal': decimal_filter,
     'cdedbid': cdedbid_filter,
+    'iban': iban_filter,
     'escape': escape_filter,
     'e': escape_filter,
     'json': json_filter,

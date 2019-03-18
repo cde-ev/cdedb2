@@ -119,7 +119,7 @@
                     </tr>
                     <tr>
                         <td>{% trans -%}IBAN{%- endtrans %}</td>
-                        <td>{{ meta_info['CdE_Konto_IBAN'] }}</td>
+                        <td>{{ meta_info['CdE_Konto_IBAN']|iban }}</td>
                     </tr>
                     <tr>
                         <td>{% trans -%}BIC{%- endtrans %}</td>
