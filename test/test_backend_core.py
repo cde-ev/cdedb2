@@ -366,7 +366,7 @@ class TestCoreBackend(BackendTest):
     def test_meta_info(self, user):
         expectation = {
             'CdE_Konto_BIC': 'BFSWDE33XXX',
-            'CdE_Konto_IBAN': 'DE26 3702 0500 0008 0689 00',
+            'CdE_Konto_IBAN': 'DE26370205000008068900',
             'CdE_Konto_Inhaber': 'CdE e.V.',
             'CdE_Konto_Institut': 'Bank für Sozialwirtschaft',
             'Finanzvorstand_Adresse_Einzeiler':
