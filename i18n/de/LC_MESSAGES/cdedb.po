@@ -2554,8 +2554,8 @@ msgid "Course in use cannot be deleted."
 msgstr "Kurse mit Kurswahlen oder Teilnehmern können nicht gelöscht werden."
 
 #: cdedb/frontend/event.py:894
-msgid "in {}. choice"
-msgstr "in {}. Wahl"
+msgid "In {}. Choice"
+msgstr "In {}. Wahl"
 
 #: cdedb/frontend/event.py:1147
 msgid "somehow know"
@@ -7738,7 +7738,7 @@ msgstr "Einverständniserklärung"
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:106
 #: cdedb/frontend/templates/web/event/stats.tmpl:29
 msgid "Checked-In"
-msgstr "eingecheckt"
+msgstr "Eingecheckt"
 
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:56
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:62
@@ -9519,7 +9519,7 @@ msgstr "Keine Unterkunft"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:39
 msgid "No Course"
-msgstr "kein Kurs"
+msgstr "Kein Kurs"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:40
 msgid "Registration Cancelled"
@@ -9539,7 +9539,7 @@ msgid "Course Attendees Statistics"
 msgstr "Kursteilnehmer-Statistik"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:85
-msgid "(potential) Instructor"
+msgid "(Potential) Instructor"
 msgstr "Kursleiter (theoretisch)"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:148

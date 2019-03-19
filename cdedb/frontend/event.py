@@ -891,7 +891,7 @@ class EventFrontend(AbstractUserFrontend):
         per_track_statistics = OrderedDict()
         if tracks:
             for i in range(max(t['num_choices'] for t in tracks.values())):
-                tests2[rs.gettext('in {}. choice').format(i + 1)] = (
+                tests2[rs.gettext('In {}. Choice').format(i + 1)] = (
                     lambda e, r, p, t: (
                         p['status'] == stati.participant
                         and t['course_id']

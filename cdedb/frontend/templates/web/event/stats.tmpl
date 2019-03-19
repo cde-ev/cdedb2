@@ -36,7 +36,6 @@
         ' payed': gettext("Paid"),
         ' no parental agreement': gettext("Parental Consent Pending"),
         'no lodgement': gettext("No Lodgement"),
-        'no course': gettext("No Course"),
         'cancelled': gettext("Registration Cancelled"),
         'rejected': gettext("Rejected"),
     } %}
@@ -82,9 +81,10 @@
     {% if ambience['event']['tracks'] %}
         <h3>{% trans -%}Course Attendees Statistics{%- endtrans %}</h3>
         {% with HEADINGS = {
-            'all instructors': gettext("(potential) Instructor"),
+            'all instructors': gettext("(Potential) Instructor"),
             'instructors': gettext("Instructor"),
             'attendees': gettext("Attendees"),
+            'no course': gettext("No Course"),
         } %}
         {# TODO move headings into translation and translate in python code #}
             <table class="table table-condensed table-slim">
