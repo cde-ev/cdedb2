@@ -108,8 +108,12 @@
                             </p>
                         {% else %}
                             <p>
-                                {% trans count=stats['low_balance_members'] -%}
-                                    {{ count }} Members have insufficient Balance right now.
+                                {% trans low_count=stats['low_balance_members'],
+                                         trial_count=stats['trial_members'],
+                                         low_last_count=stats['lastschrift_low_balance_members'] -%}
+                                    {{ low_count }} members have insufficient balance right now
+                                    (from this {{ low_last_count }} with lastschrift). Additionally
+                                    we have {{ trial_count }} trial members.
                                 {%- endtrans %}
                             </p>
                         {% endif %}
