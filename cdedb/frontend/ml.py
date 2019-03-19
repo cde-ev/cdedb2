@@ -570,8 +570,9 @@ class MlFrontend(AbstractUserFrontend):
             'problems': problems, 'overrides': overrides, 'personas': personas,
             'mailinglists': mailinglists})
 
-    @access("ml_admin", modi={"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("subscriber_id", "id"))
+    @mailinglist_guard()
     def mark_override(self, rs, mailinglist_id, subscriber_id):
         """Allow a subscription even though not in audience."""
         if rs.errors:
