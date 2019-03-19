@@ -8,9 +8,3 @@ Minimal psycopg example
 
 .. literalinclude:: psycopg_example.py
     :language: python
-
-LDAP example
-------------
-
-.. literalinclude:: ldap_example.py
-    :language: python
