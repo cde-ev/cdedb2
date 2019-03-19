@@ -19,12 +19,10 @@
     </h1>
 {% endblock %}
 {% block content %}
-    {% if is_admin %}
-        <div class="p">
-            {{ util.href(cdedblink('ml/check_states'), gettext("Consistency-Check"), aclass="btn btn-info btn-sm",
-                icon="check") }}
-        </div>
-    {% endif %}
+    <div class="p">
+        {{ util.href(cdedblink('ml/check_states'), gettext("Consistency-Check"), aclass="btn btn-info btn-sm",
+            icon="check") }}
+    </div>
     {% call util.bootstrap_panel() %}
         {% trans -%}
             Note, that only DB-Accounts can be moderators and subscribers.
