@@ -19,7 +19,7 @@
         {% else %}
             {% trans %}An unknown error occurred.{% endtrans %}
             {% if error.description %}
-               {{ error.description.split()[0] }}
+                {{ error.description|string[:21] }}
             {% endif %}
         {% endif %}
     </div>
