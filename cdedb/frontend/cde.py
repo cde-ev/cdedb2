@@ -16,6 +16,7 @@ import sys
 import tempfile
 import operator
 import datetime
+import dateutil.easter
 
 import psycopg2.extensions
 import werkzeug
@@ -1210,6 +1211,32 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
+    def _calculate_payment_date(self):
+        """Helper to calculate a payment date that is a valid TARGET2 bankday.
+
+        :rtype: datetime.date
+        """
+        payment_date = now().date() + self.conf.SEPA_PAYMENT_OFFSET
+        if payment_date.day == 1 and payment_date.month in (1, 5):
+            payment_date += datetime.timedelta(days=1)
+        elif payment_date.month == 12 and payment_date.day == 25:
+            payment_date += datetime.timedelta(days=2)
+        elif payment_date.month == 12 and payment_date.day == 26:
+            payment_date += datetime.timedelta(days=1)
+
+        if payment_date.isoweekday() == 6:
+            payment_date += datetime.timedelta(days=2)
+        elif payment_date.isoweekday() == 7:
+            payment_date += datetime.timedelta(days=1)
+
+        easter = dateutil.easter.easter(payment_date.year)
+        good_friday = easter - datetime.timedelta(days=2)
+        easter_monday = easter + datetime.timedelta(days=1)
+        if payment_date in (good_friday, easter_monday):
+            payment_date = easter + datetime.timedelta(days=2)
+
+        return payment_date
+
     def create_sepapain(self, rs, transactions):
         """Create an XML document for submission to a bank.
 
@@ -1250,7 +1277,7 @@ class CdEFrontend(AbstractUserFrontend):
                 'iban': self.conf.SEPA_SENDER_IBAN,
                 'glaeubigerid': self.conf.SEPA_GLAEUBIGERID,
             },
-            'payment_date': now().date() + self.conf.SEPA_PAYMENT_OFFSET,
+            'payment_date': self._calculate_payment_date(),
         }
         meta = check(rs, "sepa_meta", meta)
         if rs.errors:
