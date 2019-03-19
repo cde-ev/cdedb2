@@ -540,6 +540,7 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
+    @mailinglist_guard()
     def check_states(self, rs, mailinglist_id):
         """Test all explicit subscriptions for consistency with audience."""
         problems = self.mlproxy.check_states_single(rs, mailinglist_id)
