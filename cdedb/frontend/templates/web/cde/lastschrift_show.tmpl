@@ -27,7 +27,7 @@
                 $('#revokeform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('#skiptransactionform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('#generatetransactionform')
-                    .cdedbProtectAction("{{ gettext("Direct Debit will be created and SEPA file created.") }}")
+                    .cdedbProtectAction("{{ gettext("Direct Debit will be created.") }}")
                     .on('submit', function(){window.location.reload();});
                 $('.failure-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('.success-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");

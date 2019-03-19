@@ -1364,10 +1364,6 @@ class CdEFrontend(AbstractUserFrontend):
         This creates new transactions either for the lastschrift_id
         passed or if that is None, then for all open permits
         (c.f. :py:func:`determine_open_permits`).
-
-        Afterwards it creates and returns an XML-file to send to the
-        bank. If this fails all new transactions are directly
-        cancelled.
         """
         if rs.errors:
             return self.lastschrift_index(rs)
@@ -1395,48 +1391,7 @@ class CdEFrontend(AbstractUserFrontend):
         )
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
             rs, new_transactions, check_unique=True)
-        for transaction in new_transactions:
-            lastschrift = lastschrifts[transaction['lastschrift_id']]
-            persona = personas[lastschrift['persona_id']]
-            transaction.update({
-                'mandate_reference': lastschrift_reference(
-                    persona['id'], lastschrift['id']),
-                'amount': lastschrift['amount'],
-                'iban': lastschrift['iban'],
-            })
-            if (lastschrift['granted_at'].date()
-                    >= self.conf.SEPA_INITIALISATION_DATE):
-                transaction['mandate_date'] = lastschrift['granted_at'].date()
-            else:
-                transaction['mandate_date'] = self.conf.SEPA_CUTOFF_DATE
-            if lastschrift['account_owner']:
-                transaction['account_owner'] = lastschrift['account_owner']
-            else:
-                transaction['account_owner'] = "{} {}".format(
-                    persona['given_names'], persona['family_name'])
-            timestamp = "{:.6f}".format(now().timestamp())
-            transaction['unique_id'] = "{}-{}".format(
-                transaction['mandate_reference'], timestamp[-9:])
-            transaction['subject'] = asciificator(glue(
-                "{}, {}, {} I25+ Mitgliedsbeitrag u. Spende CdE e.V.",
-                "z. Foerderung der Volks- u. Berufsbildung u.",
-                "Studentenhilfe").format(
-                cdedbid_filter(persona['id']), persona['family_name'],
-                persona['given_names']))[:140]  # cut off bc of limit
-            previous = self.cdeproxy.list_lastschrift_transactions(
-                rs, lastschrift_ids=(lastschrift['id'],),
-                stati=(stati.success,))
-            transaction['type'] = ("RCUR" if previous else "FRST")
-        sepapain_file = self.create_sepapain(rs, new_transactions)
-        if not sepapain_file:
-            # Validation of SEPA data failed
-            for transaction_id in transaction_ids:
-                self.cdeproxy.finalize_lastschrift_transaction(
-                    rs, transaction_id, stati.cancelled)
-            rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
-            return self.redirect(rs, "cde/lastschrift_index")
-        return self.send_file(rs, data=sepapain_file, inline=False,
-                              filename=rs.gettext("sepa.cdd"))
+        return self.lastschrift_index(rs)
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
