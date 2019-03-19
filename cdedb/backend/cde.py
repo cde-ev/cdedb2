@@ -503,8 +503,7 @@ class CdEBackend(AbstractBackend):
             query = glue("SELECT COUNT(*) FROM core.personas AS p",
                          "JOIN cde.lastschrift AS l ON p.id = l.persona_id",
                          "WHERE p.is_member = True AND p.balance < %s",
-                         "AND p.trial_member = False AND l.revoked_at IS NULL",
-                         "GROUP BY p.id ")
+                         "AND p.trial_member = False AND l.revoked_at IS NULL")
             ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
                 rs, query, (self.conf.MEMBERSHIP_FEE,)))
             return ret
