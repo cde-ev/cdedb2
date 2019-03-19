@@ -7169,7 +7169,7 @@ msgstr "angemeldet"
 #: cdedb/frontend/templates/web/core/index.tmpl:165
 #, python-format
 msgid "(Already %(link)s)"
-msgstr "(Bereits %(link)s"
+msgstr "(Bereits %(link)s)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:172
 #: cdedb/frontend/templates/web/event/base.tmpl:19
