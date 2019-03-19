@@ -1286,6 +1286,76 @@ class CdEFrontend(AbstractUserFrontend):
             'transactions': sorted_transactions, 'meta': meta})
         return sepapain_file
 
+    @access("cde_admin")
+    @REQUESTdata(("lastschrift_id", "id_or_None"))
+    def lastschrift_download_sepapain(self, rs, lastschrift_id):
+        """Provide the sepapain file without actually issueing the transactions.
+
+        Creates and returns an XML-file for one lastschrift is a
+        lastschrift_id is given. If it is None, then this creates the file
+        for all open permits (c.f. :py:func:`determine_open_permits`).
+        """
+        if rs.errors:
+            return self.lastschrift_index(rs)
+        period = self.cdeproxy.current_period(rs)
+        if lastschrift_id is None:
+            all_ids = self.cdeproxy.list_lastschrift(rs)
+            lastschrift_ids = tuple(self.determine_open_permits(
+                rs, all_ids.keys()))
+        else:
+            lastschrift_ids = (lastschrift_id,)
+            if not self.determine_open_permits(rs, lastschrift_ids):
+                rs.notify("error", n_("Existing pending transaction."))
+                return self.lastschrift_index(rs)
+
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
+        personas = self.coreproxy.get_personas(
+            rs, tuple(e['persona_id'] for e in lastschrifts.values()))
+
+        new_transactions = []
+
+        for anid in lastschrift_ids:
+            lastschrift = lastschrifts[anid]
+            persona = personas[lastschrift['persona_id']]
+            transaction = {
+                'issued_at': now(),
+                'lastschrift_id': lastschrift['id'],
+                'period_id': period,
+                'mandate_reference': lastschrift_reference(
+                    persona['id'], lastschrift['id']),
+                'amount': lastschrift['amount'],
+                'iban': lastschrift['iban'],
+                'type': "RCUR",  # TODO remove this, hardcode it in template
+            }
+            if (lastschrift['granted_at'].date()
+                    >= self.conf.SEPA_INITIALISATION_DATE):
+                transaction['mandate_date'] = lastschrift['granted_at'].date()
+            else:
+                transaction['mandate_date'] = self.conf.SEPA_CUTOFF_DATE
+            if lastschrift['account_owner']:
+                transaction['account_owner'] = lastschrift['account_owner']
+            else:
+                transaction['account_owner'] = "{} {}".format(
+                    persona['given_names'], persona['family_name'])
+            timestamp = "{:.6f}".format(now().timestamp())
+            transaction['unique_id'] = "{}-{}".format(
+                transaction['mandate_reference'], timestamp[-9:])
+            transaction['subject'] = asciificator(glue(
+                "{}, {}, {} I25+ Mitgliedsbeitrag u. Spende CdE e.V.",
+                "z. Foerderung der Volks- u. Berufsbildung u.",
+                "Studentenhilfe").format(
+                cdedbid_filter(persona['id']), persona['family_name'],
+                persona['given_names']))[:140]  # cut off bc of limit
+
+            new_transactions.append(transaction)
+        sepapain_file = self.create_sepapain(rs, new_transactions)
+        if not sepapain_file:
+            rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
+            return self.redirect(rs, "cde/lastschrift_index")
+        return self.send_file(rs, data=sepapain_file, inline=False,
+                              filename="sepa.cdd")
+
+
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("lastschrift_id", "id_or_None"))
     def lastschrift_generate_transactions(self, rs, lastschrift_id):

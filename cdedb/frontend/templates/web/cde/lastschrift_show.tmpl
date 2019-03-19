@@ -86,11 +86,18 @@
         <h2>{% trans -%}Transactions{%- endtrans %}</h2>
 		{% if active_open and is_admin %}
             <div class="p">
+                <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
+                    id="createsepapainform" style="display: inline;">
+                    {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
+                    {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
+                    {{ util.input_submit(value=gettext("Create Sepapain File"), icon="download",
+                                         aclass="btn btn-sm btn-primary") }}
+                </form>
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
                     id="generatetransactionform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
                     {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
-                    {{ util.input_submit(value=gettext("Perform Direct Debit"), icon="download",
+                    {{ util.input_submit(value=gettext("Perform Direct Debit"), icon="play",
                                          aclass="btn btn-sm btn-primary") }}
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': active_permit}) }}"
