@@ -106,7 +106,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         return any(part['tracks'] for part in event['parts'].values())
 
-    @access("persona")
+    @access("anonymous")
     def index(self, rs):
         """Render start page."""
         open_event_list = self.eventproxy.list_visible_events(rs)
@@ -204,7 +204,7 @@ class EventFrontend(AbstractUserFrontend):
             event['registrations'] = len(regs)
         return self.render(rs, "list_db_events", {'events': events})
 
-    @access("event")
+    @access("anonymous")
     def show_event(self, rs, event_id):
         """Display event organized via DB."""
         params = {}
@@ -222,7 +222,7 @@ class EventFrontend(AbstractUserFrontend):
                 n_("The event is not published yet."))
         return self.render(rs, "show_event", params)
 
-    @access("event")
+    @access("anonymous")
     def course_list(self, rs, event_id):
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
