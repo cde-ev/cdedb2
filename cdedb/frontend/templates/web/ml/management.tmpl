@@ -32,7 +32,7 @@
 
     <div class="row">
         <div class="col-md-6">
-            <h2>{% trans -%}Moderators{%- endtrans %}</h2>
+            <h2>{% trans -%}Moderators{%- endtrans %} ({{ ambience['mailinglist']['moderators']|length }})</h2>
             <form action="{{ cdedblink('ml/add_moderator') }}" method="POST"
                   id="addmoderatorform" class="p">
                 {{ util.anti_csrf_token('ml/add_moderator') }}
@@ -116,7 +116,7 @@
         </div>
     </div>
 
-    <h2>{% trans -%}Whitelist{%- endtrans %}</h2>
+    <h2>{% trans -%}Whitelist{%- endtrans %} ({{ ambience['mailinglist']['whitelist']|length }})</h2>
     <form action="{{ cdedblink('ml/add_whitelist') }}" method="POST"
           id="addwhitelistform" class="p">
         {{ util.anti_csrf_token('ml/add_whitelist') }}
@@ -146,7 +146,7 @@
             </li>
         {% endfor %}
     </ul>
-    <h2>{% trans -%}Subscribers{%- endtrans %}</h2>
+    <h2>{% trans -%}Subscribers{%- endtrans %} ({{ subscribers|length }})</h2>
     <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
           id="addsubscriberform" class="p">
         {{ util.anti_csrf_token('ml/add_subscriber') }}
