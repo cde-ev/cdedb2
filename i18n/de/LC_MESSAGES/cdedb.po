@@ -9675,7 +9675,7 @@ msgid ""
 "The participants of this event will be subscribers of this mailinglist. (Opt-"
 "Out)"
 msgstr ""
-"Die Teilnehmer dieser Veranstaltung werden der Liste hinzugeüfgt. (Opt-Out)"
+"Die Teilnehmer dieser Veranstaltung werden der Liste hinzugefügt. (Opt-Out)"
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:59
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:41
