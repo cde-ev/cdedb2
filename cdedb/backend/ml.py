@@ -693,7 +693,7 @@ class MlBackend(AbstractBackend):
                 rs, mailinglist_id, persona_id, is_subscribed=True,
                 address=None)
 
-    @access("ml_admin")
+    @access("ml")
     @singularize("check_states_single")
     def check_states(self, rs, mailinglist_ids):
         """Verify that all explicit subscriptions are by the target audience.
@@ -732,7 +732,7 @@ class MlBackend(AbstractBackend):
             ret[mailinglist_id] = tuple(data)
         return ret
 
-    @access("ml_admin")
+    @access("ml")
     def mark_override(self, rs, mailinglist_id, persona_id):
         """Allow non-matching (w.r.t. audience) subscriptions.
 
