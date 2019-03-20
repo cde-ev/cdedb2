@@ -40,7 +40,9 @@
     </h1>
 {% endblock %}
 {% block content %}
-    {% if not preview %}
+    {% if preview %}
+        <div class="form-horizontal">
+    {% else %}
     <form action="{{ cdedblink('event/questionnaire') }}" method="POST" id="questionnaireform"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/questionnaire') }}
@@ -92,10 +94,12 @@
             {{ util.form_input_submit(value="Abschicken", cancellink=cdedblink("event/registration_status"),
                                       readonly=is_locked) }}
         {% endif %}
-    {% if not preview %}
+    {% if preview %}
+        </div>
+    {% else %}
     </form>
-    {% endif %}
     <script type="text/javascript">
         $('#questionnaireform').cdedbProtectChanges();
     </script>
+    {% endif %}
 {% endblock %}
