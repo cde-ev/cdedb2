@@ -26,10 +26,9 @@ OTHER_TRANSACTION_FIELDS = ("account", "amount_export", "db_id", "family_name",
 ACCOUNT_FIELDS = ("date", "amount", "db_id", "name_or_holder",
                   "name_or_ref", "category", "account", "reference",
                   "account_holder", "iban", "bic")
-STATEMENT_REFERENCE_DELIMITER_1 = "SVWZ+"
-STATEMENT_REFERENCE_DELIMITER_2 = "EREF+"
-STATEMENT_REFERENCE_DELIMITER_3 = "KREF+"
-
+STATEMENT_REFERENCE_DELIMITERS = ["ABWE", "ABWA", "SVWZ", "OAMT", "COAM",
+                                  "DEBT", "CRED", "MREF", "KREF", "EREF"]
+STATEMENT_RELEVANT_REFERENCE_DELIMITERS = ["SVWZ", "EREF"]
 STATEMENT_CSV_RESTKEY = "reference"
 STATEMENT_GIVEN_NAMES_UNKNOWN = "VORNAME"
 STATEMENT_FAMILY_NAME_UNKNOWN = "NACHNAME"
@@ -373,15 +372,20 @@ class Transaction:
                                  "cents": self.cents})))
 
         if STATEMENT_CSV_RESTKEY in raw:
-            self.reference = "".join(raw[STATEMENT_CSV_RESTKEY])
-            if STATEMENT_REFERENCE_DELIMITER_1 in self.reference:
-                # Only use the part after "SVWZ+"
-                self.reference = self.reference.split(
-                    STATEMENT_REFERENCE_DELIMITER_1, 1)[-1]
-            elif (STATEMENT_REFERENCE_DELIMITER_2 in self.reference
-                  or STATEMENT_REFERENCE_DELIMITER_3 in self.reference):
-                # There seems to be no useful reference
-                self.reference = ""
+            reference = "".join(raw[STATEMENT_CSV_RESTKEY])
+            reference_parts = []
+            for delimiter in STATEMENT_REFERENCE_DELIMITERS:
+                pattern = re.compile(r"{}\+(.*)$".format(delimiter))
+                result = pattern.search(reference)
+                if result:
+                    if delimiter in STATEMENT_RELEVANT_REFERENCE_DELIMITERS:
+                        reference_parts.extend(result.groups())
+                    reference = pattern.sub("", reference)
+            if reference_parts:
+                self.reference = "; ".join(part for part in reference_parts
+                                           if part and part != "NOTPROVIDED")
+            else:
+                self.reference = "".join(raw[STATEMENT_CSV_RESTKEY])
         else:
             self.reference = ""
 
