@@ -1355,7 +1355,6 @@ class CdEFrontend(AbstractUserFrontend):
         return self.send_file(rs, data=sepapain_file, inline=False,
                               filename="sepa.cdd")
 
-
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("lastschrift_id", "id_or_None"))
     def lastschrift_generate_transactions(self, rs, lastschrift_id):
@@ -1378,10 +1377,6 @@ class CdEFrontend(AbstractUserFrontend):
             if not self.determine_open_permits(rs, lastschrift_ids):
                 rs.notify("error", n_("Existing pending transaction."))
                 return self.lastschrift_index(rs)
-        lastschrifts = self.cdeproxy.get_lastschrifts(
-            rs, lastschrift_ids)
-        personas = self.coreproxy.get_personas(
-            rs, tuple(e['persona_id'] for e in lastschrifts.values()))
         new_transactions = tuple(
             {
                 'issued_at': now(),
@@ -1391,6 +1386,29 @@ class CdEFrontend(AbstractUserFrontend):
         )
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
             rs, new_transactions, check_unique=True)
+
+        lastschrifts = self.cdeproxy.get_lastschrifts(
+            rs, lastschrift_ids)
+        personas = self.coreproxy.get_personas(
+            rs, tuple(e['persona_id'] for e in lastschrifts.values()))
+        for anid in lastschrift_ids:
+            lastschrift = lastschrifts[anid]
+            persona = personas[lastschrift['persona_id']]
+            data = {
+                'persona': persona,
+                'payment_date': self._calculate_payment_date(),
+                'amount': lastschrift['amount'],
+                'iban': lastschrift['iban'],
+                'account_owner': lastschrift['account_owner'],
+                'mandate_reference': lastschrift_reference(
+                    lastschrift['persona_id'], lastschrift['id']),
+                'glaeubiger_id': self.conf.SEPA_GLAEUBIGERID,
+            }
+            self.do_mail(rs, "sepa_pre-notification",
+                         {'To': (persona['username'],),
+                          'Subject': glue("Anstehender Lastschrifteinzug"
+                                          "CdE Initiative 25+")},
+                         {'data': data})
         return self.lastschrift_index(rs)
 
     @access("cde_admin", modi={"POST"})
