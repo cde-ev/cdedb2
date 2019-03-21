@@ -20,9 +20,9 @@ EVENT_FEE_FIELDS = ("amount_export", "db_id", "family_name", "given_names",
                     "event_confidence", "reference", "account_holder",
                     "problems")
 OTHER_TRANSACTION_FIELDS = ("account", "amount_export", "db_id", "family_name",
-                            "given_names", "date", "member_confidence", "type",
-                            "type_confidence", "reference", "account_holder",
-                            "iban", "bic", "problems")
+                            "given_names", "date", "member_confidence",
+                            "posting", "type", "type_confidence", "reference",
+                            "account_holder", "iban", "bic", "problems")
 ACCOUNT_FIELDS = ("date", "amount", "db_id", "name_or_holder",
                   "name_or_ref", "category", "account", "reference",
                   "account_holder", "iban", "bic")
@@ -394,7 +394,7 @@ class Transaction:
         self.iban = raw["IBAN"]
         self.bic = raw["BIC"]
 
-        self.posting = str(raw["posting"])
+        self.posting = str(raw["posting"]).split(" ", 1)[0]
 
         # Guess the transaction type
         self.type = TransactionType.Unknown
@@ -804,6 +804,7 @@ class Transaction:
             if self.best_event_match else "",
             "event_confidence": str(self.best_event_confidence),
             "reference": self.reference,
+            "posting": self.posting,
             "account_holder": self.account_holder,
             "iban": self.iban,
             "bic": self.bic,
