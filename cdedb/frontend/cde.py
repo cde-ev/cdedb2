@@ -1211,6 +1211,15 @@ class CdEFrontend(AbstractUserFrontend):
         }
         code = self.cdeproxy.set_lastschrift(rs, data)
         self.notify_return_code(rs, code, success=n_("Permit revoked."))
+        transaction_ids = self.coreproxy.list_lastschrift_transactions(
+            rs, lastschrift_ids=(lastschrift_id,),
+            stati=(const.LastschriftTransactionStati.issued,))
+        if transaction_ids:
+            self.do_mail(rs, "pending_lastschrift_revoked",
+                         {'To': self.conf.MANAGEMENT_ADDRESS,
+                          'Subject': "Ausstehende Einzugsermächtigung "
+                                     "widerrufen"},
+                         {'persona_id': persona_id})
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
