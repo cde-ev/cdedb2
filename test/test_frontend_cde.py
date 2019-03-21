@@ -301,6 +301,24 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
 
     @as_users("anton")
+    def test_double_lastschrift_revoke(self, user):
+        self.get("/cde/user/2/lastschrift")
+        self.assertPresence("Aktive Einzugsermächtigung")
+        self.assertPresence("Betrag 42,23 €")
+        self.get("/cde/user/2/lastschrift/create")
+        f = self.response.forms['createlastschriftform']
+        f['amount'] = 25
+        f['iban'] = "DE12 5001 0517 0648 4898 90"
+        self.submit(f)
+        self.assertPresence("Betrag 25,00 €")
+        self.assertNonPresence("Dagobert")
+        self.get("/core/persona/2/membership/change")
+        f = self.response.forms['modifymembershipform']
+        self.submit(f)
+        self.get("/cde/user/2/lastschrift")
+        self.assertNonPresence("Aktive Einzugsermächtigung")
+
+    @as_users("anton")
     def test_create_user(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/user'},
