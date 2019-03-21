@@ -1104,15 +1104,18 @@ class CdEFrontend(AbstractUserFrontend):
         This presents open items as well as all permits.
         """
         lastschrift_ids = self.cdeproxy.list_lastschrift(rs)
-        lastschrifts = self.cdeproxy.get_lastschrifts(rs,
-                                                      lastschrift_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrifts(
+            rs, lastschrift_ids.keys())
+        all_lastschrift_ids = self.cdeproxy.list_lastschrift(rs, active=None)
+        all_lastschrifts = self.cdeproxy.get_lastschrifts(
+            rs, all_lastschrift_ids.keys())
         period = self.cdeproxy.current_period(rs)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, periods=(period,),
             stati=(const.LastschriftTransactionStati.issued,))
         transactions = self.cdeproxy.get_lastschrift_transactions(
             rs, transaction_ids.keys())
-        persona_ids = set(lastschrift_ids.values()).union({
+        persona_ids = set(all_lastschrift_ids.values()).union({
             x['submitted_by'] for x in lastschrifts.values()})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         open_permits = self.determine_open_permits(rs, lastschrift_ids)
@@ -1120,7 +1123,7 @@ class CdEFrontend(AbstractUserFrontend):
             lastschrift['open'] = lastschrift['id'] in open_permits
         return self.render(rs, "lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
-            'transactions': transactions})
+            'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
 
     @access("member")
     def lastschrift_show(self, rs, persona_id):

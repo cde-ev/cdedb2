@@ -120,9 +120,16 @@
                             {{ util.input_checkbox(name="transaction_ids", value=transaction_id) }}
                         </td>
                         <td>
-                            {% set persona = personas[lastschrifts[transaction['lastschrift_id']]['persona_id']] %}
+                            {% set persona = personas[all_lastschrifts[transaction['lastschrift_id']]['persona_id']] %}
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': persona['id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
+                            {% if all_lastschrifts[transaction['lastschrift_id']]['revoked_at'] %}
+                                <b class="alert-danger">{{ util.make_icon("warning-sign") }}
+                                {% trans -%}
+                                    This transaction needs to be cancelled!
+                                {%- endtrans %}
+                                </b>
+                            {% endif %}
                         </td>
                         <td>{{ transaction['issued_at']|datetime(lang=lang) }}</td>
                         <td>{{ transaction['amount'] }}€</td>
