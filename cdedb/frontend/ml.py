@@ -265,6 +265,7 @@ class MlFrontend(AbstractUserFrontend):
             'pending': is_pending})
 
     @access("ml")
+    @mailinglist_guard()
     def change_mailinglist_form(self, rs, mailinglist_id):
         """Render form."""
         mailinglists = self.mlproxy.list_mailinglists(rs)
