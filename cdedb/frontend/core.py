@@ -1080,7 +1080,7 @@ class CoreFrontend(AbstractFrontend):
                     stati=(const.LastschriftTransactionStati.issued,))
                 if transaction_ids:
                     self.do_mail(rs, "pending_lastschrift_revoked",
-                                 {'To': self.conf.MANAGEMENT_ADDRESS,
+                                 {'To': (self.conf.MANAGEMENT_ADDRESS,),
                                   'Subject': "Ausstehende Einzugsermächtigung "
                                              "widerrufen"},
                                  {'persona_id': persona_id})

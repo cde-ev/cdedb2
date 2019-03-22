@@ -1209,14 +1209,16 @@ class CdEFrontend(AbstractUserFrontend):
             'id': lastschrift_id,
             'revoked_at': now(),
         }
+        lastschrift = self.cdeproxy.get_lastschrift(rs, lastschrift_id)
+        persona_id = lastschrift['persona_id']
         code = self.cdeproxy.set_lastschrift(rs, data)
         self.notify_return_code(rs, code, success=n_("Permit revoked."))
-        transaction_ids = self.coreproxy.list_lastschrift_transactions(
+        transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, lastschrift_ids=(lastschrift_id,),
             stati=(const.LastschriftTransactionStati.issued,))
         if transaction_ids:
             self.do_mail(rs, "pending_lastschrift_revoked",
-                         {'To': self.conf.MANAGEMENT_ADDRESS,
+                         {'To': (self.conf.MANAGEMENT_ADDRESS,),
                           'Subject': "Ausstehende Einzugsermächtigung "
                                      "widerrufen"},
                          {'persona_id': persona_id})
