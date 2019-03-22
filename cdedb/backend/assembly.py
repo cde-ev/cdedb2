@@ -268,7 +268,7 @@ class AssemblyBackend(AbstractBackend):
             entity_key="assembly_id")
         return {e['persona_id'] for e in attendees}
 
-    @access("assembly")
+    @access("persona")
     def list_assemblies(self, rs, is_active=None):
         """List all assemblies.
 
