@@ -74,6 +74,26 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Überweisungen aus dem Ausland achte")
 
     @as_users("berta")
+    def test_member_profile_past_events(self, user):
+        self.traverse({'href': '/core/self/show'})
+        self.traverse({'description': "PfingstAkademie 2014"})
+        self.traverse({'href': '/core/self/show'})
+        self.traverse({'description': "Swish -- und alles ist gut"})
+
+    @as_users("emilia")
+    def test_event_profile_past_events(self, user):
+        self.traverse({'href': '/core/self/show'})
+        try:
+            self.traverse({'description': "PfingstAkademie 2014"})
+        except IndexError as e:
+            self.assertTrue(self, "No matching elements found" in str(e))
+        self.get('/core/self/show')
+        try:
+            self.traverse({'description': "Goethe zum Anfassen"})
+        except IndexError as e:
+            self.assertTrue(self, "No matching elements found" in str(e))
+
+    @as_users("berta")
     def test_cppaymentinformation(self, user):
         self.traverse({'href': '/core/self/show'})
         self.assertNonPresence("Überweisungen aus dem Ausland achte")
