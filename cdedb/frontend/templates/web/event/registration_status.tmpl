@@ -36,7 +36,7 @@
                 </tr>
                 <tr>
                     <td>{% trans -%}IBAN{%- endtrans %}</td>
-                    <td>{{ ambience['event']['iban'] }}</td>
+                    <td>{{ ambience['event']['iban']|iban }}</td>
                 </tr>
                 <tr>
                     <td>{% trans -%}BIC{%- endtrans %}</td>
