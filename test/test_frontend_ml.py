@@ -475,22 +475,22 @@ class TestMlFrontend(FrontendTest):
                   headers=HEADERS)
         self.assertEqual(True, self.response.json)
 
-    @as_users("berta")
+    @as_users("berta", "janis")
     def test_moderator_access(self, user):
         self.traverse({"href": "/ml"},
-                      {"href": "/ml/mailinglist/4/show"})
-        self.assertTitle("Klatsch und Tratsch")
-        self.traverse({"href": "/ml/mailinglist/4/manage"})
-        self.assertTitle("Klatsch und Tratsch – Verwalten")
-        self.traverse({"href": "/ml/mailinglist/4/change"})
-        self.assertTitle("Klatsch und Tratsch – Konfiguration")
+                      {"href": "/ml/mailinglist/3/show"})
+        self.assertTitle("Witz des Tages")
+        self.traverse({"href": "/ml/mailinglist/3/manage"})
+        self.assertTitle("Witz des Tages – Verwalten")
+        self.traverse({"href": "/ml/mailinglist/3/change"})
+        self.assertTitle("Witz des Tages – Konfiguration")
         self.assertPresence("Nur Administratoren dürfen die Mailinglisten-"
                             "Konfiguration ändern.", div="notifications")
         self.assertNotIn('changelistform', self.response.forms)
         # TODO check that form elements are readonly
 
-        self.traverse({"href": "ml/mailinglist/4/log"})
-        self.assertTitle("Klatsch und Tratsch: Log [0–0]")
+        self.traverse({"href": "ml/mailinglist/3/log"})
+        self.assertTitle("Witz des Tages: Log [0–0]")
 
     def test_log(self):
         ## First: generate data
