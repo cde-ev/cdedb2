@@ -1001,7 +1001,7 @@ msgstr "Banner after Login"
 
 #: cdedb/i18n_additional.py:260
 msgid "cde_misc"
-msgstr ""
+msgstr "Link Collection Memberarea"
 
 #: cdedb/validation.py:118
 msgid "Superfluous key found."
@@ -9599,89 +9599,3 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:6
 msgid "Mailinglists Log"
 msgstr ""
-
-#~ msgid "cde_misc"
-#~ msgstr "Link Collection Memberarea"
-
-#~ msgid "Course fields set."
-#~ msgstr ""
-
-#~ msgid "60_dokuteam"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Deactivates the Account, so the User can no longer login.\n"
-#~ "                                        Non-Admins "
-#~ "can still see the User but not "
-#~ "the complete Profile.\n"
-#~ "                                        This can be"
-#~ " reversed at any time."
-#~ msgstr ""
-
-#~ msgid "You do not have sufficient permissions to access this page:"
-#~ msgstr ""
-
-#~ msgid "Couldn't find the requested page"
-#~ msgstr ""
-
-#~ msgid "This HTTP method is not allowed for this URL."
-#~ msgstr ""
-
-#~ msgid "An internal error occured:"
-#~ msgstr ""
-
-#~ msgid "An unknown error occurred."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "If you think this is an error, "
-#~ "please contact the %(team)s at %(mail)s"
-#~ " with the error message\n"
-#~ "                displayed above, the current"
-#~ " time (%(time)s) and a detailed "
-#~ "description of your actions: What were"
-#~ " you\n"
-#~ "                about to do? Which links"
-#~ " and buttons did you click to "
-#~ "get here? Have you changed any "
-#~ "settings before the\n"
-#~ "                error occurred?"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "If you reached this page via an"
-#~ " internal link of the CdE-Datenbank,"
-#~ " please contact the %(team)s at\n"
-#~ "                %(mail)s and describe how you got here."
-#~ msgstr ""
-
-#~ msgid "frontpage"
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Use the navigation buttons of your "
-#~ "browser to get back to the "
-#~ "previous page or go to the\n"
-#~ "                %(frontpage_link)s of the CdE-Datenbank."
-#~ msgstr ""
-
-#~ msgid "First try reloading this page."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "If the error persists, you probably found a bug, hidden in our code.\n"
-#~ "                Please contact the %(team)s"
-#~ " at %(mail)s with the error message"
-#~ " displayed above, the current time\n"
-#~ "                (%(time)s) and a detailed "
-#~ "description of your actions: What were"
-#~ " you about to do? Which links "
-#~ "and\n"
-#~ "                buttons did you click to"
-#~ " get here? Have you changed any "
-#~ "settings before the error occurred?"
-#~ msgstr ""
-
-#~ msgid "%(count)s Members have insufficient Balance right now."
-#~ msgstr ""
-
