@@ -2237,9 +2237,9 @@ msgid "Creation of SEPA-PAIN-file failed."
 msgstr "Erstellung der SEPA-PAIN-Datei fehlgeschlagen."
 
 #: cdedb/frontend/cde.py:1403
-msgid "{count} Direct Debits issued. Notification mails sent."
+msgid "%(num)s Direct Debits issued. Notification mails sent."
 msgstr ""
-"{count} Lastschriften initialisiert. Benachrichtigungsmails wurden "
+"%(num)s Lastschriften initialisiert. Benachrichtigungsmails wurden "
 "verschickt."
 
 #: cdedb/frontend/cde.py:1443
@@ -6158,7 +6158,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:83
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:93
 msgid "Create SEPA-PAIN-file"
-msgstr ""
+msgstr "SEPA-PAIN-Datei erstellen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:62
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:100
@@ -10077,7 +10077,3 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:6
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
-
-#~ msgid "Create SEPA-PAIN File"
-#~ msgstr "SEPA-PAIN-Datei erstellen"
-

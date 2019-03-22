@@ -1400,8 +1400,9 @@ class CdEFrontend(AbstractUserFrontend):
             rs, new_transactions, check_unique=True)
         if not transaction_ids:
             return self.lastschrift_index
-        rs.notify("info", n_("{count} Direct Debits issued. Notification mails "
-                             "sent.").format(count=len(transaction_ids)))
+        rs.notify("success",
+                  n_("%(num)s Direct Debits issued. Notification mails sent."),
+                  {'num': len(transaction_ids)})
 
         lastschrifts = self.cdeproxy.get_lastschrifts(
             rs, lastschrift_ids)
@@ -1425,7 +1426,7 @@ class CdEFrontend(AbstractUserFrontend):
                           'Subject': glue("Anstehender Lastschrifteinzug"
                                           "CdE Initiative 25+")},
                          {'data': data})
-        return self.lastschrift_index(rs)
+        return self.redirect(rs, "cde/lastschrift_index")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
