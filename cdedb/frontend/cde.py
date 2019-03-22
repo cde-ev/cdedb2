@@ -1398,6 +1398,10 @@ class CdEFrontend(AbstractUserFrontend):
         )
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
             rs, new_transactions, check_unique=True)
+        if not transaction_ids:
+            return self.lastschrift_index
+        rs.notify("info", n_("{count} Direct Debits issued. Notification mails "
+                             "sent.").format(count=len(transaction_ids)))
 
         lastschrifts = self.cdeproxy.get_lastschrifts(
             rs, lastschrift_ids)

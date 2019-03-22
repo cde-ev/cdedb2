@@ -90,7 +90,7 @@
                     id="createsepapainform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
                     {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
-                    {{ util.input_submit(value=gettext("Create Sepapain File"), icon="download",
+                    {{ util.input_submit(value=gettext("Create SEPA-PAIN-file"), icon="download",
                                          aclass="btn btn-sm btn-primary") }}
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
