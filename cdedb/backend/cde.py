@@ -186,6 +186,9 @@ class CdEBackend(AbstractBackend):
         data = affirm("lastschrift", data, creation=True)
         data['submitted_by'] = rs.user.persona_id
         with Atomizer(rs):
+            if self.list_lastschrift(rs, persona_ids=(data['persona_id'],),
+                                     active=True):
+                raise ValueError(n_("Multiple active permits are disallowed."))
             new_id = self.sql_insert(rs, "cde.lastschrift", data)
             self.core.finance_log(rs, const.FinanceLogCodes.grant_lastschrift,
                                   data['persona_id'], None, None)

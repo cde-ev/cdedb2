@@ -379,6 +379,21 @@ class TestCdEBackend(BackendTest):
                          self.cde.get_lastschrifts(self.key, (new_id,)))
 
     @as_users("anton")
+    def test_lastschrift_multiple_active(self, user):
+        newdata = {
+            'account_address': None,
+            'account_owner': None,
+            'amount': decimal.Decimal('25.00'),
+            'granted_at': datetime.datetime.now(pytz.utc),
+            'iban': 'DE69370205000008068902',
+            'notes': None,
+            'persona_id': 3,
+        }
+        self.cde.create_lastschrift(self.key, newdata)
+        with self.assertRaises(ValueError):
+            self.cde.create_lastschrift(self.key, newdata)
+
+    @as_users("anton")
     def test_lastschrift_transaction(self, user):
         expectation = {1: 1, 2: 1, 3: 2}
         self.assertEqual(expectation,
