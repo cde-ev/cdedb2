@@ -1231,7 +1231,22 @@ class CdEFrontend(AbstractUserFrontend):
 
         :rtype: datetime.date
         """
-        payment_date = now().date() + self.conf.SEPA_PAYMENT_OFFSET
+        # Before anything else: check whether we are on special easter days.
+        easter = dateutil.easter.easter(payment_date.year)
+        good_friday = easter - datetime.timedelta(days=2)
+        easter_monday = easter + datetime.timedelta(days=1)
+        if payment_date in (good_friday, easter_monday):
+            payment_date = easter + datetime.timedelta(days=2)
+        else:
+            payment_date = now().date() + self.conf.SEPA_PAYMENT_OFFSET
+
+        # First: check we are not on the weekend.
+        if payment_date.isoweekday() == 6:
+            payment_date += datetime.timedelta(days=2)
+        elif payment_date.isoweekday() == 7:
+            payment_date += datetime.timedelta(days=1)
+
+        # Second: check we are not on some special day.
         if payment_date.day == 1 and payment_date.month in (1, 5):
             payment_date += datetime.timedelta(days=1)
         elif payment_date.month == 12 and payment_date.day == 25:
@@ -1239,16 +1254,11 @@ class CdEFrontend(AbstractUserFrontend):
         elif payment_date.month == 12 and payment_date.day == 26:
             payment_date += datetime.timedelta(days=1)
 
+        # Third: check whether the second step landed us on the weekend.
         if payment_date.isoweekday() == 6:
             payment_date += datetime.timedelta(days=2)
         elif payment_date.isoweekday() == 7:
             payment_date += datetime.timedelta(days=1)
-
-        easter = dateutil.easter.easter(payment_date.year)
-        good_friday = easter - datetime.timedelta(days=2)
-        easter_monday = easter + datetime.timedelta(days=1)
-        if payment_date in (good_friday, easter_monday):
-            payment_date = easter + datetime.timedelta(days=2)
 
         return payment_date
 
