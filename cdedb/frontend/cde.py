@@ -1339,8 +1339,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         new_transactions = []
 
-        for anid in lastschrift_ids:
-            lastschrift = lastschrifts[anid]
+        for lastschrift in lastschrifts:
             persona = personas[lastschrift['persona_id']]
             transaction = {
                 'issued_at': now(),
@@ -1418,8 +1417,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, lastschrift_ids)
         personas = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in lastschrifts.values()))
-        for anid in lastschrift_ids:
-            lastschrift = lastschrifts[anid]
+        for lastschrift in lastschrifts:
             persona = personas[lastschrift['persona_id']]
             data = {
                 'persona': persona,
