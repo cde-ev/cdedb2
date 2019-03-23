@@ -713,6 +713,10 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_ids = affirm_set("id", mailinglist_ids)
 
+        if (not all(self.is_moderator(rs, ml_id) for ml_id in mailinglist_ids)
+                and not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+
         mailinglists = self.get_mailinglists(rs, mailinglist_ids)
         sql_tests = {
             e['id']: const.AudiencePolicy(e['audience_policy']).sql_test()
@@ -743,6 +747,8 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
+        if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
             ml = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
