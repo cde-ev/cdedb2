@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import json
-import quopri
 import unittest
 
 import webtest
@@ -248,11 +247,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertTitle("Klatsch und Tratsch")
         mail = self.fetch_mail()[0]
-        link = None
-        for line in mail.split('\n'):
-            if line.startswith('[1] '):
-                link = line[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         self.get(link)
         self.follow()
         self.assertTitle("Klatsch und Tratsch")

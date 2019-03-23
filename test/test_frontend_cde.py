@@ -4,7 +4,6 @@ import itertools
 import json
 import csv
 import re
-import quopri
 import unittest
 import time
 
@@ -352,11 +351,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
         mail = self.fetch_mail()[0]
         self.logout()
-        link = None
-        for line in mail.split('\n'):
-            if line.strip().startswith('[1] '):
-                link = line.strip()[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
         new_password = "krce63koLe#$e"

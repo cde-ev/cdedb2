@@ -3,7 +3,6 @@ import csv
 import json
 import datetime
 import unittest
-import quopri
 import webtest
 from test.common import as_users, USER_DICT, FrontendTest, nearly_now
 
@@ -788,7 +787,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
-        self.assertIn("461.49", mail)
+        text = mail.get_body().get_content()
+        self.assertIn("461.49", text)
         self.assertPresence("Ich freu mich schon so zu kommen")
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
@@ -841,7 +841,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
-        self.assertIn("10.50", mail)
+        text = mail.get_body().get_content()
+        self.assertIn("10.50", text)
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']

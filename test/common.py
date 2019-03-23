@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import datetime
+import email.parser
+import email.policy
 import functools
 import gettext
 import inspect
 import pathlib
 import pytz
+import quopri
 import re
 import unittest
 import subprocess
@@ -391,7 +394,17 @@ class FrontendTest(unittest.TestCase):
         ret = []
         for path in mails:
             with open_utf8(path) as f:
-                ret.append(f.read())
+                raw = f.read()
+                parser = email.parser.Parser(policy=email.policy.default)
+                msg = parser.parsestr(raw)
+                ret.append(msg)
+        return ret
+
+    def fetch_link(self, msg, num=1):
+        ret = None
+        for line in msg.get_body().get_content().splitlines():
+            if line.startswith('[{}] '.format(num)):
+                ret = line.split(maxsplit=1)[-1]
         return ret
 
     def assertTitle(self, title):

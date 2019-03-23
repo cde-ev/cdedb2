@@ -1066,11 +1066,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
         msg['Content-Transfer-Encoding'] = 'quoted-printable'
-        # we want quoted-printable, but without encoding spaces and without
-        # linewrapping (encoding is a pain!)
+        # we want quoted-printable, but without encoding all the spaces
+        # however at the end of lines the standard requires spaces to be
+        # encoded hence we have to be a bit careful (encoding is a pain!)
         payload = msg.get_payload()
-        payload = payload.replace('=20', ' ')
-        payload = payload.replace('=\n', '')
+        payload = re.sub('=20(.)', r' \1', payload)
+        # do this twice for adjacent encoded spaces
+        payload = re.sub('=20(.)', r' \1', payload)
         msg.set_payload(payload)
         if attachments:
             container = email.mime.multipart.MIMEMultipart()

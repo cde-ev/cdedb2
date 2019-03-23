@@ -4,7 +4,6 @@ import datetime
 import email.parser
 import time
 import unittest
-import quopri
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
@@ -128,9 +127,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Internationaler Kongress")
         self.assertNotIn('signupform', self.response.forms)
         mail = self.fetch_mail()[0]
-        parser = email.parser.Parser()
-        msg = parser.parsestr(mail)
-        attachment = msg.get_payload()[1]
+        attachment = next(mail.iter_attachments())
         value = attachment.get_payload(decode=True)
         with open("./bin/verify_votes.py", 'rb') as f:
             self.assertEqual(f.read(), value)
@@ -154,9 +151,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle('Anwesenheitsliste (Drittes CdE-Konzil)')
         mail = self.fetch_mail()[0]
-        parser = email.parser.Parser()
-        msg = parser.parsestr(mail)
-        attachment = msg.get_payload()[1]
+        attachment = next(mail.iter_attachments())
         value = attachment.get_payload(decode=True)
         with open("./bin/verify_votes.py", 'rb') as f:
             self.assertEqual(f.read(), value)
@@ -392,9 +387,7 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/1/ballot/1/show'},)
         self.assertTitle("Antwort auf die letzte aller Fragen (Internationaler Kongress)")
         mail = self.fetch_mail()[0]
-        parser = email.parser.Parser()
-        msg = parser.parsestr(mail)
-        text = msg.get_payload()[0].get_payload()
+        text = mail.get_body().get_content()
         self.assertIn('die Abstimmung "Antwort auf die letzte aller Fragen" der Versammlung', text)
         self.traverse({'href': '/assembly/1/ballot/1/result'},)
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:

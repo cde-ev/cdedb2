@@ -3,7 +3,6 @@
 import unittest
 import copy
 import json
-import quopri
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
@@ -354,16 +353,12 @@ class TestCoreFrontend(FrontendTest):
                     self.assertTitle("CdE-Datenbank")
                     if u in {"anton", "ferdinand"}:
                         mail = self.fetch_mail()[0]
-                        self.assertNotIn('[1]', mail)
-                        self.assertIn('Sicherheitsgründe',
-                                      quopri.decodestring(mail).decode('utf-8'))
+                        text = mail.get_body().get_content()
+                        self.assertNotIn('[1]', text)
+                        self.assertIn('Sicherheitsgründe', text)
                         continue
                     mail = self.fetch_mail()[0]
-                    link = None
-                    for line in mail.split('\n'):
-                        if line.startswith('[1] '):
-                            link = line[4:]
-                    link = quopri.decodestring(link).decode('utf-8')
+                    link = self.fetch_link(mail)
                     self.get(link)
                     self.follow()
                     self.assertTitle("Neues Passwort setzen")
@@ -394,11 +389,7 @@ class TestCoreFrontend(FrontendTest):
         f['email'] = user['username']
         self.submit(f)
         mail = self.fetch_mail()[0]
-        link = None
-        for line in mail.split('\n'):
-            if line.startswith('[1] '):
-                link = line[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         # First reset should work
         self.get(link)
         self.follow()
@@ -427,11 +418,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         mail = self.fetch_mail()[0]
         self.logout()
-        link = None
-        for line in mail.split('\n'):
-            if line.startswith('[1] '):
-                link = line[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         self.get(link)
         self.follow()
         self.assertTitle("Neues Passwort setzen")
@@ -464,11 +451,7 @@ class TestCoreFrontend(FrontendTest):
         f['new_username'] = new_username
         self.submit(f)
         mail = self.fetch_mail()[0]
-        link = None
-        for line in mail.split('\n'):
-            if line.startswith('[1] '):
-                link = line[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         self.get(link)
         f = self.response.forms['usernamechangeform']
         f['password'] = user['password']
@@ -793,11 +776,7 @@ class TestCoreFrontend(FrontendTest):
         f['country'] = "Arkadien"
         self.submit(f)
         mail = self.fetch_mail()[0]
-        link = None
-        for line in mail.split('\n'):
-            if line.startswith('[1] '):
-                link = line[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         self.get(link)
         self.follow()
         self.login(user)
@@ -828,11 +807,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesiseventapprovalform1']
         self.submit(f)
         mail = self.fetch_mail()[0]
-        link = None
-        for line in mail.split('\n'):
-            if line.startswith('[1] '):
-                link = line[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
@@ -867,11 +842,7 @@ class TestCoreFrontend(FrontendTest):
         f['realm'] = "ml"
         self.submit(f)
         mail = self.fetch_mail()[0]
-        link = None
-        for line in mail.split('\n'):
-            if line.startswith('[1] '):
-                link = line[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         self.get(link)
         self.follow()
         self.login(user)
@@ -883,11 +854,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismlapprovalform1']
         self.submit(f)
         mail = self.fetch_mail()[0]
-        link = None
-        for line in mail.split('\n'):
-            if line.startswith('[1] '):
-                link = line[4:]
-        link = quopri.decodestring(link).decode('utf-8')
+        link = self.fetch_link(mail)
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
