@@ -318,10 +318,13 @@ def check_anti_csrf(rs, component, action):
     val = rs.request.values.get(ANTI_CSRF_TOKEN_NAME, "").strip()
     if not val:
         return False, n_("Anti CSRF token is required for this form.")
-    val = rs._coders['decode_parameter'](
+    timeout, val = rs._coders['decode_parameter'](
         "{}/{}".format(component, action), ANTI_CSRF_TOKEN_NAME, val)
     if not val:
-        return False, n_("Anti CSRF token is forged or expired. Try again.")
+        if timeout:
+            return False, n_("Anti CSRF token expired. Please try again.")
+        else:
+            return False, n_("Anti CSRF token is forged.")
     val = check_validation(rs, 'id', val, ANTI_CSRF_TOKEN_NAME)
     if not val:
         return False, n_("Anti CSRF token is no valid user id.")

@@ -1151,8 +1151,10 @@ def decode_parameter(salt, target, name, param):
     :type target: str
     :type name: str
     :type param: str
-    :rtype: str or None
-    :returns: decoded message, ``None`` if decoding or verification fails
+    :rtype: (bool or None, str or None)
+    :returns: The string is the decoded message or ``None`` if any failure
+      occured. The boolean is True if the failure was a timeout, False if
+      the failure was something else and None if no failure occured.
     """
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     mac, message = param[0:128], param[130:]
@@ -1161,7 +1163,7 @@ def decode_parameter(salt, target, name, param):
     if not hmac.compare_digest(h.hexdigest(), mac):
         _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
             h.hexdigest(), mac, tohash))
-        return None
+        return False, None
     timestamp = message[:24]
     if timestamp == 24 * '.':
         pass
@@ -1169,8 +1171,8 @@ def decode_parameter(salt, target, name, param):
         ttl = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S%z")
         if ttl <= now():
             _LOGGER.debug("Expired protected parameter {}".format(tohash))
-            return None
-    return message[26:]
+            return True, None
+    return None, message[26:]
 
 
 def extract_roles(session, introspection_only=False):

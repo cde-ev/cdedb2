@@ -1587,11 +1587,15 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
-            msg = decode_parameter(salt, persona_id, password_hash, cookie)
+            timeout, msg = decode_parameter(salt, persona_id, password_hash,
+                                            cookie)
             if msg is None:
-                return False, n_("Link invalid or expired.")
+                if timeout:
+                    return False, n_("Link expired.")
+                else:
+                    return False, n_("Link invalid or already used.")
             if msg != self.RESET_COOKIE_PAYLOAD:
-                return False, n_("Link already used.")
+                return False, n_("Link invalid or already used.")
             return True, None
 
     def modify_password(self, rs, new_password, old_password=None,

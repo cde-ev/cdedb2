@@ -285,7 +285,6 @@ class CoreFrontend(AbstractFrontend):
         breakage).
         """
         if persona_id != confirm_id or rs.errors:
-            rs.notify("error", n_("Link expired."))
             return self.index(rs)
         if (rs.ambience['persona']['is_archived']
                 and "core_admin" not in rs.user.roles):
@@ -1276,7 +1275,6 @@ class CoreFrontend(AbstractFrontend):
         owner actually wants the reset.
         """
         if rs.errors:
-            rs.notify("error", n_("Link expired."))
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
             "core/do_password_reset", "email", email)
@@ -1288,7 +1286,6 @@ class CoreFrontend(AbstractFrontend):
     def do_password_reset(self, rs, email, new_password, new_password2, cookie):
         """Now we can reset to a new password."""
         if rs.errors:
-            rs.notify("error", n_("Link expired."))
             return self.reset_password_form(rs)
         if new_password != new_password2:
             rs.errors.append(("new_password",
@@ -1352,7 +1349,6 @@ class CoreFrontend(AbstractFrontend):
     def do_username_change_form(self, rs, new_username):
         """Email is now verified or we are admin."""
         if rs.errors:
-            rs.notify("error", n_("Link expired."))
             return self.change_username_form(rs)
         rs.values['new_username'] = self.encode_parameter(
             "core/do_username_change", "new_username", new_username)
@@ -1364,7 +1360,6 @@ class CoreFrontend(AbstractFrontend):
     def do_username_change(self, rs, new_username, password):
         """Now we can do the actual change."""
         if rs.errors:
-            rs.notify("error", n_("Link expired."))
             return self.change_username_form(rs)
         code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)
@@ -1490,7 +1485,6 @@ class CoreFrontend(AbstractFrontend):
         This is not a POST since the link is shared via email.
         """
         if rs.errors:
-            rs.notify("error", n_("Link expired."))
             return self.genesis_request_form(rs)
         code, realm = self.coreproxy.genesis_verify(rs, case_id)
         self.notify_return_code(

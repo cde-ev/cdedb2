@@ -139,7 +139,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         :type note: str
         :rtype: str, str, {str: object}
         """
-        message = self.decode_parameter('_/notification', 'displaynote', note)
+        timeout, message = self.decode_parameter('_/notification',
+                                                 'displaynote', note)
         if not message:
             return None, None, None
         parts = message.split("--")
@@ -1632,9 +1633,13 @@ def REQUESTdata(*spec):
                             argtype = argtype[1:]
                             if val:
                                 # only decode if exists
-                                val = rs._coders['decode_parameter'](
+                                timeout, val = rs._coders['decode_parameter'](
                                     "{}/{}".format(obj.realm, fun.__name__),
                                     name, val)
+                                if timeout is True:
+                                    rs.notify("warning", n_("Link expired."))
+                                if timeout is False:
+                                    rs.notify("warning", n_("Link invalid."))
                         kwargs[name] = check_validation(rs, argtype, val, name)
             return fun(obj, rs, *args, **kwargs)
 

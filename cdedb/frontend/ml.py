@@ -520,7 +520,6 @@ class MlFrontend(AbstractUserFrontend):
         This is not a POST since the link is shared via email.
         """
         if rs.errors:
-            rs.notify("error", n_("Link expired."))
             return self.show_mailinglist(rs, mailinglist_id)
         is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
                                                    mailinglist_id)

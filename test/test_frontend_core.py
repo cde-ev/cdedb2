@@ -406,7 +406,8 @@ class TestCoreFrontend(FrontendTest):
         f['new_password'] = new_password
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
-        self.assertPresence("Link ungültig oder ausgelaufen.", div="notifications")
+        self.assertPresence("Link ist ungültig oder wurde bereits verwendet.",
+                            div="notifications")
 
     def test_admin_reset_password(self):
         new_password = "krce63koLe#$e"
