@@ -7418,24 +7418,24 @@ msgstr "Mitgliedsstatus bearbeiten"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:19
 msgid ""
-"Here You can terminate the CdE-Membership. This has the following Effects:"
+"Here you can terminate the CdE-membership. This has the following effects:"
 msgstr ""
-"Hiermit kann die CdE-Mitgliedschaft beendet werden. Das bewirkt folgendes:"
+"Hiermit kann die CdE-Mitgliedschaft beendet werden. Das hat die folgenden Auswirkungen:"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:22
-msgid "Termination of Membership"
+msgid "termination of membership"
 msgstr "Beenden der Mitgliedschaft"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:23
-msgid "Deletion of Privacy Policy Consent"
-msgstr "Löschen der Einwilligung zur Datenschutzerklärung"
+msgid "no longer able to search for/be found by other searchable members (if applicable)"
+msgstr "ggf. keinen Zugriff mehr auf die Mitgliedersuche und dort auch nicht mehr gelistet"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:24
-msgid "Loss of Membership Fee Balance"
+msgid "loss of membership fee balance"
 msgstr "Verlust des Mitgliedsbeitragguthabens"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:25
-msgid "Revocation of any active Direct Debit Authorization"
+msgid "revocation of any active direct debit authorization"
 msgstr "Widerruf aller aktiven Einzugsermächtigungen."
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:32

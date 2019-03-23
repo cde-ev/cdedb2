@@ -16,13 +16,13 @@
    {% if ambience['persona']['is_member'] %}
         <p>
             {{ util.make_icon("info-sign") }}
-            {% trans -%}Here You can terminate the CdE-Membership. This has the following Effects:{%- endtrans %}
+            {% trans -%}Here you can terminate the CdE-membership. This has the following effects:{%- endtrans %}
         </p>
         <ul>
-            <li>{% trans -%}Termination of Membership{%- endtrans %}</li>
-            <li>{% trans -%}Deletion of Privacy Policy Consent{%- endtrans %}</li>
-            <li>{% trans -%}Loss of Membership Fee Balance{%- endtrans %}</li>
-            <li>{% trans -%}Revocation of any active Direct Debit Authorization{%- endtrans %}</li>
+            <li>{% trans -%}termination of membership{%- endtrans %}</li>
+            <li>{% trans -%}no longer able to search for/be found by other searchable members (if applicable){%- endtrans %}</li>
+            <li>{% trans -%}loss of membership fee balance{%- endtrans %}</li>
+            <li>{% trans -%}revocation of any active direct debit authorization{%- endtrans %}</li>
         </ul>
 
         <form action="{{ cdedblink('core/modify_membership') }}" method="POST" id="modifymembershipform">
