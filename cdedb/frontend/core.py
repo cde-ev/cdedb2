@@ -1079,20 +1079,20 @@ class CoreFrontend(AbstractFrontend):
                     rs, lastschrift_ids=active_permits,
                     stati=(const.LastschriftTransactionStati.issued,))
                 if transaction_ids:
+                    subject = glue("Einzugsermächtigung zu ausstehender"
+                                   "Lastschrift widerrufen.")
                     self.do_mail(rs, "pending_lastschrift_revoked",
                                  {'To': (self.conf.MANAGEMENT_ADDRESS,),
-                                  'Subject': "Ausstehende Einzugsermächtigung "
-                                             "widerrufen"},
+                                  'Subject': subject},
                                  {'persona_id': persona_id})
                 for active_permit in active_permits:
-                    with Atomizer(rs):
-                        data = {
-                            'id': active_permit,
-                            'revoked_at': now(),
-                        }
-                        code = self.cdeproxy.set_lastschrift(rs, data)
-                        self.notify_return_code(rs, code,
-                                                success=n_("Permit revoked."))
+                    data = {
+                        'id': active_permit,
+                        'revoked_at': now(),
+                    }
+                    code = self.cdeproxy.set_lastschrift(rs, data)
+                    self.notify_return_code(rs, code,
+                                            success=n_("Permit revoked."))
 
         return self.redirect_show_user(rs, persona_id)
 

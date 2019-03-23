@@ -1217,10 +1217,11 @@ class CdEFrontend(AbstractUserFrontend):
             rs, lastschrift_ids=(lastschrift_id,),
             stati=(const.LastschriftTransactionStati.issued,))
         if transaction_ids:
+            subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
+                           "widerrufen.")
             self.do_mail(rs, "pending_lastschrift_revoked",
                          {'To': (self.conf.MANAGEMENT_ADDRESS,),
-                          'Subject': "Ausstehende Einzugsermächtigung "
-                                     "widerrufen"},
+                          'Subject': subject},
                          {'persona_id': persona_id})
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
@@ -1402,9 +1403,6 @@ class CdEFrontend(AbstractUserFrontend):
             rs, new_transactions, check_unique=True)
         if not transaction_ids:
             return self.lastschrift_index
-        rs.notify("success",
-                  n_("%(num)s Direct Debits issued. Notification mails sent."),
-                  {'num': len(transaction_ids)})
 
         lastschrifts = self.cdeproxy.get_lastschrifts(
             rs, lastschrift_ids)
@@ -1423,11 +1421,14 @@ class CdEFrontend(AbstractUserFrontend):
                     lastschrift['persona_id'], lastschrift['id']),
                 'glaeubiger_id': self.conf.SEPA_GLAEUBIGERID,
             }
+            subject = "Anstehender Lastschrifteinzug CdE Initiative 25+"
             self.do_mail(rs, "sepa_pre-notification",
                          {'To': (persona['username'],),
-                          'Subject': glue("Anstehender Lastschrifteinzug"
-                                          "CdE Initiative 25+")},
+                          'Subject': subject},
                          {'data': data})
+        rs.notify("success",
+                  n_("%(num)s Direct Debits issued. Notification mails sent."),
+                  {'num': len(transaction_ids)})
         return self.redirect(rs, "cde/lastschrift_index")
 
     @access("cde_admin", modi={"POST"})
