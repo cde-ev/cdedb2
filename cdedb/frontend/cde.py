@@ -1542,6 +1542,16 @@ class CdEFrontend(AbstractUserFrontend):
         code = self.cdeproxy.rollback_lastschrift_transaction(
             rs, transaction_id, tally)
         self.notify_return_code(rs, code)
+        transaction_ids = self.cdeproxy.list_lastschrift_transactions(
+            rs, lastschrift_ids=(lastschrift_id,),
+            stati=(const.LastschriftTransactionStati.issued,))
+        if transaction_ids:
+            subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
+                           "widerrufen.")
+            self.do_mail(rs, "pending_lastschrift_revoked",
+                         {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                          'Subject': subject},
+                         {'persona_id': persona_id})
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
                                  {'persona_id': persona_id})
