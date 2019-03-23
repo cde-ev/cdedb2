@@ -80,7 +80,7 @@
             <dt>{% trans -%}Institution{%- endtrans %}</dt>
             <dd>{{ institutions[ambience['event']['institution']] }}</dd>
             <dt>{% trans -%}CdE-Account IBAN{%- endtrans %}</dt>
-            <dd>{{ ambience['event']['iban'] }}</dd>
+            <dd>{{ ambience['event']['iban']|iban }}</dd>
             <dt>{% trans -%}Questionnaire active{%- endtrans %}</dt>
             <dd>{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire'],
                         titles=[gettext("No"),gettext("Yes")]) }}</dd>

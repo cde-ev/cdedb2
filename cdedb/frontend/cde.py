@@ -16,6 +16,7 @@ import sys
 import tempfile
 import operator
 import datetime
+import dateutil.easter
 
 import psycopg2.extensions
 import werkzeug
@@ -1103,15 +1104,18 @@ class CdEFrontend(AbstractUserFrontend):
         This presents open items as well as all permits.
         """
         lastschrift_ids = self.cdeproxy.list_lastschrift(rs)
-        lastschrifts = self.cdeproxy.get_lastschrifts(rs,
-                                                      lastschrift_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrifts(
+            rs, lastschrift_ids.keys())
+        all_lastschrift_ids = self.cdeproxy.list_lastschrift(rs, active=None)
+        all_lastschrifts = self.cdeproxy.get_lastschrifts(
+            rs, all_lastschrift_ids.keys())
         period = self.cdeproxy.current_period(rs)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, periods=(period,),
             stati=(const.LastschriftTransactionStati.issued,))
         transactions = self.cdeproxy.get_lastschrift_transactions(
             rs, transaction_ids.keys())
-        persona_ids = set(lastschrift_ids.values()).union({
+        persona_ids = set(all_lastschrift_ids.values()).union({
             x['submitted_by'] for x in lastschrifts.values()})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         open_permits = self.determine_open_permits(rs, lastschrift_ids)
@@ -1119,7 +1123,7 @@ class CdEFrontend(AbstractUserFrontend):
             lastschrift['open'] = lastschrift['id'] in open_permits
         return self.render(rs, "lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
-            'transactions': transactions})
+            'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
 
     @access("member")
     def lastschrift_show(self, rs, persona_id):
@@ -1205,10 +1209,58 @@ class CdEFrontend(AbstractUserFrontend):
             'id': lastschrift_id,
             'revoked_at': now(),
         }
+        lastschrift = self.cdeproxy.get_lastschrift(rs, lastschrift_id)
+        persona_id = lastschrift['persona_id']
         code = self.cdeproxy.set_lastschrift(rs, data)
         self.notify_return_code(rs, code, success=n_("Permit revoked."))
+        transaction_ids = self.cdeproxy.list_lastschrift_transactions(
+            rs, lastschrift_ids=(lastschrift_id,),
+            stati=(const.LastschriftTransactionStati.issued,))
+        if transaction_ids:
+            subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
+                           "widerrufen.")
+            self.do_mail(rs, "pending_lastschrift_revoked",
+                         {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                          'Subject': subject},
+                         {'persona_id': persona_id})
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
+
+    def _calculate_payment_date(self):
+        """Helper to calculate a payment date that is a valid TARGET2 bankday.
+
+        :rtype: datetime.date
+        """
+        # Before anything else: check whether we are on special easter days.
+        easter = dateutil.easter.easter(payment_date.year)
+        good_friday = easter - datetime.timedelta(days=2)
+        easter_monday = easter + datetime.timedelta(days=1)
+        if payment_date in (good_friday, easter_monday):
+            payment_date = easter + datetime.timedelta(days=2)
+        else:
+            payment_date = now().date() + self.conf.SEPA_PAYMENT_OFFSET
+
+        # First: check we are not on the weekend.
+        if payment_date.isoweekday() == 6:
+            payment_date += datetime.timedelta(days=2)
+        elif payment_date.isoweekday() == 7:
+            payment_date += datetime.timedelta(days=1)
+
+        # Second: check we are not on some special day.
+        if payment_date.day == 1 and payment_date.month in (1, 5):
+            payment_date += datetime.timedelta(days=1)
+        elif payment_date.month == 12 and payment_date.day == 25:
+            payment_date += datetime.timedelta(days=2)
+        elif payment_date.month == 12 and payment_date.day == 26:
+            payment_date += datetime.timedelta(days=1)
+
+        # Third: check whether the second step landed us on the weekend.
+        if payment_date.isoweekday() == 6:
+            payment_date += datetime.timedelta(days=2)
+        elif payment_date.isoweekday() == 7:
+            payment_date += datetime.timedelta(days=1)
+
+        return payment_date
 
     def create_sepapain(self, rs, transactions):
         """Create an XML document for submission to a bank.
@@ -1250,7 +1302,7 @@ class CdEFrontend(AbstractUserFrontend):
                 'iban': self.conf.SEPA_SENDER_IBAN,
                 'glaeubigerid': self.conf.SEPA_GLAEUBIGERID,
             },
-            'payment_date': now().date() + self.conf.SEPA_PAYMENT_OFFSET,
+            'payment_date': self._calculate_payment_date(),
         }
         meta = check(rs, "sepa_meta", meta)
         if rs.errors:
@@ -1259,54 +1311,46 @@ class CdEFrontend(AbstractUserFrontend):
             'transactions': sorted_transactions, 'meta': meta})
         return sepapain_file
 
-    @access("cde_admin", modi={"POST"})
+    @access("cde_admin")
     @REQUESTdata(("lastschrift_id", "id_or_None"))
-    def lastschrift_generate_transactions(self, rs, lastschrift_id):
-        """Issue direct debit transactions.
+    def lastschrift_download_sepapain(self, rs, lastschrift_id):
+        """Provide the sepapain file without actually issueing the transactions.
 
-        This creates new transactions either for the lastschrift_id
-        passed or if that is None, then for all open permits
-        (c.f. :py:func:`determine_open_permits`).
-
-        Afterwards it creates and returns an XML-file to send to the
-        bank. If this fails all new transactions are directly
-        cancelled.
+        Creates and returns an XML-file for one lastschrift is a
+        lastschrift_id is given. If it is None, then this creates the file
+        for all open permits (c.f. :py:func:`determine_open_permits`).
         """
         if rs.errors:
             return self.lastschrift_index(rs)
-        stati = const.LastschriftTransactionStati
         period = self.cdeproxy.current_period(rs)
-        if not lastschrift_id:
-            all_lids = self.cdeproxy.list_lastschrift(rs)
+        if lastschrift_id is None:
+            all_ids = self.cdeproxy.list_lastschrift(rs)
             lastschrift_ids = tuple(self.determine_open_permits(
-                rs, all_lids.keys()))
+                rs, all_ids.keys()))
         else:
             lastschrift_ids = (lastschrift_id,)
             if not self.determine_open_permits(rs, lastschrift_ids):
                 rs.notify("error", n_("Existing pending transaction."))
                 return self.lastschrift_index(rs)
-        lastschrifts = self.cdeproxy.get_lastschrifts(
-            rs, lastschrift_ids)
+
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
         personas = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in lastschrifts.values()))
-        new_transactions = tuple(
-            {
-                'issued_at': now(),
-                'lastschrift_id': anid,
-                'period_id': period,
-            } for anid in lastschrift_ids
-        )
-        transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
-            rs, new_transactions, check_unique=True)
-        for transaction in new_transactions:
-            lastschrift = lastschrifts[transaction['lastschrift_id']]
+
+        new_transactions = []
+
+        for lastschrift in lastschrifts:
             persona = personas[lastschrift['persona_id']]
-            transaction.update({
+            transaction = {
+                'issued_at': now(),
+                'lastschrift_id': lastschrift['id'],
+                'period_id': period,
                 'mandate_reference': lastschrift_reference(
                     persona['id'], lastschrift['id']),
                 'amount': lastschrift['amount'],
                 'iban': lastschrift['iban'],
-            })
+                'type': "RCUR",  # TODO remove this, hardcode it in template
+            }
             if (lastschrift['granted_at'].date()
                     >= self.conf.SEPA_INITIALISATION_DATE):
                 transaction['mandate_date'] = lastschrift['granted_at'].date()
@@ -1326,20 +1370,74 @@ class CdEFrontend(AbstractUserFrontend):
                 "Studentenhilfe").format(
                 cdedbid_filter(persona['id']), persona['family_name'],
                 persona['given_names']))[:140]  # cut off bc of limit
-            previous = self.cdeproxy.list_lastschrift_transactions(
-                rs, lastschrift_ids=(lastschrift['id'],),
-                stati=(stati.success,))
-            transaction['type'] = ("RCUR" if previous else "FRST")
+
+            new_transactions.append(transaction)
         sepapain_file = self.create_sepapain(rs, new_transactions)
         if not sepapain_file:
-            # Validation of SEPA data failed
-            for transaction_id in transaction_ids:
-                self.cdeproxy.finalize_lastschrift_transaction(
-                    rs, transaction_id, stati.cancelled)
             rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
             return self.redirect(rs, "cde/lastschrift_index")
         return self.send_file(rs, data=sepapain_file, inline=False,
-                              filename=rs.gettext("sepa.cdd"))
+                              filename="sepa.cdd")
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("lastschrift_id", "id_or_None"))
+    def lastschrift_generate_transactions(self, rs, lastschrift_id):
+        """Issue direct debit transactions.
+
+        This creates new transactions either for the lastschrift_id
+        passed or if that is None, then for all open permits
+        (c.f. :py:func:`determine_open_permits`).
+        """
+        if rs.errors:
+            return self.lastschrift_index(rs)
+        stati = const.LastschriftTransactionStati
+        period = self.cdeproxy.current_period(rs)
+        if not lastschrift_id:
+            all_lids = self.cdeproxy.list_lastschrift(rs)
+            lastschrift_ids = tuple(self.determine_open_permits(
+                rs, all_lids.keys()))
+        else:
+            lastschrift_ids = (lastschrift_id,)
+            if not self.determine_open_permits(rs, lastschrift_ids):
+                rs.notify("error", n_("Existing pending transaction."))
+                return self.lastschrift_index(rs)
+        new_transactions = tuple(
+            {
+                'issued_at': now(),
+                'lastschrift_id': anid,
+                'period_id': period,
+            } for anid in lastschrift_ids
+        )
+        transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
+            rs, new_transactions, check_unique=True)
+        if not transaction_ids:
+            return self.lastschrift_index
+
+        lastschrifts = self.cdeproxy.get_lastschrifts(
+            rs, lastschrift_ids)
+        personas = self.coreproxy.get_personas(
+            rs, tuple(e['persona_id'] for e in lastschrifts.values()))
+        for lastschrift in lastschrifts:
+            persona = personas[lastschrift['persona_id']]
+            data = {
+                'persona': persona,
+                'payment_date': self._calculate_payment_date(),
+                'amount': lastschrift['amount'],
+                'iban': lastschrift['iban'],
+                'account_owner': lastschrift['account_owner'],
+                'mandate_reference': lastschrift_reference(
+                    lastschrift['persona_id'], lastschrift['id']),
+                'glaeubiger_id': self.conf.SEPA_GLAEUBIGERID,
+            }
+            subject = "Anstehender Lastschrifteinzug CdE Initiative 25+"
+            self.do_mail(rs, "sepa_pre-notification",
+                         {'To': (persona['username'],),
+                          'Subject': subject},
+                         {'data': data})
+        rs.notify("success",
+                  n_("%(num)s Direct Debits issued. Notification mails sent."),
+                  {'num': len(transaction_ids)})
+        return self.redirect(rs, "cde/lastschrift_index")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
@@ -1442,6 +1540,16 @@ class CdEFrontend(AbstractUserFrontend):
         code = self.cdeproxy.rollback_lastschrift_transaction(
             rs, transaction_id, tally)
         self.notify_return_code(rs, code)
+        transaction_ids = self.cdeproxy.list_lastschrift_transactions(
+            rs, lastschrift_ids=(lastschrift_id,),
+            stati=(const.LastschriftTransactionStati.issued,))
+        if transaction_ids:
+            subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
+                           "widerrufen.")
+            self.do_mail(rs, "pending_lastschrift_revoked",
+                         {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                          'Subject': subject},
+                         {'persona_id': persona_id})
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
                                  {'persona_id': persona_id})

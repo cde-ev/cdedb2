@@ -1069,17 +1069,30 @@ class CoreFrontend(AbstractFrontend):
                 rs, persona_ids=(persona_id,), active=None)
             lastschrifts = self.cdeproxy.get_lastschrifts(
                 rs, lastschrift_ids.keys())
-            active_permit = None
+            active_permits = []
             for lastschrift in lastschrifts.values():
                 if not lastschrift['revoked_at']:
-                    active_permit = lastschrift['id']
-            if active_permit:
-                data = {
-                    'id': active_permit,
-                    'revoked_at': now(),
-                }
-                code = self.cdeproxy.set_lastschrift(rs, data)
-                self.notify_return_code(rs, code, success=n_("Permit revoked."))
+                    active_permits.append(lastschrift['id'])
+            if active_permits:
+                active_transactions = []
+                transaction_ids = self.cdeproxy.list_lastschrift_transactions(
+                    rs, lastschrift_ids=active_permits,
+                    stati=(const.LastschriftTransactionStati.issued,))
+                if transaction_ids:
+                    subject = glue("Einzugsermächtigung zu ausstehender"
+                                   "Lastschrift widerrufen.")
+                    self.do_mail(rs, "pending_lastschrift_revoked",
+                                 {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                                  'Subject': subject},
+                                 {'persona_id': persona_id})
+                for active_permit in active_permits:
+                    data = {
+                        'id': active_permit,
+                        'revoked_at': now(),
+                    }
+                    code = self.cdeproxy.set_lastschrift(rs, data)
+                    self.notify_return_code(rs, code,
+                                            success=n_("Permit revoked."))
 
         return self.redirect_show_user(rs, persona_id)
 

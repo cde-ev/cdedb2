@@ -300,6 +300,24 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
 
     @as_users("anton")
+    def test_double_lastschrift_revoke(self, user):
+        self.get("/cde/user/2/lastschrift")
+        self.assertPresence("Aktive Einzugsermächtigung")
+        self.assertPresence("Betrag 42,23 €")
+        self.get("/cde/user/2/lastschrift/create")
+        f = self.response.forms['createlastschriftform']
+        f['amount'] = 25
+        f['iban'] = "DE12 5001 0517 0648 4898 90"
+        self.submit(f)
+        self.assertPresence("Betrag 25,00 €")
+        self.assertNonPresence("Dagobert")
+        self.get("/core/persona/2/membership/change")
+        f = self.response.forms['modifymembershipform']
+        self.submit(f)
+        self.get("/cde/user/2/lastschrift")
+        self.assertNonPresence("Aktive Einzugsermächtigung")
+
+    @as_users("anton")
     def test_create_user(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/user'},
@@ -413,7 +431,12 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        f = self.response.forms['generatetransactionsform']
+        self.assertNonPresence("Keine zu bearbeitenden Lastschriften für "
+                               "dieses Semester.")
+        self.assertPresence("Aktuell befinden sich keine Einzüge in der "
+                            "Schwebe.")
+        f = self.response.forms['downloadsepapainform']
+        g = self.response.forms['generatetransactionsform']
         self.submit(f, check_notification=False)
         with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
@@ -421,13 +444,26 @@ class TestCdEFrontend(FrontendTest):
         for index, line in enumerate(self.response.body.split(b'\n')):
             if index not in exceptions:
                 self.assertEqual(expectation[index], line)
+        self.submit(g)
+        self.assertPresence("1 Lastschriften initialisiert.",
+                            div="notifications")
+        self.assertPresence("Keine zu bearbeitenden Lastschriften für dieses "
+                            "Semester.")
+        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
+                               "Schwebe.")
 
     @as_users("anton")
     def test_lastschrift_generate_single_transaction(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift/$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        f = self.response.forms['generatetransactionform2']
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        self.assertNonPresence("Keine zu bearbeitenden Lastschriften für "
+                               "dieses Semester.")
+        self.assertPresence("Aktuell befinden sich keine Einzüge in der "
+                            "Schwebe.")
+        f = self.response.forms['downloadsepapainform2']
+        g = self.response.forms['generatetransactionform2']
         self.submit(f, check_notification=False)
         with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
@@ -435,6 +471,13 @@ class TestCdEFrontend(FrontendTest):
         for index, line in enumerate(self.response.body.split(b'\n')):
             if index not in exceptions:
                 self.assertEqual(expectation[index], line)
+        self.submit(g)
+        self.assertPresence("1 Lastschriften initialisiert.",
+                            div="notifications")
+        self.assertPresence("Keine zu bearbeitenden Lastschriften für dieses "
+                            "Semester.")
+        self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
+                               "Schwebe.")
 
     @as_users("anton")
     def test_lastschrift_transaction_rollback(self, user):

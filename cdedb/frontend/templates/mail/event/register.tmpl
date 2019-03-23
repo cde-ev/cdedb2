@@ -15,7 +15,7 @@ Achte bitte bei internationalen Überweisungen darauf, dass der
 Empfänger keine Gebühren zahlen muss.
 
 Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
-IBAN:             {{ ambience['event']['iban'] }}
+IBAN:             {{ ambience['event']['iban']|iban }}
 BIC:              {{ meta_info['CdE_Konto_BIC'] }}
 Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
 Verwendungszweck: {{ user['given_names'] }} {{ user['family_name'] }}, {{ user['persona_id']|cdedbid }}

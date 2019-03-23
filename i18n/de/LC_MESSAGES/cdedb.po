@@ -1146,6 +1146,7 @@ msgstr "Darf nur Ganzzahlen enthalten."
 #: cdedb/backend/core.py:1641 cdedb/frontend/core.py:1163
 #: cdedb/frontend/core.py:1293 cdedb/validation.py:694
 #: cdedb/frontend/core.py:1164 cdedb/frontend/core.py:1294
+#: cdedb/frontend/core.py:1177 cdedb/frontend/core.py:1307
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
@@ -1265,15 +1266,16 @@ msgstr "Prüfziffer muss aus Ziffern bestehen."
 msgid "Invalid character in IBAN."
 msgstr "Ungültiges Zeichen in IBAN."
 
-#: cdedb/validation.py:1447 cdedb/validation.py:1446
+#: cdedb/validation.py:1446
 msgid "Unknown or unsupported Country Code."
-msgstr ""
+msgstr "Unbekannter oder nicht unterstützter Ländercode."
 
-#: cdedb/validation.py:1451 cdedb/validation.py:1450
+#: cdedb/validation.py:1450
 #, python-format
 msgid ""
 "Invalid length %(len)s for Country Code %(code)s. Expexted length %(exp)s."
 msgstr ""
+"Ungültige Länge  %(len)s für Ländercode %(code)s. Erwartete Länge: %(exp)s."
 
 #: cdedb/validation.py:1459 cdedb/validation.py:1458
 msgid "Invalid checksum."
@@ -1519,7 +1521,9 @@ msgstr "Zu viele Eingaben gemacht."
 #: cdedb/frontend/core.py:623 cdedb/frontend/core.py:630
 #: cdedb/frontend/core.py:1097 cdedb/frontend/core.py:1110
 #: cdedb/frontend/core.py:1524 cdedb/frontend/core.py:1545
-#: cdedb/frontend/core.py:1565
+#: cdedb/frontend/core.py:1565 cdedb/frontend/core.py:1123
+#: cdedb/frontend/core.py:1537 cdedb/frontend/core.py:1558
+#: cdedb/frontend/core.py:1578
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -1599,6 +1603,7 @@ msgid "Lastschrift already revoked."
 msgstr "Lastschriftmandat bereits widerrufen."
 
 #: cdedb/backend/cde.py:277 cdedb/frontend/cde.py:1286
+#: cdedb/frontend/cde.py:1320 cdedb/frontend/cde.py:1390
 msgid "Existing pending transaction."
 msgstr "Es liegen noch unbearbeitete Transaktionen vor."
 
@@ -1618,6 +1623,7 @@ msgstr "Kein Saldo für fehlgeschlagene Transaktion angegeben."
 #: cdedb/database/constants.py:212 cdedb/database/constants.py:230
 #: cdedb/frontend/cde.py:481 cdedb/frontend/cde.py:616
 #: cdedb/frontend/common.py:1182 cdedb/frontend/common.py:1197
+#: cdedb/frontend/cde.py:482 cdedb/frontend/cde.py:617
 msgid "Impossible."
 msgstr "Unmöglich."
 
@@ -1663,7 +1669,7 @@ msgstr "Modifikation fehlgeschlagen."
 
 #: cdedb/backend/core.py:593 cdedb/backend/core.py:1702
 #: cdedb/backend/core.py:1728 cdedb/frontend/core.py:1198
-#: cdedb/frontend/core.py:1199
+#: cdedb/frontend/core.py:1199 cdedb/frontend/core.py:1212
 msgid "Nonexistant user."
 msgstr "Nutzer existiert nicht."
 
@@ -1752,13 +1758,14 @@ msgid "Only admins may unset a username."
 msgstr "Löschen von E-Mail-Adressen nur durch Admins."
 
 #: cdedb/backend/core.py:1160 cdedb/frontend/core.py:1322
-#: cdedb/frontend/core.py:1323
+#: cdedb/frontend/core.py:1323 cdedb/frontend/core.py:1336
 msgid "Name collision."
 msgstr "E-Mail-Adresse bereits vorhanden. "
 
 #: cdedb/backend/core.py:1179 cdedb/frontend/core.py:1454
 #: cdedb/frontend/core.py:1579 cdedb/frontend/core.py:1455
-#: cdedb/frontend/core.py:1580
+#: cdedb/frontend/core.py:1580 cdedb/frontend/core.py:1468
+#: cdedb/frontend/core.py:1593
 msgid "Failed."
 msgstr "Aktion fehlgeschlagen."
 
@@ -2070,7 +2077,7 @@ msgstr "Der Anti-CSRF-Token wurde gefälscht."
 #: cdedb/frontend/core.py:811 cdedb/frontend/core.py:864
 #: cdedb/frontend/event.py:179 cdedb/frontend/event.py:3661
 #: cdedb/frontend/ml.py:127 cdedb/frontend/core.py:812
-#: cdedb/frontend/core.py:865
+#: cdedb/frontend/core.py:865 cdedb/frontend/cde.py:258
 msgid "result.csv"
 msgstr "Ergebnis.csv"
 
@@ -2079,6 +2086,7 @@ msgstr "Ergebnis.csv"
 #: cdedb/frontend/core.py:870 cdedb/frontend/event.py:185
 #: cdedb/frontend/event.py:3667 cdedb/frontend/ml.py:132
 #: cdedb/frontend/core.py:818 cdedb/frontend/core.py:871
+#: cdedb/frontend/cde.py:264
 msgid "result.json"
 msgstr "Ergebnis.json"
 
@@ -2096,6 +2104,8 @@ msgstr "Bereits angemeldet."
 #: cdedb/frontend/event.py:2697 cdedb/frontend/event.py:3081
 #: cdedb/frontend/event.py:3876 cdedb/frontend/ml.py:454
 #: cdedb/frontend/core.py:1648 cdedb/frontend/core.py:1675
+#: cdedb/frontend/cde.py:2269 cdedb/frontend/core.py:1661
+#: cdedb/frontend/core.py:1688
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
@@ -2127,94 +2137,98 @@ msgstr "Abstimmung noch nicht ausgezählt."
 msgid "Duplicate moniker."
 msgstr "Option doppelt gefunden."
 
-#: cdedb/frontend/cde.py:157
+#: cdedb/frontend/cde.py:157 cdedb/frontend/cde.py:158
 msgid "Consent noted."
 msgstr "Zustimmung gespeichert."
 
-#: cdedb/frontend/cde.py:157
+#: cdedb/frontend/cde.py:157 cdedb/frontend/cde.py:158
 msgid "Decision noted."
 msgstr "Entscheidung gespeichert."
 
-#: cdedb/frontend/cde.py:212
+#: cdedb/frontend/cde.py:212 cdedb/frontend/cde.py:213
 msgid "Too many query results."
 msgstr "Zu viele Treffer."
 
-#: cdedb/frontend/cde.py:342
+#: cdedb/frontend/cde.py:342 cdedb/frontend/cde.py:343
 msgid "Entry changed."
 msgstr "Eintrag geändert."
 
-#: cdedb/frontend/cde.py:382
+#: cdedb/frontend/cde.py:382 cdedb/frontend/cde.py:383
 msgid "No course available."
 msgstr "Kein Kurs verfügbar."
 
-#: cdedb/frontend/cde.py:389
+#: cdedb/frontend/cde.py:389 cdedb/frontend/cde.py:390
 msgid "Doppelgangers found."
 msgstr "Ähnlicher Account gefunden."
 
-#: cdedb/frontend/cde.py:396
+#: cdedb/frontend/cde.py:396 cdedb/frontend/cde.py:397
 msgid "Doppelganger choice doesn't fit resolution."
 msgstr "Accountzusammenführung inkonsistent mit Aktion."
 
-#: cdedb/frontend/cde.py:400
+#: cdedb/frontend/cde.py:400 cdedb/frontend/cde.py:401
 msgid "Doppelganger unavailable."
 msgstr "Accountzusammenführung nicht möglich."
 
-#: cdedb/frontend/cde.py:405
+#: cdedb/frontend/cde.py:405 cdedb/frontend/cde.py:406
 msgid "Doppelganger not a CdE-Account."
 msgstr "Accountzusammenführung mit einem nicht-CdE-Account."
 
-#: cdedb/frontend/cde.py:412
+#: cdedb/frontend/cde.py:412 cdedb/frontend/cde.py:413
 msgid "Participation already recorded."
 msgstr "Teilnahme bereits erfasst."
 
-#: cdedb/frontend/cde.py:469
+#: cdedb/frontend/cde.py:469 cdedb/frontend/cde.py:470
 msgid "Renewed trial membership."
 msgstr "Probemitgliedschaft erneuert."
 
-#: cdedb/frontend/cde.py:476
+#: cdedb/frontend/cde.py:476 cdedb/frontend/cde.py:477
 msgid "Imported recent data."
 msgstr "Aktualisierte Daten aufgenommen."
 
-#: cdedb/frontend/cde.py:603
+#: cdedb/frontend/cde.py:603 cdedb/frontend/cde.py:604
 #, python-format
 msgid "Lines %(first)s and %(second)s are the same."
 msgstr "Zeilen %(first)s und %(second)s sind identisch."
 
-#: cdedb/frontend/cde.py:609
+#: cdedb/frontend/cde.py:609 cdedb/frontend/cde.py:610
 #, python-format
 msgid "Lines %(first)s and %(second)s look the same."
 msgstr "Zeilen %(first)s und %(second)s sehen gleich aus."
 
 #: cdedb/frontend/cde.py:628 cdedb/frontend/cde.py:1046
-#: cdedb/frontend/event.py:1457
+#: cdedb/frontend/event.py:1457 cdedb/frontend/cde.py:629
+#: cdedb/frontend/cde.py:1047
 msgid "Lines didn't match up."
 msgstr "Daten wurden geändert."
 
-#: cdedb/frontend/cde.py:632
+#: cdedb/frontend/cde.py:632 cdedb/frontend/cde.py:633
 msgid "Only member admission supported."
 msgstr "Nur Aufnahme von Mitglieder unterstützt."
 
-#: cdedb/frontend/cde.py:647
+#: cdedb/frontend/cde.py:647 cdedb/frontend/cde.py:648
 #, python-format
 msgid "Created %(num)s accounts."
 msgstr "%(num)s Accounts erstellt."
 
 #: cdedb/frontend/cde.py:651 cdedb/frontend/cde.py:1069
-#: cdedb/frontend/event.py:1472
+#: cdedb/frontend/event.py:1472 cdedb/frontend/cde.py:652
+#: cdedb/frontend/cde.py:1070
 msgid "DB serialization error."
 msgstr "Datenbank-Transaktions-Fehler."
 
 #: cdedb/frontend/cde.py:653 cdedb/frontend/cde.py:1071
+#: cdedb/frontend/cde.py:654 cdedb/frontend/cde.py:1072
 #, python-format
 msgid "Unexpected error on line %(num)s."
 msgstr "Unerwarteter Fehler in Zeile %(num)s."
 
-#: cdedb/frontend/cde.py:726
+#: cdedb/frontend/cde.py:726 cdedb/frontend/cde.py:727
 #, python-format
 msgid "Line %(lineno)s does not have the correct number of columns."
 msgstr "Zeile %(lineno)s hat nicht die korrekte Anzahl Spalten."
 
 #: cdedb/frontend/cde.py:906 cdedb/frontend/event.py:1348
+#: cdedb/frontend/cde.py:907
 #, python-format
 msgid "No Member with ID %(p_id)s found."
 msgstr "Kein Account mit ID %(p_id)s gefunden."
@@ -2227,36 +2241,41 @@ msgstr "Kein Account mit ID %(p_id)s gefunden."
 #: cdedb/frontend/core.py:900 cdedb/frontend/core.py:961
 #: cdedb/frontend/core.py:1000 cdedb/frontend/core.py:1050
 #: cdedb/frontend/core.py:1099 cdedb/frontend/core.py:1376
-#: cdedb/frontend/core.py:1410
+#: cdedb/frontend/core.py:1410 cdedb/frontend/cde.py:912
+#: cdedb/frontend/core.py:1112 cdedb/frontend/core.py:1389
+#: cdedb/frontend/core.py:1423
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
 #: cdedb/frontend/cde.py:916 cdedb/frontend/event.py:1379
+#: cdedb/frontend/cde.py:917
 msgid "Family name doesn't match."
 msgstr "Nachname passt nicht."
 
 #: cdedb/frontend/cde.py:921 cdedb/frontend/event.py:1384
+#: cdedb/frontend/cde.py:922
 msgid "Given names don't match."
 msgstr "Vornamen passen nicht zusammen."
 
-#: cdedb/frontend/cde.py:1039
+#: cdedb/frontend/cde.py:1039 cdedb/frontend/cde.py:1040
 #, python-format
 msgid ""
 "More than one transfer for this account (lines %(first)s and %(second)s)."
 msgstr ""
 "Mehrere Überweisungen für diesen Account (Zeilen %(first)s und %(second)s)."
 
-#: cdedb/frontend/cde.py:1063
+#: cdedb/frontend/cde.py:1063 cdedb/frontend/cde.py:1064
 #, python-format
 msgid "Committed %(num)s transfers. There were %(new_members)s new members."
 msgstr "%(num)s Überweisungen gebucht. %(new_members)s neue Mitglieder."
 
 #: cdedb/frontend/cde.py:1209 cdedb/frontend/core.py:1081
-#: cdedb/frontend/core.py:1082
+#: cdedb/frontend/core.py:1082 cdedb/frontend/cde.py:1213
+#: cdedb/frontend/core.py:1095
 msgid "Permit revoked."
 msgstr "Lastschriftmandat widerrufen."
 
-#: cdedb/frontend/cde.py:1339
+#: cdedb/frontend/cde.py:1339 cdedb/frontend/cde.py:1365
 msgid "Creation of SEPA-PAIN-file failed."
 msgstr "Erstellung der SEPA-PAIN-Datei fehlgeschlagen."
 
@@ -2264,96 +2283,99 @@ msgstr "Erstellung der SEPA-PAIN-Datei fehlgeschlagen."
 msgid "sepa.cdd"
 msgstr "sepa.cdd"
 
-#: cdedb/frontend/cde.py:1357
+#: cdedb/frontend/cde.py:1357 cdedb/frontend/cde.py:1443
 msgid "Unable to skip transaction."
 msgstr "Einzug kann nicht pausiert werden."
 
-#: cdedb/frontend/cde.py:1359
+#: cdedb/frontend/cde.py:1359 cdedb/frontend/cde.py:1445
 msgid "Skipped."
 msgstr "Pausiert."
 
-#: cdedb/frontend/cde.py:1410
+#: cdedb/frontend/cde.py:1410 cdedb/frontend/cde.py:1496
 msgid "Wrong number of actions."
 msgstr "Falsche Anzahl an Aktionen."
 
-#: cdedb/frontend/cde.py:1414
+#: cdedb/frontend/cde.py:1414 cdedb/frontend/cde.py:1500
 msgid "No transactions selected."
 msgstr "Keine Transaktionen ausgewählt."
 
-#: cdedb/frontend/cde.py:1565
+#: cdedb/frontend/cde.py:1565 cdedb/frontend/cde.py:1651
 msgid "Billing already done."
 msgstr "Zahlungserinnerung bereits erledigt."
 
 #: cdedb/frontend/cde.py:1627 cdedb/frontend/cde.py:1838
+#: cdedb/frontend/cde.py:1713 cdedb/frontend/cde.py:1924
 msgid "Started sending mail."
 msgstr "E-Mail-Versand hat begonnen."
 
-#: cdedb/frontend/cde.py:1636
+#: cdedb/frontend/cde.py:1636 cdedb/frontend/cde.py:1722
 msgid "Wrong timing for ejection."
 msgstr "Falscher Zeitpunkt für Bereinigung."
 
-#: cdedb/frontend/cde.py:1685
+#: cdedb/frontend/cde.py:1685 cdedb/frontend/cde.py:1771
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
 
-#: cdedb/frontend/cde.py:1694
+#: cdedb/frontend/cde.py:1694 cdedb/frontend/cde.py:1780
 msgid "Wrong timing for balance update."
 msgstr "Falscher Zeitpunkt für Guthabenaktualisierung."
 
-#: cdedb/frontend/cde.py:1721
+#: cdedb/frontend/cde.py:1721 cdedb/frontend/cde.py:1807
 msgid "Balance too low."
 msgstr "Guthaben zu niedrig."
 
-#: cdedb/frontend/cde.py:1729
+#: cdedb/frontend/cde.py:1729 cdedb/frontend/cde.py:1815
 msgid "End trial membership."
 msgstr "Probemitgliedschaft beenden."
 
-#: cdedb/frontend/cde.py:1745
+#: cdedb/frontend/cde.py:1745 cdedb/frontend/cde.py:1831
 msgid "Started updating balance."
 msgstr "Aktualisierung der Guthaben gestartet."
 
-#: cdedb/frontend/cde.py:1754
+#: cdedb/frontend/cde.py:1754 cdedb/frontend/cde.py:1840
 msgid "Wrong timing for advancing the semester."
 msgstr "Falscher Zeitpunkt für Beendigung des Semesters."
 
-#: cdedb/frontend/cde.py:1759
+#: cdedb/frontend/cde.py:1759 cdedb/frontend/cde.py:1845
 msgid "New period started."
 msgstr "Nächstes Semester initialisiert."
 
-#: cdedb/frontend/cde.py:1773
+#: cdedb/frontend/cde.py:1773 cdedb/frontend/cde.py:1859
 msgid "Addresscheck already done."
 msgstr "Adressabfrage bereits erledigt."
 
-#: cdedb/frontend/cde.py:1834
+#: cdedb/frontend/cde.py:1834 cdedb/frontend/cde.py:1920
 msgid "Not sending mail."
 msgstr "Keine E-Mail verschickt."
 
-#: cdedb/frontend/cde.py:1849
+#: cdedb/frontend/cde.py:1849 cdedb/frontend/cde.py:1935
 msgid "Addresscheck not done."
 msgstr "Adressabfrage noch nicht erledigt."
 
-#: cdedb/frontend/cde.py:1852
+#: cdedb/frontend/cde.py:1852 cdedb/frontend/cde.py:1938
 msgid "New expuls started."
 msgstr "Nächster Expuls initialisiert."
 
-#: cdedb/frontend/cde.py:2128
+#: cdedb/frontend/cde.py:2128 cdedb/frontend/cde.py:2214
 #, python-format
 msgid "Line %(lineno)s is faulty."
 msgstr "Zeile %(lineno)s ist fehlerhaft."
 
 #: cdedb/frontend/cde.py:2137 cdedb/frontend/event.py:677
+#: cdedb/frontend/cde.py:2223
 msgid "Event created."
 msgstr "Veranstaltung erstellt."
 
 #: cdedb/frontend/cde.py:2172 cdedb/frontend/event.py:783
+#: cdedb/frontend/cde.py:2258
 msgid "Course created."
 msgstr "Kurs erstellt"
 
-#: cdedb/frontend/cde.py:2209
+#: cdedb/frontend/cde.py:2209 cdedb/frontend/cde.py:2295
 msgid "Participant already present."
 msgstr "Teilnehmer bereits vorhanden."
 
-#: cdedb/frontend/cde.py:2242
+#: cdedb/frontend/cde.py:2242 cdedb/frontend/cde.py:2328
 msgid "*Nothing here yet.*"
 msgstr "*Hier gibt es noch nichts.*"
 
@@ -2379,6 +2401,7 @@ msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
 #: cdedb/frontend/common.py:1158 cdedb/frontend/core.py:1638
 #: cdedb/frontend/common.py:1173 cdedb/frontend/core.py:1639
+#: cdedb/frontend/core.py:1652
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
@@ -2442,7 +2465,9 @@ msgstr "Nicht unterstützte Sprache"
 #: cdedb/frontend/ml.py:522 cdedb/frontend/core.py:288
 #: cdedb/frontend/core.py:1266 cdedb/frontend/core.py:1278
 #: cdedb/frontend/core.py:1342 cdedb/frontend/core.py:1354
-#: cdedb/frontend/core.py:1480
+#: cdedb/frontend/core.py:1480 cdedb/frontend/core.py:1279
+#: cdedb/frontend/core.py:1291 cdedb/frontend/core.py:1355
+#: cdedb/frontend/core.py:1367 cdedb/frontend/core.py:1493
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
@@ -2460,6 +2485,7 @@ msgstr "Zugriff auf Mitgliedsdatensatz ohne Datenschutz-Einwilligung."
 #: cdedb/frontend/core.py:430 cdedb/frontend/core.py:898
 #: cdedb/frontend/core.py:920 cdedb/frontend/core.py:1374
 #: cdedb/frontend/core.py:1387 cdedb/frontend/core.py:1405
+#: cdedb/frontend/core.py:1400 cdedb/frontend/core.py:1418
 msgid "Not a relative admin."
 msgstr "Nicht genug Adminprivilegien für diesen Account."
 
@@ -2472,6 +2498,7 @@ msgid "No promotion necessary."
 msgstr "Keine Änderung erforderlich."
 
 #: cdedb/frontend/core.py:1132 cdedb/frontend/core.py:1133
+#: cdedb/frontend/core.py:1146
 msgid "Foto updated."
 msgstr "Bild aktualisiert."
 
@@ -2480,53 +2507,68 @@ msgstr "Bild aktualisiert."
 #: cdedb/frontend/core.py:1283 cdedb/frontend/core.py:1284
 #: cdedb/frontend/core.py:1148 cdedb/frontend/core.py:1151
 #: cdedb/frontend/core.py:1282 cdedb/frontend/core.py:1285
+#: cdedb/frontend/core.py:1161 cdedb/frontend/core.py:1163
+#: cdedb/frontend/core.py:1164 cdedb/frontend/core.py:1295
+#: cdedb/frontend/core.py:1297 cdedb/frontend/core.py:1298
 msgid "Passwords don't match."
 msgstr "Passwörter stimmen nicht überein."
 
 #: cdedb/frontend/core.py:1167 cdedb/frontend/core.py:1168
+#: cdedb/frontend/core.py:1181
 msgid "Password changed."
 msgstr "Passwort geändert."
 
 #: cdedb/frontend/core.py:1171 cdedb/frontend/core.py:1172
+#: cdedb/frontend/core.py:1185
 msgid "Wrong password."
 msgstr "Passwort falsch."
 
 #: cdedb/frontend/core.py:1219 cdedb/frontend/core.py:1226
 #: cdedb/frontend/core.py:1253 cdedb/frontend/core.py:1220
 #: cdedb/frontend/core.py:1227 cdedb/frontend/core.py:1254
+#: cdedb/frontend/core.py:1233 cdedb/frontend/core.py:1240
+#: cdedb/frontend/core.py:1267
 msgid "Email sent."
 msgstr "E-Mail abgeschickt."
 
 #: cdedb/frontend/core.py:1302 cdedb/frontend/core.py:1303
+#: cdedb/frontend/core.py:1316
 msgid "Password reset."
 msgstr "Passwort zurückgesetzt."
 
 #: cdedb/frontend/core.py:1319 cdedb/frontend/core.py:1320
+#: cdedb/frontend/core.py:1333
 msgid "Must be different from current username."
 msgstr "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
 
 #: cdedb/frontend/core.py:1357 cdedb/frontend/core.py:1391
 #: cdedb/frontend/core.py:1358 cdedb/frontend/core.py:1392
+#: cdedb/frontend/core.py:1371 cdedb/frontend/core.py:1405
 msgid "Username changed."
 msgstr "E-Mail-Adresse geändert."
 
 #: cdedb/frontend/core.py:1440 cdedb/frontend/core.py:1441
+#: cdedb/frontend/core.py:1454
 msgid "Rationale too long."
 msgstr "Begründung zu lang."
 
 #: cdedb/frontend/core.py:1445 cdedb/frontend/core.py:1446
+#: cdedb/frontend/core.py:1459
 msgid "Email address already in DB. Reset password."
 msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."
 
 #: cdedb/frontend/core.py:1468 cdedb/frontend/core.py:1469
+#: cdedb/frontend/core.py:1482
 msgid "Email sent. Please follow the link contained in the email."
 msgstr "E-Mail verschickt. Bitte den enthaltenen Link besuchen."
 
 #: cdedb/frontend/core.py:1484 cdedb/frontend/core.py:1485
+#: cdedb/frontend/core.py:1498
 msgid "Verification failed. Please contact the administrators."
 msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 
 #: cdedb/frontend/core.py:1485 cdedb/frontend/core.py:1486
+#: cdedb/frontend/core.py:1499
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 "E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet werden und Du "
@@ -2535,22 +2577,28 @@ msgstr ""
 #: cdedb/frontend/core.py:1525 cdedb/frontend/core.py:1546
 #: cdedb/frontend/core.py:1566 cdedb/frontend/core.py:1526
 #: cdedb/frontend/core.py:1547 cdedb/frontend/core.py:1567
+#: cdedb/frontend/core.py:1539 cdedb/frontend/core.py:1560
+#: cdedb/frontend/core.py:1580
 msgid "Case not to review."
 msgstr "Anfrage befindet sich nicht in der Begutachtung."
 
 #: cdedb/frontend/core.py:1595 cdedb/frontend/core.py:1596
+#: cdedb/frontend/core.py:1609
 msgid "Case approved."
 msgstr "Antrag genehmigt."
 
 #: cdedb/frontend/core.py:1603 cdedb/frontend/core.py:1604
+#: cdedb/frontend/core.py:1617
 msgid "Case rejected."
 msgstr "Anfrage abgewiesen."
 
 #: cdedb/frontend/core.py:1620 cdedb/frontend/core.py:1621
+#: cdedb/frontend/core.py:1634
 msgid "Persona has no pending change."
 msgstr "Account hat keine zu begutachtenden Änderungen."
 
 #: cdedb/frontend/core.py:1638 cdedb/frontend/core.py:1639
+#: cdedb/frontend/core.py:1652
 msgid "Change dropped."
 msgstr "Änderung unterdrückt."
 
@@ -4180,6 +4228,7 @@ msgstr "Details"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:145
 #: cdedb/frontend/templates/web/generic.tmpl:624
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:167
 msgid "Profile"
 msgstr "Profil"
 
@@ -4846,6 +4895,7 @@ msgstr "Keine Verlängerung notwendig, da %(quorum)s Stimmen erreicht wurden."
 #: cdedb/frontend/templates/web/event/create_course.tmpl:46
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:84
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:125
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:119
 msgid "Status"
 msgstr "Status"
 
@@ -6103,6 +6153,7 @@ msgstr "Einzugsermächtigung bearbeiten"
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:52
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:23
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:41
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:114
 msgid "Member"
 msgstr "Mitglied"
 
@@ -6116,6 +6167,8 @@ msgstr "Mitglied"
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:28
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:34
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:50
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:116
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:120
 msgid "Amount"
 msgstr "Betrag"
 
@@ -6181,27 +6234,35 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:52
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:93
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:62
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:100
 msgid "Perform Direct Debit"
 msgstr "Bankeinzug ausführen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:60
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:100
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:70
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:107
 msgid "Skip Direct Debit"
 msgstr "Überspringen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:65
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:75
 msgid "No Direct Debits to perform this Semester."
 msgstr "Keine zu bearbeitenden Lastschriften für dieses Semester."
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:73
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:88
 msgid "Perform all Direct Debits"
 msgstr "Alle Bankeinzüge ausführen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:83
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:98
 msgid "Open Direct Debits"
 msgstr "Offene Bankeinzüge"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:86
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:101
 msgid ""
 "The following Direct Debits are pending. As soon as they are executed, enter "
 "whether they were\n"
@@ -6216,33 +6277,43 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:100
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:34
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:115
 msgid "Date"
 msgstr "Datum"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:120
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:142
 msgid "All selected:"
 msgstr "Alle ausgewählten:"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:121
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:141
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:143
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:148
 msgid "Success"
 msgstr "Erfolg"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:122
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:151
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:144
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:158
 msgid "Failed"
 msgstr "Geplatzt"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:123
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:161
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:145
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:168
 msgid "Cancelled"
 msgstr "Abbruch"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:127
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:149
 msgid "There are currently no Direct Debits pending."
 msgstr "Aktuell befinden sich keine Einzüge in der Schwebe."
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:132
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:154
 msgid "All active Authorizations"
 msgstr "Alle aktiven Einzugsermächtigungen"
 
@@ -6281,30 +6352,37 @@ msgid "Transactions"
 msgstr "Getätigte Lastschriften"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:109
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:116
 msgid "Created"
 msgstr "Erstellt"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:110
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:117
 msgid "Finalized"
 msgstr "Finalisiert"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:111
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:118
 msgid "Semester"
 msgstr "Semester"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:114
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:121
 msgid "Transaction"
 msgstr "Buchung"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:115
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:122
 msgid "Creator"
 msgstr "Ersteller"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:171
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:178
 msgid "Donation receipt"
 msgstr "Spendenbescheinigung"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:180
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:187
 msgid "Reverse"
 msgstr "Rückbuchung"
 
@@ -10147,3 +10225,61 @@ msgstr ""
 "Derzeit haben %(low_count)s Mitglieder ein zu niedriges Guthaben (davon "
 "%(low_last_count)s mit einer Einzugsermächtigung. Zusätzlich gibt es "
 "%(trial_count)s Probemitglieder."
+
+#: cdedb/frontend/cde.py:1403
+msgid "%(num)s Direct Debits issued. Notification mails sent."
+msgstr ""
+"%(num)s Lastschriften initialisiert. Benachrichtigungsmails wurden "
+"verschickt."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:21
+msgid "Direct Debits will be created."
+msgstr "Lastschriften werden initialisiert."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:23
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:30
+msgid "Direct Debit will be created."
+msgstr "Lastschrift wird initialisiert."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:31
+msgid ""
+"During the Semester – as early as possible, but not before the Payment "
+"Reqeusts/Information are sent – the\n"
+"            following Direct Debits have to be executed.\n"
+"            To do this, generate a cdd-file and import it into the online "
+"banking software.\n"
+"            Directly afterwards activate the Direct Debits in the DB by "
+"clicking \"Perform Direct Debit\".\n"
+"            This sends a notification to the members informing them about "
+"the transaction."
+msgstr ""
+"Im Laufe des Semesters – und dabei möglichst früh, aber erst nach der "
+"Zahlungsinformation – sind noch folgende Lastschriften auszuführen. Dazu "
+"eine cdd-Datei generieren und in die Online-Banking-Software importieren. "
+"Direkt anschließend die Lastschriften in der Datenbank initialisieren per "
+"Klick auf \"Bankeinzug ausführen\" .Dies versendet eine Benachrichtigung an "
+"die Mitglieder über den bevorstehenden Lastschrifteinzug."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:54
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:83
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:93
+msgid "Create SEPA-PAIN-file"
+msgstr "SEPA-PAIN-Datei erstellen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:130
+msgid "This transaction needs to be cancelled!"
+msgstr "Diese Lastschrift muss abgebrochen werden!"
+
+#~ msgid "Course fields set."
+#~ msgstr "Kursfelder gesetzt."
+
+#~ msgid ""
+#~ "Deactivates the Account, so the User can no longer login.\n"
+#~ "                                        Non-Admins can still see the User "
+#~ "but not the complete Profile.\n"
+#~ "                                        This can be reversed at any time."
+#~ msgstr ""
+#~ "Deaktiviert den Account, sodass der Benutzer sich nicht mehr anmelden "
+#~ "kann. Andere Benutzer ohne Admin-Rechte können den Benutzer noch sehen, "
+#~ "jedoch ohne vollständiges Profil. Dies kann jederzeit rückgängig gemacht "
+#~ "werden."

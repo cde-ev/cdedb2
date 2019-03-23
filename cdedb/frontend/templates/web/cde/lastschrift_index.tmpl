@@ -18,9 +18,9 @@
                 "{{ gettext("This Direct Debit will be skipped for this semster. This cannot be undone.") }}");
             $('#finalizationform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}",
                     function(){return $('#finalization-cancel')[0] == document.activeElement;});
-            $('#generatetransactionsform').cdedbProtectAction("{{ gettext("Direct Debits will be created and SEPA file created.") }}")
+            $('#generatetransactionsform').cdedbProtectAction("{{ gettext("Direct Debits will be created.") }}")
                 .on('submit', function(){window.location.reload();});
-            $('.generatetransactionform').cdedbProtectAction("{{ gettext("Direct Debit will be created and SEPA file created.") }}")
+            $('.generatetransactionform').cdedbProtectAction("{{ gettext("Direct Debit will be created.") }}")
                 .on('submit', function(){window.location.reload();});
         });
     </script>
@@ -30,8 +30,10 @@
     <p>
         {% trans -%}
             During the Semester – as early as possible, but not before the Payment Reqeusts/Information are sent – the
-            following Direct Debits have to be executed. To do this, generate a dtx-file and import it into the online
-            banking software.
+            following Direct Debits have to be executed.
+            To do this, generate a cdd-file and import it into the online banking software.
+            Directly afterwards activate the Direct Debits in the DB by clicking "Perform Direct Debit".
+            This sends a notification to the members informing them about the transaction.
         {%- endtrans %}
     </p>
 
@@ -45,11 +47,19 @@
                                  "{} {}".format(persona['given_names'], persona['family_name'])) }}
                 </td>
                 <td>
+                    <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
+                            id="downloadsepapainform{{ lastschrift_id }}" class="downloadsepapainform">
+                        {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
+                        {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
+                        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='download', aclass='btn btn-xs btn-primary') }}
+                    </form>
+                </td>
+                <td>
                     <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
                             id="generatetransactionform{{ lastschrift_id }}" class="generatetransactionform">
                         {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
                         {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                        {{ util.input_submit(gettext("Perform Direct Debit"), icon='download', aclass='btn btn-xs btn-primary') }}
+                        {{ util.input_submit(gettext("Perform Direct Debit"), icon='play', aclass='btn btn-xs btn-primary') }}
                     </form>
                 </td>
                 <td>
@@ -67,14 +77,19 @@
         </tbody>
     </table>
 
+    <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
+      id="downloadsepapainform" style="display: inline;">
+        {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
+        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='download', aclass='btn btn-primary') }}
+    </form>
     <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
-      id="generatetransactionsform">
+      id="generatetransactionsform" style="display: inline;">
         {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
-        {{ util.input_submit(gettext("Perform all Direct Debits"), icon='download', aclass='btn btn-primary') }}
+        {{ util.input_submit(gettext("Perform all Direct Debits"), icon='play', aclass='btn btn-primary') }}
     </form>
     {% if errors %}
         <ul>
-        {% for name, error in errors %}
+        {% for name, error in errors.items() %}
             <li>{{ name }}: {{ util.format_error(error) }}</li>
         {% endfor %}
         </ul>
@@ -107,9 +122,16 @@
                             {{ util.input_checkbox(name="transaction_ids", value=transaction_id) }}
                         </td>
                         <td>
-                            {% set persona = personas[lastschrifts[transaction['lastschrift_id']]['persona_id']] %}
+                            {% set persona = personas[all_lastschrifts[transaction['lastschrift_id']]['persona_id']] %}
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': persona['id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
+                            {% if all_lastschrifts[transaction['lastschrift_id']]['revoked_at'] %}
+                                <b class="alert-danger">{{ util.make_icon("warning-sign") }}
+                                {% trans -%}
+                                    This transaction needs to be cancelled!
+                                {%- endtrans %}
+                                </b>
+                            {% endif %}
                         </td>
                         <td>{{ transaction['issued_at']|datetime(lang=lang) }}</td>
                         <td>{{ transaction['amount'] }}€</td>
