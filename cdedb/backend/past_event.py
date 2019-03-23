@@ -662,5 +662,5 @@ class PastEventBackend(AbstractBackend):
                 return None, "Event locked."
             self.event.set_event(rs, {'id': event_id, 'is_archived': True})
             new_ids = tuple(self.archive_one_part(rs, event, part_id)
-                            for part_id in event['parts'])
+                            for part_id in sorted(event['parts']))
         return new_ids, None
