@@ -308,14 +308,9 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['createlastschriftform']
         f['amount'] = 25
         f['iban'] = "DE12 5001 0517 0648 4898 90"
-        self.submit(f)
-        self.assertPresence("Betrag 25,00 €")
-        self.assertNonPresence("Dagobert")
-        self.get("/core/persona/2/membership/change")
-        f = self.response.forms['modifymembershipform']
-        self.submit(f)
-        self.get("/cde/user/2/lastschrift")
-        self.assertNonPresence("Aktive Einzugsermächtigung")
+        self.submit(f, check_notification=False)
+        self.assertPresence("Mehrere aktive Einzugsermächtigungen sind unzulässig.",
+                            div="notifications")
 
     @as_users("anton")
     def test_create_user(self, user):

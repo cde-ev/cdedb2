@@ -1195,6 +1195,11 @@ class CdEFrontend(AbstractUserFrontend):
         data = check(rs, "lastschrift", data, creation=True)
         if rs.errors:
             return self.lastschrift_create_form(rs, persona_id)
+        if self.cdeproxy.list_lastschrift(
+                rs, persona_ids=(persona_id,), active=True):
+            rs.notify("error", n_("Multiple active permits are disallowed."))
+            return self.redirect(rs, "cde/lastschrift_show", {
+                'persona_id': persona_id})
         new_id = self.cdeproxy.create_lastschrift(rs, data)
         self.notify_return_code(rs, new_id)
         return self.redirect(rs, "cde/lastschrift_show")
@@ -1231,14 +1236,14 @@ class CdEFrontend(AbstractUserFrontend):
 
         :rtype: datetime.date
         """
+        payment_date = now().date() + self.conf.SEPA_PAYMENT_OFFSET
+
         # Before anything else: check whether we are on special easter days.
         easter = dateutil.easter.easter(payment_date.year)
         good_friday = easter - datetime.timedelta(days=2)
         easter_monday = easter + datetime.timedelta(days=1)
         if payment_date in (good_friday, easter_monday):
             payment_date = easter + datetime.timedelta(days=2)
-        else:
-            payment_date = now().date() + self.conf.SEPA_PAYMENT_OFFSET
 
         # First: check we are not on the weekend.
         if payment_date.isoweekday() == 6:
@@ -1339,7 +1344,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         new_transactions = []
 
-        for lastschrift in lastschrifts:
+        for lastschrift in lastschrifts.values():
             persona = personas[lastschrift['persona_id']]
             transaction = {
                 'issued_at': now(),
@@ -1417,7 +1422,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, lastschrift_ids)
         personas = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in lastschrifts.values()))
-        for lastschrift in lastschrifts:
+        for lastschrift in lastschrifts.values():
             persona = personas[lastschrift['persona_id']]
             data = {
                 'persona': persona,
