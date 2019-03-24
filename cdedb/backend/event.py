@@ -2065,15 +2065,12 @@ class EventBackend(AbstractBackend):
         :returns: standard return code
         """
         data = affirm("serialized_event", data)
-        data = data
         if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
             raise RuntimeError(n_("It makes no sense to do this."))
         if not self.is_offline_locked(rs, event_id=data['id']):
             raise RuntimeError(n_("Not locked."))
         if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
             raise ValueError(n_("Version mismatch -- aborting."))
-        if data["kind"] != "full":
-            raise ValueError(n_("Not a full export, unable to proceed."))
 
         with Atomizer(rs):
             current = self.export_event(rs, data['id'])
@@ -2131,3 +2128,253 @@ class EventBackend(AbstractBackend):
             ret *= self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
             return ret
+
+    @access("event")
+    def partial_export_event(self, rs, event_id):
+        """Export an event for third-party applications.
+
+        This provides a consumer-friendly package of event data which can
+        later on be reintegrated with the partial import facility.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: dict
+        :returns: dict holding all data of the exported event
+        """
+        # TODO maybe add more info (best to do this conditionally)
+        event_id = affirm("id", event_id)
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
+
+        def list_to_dict(alist):
+            return {e['id']: e for e in alist}
+
+        with Atomizer(rs):
+            event_fields = self._get_event_fields(rs, event_id)
+            # basics
+            ret = {
+                'CDEDB_EXPORT_EVENT_VERSION': _CDEDB_EXPORT_EVENT_VERSION,
+                'kind': "partial",  # could also be "full"
+                'id': event_id,
+                'timestamp': now(),
+            }
+            # courses
+            courses = list_to_dict(self.sql_select(
+                rs, 'event.courses', COURSE_FIELDS, (event_id,),
+                entity_key='event_id'))
+            temp = self.sql_select(
+                rs, 'event.course_segments',
+                ('course_id', 'track_id', 'is_active'), courses.keys(),
+                entity_key='course_id')
+            lookup = collections.defaultdict(dict)
+            for e in temp:
+                lookup[e['course_id']][e['track_id']] = e['is_active']
+            for course_id, course in courses.items():
+                del course['id']
+                del course['event_id']
+                course['segments'] = lookup[course_id]
+                course['fields'] = cast_fields(course['fields'], event_fields)
+            ret['courses'] = courses
+            # lodgements
+            lodgements = list_to_dict(self.sql_select(
+                rs, 'event.lodgements', LODGEMENT_FIELDS, (event_id,),
+                entity_key='event_id'))
+            for lodgement in lodgements.values():
+                del lodgement['id']
+                del lodgement['event_id']
+                lodgement['fields'] = cast_fields(lodgement['fields'],
+                                                  event_fields)
+            ret['lodgements'] = lodgements
+            # registrations
+            registrations = list_to_dict(self.sql_select(
+                rs, 'event.registrations', REGISTRATION_FIELDS, (event_id,),
+                entity_key='event_id'))
+            temp = self.sql_select(
+                rs, 'event.registration_parts',
+                REGISTRATION_PART_FIELDS, registrations.keys(),
+                entity_key='registration_id')
+            part_lookup = collections.defaultdict(dict)
+            for e in temp:
+                part_lookup[e['registration_id']][e['part_id']] = e
+            temp = self.sql_select(
+                rs, 'event.registration_tracks',
+                REGISTRATION_TRACK_FIELDS, registrations.keys(),
+                entity_key='registration_id')
+            track_lookup = collections.defaultdict(dict)
+            for e in temp:
+                track_lookup[e['registration_id']][e['track_id']] = e
+            choices = self.sql_select(
+                rs, "event.course_choices",
+                ("registration_id", "track_id", "course_id", "rank"),
+                registrations.keys(), entity_key="registration_id")
+            for registration_id, registration in registrations.items():
+                del registration['id']
+                del registration['event_id']
+                del registration['persona_id']
+                del registration['real_persona_id']
+                parts = part_lookup[registration_id]
+                for part in parts.values():
+                    del part['registration_id']
+                    del part['part_id']
+                registration['parts'] = parts
+                tracks = track_lookup[registration_id]
+                for track_id, track in tracks.items():
+                    tmp = {e['course_id']: e['rank'] for e in choices
+                           if (e['registration_id'] == track['registration_id']
+                               and e['track_id'] == track_id)}
+                    track['choices'] = sorted(tmp.keys(), key=tmp.get)
+                    del track['registration_id']
+                    del track['track_id']
+                registration['tracks'] = tracks
+                registration['fields'] = cast_fields(registration['fields'],
+                                                     event_fields)
+            ret['registrations'] = registrations
+            return ret
+
+    @access("event")
+    def partial_import_event(self, rs, data, dryrun):
+        """Incorporate changes into an event.
+
+        In contrast to the full import in this case the data describes a
+        delta to be applied to the current online state.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: dict
+        :type dryrun: bool
+        :param dryrun: If True we do not modify any state.
+        :rtype: (int, dict)
+        :returns: A tuple of a standard return code and the datasets that
+          are changed by the operation (in the state after the change).
+        """
+        # TODO maybe add hash validation to ensure deteministic semantics
+        data = affirm("serialized_partial_event", data)
+        dryrun = affirm("bool", dryrun)
+        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=data['id'])
+        if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
+            raise ValueError(n_("Version mismatch -- aborting."))
+
+        def dict_diff(old, new):
+            ret = {}
+            # keys missing in the new dict are simply ignored
+            for key, value in new.items():
+                if key not in old:
+                    ret[key] = value
+                else:
+                    if value == old[key]:
+                        pass
+                    elif isinstance(value, collections.abc.Mapping):
+                        ret[key] = dict_diff(old[key], value)
+                    else:
+                        ret[key] = value
+            return ret
+
+        with Atomizer(rs):
+            event = unwrap(self.get_events(rs, (data['id'],)))
+            code = 1
+            all_current_data = self.partial_export_event(rs, data['id'])
+            total_delta = {}
+            rdelta = {}
+            data_regs = data.get('registrations', {})
+            for registration_id, new_registration in data_regs.items():
+                current = all_current_data['registrations'].get(
+                    registration_id)
+                if registration_id > 0 and current is None:
+                    # registration was deleted online in the meantime
+                    rdelta[registration_id] = None
+                elif new_registration is None:
+                    rdelta[registration_id] = None
+                    if not dryrun:
+                        self.delete_registration(rs, registration_id)
+                elif registration_id < 0:
+                    rdelta[registration_id] = new_registration
+                    if not dryrun:
+                        new = copy.deepcopy(new_registration)
+                        new['event_id'] = data['id']
+                        self.create_registration(rs, new)
+                else:
+                    delta = dict_diff(current, new_registration)
+                    if delta:
+                        rdelta[registration_id] = delta
+                        if not dryrun:
+                            delta['id'] = registration_id
+                            self.set_registration(rs, delta)
+            if rdelta:
+                total_delta['registrations'] = rdelta
+            ldelta = {}
+            for lodgement_id, new_lodgement in data.get('lodgements',
+                                                        {}).items():
+                current = all_current_data['lodgements'].get(lodgement_id)
+                if lodgement_id > 0 and current is None:
+                    # lodgement was deleted online in the meantime
+                    ldelta[lodgement_id] = None
+                elif new_lodgement is None:
+                    ldelta[lodgement_id] = None
+                    if not dryrun:
+                        self.delete_lodgement(rs, lodgement_id)
+                elif lodgement_id < 0:
+                    rdelta[lodgement_id] = new_lodgement
+                    if not dryrun:
+                        new = copy.deepcopy(new_lodgement)
+                        new['event_id'] = data['id']
+                        self.create_lodgement(rs, new)
+                else:
+                    delta = dict_diff(current, new_lodgement)
+                    if delta:
+                        ldelta[lodgement_id] = delta
+                        if not dryrun:
+                            delta['id'] = lodgement_id
+                            self.set_lodgement(rs, delta)
+            if ldelta:
+                total_delta['lodgements'] = ldelta
+            cdelta = {}
+            check_seg = lambda track_id, delta, original: (
+                 (track_id in delta and delta[track_id] is not None)
+                 or (track_id not in delta and track_id in original))
+            for course_id, new_course in data.get('courses', {}).items():
+                current = all_current_data['courses'].get(course_id)
+                if course_id > 0 and current is None:
+                    # course was deleted online in the meantime
+                    cdelta[course_id] = None
+                elif new_course is None:
+                    cdelta[course_id] = None
+                    if not dryrun:
+                        self.delete_course(rs, course_id)
+                elif course_id < 0:
+                    rdelta[course_id] = new_course
+                    if not dryrun:
+                        new = copy.deepcopy(new_course)
+                        new['event_id'] = data['id']
+                        segments = new.pop('segments')
+                        new['segments'] = list(segments.keys())
+                        new['active_segments'] = [key for key in segments
+                                                  if segments[key]]
+                        self.create_course(rs, new)
+                else:
+                    delta = dict_diff(current, new_course)
+                    if delta:
+                        cdelta[course_id] = delta
+                        if not dryrun:
+                            segments = delta.pop('segments', None)
+                            if segments:
+                                internal = unwrap(self.get_courses(
+                                    rs, (course_id,)))
+                                orig_seg = internal['segments']
+                                new_segments = [
+                                    x for x in event['tracks']
+                                    if check_seg(x, segments, orig_seg)]
+                                delta['segments'] = new_segments
+                                orig_active = internal['active_segments']
+                                new_active = [
+                                    x for x in event['tracks']
+                                    if segments.get(x, x in orig_active)]
+                                delta['active_segments'] = new_active
+                            delta['id'] = course_id
+                            self.set_course(rs, delta)
+            if cdelta:
+                total_delta['courses'] = cdelta
+            if not dryrun:
+                self.event_log(rs, const.EventLogCodes.event_partial_import,
+                               data['id'])
+            return code, delta

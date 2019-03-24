@@ -323,6 +323,7 @@ class EventLogCodes(enum.IntEnum):
     registration_deleted = 52  #:
     event_locked = 60  #:
     event_unlocked = 61  #:
+    event_partial_import = 62  #:
 
 
 @enum.unique

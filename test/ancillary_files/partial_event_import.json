@@ -1,10 +1,10 @@
 {
     "kind": "partial",
     "courses": {
-        "3": {
+        "1": {
             "segments": {
-                "1": true,
-                "2": false
+                "1": false,
+                "2": true
             },
             "instructors": "Die Buddenbroks",
             "title": "Ganz Kurzer Kurs",
@@ -18,8 +18,8 @@
             "nr": "\u03b2",
             "description": "mit extrem hoher Leistung."
         },
-        "2": null,
-	"4": {
+        "3": null,
+	"2": {
 	    "instructors": "Adams und Heinlein"
 	},
 	"5": {
@@ -28,7 +28,7 @@
                 "3": true
             }
 	},
-        "1": {
+        "4": {
             "segments": {
                 "1": null
             }
@@ -109,8 +109,6 @@
             "checkin": null,
             "payment": "2014-03-04",
             "list_consent": false,
-            "persona_id": 7,
-            "real_persona_id": null,
             "notes": "Reingelegt",
             "parental_agreement": null,
             "tracks": {
@@ -122,7 +120,7 @@
                 "2": {
                     "course_id": null,
                     "course_instructor": 1,
-                    "choices": [4, 3, 5]
+                    "choices": [5, 4]
                 },
                 "1": {
                     "course_id": 4,
@@ -145,15 +143,20 @@
             },
             "tracks": {
                 "3": {
-                    "course_id": 3
+                    "course_id": 5
                 },
                 "2": {
-                    "choices": [3, 4, 5]
+                    "choices": [4, 5]
                 }
             }
         },
         "1": {
-            "orga_notes": "Neueste Geruechte hier einfuegen"
+            "orga_notes": "Neueste Geruechte hier einfuegen",
+            "tracks": {
+                "1": {
+                    "choices": [1, 4, 2]
+                }
+            }
         },
         "4": null,
 	"-1": {
@@ -183,7 +186,6 @@
             "payment": null,
             "list_consent": true,
             "persona_id": 2,
-            "real_persona_id": null,
             "notes": null,
             "parental_agreement": null,
             "tracks": {
@@ -195,12 +197,12 @@
                 "2": {
                     "course_id": null,
                     "course_instructor": null,
-                    "choices": [5, 3, 4]
+                    "choices": [5, 4]
                 },
                 "1": {
                     "course_id": null,
                     "course_instructor": null,
-                    "choices": [1, 3, 4]
+                    "choices": [1, 4]
                 }
             }
         }

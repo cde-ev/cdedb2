@@ -74,7 +74,7 @@ storage-test:
 	mkdir -p "/tmp/cdedb-store/ballot_result/"
 	mkdir -p "/tmp/cdedb-store/assembly_attachment/"
 	mkdir -p "/tmp/cdedb-store/testfiles/"
-	cp test/ancillary_files/{picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv} /tmp/cdedb-store/testfiles/
+	cp test/ancillary_files/{picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv,partial_event_import.json} /tmp/cdedb-store/testfiles/
 
 sql:
 ifeq ($(wildcard /DBVM),/DBVM)

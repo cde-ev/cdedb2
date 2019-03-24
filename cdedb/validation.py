@@ -1755,9 +1755,9 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'is_visible': _bool,
     'is_course_list_visible': _bool,
     'is_archived': _bool,
-    'orgas': _any,
-    'parts': _any,
-    'fields': _any,
+    'orgas': _iterable,
+    'parts': _mapping,
+    'fields': _mapping,
     'lodge_field': _id_or_None,
     'reserve_field': _id_or_None,
 }
@@ -1805,58 +1805,46 @@ def _event(val, argname=None, *, creation=False, _convert=True):
             errs.append(("registration_start",
                          ValueError(n_("Must be before hard and soft limit."))))
     if 'orgas' in val:
-        oldorgas, e = _iterable(val['orgas'], "orgas", _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            orgas = set()
-            for anid in oldorgas:
-                v, e = _id(anid, 'orgas', _convert=_convert)
-                if e:
-                    errs.extend(e)
-                else:
-                    orgas.add(v)
-            val['orgas'] = orgas
+        orgas = set()
+        for anid in val['orgas']:
+            v, e = _id(anid, 'orgas', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                orgas.add(v)
+        val['orgas'] = orgas
     if 'parts' in val:
-        oldparts, e = _mapping(val['parts'], 'parts', _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            newparts = {}
-            for anid, part in oldparts.items():
-                anid, e = _int(anid, 'parts', _convert=_convert)
-                if e:
-                    errs.extend(e)
+        newparts = {}
+        for anid, part in val['parts'].items():
+            anid, e = _int(anid, 'parts', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                part, ee = _event_part_or_None(
+                    part, 'parts', creation=creation,
+                    _convert=_convert)
+                if ee:
+                    errs.extend(ee)
                 else:
-                    creation = (anid < 0)
-                    part, ee = _event_part_or_None(
-                        part, 'parts', creation=creation,
-                        _convert=_convert)
-                    if ee:
-                        errs.extend(ee)
-                    else:
-                        newparts[anid] = part
-            val['parts'] = newparts
+                    newparts[anid] = part
+        val['parts'] = newparts
     if 'fields' in val:
-        oldfields, e = _mapping(val['fields'], 'fields', _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            newfields = {}
-            for anid, field in oldfields.items():
-                anid, e = _int(anid, 'fields', _convert=_convert)
-                if e:
-                    errs.extend(e)
+        newfields = {}
+        for anid, field in val['fields'].items():
+            anid, e = _int(anid, 'fields', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                field, ee = _event_field_or_None(
+                    field, 'fields', creation=creation,
+                    _convert=_convert)
+                if ee:
+                    errs.extend(ee)
                 else:
-                    creation = (anid < 0)
-                    field, ee = _event_field_or_None(
-                        field, 'fields', creation=creation,
-                        _convert=_convert)
-                    if ee:
-                        errs.extend(ee)
-                    else:
-                        newfields[anid] = field
-            val['fields'] = newfields
+                    newfields[anid] = field
+        val['fields'] = newfields
     return val, errs
 
 
@@ -1866,7 +1854,7 @@ _EVENT_PART_COMMON_FIELDS = {
     'part_begin': _date,
     'part_end': _date,
     'fee': _decimal,
-    'tracks': _any,
+    'tracks': _mapping,
 }
 
 
@@ -1897,28 +1885,24 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if 'tracks' in val:
-        oldtracks, e = _mapping(val['tracks'], 'tracks', _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            newtracks = {}
-            for anid, track in oldtracks.items():
-                anid, e = _int(anid, 'tracks', _convert=_convert)
-                if e:
-                    errs.extend(e)
+        newtracks = {}
+        for anid, track in val['tracks'].items():
+            anid, e = _int(anid, 'tracks', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                if creation:
+                    track, ee = _event_track(
+                        track, 'tracks', _convert=_convert, creation=True)
                 else:
-                    creation = (anid < 0)
-                    if creation:
-                        track, ee = _event_track(
-                            track, 'tracks', _convert=_convert, creation=True)
-                    else:
-                        track, ee = _event_track_or_None(
-                            track, 'tracks', _convert=_convert)
-                    if ee:
-                        errs.extend(ee)
-                    else:
-                        newtracks[anid] = track
-            val['tracks'] = newtracks
+                    track, ee = _event_track_or_None(
+                        track, 'tracks', _convert=_convert)
+                if ee:
+                    errs.extend(ee)
+                else:
+                    newtracks[anid] = track
+        val['tracks'] = newtracks
     return val, errs
 
 
@@ -2086,9 +2070,9 @@ _COURSE_COMMON_FIELDS = lambda: {
     'notes': _str_or_None,
 }
 _COURSE_OPTIONAL_FIELDS = {
-    'segments': _any,
-    'active_segments': _any,
-    'fields': _any,
+    'segments': _iterable,
+    'active_segments': _iterable,
+    'fields': _mapping,
 }
 
 
@@ -2120,33 +2104,23 @@ def _course(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if 'segments' in val:
-        oldsegments, e = _iterable(val['segments'], 'segments',
-                                   _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            segments = set()
-            for anid in oldsegments:
-                v, e = _id(anid, 'segments', _convert=_convert)
-                if e:
-                    errs.extend(e)
-                else:
-                    segments.add(v)
-            val['segments'] = segments
+        segments = set()
+        for anid in val['segments']:
+            v, e = _id(anid, 'segments', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                segments.add(v)
+        val['segments'] = segments
     if 'active_segments' in val:
-        oldsegments, e = _iterable(val['active_segments'], 'active_segments',
-                                   _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            active_segments = set()
-            for anid in oldsegments:
-                v, e = _id(anid, 'active_segments', _convert=_convert)
-                if e:
-                    errs.extend(e)
-                else:
-                    active_segments.add(v)
-            val['active_segments'] = active_segments
+        active_segments = set()
+        for anid in val['active_segments']:
+            v, e = _id(anid, 'active_segments', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                active_segments.add(v)
+        val['active_segments'] = active_segments
     if 'segments' in val and 'active_segments' in val:
         if not val['active_segments'] <= val['segments']:
             errs.append(('segments',
@@ -2160,8 +2134,8 @@ _REGISTRATION_COMMON_FIELDS = lambda: {
     'mixed_lodging': _bool,
     'list_consent': _bool,
     'notes': _str_or_None,
-    'parts': _any,
-    'tracks': _any,
+    'parts': _mapping,
+    'tracks': _mapping,
 }
 _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'parental_agreement': _bool_or_None,
@@ -2169,7 +2143,7 @@ _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
     'checkin': _datetime_or_None,
-    'fields': _any
+    'fields': _mapping
 }
 
 
@@ -2205,38 +2179,30 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if 'parts' in val:
-        oldparts, e = _mapping(val['parts'], 'parts', _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            newparts = {}
-            for anid, part in oldparts.items():
-                anid, e = _id(anid, 'parts', _convert=_convert)
-                part, ee = _registration_part_or_None(part, 'parts',
-                                                      _convert=_convert)
-                if e or ee:
-                    errs.extend(e)
-                    errs.extend(ee)
-                else:
-                    newparts[anid] = part
-            val['parts'] = newparts
+        newparts = {}
+        for anid, part in val['parts'].items():
+            anid, e = _id(anid, 'parts', _convert=_convert)
+            part, ee = _registration_part_or_None(part, 'parts',
+                                                  _convert=_convert)
+            if e or ee:
+                errs.extend(e)
+                errs.extend(ee)
+            else:
+                newparts[anid] = part
+        val['parts'] = newparts
     if 'tracks' in val:
-        oldtracks, e = _mapping(val['tracks'], 'tracks', _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            newtracks = {}
-            for anid, track in oldtracks.items():
-                anid, e = _id(anid, 'tracks', _convert=_convert)
-                track, ee = _registration_track_or_None(track, 'tracks',
-                                                        _convert=_convert)
-                if e or ee:
-                    errs.extend(e)
-                    errs.extend(ee)
-                else:
-                    newtracks[anid] = track
-            val['tracks'] = newtracks
-    # the check of fields is delegated to _event_associated_fields
+        newtracks = {}
+        for anid, track in val['tracks'].items():
+            anid, e = _id(anid, 'tracks', _convert=_convert)
+            track, ee = _registration_track_or_None(track, 'tracks',
+                                                  _convert=_convert)
+            if e or ee:
+                errs.extend(e)
+                errs.extend(ee)
+            else:
+                newtracks[anid] = track
+        val['tracks'] = newtracks
+    ## the check of fields is delegated to _event_associated_fields
     return val, errs
 
 
@@ -2284,24 +2250,20 @@ def _registration_track(val, argname=None, *, _convert=True):
     optional_fields = {
         'course_id': _id_or_None,
         'course_instructor': _id_or_None,
-        'choices': _any,
+        'choices': _iterable,
     }
     val, errs = _examine_dictionary_fields(val, {}, optional_fields,
                                            _convert=_convert)
     if 'choices' in val:
-        oldchoices, e = _iterable(val['choices'], 'choices', _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            newchoices = []
-            for choice in oldchoices:
-                choice, e = _id(choice, 'choices', _convert=_convert)
-                if e:
-                    errs.extend(e)
-                    break
-                else:
-                    newchoices.append(choice)
-            val['choices'] = newchoices
+        newchoices = []
+        for choice in val['choices']:
+            choice, e = _id(choice, 'choices', _convert=_convert)
+            if e:
+                errs.extend(e)
+                break
+            else:
+                newchoices.append(choice)
+        val['choices'] = newchoices
     return val, errs
 
 
@@ -2363,7 +2325,7 @@ _LODGEMENT_COMMON_FIELDS = lambda: {
     'notes': _str_or_None,
 }
 _LODGEMENT_OPTIONAL_FIELDS = {
-    'fields': _any,
+    'fields': _mapping,
 }
 
 
@@ -2445,7 +2407,6 @@ def _serialized_event_upload(val, argname=None, *, _convert=True):
     data = json.loads(val.decode("utf-8"))
     return _serialized_event(data, argname, _convert=_convert)
 
-
 @_addvalidator
 def _serialized_event(val, argname=None, *, _convert=True):
     """Check an event data set for import after offline usage.
@@ -2462,7 +2423,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
         return val, errs
     if 'kind' not in val or val['kind'] != "full":
         return None, [(argname, KeyError(n_(
-            "Currently only full exports are supported")))]
+            "Only full exports are supported")))]
 
     mandatory_fields = {
         'CDEDB_EXPORT_EVENT_VERSION': _int,
@@ -2563,6 +2524,238 @@ def _serialized_event(val, argname=None, *, _convert=True):
         val = None
     return val, errs
 
+@_addvalidator
+def _serialized_partial_event_upload(val, argname=None, *, _convert=True):
+    """Check an event data set for delta import.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "serialized_partial_event_upload"
+    val, errs = _input_file(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    data = json.loads(val.decode("utf-8"))
+    return _serialized_partial_event(data, argname, _convert=_convert)
+
+@_addvalidator
+def _serialized_partial_event(val, argname=None, *, _convert=True):
+    """Check an event data set for delta import.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "serialized_event"
+    ## First a basic check
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if 'kind' not in val or val['kind'] != "partial":
+        return None, [(argname, KeyError(n_(
+            "Only partial exports are supported")))]
+
+    mandatory_fields = {
+        'CDEDB_EXPORT_EVENT_VERSION': _int,
+        'kind': _str,
+        'id': _id,
+        'timestamp': _datetime,
+    }
+    optional_fields = {
+        'courses': _mapping,
+        'lodgements': _mapping,
+        'registrations': _mapping,
+    }
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    for domain, validator in (('courses', _partial_course_or_None),
+                              ('lodgements', _partial_lodgement_or_None),
+                              ('registrations', _partial_registration_or_None)):
+        if domain not in val:
+            continue
+        new_dict = {}
+        for key, entry in val[domain].items():
+            new_key, e = _int(key, domain, _convert=True) # fix JSON key restriction
+            if e:
+                errs.extend(e)
+                continue
+            creation = (new_key < 0)
+            new_entry, e = validator(entry, domain, _convert=_convert,
+                                     creation=creation)
+            if e:
+                errs.extend(e)
+            else:
+                new_dict[new_key] = new_entry
+        val[domain] = new_dict
+    if errs:
+        val = None
+    return val, errs
+
+_PARTIAL_COURSE_COMMON_FIELDS = lambda: {
+    'title': _str,
+    'description': _str_or_None,
+    'nr': _str_or_None,
+    'shortname': _str,
+    'instructors': _str_or_None,
+    'max_size': _int_or_None,
+    'min_size': _int_or_None,
+    'notes': _str_or_None,
+}
+_PARTIAL_COURSE_OPTIONAL_FIELDS = {
+    'segments': _mapping,
+    'fields': _mapping,
+}
+@_addvalidator
+def _partial_course(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "course"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _PARTIAL_COURSE_COMMON_FIELDS()
+        optional_fields = _PARTIAL_COURSE_OPTIONAL_FIELDS
+    else:
+        mandatory_fields = {}
+        optional_fields = dict(_PARTIAL_COURSE_COMMON_FIELDS(),
+                               **_PARTIAL_COURSE_OPTIONAL_FIELDS)
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    if 'segments' in val:
+        new_dict = {}
+        for key, entry in val['segments'].items():
+            new_key, e = _int(key, 'segments', _convert=True)
+            new_entry, ee = _bool_or_None(entry, 'segments', _convert=_convert)
+            if e or ee:
+                errs.extend(e)
+                errs.extend(ee)
+            else:
+                new_dict[new_key] = new_entry
+        val['segments'] = new_dict
+    ## the check of fields is delegated to _event_associated_fields
+    return val, errs
+
+_PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
+    'moniker': _str,
+    'capacity': _int,
+    'reserve': _int,
+    'notes': _str_or_None,
+}
+_PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
+    'fields': _mapping,
+}
+@_addvalidator
+def _partial_lodgement(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "lodgement"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _PARTIAL_LODGEMENT_COMMON_FIELDS()
+        optional_fields = _PARTIAL_LODGEMENT_OPTIONAL_FIELDS
+    else:
+        mandatory_fields = {}
+        optional_fields = dict(_PARTIAL_LODGEMENT_COMMON_FIELDS(),
+                               **_PARTIAL_LODGEMENT_OPTIONAL_FIELDS)
+    ## the check of fields is delegated to _event_associated_fields
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      _convert=_convert)
+
+_PARTIAL_REGISTRATION_COMMON_FIELDS = lambda: {
+    'mixed_lodging': _bool,
+    'list_consent': _bool,
+    'notes': _str_or_None,
+    'parts': _mapping,
+    'tracks': _mapping,
+}
+_PARTIAL_REGISTRATION_OPTIONAL_FIELDS = lambda: {
+    'parental_agreement': _bool_or_None,
+    'orga_notes': _str_or_None,
+    'payment': _date_or_None,
+    'checkin': _datetime_or_None,
+    'fields': _mapping,
+}
+@_addvalidator
+def _partial_registration(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "registration"
+
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        ## creation does not allow fields for sake of simplicity
+        mandatory_fields = dict(_PARTIAL_REGISTRATION_COMMON_FIELDS(),
+                                persona_id=_id)
+        optional_fields = _PARTIAL_REGISTRATION_OPTIONAL_FIELDS()
+    else:
+        ## no event_id/persona_id, since associations should be fixed
+        mandatory_fields = {}
+        optional_fields = dict(
+            _PARTIAL_REGISTRATION_COMMON_FIELDS(),
+            **_PARTIAL_REGISTRATION_OPTIONAL_FIELDS())
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    ## The following can use the normal validators since in this case
+    ## everything is unchanged
+    if 'parts' in val:
+        newparts = {}
+        for anid, part in val['parts'].items():
+            anid, e = _id(anid, 'parts', _convert=_convert)
+            part, ee = _registration_part(part, 'parts', _convert=_convert)
+            if e or ee:
+                errs.extend(e)
+                errs.extend(ee)
+            else:
+                newparts[anid] = part
+        val['parts'] = newparts
+    if 'tracks' in val:
+        newtracks = {}
+        for anid, track in val['tracks'].items():
+            anid, e = _id(anid, 'tracks', _convert=_convert)
+            track, ee = _registration_track(track, 'tracks', _convert=_convert)
+            if e or ee:
+                errs.extend(e)
+                errs.extend(ee)
+            else:
+                newtracks[anid] = track
+        val['tracks'] = newtracks
+    ## the check of fields is delegated to _event_associated_fields
+    return val, errs
 
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -2577,13 +2770,13 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'is_active': _bool,
     'gateway': _id_or_None,
     'event_id': _id_or_None,
-    'registration_stati': _any,
+    'registration_stati': _iterable,
     'assembly_id': _id_or_None,
     'notes': _str_or_None,
 }
 _MAILINGLIST_OPTIONAL_FIELDS = {
-    'moderators': _any,
-    'whitelist': _any,
+    'moderators': _iterable,
+    'whitelist': _iterable,
 }
 
 
@@ -2635,18 +2828,14 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     for key, validator in (('registration_stati', _enum_registrationpartstati),
                            ('moderators', _id), ('whitelist', _email)):
         if key in val:
-            oldarray, e = _iterable(val[key], key, _convert=_convert)
-            if e:
-                errs.extend(e)
-            else:
-                newarray = []
-                for anid in oldarray:
-                    v, e = validator(anid, key, _convert=_convert)
-                    if e:
-                        errs.extend(e)
-                    else:
-                        newarray.append(v)
-                val[key] = newarray
+            newarray = []
+            for anid in val[key]:
+                v, e = validator(anid, key, _convert=_convert)
+                if e:
+                    errs.extend(e)
+                else:
+                    newarray.append(v)
+            val[key] = newarray
     return val, errs
 
 
@@ -2701,7 +2890,7 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
     'votes': _int_or_None,
     'use_bar': _bool,
     'is_tallied': _bool,
-    'candidates': _any
+    'candidates': _mapping
 }
 
 
@@ -2749,26 +2938,21 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
                             "Mustn't be before end of voting period.")))
                     )
     if 'candidates' in val:
-        oldcandidates, e = _mapping(val['candidates'], 'candidates',
-                                    _convert=_convert)
-        if e:
-            errs.extend(e)
-        else:
-            newcandidates = {}
-            for anid, candidate in oldcandidates.items():
-                anid, e = _int(anid, 'candidates', _convert=_convert)
-                if e:
-                    errs.extend(e)
+        newcandidates = {}
+        for anid, candidate in val['candidates'].items():
+            anid, e = _int(anid, 'candidates', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                candidate, ee = _ballot_candidate_or_None(
+                    candidate, 'candidates', creation=creation,
+                    _convert=_convert)
+                if ee:
+                    errs.extend(ee)
                 else:
-                    creation = (anid < 0)
-                    candidate, ee = _ballot_candidate_or_None(
-                        candidate, 'candidates', creation=creation,
-                        _convert=_convert)
-                    if ee:
-                        errs.extend(ee)
-                    else:
-                        newcandidates[anid] = candidate
-            val['candidates'] = newcandidates
+                    newcandidates[anid] = candidate
+        val['candidates'] = newcandidates
     return val, errs
 
 

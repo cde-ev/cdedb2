@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections.abc
 import datetime
 import email.parser
 import email.policy
@@ -34,6 +35,7 @@ from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
 
+
 class NearlyNow(datetime.datetime):
     """This is something, that equals an automatically generated timestamp.
 
@@ -50,11 +52,39 @@ class NearlyNow(datetime.datetime):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    
 def nearly_now():
     """Create a NearlyNow."""
     now = datetime.datetime.now(pytz.utc)
-    return NearlyNow(year=now.year, month=now.month, day=now.day, hour=now.hour,
-                     minute=now.minute, second=now.second, tzinfo=pytz.utc)
+    return NearlyNow(
+        year=now.year, month=now.month, day=now.day, hour=now.hour,
+        minute=now.minute, second=now.second, tzinfo=pytz.utc)
+
+
+def json_keys_to_int(obj):
+    """Convert dict keys to integers if possible.
+
+    This is a restriction of the JSON format allowing only string keys.
+    :type obj: object
+    :rtype obj: object
+    """
+    if isinstance(obj, collections.abc.Mapping):
+        ret = {}
+        for key, val in obj.items():
+            try:
+                key = int(key)
+            except (ValueError, TypeError):
+                pass
+            ret[key] = json_keys_to_int(val)
+    elif isinstance(obj, collections.abc.Sequence):
+        if isinstance(obj, str):
+            ret = obj
+        else:
+            ret = [json_keys_to_int(e) for e in obj]
+    else:
+        ret = obj
+    return ret
+
 
 class BackendShim(ProxyShim):
     def __init__(self, backend, *args, **kwargs):

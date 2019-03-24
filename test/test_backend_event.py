@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 
+import collections.abc
 import copy
 import datetime
 import decimal
+import json
 import pytz
 
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
+from test.common import (
+    BackendTest, as_users, USER_DICT, nearly_now, json_keys_to_int)
 from cdedb.backend.event import EventBackend
+from cdedb.backend.common import cast_fields
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
 from cdedb.common import PERSONA_EVENT_FIELDS
 from cdedb.enums import ENUMS_DICT
@@ -744,7 +748,7 @@ class TestEventBackend(BackendTest):
         self.event.delete_registration(self.key, 1)
         self.assertEqual({2: 5, 3: 7, 4: 9},
                          self.event.list_registrations(self.key, 1))
-        
+
     @as_users("anton", "garcia")
     def test_course_filtering(self, user):
         event_id = 1
@@ -1966,8 +1970,269 @@ class TestEventBackend(BackendTest):
         self.assertEqual(stored_data, result)
 
     @as_users("anton")
+    def test_partial_export_event(self, user):
+        expectation = {
+            'CDEDB_EXPORT_EVENT_VERSION': 1,
+            'courses': {1: {'description': 'Wir werden die Bäume drücken.',
+                            'fields': {'room': 'Wald'},
+                            'instructors': 'ToFi & Co',
+                            'max_size': 10,
+                            'min_size': 3,
+                            'notes': 'Promotionen in Mathematik und Ethik für Teilnehmer '
+                            'notwendig.',
+                            'nr': 'α',
+                            'segments': {1: True, 3: True},
+                            'shortname': 'Heldentum',
+                            'title': 'Planetenretten für Anfänger'},
+                        2: {'description': 'Inklusive Post, Backwaren und frühzeitigem '
+                            'Ableben.',
+                            'fields': {'room': 'Theater'},
+                            'instructors': 'Bernd Lucke',
+                            'max_size': 20,
+                            'min_size': 10,
+                            'notes': 'Kursleiter hat Sekt angefordert.',
+                            'nr': 'β',
+                            'segments': {1: True, 2: False, 3: True},
+                            'shortname': 'Kabarett',
+                            'title': 'Lustigsein für Fortgeschrittene'},
+                        3: {'description': 'mit hoher Leistung.',
+                            'fields': {'room': 'Seminarraum 42'},
+                            'instructors': 'Heinrich und Thomas Mann',
+                            'max_size': 14,
+                            'min_size': 5,
+                            'notes': None,
+                            'nr': 'γ',
+                            'segments': {2: True},
+                            'shortname': 'Kurz',
+                            'title': 'Kurzer Kurs'},
+                        4: {'description': 'mit hohem Umsatz.',
+                            'fields': {'room': 'Seminarraum 23'},
+                            'instructors': 'Stephen Hawking und Richard Feynman',
+                            'max_size': None,
+                            'min_size': None,
+                            'notes': None,
+                            'nr': 'δ',
+                            'segments': {1: True, 2: True, 3: True},
+                            'shortname': 'Lang',
+                            'title': 'Langer Kurs'},
+                        5: {'description': 'damit wir Auswahl haben',
+                            'fields': {'room': 'Nirwana'},
+                            'instructors': 'TBA',
+                            'max_size': None,
+                            'min_size': None,
+                            'notes': None,
+                            'nr': 'ε',
+                            'segments': {1: True, 2: True, 3: False},
+                            'shortname': 'Backup',
+                            'title': 'Backup-Kurs'}},
+            'id': 1,
+            'kind': 'partial',
+            'lodgements': {1: {'capacity': 5,
+                               'fields': {'contamination': 'high'},
+                               'moniker': 'Warme Stube',
+                               'notes': None,
+                               'reserve': 1},
+                           2: {'capacity': 10,
+                               'fields': {'contamination': 'none'},
+                               'moniker': 'Kalte Kammer',
+                               'notes': 'Dafür mit Frischluft.',
+                               'reserve': 2},
+                           3: {'capacity': 0,
+                               'fields': {'contamination': 'low'},
+                               'moniker': 'Kellerverlies',
+                               'notes': 'Nur für Notfälle.',
+                               'reserve': 100},
+                           4: {'capacity': 1,
+                               'fields': {'contamination': 'high'},
+                               'moniker': 'Einzelzelle',
+                               'notes': None,
+                               'reserve': 0}},
+            'registrations': {1: {'checkin': None,
+                                  'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
+                                  'list_consent': True,
+                                  'mixed_lodging': True,
+                                  'notes': None,
+                                  'orga_notes': None,
+                                  'parental_agreement': None,
+                                  'parts': {1: {'is_reserve': False,
+                                                'lodgement_id': None,
+                                                'status': -1},
+                                            2: {'is_reserve': False,
+                                                'lodgement_id': None,
+                                                'status': 1},
+                                            3: {'is_reserve': False,
+                                                'lodgement_id': 1,
+                                                'status': 2}},
+                                  'payment': None,
+                                  'tracks': {1: {'choices': [1, 3, 4, 2],
+                                                 'course_id': None,
+                                                 'course_instructor': None},
+                                             2: {'choices': [2],
+                                                 'course_id': None,
+                                                 'course_instructor': None},
+                                             3: {'choices': [1, 4],
+                                                 'course_id': None,
+                                                 'course_instructor': None}}},
+                              2: {'checkin': None,
+                                  'fields': {'brings_balls': True,
+                                             'transportation': 'pedes'},
+                                  'list_consent': True,
+                                  'mixed_lodging': True,
+                                  'notes': 'Extrawünsche: Meerblick, Weckdienst und '
+                                  'Frühstück am Bett',
+                                  'orga_notes': 'Unbedingt in die Einzelzelle.',
+                                  'parental_agreement': None,
+                                  'parts': {1: {'is_reserve': False,
+                                                'lodgement_id': None,
+                                                'status': 3},
+                                            2: {'is_reserve': False,
+                                                'lodgement_id': 4,
+                                                'status': 4},
+                                            3: {'is_reserve': False,
+                                                'lodgement_id': 4,
+                                                'status': 2}},
+                                  'payment': datetime.date(2014, 2, 2),
+                                  'tracks': {1: {'choices': [5, 4, 2, 1],
+                                                 'course_id': None,
+                                                 'course_instructor': None},
+                                             2: {'choices': [3],
+                                                 'course_id': None,
+                                                 'course_instructor': None},
+                                             3: {'choices': [4, 2],
+                                                 'course_id': 1,
+                                                 'course_instructor': 1}}},
+                              3: {'checkin': None,
+                                  'fields': {'transportation': 'car'},
+                                  'list_consent': False,
+                                  'mixed_lodging': True,
+                                  'notes': None,
+                                  'orga_notes': None,
+                                  'parental_agreement': None,
+                                  'parts': {1: {'is_reserve': False,
+                                                'lodgement_id': 2,
+                                                'status': 2},
+                                            2: {'is_reserve': False,
+                                                'lodgement_id': None,
+                                                'status': 2},
+                                            3: {'is_reserve': False,
+                                                'lodgement_id': 2,
+                                                'status': 2}},
+                                  'payment': datetime.date(2014, 3, 3),
+                                  'tracks': {1: {'choices': [4, 2, 1, 5],
+                                                 'course_id': None,
+                                                 'course_instructor': None},
+                                             2: {'choices': [2],
+                                                 'course_id': 2,
+                                                 'course_instructor': None},
+                                             3: {'choices': [2, 4],
+                                                 'course_id': None,
+                                                 'course_instructor': None}}},
+                              4: {'checkin': None,
+                                  'fields': {'brings_balls': False,
+                                             'may_reserve': True,
+                                             'transportation': 'etc'},
+                                  'list_consent': True,
+                                  'mixed_lodging': False,
+                                  'notes': None,
+                                  'orga_notes': None,
+                                  'parental_agreement': None,
+                                  'parts': {1: {'is_reserve': False,
+                                                'lodgement_id': None,
+                                                'status': 6},
+                                            2: {'is_reserve': False,
+                                                'lodgement_id': None,
+                                                'status': 5},
+                                            3: {'is_reserve': True,
+                                                'lodgement_id': 2,
+                                                'status': 2}},
+                                  'payment': datetime.date(2014, 4, 4),
+                                  'tracks': {1: {'choices': [2, 1, 4, 5],
+                                                 'course_id': None,
+                                                 'course_instructor': None},
+                                             2: {'choices': [4],
+                                                 'course_id': None,
+                                                 'course_instructor': None},
+                                             3: {'choices': [1, 2],
+                                                 'course_id': 1,
+                                                 'course_instructor': None}}}},
+            'timestamp': nearly_now()
+        }
+        export = self.event.partial_export_event(self.key, 1)
+        self.assertEqual(expectation, export)
+
+    @as_users("anton")
+    def test_partial_import_event(self, user):
+        event = self.event.get_event(self.key, 1)
+        previous = self.event.partial_export_event(self.key, 1)
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") as datafile:
+            data = json.load(datafile)
+
+        # first a test run
+        code, delta = self.event.partial_import_event(self.key, data, True)
+        self.assertLess(0, code)
+        expectation = copy.deepcopy(delta)
+        self.assertEqual(expectation, delta)
+        # now for real
+        code, delta = self.event.partial_import_event(self.key, data, False)
+        self.assertLess(0, code)
+
+        updated = self.event.partial_export_event(self.key, 1)
+        expectation = previous
+        delta = json_keys_to_int(data)
+
+        CMAP = {
+            ('courses', -1): 6,
+            ('lodgements', -1): 5,
+            ('registrations', -1): 5,
+        }
+        TMAP = {
+            'courses': {'segments': {}, 'fields': {}},
+            'lodgements': {'fields': {}},
+            'registrations': {'parts': {}, 'tracks': {}, 'fields': {}},
+        }
+        def recursive_update(old, new, hint=None):
+            if hint == 'fields':
+                new = cast_fields(new, event['fields'])
+            deletions = [key for key, val in new.items()
+                         if val is None and key in old]
+            for key in deletions:
+                if (isinstance(old[key], collections.abc.Mapping)
+                        or hint =='segments'):
+                    del old[key]
+                    del new[key]
+            recursions = [key for key, val in new.items()
+                          if isinstance(val, collections.abc.Mapping)]
+            for key in recursions:
+                temp = new.pop(key)
+                if isinstance(key, int) and key < 0:
+                    new_key = CMAP[(hint, key)]
+                    old[new_key] = TMAP[hint]
+                else:
+                    new_key = key
+                if new_key not in old:
+                    old[new_key] = {}
+                recursive_update(old[new_key], temp, new_key)
+            for key in ('persona_id', 'real_persona_id'):
+                if key in new:
+                    del new[key]
+            for key in ('payment',):
+                if new.get(key):
+                    try:
+                        new[key] = datetime.date.fromisoformat(new[key])
+                    except AttributeError:
+                        del new[key]
+                        if key in old:
+                            del old[key]
+            old.update(new)
+
+        recursive_update(expectation, delta)
+        del expectation['timestamp']
+        del updated['timestamp']
+        self.assertEqual(expectation, updated)
+
+    @as_users("anton")
     def test_log(self, user):
-        ## first generate some data
+        # first generate some data
         data = {
             'title': "New Link Academy",
             'institution': 1,
