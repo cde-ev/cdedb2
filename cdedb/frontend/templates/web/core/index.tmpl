@@ -79,7 +79,7 @@
             </div>
         {% endif %}
 
-        {% if 'orga' in dashboard %}
+        {% if dashboard['orga'] %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='blackboard', aclass='panel-warning') %}
                 <ul class="slim">
