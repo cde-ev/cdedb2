@@ -1971,7 +1971,7 @@ def make_transaction_subject(persona):
                                asciificator(persona['given_names']))
 
 
-def csv_output(data, fields, writeheader=True, replace_newlines=True,
+def csv_output(data, fields, writeheader=True, replace_newlines=False,
                substitutions=None):
     """Generate a csv representation of the passed data.
 

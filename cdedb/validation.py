@@ -365,6 +365,7 @@ def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
         val = val.translate(str.maketrans("", "", zap))
     if sieve:
         val = ''.join(c for c in val if c in sieve)
+    val = val.replace("\r\n", "\n").replace("\r", "\n")
     return val, []
 
 
