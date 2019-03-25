@@ -4694,7 +4694,7 @@ msgstr "Partizipationsstatus"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:29
 msgid "You are participating in this assembly."
-msgstr "Du nimmst an dieser Abstimmung teil."
+msgstr "Du nimmst an dieser Versammlung teil."
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:31
 msgid "You are not participating."
