@@ -117,6 +117,7 @@ class TestValidation(unittest.TestCase):
             ("with stuff äößł€ ", "with stuff äößł€ ", None, True),
             ("", "", None, True),
             (54, "54", None, False),
+            ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None, True),
             ))
         self.do_validator_test("_str_type", (
             ("a string", "a stig", None, True),
@@ -131,6 +132,7 @@ class TestValidation(unittest.TestCase):
             ("string with stuff äößł€", "string with stuff äößł€", None, True),
             ("", "", ValueError, False),
             (54, "54", None, False),
+            ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None, True),
             ))
 
     def test_mapping(self):
