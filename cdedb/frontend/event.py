@@ -61,6 +61,8 @@ class EventFrontend(AbstractUserFrontend):
                 params['is_registered'] = bool(
                     self.eventproxy.list_registrations(
                         rs, rs.ambience['event']['id'], rs.user.persona_id))
+            if rs.ambience['event'].get('is_archived'):
+                rs.notify("info", "This event has been archived.")
         return super().render(rs, templatename, params=params)
 
     @classmethod

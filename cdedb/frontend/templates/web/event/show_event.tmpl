@@ -17,12 +17,6 @@
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard", active=True) }}
 {% endblock %}
 {% block content %}
-    {% if ambience['event']['is_archived'] %}
-        <div class="alert alert-info">
-            {{ util.make_icon('info-sign') }} <strong>{% trans -%}Info{%- endtrans %}</strong>
-            {% trans -%}This event has been archived.{%- endtrans %}
-        </div>
-    {% endif %}
     
     {{ ambience['event']['description']|md }}
 
@@ -239,8 +233,7 @@
                     <p class="text-muted">
                         {% trans -%}
                         	Archives the event. This creates a new "Past Event" in the CdE-Realm and transfers
-                            course and participant information there. Afterwards the event cannot be changed
-                            (incl. participants, courses and lodgements).
+                            course and participant information there.
                         {%- endtrans %}
                     </p>
                 </div>
