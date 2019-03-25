@@ -56,7 +56,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Suchmaske")
         self.assertNonPresence("Search Mask")
 
-    @as_users("anton", "berta", "emilia")
+    @as_users("anton", "berta", "charly", "daniel", "emilia", "ferdinand",
+              "garcia", "inga", "janis", "kalif")
     def test_showuser(self, user):
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("{} {}".format(user['given_names'],
@@ -111,7 +112,7 @@ class TestCoreFrontend(FrontendTest):
                            'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
         self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5')
-        expectation = (1, 2, 3, 5, 6, 7, 9, 11)
+        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 11)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')

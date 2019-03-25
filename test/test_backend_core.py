@@ -527,7 +527,7 @@ class TestCoreBackend(BackendTest):
     @as_users("anton")
     def test_verify_personas(self, user):
         self.assertEqual(
-            {1, 2, 3, 5, 6, 7, 9, 12},
+            {1, 2, 3, 4, 5, 6, 7, 9, 12},
             set(self.core.verify_personas(self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), ("event",))))
 
     @as_users("anton")

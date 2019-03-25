@@ -191,7 +191,7 @@
                         </dd>
                     {% else %}
                         <dd>{{ data['balance']|money(lang=lang) }}</dd>
-                        {% if 'cde_admin' in user.roles %}
+                        {% if data['is_member'] and 'cde_admin' in user.roles %}
                             <dd>
                                 {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                         gettext("New Direct Debit Authorization …"), icon="euro") }}

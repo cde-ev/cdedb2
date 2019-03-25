@@ -360,7 +360,7 @@ class CoreFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_event_user(rs, persona_id))
         if "cde" in access_levels and "cde" in roles:
             data.update(self.coreproxy.get_cde_user(rs, persona_id))
-            if "core" in access_levels:
+            if "core" in access_levels and "member" in roles:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
@@ -368,7 +368,8 @@ class CoreFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_total_persona(rs, persona_id))
 
         # Cull unwanted data
-        if not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data:
+        if (not ('is_cde_realm' in data and data['is_cde_realm'])
+                and 'foto' in data):
             del data['foto']
         if "core" not in access_levels:
             masks = (
