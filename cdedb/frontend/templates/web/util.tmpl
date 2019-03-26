@@ -3,43 +3,23 @@
 {# Macro to load JavaScript files on a per-template basis. This macro should be used the following way in templates, to
    add the correct <script src="..."> tags to the HTML header:
 
-       {% block scripts %}{{ util.cdedb_script('SCRIPTNAME') }}{% endblock %}
+       {% block scripts %}{{ util.cdedb_script('SCRIPTFILE') }}{% endblock %}
 
    This Macro takes care of including the correct dependencies (other script files (or CSS stylesheets) required for the
-   target script) and including each script only once. For the possible values of SCRIPTNAME, take a glance at the
-   if-else-ladder down below. #}
+   target script) and including each script only once. #}
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {%- if not script in script_files %}
-        {%- if script == 'queryform' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js") }}"></script>
-            {{ cdedb_script('selectize') }}
-        {%- elif script == 'dynamicrow' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_dynamicrow.js") }}"></script>
-        {%- elif script == 'historycollapse' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_historycollapse.js") }}"></script>
-        {%- elif script == 'helper' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_helper.js") }}"></script>
-        {%- elif script == 'selectize' %}
-            <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js") }}"></script>
+        {%- if script == 'cdedb_queryform.js' %}
+            {{- cdedb_script('selectize/selectize.min.js') }}
+        {%- elif script == 'selectize/selectize.min.js' %}
             <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css") }}" />
-        {%- elif script == 'csv-tools' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_csv_tools.js") }}"></script>
-        {%- elif script == 'search-persona' %}
-            {{- cdedb_script('selectize') }}
-            <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js") }}"></script>
-        {%- elif script == 'change-mailinglist' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_change_mailinglist.js") }}"></script>
-        {%- elif script == 'voting' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_voting.js") }}"></script>
-        {%- elif script == 'questionnaire_config' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_questionnaire_config.js") }}"></script>
-        {%- elif script == 'manage_participants' %}
-            {{- cdedb_script('selectize') }}
-            <script type="text/javascript" src="{{ staticurl("cdedb_manage_participants.js") }}"></script>
-        {%- elif script == 'orderrow' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_orderrow.js") }}"></script>
+        {%- elif script == 'cdedb_searchpersona.js' %}
+            {{- cdedb_script('selectize/selectize.min.js') }}
+        {%- elif script == 'cdedb_manage_participants.js' %}
+            {{- cdedb_script('selectize/selectize.min.js') }}
         {%- endif %}
+        <script type="text/javascript" src="{{ staticurl(script) }}"></script>
         {%- do script_files.append(script) %}
     {%- endif %}
 {%- endmacro %}

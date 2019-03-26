@@ -1,7 +1,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/generic.tmpl" as generic with context %}
-{% block scripts %}{{ util.cdedb_script('historycollapse') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_historycollapse.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans given_names=current['given_names'], family_name=current['family_name'] -%}

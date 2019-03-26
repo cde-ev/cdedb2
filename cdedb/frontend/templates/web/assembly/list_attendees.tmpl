@@ -1,6 +1,6 @@
 {% set sidenav_active='assembly_attendees' %}
 {% extends "web/assembly/base.tmpl" %}
-{% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
     {% trans title=ambience['assembly']['title'] -%}

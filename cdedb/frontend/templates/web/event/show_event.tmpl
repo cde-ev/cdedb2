@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
     {% if values['event_id'] in user.orga or is_admin %}
-        {{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}
+        {{ util.cdedb_script('cdedb_searchpersona.js') }}{{ util.cdedb_script('cdedb_helper.js') }}
     {% endif %}
 {% endblock %}
 {% if values['event_id'] in user.orga or is_admin %}

@@ -1,6 +1,6 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('voting') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_voting.js') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }}){% endblock %}
 {% block heading %}

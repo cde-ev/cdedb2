@@ -1,7 +1,7 @@
 {% extends "web/event/base.tmpl" %}
 {% set sidenav_active='event_lodgements' %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans lodgement=ambience['lodgement']['moniker'], title=ambience['event']['title'] -%}

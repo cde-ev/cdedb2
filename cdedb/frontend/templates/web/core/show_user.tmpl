@@ -1,7 +1,7 @@
 {% if data['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
     {% trans given_names=data['given_names'], family_name=data['family_name'] -%}

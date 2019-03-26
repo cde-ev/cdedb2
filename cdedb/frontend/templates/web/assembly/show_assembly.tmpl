@@ -1,6 +1,6 @@
 {% set sidenav_active='assembly_show' %}
 {% extends "web/assembly/base.tmpl" %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['assembly']['title'] }}{% endblock %}
 {% block breadcrumb %}

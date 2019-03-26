@@ -2,7 +2,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
-    {% if 'core_admin' in user.roles %}{{ util.cdedb_script('search-persona') }}{% endif %}
+    {% if 'core_admin' in user.roles %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{% endif %}
 {% endblock %}
 {% block title %}
     {% trans -%}

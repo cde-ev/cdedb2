@@ -2,7 +2,7 @@
 {% set sidenav_active='event_quest_summary' %}
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='strong' %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('orderrow') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_orderrow.js') }}{% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] -%}
     	Reorder Questionnaire ({{ title }})

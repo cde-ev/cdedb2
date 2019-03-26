@@ -1,7 +1,7 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block inner_navigation %}{{assembly_inner_navigation(ambience['assembly']) }}{% endblock %}
 {% block title %}{{ gettext("Create Ballot") }}{% endblock %}

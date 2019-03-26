@@ -3,9 +3,9 @@
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='strong' %}
 {% block scripts %}
-    {{ util.cdedb_script('helper') }}
-    {{ util.cdedb_script('dynamicrow') }}
-    {{ util.cdedb_script('questionnaire_config') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+    {{ util.cdedb_script('cdedb_questionnaire_config.js') }}
 {% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] -%}

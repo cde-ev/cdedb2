@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_parse' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('csv-tools') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{% endblock %}
 {% block title %}
     {% trans -%}
         Parse Bank Statement

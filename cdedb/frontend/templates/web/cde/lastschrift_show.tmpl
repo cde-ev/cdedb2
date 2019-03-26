@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_lastschrift' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title -%}
     {% trans -%}Direct Debit Authorization{%- endtrans %}
     {{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }}

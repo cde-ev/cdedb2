@@ -2,7 +2,7 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
-    {% if is_admin %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endif %}
+    {% if is_admin %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endif %}
 {% endblock %}
 {% block title %}{{ ambience['pevent']['title'] }}{% endblock %}
 {% block heading %}

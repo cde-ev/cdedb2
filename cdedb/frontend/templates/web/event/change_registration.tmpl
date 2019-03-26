@@ -1,7 +1,7 @@
 {% set sidenav_active='event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
     {% trans given_names=persona['given_names'], family_name=persona['family_name'], title=ambience['event']['title'] -%}
