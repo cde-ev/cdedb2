@@ -2442,8 +2442,14 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def change_registration_form(self, rs, event_id, registration_id):
-        """Render form."""
+    @REQUESTdata(('skip', '[str]'))
+    def change_registration_form(self, rs, event_id, registration_id, skip):
+        """Render form.
+
+        The skip parameter is meant to hide certain fields and skip them when
+        evaluating the submitted from in change_registration(). This can be
+        used in situations, where changing those fields could override
+        concurrent changes (e.g. the Check-in)"""
         tracks = rs.ambience['event']['tracks']
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
@@ -2485,11 +2491,12 @@ class EventFrontend(AbstractUserFrontend):
                     *(part_values + track_values))
         return self.render(rs, "change_registration", {
             'persona': persona, 'courses': courses,
-            'course_choices': course_choices, 'lodgements': lodgements})
+            'course_choices': course_choices, 'lodgements': lodgements,
+            'skip': skip or []})
 
     @staticmethod
     def process_orga_registration_input(rs, event, do_fields=True,
-                                        check_enabled=False,
+                                        check_enabled=False, skip=(),
                                         do_real_persona_id=False):
         """Helper to handle input by orgas.
 
@@ -2505,6 +2512,8 @@ class EventFrontend(AbstractUserFrontend):
                               to the fields are set. This is required for the
                               multiedit page.
         :type check_enabled: bool
+        :param skip: A list of field names to be entirely skipped
+        :type skip: [str]
         :param do_real_persona_id: Process the `real_persona_id` field. Should
                                    only be done when CDEDB_OFFLINE_DEPLOYMENT
         :type do_real_persona_id: bool
@@ -2512,8 +2521,10 @@ class EventFrontend(AbstractUserFrontend):
         :returns: registration data set
         """
 
-        # Helper function to filter parameters by `enabled` checkbox
         def filter_parameters(params):
+            """Helper function to filter parameters by `skip` list and `enabled`
+            checkboxes"""
+            params = ((key, kind) for key, kind in params if key not in skip)
             if not check_enabled:
                 return params
             enable_params = tuple(("enable_{}".format(i), "bool")
@@ -2606,7 +2617,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def change_registration(self, rs, event_id, registration_id):
+    @REQUESTdata(('skip', '[str]'))
+    def change_registration(self, rs, event_id, registration_id, skip):
         """Make privileged changes to any information pertaining to a
         registration.
 
@@ -2615,11 +2627,10 @@ class EventFrontend(AbstractUserFrontend):
         much more cumbersome to always use this interface.
         """
         registration = self.process_orga_registration_input(
-            rs, rs.ambience['event'],
+            rs, rs.ambience['event'], skip=skip,
             do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
         if rs.errors:
             return self.change_registration_form(rs, event_id, registration_id)
-
         registration['id'] = registration_id
         code = self.eventproxy.set_registration(rs, registration)
         self.notify_return_code(rs, code)
