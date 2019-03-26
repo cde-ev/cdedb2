@@ -704,7 +704,7 @@ class EventBackend(AbstractBackend):
                 continue
             try:
                 new_value = casters[new_kind](value)
-            except ValueError:
+            except (ValueError, TypeError):
                 new_value = None
             fdata[field_data['field_name']] = new_value
             new = {
