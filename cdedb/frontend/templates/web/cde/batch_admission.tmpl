@@ -148,7 +148,7 @@
 
             {{ ba_submit_button() }}
 
-            <script type="text/javascript">
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $(function() {
                     /* Add csv jumps */
                     var $textinput = $('#input-data');

@@ -128,7 +128,7 @@
                         <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
                         {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
                                            arialabel=gettext("ID of the new Orga")) }}
-                        <script type="text/javascript">
+                        <script type="text/javascript" nonce="{{ csp_nonce }}">
                             $('#input-add-orga').cdedbSearchPerson(
                                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=orga_event_user&phrase=%s&aux='|s) + 
                                     (ambience['event']['id']|string|e) }}',
@@ -246,7 +246,7 @@
                 </div>
             </div>
         {% endcall %}
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('#archiveeventform').cdedbProtectAction("{{ gettext("The event will be permanently archived.") }}");
             $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
         </script>

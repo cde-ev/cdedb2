@@ -29,7 +29,7 @@
         <h3 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h3>
         {{ util.form_input_text(name="persona.persona_id", label=gettext("CdEDB-ID"), anid="input-persona-persona_id",
                                 placeholder=gettext("DB-XXXX-X")) }}
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('#input-persona-persona_id').cdedbSearchPerson(
                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=orga_event_user&phrase=%s&aux='|s) + (ambience['event']['id']|string|e) }}',
                 {{ registered_personas|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
@@ -92,7 +92,7 @@
 
         {{ util.form_input_submit(value=gettext("Add"), cancellink=cdedblink('event/registration_query')) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#addregistrationform').cdedbProtectChanges();
     </script>
 {% endblock %}

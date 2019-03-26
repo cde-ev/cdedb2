@@ -17,7 +17,7 @@
         gettext("Create Course"), active=True) }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $(function() {
             $('#createcourseform').cdedbProtectChanges();
         });

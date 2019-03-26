@@ -142,7 +142,7 @@
                                 icon='trash') }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                     </form>
-                    <script type="text/javascript">
+                    <script type="text/javascript" nonce="{{ csp_nonce }}">
                         $('#deletelodgementform').cdedbProtectAction(
                             "{{ gettext("The Lodgement will be permanently deleted.") }}");
                         $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();

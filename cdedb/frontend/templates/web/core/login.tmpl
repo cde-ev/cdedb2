@@ -30,7 +30,7 @@
                                     anid="login_name") }}
             {{ util.form_input_text(name="password", label=gettext("Password"), small=True, anid="login_password",
                                     type="password") }}
-            <script type="text/javascript">
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $(function() {
                     $('#login_name').focus();
                 });

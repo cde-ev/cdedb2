@@ -12,7 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"), active="True") }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $(function() {
             $('.skip-form').cdedbProtectAction(
                 "{{ gettext("This Direct Debit will be skipped for this semster. This cannot be undone.") }}");

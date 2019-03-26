@@ -78,7 +78,7 @@
             </div>
         {% endfor %}
     </div>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $("#searchpanel").show();
         $("#selector").focus()
             .on('keydown paste input', function(){

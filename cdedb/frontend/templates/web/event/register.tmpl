@@ -139,7 +139,7 @@
 
         {{ util.form_input_submit(value=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
         $form.cdedbProtectChanges();
         var checkboxes = $form.find('[type="checkbox"][name="parts"]');

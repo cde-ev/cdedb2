@@ -119,7 +119,7 @@
                         submit='<div class="col-md-2">%s</div>'|s|format(util.input_submit(value=gettext("Go!"))) -%}
                 	{{ assign }} {{ participants }} {{ course }} {{ tracks }} {{ submit }}
                 {%- endtrans %}
-                <script type="text/javascript">
+                <script type="text/javascript" nonce="{{ csp_nonce }}">
                     {
                         var $actionSelect = $('#input-action');
                         var $courseSelect = $('#input-course_id');
@@ -239,7 +239,7 @@
             </tbody>
         </table>
 
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('#course_choice_table').cdedbListSelect();
             var lsObj = $('#course_choice_table').data('listSelect');
             $('#btn-select-all').click(function(){
@@ -254,7 +254,7 @@
             $('#js-button-group').show();
         </script>
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('.event_course_id').dblclick(function() {
             location.href =
                 "{{ cdedblink('event/show_course', magic_placeholders=['course_id']) }}"

@@ -42,7 +42,7 @@
         </div>
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("assembly/show_assembly")) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#changeassemblyform').cdedbProtectChanges();
     </script>
 {% endblock %}

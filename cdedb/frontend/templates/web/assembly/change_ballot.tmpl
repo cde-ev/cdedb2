@@ -50,7 +50,7 @@
         </div>
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('assembly/show_ballot')) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#changeballotform').cdedbProtectChanges();
     </script>
 {% endblock %}

@@ -60,7 +60,7 @@
                     title=gettext("Remove all the above as subscribers.")) }}
             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
         </form>
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('#removeallproblemsform').cdedbProtectAction(
                 "{{ gettext("All problematic subscribers will be removed.") }}");
             $('#removeallproblemsform').find('[name="ack_delete"]').prop('checked', true)

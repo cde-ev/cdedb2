@@ -83,7 +83,7 @@
             </div>
         {% endfor %}
 
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $(function() {
                 var $textinput = $('#input-data');
                 $('.row-col-key').addClass('clickable').click(function() {

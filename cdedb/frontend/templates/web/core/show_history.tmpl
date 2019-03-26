@@ -97,7 +97,7 @@
         </p>
     {% endif %}
 
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $(function() {
             $('.history-container').cdedbHistoryCollapse({
                 'more_versions': "{{ gettext("– {num} more versions –") }}",
