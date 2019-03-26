@@ -752,7 +752,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'glue': glue,
             'enums': ENUMS_DICT,
             'encode_parameter': self.encode_parameter,
-            'staticurl': staticurl,
+            'staticurl': functools.partial(staticurl,
+                                           version=self.conf.GIT_COMMIT[:8]),
             'docurl': docurl,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
             'CDEDB_DEV': self.conf.CDEDB_DEV,
@@ -1566,15 +1567,20 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
-def staticurl(path):
+def staticurl(path, version=None):
     """Construct an HTTP URL to a static resource (to be found in the static
     directory). We encapsulate this here so moving the directory around
     causes no pain.
 
     :type path: str
+    :param version: If not None, this string is appended to the URL as an URL
+        parameter. This can be used to force Browsers to flush their caches on
+        code updates.
+    :type version: str
     :rtype: str
     """
-    return str(pathlib.Path("/static", path))
+    return str(pathlib.Path("/static", path)) \
+        + ('?v=' + version if version else '')
 
 
 def docurl(topic, anchor=None):
