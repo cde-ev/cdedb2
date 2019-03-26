@@ -48,6 +48,7 @@ import zxcvbn
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
+from cdedb.database.constants import FieldDatatypes
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
     ITU_CODES)
@@ -2004,13 +2005,13 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                     errs.append((entries_key,
                                  ValueError(msg, {'line': idx + 1})))
                 else:
-                    value, e = _str(value, entries_key, _convert=_convert)
-                    if not e and kind_key in val:
-                        # just validate, but in the end we store the string
-                        validator = getattr(
-                            current_module,
-                            "_{}_or_None".format(val[kind_key].name))
-                        _, e = validator(value, entries_key, _convert=_convert)
+                    # Validate value according to type and use the opportunity
+                    # to normalize the value by transforming it back to string
+                    kind = val.get(kind_key, FieldDatatypes.str)
+                    validator = getattr(
+                        current_module,
+                        "_{}".format(val[kind_key].name))
+                    value, e = validator(value, entries_key, _convert=_convert)
                     description, ee = _str(description, entries_key,
                                            _convert=_convert)
                     if value in seen_values:
@@ -2020,6 +2021,12 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                         errs.extend(e)
                         errs.extend(ee)
                     else:
+                        if kind == FieldDatatypes.date:
+                            value = value.strftime('%Y-%m-%d')
+                        if kind == FieldDatatypes.datetime:
+                            value = value.strftime('%Y-%m-%dT%H:%M:%S')
+                        else:
+                            value = str(value)
                         entries.append((value, description))
                         seen_values.add(value)
             val[entries_key] = entries
