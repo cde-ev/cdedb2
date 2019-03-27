@@ -28,16 +28,16 @@
                             ('course-fewp' if course['min_size'] and attendees < course['min_size'] else '')) %}
             <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
                        {% if filtered %}filtered_column{% endif %} {{ aclass }}">
-                <span title="{{ course['nr'] }}. {{ course['shortname'] -}}
+                <span title="{{ course['nr'] }}. {{ course['shortname'] }} {# -#}
                             {% if course['max_size'] -%}
                                 ({% trans count=attendees, max=course['max_size'] -%}
                                     {{ count }} of {{ max }} Att.
                                 {%- endtrans %})
-                            {% else -%}
+                            {%- else -%}
                                 ({% trans count=attendees -%}
                                 	{{ count }} Att.
                                 {%- endtrans %})
-                            {% endif -%}"
+                            {%- endif %}"
                       data-id="{{ course_id }}"
                       class="event_course_id">
                    {{ course['nr'] }}

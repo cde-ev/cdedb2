@@ -8325,12 +8325,12 @@ msgstr "Kurswahlen (%(title)s)"
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:33
 #, python-format
 msgid "%(count)s of %(max)s Att."
-msgstr "%(count)s of %(max)s TN."
+msgstr "%(count)s von %(max)s Tn."
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:37
 #, python-format
 msgid "%(count)s Att."
-msgstr "%(count)s TN."
+msgstr "%(count)s Tn."
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:63
 #, python-format
