@@ -222,7 +222,7 @@ class TestCdEFrontend(FrontendTest):
         f['qord_primary'] = "personas.id"
         self.response = f.submit("download", value="csv")
         expectation = '''id;given_names;family_name;username;birthday;decided_search;free_form
-2;Bertålotta;Beispiel;berta@example.cde;1981-02-11;True;Jede Menge Gefasel               Gut verteilt              Über mehrere Zeilen
+2;Bertålotta;Beispiel;berta@example.cde;1981-02-11;True;"Jede Menge Gefasel \nGut verteilt \nÜber mehrere Zeilen"
 3;Charly C.;Clown;charly@example.cde;1984-05-13;True;
 4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;
 6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;
