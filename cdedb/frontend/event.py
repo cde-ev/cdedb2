@@ -1081,7 +1081,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     def course_assignment_checks(self, rs, event_id):
-        """Present an overview of the basic stats."""
+        """Provide some consistency checks for course assignment."""
         event = rs.ambience['event']
         tracks = rs.ambience['event']['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
