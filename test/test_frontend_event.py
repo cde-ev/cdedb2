@@ -1357,6 +1357,42 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("garcia")
+    def test_assignment_checks(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/choices'},
+                      {'href': '/event/event/1/course/checks'},)
+        self.assertTitle("Kurseinteilungsprüfung (Große Testakademie 2222)")
+        self.assertPresence("Ausfallende Kurse mit Teilnehmern")
+        self.assertPresence("Kabarett", 'problem_cancelled_with_p')
+        self.assertPresence("Teilnehmer ohne Kurs")
+        self.assertPresence("Anton", 'problem_no_course')
+
+        # Assigning Garcia to "Backup" in "Kaffekränzchen" fixes 'cancelled'
+        # problem, but raises 'unchosen' problem
+        self.get('/event/event/1/registration/3/change')
+        f = self.response.forms['changeregistrationform']
+        f['track2.course_id'] = "5"
+        self.submit(f)
+        # Assign Garcia and Anton to their 1. choice to fix 'no_course' issues;
+        # accidentally, also assign emilia (instructor) to 1. choice ;-)
+        self.get('/event/event/1/course/choices')
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [1, 2, 3]
+        f['assign_track_ids'] = [1, 3]
+        f['assign_action'] = 0
+        self.submit(f)
+
+        self.traverse({'href': '/event/event/1/course/checks'})
+        self.assertPresence("Teilnehmer in einem ungewählten Kurs")
+        self.assertPresence("Garcia", 'problem_unchosen')
+        self.assertPresence("Kursleiter im falschen Kurs")
+        self.assertPresence("Emilia", 'problem_instructor_wrong_course')
+        self.assertPresence("α", 'problem_instructor_wrong_course')
+        self.assertPresence("δ", 'problem_instructor_wrong_course')
+
+
+    @as_users("garcia")
     def test_downloads(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
