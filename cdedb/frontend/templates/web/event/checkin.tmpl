@@ -41,14 +41,14 @@
                                 {{ part['title'] }}
                                 {% if registration['parts'][part_id]['status']
                                         == enums['RegistrationPartStati'].guest.value %}
-                                    ({{ gettext(enums['RegistrationPartStati'].guest) }})
+                                    ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                                 {% endif %}
                                 {% if not loop.last %} • {% endif %}
                             {% endfor %}
                         </span>
                     {% elif (registration['parts']|dictsort)[0]['status']
                             == enums['RegistrationPartStati'].guest.value %}
-                        ({{ gettext(enums['RegistrationPartStati'].guest) }})
+                        ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                     {% endif %}
                 </div>
                 <div class="col-sm-4 hide-xs">
