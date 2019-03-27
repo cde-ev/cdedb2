@@ -1276,8 +1276,7 @@ class EventFrontend(AbstractUserFrontend):
                     if (len(reg['tracks'][track_id]['choices']) > i
                         and reg['tracks'][track_id]['choices'][i] == course_id
                         and (reg['parts'][tracks[track_id]['part_id']]['status']
-                             == const.RegistrationPartStati.participant)
-                        and reg['persona_id'] not in event['orgas']))
+                             == const.RegistrationPartStati.participant)))
                 for track_id, track in tracks.items()
                 for i in range(track['num_choices'])
             }
@@ -1289,8 +1288,7 @@ class EventFrontend(AbstractUserFrontend):
                     1 for reg in registrations.values()
                     if (reg['tracks'][track_id]['course_id'] == course_id
                         and (reg['parts'][track['part_id']]['status']
-                             == const.RegistrationPartStati.participant)
-                        and reg['persona_id'] not in event['orgas']))
+                             == const.RegistrationPartStati.participant)))
                 for track_id, track in tracks.items()
             }
             for course_id in course_ids
@@ -1551,8 +1549,7 @@ class EventFrontend(AbstractUserFrontend):
                     if (len(reg['tracks'][track_id]['choices']) > i
                         and reg['tracks'][track_id]['choices'][i] == course_id
                         and (reg['parts'][track['part_id']]['status']
-                             == const.RegistrationPartStati.participant)
-                        and reg['persona_id'] not in event['orgas']))
+                             == const.RegistrationPartStati.participant)))
                 for track_id, track in tracks.items() for i in
                 range(track['num_choices'])
             }
