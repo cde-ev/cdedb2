@@ -189,15 +189,15 @@ msgstr "Anhang entfernt"
 
 #: cdedb/i18n_additional.py:31
 msgid "AttachmentPolicy.allow"
-msgstr "Alle Anhänge erlaubt"
+msgstr "HTML-E-Mails & alle Anhänge erlaubt"
 
 #: cdedb/i18n_additional.py:32
 msgid "AttachmentPolicy.pdf_only"
-msgstr "Nur PDF-Anhänge erlaubt"
+msgstr "Nur Text-E-Mails mit PDF-Anhängen erlaubt"
 
 #: cdedb/i18n_additional.py:33
 msgid "AttachmentPolicy.forbid"
-msgstr "Keine Anhänge erlaubt"
+msgstr "Nur Text-E-Mails ohne Anhänge erlaubt"
 
 #: cdedb/i18n_additional.py:35
 msgid "AudiencePolicy.everybody"
@@ -9689,8 +9689,8 @@ msgstr "Präfix (Betreffzeile)"
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:71
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:53
-msgid "Attachments"
-msgstr "Anhänge"
+msgid "MIME filter / Attachments"
+msgstr "MIME-Filter / Anhänge"
 
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:73
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:55

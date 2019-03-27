@@ -189,15 +189,15 @@ msgstr "Attachment removed"
 
 #: cdedb/i18n_additional.py:31
 msgid "AttachmentPolicy.allow"
-msgstr "All Attachments allowed"
+msgstr "HTML emails and all attachments allowed"
 
 #: cdedb/i18n_additional.py:32
 msgid "AttachmentPolicy.pdf_only"
-msgstr "Only PDF-files allowed"
+msgstr "Only plain text emails with PDF files allowed"
 
 #: cdedb/i18n_additional.py:33
 msgid "AttachmentPolicy.forbid"
-msgstr "No Attachments allowed"
+msgstr "Only plain text emails without attachments allowed"
 
 #: cdedb/i18n_additional.py:35
 msgid "AudiencePolicy.everybody"
