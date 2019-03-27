@@ -141,6 +141,10 @@
                                                         ['persona_id']]['given_names'],
                                                                 personas[registrations[registration_id]
                                                         ['persona_id']]['family_name'])) }}
+                                    {% if registrations[registration_id]['tracks'][track_id]['course_instructor']
+                                            == ambience['course']['id'] %}
+                                        ({% trans %}Instr.{% endtrans %})
+                                    {% endif %}
                                 </li>
                             {% endfor %}
                         </ul>
