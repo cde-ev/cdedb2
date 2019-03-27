@@ -105,9 +105,26 @@
             {%- endtrans %}
         </p>
 
+        <div class="p softhide" id="js-button-group">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Select All{%- endtrans %}"
+                        id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans -%}All{%- endtrans %}</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Select None{%- endtrans %}"
+                        id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans -%}None{%- endtrans %}</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Invert Selection{%- endtrans %}"
+                        id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans -%}Invert{%- endtrans %}</span>
+                </button>
+            </div>
+        </div>
+
         <form action="{{ cdedblink('cde/lastschrift_finalize_transactions') }}" method="POST" id="finalizationform">
             {{ util.anti_csrf_token('cde/lastschrift_finalize_transactions') }}
-            <table class="table table-condensed">
+            <table class="table table-condensed ls-list" id="open_lastschrift_table">
                 <thead>
                     <tr>
                         <th></th>
@@ -117,9 +134,9 @@
                 </thead>
                 <tbody>
                 {% for transaction_id, transaction in transactions|xdictsort('issued_at') %}
-                    <tr>
+                    <tr class="ls-item">
                         <td>
-                            {{ util.input_checkbox(name="transaction_ids", value=transaction_id) }}
+                            {{ util.input_checkbox(name="transaction_ids", value=transaction_id, aclass="rowSelector") }}
                         </td>
                         <td>
                             {% set persona = personas[all_lastschrifts[transaction['lastschrift_id']]['persona_id']] %}
@@ -139,6 +156,21 @@
                 {% endfor %}
                 </tbody>
             </table>
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                $('#open_lastschrift_table').cdedbListSelect();
+                var lsObj = $('#open_lastschrift_table').data('listSelect');
+                $('#btn-select-all').click(function(){
+                    lsObj.selectAll();
+                });
+                $('#btn-select-none').click(function(){
+                    lsObj.selectNone();
+                });
+                $('#btn-select-swap').click(function(){
+                    lsObj.invertSelection();
+                });
+                $('#js-button-group').show();
+            </script>
+
             {% trans -%}All selected:{%- endtrans %}
             {{ util.input_submit(value=gettext("Success"), name='success', aclass="btn btn-success") }}
             {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-sign") }}
