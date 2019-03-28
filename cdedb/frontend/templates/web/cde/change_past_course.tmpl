@@ -16,7 +16,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
         ambience['pcourse']['title'], icon="book") }}
 {{ util.breadcrumb_link(cdedblink("cde/change_past_course_form", {'pcourse_id' : ambience['pcourse']['id']}),
-        "Bearbeiten", active=True) }}
+        gettext("Edit"), active=True) }}
 {% endblock %}
 {% block content %}
     <script type="text/javascript">

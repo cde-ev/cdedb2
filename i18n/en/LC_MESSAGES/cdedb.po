@@ -89,7 +89,7 @@ msgstr "U18 without Parental Consent"
 
 #: cdedb/config.py:140
 msgid "60_query_dokuteam_export"
-msgstr ""
+msgstr "Export for Dokuteam"
 
 #: cdedb/config.py:336
 msgid "00_query_cde_trial_members"
@@ -366,6 +366,9 @@ msgstr "Registration deleted"
 #: cdedb/i18n_additional.py:79
 msgid "EventLogCodes.event_locked"
 msgstr "Event locked"
+
+msgid "EventLogCodes.event_partial_import"
+msgstr "Partial Import"
 
 #: cdedb/i18n_additional.py:80
 msgid "EventLogCodes.event_unlocked"

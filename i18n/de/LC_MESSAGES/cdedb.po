@@ -367,6 +367,9 @@ msgstr "Anmeldung gelöscht"
 msgid "EventLogCodes.event_locked"
 msgstr "Veranstaltung gesperrt"
 
+msgid "EventLogCodes.event_partial_import"
+msgstr "Partieller Import"
+
 #: cdedb/i18n_additional.py:80
 msgid "EventLogCodes.event_unlocked"
 msgstr "Veranstaltung entsperrt"
