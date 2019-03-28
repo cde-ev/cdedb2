@@ -41,8 +41,7 @@
 
         <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=username,
-                info=gettext("To Change Your E-Mail, which serves as Your
-                              username, use the button on Your Profile Page.")) }}
+                info=gettext("To Change Your E-Mail Address, use the button on Your Profile Page.")) }}
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobilephone")) }}

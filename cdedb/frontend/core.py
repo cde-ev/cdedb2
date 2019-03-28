@@ -1398,7 +1398,7 @@ class CoreFrontend(AbstractFrontend):
             return self.admin_username_change_form(rs, persona_id)
         code, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
-        self.notify_return_code(rs, code, success=n_("Username changed."),
+        self.notify_return_code(rs, code, success=n_("E-Mail-Address changed."),
                                 error=message)
         if not code:
             return self.redirect(rs, "core/admin_username_change_form")

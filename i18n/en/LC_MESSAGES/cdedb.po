@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-03-28 17:33+0100\n"
+"POT-Creation-Date: 2019-03-28 17:46+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -923,7 +923,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:77
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:35
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:102
-#: cdedb/frontend/templates/web/core/change_user.tmpl:99
+#: cdedb/frontend/templates/web/core/change_user.tmpl:98
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:70
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:35
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:69
@@ -2448,12 +2448,8 @@ msgstr ""
 msgid "Must be different from current E-Mail-Address."
 msgstr ""
 
-#: cdedb/frontend/core.py:1367
+#: cdedb/frontend/core.py:1367 cdedb/frontend/core.py:1401
 msgid "E-Mail-Address changed."
-msgstr ""
-
-#: cdedb/frontend/core.py:1401
-msgid "Username changed."
 msgstr ""
 
 #: cdedb/frontend/core.py:1450
@@ -3173,7 +3169,7 @@ msgid "First Given Name"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:80
-#: cdedb/frontend/templates/web/core/change_user.tmpl:82
+#: cdedb/frontend/templates/web/core/change_user.tmpl:81
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:94
 #: cdedb/frontend/templates/web/core/show_history.tmpl:256
 #: cdedb/frontend/templates/web/core/show_user.tmpl:298
@@ -3184,7 +3180,7 @@ msgid "Specialisation"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:83
-#: cdedb/frontend/templates/web/core/change_user.tmpl:85
+#: cdedb/frontend/templates/web/core/change_user.tmpl:84
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:95
 #: cdedb/frontend/templates/web/core/show_history.tmpl:257
 #: cdedb/frontend/templates/web/core/show_user.tmpl:302
@@ -3195,7 +3191,7 @@ msgid "School, University, …"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:86
-#: cdedb/frontend/templates/web/core/change_user.tmpl:88
+#: cdedb/frontend/templates/web/core/change_user.tmpl:87
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:96
 #: cdedb/frontend/templates/web/core/show_history.tmpl:258
 #: cdedb/frontend/templates/web/core/show_user.tmpl:306
@@ -3207,7 +3203,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:58
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:89
-#: cdedb/frontend/templates/web/core/change_user.tmpl:91
+#: cdedb/frontend/templates/web/core/change_user.tmpl:90
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:97
 #: cdedb/frontend/templates/web/core/show_history.tmpl:259
 #: cdedb/frontend/templates/web/core/show_user.tmpl:310
@@ -3222,8 +3218,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/view_misc.tmpl:9
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:79
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:92
-#: cdedb/frontend/templates/web/core/change_user.tmpl:81
-#: cdedb/frontend/templates/web/core/change_user.tmpl:94
+#: cdedb/frontend/templates/web/core/change_user.tmpl:80
+#: cdedb/frontend/templates/web/core/change_user.tmpl:93
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:93
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:98
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:93
@@ -3311,7 +3307,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:75
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:54
-#: cdedb/frontend/templates/web/core/change_user.tmpl:47
+#: cdedb/frontend/templates/web/core/change_user.tmpl:46
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:48
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:47
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:75
@@ -3329,7 +3325,7 @@ msgid "Phone"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:55
-#: cdedb/frontend/templates/web/core/change_user.tmpl:48
+#: cdedb/frontend/templates/web/core/change_user.tmpl:47
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:49
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:48
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:76
@@ -3347,7 +3343,7 @@ msgid "Mobilephone"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:58
-#: cdedb/frontend/templates/web/core/change_user.tmpl:51
+#: cdedb/frontend/templates/web/core/change_user.tmpl:50
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:77
 #: cdedb/frontend/templates/web/core/show_history.tmpl:221
 #: cdedb/frontend/templates/web/core/show_user.tmpl:259
@@ -3362,7 +3358,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:48
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:77
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:62
-#: cdedb/frontend/templates/web/core/change_user.tmpl:55
+#: cdedb/frontend/templates/web/core/change_user.tmpl:54
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:79
 #: cdedb/frontend/templates/web/core/show_history.tmpl:228
 #: cdedb/frontend/templates/web/core/show_user.tmpl:269
@@ -3381,8 +3377,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:63
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:71
-#: cdedb/frontend/templates/web/core/change_user.tmpl:61
-#: cdedb/frontend/templates/web/core/change_user.tmpl:75
+#: cdedb/frontend/templates/web/core/change_user.tmpl:60
+#: cdedb/frontend/templates/web/core/change_user.tmpl:74
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:50
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:49
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:80
@@ -3399,8 +3395,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift_subscription_form_fill.tmpl:47
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:64
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:72
-#: cdedb/frontend/templates/web/core/change_user.tmpl:62
-#: cdedb/frontend/templates/web/core/change_user.tmpl:76
+#: cdedb/frontend/templates/web/core/change_user.tmpl:61
+#: cdedb/frontend/templates/web/core/change_user.tmpl:75
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:51
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:50
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:81
@@ -3420,8 +3416,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:65
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:73
-#: cdedb/frontend/templates/web/core/change_user.tmpl:63
-#: cdedb/frontend/templates/web/core/change_user.tmpl:77
+#: cdedb/frontend/templates/web/core/change_user.tmpl:62
+#: cdedb/frontend/templates/web/core/change_user.tmpl:76
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:52
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:51
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:88
@@ -3437,8 +3433,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:80
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:66
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:74
-#: cdedb/frontend/templates/web/core/change_user.tmpl:64
-#: cdedb/frontend/templates/web/core/change_user.tmpl:78
+#: cdedb/frontend/templates/web/core/change_user.tmpl:63
+#: cdedb/frontend/templates/web/core/change_user.tmpl:77
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:53
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:52
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:83
@@ -3459,8 +3455,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:82
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:67
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:75
-#: cdedb/frontend/templates/web/core/change_user.tmpl:65
-#: cdedb/frontend/templates/web/core/change_user.tmpl:79
+#: cdedb/frontend/templates/web/core/change_user.tmpl:64
+#: cdedb/frontend/templates/web/core/change_user.tmpl:78
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:54
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:53
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:84
@@ -3478,7 +3474,7 @@ msgid "Country"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:70
-#: cdedb/frontend/templates/web/core/change_user.tmpl:68
+#: cdedb/frontend/templates/web/core/change_user.tmpl:67
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:86
 #: cdedb/frontend/templates/web/core/show_history.tmpl:241
 #: cdedb/frontend/templates/web/core/show_user.tmpl:282
@@ -3562,11 +3558,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:87
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:90
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:93
-#: cdedb/frontend/templates/web/core/change_user.tmpl:83
-#: cdedb/frontend/templates/web/core/change_user.tmpl:86
-#: cdedb/frontend/templates/web/core/change_user.tmpl:89
-#: cdedb/frontend/templates/web/core/change_user.tmpl:92
-#: cdedb/frontend/templates/web/core/change_user.tmpl:95
+#: cdedb/frontend/templates/web/core/change_user.tmpl:82
+#: cdedb/frontend/templates/web/core/change_user.tmpl:85
+#: cdedb/frontend/templates/web/core/change_user.tmpl:88
+#: cdedb/frontend/templates/web/core/change_user.tmpl:91
+#: cdedb/frontend/templates/web/core/change_user.tmpl:94
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:30
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:94
 #: cdedb/frontend/templates/web/event/change_course.tmpl:35
@@ -3604,11 +3600,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:88
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:91
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:94
-#: cdedb/frontend/templates/web/core/change_user.tmpl:84
-#: cdedb/frontend/templates/web/core/change_user.tmpl:87
-#: cdedb/frontend/templates/web/core/change_user.tmpl:90
-#: cdedb/frontend/templates/web/core/change_user.tmpl:93
-#: cdedb/frontend/templates/web/core/change_user.tmpl:96
+#: cdedb/frontend/templates/web/core/change_user.tmpl:83
+#: cdedb/frontend/templates/web/core/change_user.tmpl:86
+#: cdedb/frontend/templates/web/core/change_user.tmpl:89
+#: cdedb/frontend/templates/web/core/change_user.tmpl:92
+#: cdedb/frontend/templates/web/core/change_user.tmpl:95
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:32
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:95
 #: cdedb/frontend/templates/web/event/change_course.tmpl:36
@@ -3646,11 +3642,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:88
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:91
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:94
-#: cdedb/frontend/templates/web/core/change_user.tmpl:84
-#: cdedb/frontend/templates/web/core/change_user.tmpl:87
-#: cdedb/frontend/templates/web/core/change_user.tmpl:90
-#: cdedb/frontend/templates/web/core/change_user.tmpl:93
-#: cdedb/frontend/templates/web/core/change_user.tmpl:96
+#: cdedb/frontend/templates/web/core/change_user.tmpl:83
+#: cdedb/frontend/templates/web/core/change_user.tmpl:86
+#: cdedb/frontend/templates/web/core/change_user.tmpl:89
+#: cdedb/frontend/templates/web/core/change_user.tmpl:92
+#: cdedb/frontend/templates/web/core/change_user.tmpl:95
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:32
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:95
 #: cdedb/frontend/templates/web/event/change_course.tmpl:36
@@ -6692,17 +6688,14 @@ msgid "Edit Your Data"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:44
-msgid ""
-"To Change Your E-Mail, which serves as Your\n"
-"                              username, use the button on Your Profile "
-"Page."
+msgid "To Change Your E-Mail Address, use the button on Your Profile Page."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/change_user.tmpl:57
+#: cdedb/frontend/templates/web/core/change_user.tmpl:56
 msgid "This should be your primary address. The exPuls will be sent here."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/change_user.tmpl:70
+#: cdedb/frontend/templates/web/core/change_user.tmpl:69
 msgid ""
 "This address is meant to be a \"backup\", should the primary address not "
 "work. Please give an address where\n"
@@ -9799,5 +9792,14 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "Must be different from current username."
+#~ msgstr ""
+
+#~ msgid "Username changed."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "To Change Your E-Mail, which serves as Your\n"
+#~ "                              username, use the "
+#~ "button on Your Profile Page."
 #~ msgstr ""
 
