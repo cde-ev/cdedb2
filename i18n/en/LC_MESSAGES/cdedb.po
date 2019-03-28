@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-03-28 17:20+0100\n"
+"POT-Creation-Date: 2019-03-28 17:33+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -1678,7 +1678,7 @@ msgid "Modification of balance prevented."
 msgstr ""
 
 #: cdedb/backend/core.py:674
-msgid "Modification of username prevented."
+msgid "Modification of E-Mail-Address prevented."
 msgstr ""
 
 #: cdedb/backend/core.py:676
@@ -1730,7 +1730,7 @@ msgid "Persona is not archived."
 msgstr ""
 
 #: cdedb/backend/core.py:1156
-msgid "Only admins may unset a username."
+msgid "Only admins may unset a E-Mail-Address."
 msgstr ""
 
 #: cdedb/backend/core.py:1160 cdedb/frontend/core.py:1334
@@ -2445,10 +2445,14 @@ msgid "Password reset."
 msgstr ""
 
 #: cdedb/frontend/core.py:1331
-msgid "Must be different from current username."
+msgid "Must be different from current E-Mail-Address."
 msgstr ""
 
-#: cdedb/frontend/core.py:1367 cdedb/frontend/core.py:1401
+#: cdedb/frontend/core.py:1367
+msgid "E-Mail-Address changed."
+msgstr ""
+
+#: cdedb/frontend/core.py:1401
 msgid "Username changed."
 msgstr ""
 
@@ -9786,5 +9790,14 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "New Username"
+#~ msgstr ""
+
+#~ msgid "Modification of username prevented."
+#~ msgstr ""
+
+#~ msgid "Only admins may unset a username."
+#~ msgstr ""
+
+#~ msgid "Must be different from current username."
 #~ msgstr ""
 

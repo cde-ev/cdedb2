@@ -671,7 +671,7 @@ class CoreBackend(AbstractBackend):
                      or "finance" not in allow_specials)):
             raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
-            raise PrivilegeError(n_("Modification of username prevented."))
+            raise PrivilegeError(n_("Modification of E-Mail-Address prevented."))
         if "foto" in data and "foto" not in allow_specials:
             raise PrivilegeError(n_("Modification of foto prevented."))
         if data.get("is_active") and rs.user.persona_id == data['id']:
@@ -1153,7 +1153,7 @@ class CoreBackend(AbstractBackend):
         new_username = affirm("email_or_None", new_username)
         password = affirm("str_or_None", password)
         if new_username is None and not self.is_relative_admin(rs, persona_id):
-            return False, n_("Only admins may unset a username.")
+            return False, n_("Only admins may unset a E-Mail-Address.")
         with Atomizer(rs):
             if new_username and self.verify_existence(rs, new_username):
                 # abort if there is already an account with this address

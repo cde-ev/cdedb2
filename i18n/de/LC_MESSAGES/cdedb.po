@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-03-28 17:20+0100\n"
+"POT-Creation-Date: 2019-03-28 17:33+0100\n"
 "PO-Revision-Date: 2019-03-23 21:48+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -1690,7 +1690,7 @@ msgid "Modification of balance prevented."
 msgstr "Änderung des Guthaben verhindert."
 
 #: cdedb/backend/core.py:674
-msgid "Modification of username prevented."
+msgid "Modification of E-Mail-Address prevented."
 msgstr "Änderung der E-Mail-Adresse verhindert."
 
 #: cdedb/backend/core.py:676
@@ -1742,7 +1742,7 @@ msgid "Persona is not archived."
 msgstr "Benutzer ist nicht archiviert."
 
 #: cdedb/backend/core.py:1156
-msgid "Only admins may unset a username."
+msgid "Only admins may unset a E-Mail-Address."
 msgstr "Löschen von E-Mail-Adressen nur durch Admins."
 
 #: cdedb/backend/core.py:1160 cdedb/frontend/core.py:1334
@@ -2470,12 +2470,16 @@ msgid "Password reset."
 msgstr "Passwort zurückgesetzt."
 
 #: cdedb/frontend/core.py:1331
-msgid "Must be different from current username."
+msgid "Must be different from current E-Mail-Address."
 msgstr "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
 
-#: cdedb/frontend/core.py:1367 cdedb/frontend/core.py:1401
-msgid "Username changed."
+#: cdedb/frontend/core.py:1367
+msgid "E-Mail-Address changed."
 msgstr "E-Mail-Adresse geändert."
+
+#: cdedb/frontend/core.py:1401
+msgid "Username changed."
+msgstr ""
 
 #: cdedb/frontend/core.py:1450
 msgid "Rationale too long."
