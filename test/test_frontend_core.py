@@ -688,6 +688,12 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['ackchangeform']
         self.submit(f)
         self.assertTitle("Zu prüfende Profiländerungen [0]")
+        self.traverse({'description': 'Nutzerdaten-Log'})
+        f = self.response.forms['logshowform']
+        f['reviewed_by'] = 'DB-1-9'
+        self.submit(f)
+        self.assertTitle('Nutzerdaten-Log [0–1]')
+        self.assertPresence("Bertålotta Ganondorf")
         self.logout()
         user = USER_DICT["berta"]
         self.login(user)
