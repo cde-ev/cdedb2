@@ -7929,6 +7929,7 @@ msgid "Participant Statistics"
 msgstr "Teilnehmer-Statistik"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:39
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:12
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:14
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:78
 msgid "Course Assignment"
@@ -8319,6 +8320,52 @@ msgstr "Name zum Filtern"
 #: cdedb/frontend/templates/web/event/checkin.tmpl:95
 msgid "The Participant will be checked in."
 msgstr "Der Teilnehmer wird eingecheckt."
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:5
+#, python-format
+msgid "Course Assignment Checks (%(title)s)"
+msgstr "Kurseinteilungsprüfung (%(title)s)"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:13
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:59
+msgid "Checks"
+msgstr "Prüfung"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:17
+msgid "Course Assignment Checks"
+msgstr "Kurseinteilungsprüfung"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:28
+msgid "instead of"
+msgstr "statt"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:37
+msgid "Cancelled courses with participants"
+msgstr "Ausfallende Kurse mit Teilnehmern"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:38
+msgid "Courses with too many attendees"
+msgstr "Kurse mit zu vielen Teilnehmern"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:39
+msgid "Courses with too few attendees"
+msgstr "Kurse mit zu wenigen Teilnehmern"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:40
+msgid "Courses without instructor"
+msgstr "Kurse ohne Kursleiter"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:64
+msgid "Participants without course"
+msgstr "Teilnehmer ohne Kurs"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:65
+msgid "Instructors not in their own course"
+msgstr "Kursleiter im falschen Kurs"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:66
+msgid "Assigned to unchosen course"
+msgstr "Teilnehmer in einem ungewählten Kurs"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:7
 #, python-format

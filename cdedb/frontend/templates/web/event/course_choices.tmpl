@@ -55,6 +55,11 @@
 {% block content %}
     {% set course_entries = courses|xdictsort('nr', pad=True)|xdict_entries('{id}', '{nr}. {shortname}') %}
 
+    <div class="p">
+        {{ util.href(cdedblink("event/course_assignment_checks"), gettext("Checks"), icon='check',
+                     aclass='btn btn-sm btn-info') }}
+    </div>
+
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form') }}" method="GET" id="choicefilterform"
               aria-label="{% trans -%}Filter{%- endtrans %}">

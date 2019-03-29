@@ -907,47 +907,6 @@ class EventFrontend(AbstractUserFrontend):
                                 r['parts'][tracks[track_id]['part_id']],
                                 r['tracks'][track_id]))
                     for track_id in tracks}
-        tests3 = {
-            # Add tests (id: lambda(event, reg, part, track)) to add filtered
-            # lists of participants by event part
-        }
-        sorter = lambda registration_id: name_key(
-            personas[registrations[registration_id]['persona_id']])
-        per_part_listings = {
-            key: {
-                part_id: sorted(
-                    (registration_id
-                     for registration_id, r in registrations.items()
-                     if test(rs.ambience['event'], r, r['parts'][part_id])),
-                    key=sorter)
-                for part_id in rs.ambience['event']['parts']
-            }
-            for key, test in tests3.items()
-        }
-        tests4 = {
-            'wrong choice': (lambda e, r, p, t: (
-                    p['status'] == stati.participant
-                    and t['course_id']
-                    and t['course_id'] != t['course_instructor']
-                    and (t['course_id'] not in
-                         t['choices']
-                         [:e['tracks'][t['track_id']]['num_choices']]))),
-        }
-        sorter = lambda registration_id: name_key(
-            personas[registrations[registration_id]['persona_id']])
-        per_track_listings = {
-            key: {
-                track_id: sorted(
-                    (registration_id
-                     for registration_id, reg in registrations.items()
-                     if test(rs.ambience['event'], reg, reg['parts'][part_id],
-                             reg['tracks'][track_id])),
-                    key=sorter)
-                for part_id, part in rs.ambience['event']['parts'].items()
-                for track_id in part['tracks']
-            }
-            for key, test in tests4.items()
-        }
 
         # The base query object to use for links to event/registration_query
         base_query = Query(
@@ -1074,9 +1033,120 @@ class EventFrontend(AbstractUserFrontend):
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'per_part_statistics': per_part_statistics,
             'per_track_statistics': per_track_statistics,
-            'per_part_listings': per_part_listings,
-            'per_track_listings': per_track_listings,
             'get_query': get_query})
+
+    @access("event")
+    @event_guard()
+    def course_assignment_checks(self, rs, event_id):
+        """Provide some consistency checks for course assignment."""
+        event = rs.ambience['event']
+        tracks = rs.ambience['event']['tracks']
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        personas = self.coreproxy.get_event_users(
+            rs, tuple(e['persona_id'] for e in registrations.values()))
+        stati = const.RegistrationPartStati
+
+        # Get number of attendees per course
+        # assign_counts has the structure:
+        # {course_id: {track_id: (num_participants, num_instructors)}}
+        assign_counts = {
+            course_id: {
+                track_id: (
+                    sum(1 for reg in registrations.values()
+                        if (reg['tracks'][track_id]['course_id'] == course_id
+                            and (reg['parts'][track['part_id']]['status']
+                                 == stati.participant))),
+                    sum(1 for reg in registrations.values()
+                        if (reg['tracks'][track_id]['course_id'] == course_id
+                            and (reg['parts'][track['part_id']]['status']
+                                 == stati.participant)
+                            and reg['tracks'][track_id]['course_instructor']
+                                == course_id)))
+                for track_id, track in tracks.items()
+            }
+            for course_id in courses
+        }
+
+        # Tests for problematic courses
+        course_tests = {
+            'cancelled_with_p': lambda c, tid: (
+                tid not in c['active_segments']
+                and assign_counts[c['id']][tid][0] > 0),
+            'many_p': lambda c, tid: (
+                tid in c['active_segments']
+                and c['max_size'] is not None
+                and assign_counts[c['id']][tid][0] > c['max_size']),
+            'few_p': lambda c, tid: (
+                tid in c['active_segments']
+                and c['min_size']
+                and assign_counts[c['id']][tid][0] < c['min_size']),
+            'no_instructor': lambda c, tid: (
+                tid in c['active_segments']
+                and assign_counts[c['id']][tid][1] <= 0),
+        }
+
+        # Calculate problematic course lists
+        # course_problems will have the structure {key: [(reg_id, [track_id])]}
+        max_course_no_len = max(len(c['nr']) for c in courses.values())
+        course_problems = {}
+        for key, test in course_tests.items():
+            problems = []
+            for course_id, course in courses.items():
+                problem_tracks = [
+                    track_id
+                    for track_id in event['tracks']
+                    if test(course, track_id)]
+                if problem_tracks:
+                    problems.append((course_id, problem_tracks))
+            course_problems[key] = sorted(
+                problems, key=lambda problem:
+                    courses[problem[0]]['nr'].rjust(max_course_no_len, '\0'))
+
+        # Tests for registrations with problematic assignments
+        reg_tests = {
+            'no_course': lambda r, p, t: (
+                p['status'] == stati.participant
+                and not t['course_id']),
+            'instructor_wrong_course': lambda r, p, t: (
+                p['status'] == stati.participant
+                and t['course_instructor']
+                and t['track_id'] in
+                    courses[t['course_instructor']]['active_segments']
+                and t['course_id'] != t['course_instructor']),
+            'unchosen': lambda r, p, t: (
+                p['status'] == stati.participant
+                and t['course_id']
+                and t['course_id'] != t['course_instructor']
+                and (t['course_id'] not in
+                     t['choices']
+                     [:event['tracks'][t['track_id']]['num_choices']])),
+        }
+
+        # Calculate problematic registrations
+        # reg_problems will have the structure {key: [(reg_id, [track_id])]}
+        reg_problems = {}
+        for key, test in reg_tests.items():
+            problems = []
+            for reg_id, reg in registrations.items():
+                problem_tracks = [
+                    track_id
+                    for part_id, part in event['parts'].items()
+                    for track_id in part['tracks']
+                    if test(reg, reg['parts'][part_id],
+                            reg['tracks'][track_id])]
+                if problem_tracks:
+                    problems.append((reg_id, problem_tracks))
+            reg_problems[key] = sorted(
+                problems, key=lambda problem:
+                    name_key(personas[registrations[problem[0]]['persona_id']]))
+
+        return self.render(rs, "course_assignment_checks", {
+            'registrations': registrations, 'personas': personas,
+            'courses': courses, 'course_problems': course_problems,
+            'reg_problems': reg_problems})
 
     @access("event")
     @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
