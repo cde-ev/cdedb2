@@ -133,7 +133,7 @@ class TestCdEBackend(BackendTest):
                 'display_name': 'Bertå',
                 'family_name': 'Beispiel',
                 'foto': 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',
-                'free_form': 'Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen',
+                'free_form': 'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen',
                 'gender': 1,
                 'given_names': 'Bertålotta',
                 'id': 2,

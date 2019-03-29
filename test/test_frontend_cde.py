@@ -247,7 +247,7 @@ class TestCdEFrontend(FrontendTest):
             {'birthday': '1981-02-11',
              'decided_search': True,
              'family_name': 'Beispiel',
-             'free_form': 'Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen',
+             'free_form': 'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen',
              'given_names': 'Bertålotta',
              'id': 2,
              'username': 'berta@example.cde'},
