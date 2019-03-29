@@ -206,7 +206,8 @@ class CoreBackend(AbstractBackend):
     @access("core_admin")
     def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None,
                                 submitted_by=None, reviewed_by=None,
-                                persona_id=None, additional_info=None):
+                                persona_id=None, additional_info=None,
+                                time_start=None, time_stop=None):
         """Get changelog activity.
 
         Similar to
@@ -220,6 +221,8 @@ class CoreBackend(AbstractBackend):
         :type reviewed_by: id or None
         :type persona_id: id or None
         :type additional_info: str or None
+        :type time_start: datetime or None
+        :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
         stati = affirm_set("enum_memberchangestati", stati, allow_None=True)
@@ -267,6 +270,19 @@ class CoreBackend(AbstractBackend):
             connector = "AND"
             value = "%{}%".format(diacritic_patterns(additional_info.lower()))
             params.append(value)
+        if time_start and time_stop:
+            condition = glue(condition,
+                             "{} %s <= ctime AND ctime <= %s".format(connector))
+            connector = "AND"
+            params.extend((time_start, time_stop))
+        elif time_start:
+            condition = glue(condition, "{} %s <= ctime".format(connector))
+            connector = "AND"
+            params.append(time_start)
+        elif time_stop:
+            condition = glue(condition, "{} ctime <= %s".format(connector))
+            connector = "AND"
+            params.append(time_stop)
         query = query.format(condition)
         return self.query_all(rs, query, params)
 
