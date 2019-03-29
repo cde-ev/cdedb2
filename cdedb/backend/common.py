@@ -576,7 +576,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     def generic_retrieve_log(self, rs, code_validator, entity_name, table,
                              codes=None, entity_id=None, start=None, stop=None,
-                             additional_columns=None, additional_info=None):
+                             additional_columns=None, additional_info=None,
+                             time_start=None, time_stop=None):
         """Get recorded activity.
 
         Each realm has it's own log as well as potentially additional
@@ -614,6 +615,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :param additional_columns: Extra values to retrieve.
         :type additional_info: str or None
         :param additional_info: Filter for additional_info column
+        :type time_start: datetime or None
+        :param time_start: lower bound for ctime columns
+        :type time_stop: datetime or None
+        :param time_stop: upper bound for ctime column
         :rtype: [{str: object}]
         """
         codes = affirm_set_validation(code_validator, codes, allow_None=True)
@@ -657,6 +662,19 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             connector = "AND"
             value = "%{}%".format(diacritic_patterns(additional_info.lower()))
             params.append(value)
+        if time_start and time_stop:
+            condition = glue(condition,
+                             "{} %s <= ctime AND ctime <= %s".format(connector))
+            connector = "AND"
+            params.extend((time_start, time_stop))
+        elif time_start:
+            condition = glue(condition, "{} %s <= ctime".format(connector))
+            connector = "AND"
+            params.append(time_start)
+        elif time_stop:
+            condition = glue(condition, "{} ctime <= %s".format(connector))
+            connector = "AND"
+            params.append(time_stop)
         query = query.format(entity=entity_name, extra_columns=extra_columns,
                              table=table, condition=condition)
         return self.query_all(rs, query, params)
