@@ -1008,13 +1008,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # Add CSP header to disallow scripts, styles, images and objects from
         # other domains. This is part of XSS mitigation
-        rs.response.headers.add(
-            'Content-Security-Policy',
-            "default-src 'self'; "
-            "script-src 'unsafe-inline' 'self' https: 'nonce-{}'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src *"
-            .format(csp_nonce))
+        csp_header_template = glue(
+            "default-src 'self';",
+            "script-src 'unsafe-inline' 'self' https: 'nonce-{}';",
+            "style-src 'self' 'unsafe-inline';",
+            "img-src *")
+        rs.response.headers.add('Content-Security-Policy',
+                                csp_header_template.format(csp_nonce))
         return rs.response
 
     def do_mail(self, rs, templatename, headers, params=None, attachments=None):
