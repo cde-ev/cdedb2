@@ -1694,9 +1694,12 @@ class CoreFrontend(AbstractFrontend):
                  ("reviewed_by", "cdedbid_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("stop", "non_negative_int_or_None"))
+                 ("stop", "non_negative_int_or_None"),
+                 ("time_start", "datetime_or_None"),
+                 ("time_stop", "datetime_or_None"))
     def view_changelog_meta(self, rs, stati, start, stop, submitted_by,
-                            reviewed_by, persona_id, additional_info):
+                            reviewed_by, persona_id, additional_info,
+                            time_start, time_stop):
         """View changelog activity."""
         start = start or 0
         stop = stop or 50
@@ -1704,7 +1707,7 @@ class CoreFrontend(AbstractFrontend):
         # are lost
         log = self.coreproxy.retrieve_changelog_meta(
             rs, stati, start, stop, submitted_by, reviewed_by, persona_id,
-            additional_info)
+            additional_info, time_start, time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -1719,15 +1722,19 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"))
-    def view_log(self, rs, codes, persona_id, start, stop, additional_info):
+                 ("stop", "non_negative_int_or_None"),
+                 ("time_start", "datetime_or_None"),
+                 ("time_stop", "datetime_or_None"))
+    def view_log(self, rs, codes, persona_id, start, stop, additional_info,
+                 time_start, time_stop):
         """View activity."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.coreproxy.retrieve_log(rs, codes, persona_id, start, stop,
-                                          additional_info)
+                                          additional_info, time_start,
+                                          time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
