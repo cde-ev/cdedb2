@@ -90,7 +90,8 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin", "event_admin")
     def retrieve_past_log(self, rs, codes=None, pevent_id=None, start=None,
-                          stop=None, additional_info=None):
+                          stop=None, additional_info=None, time_start=None,
+                          time_stop=None):
         """Get recorded activity for concluded events.
 
         See
@@ -102,11 +103,14 @@ class PastEventBackend(AbstractBackend):
         :type start: int or None
         :type stop: int or None
         :type additional_info: str or None
+        :type time_start: datetime or None
+        :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
             rs, "enum_pasteventlogcodes", "pevent", "past_event.log", codes,
-            pevent_id, start, stop, additional_info=additional_info)
+            pevent_id, start, stop, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
 
     @access("cde", "event")
     def list_institutions(self, rs):

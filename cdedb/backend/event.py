@@ -251,7 +251,8 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def retrieve_log(self, rs, codes=None, event_id=None, start=None,
-                     stop=None, additional_info=None):
+                     stop=None, additional_info=None, time_start=None,
+                     time_stop=None):
         """Get recorded activity.
 
         See
@@ -263,6 +264,8 @@ class EventBackend(AbstractBackend):
         :type start: int or None
         :type stop: int or None
         :type additional_info: str or None
+        :type time_start: datetime or None
+        :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
         event_id = affirm("id_or_None", event_id)
@@ -271,7 +274,8 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, "enum_eventlogcodes", "event", "event.log", codes, event_id,
-            start, stop, additional_info=additional_info)
+            start, stop, additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("persona")
     def list_db_events(self, rs, visible_only=False):

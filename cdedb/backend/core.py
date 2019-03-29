@@ -185,7 +185,8 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin")
     def retrieve_log(self, rs, codes=None, persona_id=None, start=None,
-                     stop=None, additional_info=None):
+                     stop=None, additional_info=None, time_start=None,
+                     time_stop=None):
         """Get recorded activity.
 
         See
@@ -197,11 +198,14 @@ class CoreBackend(AbstractBackend):
         :type start: int or None
         :type stop: int or None
         :type additional_info: str or None
+        :type time_start: datetime or None
+        :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
             rs, "enum_corelogcodes", "persona", "core.log", codes, persona_id,
-            start, stop, additional_info=additional_info)
+            start, stop, additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("core_admin")
     def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None,

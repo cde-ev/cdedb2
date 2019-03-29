@@ -63,7 +63,8 @@ class CdEBackend(AbstractBackend):
 
     @access("cde_admin")
     def retrieve_cde_log(self, rs, codes=None, persona_id=None, start=None,
-                         stop=None, additional_info=None):
+                         stop=None, additional_info=None, time_start=None,
+                         time_stop=None):
         """Get recorded activity.
 
         See
@@ -75,15 +76,19 @@ class CdEBackend(AbstractBackend):
         :type start: int or None
         :type stop: int or None
         :type additional_info: str or None
+        :type time_start: datetime or None
+        :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
             rs, "enum_cdelogcodes", "persona", "cde.log", codes, persona_id,
-            start, stop, additional_info=additional_info)
+            start, stop, additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("core_admin", "cde_admin")
     def retrieve_finance_log(self, rs, codes=None, persona_id=None, start=None,
-                             stop=None, additional_info=None):
+                             stop=None, additional_info=None, time_start=None,
+                             time_stop=None):
         """Get financial activity.
 
         Similar to
@@ -95,12 +100,15 @@ class CdEBackend(AbstractBackend):
         :type start: int or None
         :type stop: int or None
         :type additional_info: str or None
+        :type time_start: datetime or None
+        :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
         additional_columns = ["delta", "new_balance", "members", "total"]
         return self.generic_retrieve_log(
             rs, "enum_financelogcodes", "persona", "cde.finance_log", codes,
-            persona_id, start, stop, additional_columns, additional_info)
+            persona_id, start, stop, additional_columns, additional_info,
+            time_start, time_stop)
 
     @access("member")
     def list_lastschrift(self, rs, persona_ids=None, active=True):
