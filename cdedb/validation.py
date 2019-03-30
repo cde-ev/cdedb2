@@ -1284,6 +1284,26 @@ def _input_file(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
+def _csvfile(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)]
+    """
+    val, errs = _input_file(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mime = magic.from_buffer(val, mime=True)
+    if mime not in ("text/csv", "text/plain"):
+        errs.append((argname, ValueError(n_("Only text/csv allowed."))))
+    if errs:
+        return None, errs
+    val = val.decode()
+    return val, errs
+
+
+@_addvalidator
 def _profilepic(val, argname=None, *, _convert=True):
     """
     :type val: object
