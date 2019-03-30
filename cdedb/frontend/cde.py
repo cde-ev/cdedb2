@@ -32,7 +32,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
-    enum_entries_filter, money_filter)
+    enum_entries_filter, money_filter, REQUESTfile)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 from cdedb.backend.event import EventBackend
@@ -677,8 +677,9 @@ class CdEFrontend(AbstractUserFrontend):
                                                    'csvfields': csv_position})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("statement", "str"))
-    def parse_statement(self, rs, statement):
+    @REQUESTdata(("statement", "str_or_None"))
+    @REQUESTfile("statement_file")
+    def parse_statement(self, rs, statement, statement_file):
         """
         Parse the statement into multiple CSV files.
 
@@ -699,8 +700,11 @@ class CdEFrontend(AbstractUserFrontend):
         This uses POST because the expected data is too large for GET.
         
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type statement: str
+        :type statement: str or None
+        :type statement_file: file or None
         """
+        statement_file = check(rs, "csvfile", statement_file,
+                               "statement_file")
         if rs.errors:
             return self.parse_statement_form(rs)
 
@@ -709,11 +713,23 @@ class CdEFrontend(AbstractUserFrontend):
         event_names = {e["title"]: (get_event_name_pattern(e), e["shortname"])
                        for e in events.values()}
 
-        statementlines = statement.splitlines()
-        reader = csv.DictReader(statementlines, fieldnames=STATEMENT_CSV_FIELDS,
-                                delimiter=";", quotechar='"',
-                                restkey=STATEMENT_CSV_RESTKEY, restval="")
+        if statement_file and statement:
+            rs.notify("warning", n_("Only one input method allowed."))
+            return self.parse_statement_form(rs)
+        elif statement_file:
+            rs.values["statement"] = statement_file
+            statementlines = statement_file.splitlines()
+        elif statement:
+            statementlines = statement.splitlines()
+        else:
+            rs.notify("error", n_("No input provided"))
+            return self.parse_statement_form(rs)
 
+        reader = csv.DictReader(statementlines, delimiter=";",
+                                quotechar='"',
+                                fieldnames=STATEMENT_CSV_FIELDS,
+                                restkey=STATEMENT_CSV_RESTKEY,
+                                restval="")
         problems = []
 
         transactions = []

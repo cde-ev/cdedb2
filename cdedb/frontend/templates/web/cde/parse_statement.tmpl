@@ -12,15 +12,12 @@
 {{ util.breadcrumb_link(cdedblink("cde/parse_statement_form"), gettext("Parse Bank Statement"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform">
+    <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform" enctype="multipart/form-data">
         {{ util.anti_csrf_token('cde/parse_statement') }}
-        {{ util.form_input_textarea(name="statement", label=gettext("Statement"), horizontal=False,
-                rows=8, anid="input-data") }}
-
-        <p class="help-block">
-            {{ util.make_icon('info-sign') }}
-            {% trans -%}Directly paste the Bank Statement from Bank für Sozialwirtschaft here.{%- endtrans %}
-        </p>
+        {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv") }}
+        {{ util.form_input_textarea(name="statement", horizontal=False,
+                rows=8, anid="input-data",
+                info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft here.")) }}
 
         {{ util.form_input_submit(value=gettext("Parse"), horizontal=False) }}
     </form>
