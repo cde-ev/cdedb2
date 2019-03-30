@@ -722,7 +722,7 @@ class CdEFrontend(AbstractUserFrontend):
         elif statement:
             statementlines = statement.splitlines()
         else:
-            rs.notify("error", n_("No input provided"))
+            rs.notify("error", n_("No input provided."))
             return self.parse_statement_form(rs)
 
         reader = csv.DictReader(statementlines, delimiter=";",
@@ -899,18 +899,19 @@ class CdEFrontend(AbstractUserFrontend):
         :rtype: {str: object}
         :returns: The processed input datum.
         """
-        persona_id, problems = validate.check_cdedbid(
+        amount, problems = validate.check_non_negative_decimal(
+            datum['raw']['amount'], "amount")
+        persona_id, p = validate.check_cdedbid(
             datum['raw']['persona_id'].strip(), "persona_id")
+        problems.extend(p)
         family_name, p = validate.check_str(
             datum['raw']['family_name'], "family_name")
         problems.extend(p)
         given_names, p = validate.check_str(
             datum['raw']['given_names'], "given_names")
         problems.extend(p)
-        amount, p = validate.check_non_negative_decimal(datum['raw']['amount'],
-                                                        "amount")
-        problems.extend(p)
-        note, p = validate.check_str_or_None(datum['raw']['note'], "note")
+        note, p = validate.check_str_or_None(
+            datum['raw']['note'], "note")
         problems.extend(p)
 
         persona = None
@@ -1024,9 +1025,11 @@ class CdEFrontend(AbstractUserFrontend):
         return True, count, memberships_gained
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("sendmail", "bool"), ("transfers", "str"),
+    @REQUESTdata(("sendmail", "bool"), ("transfers", "str_or_None"),
                  ("checksum", "str_or_None"))
-    def money_transfers(self, rs, sendmail, transfers, checksum):
+    @REQUESTfile("transfers_file")
+    def money_transfers(self, rs, sendmail, transfers, checksum,
+                        transfers_file):
         """Update member balances.
 
         The additional parameter sendmail modifies the behaviour and can
@@ -1036,8 +1039,21 @@ class CdEFrontend(AbstractUserFrontend):
         corruption and to explicitly signal at what point the data will
         be committed (for the second purpose it works like a boolean).
         """
-        transfers = transfers or ''
-        transferlines = transfers.splitlines()
+        transfers_file = check(rs, "csvfile_or_None", transfers_file,
+                               "transfers_file")
+        if rs.errors:
+            return self.money_transfers_form(rs)
+        if transfers_file and transfers:
+            rs.notify("warning", n_("Only one input method allowed."))
+            return self.money_transfers_form(rs)
+        elif transfers_file:
+            rs.values["transfers"] = transfers_file
+            transferlines = transfers_file.splitlines()
+        elif transfers:
+            transferlines = transfers.splitlines()
+        else:
+            rs.notify("error", n_("No input provided."))
+            return self.money_transfers_form(rs)
         fields = ('amount', 'persona_id', 'family_name', 'given_names', 'note')
         reader = csv.DictReader(
             transferlines, fieldnames=fields, delimiter=';',

@@ -13,11 +13,12 @@
 {{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Enter Bank Transfers"), active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('cde/money_transfers') }}" method="POST" id="transfersform">
+    <form action="{{ cdedblink('cde/money_transfers') }}" method="POST" id="transfersform" enctype="multipart/form-data">
         {{ util.anti_csrf_token('cde/money_transfers') }}
         {{ util.input_hidden("checksum") }}
         {{ util.form_input_checkbox("sendmail", label=gettext("Send Notification"), horizontal=False) }}
-        {{ util.form_input_textarea(name="transfers", label=gettext("Transfers"), horizontal=False, rows=8, anid="input-data") }}
+        {{ util.form_input_file(name="transfers_file", label=gettext("Transfers"), horizontal=False) }}
+        {{ util.form_input_textarea(name="transfers", horizontal=False, rows=8, anid="input-data") }}
 
         <p class="help-block">
             {{ util.make_icon('info-sign') }} {% trans -%}Enter one dataset per line.{%- endtrans %}

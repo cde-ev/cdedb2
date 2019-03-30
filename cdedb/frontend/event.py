@@ -1396,10 +1396,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         event = rs.ambience['event']
         warnings = []
-        date, problems = validate.check_date(datum['raw']['date'], "date")
-        amount, p = validate.check_non_negative_decimal(
+        amount, problems = validate.check_non_negative_decimal(
             datum['raw']['amount'], "amount")
-        problems.extend(p)
         persona_id, p = validate.check_cdedbid(
             datum['raw']['id'], "persona_id")
         problems.extend(p)
@@ -1408,6 +1406,8 @@ class EventFrontend(AbstractUserFrontend):
         problems.extend(p)
         given_names, p = validate.check_str(
             datum['raw']['given_names'], "given_names")
+        problems.extend(p)
+        date, p = validate.check_date(datum['raw']['date'], "date")
         problems.extend(p)
 
         registration_id = None
@@ -1506,12 +1506,28 @@ class EventFrontend(AbstractUserFrontend):
         return True, count
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("force", "bool"), ("fee_data", "str"))
+    @REQUESTdata(("force", "bool"), ("fee_data", "str_or_None"))
+    @REQUESTfile("fee_data_file")
     @event_guard(check_offline=True)
-    def batch_fees(self, rs, event_id, force, fee_data):
+    def batch_fees(self, rs, event_id, force, fee_data, fee_data_file):
         """Allow orgas to add lots paid of participant fee at once."""
-        fee_data = fee_data or ''
-        fee_data_lines = fee_data.splitlines()
+        fee_data_file = check(rs, "csvfile_or_None", fee_data_file, 
+                              "fee_data_file")
+        if rs.errors:
+            return self.batch_fees_form(rs, event_id)
+
+        if fee_data_file and fee_data:
+            rs.notify("warning", n_("Only one input method allowed."))
+            return self.batch_fees_form(rs, event_id)
+        elif fee_data_file:
+            rs.values["fee_data"] = fee_data_file
+            fee_data_lines = fee_data_file.splitlines()
+        elif fee_data:
+            fee_data_lines = fee_data.splitlines()
+        else:
+            rs.notify("error", n_("No input provided."))
+            return self.batch_fees_form(rs, event_id)
+
         fields = ('amount', 'id', 'family_name', 'given_names', 'date')
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, delimiter=';',
