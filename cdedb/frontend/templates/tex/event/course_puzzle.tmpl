@@ -29,7 +29,6 @@
     <<% endfor %>>
     \clearpage
     <<% for registration_id, registration in registrations|dictsort %>>
-        <<% if registration['persona_id'] not in ambience['event']['orgas'] %>>
             <<% for track_id, track in ambience['event']['tracks']|dictsort %>>
                 <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
                     \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
@@ -49,6 +48,5 @@
                     <<% endfor %>>
                 <<% endif %>>
             <<% endfor %>>
-        <<% endif %>>
     <<% endfor %>>
 <<% endblock %>>
