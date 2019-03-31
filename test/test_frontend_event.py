@@ -658,6 +658,20 @@ etc;anything else""", f['entries_2'].value)
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
 
+    @as_users("anton", "garcia")
+    def test_set_event_logo(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        f = self.response.forms['seteventlogoform']
+        with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as datafile:
+            data = datafile.read()
+        f['event_logo'] = webtest.Upload("picture.jpg", data, "application/octet-stream")
+        self.submit(f)
+        self.get('/event/event/1/get_logo')
+        with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as f:
+            self.assertEqual(f.read(), self.response.body)
+
     @as_users("anton", "ferdinand")
     def test_create_event(self, user):
         self.traverse({'href': '/event/$'},
