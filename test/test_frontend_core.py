@@ -883,6 +883,29 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("Zelda Zeruda-Hime")
 
+    def test_genesis_name_collision(self):
+        self.get("/core/genesis/request")
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "ml"
+        # Submit once
+        self.submit(f)
+        # Submit twice
+        self.submit(f, check_notification=False)
+        self.assertPresence("E-Mail-Adresse bereits vorhanden.",
+                            div="notifications")
+        user = USER_DICT['anton']
+        self.login(user)
+        self.get("/core/log")
+        f = self.response.forms['logshowform']
+        f['codes'] = [20]
+        self.submit(f)
+        self.assertTitle("Account-Log [0–1]")
+
     def test_log(self):
         ## First: generate data
         self.test_set_foto()
