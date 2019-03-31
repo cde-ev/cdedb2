@@ -1561,10 +1561,14 @@ class CoreBackend(AbstractBackend):
         email = affirm("email", email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
         data = self.query_one(rs, query, (email,))
-        query = "SELECT COUNT(*) AS num FROM core.genesis_cases WHERE username = %s"
-        data2 = self.query_one(rs, query, (email,))
+        query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
+                     "WHERE username = %s AND case_status = ANY(%s)")
+        stati = (const.GenesisStati.unconfirmed,
+                 const.GenesisStati.to_review,
+                 const.GenesisStati.approved)
+        data2 = self.query_one(rs, query, (email, stati))
         return bool(data['num'] + data2['num'])
-
+    
     RESET_COOKIE_PAYLOAD = "X"
 
     def _generate_reset_cookie(self, rs, persona_id, salt,
