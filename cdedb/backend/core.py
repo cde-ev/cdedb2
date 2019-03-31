@@ -1153,7 +1153,7 @@ class CoreBackend(AbstractBackend):
         new_username = affirm("email_or_None", new_username)
         password = affirm("str_or_None", password)
         if new_username is None and not self.is_relative_admin(rs, persona_id):
-            return False, n_("Only admins may unset a email address.")
+            return False, n_("Only admins may unset an email address.")
         with Atomizer(rs):
             if new_username and self.verify_existence(rs, new_username):
                 # abort if there is already an account with this address

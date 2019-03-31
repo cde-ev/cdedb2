@@ -1730,7 +1730,7 @@ msgid "Persona is not archived."
 msgstr ""
 
 #: cdedb/backend/core.py:1156
-msgid "Only admins may unset a email address."
+msgid "Only admins may unset an email address."
 msgstr ""
 
 #: cdedb/backend/core.py:1160 cdedb/frontend/core.py:1334
@@ -2449,7 +2449,7 @@ msgid "Must be different from current email address."
 msgstr ""
 
 #: cdedb/frontend/core.py:1367 cdedb/frontend/core.py:1401
-msgid "email address changed."
+msgid "Email address changed."
 msgstr ""
 
 #: cdedb/frontend/core.py:1450
@@ -6704,17 +6704,17 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:5
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:4
-msgid "Change Your email address"
+msgid "Change Your Email Address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:13
-msgid "Change email address"
+msgid "Change Email Address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:17
 msgid ""
-"To change Your email address, You will have to confirm Your new E-Mail-"
-"Address by clicking a link in the\n"
+"To change Your email address, You will have to confirm Your "
+"new email address by clicking a link in the\n"
 "            verification mail sent to the new E-Mail."
 msgstr ""
 
