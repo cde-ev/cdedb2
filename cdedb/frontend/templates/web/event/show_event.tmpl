@@ -211,6 +211,28 @@
                     {% endif %}
                 {% endcall %}
             </div>
+
+            <div class="col-md-6">
+                {% call util.bootstrap_panel(title=gettext("Event Logo"), icon="foto") %}
+                    {% if logo_present %}
+                        <img src="{{ cdedblink('event/get_logo') }}"
+                             alt="{{ gettext("Event Logo") }}" class="profilepic img-thumbnail">
+                    {% else %}
+                        {% trans -%}No logo set.{%- endtrans %}
+                    {% endif %}
+                    <form action="{{ cdedblink('event/set_logo') }}" method="POST" enctype="multipart/form-data"
+                          id="changeminorformform">
+                        {{ util.anti_csrf_token('event/set_logo') }}
+                        {{ util.input_hidden(name="delete", value="False") }}
+                        <div class="input-group">
+                            {{ util.input_file(name="event_logo", accept="image/*") }}
+                            <div class="input-group-btn">
+                                {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='upload') }}
+                            </div>
+                        </div>
+                    </form>
+                {% endcall %}
+            </div>
         </div>
     {% endif %}
 

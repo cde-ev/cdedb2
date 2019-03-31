@@ -15,6 +15,7 @@ import sys
 import tempfile
 import operator
 
+import magic
 import psycopg2.extensions
 import werkzeug
 
@@ -209,6 +210,8 @@ class EventFrontend(AbstractUserFrontend):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (self.conf.STORAGE_DIR / 'minor_form'
                                             / str(event_id)).exists()
+            params['logo_present'] = (self.conf.STORAGE_DIR / "event_logo" /
+                                      str(event_id)).exists()
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(
                 n_("The event is not published yet."))
@@ -282,6 +285,44 @@ class EventFrontend(AbstractUserFrontend):
         with open(str(path), 'wb') as f:
             f.write(minor_form)
         rs.notify("success", n_("Minor form updated."))
+        return self.redirect(rs, "event/show_event")
+
+    @access("event")
+    def get_logo(self, rs, event_id):
+        """Retrieve event logo."""
+        if not rs.ambience['event']['is_visible']:
+            raise werkzeug.exceptions.Forbidden(
+                n_("The event is not published yet."))
+        path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
+        mimetype = magic.from_file(str(path), mime=True)
+        return self.send_file(rs, path=path, mimetype=mimetype)
+
+    @access("event", modi={"POST"})
+    @REQUESTfile("event_logo")
+    @REQUESTdata(("delete", "bool"))
+    @event_guard(check_offline=True)
+    def set_logo(self, rs, event_id, event_logo, delete):
+        """Change the logo of the event.
+
+        This is used in the pdf downloads provided in the DB.
+        """
+        event_logo = check(rs, 'profilepic_or_None', event_logo, "event_logo")
+        if not event_logo and not delete:
+            rs.errors.append(
+                ("event_logo", ValueError(n_("Mustn't be empty."))))
+        if rs.errors:
+            return self.show_event(rs, event_id)
+        path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
+        if delete and not event_logo:
+            if path.exists():
+                path.unlink()
+                rs.notify("success", n_("Logo has been removed."))
+            else:
+                rs.notify("info", n_("Nothing to remove."))
+        elif event_logo:
+            with open(str(path), 'wb') as f:
+                f.write(event_logo)
+            rs.notify("success", n_("Logo has been updated."))
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
@@ -1598,7 +1639,11 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             with open_utf8(work_dir / "nametags.tex", 'w') as f:
                 f.write(tex)
-            src = self.conf.REPOSITORY_PATH / "misc/logo.png"
+            path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
+            if path.exists():
+                src = path
+            else:
+                src = self.conf.REPOSITORY_PATH / "misc/logo.png"
             shutil_copy(src, work_dir / "aka-logo.png")
             shutil_copy(src, work_dir / "orga-logo.png")
             shutil_copy(src, work_dir / "minor-pictogram.png")
@@ -1723,10 +1768,13 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             with open_utf8(work_dir / "course_lists.tex", 'w') as f:
                 f.write(tex)
+            path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
+            if path.exists():
+                src = path
+            else:
+                src = self.conf.REPOSITORY_PATH / "misc/logo.png"
             for course_id in courses:
-                shutil_copy(
-                    self.conf.REPOSITORY_PATH / "misc/logo.png",
-                    work_dir / "logo-{}.png".format(course_id))
+                shutil_copy(src, work_dir / "logo-{}.png".format(course_id))
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 "course_lists.tex", runs)
@@ -1758,9 +1806,12 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             with open_utf8(work_dir / "lodgement_lists.tex", 'w') as f:
                 f.write(tex)
-            shutil_copy(
-                self.conf.REPOSITORY_PATH / "misc/logo.png",
-                work_dir / "aka-logo.png")
+            path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
+            if path.exists():
+                src = path
+            else:
+                src = self.conf.REPOSITORY_PATH / "misc/logo.png"
+            shutil_copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 "lodgement_lists.tex", runs)
