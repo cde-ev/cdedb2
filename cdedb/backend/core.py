@@ -1561,7 +1561,9 @@ class CoreBackend(AbstractBackend):
         email = affirm("email", email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
         data = self.query_one(rs, query, (email,))
-        return bool(data['num'])
+        query = "SELECT COUNT(*) AS num FROM core.genesis_cases WHERE username = %s"
+        data2 = self.query_one(rs, query, (email,))
+        return bool(data['num'] + data2['num'])
 
     RESET_COOKIE_PAYLOAD = "X"
 
