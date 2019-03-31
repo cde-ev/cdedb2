@@ -1583,6 +1583,26 @@ etc;anything else""", f['entries_2'].value)
         self.assertNotIn('checkinform2', self.response.forms)
 
     @as_users("garcia")
+    def test_checkin_concurrent_modification(self, user):
+        """Test the special measures of the 'Edit' button at the Checkin page,
+        that ensure that the checkin state is not overriden by the
+        change_registration form"""
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/checkin'})
+        f = self.response.forms['checkinform2']
+        self.traverse({'href': '/event/event/1/registration/2/change'})
+        f2 = self.response.forms['changeregistrationform']
+        f2['part2.lodgement_id'] = 3
+        self.submit(f)
+        self.submit(f2)
+        # Check that the change to lodgement was committed ...
+        self.assertPresence("Kellerverlies")
+        # ... but the checkin is still valid
+        self.assertPresence("eingecheckt:")
+
+
+    @as_users("garcia")
     def test_manage_attendees(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
