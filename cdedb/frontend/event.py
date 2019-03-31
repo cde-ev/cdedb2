@@ -288,11 +288,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event")
-    def get_logo(self, rs, event_id):
+    def get_event_logo(self, rs, event_id):
         """Retrieve event logo."""
-        if not rs.ambience['event']['is_visible']:
-            raise werkzeug.exceptions.Forbidden(
-                n_("The event is not published yet."))
         path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
         mimetype = magic.from_file(str(path), mime=True)
         return self.send_file(rs, path=path, mimetype=mimetype)
@@ -301,7 +298,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTfile("event_logo")
     @REQUESTdata(("delete", "bool"))
     @event_guard(check_offline=True)
-    def set_logo(self, rs, event_id, event_logo, delete):
+    def set_event_logo(self, rs, event_id, event_logo, delete):
         """Change the logo of the event.
 
         This is used in the pdf downloads provided in the DB.
@@ -324,6 +321,42 @@ class EventFrontend(AbstractUserFrontend):
                 f.write(event_logo)
             rs.notify("success", n_("Logo has been updated."))
         return self.redirect(rs, "event/show_event")
+
+    @access("event")
+    def get_course_logo(self, rs, event_id, course_id):
+        """Retrieve course logo."""
+        path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
+        mimetype = magic.from_file(str(path), mime=True)
+        return self.send_file(rs, path=path, mimetype=mimetype)
+
+    @access("event", modi={"POST"})
+    @REQUESTfile("course_logo")
+    @REQUESTdata(("delete", "bool"))
+    @event_guard(check_offline=True)
+    def set_course_logo(self, rs, event_id, course_id, course_logo, delete):
+        """
+        Set or change a course logo.
+
+        These are used in the PDF downloads provided by the DB.
+        """
+        course_logo = check(rs, 'profilepic_or_None', course_logo, "course_logo")
+        if not course_logo and not delete:
+            rs.errors.append(
+                ("course_logo", ValueError(n_("Mustn't be empty."))))
+        if rs.errors:
+            return self.show_course(rs, event_id, course_id)
+        path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
+        if delete and not course_logo:
+            if path.exists():
+                path.unlink()
+                rs.notify("success", n_("Logo has been removed."))
+            else:
+                rs.notify("info", n_("Nothing to remove."))
+        elif course_logo:
+            with open(str(path), 'wb') as f:
+                f.write(course_logo)
+            rs.notify("success", n_("Logo has been updated."))
+        return self.redirect(rs, "event/show_course")
 
     @access("event", modi={"POST"})
     @REQUESTdata(("orga_id", "cdedbid"))
@@ -745,6 +778,8 @@ class EventFrontend(AbstractUserFrontend):
             params['attendees'] = attendees
             params['is_removable'] = self.eventproxy.is_course_removable(
                 rs, course_id)
+            params['logo_present'] = (self.conf.STORAGE_DIR / "course_logo" /
+                                      str(course_id)).exists()
         return self.render(rs, "show_course", params)
 
     @access("event")

@@ -213,13 +213,13 @@
             </div>
 
             <div class="col-md-6">
-                {% call util.bootstrap_panel(title=gettext("Event Logo"), icon="foto") %}
+                {% call util.bootstrap_panel(title=gettext("Event Logo"), icon="picture") %}
                     {% if logo_present %}
-                        <img src="{{ cdedblink('event/get_logo') }}"
+                        <img src="{{ cdedblink('event/get_event_logo') }}"
                              alt="{{ gettext("Event Logo") }}" class="profilepic img-thumbnail">
-                        <form action="{{ cdedblink('event/set_logo') }}" method="POST"
+                        <form action="{{ cdedblink('event/set_event_logo') }}" method="POST"
                                 id="removeeventlogoform">
-                            {{ util.anti_csrf_token('event/set_logo') }}
+                            {{ util.anti_csrf_token('event/set_event_logo') }}
                             {{ util.input_hidden(name="delete", value=True) }}
                             {{ util.input_submit(value=gettext("Remove Logo"), readonly=is_locked,
                                                  icon='trash', aclass='btn btn-danger') }}
@@ -227,9 +227,9 @@
                     {% else %}
                         {% trans -%}No logo set.{%- endtrans %}
                     {% endif %}
-                    <form action="{{ cdedblink('event/set_logo') }}" method="POST" enctype="multipart/form-data"
+                    <form action="{{ cdedblink('event/set_event_logo') }}" method="POST" enctype="multipart/form-data"
                           id="seteventlogoform" {% if "event_logo" in errors %}class="has-error"{% endif %}>
-                        {{ util.anti_csrf_token('event/set_logo') }}
+                        {{ util.anti_csrf_token('event/set_event_logo') }}
                         {{ util.input_hidden(name="delete", value=False) }}
                         <div class="input-group">
                             {{ util.input_file(name="event_logo", accept="image/*") }}
