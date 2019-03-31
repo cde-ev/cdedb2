@@ -74,7 +74,7 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event')) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#changeeventform').cdedbProtectChanges();
     </script>
 {% endblock %}

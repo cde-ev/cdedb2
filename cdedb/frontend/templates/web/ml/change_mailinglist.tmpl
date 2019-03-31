@@ -22,7 +22,7 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $(function() {
             $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist();
         });

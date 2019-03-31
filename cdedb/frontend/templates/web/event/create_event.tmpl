@@ -45,7 +45,7 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('#input-orgas').cdedbSearchPerson(
                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_admin_user&phrase=%s'|s) }}',
                 [],
@@ -57,7 +57,7 @@
         {{ util.input_hidden(name="use_questionnaire", value=False) }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_db_events")) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#createeventform').cdedbProtectChanges();
     </script>
 {% endblock %}

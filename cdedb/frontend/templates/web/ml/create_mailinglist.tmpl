@@ -11,7 +11,7 @@
 {{ util.breadcrumb_link(cdedblink("ml/create_mailinglist"), gettext("Create Mailinglist"), active=True) }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $(function() {
             $('#createlistform').cdedbProtectChanges().cdedbChangeMailinglist();
         });

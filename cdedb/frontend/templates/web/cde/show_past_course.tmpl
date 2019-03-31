@@ -42,7 +42,7 @@
                             {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
                                                anid='input-add-participant', aclass='form-control input-sm',
                                                arialabel=gettext("ID of the new Participant")) }}
-                            <script type="text/javascript">
+                            <script type="text/javascript" nonce="{{ csp_nonce }}">
                                 $('#input-add-participant').cdedbSearchPerson(
                                     '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'|s }}',
                                     {{ participants.keys()|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
@@ -137,7 +137,7 @@
                 </div>
             </div>
         {% endcall %}
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('#deletecourseform').cdedbProtectAction("{{ gettext("The Course will be permanently deleted.") }}");
             $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
             $('.delete-participant-form').cdedbProtectAction("{{ gettext("The Participant will be removed from this Course.") }}");

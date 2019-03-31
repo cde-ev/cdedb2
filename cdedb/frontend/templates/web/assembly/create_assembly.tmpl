@@ -32,7 +32,7 @@
         </div>
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('assembly/index')) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#createassemblyform').cdedbProtectChanges();
     </script>
 {% endblock %}

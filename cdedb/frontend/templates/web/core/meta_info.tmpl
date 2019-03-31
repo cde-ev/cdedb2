@@ -12,7 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("core/meta_info_form"), gettext("Metadata"), active="True") }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $(function() {
             $('#changeinfoform').cdedbProtectChanges();
         });

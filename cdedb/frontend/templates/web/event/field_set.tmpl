@@ -45,7 +45,7 @@
             {% trans -%}No registrations found.{%- endtrans %}
         </p>
     {% endif %}
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#fieldform').cdedbProtectChanges();
     </script>
 {% endblock %}

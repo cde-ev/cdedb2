@@ -284,7 +284,7 @@
                     {% endif %}
                     {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
                 </form>
-                <script type="text/javascript">
+                <script type="text/javascript" nonce="{{ csp_nonce }}">
                     {% if ambience['ballot']['votes'] > 1 %}
                         $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_MONIKER }}');
                     {% endif %}
@@ -328,7 +328,7 @@
                     {% endfor %}
                 </ul>
                 {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
-                    <script type="text/javascript">
+                    <script type="text/javascript" nonce="{{ csp_nonce }}">
                         $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The Candidate will be removed.") }}");
                     </script>
                 {% endif %}
@@ -361,7 +361,7 @@
                 {% endfor %}
             </ul>
             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
-                <script type="text/javascript">
+                <script type="text/javascript" nonce="{{ csp_nonce }}">
                     $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The Candidate will be removed.") }}");
                 </script>
             {% endif %}
@@ -395,7 +395,7 @@
                                                     anid='input-preferencelist') }}
                             {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
                         </form>
-                        <script type="text/javascript">
+                        <script type="text/javascript" nonce="{{ csp_nonce }}">
                             $('#voteform').cdedbProtectChanges();
                         </script>
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
@@ -505,7 +505,7 @@
                                 {{ util.make_icon('ok') }} {% trans -%}Vote{%- endtrans %}
                             </button>
                         </div>
-                        <script type="text/javascript">
+                        <script type="text/javascript" nonce="{{ csp_nonce }}">
                             /* Show tabs */
                             $('#tablist-formselect').show();
                             /* Initialize JS Fancy form */
@@ -621,7 +621,7 @@
                              {{ util.input_submit(value=gettext("Delete"), icon="trash", aclass="btn btn-danger") }}
                              {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                          </form>
-                         <script type="text/javascript">
+                         <script type="text/javascript" nonce="{{ csp_nonce }}">
                              $(function() {
                                  $('#deleteballotform').cdedbProtectAction(
                                      "{{ gettext("This Ballot and all its Data will be permanently deleted.") }}");

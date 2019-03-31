@@ -42,7 +42,7 @@
         </div>
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('assembly/list_ballots')) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#createballotform').cdedbProtectChanges();
     </script>
 {% endblock %}

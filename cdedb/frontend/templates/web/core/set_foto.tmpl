@@ -23,7 +23,7 @@
                 <h3>{% trans -%}Current Picture{%- endtrans %}</h3>
                 <img src="{{ cdedblink('core/get_foto', {'foto': foto}) }}" class="profilepic img-thumbnail">
 
-                <script type="text/javascript">
+                <script type="text/javascript" nonce="{{ csp_nonce }}">
                     $(function() {
                         $('#resetfotoform').cdedbProtectAction(
                             "{{ gettext("The Profile Picture will be permanently deleted.") }}");

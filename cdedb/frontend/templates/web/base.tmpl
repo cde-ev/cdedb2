@@ -18,7 +18,7 @@
         <script type="text/javascript" src="{{ staticurl("cdedb-general.js") }}"></script>
         {% if CDEDB_DEV %}
             <!-- script for adding links to view emails -->
-            <script type="text/javascript">
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $(function() {
                     $("div.alert-info").append(function(index, html){
                         /* search for paths of temporary mail files and create link */
@@ -146,7 +146,7 @@
                     </ul>
                 </div><!-- /.navbar-collapse -->
             </nav>
-            <script type="text/javascript">
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#navbar-collapse-1').removeClass('in');
                 $('#button-navbar-toggle').removeClass('hide');
             </script>

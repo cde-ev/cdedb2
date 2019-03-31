@@ -58,7 +58,7 @@
 
         {{ util.form_input_submit(value=gettext("Add"), cancellink=cdedblink('event/course_stats')) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#createcourseform').cdedbProtectChanges();
     </script>
 {% endblock %}

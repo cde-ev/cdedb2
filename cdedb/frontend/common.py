@@ -55,6 +55,7 @@ from cdedb.enums import ENUMS_DICT
 import cdedb.validation as validate
 import cdedb.database.constants as const
 import cdedb.query as query_mod
+from cdedb.security import secure_token_hex
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -998,18 +999,23 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if self.conf.LOCKDOWN:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
+        # A nonce to mark safe <script> tags in context of the CSP header
+        csp_nonce = secure_token_hex(12)
+        params['csp_nonce'] = csp_nonce
+
         html = self.fill_template(rs, "web", templatename, params)
         rs.response = Response(html, mimetype='text/html')
         rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
 
         # Add CSP header to disallow scripts, styles, images and objects from
         # other domains. This is part of XSS mitigation
-        # TODO use 'nonce-...' eventually, when browser support (CSP L2) is
-        #  sufficient
-        rs.response.headers.add(
-            'Content-Security-Policy',
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; img-src *")
+        csp_header_template = glue(
+            "default-src 'self';",
+            "script-src 'unsafe-inline' 'self' https: 'nonce-{}';",
+            "style-src 'self' 'unsafe-inline';",
+            "img-src *")
+        rs.response.headers.add('Content-Security-Policy',
+                                csp_header_template.format(csp_nonce))
         return rs.response
 
     def do_mail(self, rs, templatename, headers, params=None, attachments=None):

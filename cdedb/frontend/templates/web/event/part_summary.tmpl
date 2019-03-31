@@ -181,7 +181,7 @@
         {% endif %}
         {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#drow-container').cdedbDynamicRow({
             addButton: $('#drow-addbutton'),
             delButtonTitle: "{{ gettext("Remove Event-Part") }}",

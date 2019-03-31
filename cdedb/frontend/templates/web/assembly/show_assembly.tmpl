@@ -125,7 +125,7 @@
                     </div>
                 </div>
             {% endcall %}
-            <script type="text/javascript">
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $(function() {
                     $('#concludeassemblyform').cdedbProtectAction("{{ gettext("The assembly will be permanently archived.") }}");
                     $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();

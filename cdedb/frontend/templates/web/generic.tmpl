@@ -73,7 +73,7 @@
 
         {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#newuserform').cdedbProtectChanges();
     </script>
 {% endmacro %}
@@ -461,7 +461,7 @@
                     </span>
                 </p>
                 {{ util.output_errors('query', wrapper=True) }}
-                <script type="text/javascript">
+                <script type="text/javascript" nonce="{{ csp_nonce }}">
                     {
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
@@ -511,7 +511,7 @@
                 {% endfor %}
             </div>
         {% endcall %}
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('.default-query').each(function(){
                 var url = $(this).attr('href');
                 var $link = $('<a></a>', {'href':'#',
@@ -533,7 +533,7 @@
     {% if not result|length %}
         {% trans -%}No search results!{%- endtrans %}
     {% else %}
-        <script type="text/javascript">
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
             $(function(){
                 $('.ls-list').cdedbListSelect();
                 $('#btn-select-all').click(function(){

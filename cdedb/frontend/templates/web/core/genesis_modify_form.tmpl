@@ -54,7 +54,7 @@
                 {{ util.form_input_text(name="country", label=gettext("Country"), small=True) }}
             </div>
 
-            <script type="text/javascript">
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var show_event_fields = function() {
                     if ($select.val() === 'event') {
