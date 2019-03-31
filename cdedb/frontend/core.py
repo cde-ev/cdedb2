@@ -1329,7 +1329,7 @@ class CoreFrontend(AbstractFrontend):
         """First verify new name with test email."""
         if new_username == rs.user.username:
             rs.errors.append(("new_username", ValueError(n_(
-                "Must be different from current E-Mail-Address."))))
+                "Must be different from current email address."))))
         if not rs.errors and self.coreproxy.verify_existence(rs, new_username):
             rs.errors.append(("new_username", ValueError(n_("Name collision."))))
         if rs.errors:
@@ -1364,7 +1364,7 @@ class CoreFrontend(AbstractFrontend):
             return self.change_username_form(rs)
         code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)
-        self.notify_return_code(rs, code, success=n_("E-Mail-Address changed."),
+        self.notify_return_code(rs, code, success=n_("email address changed."),
                                 error=message)
         if not code:
             return self.redirect(rs, "core/change_username_form")
@@ -1398,7 +1398,7 @@ class CoreFrontend(AbstractFrontend):
             return self.admin_username_change_form(rs, persona_id)
         code, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
-        self.notify_return_code(rs, code, success=n_("E-Mail-Address changed."),
+        self.notify_return_code(rs, code, success=n_("email address changed."),
                                 error=message)
         if not code:
             return self.redirect(rs, "core/admin_username_change_form")

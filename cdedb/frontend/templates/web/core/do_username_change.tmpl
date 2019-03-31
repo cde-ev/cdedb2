@@ -2,14 +2,14 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans -%}
-    	Change Your E-Mail-Address
+    	Change Your Email Address
     {%- endtrans %}
 {% endblock %}
 {% block content %}
     <p>
         {% trans email=raw_email -%}
-        	Enter Your Password and click "Confirm" to change Your E-Mail-Address to <code>{{ email }}</code>.
-            Aftwerwards you need to user Your new E-Mail-Address to login.
+        	Enter Your Password and click "Confirm" to change Your email address to <code>{{ email }}</code>.
+            Aftwerwards you need to user Your new email address to login.
         {%- endtrans %}
     </p>
 

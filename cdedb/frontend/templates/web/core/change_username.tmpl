@@ -3,26 +3,26 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans -%}
-    	Change Your E-Mail-Address
+    	Change Your Email Address
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(user['persona_id']), user['given_names'] + " " + user['family_name'],
                             icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/change_username_form"), gettext("Change E-Mail-Address"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/change_username_form"), gettext("Change Email Address"), active=True) }}
 {% endblock %}
 {% block content %}
     <p>
         {% trans -%}
-        	To change Your E-Mail-Address, You will have to confirm Your new E-Mail-Address by clicking a link in the
+        	To change Your email address, You will have to confirm Your new email address by clicking a link in the
             verification mail sent to the new E-Mail.
         {%- endtrans %}
     </p>
 
     <form action="{{ cdedblink('core/send_username_change_link') }}" method="GET" id="usernamechangeform"
             class="form-horizontal">
-        {{ util.form_input_text(name="new_username", label=gettext("New E-Mail-Address"), type="email") }}
+        {{ util.form_input_text(name="new_username", label=gettext("New email address"), type="email") }}
         {{ util.form_input_submit(value=gettext("Send verification mail")) }}
     </form>
 {% endblock %}

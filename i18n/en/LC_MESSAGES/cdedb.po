@@ -1678,7 +1678,7 @@ msgid "Modification of balance prevented."
 msgstr ""
 
 #: cdedb/backend/core.py:674
-msgid "Modification of E-Mail-Address prevented."
+msgid "Modification of email address prevented."
 msgstr ""
 
 #: cdedb/backend/core.py:676
@@ -1730,7 +1730,7 @@ msgid "Persona is not archived."
 msgstr ""
 
 #: cdedb/backend/core.py:1156
-msgid "Only admins may unset a E-Mail-Address."
+msgid "Only admins may unset a email address."
 msgstr ""
 
 #: cdedb/backend/core.py:1160 cdedb/frontend/core.py:1334
@@ -2445,11 +2445,11 @@ msgid "Password reset."
 msgstr ""
 
 #: cdedb/frontend/core.py:1331
-msgid "Must be different from current E-Mail-Address."
+msgid "Must be different from current email address."
 msgstr ""
 
 #: cdedb/frontend/core.py:1367 cdedb/frontend/core.py:1401
-msgid "E-Mail-Address changed."
+msgid "email address changed."
 msgstr ""
 
 #: cdedb/frontend/core.py:1450
@@ -6539,12 +6539,12 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
-msgid "Edit E-Mail-Address for %(given_names)s %(family_name)s"
+msgid "Edit email address for %(given_names)s %(family_name)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:11
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:20
-msgid "Edit E-Mail-Address"
+msgid "Edit email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:17
@@ -6554,12 +6554,12 @@ msgid "User"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:18
-msgid "Old E-Mail-Address"
+msgid "Old email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:19
 #: cdedb/frontend/templates/web/core/change_username.tmpl:25
-msgid "New E-Mail-Address"
+msgid "New email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/archived_user_search.tmpl:8
@@ -6688,7 +6688,7 @@ msgid "Edit Your Data"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:44
-msgid "To Change Your E-Mail Address, use the button on Your Profile Page."
+msgid "To Change Your email address, use the button on Your Profile Page."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:56
@@ -6704,16 +6704,16 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:5
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:4
-msgid "Change Your E-Mail-Address"
+msgid "Change Your email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:13
-msgid "Change E-Mail-Address"
+msgid "Change email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:17
 msgid ""
-"To change Your E-Mail-Address, You will have to confirm Your new E-Mail-"
+"To change Your email address, You will have to confirm Your new E-Mail-"
 "Address by clicking a link in the\n"
 "            verification mail sent to the new E-Mail."
 msgstr ""
@@ -6745,9 +6745,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:10
 #, python-format
 msgid ""
-"Enter Your Password and click \"Confirm\" to change Your E-Mail-Address "
+"Enter Your Password and click \"Confirm\" to change Your email address "
 "to <code>%(email)s</code>.\n"
-"            Aftwerwards you need to user Your new E-Mail-Address to login."
+"            Aftwerwards you need to user Your new email address to login."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:20
@@ -7131,7 +7131,7 @@ msgstr ""
 msgid ""
 "If You have forgotten Your Password, You can request an E-Mail to reset "
 "it.\n"
-"            To do this, just enter the E-Mail Address You would use to "
+"            To do this, just enter the email address You would use to "
 "login."
 msgstr ""
 
@@ -9612,11 +9612,11 @@ msgid "You are subscribed to this mailinglist."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:80
-msgid "Your E-Mail address"
+msgid "Your email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:96
-msgid "Reset E-Mail adress"
+msgid "Reset email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:104
@@ -9624,12 +9624,12 @@ msgid "Unsubscribe"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:109
-msgid "Change E-Mail address"
+msgid "Change email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:112
 msgid ""
-"To recieve mails from this mailinglist with a different E-Mail address,\n"
+"To recieve mails from this mailinglist with a different email address,\n"
 "                                enter the new address in this form. You "
 "will recieve a confirmation mail."
 msgstr ""
@@ -9639,7 +9639,7 @@ msgid "New Subsciption Address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:125
-msgid "New E-Mail address"
+msgid "New email address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:127
