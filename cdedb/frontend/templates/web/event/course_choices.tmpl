@@ -64,7 +64,7 @@
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form') }}" method="GET" id="choicefilterform"
               aria-label="{% trans -%}Filter{%- endtrans %}">
-            <p>
+            <div class="p">
                 {% if ambience['event']['tracks']|length > 1 %}
                     {% set select1 = gettext("in Track %s")|e|format(util.input_select(
                         name="track_id", nulloption=gettext("— any —"),
@@ -80,18 +80,21 @@
                                 aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Course")),
                         select3=util.input_select(name="position", entries=filter_entries,
                                 aclass="form-control input-slim input-sm", nulloption=gettext("— no Filter —"),
-                                arialabel=gettext("Filter: Course Operator")),
-                        select4=util.input_text(name='ids', aclass="form-control input-slim input-sm",
-                                   arialabel=gettext("Filter: Registration IDs"))
+                                arialabel=gettext("Filter: Course Operator"))
                         -%}
-                    Show participants who {{ select3 }} the course {{ select2 }} {{ select1 }},
-                    with one of these participant IDs: {{ select4 }}
+                    Show only participants who {{ select3 }} the course {{ select2 }} {{ select1 }}
                 {%- endtrans %}
-                {{ util.input_checkbox('include_active', gettext("Show all registrations")) }}
-            </p>
+            </div>
+            <div class="p">
+                {% trans select4=util.input_text(name='ids', aclass="form-control input-slim input-sm",
+                                   arialabel=gettext("Filter: Registration IDs")),
+                         checkbox=util.input_checkbox('include_active', gettext("Show pending registrations")) %}
+                    Only include these IDs: {{ select4 }}, but {{ checkbox }}.
+                {% endtrans %}
+            </div>
             <p class="nosp">
                 {{ util.input_submit(value=gettext("Go!"), icon="search") }}
-                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show All"), icon="remove",
+                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show all participants"), icon="remove",
                              aclass="btn btn-default") }}
             </p>
         </form>
