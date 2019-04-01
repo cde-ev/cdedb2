@@ -261,7 +261,9 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def get_minor_form(self, rs, event_id):
         """Retrieve minor form."""
-        if not rs.ambience['event']['is_visible']:
+        if not (rs.ambience['event']['is_visible']
+                or event_id in rs.user.orga
+                or self.is_admin(rs)):
             raise werkzeug.exceptions.Forbidden(
                 n_("The event is not published yet."))
         path = self.conf.STORAGE_DIR / "minor_form" / str(event_id)
