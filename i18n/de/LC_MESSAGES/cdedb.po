@@ -10175,3 +10175,6 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:6
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
+
+msgid "Must supply archival note."
+msgstr "Archivierungsnotiz muss angegeben werden."
