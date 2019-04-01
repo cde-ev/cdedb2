@@ -9,7 +9,10 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses"), active=not include_active) }}
+    {% if include_active %}
+        {{ util.breadcrumb_link(cdedblink("event/course_stats", {'include_active': True}), gettext("Include all active registrations"), active=True) }}
+    {% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -23,6 +26,38 @@
         {{ util.href(cdedblink('event/create_course_form'), gettext("Add Course"), readonly=is_locked, icon='plus',
                      aclass='btn btn-success btn-sm') }}
     </div>
+
+    {% if not include_active %}
+        <p class="pull-right">
+            {{ util.href(cdedblink("event/course_stats", {'include_active': True}),
+                         gettext('Include all active registrations'), aclass='btn btn-sm btn-info',
+                         icon='asterisk') }}
+        </p>
+        <p>
+            {{ util.make_icon('info-sign') }}
+            {% trans -%}
+                The course statistics, shown below, include only approved
+                participants.
+            {%- endtrans %}
+        </p>
+        <div style="clear: both"></div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>
+                {{ util.make_icon('info-sign') }}
+                {% trans -%}
+                    The course attendee and choice statistics include all active
+                    registrations (registration status “Participant”, “Guest”,
+                    “Waitlist” and “Applied”)
+                {%- endtrans %}
+            </p>
+            <p>
+                {{ util.href(cdedblink("event/course_stats"), gettext('Back to Participants only'),
+                             aclass='btn btn-default btn-sm', icon='arrow-left') }}
+            </p>
+        </div>
+    {% endif %}
+
     <table class="table table-condensed">
         <thead>
             <tr>

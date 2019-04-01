@@ -1416,12 +1416,20 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def course_stats(self, rs, event_id):
+    @REQUESTdata(("include_active", "bool_or_None"))
+    def course_stats(self, rs, event_id, include_active):
         """List courses.
 
         Provide an overview of the number of choices and assignments for
         all courses.
         """
+        if include_active:
+            include_states = tuple(
+                status for status in const.RegistrationPartStati
+                if status.is_involved)
+        else:
+            include_states = (const.RegistrationPartStati.participant,)
+
         event = rs.ambience['event']
         tracks = event['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -1435,7 +1443,7 @@ class EventFrontend(AbstractUserFrontend):
                     if (len(reg['tracks'][track_id]['choices']) > i
                         and reg['tracks'][track_id]['choices'][i] == course_id
                         and (reg['parts'][tracks[track_id]['part_id']]['status']
-                             == const.RegistrationPartStati.participant)))
+                             in include_states)))
                 for track_id, track in tracks.items()
                 for i in range(track['num_choices'])
             }
@@ -1447,14 +1455,14 @@ class EventFrontend(AbstractUserFrontend):
                     1 for reg in registrations.values()
                     if (reg['tracks'][track_id]['course_id'] == course_id
                         and (reg['parts'][track['part_id']]['status']
-                             == const.RegistrationPartStati.participant)))
+                             in include_states)))
                 for track_id, track in tracks.items()
             }
             for course_id in course_ids
         }
         return self.render(rs, "course_stats", {
             'courses': courses, 'choice_counts': choice_counts,
-            'assign_counts': assign_counts})
+            'assign_counts': assign_counts, 'include_active': include_active})
 
     @access("event")
     @event_guard(check_offline=True)
