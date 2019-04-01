@@ -1219,7 +1219,8 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def registrations_by_course(self, rs, event_id, course_id=None,
-                                track_id=None, position=None, reg_ids=None):
+            track_id=None, position=None, reg_ids=None,
+            reg_states=(const.RegistrationPartStati.participant,)):
         """List registrations of an event pertaining to a certain course.
 
         This is a filter function, mainly for the course assignment tool.
@@ -1232,6 +1233,8 @@ class EventBackend(AbstractBackend):
         :type position: :py:class:`cdedb.common.InfiniteEnum`
         :param reg_ids: List of registration ids to filter for
         :type reg_ids: [int] or None
+        :param reg_ids: List of registration states (in any part) to filter for
+        :type reg_ids: [const.RegistrationPartStati]
         :rtype: {int: int}
         """
         event_id = affirm("id", event_id)
@@ -1241,6 +1244,7 @@ class EventBackend(AbstractBackend):
                           position)
         reg_ids = reg_ids or set()
         reg_ids = affirm_set("id", reg_ids)
+        reg_states = affirm_set("enum_registrationpartstati", reg_states)
         if (not self.is_admin(rs)
                 and not self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
@@ -1257,8 +1261,8 @@ class EventBackend(AbstractBackend):
             "LEFT OUTER JOIN event.course_choices AS choices",
             "ON choices.registration_id = regs.id",
             "AND choices.track_id = course_tracks.id",
-            "WHERE regs.event_id = %s AND rparts.status = %s")
-        params = (event_id, const.RegistrationPartStati.participant)
+            "WHERE regs.event_id = %s AND rparts.status = ANY(%s)")
+        params = (event_id, reg_states)
         if track_id:
             query = glue(query, "AND course_tracks.id = %s")
             params += (track_id,)
