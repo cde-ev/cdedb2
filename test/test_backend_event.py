@@ -88,8 +88,8 @@ class TestEventBackend(BackendTest):
                     'association': 1,
                     'field_name': "preferred_excursion_date",
                     'kind': 5,
-                    'entries': [["2109-8-16", "In the first coming"],
-                                ["2110-8-16", "During the second coming"]],
+                    'entries': [["2109-08-16", "In the first coming"],
+                                ["2110-08-16", "During the second coming"]],
                 },
             },
         }
@@ -176,8 +176,8 @@ class TestEventBackend(BackendTest):
         changed_field = {
             'association': 2,
             'kind': 5,
-            'entries': [["2110-8-15", "early second coming"],
-                        ["2110-8-17", "late second coming"],],
+            'entries': [["2110-08-15", "early second coming"],
+                        ["2110-08-17", "late second coming"],],
         }
         self.event.set_event(self.key, {
             'id': new_id,
