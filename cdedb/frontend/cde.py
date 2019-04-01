@@ -703,15 +703,10 @@ class CdEFrontend(AbstractUserFrontend):
         :type statement: str or None
         :type statement_file: file or None
         """
-        statement_file = check(rs, "csvfile", statement_file,
+        statement_file = check(rs, "csvfile_or_None", statement_file,
                                "statement_file")
         if rs.errors:
             return self.parse_statement_form(rs)
-
-        event_list = self.eventproxy.list_db_events(rs)
-        events = self.eventproxy.get_events(rs, event_list)
-        event_names = {e["title"]: (get_event_name_pattern(e), e["shortname"])
-                       for e in events.values()}
 
         if statement_file and statement:
             rs.notify("warning", n_("Only one input method allowed."))
@@ -724,6 +719,11 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             rs.notify("error", n_("No input provided."))
             return self.parse_statement_form(rs)
+
+        event_list = self.eventproxy.list_db_events(rs)
+        events = self.eventproxy.get_events(rs, event_list)
+        event_names = {e["title"]: (get_event_name_pattern(e), e["shortname"])
+                       for e in events.values()}
 
         reader = csv.DictReader(statementlines, delimiter=";",
                                 quotechar='"',
