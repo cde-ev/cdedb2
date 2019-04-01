@@ -446,10 +446,11 @@ Mitglied.</pre>
                         <div class="col-sm-4">
                             <div class="p">
                                 <form action="{{ cdedblink('core/archive_persona') }}" method="POST"
-                                 id="archivepersonaform" style="display: inline;">
+                                 id="archivepersonaform">
                                     {{ util.anti_csrf_token('core/archive_persona') }}
-                                    {{ util.input_submit(value=gettext("Archive Account"), icon="erase",
-                                            aclass="btn btn-danger btn-sm") }}
+                                    {{ util.form_input_text(name="note", label=gettext("Note")) }}
+                                    {{ util.form_input_submit(value=gettext("Archive Account"), icon="erase",
+                                            aclass="btn btn-danger btn-sm", horizontal=False) }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                 </form>
                                 <script type="text/javascript" nonce="{{ csp_nonce }}">

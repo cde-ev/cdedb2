@@ -1649,16 +1649,20 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/list_pending_changes")
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
-    def archive_persona(self, rs, persona_id, ack_delete):
+    @REQUESTdata(("ack_delete", "bool"), ("note", "str"))
+    def archive_persona(self, rs, persona_id, ack_delete, note):
         """Move a persona to the attic."""
         if not ack_delete:
             rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
+        if not note:
+            # TODO This is somewhat ugly, due to validation results being lost
+            # on redirect...
+            rs.notify("error", n_("Must supply archival note."))
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
 
         try:
-            code = self.coreproxy.archive_persona(rs, persona_id)
+            code = self.coreproxy.archive_persona(rs, persona_id, note)
         except ArchiveError as e:
             rs.notify("error", e.args[0])
             code = 0
