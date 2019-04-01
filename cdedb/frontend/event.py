@@ -2660,7 +2660,7 @@ class EventFrontend(AbstractUserFrontend):
         def filter_parameters(params):
             """Helper function to filter parameters by `skip` list and `enabled`
             checkboxes"""
-            params = ((key, kind) for key, kind in params if key not in skip)
+            params = [(key, kind) for key, kind in params if key not in skip]
             if not check_enabled:
                 return params
             enable_params = tuple(("enable_{}".format(i), "bool")
