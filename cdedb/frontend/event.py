@@ -273,20 +273,31 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @REQUESTfile("minor_form")
+    @REQUESTdata(("delete", "bool"))
     @event_guard(check_offline=True)
-    def change_minor_form(self, rs, event_id, minor_form):
+    def change_minor_form(self, rs, event_id, minor_form, delete):
         """Replace the form for parental agreement for minors.
 
         This somewhat clashes with our usual naming convention, it is
         about the 'minor form' and not about changing minors.
         """
-        minor_form = check(rs, 'pdffile', minor_form, "minor_form")
+        minor_form = check(rs, 'pdffile_or_None', minor_form, "minor_form")
+        if not minor_form and not delete:
+            rs.errors.append(
+                ("event_logo", ValueError(n_("Mustn't be empty."))))
         if rs.errors:
             return self.show_event(rs, event_id)
         path = self.conf.STORAGE_DIR / 'minor_form' / str(event_id)
-        with open(str(path), 'wb') as f:
-            f.write(minor_form)
-        rs.notify("success", n_("Minor form updated."))
+        if delete and not minor_form:
+            if path.exists():
+                path.unlink()
+                rs.notify("success", n_("Minor form has been removed."))
+            else:
+                rs.notify("info", n_("Nothing to remove."))
+        elif minor_form:
+            with open(str(path), 'wb') as f:
+                f.write(minor_form)
+            rs.notify("success", n_("Minor form updated."))
         return self.redirect(rs, "event/show_event")
 
     @access("event")

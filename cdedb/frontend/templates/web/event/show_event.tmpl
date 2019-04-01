@@ -147,6 +147,13 @@
                                                     icon='file') -%}
                             	Form present: {{ link }}
                             {%- endtrans %}
+                            <form action="{{ cdedblink("event/change_minor_form") }}" method="POST"
+                                id="removeminorformform">
+                            {{ util.anti_csrf_token("event/change_minor_form") }}
+                            {{ util.input_hidden(name="delete", value=True) }}
+                            {{ util.input_submit(value=gettext("Remove Minor Form"), readonly=is_locked,
+                                                 icon="trash", aclass='btn btn-danger') }}
+                        </form>
                         {% else %}
                             <strong>{{ util.make_icon('warning-sign') }}
                                 {% trans -%}No Form present – Minors cannot register{%- endtrans %}
@@ -156,6 +163,7 @@
                     <form action="{{ cdedblink('event/change_minor_form') }}" method="POST" enctype="multipart/form-data"
                      id="changeminorformform" {% if 'minor_form' in errors %}class="has-error"{% endif %}>
                         {{ util.anti_csrf_token('event/change_minor_form') }}
+                        {{ util.input_hidden(name="delete", value=True) }}
                         <div class="input-group">
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel=gettext("PDF of the new Minor Form")) }}
