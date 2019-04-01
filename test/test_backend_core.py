@@ -599,7 +599,7 @@ class TestCoreBackend(BackendTest):
     def test_archive(self, user):
         data = self.core.get_total_persona(self.key, 3)
         self.assertEqual(False, data['is_archived'])
-        ret = self.core.archive_persona(self.key, 3)
+        ret = self.core.archive_persona(self.key, 3, "Archived for testing.")
         self.assertLess(0, ret)
         data = self.core.get_total_persona(self.key, 3)
         self.assertEqual(True, data['is_archived'])
@@ -610,7 +610,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton")
     def test_archive_activate_bug(self, user):
-        self.core.archive_persona(self.key, 4)
+        self.core.archive_persona(self.key, 4, "Archived for testing.")
         self.core.dearchive_persona(self.key, 4)
         # The following call sometimes failed with the error "editing
         # archived members impossbile". The solution may be to add some
