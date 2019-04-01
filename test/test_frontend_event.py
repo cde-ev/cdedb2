@@ -668,7 +668,7 @@ etc;anything else""", f['entries_2'].value)
             data = datafile.read()
         f['event_logo'] = webtest.Upload("picture.jpg", data, "application/octet-stream")
         self.submit(f)
-        self.get('/event/event/1/get_logo')
+        self.get('/event/event/1/logo/get')
         with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
 
