@@ -331,6 +331,7 @@ class PastEventLogCodes(enum.IntEnum):
     """Available log messages past_event.log."""
     event_created = 1  #:
     event_changed = 2  #:
+    event_deleted = 3  #:
     course_created = 10  #:
     course_changed = 11  #:
     course_deleted = 12  #:

@@ -293,6 +293,32 @@ class PastEventBackend(AbstractBackend):
         self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
         return ret
 
+    @access("cde_admin", "event_admin")
+    def delete_past_event(self, rs, pevent_id, cascade=False):
+
+        pevent_id = affirm("id", pevent_id)
+        cascade = affirm("bool", cascade)
+        pevent = self.get_past_event(rs, pevent_id)
+        ret = 1
+        with Atomizer(rs):
+            data = self.get_past_event(rs, pevent_id)
+            if cascade:
+                with Silencer(rs):
+                    for pcourse_id in self.list_past_courses(rs, pevent_id):
+                        # Delete courses cascadingly
+                        ret *= self.delete_past_course(rs, pcourse_id, True)
+                    for pid, _ in self.list_participants(
+                            rs, pevent_id=pevent_id):
+                        # Remove participants without course
+                        ret *= self.remove_participant(rs, pevent_id, None, pid)
+                ret *= self.sql_delete(rs, "past_event.log", (pevent_id,),
+                                       entity_key="pevent_id")
+            ret *= self.sql_delete_one(rs, "past_event.events", pevent_id)
+            self.past_event_log(rs, const.PastEventLogCodes.event_deleted,
+                                pevent_id=None, persona_id=None,
+                                additional_info=pevent['title'])
+        return ret
+
     @access("persona")
     def list_past_courses(self, rs, pevent_id):
         """List all courses of a concluded event.
