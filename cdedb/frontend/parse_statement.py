@@ -43,6 +43,8 @@ STATEMENT_REFERENCE_REFUND = re.compile(
     r"(R(ü|ue|u|\s)ck)?erstattung", flags=re.I)
 STATEMENT_REFERENCE_MEMBERSHIP = re.compile(
     r"Mitglied(schaft)?(sbeitrag)?|(Halb)?Jahresbeitrag", flags=re.I)
+STATEMENT_REFERENCE_DONATION = re.compile(
+    r"Spende", flags=re.I)
 STATEMENT_REFERENCE_EXTERNAL = re.compile(
     r"\d{4}-\d{2}-\d{2}[-,.\s]*Extern", flags=re.I)
 STATEMENT_DB_ID_PATTERN = re.compile(
@@ -432,7 +434,6 @@ class Transaction:
                 # Membership Fee Transaction
                 self.type = TransactionType.MembershipFee
                 self.type_confidence = confidence
-                return
 
             elif re.search(STATEMENT_DB_ID_SIMILAR, self.reference):
                 # Semi-Correct ID found, so we decrease confidence
@@ -440,13 +441,11 @@ class Transaction:
                 self.type = TransactionType.MembershipFee
                 confidence = confidence.decrease()
                 self.type_confidence = confidence
-                return
 
             elif re.search(STATEMENT_POSTING_OTHER, self.posting):
                 # Posting reserved for administrative fees found
                 self.type = TransactionType.Other
                 self.type_confidence = confidence
-                return
 
             elif re.search(STATEMENT_POSTING_REFUND, self.posting):
                 # Posting used for refunds found
@@ -454,7 +453,6 @@ class Transaction:
                     # Reference mentions a refund
                     self.type = TransactionType.Refund
                     self.type_confidence = confidence
-                    return
 
                 else:
                     # Reference doesn't mention a refund so this
@@ -462,14 +460,12 @@ class Transaction:
                     self.type = TransactionType.Other
                     confidence = confidence.decrease()
                     self.type_confidence = confidence
-                    return
 
             elif re.search(STATEMENT_REFERENCE_MEMBERSHIP, self.reference):
                 # No DB-ID found, but membership mentioned in reference
                 self.type = TransactionType.MembershipFee
                 confidence = confidence.decrease()
                 self.type_confidence = confidence
-                return
 
             else:
                 # No other Options left so we assume this to be
@@ -477,7 +473,27 @@ class Transaction:
                 self.type = TransactionType.Other
                 confidence = confidence.decrease(2)
                 self.type_confidence = confidence
-                return
+
+            # Check whether this could actually be an Event Fee
+            # Iterate through known Event names and their variations
+            for event_name, value in event_names.items():
+                pattern, shortname = value
+                if re.search(escape(event_name), self.reference,
+                             flags=re.IGNORECASE):
+                    self.type = TransactionType.EventFee
+                    confidence = confidence.decrease()
+                    self.type_confidence = confidence
+                    break
+                elif re.search(pattern, self.reference,
+                               flags=re.IGNORECASE):
+                    self.type = TransactionType.EventFee
+                    confidence = confidence.decrease(2)
+                    self.type_confidence = confidence
+                    break
+
+            if re.search(STATEMENT_REFERENCE_DONATION, self.reference):
+                self.type = TransactionType.Other
+                self.type_confidence = ConfidenceLevel.Full
 
         elif self.account == Accounts.Account1:
             if re.search(STATEMENT_DB_ID_PATTERN, self.reference):
@@ -485,7 +501,6 @@ class Transaction:
                 # Event Fee
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence
-                return
 
             elif re.search(STATEMENT_DB_ID_SIMILAR, self.reference):
                 # Semi-Correct DB-ID found, so we decrease confidence
@@ -493,13 +508,11 @@ class Transaction:
                 self.type = TransactionType.EventFee
                 confidence = confidence.decrease()
                 self.type_confidence = confidence
-                return
 
             elif re.search(STATEMENT_POSTING_OTHER, self.posting):
                 # Reserved Posting for administrative fees
                 self.type = TransactionType.Other
                 self.type_confidence = confidence
-                return
 
             elif re.search(STATEMENT_POSTING_REFUND, self.posting):
                 # Posting used for refunds found
@@ -507,14 +520,12 @@ class Transaction:
                     # Refund mentioned in reference
                     self.type = TransactionType.Refund
                     self.type_confidence = confidence
-                    return
                 else:
                     # Reference doesn't mention refund, so this
                     # probably is a different kind of payment
                     self.type = TransactionType.Other
                     confidence = confidence.decrease()
                     self.type_confidence = confidence
-                    return
 
             else:
                 # Iterate through known Event names and their variations
@@ -525,34 +536,35 @@ class Transaction:
                         self.type = TransactionType.EventFee
                         confidence = confidence.decrease()
                         self.type_confidence = confidence
-                        return
-                    if re.search(pattern, self.reference,
-                                 flags=re.IGNORECASE):
+                        break
+                    elif re.search(pattern, self.reference,
+                                   flags=re.IGNORECASE):
                         self.type = TransactionType.EventFee
                         confidence = confidence.decrease(2)
                         self.type_confidence = confidence
-                        return
+                        break
 
                 # No other Options left, so we assume this to be
                 # something else, but with lower confidence.
                 self.type = TransactionType.Other
                 confidence = confidence.decrease(2)
                 self.type_confidence = confidence
-                return
+
+            if re.search(STATEMENT_REFERENCE_DONATION, self.reference):
+                self.type = TransactionType.Other
+                self.type_confidence = ConfidenceLevel.Full
 
         elif self.account == Accounts.Account2:
             # This account should not be in use
             self.type = TransactionType.Other
             confidence = confidence.decrease(3)
             self.type_confidence = confidence
-            return
 
         else:
             # This Transaction uses an unknown account
             self.type = TransactionType.Unknown
             confidence = confidence.destroy()
             self.type_confidence = confidence
-            return
 
     def match_member(self, rs, get_persona):
         """
