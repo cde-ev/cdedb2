@@ -1476,6 +1476,19 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Tretbootfahren")
 
     @as_users("anton")
+    def test_delete_past_event(self, user):
+        self.get("/cde/past/event/list")
+        self.assertTitle("Verg. Veranstaltungen")
+        self.assertPresence("2014")
+        self.get("/cde/past/event/1/show")
+        self.assertTitle("PfingstAkademie 2014")
+        f = self.response.forms['deletepasteventform']
+        f['ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("Verg. Veranstaltungen")
+        self.assertNonPresence("2014")
+
+    @as_users("anton")
     def test_change_past_course(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/past/event/list'},
