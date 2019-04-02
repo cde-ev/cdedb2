@@ -901,8 +901,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Kontoauszug parsen")
         self.assertPresence("3 Transaktionen für event_fees gefunden.")
         self.assertPresence("2 Transaktionen für membership_fees gefunden.")
-        self.assertPresence("4 Transaktionen für other_transactions gefunden.")
-        self.assertPresence("9 Transaktionen für transactions gefunden.")
+        self.assertPresence("6 Transaktionen für other_transactions gefunden.")
+        self.assertPresence("11 Transaktionen für transactions gefunden.")
         
         save = self.response
         
@@ -990,24 +990,45 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(STATEMENT_GIVEN_NAMES_UNKNOWN,
                          result[1]["given_names"])
         self.assertIn("No DB-ID found.", result[1]["problems"])
-        
-        self.assertEqual("8068901", result[2]["account"])
-        self.assertEqual("31.12.18", result[2]["date"])
-        self.assertEqual("-18.54", result[2]["amount_export"])
-        self.assertIn("Genutzte Freiposten", result[2]["reference"])
-        self.assertEqual("", result[2]["account_holder"])
-        self.assertEqual("Sonstiges", result[2]["type"])
+
+        self.assertEqual("8068900", result[2]["account"])
+        self.assertEqual("21.12.18", result[2]["date"])
+        self.assertEqual("10.00", result[2]["amount_export"])
+        self.assertEqual("Mitgliedsbeitrag für DB-1-9 und DB-2-7",
+                         result[2]["reference"])
+        self.assertEqual("Anton & Berta", result[2]["account_holder"])
+        self.assertEqual("Mitgliedsbeitrag", result[2]["type"])
         self.assertEqual("ConfidenceLevel.Full", result[2]["type_confidence"])
-        self.assertEqual("", result[2]["problems"])
+        self.assertIn("reference: Multiple (2) DB-IDs found in line 11!",
+                      result[2]["problems"])
         
         self.assertEqual("8068901", result[3]["account"])
-        self.assertEqual("30.12.18", result[3]["date"])
-        self.assertEqual("-52.50", result[3]["amount_export"])
-        self.assertEqual("KONTOFUEHRUNGSGEBUEHREN", result[3]["reference"])
+        self.assertEqual("31.12.18", result[3]["date"])
+        self.assertEqual("-18.54", result[3]["amount_export"])
+        self.assertIn("Genutzte Freiposten", result[3]["reference"])
         self.assertEqual("", result[3]["account_holder"])
         self.assertEqual("Sonstiges", result[3]["type"])
         self.assertEqual("ConfidenceLevel.Full", result[3]["type_confidence"])
         self.assertEqual("", result[3]["problems"])
+        
+        self.assertEqual("8068901", result[4]["account"])
+        self.assertEqual("30.12.18", result[4]["date"])
+        self.assertEqual("-52.50", result[4]["amount_export"])
+        self.assertEqual("KONTOFUEHRUNGSGEBUEHREN", result[4]["reference"])
+        self.assertEqual("", result[4]["account_holder"])
+        self.assertEqual("Sonstiges", result[4]["type"])
+        self.assertEqual("ConfidenceLevel.Full", result[4]["type_confidence"])
+        self.assertEqual("", result[4]["problems"])
+
+        self.assertEqual("8068900", result[5]["account"])
+        self.assertEqual("22.12.18", result[5]["date"])
+        self.assertEqual("50.00", result[5]["amount_export"])
+        self.assertEqual("Anton Armin A. Administrator DB-1-9 Spende",
+                         result[5]["reference"])
+        self.assertEqual("Anton", result[5]["account_holder"])
+        self.assertEqual("Sonstiges", result[5]["type"])
+        self.assertEqual("ConfidenceLevel.Full", result[5]["type_confidence"])
+        self.assertEqual("", result[5]["problems"])
         
         # check transactions files
         # check account 00
