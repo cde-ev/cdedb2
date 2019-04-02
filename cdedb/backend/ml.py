@@ -627,8 +627,8 @@ class MlBackend(AbstractBackend):
             # (2) Handle actual transitions
             policy = const.AudiencePolicy(ml['audience_policy'])
             roles = extract_roles(self.core.get_persona(rs, persona_id))
-            if not policy.check(roles) and not self.is_admin(rs):
-                # Only admins may add non-matching users
+            if not policy.check(roles) and not privileged:
+                # Only moderators may add non-matching users
                 return 0
             gateway = False
             if subscribe and not privileged and ml['gateway']:

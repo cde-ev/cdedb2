@@ -669,15 +669,6 @@ class CoreFrontend(AbstractFrontend):
                  "display_name"), search, (("personas.id", True),))
             data = self.coreproxy.submit_select_persona_query(rs, query)
 
-        # Filter result to get only valid audience, if mailinglist is given
-        if mailinglist:
-            persona_ids = tuple(e['id'] for e in data)
-            personas = self.coreproxy.get_personas(rs, persona_ids)
-            pol = const.AudiencePolicy(mailinglist['audience_policy'])
-            data = tuple(
-                e for e in data
-                if pol.check(extract_roles(personas[e['id']])))
-
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
             tmp = sorted(data, key=lambda e: e['id'])
