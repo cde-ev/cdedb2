@@ -376,10 +376,10 @@ class Transaction:
             reference_parts = []
             for delimiter in STATEMENT_REFERENCE_DELIMITERS:
                 pattern = re.compile(r"{}\+(.*)$".format(delimiter))
-                result = pattern.search(reference)
+                result = pattern.findall(reference)
                 if result:
                     if delimiter in STATEMENT_RELEVANT_REFERENCE_DELIMITERS:
-                        reference_parts.extend(result.groups())
+                        reference_parts.extend(result)
                     reference = pattern.sub("", reference)
             if reference_parts:
                 self.reference = "; ".join(part for part in reference_parts
@@ -573,24 +573,24 @@ class Transaction:
                              TransactionType.EventFee}:
             return
 
-        result = re.search(STATEMENT_DB_ID_PATTERN, self.reference)
-        result2 = re.search(STATEMENT_DB_ID_SIMILAR, self.reference)
+        result = re.findall(STATEMENT_DB_ID_PATTERN, self.reference)
+        result2 = re.findall(STATEMENT_DB_ID_SIMILAR, self.reference)
         if not result and result2:
             confidence = confidence.decrease()
             result = result2
 
         if result:
-            if len(result.groups()) > 1:
+            if len(result) > 1:
                 # Multiple DB-IDs found, where only one is expected.
                 p = ("reference",
                      ValueError("Multiple (%(count)s) DB-IDs found "
                                 "in line %(t_id)s!",
-                                {"count": len(result.groups()),
+                                {"count": len(result),
                                  "t_id": self.t_id}))
                 self.problems.append(p)
-                confidence = confidence.decrease()
+                confidence = confidence.decrease(2)
 
-            for db_id in result.groups():
+            for db_id in result:
                 # Clone ConfidenceLevel for every result
                 temp_confidence = ConfidenceLevel(
                     confidence.value)
@@ -599,7 +599,7 @@ class Transaction:
                 value = db_id[:-1]
                 for pattern in STATEMENT_DB_ID_REMOVE:
                     value = re.sub(pattern, "", value)
-                checkdigit = db_id[-1]
+                checkdigit = db_id[-1].upper()
 
                 # Check the DB-ID
                 p_id, p = validate.check_cdedbid(

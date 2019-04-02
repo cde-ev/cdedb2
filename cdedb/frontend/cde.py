@@ -759,7 +759,8 @@ class CdEFrontend(AbstractUserFrontend):
             transactions.append(t)
             if (t.type in {TransactionType.EventFee}
                     and t.best_event_match
-                    and t.best_member_match):
+                    and t.best_member_match
+                    and t.best_member_confidence > 2):
                 event_fees.append(t)
             elif (t.type in {TransactionType.MembershipFee}
                   and t.best_member_match
