@@ -37,6 +37,8 @@ Here is a list of best practices to follow, so the code stays nice.
 * As general pattern: return tuple ``(bool, str)`` where the bool signals
   success, and the str is the either error message or return value
 * The test-suite should visit all functionality at least once.
+* If a change requires manual intervention on the server note this in the
+  commit message on a line starting with ``Deploy:``.
 
 .. _sample-data:
 
