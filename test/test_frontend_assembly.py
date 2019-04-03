@@ -253,6 +253,29 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNonPresence("Maximale Länge der Satzung")
 
     @as_users("anton")
+    def test_delete_ballot(self, user):
+        self.get("/assembly/assembly/1/ballot/2/show")
+        self.assertTitle("Farbe des Logos (Internationaler Kongress)")
+        self.assertPresence("Diese Abstimmung hat noch nicht begonnen.")
+        f = self.response.forms['deleteballotform']
+        f['ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("Internationaler Kongress – Abstimmungen")
+        self.assertNonPresence("Farbe des Logos")
+        self.assertNonPresence("Zukünftige Abstimmungen")
+        self.traverse({"description": "Lieblingszahl"})
+        self.assertTitle("Lieblingszahl (Internationaler Kongress)")
+        self.assertPresence("Die Abstimmung läuft.")
+        self.assertNonPresence("Löschen")
+        self.assertNotIn("deleteballotform", self.response.forms)
+        self.get("/assembly/assembly/1/ballot/list")
+        self.traverse({"description": "Antwort auf die letzte aller Fragen"})
+        self.assertTitle("Antwort auf die letzte aller Fragen (Internationaler Kongress)")
+        self.assertPresence("Die Abstimmung ist beendet.")
+        self.assertNonPresence("Löschen")
+        self.assertNotIn("deleteballotform", self.response.forms)
+
+    @as_users("anton")
     def test_attachments(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},

@@ -615,8 +615,23 @@ class AssemblyFrontend(AbstractUserFrontend):
                 ("ack_conclude", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)
+        blockers = self.assemblyproxy.delete_ballot_blockers(rs, ballot_id)
+        if "vote_begin" in blockers:
+            rs.notify("error",
+                      ValueError(n_("Unable to remove active ballot.")))
+            return self.show_ballot(rs, assembly_id, ballot_id)
 
-        code = self.assemblyproxy.delete_ballot(rs, ballot_id, cascade=True)
+        # Specify what to cascade
+        cascade = {"candidates", "attachments", "voters"} & blockers.keys()
+        if "attachments" in cascade:
+            # Filehandling is left to the frontend so we do this manually
+            for attachment_id in blockers["attachments"]:
+                path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+                        / str(attachment_id))
+                if path.exists():
+                    path.unlink()
+        code = self.assemblyproxy.delete_ballot(rs, ballot_id, cascade=cascade)
+
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/list_ballots")
 
