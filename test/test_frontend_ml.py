@@ -201,6 +201,16 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({"3", "5", None}, tmp)
 
+    @as_users("anton")
+    def test_delete_ml(self, user):
+        self.get("/ml/mailinglist/2/management")
+        self.assertTitle("Werbung – Verwalten")
+        f = self.response.forms["deletemlform"]
+        f["ack_delete"].checked = True
+        self.submit(f)
+        self.assertTitle("Mailinglisten Komplettübersicht")
+        self.assertNonPresence("Werbung")
+
     def test_subscription_request(self):
         self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'},
