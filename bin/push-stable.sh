@@ -7,8 +7,8 @@ function notice_lines () {
 }
 
 for rev in $(git rev-list origin/stable..stable); do
-    notice_lines $(git show $rev | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /" | wc -l)
-    git show $rev | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /"
+    notice_lines $(git show -s $rev | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /" | wc -l)
+    git show -s $rev | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /"
 done
 
 if [ $COUNT -gt 0 ]
@@ -17,7 +17,7 @@ then
     select yn in "Push" "Abort"; do
         case $yn in
             Push ) git push origin stable
-                  break;;
+                   break;;
             Abort ) exit;;
         esac
     done
