@@ -1158,10 +1158,10 @@ class CoreFrontend(AbstractFrontend):
         """Update your own password."""
         if new_password != new_password2:
             rs.errors.append(("new_password",
-                              ValueError(n_("Passwords don't match."))))
+                              ValueError(n_("Passwords don’t match."))))
             rs.errors.append(("new_password2",
-                              ValueError(n_("Passwords don't match."))))
-            rs.notify("error", n_("Passwords don't match."))
+                              ValueError(n_("Passwords don’t match."))))
+            rs.notify("error", n_("Passwords don’t match."))
             return self.change_password_form(rs)
         # Provide user-specific data to consider it when calculating
         # password strength.
@@ -1290,10 +1290,10 @@ class CoreFrontend(AbstractFrontend):
             return self.reset_password_form(rs)
         if new_password != new_password2:
             rs.errors.append(("new_password",
-                              ValueError(n_("Passwords don't match."))))
+                              ValueError(n_("Passwords don’t match."))))
             rs.errors.append(("new_password2",
-                              ValueError(n_("Passwords don't match."))))
-            rs.notify("error", n_("Passwords don't match."))
+                              ValueError(n_("Passwords don’t match."))))
+            rs.notify("error", n_("Passwords don’t match."))
             return self.change_password_form(rs)
         # Provide user-specific data to consider it when calculating
         # password strength.

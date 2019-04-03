@@ -60,7 +60,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the participants' "
+                                  nulloption="", info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. Fieldtype: Text")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
@@ -69,7 +69,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="reserve_field", label=gettext("Field for Camping Mat"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the participants' "
+                                  nulloption="", info=gettext("The custom field in which the participants’ "
                                   "willingness to sleep on a camping mat will be saved. Fieldtype: Yes/No")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event')) }}

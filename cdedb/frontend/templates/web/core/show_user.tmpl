@@ -103,7 +103,7 @@
 
 
 
-            <h4 class="heading-underline">{% trans -%}Account &amp; Membership{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans -%}Account & Membership{%- endtrans %}</h4>
             <dl class="dl-horizontal">
                 <dt>{% trans -%}CdEDB-ID{%- endtrans %}</dt>
                 <dd>{{ data['id']|cdedbid }}</dd>
@@ -252,7 +252,7 @@
                 <dd>{{ data['telephone'] }}</dd>
             {% endif %}
             {% if data['mobile'] %}
-                <dt>{% trans -%}Mobilephone{%- endtrans %}</dt>
+                <dt>{% trans -%}Mobile Phone{%- endtrans %}</dt>
                 <dd>{{ data['mobile'] }}</dd>
             {% endif %}
             {% if data['weblink'] %}
@@ -392,7 +392,7 @@ Mitglied.</pre>
                                 {% if data['is_active'] %}
                                     {% trans -%}
                                     	Sends an email to this user, which contains a password reset link. This is
-                                        basically the same as any non-admin user can achieve using the "Reset Password"
+                                        basically the same as any non-admin user can achieve using the “Reset Password”
                                         form on the login page.
                                     {%- endtrans %}
                                 {% endif %}
@@ -464,8 +464,8 @@ Mitglied.</pre>
                             <p class="text-muted">
                                 {% trans -%}
                                 	Archives the Account. The User can no longer login and most Information is deleted.
-                                    Only Information necesary to restore Membership will be retained
-                                    (i.e. Name and Past Events attendance).
+                                    Only Information necessary to restore Membership will be retained
+                                    (i. e. Name and Past Events attendance).
                                     Other Users can no longer see the Account.
                                 {%- endtrans %}
                             </p>

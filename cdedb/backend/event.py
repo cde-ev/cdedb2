@@ -964,7 +964,7 @@ class EventBackend(AbstractBackend):
             events = {e['event_id'] for e in data}
             if len(events) > 1:
                 raise ValueError(n_(
-                    "Only courses from one event allowed!"))
+                    "Only courses from one event allowed."))
             event_fields = self._get_event_fields(rs, unwrap(events))
             data = self.sql_select(
                 rs, "event.course_segments", COURSE_SEGMENT_FIELDS, ids,
@@ -1124,7 +1124,7 @@ class EventBackend(AbstractBackend):
             # Check for existence of course tracks
             event = self.get_event(rs, data['event_id'])
             if not event['tracks']:
-                raise RuntimeError(n_("Event without tracks forbids courses"))
+                raise RuntimeError(n_("Event without tracks forbids courses."))
 
             cdata = {k: v for k, v in data.items()
                      if k in COURSE_FIELDS}
@@ -1316,7 +1316,7 @@ class EventBackend(AbstractBackend):
             personas = {e['persona_id'] for e in associated}
             if len(events) > 1:
                 raise ValueError(n_(
-                    "Only registrations from exactly one event allowed!"))
+                    "Only registrations from exactly one event allowed."))
             event_id = unwrap(events)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
@@ -2074,7 +2074,7 @@ class EventBackend(AbstractBackend):
         if not self.is_offline_locked(rs, event_id=data['id']):
             raise RuntimeError(n_("Not locked."))
         if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
-            raise ValueError(n_("Version mismatch -- aborting."))
+            raise ValueError(n_("Version mismatch – aborting."))
 
         with Atomizer(rs):
             current = self.export_event(rs, data['id'])
@@ -2257,7 +2257,7 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['id'])
         if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
-            raise ValueError(n_("Version mismatch -- aborting."))
+            raise ValueError(n_("Version mismatch – aborting."))
 
         def dict_diff(old, new):
             ret = {}

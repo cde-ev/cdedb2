@@ -29,7 +29,7 @@
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
-        <h4 class="heading-underline">{% trans -%}Moderation &amp; Subscribers{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans -%}Moderation & Subscribers{%- endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
                 entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
         {{ util.form_input_select(name="audience_policy", label=gettext("Audience"),

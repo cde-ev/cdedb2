@@ -688,7 +688,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.errors.append(("moniker", ValueError(n_("Duplicate moniker."))))
         if moniker == ASSEMBLY_BAR_MONIKER:
             rs.errors.append(
-                ("moniker", ValueError(n_("Mustn't be the bar moniker."))))
+                ("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)
         data = {

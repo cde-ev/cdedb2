@@ -384,7 +384,7 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True):
     """
     val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert)
     if val is not None and not val.strip():
-        errs.append((argname, ValueError(n_("Mustn't be empty."))))
+        errs.append((argname, ValueError(n_("Mustn’t be empty."))))
     return val, errs
 
 
@@ -522,7 +522,7 @@ def _printable_ascii(val, argname=None, *, _convert=True):
     """
     val, errs = _printable_ascii_type(val, argname, _convert=_convert)
     if val is not None and not val.strip():
-        errs.append((argname, ValueError(n_("Mustn't be empty."))))
+        errs.append((argname, ValueError(n_("Mustn’t be empty."))))
     return val, errs
 
 
@@ -2584,7 +2584,7 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
         return val, errs
     if 'kind' not in val or val['kind'] != "partial":
         return None, [(argname, KeyError(n_(
-            "Only partial exports are supported")))]
+            "Only partial exports are supported.")))]
 
     mandatory_fields = {
         'CDEDB_EXPORT_EVENT_VERSION': _int,
@@ -2951,19 +2951,19 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
     if 'vote_begin' in val:
         if val['vote_begin'] <= now():
             errs.append(
-                ("vote_begin", ValueError(n_("Mustn't be in the past.")))
+                ("vote_begin", ValueError(n_("Mustn’t be in the past.")))
             )
         if 'vote_end' in val:
             if val['vote_end'] <= val['vote_begin']:
                 errs.append(
                     ("vote_end", ValueError(n_(
-                        "Mustn't be before start of voting period.")))
+                        "Mustn’t be before start of voting period.")))
                 )
             if 'vote_extension_end' in val and val['vote_extension_end']:
                 if val['vote_extension_end'] <= val['vote_end']:
                     errs.append(
                         ("vote_extension_end", ValueError(n_(
-                            "Mustn't be before end of voting period.")))
+                            "Mustn’t be before end of voting period.")))
                     )
     if 'candidates' in val:
         newcandidates = {}
@@ -3016,7 +3016,7 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if val.get('moniker') == ASSEMBLY_BAR_MONIKER:
-        errs.append(("moniker", ValueError(n_("Mustn't be the bar moniker."))))
+        errs.append(("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
     return val, errs
 
 
@@ -3255,7 +3255,7 @@ def _query(val, argname=None, *, _convert=None):
     # scope
     _, errs = _identifier(val.scope, "scope", _convert=False)
     if not val.scope.startswith("qview_"):
-        errs.append(("scope", ValueError(n_("Must start with 'qview_'."))))
+        errs.append(("scope", ValueError(n_("Must start with “qview_”."))))
     # spec
     for field, validator in val.spec.items():
         _, e = _csv_identifier(field, "spec", _convert=False)
@@ -3267,7 +3267,7 @@ def _query(val, argname=None, *, _convert=None):
         _, e = _csv_identifier(field, "fields_of_interest", _convert=False)
         errs.extend(e)
     if not val.fields_of_interest:
-        errs.append(("fields_of_interest", ValueError(n_("Mustn't be empty."))))
+        errs.append(("fields_of_interest", ValueError(n_("Mustn’t be empty."))))
     # constraints
     for idx, x in enumerate(val.constraints):
         try:

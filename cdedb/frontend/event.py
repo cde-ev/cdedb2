@@ -309,7 +309,7 @@ class EventFrontend(AbstractUserFrontend):
         event_logo = check(rs, 'profilepic_or_None', event_logo, "event_logo")
         if not event_logo and not delete:
             rs.errors.append(
-                ("event_logo", ValueError(n_("Mustn't be empty."))))
+                ("event_logo", ValueError(n_("Mustn’t be empty."))))
         if rs.errors:
             return self.show_event(rs, event_id)
         path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
@@ -795,7 +795,7 @@ class EventFrontend(AbstractUserFrontend):
         # by default select all tracks
         tracks = rs.ambience['event']['tracks']
         if not tracks:
-            rs.notify("error", n_("Event without tracks forbids courses"))
+            rs.notify("error", n_("Event without tracks forbids courses."))
             return self.redirect(rs, 'event/course_stats')
         if 'segments' not in rs.values:
             rs.values.setlist('segments', tracks)
@@ -1487,12 +1487,12 @@ class EventFrontend(AbstractUserFrontend):
                                  persona['family_name'], flags=re.IGNORECASE):
                     warnings.append(('family_name',
                                      ValueError(
-                                         n_("Family name doesn't match."))))
+                                         n_("Family name doesn’t match."))))
                 if not re.search(diacritic_patterns(given_names),
                                  persona['given_names'], flags=re.IGNORECASE):
                     warnings.append(('given_names',
                                      ValueError(
-                                         n_("Given names don't match."))))
+                                         n_("Given names don’t match."))))
         datum.update({
             'persona_id': persona_id,
             'registration_id': registration_id,
@@ -1581,7 +1581,7 @@ class EventFrontend(AbstractUserFrontend):
             data.append(self.examine_fee(rs, dataset))
         if lineno != len(fee_data_lines):
             rs.errors.append(("fee_data",
-                              ValueError(n_("Lines didn't match up."))))
+                              ValueError(n_("Lines didn’t match up."))))
         open_issues = any(e['problems'] for e in data)
         if not force:
             open_issues = open_issues or any(e['warnings'] for e in data)
@@ -2379,7 +2379,7 @@ class EventFrontend(AbstractUserFrontend):
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(
-                    n_("Must be Orga to use Preview."))
+                    n_("Must be Orga to use preview."))
             if not rs.ambience['event']['use_questionnaire']:
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)

@@ -394,7 +394,7 @@ class CdEFrontend(AbstractUserFrontend):
             problems.append(
                 ("doppelganger",
                  RuntimeError(
-                     n_("Doppelganger choice doesn't fit resolution."))))
+                     n_("Doppelganger choice doesn’t fit resolution."))))
         if datum['doppelganger_id']:
             if datum['doppelganger_id'] not in doppelgangers:
                 problems.append(
@@ -626,7 +626,7 @@ class CdEFrontend(AbstractUserFrontend):
                     LineResolutions.create.value
         if lineno != len(accountlines):
             rs.errors.append(("accounts",
-                              ValueError(n_("Lines didn't match up."))))
+                              ValueError(n_("Lines didn’t match up."))))
         if not membership:
             rs.errors.append(("membership",
                               ValueError(
@@ -932,12 +932,12 @@ class CdEFrontend(AbstractUserFrontend):
                                  persona['family_name'], flags=re.IGNORECASE):
                     problems.append(('family_name',
                                      ValueError(
-                                         n_("Family name doesn't match."))))
+                                         n_("Family name doesn’t match."))))
                 if not re.search(diacritic_patterns(given_names),
                                  persona['given_names'], flags=re.IGNORECASE):
                     problems.append(('given_names',
                                      ValueError(
-                                         n_("Given names don't match."))))
+                                         n_("Given names don’t match."))))
         datum.update({
             'persona_id': persona_id,
             'amount': amount,
@@ -1077,7 +1077,7 @@ class CdEFrontend(AbstractUserFrontend):
                 ds2['warnings'].append(warning)
         if lineno != len(transferlines):
             rs.errors.append(("transfers",
-                              ValueError(n_("Lines didn't match up."))))
+                              ValueError(n_("Lines didn’t match up."))))
         open_issues = any(e['problems'] for e in data)
         saldo = sum(e['amount'] for e in data if e['amount'])
         if rs.errors or not data or open_issues:
