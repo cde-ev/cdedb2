@@ -2741,7 +2741,7 @@ msgstr "Keine Anmeldung gefunden."
 #: cdedb/frontend/event.py:1597 cdedb/frontend/event.py:1470
 #, python-format
 msgid "Committed %(num)s fees."
-msgstr "Betrag %(num)s übernommen."
+msgstr "%(num)s Überweisungen gebucht."
 
 #: cdedb/frontend/event.py:1603 cdedb/frontend/event.py:1476
 msgid "Unexpected error on line {num}."
