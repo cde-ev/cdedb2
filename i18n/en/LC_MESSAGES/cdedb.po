@@ -4633,6 +4633,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/set_foto.tmpl:62
 #: cdedb/frontend/templates/web/event/show_event.tmpl:163
 #: cdedb/frontend/templates/web/event/show_event.tmpl:230
+#: cdedb/frontend/templates/web/event/show_event.tmpl:237
 msgid "Upload"
 msgstr ""
 
@@ -5021,12 +5022,14 @@ msgstr "belongs to ballot"
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:258
 #: cdedb/frontend/templates/web/event/show_event.tmpl:219
 #: cdedb/frontend/templates/web/ml/management.tmpl:200
+#: cdedb/frontend/templates/web/event/show_event.tmpl:249
 msgid "Actions"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:114
 #: cdedb/frontend/templates/web/event/show_event.tmpl:248
 #: cdedb/frontend/templates/web/event/show_event.tmpl:226
+#: cdedb/frontend/templates/web/event/show_event.tmpl:256
 msgid "Archive"
 msgstr ""
 
@@ -5042,6 +5045,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:61
 #: cdedb/frontend/templates/web/event/show_event.tmpl:228
 #: cdedb/frontend/templates/web/ml/management.tmpl:209
+#: cdedb/frontend/templates/web/event/show_event.tmpl:258
 msgid "Are you sure?"
 msgstr ""
 
@@ -9529,11 +9533,13 @@ msgid "Event Logo"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:221
+#: cdedb/frontend/templates/web/event/show_event.tmpl:228
 msgid "No logo set."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:256
 #: cdedb/frontend/templates/web/event/show_event.tmpl:234
+#: cdedb/frontend/templates/web/event/show_event.tmpl:264
 msgid ""
 "Archives the event. This creates a new \"Past Event\" in the CdE-Realm and "
 "transfers\n"
@@ -9542,6 +9548,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:265
 #: cdedb/frontend/templates/web/event/show_event.tmpl:243
+#: cdedb/frontend/templates/web/event/show_event.tmpl:273
 msgid "The event will be permanently archived."
 msgstr ""
 
@@ -10727,4 +10734,8 @@ msgstr ""
 msgid ""
 "Note that only DB-Accounts can be moderators and subscribers.\n"
 "            Any email address can be added to the whitelist though."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:224
+msgid "Remove Logo"
 msgstr ""

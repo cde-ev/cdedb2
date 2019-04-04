@@ -668,9 +668,43 @@ etc;anything else""", f['entries_2'].value)
             data = datafile.read()
         f['event_logo'] = webtest.Upload("picture.jpg", data, "application/octet-stream")
         self.submit(f)
-        self.get('/event/event/1/get_logo')
+        self.get('/event/event/1/logo')
         with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
+        # Remove the logo again
+        self.get("/event/event/1/show")
+        self.assertTitle("Große Testakademie 2222")
+        self.assertNonPresence("Kein Logo.")
+        f = self.response.forms['removeeventlogoform']
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Kein Logo.")
+
+    @as_users("anton", "garcia")
+    def test_set_course_logo(self, user):
+        self.get("/event/event/1/course/1/show")
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        self.assertPresence("Kein Logo.")
+        f = self.response.forms['setcourselogoform']
+        with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as datafile:
+            data = datafile.read()
+        f['course_logo'] = webtest.Upload("picture.jpg", data,
+                                         "application/octet-stream")
+        self.submit(f)
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        self.assertNonPresence("Kein Logo.")
+        self.get('/event/event/1/course/1/logo')
+        with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as f:
+            self.assertEqual(f.read(), self.response.body)
+        # Remove the logo again
+        self.get("/event/event/1/course/1/show")
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        self.assertNonPresence("Kein Logo.")
+        f = self.response.forms['removecourselogoform']
+        self.submit(f)
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        self.assertPresence("Kein Logo.")
+
 
     @as_users("anton", "ferdinand")
     def test_create_event(self, user):

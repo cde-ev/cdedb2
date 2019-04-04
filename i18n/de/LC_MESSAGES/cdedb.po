@@ -4680,6 +4680,7 @@ msgstr "Nur PDF-Dokumente sind möglich."
 #: cdedb/frontend/templates/web/core/set_foto.tmpl:62
 #: cdedb/frontend/templates/web/event/show_event.tmpl:163
 #: cdedb/frontend/templates/web/event/show_event.tmpl:230
+#: cdedb/frontend/templates/web/event/show_event.tmpl:237
 msgid "Upload"
 msgstr "Hochladen"
 
@@ -5077,12 +5078,14 @@ msgstr "Zu Abstimmung"
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:258
 #: cdedb/frontend/templates/web/event/show_event.tmpl:219
 #: cdedb/frontend/templates/web/ml/management.tmpl:200
+#: cdedb/frontend/templates/web/event/show_event.tmpl:249
 msgid "Actions"
 msgstr "Aktionen"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:114
 #: cdedb/frontend/templates/web/event/show_event.tmpl:248
 #: cdedb/frontend/templates/web/event/show_event.tmpl:226
+#: cdedb/frontend/templates/web/event/show_event.tmpl:256
 msgid "Archive"
 msgstr "Archivieren"
 
@@ -5098,6 +5101,7 @@ msgstr "Archivieren"
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:61
 #: cdedb/frontend/templates/web/event/show_event.tmpl:228
 #: cdedb/frontend/templates/web/ml/management.tmpl:209
+#: cdedb/frontend/templates/web/event/show_event.tmpl:258
 msgid "Are you sure?"
 msgstr "sicher?"
 
@@ -9889,11 +9893,13 @@ msgid "Event Logo"
 msgstr "Veranstaltungslogo"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:221
+#: cdedb/frontend/templates/web/event/show_event.tmpl:228
 msgid "No logo set."
 msgstr "Kein Logo."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:256
 #: cdedb/frontend/templates/web/event/show_event.tmpl:234
+#: cdedb/frontend/templates/web/event/show_event.tmpl:264
 msgid ""
 "Archives the event. This creates a new \"Past Event\" in the CdE-Realm and "
 "transfers\n"
@@ -9905,6 +9911,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:265
 #: cdedb/frontend/templates/web/event/show_event.tmpl:243
+#: cdedb/frontend/templates/web/event/show_event.tmpl:273
 msgid "The event will be permanently archived."
 msgstr "Die Veranstaltung wird irreversibel archiviert."
 
@@ -11231,6 +11238,10 @@ msgstr ""
 "Beachte, dass als Moderatoren und Abonnenten nur DB-Accounts und keine "
 "beliebigen E-Mail-Adressen eingetragen werden können. Bei der Whitelist "
 "können hingegen beliebige E-Mail-Adressen eingetragen werden."
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:224
+msgid "Remove Logo"
+msgstr "Logo entfernen"
 
 #~ msgid "Course fields set."
 #~ msgstr "Kursfelder gesetzt."
