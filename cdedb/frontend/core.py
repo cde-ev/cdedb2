@@ -1269,13 +1269,17 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata(("email", "#email"), ("cookie", "str"))
-    def do_password_reset_form(self, rs, email, cookie):
+    def do_password_reset_form(self, rs, email, cookie, internal=False):
         """Second form.
 
         Pretty similar to first form, but now we know, that the account
         owner actually wants the reset.
+
+        The internal parameter signals that the call is from another
+        frontend function and not an incoming request. This prevents
+        validation from changing the target again.
         """
-        if rs.errors:
+        if rs.errors and not internal:
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
             "core/do_password_reset", "email", email)
@@ -1303,7 +1307,8 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
-            return self.do_password_reset_form(rs, email=email, cookie=cookie)
+            return self.do_password_reset_form(rs, email=email, cookie=cookie,
+                                               internal=True)
         code, message = self.coreproxy.reset_password(rs, email, new_password,
                                                       cookie=cookie)
         self.notify_return_code(rs, code, success=n_("Password reset."),
