@@ -300,7 +300,7 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertPresence('Passwort ist zu schwach für Admin-Account.')
+        self.assertPresence('Passwort ist zu schwach für einen Admin-Account.')
 
     @as_users("berta", "emilia")
     def test_change_password_zxcvbn_noadmin(self, user):
