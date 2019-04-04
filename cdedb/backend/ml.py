@@ -339,8 +339,8 @@ class MlBackend(AbstractBackend):
                                                    persona_id, ack=False)
                 # Manually delete entries which are not otherwise accessible
                 for table in ("ml.subscription_states", "ml.log"):
-                    self.sql_delete_one(rs, table, mailinglist_id,
-                                        entity_key="mailinglist_id")
+                    self.sql_delete(rs, table, (mailinglist_id,),
+                                    entity_key="mailinglist_id")
             ret *= self.sql_delete_one(rs, "ml.mailinglists", mailinglist_id)
             self.ml_log(rs, const.MlLogCodes.list_deleted, mailinglist_id=None,
                         additional_info="{} ({})".format(

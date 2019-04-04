@@ -310,6 +310,21 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
+    @access("ml_admin", modi={"POST"})
+    @REQUESTdata(("ack_delete", "bool"))
+    def delete_mailinglist(self, rs, mailinglist_id, ack_delete):
+        """Remove a mailinglist."""
+        if not ack_delete:
+            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.errors:
+            return self.management(rs, mailinglist_id)
+
+        code = self.mlproxy.delete_mailinglist(rs, mailinglist_id,
+                                               cascade=True)
+
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "ml/list_mailinglists")
+
     @access("ml")
     @REQUESTdata(("codes", "[int]"), ("start", "non_negative_int_or_None"),
                  ("additional_info", "str_or_None"),

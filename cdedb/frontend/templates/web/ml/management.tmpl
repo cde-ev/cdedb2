@@ -1,7 +1,10 @@
 {% set sidenav_active='ml_manage' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
     {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Manage
@@ -192,4 +195,32 @@
             </div>
         {% endfor %}
     </div>
+
+    {% if is_admin %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        <form action="{{ cdedblink('ml/delete_mailinglist') }}" method="POST" id="deletemlform"
+                                style="display: inline;">
+                            {{ util.anti_csrf_token('ml/delete_mailinglist') }}
+                            {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
+                                                 aclass="btn btn-danger", icon="folder-close") }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                        </form>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        {% trans -%}Deletes the mailinglist including description and all subscriber information.{%- endtrans %}
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
+            $('#deletemlform').cdedbProtectAction("{{ gettext("The mailinglist will be permanently deleted.") }}");
+            $('#deletemlform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+        </script>
+    {% endif %}
+
 {% endblock %}
