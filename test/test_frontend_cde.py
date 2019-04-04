@@ -192,6 +192,18 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Inga Iota")
 
+    @as_users("anton", "berta")
+    def test_member_search_phone(self, user):
+        self.get("/cde/search/member")
+        self.assertTitle("CdE-Mitglied suchen")
+        f = self.response.forms["membersearchform"]
+        f["qval_telephone,mobile"] = 234
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("2 Mitglieder gefunden")
+        self.assertPresence("Anton Armin A. Administrator")
+        self.assertPresence("Bertålotta Beispiel")
+
     @as_users("anton")
     def test_user_search(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
