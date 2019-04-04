@@ -136,6 +136,7 @@ QUERY_SPECS = {
             ("username", "str"),
             ("address,address_supplement,address2,address_supplement2", "str"),
             ("postal_code,postal_code2", "str"),
+            ("telephone,mobile", "str"),
             ("location,location2", "str"),
             ("country,country2", "str"),
             ("weblink,specialisation,affiliation,timeline,interests,free_form",
