@@ -284,7 +284,7 @@ class EventFrontend(AbstractUserFrontend):
         minor_form = check(rs, 'pdffile_or_None', minor_form, "minor_form")
         if not minor_form and not delete:
             rs.errors.append(
-                ("event_logo", ValueError(n_("Mustn't be empty."))))
+                ("minor_form", ValueError(n_("Mustn't be empty."))))
         if rs.errors:
             return self.show_event(rs, event_id)
         path = self.conf.STORAGE_DIR / 'minor_form' / str(event_id)
