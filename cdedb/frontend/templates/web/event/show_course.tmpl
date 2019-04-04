@@ -161,7 +161,7 @@
             <img src="{{ cdedblink('event/get_course_logo') }}"
                  alt="{{ gettext("Course Logo") }}" class="profilepic img-thumbnail">
             <form action="{{ cdedblink('event/set_course_logo') }}" method="POST"
-                    id="removeeventlogoform">
+                    id="removecourselogoform">
                 {{ util.anti_csrf_token('event/set_course_logo') }}
                 {{ util.input_hidden(name="delete", value=True) }}
                 {{ util.input_submit(value=gettext("Remove Logo"), readonly=is_locked,
@@ -171,7 +171,7 @@
             {% trans -%}No logo set.{%- endtrans %}
         {% endif %}
         <form action="{{ cdedblink('event/set_course_logo') }}" method="POST" enctype="multipart/form-data"
-              id="seteventlogoform" {% if "course_logo" in errors %}class="has-error"{% endif %}>
+              id="setcourselogoform" {% if "course_logo" in errors %}class="has-error"{% endif %}>
             {{ util.anti_csrf_token('event/set_course_logo') }}
             {{ util.input_hidden(name="delete", value=False) }}
             <div class="input-group">
