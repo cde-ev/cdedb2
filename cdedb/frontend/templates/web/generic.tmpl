@@ -32,7 +32,7 @@
         {{ util.form_input_text(name="username", label=gettext("E-Mail")) }}
         {% if realm in ("cde", "event") %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobilephone")) }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone")) }}
         {% endif %}
         {% if realm == "cde" %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
@@ -109,7 +109,7 @@
         {{ util.form_input_static(label=gettext("E-Mail"), value=case['username']) }}
         {% if realm == "event" %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), placeholder="+49 (0000) 000000") }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobilephone"), placeholder="+49 (000) 0000000") }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), placeholder="+49 (000) 0000000") }}
 
             <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
             {{ util.form_input_text(name="address", label=gettext("Street")) }}
@@ -162,7 +162,7 @@
         "gender": gettext("Gender"),
         "birthday": gettext("Birthday"),
         "telephone": gettext("Phone"),
-        "mobile": gettext("Mobilephone"),
+        "mobile": gettext("Mobile Phone"),
         "address": gettext("Address"),
         "address_supplement": gettext("Address Supplement"),
         "postal_code": gettext("ZIP"),
@@ -229,7 +229,7 @@
         "gender": gettext("Gender"),
         "birthday": gettext("Birthday"),
         "telephone": gettext("Phone"),
-        "mobile": gettext("Mobilephone"),
+        "mobile": gettext("Mobile Phone"),
         "address": gettext("Address"),
         "address_supplement": gettext("Address Supplement"),
         "postal_code": gettext("ZIP"),

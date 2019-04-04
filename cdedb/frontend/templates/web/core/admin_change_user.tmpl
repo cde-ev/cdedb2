@@ -52,7 +52,7 @@
         {{ util.form_input_static(label="E-Mail", value=values['username']) }}
         {% if (values['is_cde_realm'] or values['is_event_realm']) and 'event' in admin_bits %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobilephone")) }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone")) }}
         {% endif %}
         {% if values['is_cde_realm'] and 'cde' in admin_bits %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}

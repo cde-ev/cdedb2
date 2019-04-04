@@ -421,7 +421,7 @@
                                         Additionally You need to use the Rejection Bar {{ abm }} in Your preferencelist.
                                         Use it in Your preferencelist like You would a Candidate. Put all
                                         Candidates You deem suitable higher than {{ abm }} and all
-                                        Candidates You reject lower, i.e. to the right of {{ abm }}.
+                                        Candidates You reject lower, i. e. to the right of {{ abm }}.
                                         Should no Candidate win against the bar, the board may take additional measures.
                                     {%- endtrans %}
                                 </p>
@@ -436,7 +436,7 @@
                                 <li>{% trans -%}Luke Skywalker, short: [Luke]{%- endtrans %}</li>
                                 <li>{% trans -%}Princess Leia Organa of Alderaan, short: [Leia]{%- endtrans %}</li>
                                 <li>{% trans -%}Han Solo, short: [Han]{%- endtrans %}</li>
-                                <li>{% trans -%}Obi-Wan "Ben" Kenobi, short: [ObiWan]{%- endtrans %}</li>
+                                <li>{% trans -%}Obi-Wan “Ben” Kenobi, short: [ObiWan]{%- endtrans %}</li>
                             </ul>
                             <p>
                                 {% trans -%}Your Vote could look like this:{%- endtrans %}
@@ -450,12 +450,12 @@
                                         <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}</code></li>
                                     <li>{% trans -%}
                                             You deem Leia and Obi-Wan (equally) suitable, You want to reject Luke
-                                            and you absolutely can't stand Han Solo.
+                                            and you absolutely can’t stand Han Solo.
                                         {%- endtrans %}<br />
                                         <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}&gt;Luke&gt;Han</code></li>
                                     <li>{% trans -%}
-                                            You want to vote for Luke and if he doesn't make it, You think Obi-Wan should.
-                                            You don't have an opinion about the others.
+                                            You want to vote for Luke and if he doesn’t make it, you think Obi-Wan should.
+                                            You don’t have an opinion about the others.
                                         {%- endtrans %}<br />
                                         <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}=Han=Leia</code></li>
                                     <li>{% trans -%}
@@ -474,8 +474,8 @@
                                         {%- endtrans %}<br />
                                         <code>Leia=ObiWan&gt;Luke&gt;Han</code></li>
                                     <li>{% trans -%}
-                                            You want to vote for Luke and if he doensn't make it, You think Obi-Wan should.
-                                            You don't have an opinion about the others.
+                                            You want to vote for Luke and if he doesn’t make it, you think Obi-Wan should.
+                                            You don’t have an opinion about the others.
                                         {%- endtrans %}<br />
                                         <code>Luke&gt;ObiWan&gt;Han=Leia</code></li>
                                     <li>{% trans -%}
@@ -549,7 +549,7 @@
                                 {% trans tab="<kbd>{key}</kbd>"|s|format(key=gettext("TAB")),
                                          enter="<kbd>{key}</kbd>"|s|format(key=gettext("ENTER")),
                                          space="<kbd>{key}</kbd>"|s|format(key=gettext("Space")) -%}
-                                    There are three ways of moving Candidates: Drag'n'Drop them into a different box or
+                                    There are three ways of moving Candidates: Drag’n’Drop them into a different box or
                                     click on a Candidate and then on a box. Or You can select a Candidate with {{ tab }},
                                     confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
                                     and confirm the selection with {{ enter }} or {{ space }}.
@@ -558,7 +558,7 @@
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
                                     {% trans -%}
-                                        One of the boxes is marked as "Neutral". Please place Candidates You deem suitable
+                                        One of the boxes is marked as “Neutral”. Please place Candidates You deem suitable
                                         above this box (they will be highlighted in green) and Candidates you want to reject
                                         below this box (they will be highlighted in red). Should all Candidates be rejected,
                                         the board may take additional measures.

@@ -62,7 +62,7 @@
             {% if next %}{{ gettext(enums['Genders'](pending['gender'])|string) }}{% else %}{{ gettext(enums['Genders'](current['gender'])|string) }}{% endif %}
         {% endcall %}
 
-        <h4 class="heading-underline">{% trans -%}Account &amp; Membership{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans -%}Account & Membership{%- endtrans %}</h4>
         {% call(next) show_diff('id', gettext("CdEDB-ID"), True) %}
             {{ util.href(show_user_link(pending['id']), pending['id']|cdedbid, aclass='nowrap') }}
         {% endcall %}
@@ -73,7 +73,7 @@
         <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
         {{ show_diff('username', gettext("E-Mail"), True) }}
         {{ show_diff('telephone', gettext("Phone")) }}
-        {{ show_diff('mobile', gettext("Mobilephone")) }}
+        {{ show_diff('mobile', gettext("Mobile Phone")) }}
         {{ show_diff('weblink', gettext("WWW")) }}
 
         <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>

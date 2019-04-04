@@ -30,7 +30,7 @@
                 {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                     <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
                         {%- if ambience['event']['tracks']|length == 1 -%}
-                            {% trans -%}Attendees &amp; Course Choices{%- endtrans %}
+                            {% trans -%}Attendees & Course Choices{%- endtrans %}
                         {%- else -%}
                             {{ track['title'] }}
                         {%- endif -%}

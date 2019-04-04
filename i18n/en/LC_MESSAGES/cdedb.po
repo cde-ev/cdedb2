@@ -10290,3 +10290,441 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/management.tmpl:221
 msgid "The mailinglist will be permanently deleted."
 msgstr ""
+
+#: cdedb/i18n_additional.py:215
+msgid "Repeats like “aaa” are easy to guess."
+msgstr ""
+
+#: cdedb/i18n_additional.py:216
+msgid "Repeats like “abcabcabc” are only slightly harder to guess than “abc”."
+msgstr ""
+
+#: cdedb/i18n_additional.py:219
+msgid "Sequences like “abc“ or “6543” are easy to guess."
+msgstr ""
+
+#: cdedb/i18n_additional.py:232
+msgid "Capitalization doesn’t help very much."
+msgstr ""
+
+#: cdedb/i18n_additional.py:234
+msgid "Reversed words aren’t much harder to guess."
+msgstr ""
+
+#: cdedb/i18n_additional.py:235
+msgid "Predictable substitutions like “@” instead of “a” don’t help very much."
+msgstr ""
+
+#: cdedb/frontend/event.py:312 cdedb/validation.py:387 cdedb/validation.py:525
+#: cdedb/validation.py:3270
+msgid "Mustn’t be empty."
+msgstr ""
+
+#: cdedb/validation.py:2586
+msgid "Only partial exports are supported."
+msgstr ""
+
+#: cdedb/validation.py:2954
+msgid "Mustn’t be in the past."
+msgstr ""
+
+#: cdedb/validation.py:2959
+msgid "Mustn’t be before start of voting period."
+msgstr ""
+
+#: cdedb/validation.py:2965
+msgid "Mustn’t be before end of voting period."
+msgstr ""
+
+#: cdedb/frontend/assembly.py:691 cdedb/validation.py:3019
+msgid "Mustn’t be the bar moniker."
+msgstr ""
+
+#: cdedb/validation.py:3258
+msgid "Must start with “qview_”."
+msgstr ""
+
+#: cdedb/backend/core.py:1455 cdedb/backend/core.py:1678
+msgid "Atomized – impossible to escalate."
+msgstr ""
+
+#: cdedb/backend/event.py:966
+msgid "Only courses from one event allowed."
+msgstr ""
+
+#: cdedb/backend/event.py:1127 cdedb/frontend/event.py:798
+msgid "Event without tracks forbids courses."
+msgstr ""
+
+#: cdedb/backend/event.py:1318
+msgid "Only registrations from exactly one event allowed."
+msgstr ""
+
+#: cdedb/backend/event.py:2077 cdedb/backend/event.py:2260
+msgid "Version mismatch – aborting."
+msgstr ""
+
+#: cdedb/frontend/cde.py:397
+msgid "Doppelganger choice doesn’t fit resolution."
+msgstr ""
+
+#: cdedb/frontend/cde.py:629 cdedb/frontend/cde.py:1080
+#: cdedb/frontend/event.py:1584
+msgid "Lines didn’t match up."
+msgstr ""
+
+#: cdedb/frontend/cde.py:935 cdedb/frontend/event.py:1490
+msgid "Family name doesn’t match."
+msgstr ""
+
+#: cdedb/frontend/cde.py:940 cdedb/frontend/event.py:1495
+msgid "Given names don’t match."
+msgstr ""
+
+#: cdedb/frontend/common.py:1860
+msgid "This page can only be accessed by the mailinglist’s moderators."
+msgstr ""
+
+#: cdedb/frontend/core.py:1161 cdedb/frontend/core.py:1163
+#: cdedb/frontend/core.py:1164 cdedb/frontend/core.py:1293
+#: cdedb/frontend/core.py:1295 cdedb/frontend/core.py:1296
+msgid "Passwords don’t match."
+msgstr ""
+
+#: cdedb/frontend/event.py:2382
+msgid "Must be Orga to use preview."
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:11
+msgid "Couldn’t find the requested page"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:55
+#: cdedb/frontend/templates/web/core/change_user.tmpl:48
+#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:49
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:48
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:76
+#: cdedb/frontend/templates/web/core/promote_user.tmpl:85
+#: cdedb/frontend/templates/web/core/show_history.tmpl:220
+#: cdedb/frontend/templates/web/core/show_user.tmpl:255
+#: cdedb/frontend/templates/web/event/register.tmpl:59
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:60
+#: cdedb/frontend/templates/web/event/show_registration.tmpl:58
+#: cdedb/frontend/templates/web/generic.tmpl:35
+#: cdedb/frontend/templates/web/generic.tmpl:112
+#: cdedb/frontend/templates/web/generic.tmpl:165
+#: cdedb/frontend/templates/web/generic.tmpl:232
+msgid "Mobile Phone"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/index.tmpl:12
+msgid "Here You can find the CdE’s general assemblies."
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:26
+msgid "Participation Status"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:420
+#, python-format
+msgid ""
+"Additionally You need to use the Rejection Bar %(abm)s in Your "
+"preferencelist.\n"
+"                                        Use it in Your preferencelist like "
+"You would a Candidate. Put all\n"
+"                                        Candidates You deem suitable higher "
+"than %(abm)s and all\n"
+"                                        Candidates You reject lower, i. e. "
+"to the right of %(abm)s.\n"
+"                                        Should no Candidate win against the "
+"bar, the board may take additional measures."
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:439
+msgid "Obi-Wan “Ben” Kenobi, short: [ObiWan]"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:451
+msgid ""
+"You deem Leia and Obi-Wan (equally) suitable, You want to reject Luke\n"
+"                                            and you absolutely can’t stand "
+"Han Solo."
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:456
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:476
+msgid ""
+"You want to vote for Luke and if he doesn’t make it, you think Obi-Wan "
+"should.\n"
+"                                            You don’t have an opinion about "
+"the others."
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:549
+#, python-format
+msgid ""
+"There are three ways of moving Candidates: Drag’n’Drop them into a different "
+"box or\n"
+"                                    click on a Candidate and then on a box. "
+"Or You can select a Candidate with %(tab)s,\n"
+"                                    confirm it with %(enter)s or %(space)s, "
+"then select a box with %(tab)s\n"
+"                                    and confirm the selection with %(enter)s "
+"or %(space)s."
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:560
+msgid ""
+"One of the boxes is marked as “Neutral”. Please place Candidates You deem "
+"suitable\n"
+"                                        above this box (they will be "
+"highlighted in green) and Candidates you want to reject\n"
+"                                        below this box (they will be "
+"highlighted in red). Should all Candidates be rejected,\n"
+"                                        the board may take additional "
+"measures."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:56
+msgid "I accept that my data may be mailed to other CdE-Members by post."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:71
+msgid ""
+"I hereby declare that I will not pass the data of CdE-Members to third "
+"parties\n"
+"                and that I will will not use it for any purpose, that is not "
+"in the sense and purpose of the CdE."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/consent_decision.tmpl:96
+msgid "Don’t change anything"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:29
+#, python-format
+msgid ""
+"Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:12
+msgid "Initiative 25+ – What’s that?"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:22
+#, python-format
+msgid ""
+"These %(amount)s will be used to pay the annual membership fee\n"
+"            currently in force, currently %(fee)s. The remainder is a "
+"donation\n"
+"            to the CdE. The CdE will make sure that about 40 to 50 percent "
+"of\n"
+"            this is given to %(dsa)s or otherwise used to support the "
+"“%(idea)s”."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:45
+#, python-format
+msgid ""
+"The %(initiative)s implements a decision of the General Assembly 2008\n"
+"            to support the “%(idea)s“ financially. To this end, the CdE may "
+"give a\n"
+"            portion of the donations received this way to %(bub)s or use "
+"them to support\n"
+"            SchülerAkademien in some other way."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:47
+msgid "Bildung & Begabung gem. GmbH"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:49
+#, python-format
+msgid ""
+"With the Initiative 25+ you can support the CdE and the “%(idea)s” "
+"financially,\n"
+"                            via Direct Debit of %(amount)s or more annually. "
+"%(link)s"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:57
+msgid "You are already a part of the Initiative 25+."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:68
+#, python-format
+msgid ""
+"You want to support the CdE and the “%(idea)s“ financially?\n"
+"                            You can give authorization for the CdE to "
+"withdraw %(amount)s or more annually via Direct Debit."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:30
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:43
+msgid "Account holder’s address (if different)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:31
+msgid ""
+"During the Semester – as early as possible, but not before the Payment "
+"Reqeusts/Information are sent – the\n"
+"            following Direct Debits have to be executed.\n"
+"            To do this, generate a cdd-file and import it into the online "
+"banking software.\n"
+"            Directly afterwards activate the Direct Debits in the DB by "
+"clicking “Perform Direct Debit”.\n"
+"            This sends a notification to the members informing them about "
+"the transaction."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:73
+msgid "Acc. holder’s address"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/change_password.tmpl:17
+#: cdedb/frontend/templates/web/core/do_password_reset.tmpl:15
+msgid ""
+"There are no hard criteria for your new password, as we are using the zxcvbn "
+"library to evaluate the\n"
+"            actual strength of password. Numerals, Uppercase letters, and "
+"Special characters aren’t required.\n"
+"            For example, you can use a randomized string of 8 characters, "
+"but it is also fine to use two words that\n"
+"            aren’t too common. This form will provide feedback to help you "
+"chose a better password if your new password\n"
+"            is too weak."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/change_user.tmpl:70
+msgid ""
+"This address is meant to be a “backup”,, should the primary address not "
+"work. Please give an address where\n"
+"                you can be reached long-term, e.g. your parents' address."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/do_username_change.tmpl:10
+#, python-format
+msgid ""
+"Enter Your Password and click “Confirm” to change Your E-Mail-Address to "
+"<code>%(email)s</code>.\n"
+"            Aftwerwards you need to user Your new E-Mail-Address to login."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:65
+#: cdedb/frontend/templates/web/core/show_history.tmpl:138
+#: cdedb/frontend/templates/web/core/show_user.tmpl:106
+msgid "Account & Membership"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/set_foto.tmpl:51
+msgid "max. 128 kB Filesize"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/show_user.tmpl:393
+msgid ""
+"Sends an email to this user, which contains a password reset link. This is\n"
+"                                        basically the same as any non-admin "
+"user can achieve using the “Reset Password”\n"
+"                                        form on the login page."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/show_user.tmpl:465
+msgid ""
+"Archives the Account. The User can no longer login and most Information is "
+"deleted.\n"
+"                                    Only Information necessary to restore "
+"Membership will be retained\n"
+"                                    (i. e. Name and Past Events "
+"attendance).\n"
+"                                    Other Users can no longer see the "
+"Account."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/amend_registration.tmpl:43
+#: cdedb/frontend/templates/web/event/register.tmpl:135
+msgid ""
+"I agree that my data, including my name, address and my email, may be sent "
+"to other participants of this event beforehand."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:63
+msgid ""
+"The custom field in which the participants’ rooming preferences will be "
+"saved. Fieldtype: Text"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:72
+msgid ""
+"The custom field in which the participants’ willingness to sleep on a "
+"camping mat will be saved. Fieldtype: Yes/No"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_registrations.tmpl:40
+#: cdedb/frontend/templates/web/event/change_registrations.tmpl:55
+#, python-format
+msgid "Overwrite ”%(label)s”"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course_stats.tmpl:33
+msgid "Attendees & Course Choices"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/field_summary.tmpl:154
+msgid ""
+"Deleting a field includes deletion of all data, which is stored\n"
+"            in this field in any registration/course/lodgement. Changing\n"
+"            the datatype of a field deletes all data that cannot be casted\n"
+"            to the new type, upon saving."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:41
+#, python-format
+msgid "Supports %(infolink)s for “Text-Only” fields."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:24
+#, python-format
+msgid ""
+"Please keep in mind that your Registration will only be complete, once\n"
+"                you pay your participation fee. Please transfer %(fee)s to "
+"the following\n"
+"                Account. Please make sure, the recipient does not have to "
+"pay any fees,\n"
+"                especially when paying internationally."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:121
+#, python-format
+msgid ""
+"I %(consent)sagree that my data, including my name, address and my email, "
+"may be sent\n"
+"                to other participants of this event beforehand."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/show_course.tmpl:103
+msgid "Participants’ Course Choices"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:256
+msgid ""
+"Archives the event. This creates a new “Past Event” in the CdE-Realm and "
+"transfers\n"
+"                            course and participant information there."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:49
+#: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:32
+msgid "Moderation & Subscribers"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/index.tmpl:29
+msgid ""
+"Here you can find the CdE’s Mailinglists; notably also those linked to "
+"events and assemblies."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:27
+msgid ""
+"Note that only DB-Accounts can be moderators and subscribers.\n"
+"            Any email address can be added to the whitelist though."
+msgstr ""

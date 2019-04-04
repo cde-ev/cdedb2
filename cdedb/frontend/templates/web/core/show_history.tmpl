@@ -135,7 +135,7 @@
         {% endif %}
 
 
-        <h4 class="heading-underline">{% trans -%}Account &amp; Membership{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans -%}Account & Membership{%- endtrans %}</h4>
 
         {% call history_field(gettext("Active")) %}
             {{ print_history('is_active') }}
@@ -217,7 +217,7 @@
 
         {% for name, field in ((gettext("E-Mail"), 'username'),
                                (gettext("Phone"), 'telephone'),
-                               (gettext("Mobilephone"), 'mobile'),
+                               (gettext("Mobile Phone"), 'mobile'),
                                (gettext("WWW"), 'weblink')) %}
             {% call history_field(name) %}
                 {{ print_history(field) }}

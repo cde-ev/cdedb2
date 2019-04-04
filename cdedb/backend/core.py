@@ -1452,7 +1452,7 @@ class CoreBackend(AbstractBackend):
             # Escalate db privilige role in case of successful login.
             # This will not be deescalated.
             if rs.conn.is_contaminated:
-                raise RuntimeError(n_("Atomized -- impossible to escalate."))
+                raise RuntimeError(n_("Atomized – impossible to escalate."))
 
             is_cde = unwrap(self.sql_select_one(rs, "core.personas",
                                                 ("is_cde_realm",), data["id"]))
@@ -1675,7 +1675,7 @@ class CoreBackend(AbstractBackend):
             if reset_cookie and "persona" not in rs.user.roles:
                 if rs.conn.is_contaminated:
                     raise RuntimeError(
-                        n_("Atomized -- impossible to escalate."))
+                        n_("Atomized – impossible to escalate."))
                 orig_conn = rs.conn
                 rs.conn = self.connpool['cdb_persona']
             # do not use set_persona since it doesn't operate on password

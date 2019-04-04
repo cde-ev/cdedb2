@@ -1858,7 +1858,7 @@ def mailinglist_guard(argname="mailinglist_id"):
                 arg = args[0]
             if arg not in rs.user.moderator and not obj.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(rs.gettext(
-                    "This page can only be accessed by the mailinglist's "
+                    "This page can only be accessed by the mailinglist’s "
                     "moderators."))
             return fun(obj, rs, *args, **kwargs)
 

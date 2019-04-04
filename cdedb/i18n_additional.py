@@ -212,11 +212,11 @@ I18N_STRINGS = (
     n_('Straight rows of keys are easy to guess.'),
     n_('Short keyboard patterns are easy to guess.'),
     n_('Use a longer keyboard pattern with more turns.'),
-    n_('Repeats like "aaa" are easy to guess.'),
-    n_('Repeats like "abcabcabc" are only slightly harder to '
-       'guess than "abc".'),
+    n_('Repeats like “aaa” are easy to guess.'),
+    n_('Repeats like “abcabcabc” are only slightly harder to guess than '
+       '“abc”.'),
     n_('Avoid repeated words and characters.'),
-    n_('Sequences like "abc" or "6543" are easy to guess.'),
+    n_('Sequences like “abc“ or “6543” are easy to guess.'),
     n_('Avoid sequences.'),
     n_("Recent years are easy to guess."),
     n_('Avoid recent years.'),
@@ -229,11 +229,11 @@ I18N_STRINGS = (
     n_('A word by itself is easy to guess.'),
     n_('Names and surnames by themselves are easy to guess.'),
     n_('Common names and surnames are easy to guess.'),
-    n_("Capitalization doesn't help very much."),
+    n_("Capitalization doesn’t help very much."),
     n_("All-uppercase is almost as easy to guess as all-lowercase."),
-    n_("Reversed words aren't much harder to guess."),
-    n_("Predictable substitutions like '@' instead of 'a' don't help "
-       "very much."),
+    n_("Reversed words aren’t much harder to guess."),
+    n_("Predictable substitutions like “@” instead of “a” don’t help very "
+       "much."),
 
     #
     # Default Strings

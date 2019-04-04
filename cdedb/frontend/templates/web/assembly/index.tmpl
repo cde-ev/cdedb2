@@ -9,7 +9,7 @@
         {{ util.href(cdedblink("assembly/create_assembly_form"), gettext("Create Assembly"), icon="plus",
                 aclass="btn btn-sm btn-success") }}
     {% else %}
-        <p>{{ gettext("Here You can find the CdE's general assemblies.") }}</p>
+        {% trans -%}Here You can find the CdE’s general assemblies.{%- endtrans %}
     {% endif %}
     <h3>{{ gettext("Active Assemblies") }}</h3>
     <ul>

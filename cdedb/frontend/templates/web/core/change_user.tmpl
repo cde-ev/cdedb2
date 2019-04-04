@@ -44,7 +44,7 @@
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobilephone")) }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone")) }}
         {% endif %}
         {% if values['is_cde_realm'] %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
@@ -67,7 +67,7 @@
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
             <p>
             {% trans -%}
-                This address is meant to be a "backup", should the primary address not work. Please give an address where
+                This address is meant to be a “backup”,, should the primary address not work. Please give an address where
                 you can be reached long-term, e.g. your parents' address.
             {%- endtrans %}
             </p>

@@ -9,7 +9,7 @@
         gettext("Initiative 25+ (Additional Information)"), active=True) }}
 {% endblock %}
 {% block content %}
-    <h2>{% trans -%}Initiative 25+ – What's that?{%- endtrans %}</h2>
+    <h2>{% trans -%}Initiative 25+ – What’s that?{%- endtrans %}</h2>
 
     <p>
         {% trans amount=25|money(lang=lang) -%}
@@ -23,8 +23,8 @@
                 gettext("Deutsche SchülerAkademie"), idea=gettext("Idee SchülerAkademie")-%}
         	These {{ amount }} will be used to pay the annual membership fee
             currently in force, currently {{ fee }}. The remainder is a donation
-            to the CdE. The CdE will make sure, that about 40 to 50 percent of
-            this is given to {{ dsa }} or otherwise used to support the "{{ idea }}".
+            to the CdE. The CdE will make sure that about 40 to 50 percent of
+            this is given to {{ dsa }} or otherwise used to support the “{{ idea }}”.
         {%- endtrans %}
     </p>
 
@@ -44,9 +44,9 @@
     <p>
         {% trans initiative=("<em>%s</em>"|s|format(gettext("Initiative 25+"))),
                 idea=gettext("Idee SchülerAkademie"),
-                bub=gettext("Bildung &amp; Begabung gem. GmbH") -%}
+                bub=gettext("Bildung & Begabung gem. GmbH") -%}
         	The {{ initiative }} implements a decision of the General Assembly 2008
-            to support the "{{ idea }}" financially. To this end, the CdE may give a
+            to support the “{{ idea }}“ financially. To this end, the CdE may give a
             portion of the donations received this way to {{ bub }} or use them to support
             SchülerAkademien in some other way.
         {%- endtrans %}
