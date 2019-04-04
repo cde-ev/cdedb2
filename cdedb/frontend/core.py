@@ -1303,12 +1303,7 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
-            # Redirect so that encoded parameter works.
-            params = {
-                'email': self.encode_parameter(
-                    "core/do_password_reset_form", "email", email),
-                'cookie': cookie}
-            return self.redirect(rs, 'core/do_password_reset_form', params)
+            return self.do_password_reset_form(rs, email=email, cookie=cookie)
         code, message = self.coreproxy.reset_password(rs, email, new_password,
                                                       cookie=cookie)
         self.notify_return_code(rs, code, success=n_("Password reset."),
