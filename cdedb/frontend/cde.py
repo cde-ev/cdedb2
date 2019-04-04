@@ -2283,6 +2283,20 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, new_id, success=n_("Event created."))
         return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
 
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("ack_delete", "bool"))
+    def delete_past_event(self, rs, pevent_id, ack_delete):
+        """Remove a past event."""
+        if not ack_delete:
+            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.errors:
+            return self.show_past_event(rs, pevent_id)
+
+        code = self.pasteventproxy.delete_past_event(
+            rs, pevent_id, cascade=True)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "cde/list_past_events")
+
     @access("cde_admin")
     def change_past_course_form(self, rs, pevent_id, pcourse_id):
         """Render form."""

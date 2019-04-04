@@ -463,7 +463,7 @@ CREATE TABLE past_event.events (
         tempus                  date NOT NULL
 );
 GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
-GRANT INSERT ON past_event.events TO cdb_admin;
+GRANT DELETE, INSERT ON past_event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.courses (

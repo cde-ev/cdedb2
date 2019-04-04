@@ -150,7 +150,28 @@
         </p>
     {% endif %}
     {% if is_admin %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        <form action="{{ cdedblink('cde/delete_past_event') }}" method="POST"
+                                id="deletepasteventform" style="display: inline;">
+                            {{ util.anti_csrf_token('cde/delete_past_event') }}
+                            {{ util.input_submit(value=gettext("Delete Event"), icon="trash", aclass="btn btn-danger") }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
+                        </form>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        {% trans -%}Deletes the event, including description, courses and participant information{%- endtrans %}
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
         <script type="text/javascript" nonce="{{ csp_nonce }}">
+            $('#deletepasteventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
+            $('#deletepasteventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
             $('.delete-participant-form').cdedbProtectAction("{{ gettext("The Participant will be removed from the Event.") }}");
         </script>
     {% endif %}
