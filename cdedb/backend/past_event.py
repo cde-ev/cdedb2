@@ -301,7 +301,6 @@ class PastEventBackend(AbstractBackend):
         pevent = self.get_past_event(rs, pevent_id)
         ret = 1
         with Atomizer(rs):
-            data = self.get_past_event(rs, pevent_id)
             if cascade:
                 with Silencer(rs):
                     for pcourse_id in self.list_past_courses(rs, pevent_id):
