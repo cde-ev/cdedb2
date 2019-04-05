@@ -20,35 +20,75 @@
     <h3>{% trans -%}Printables{%- endtrans %}</h3>
     <table class="table table-slim">
         <tbody>
-            {% for name, endpoint, additional_params in [
-                (gettext("Nametags"), 'event/download_nametags', {}),
-                (gettext("Course Puzzle"),'event/download_course_puzzle', {}),
-                (gettext("Lodgement Puzzle"),'event/download_lodgement_puzzle', {}),
-                (gettext("Participant List"),'event/download_participant_list', {}),
-                (gettext("Participant List (Landscape)"),'event/download_participant_list', {'landscape': True}),
-                (gettext("Participant List (Orgas only)"),'event/download_participant_list', {'orgas_only': True}),
-                (gettext("Participant List (Orgas only) (Landscape)"),'event/download_participant_list',
-                    {'orgas_only': True, 'landscape': True}),
-                (gettext("Course Attendee Lists"),'event/download_course_lists', {}),
-                (gettext("Lodgement Inhabitant Lists"),'event/download_lodgement_lists', {}),
-            ] %}
-                <tr>
-                    <td>
-                        {{ name }}
-                    </td>
-                    <td>
-                        {% set params = {'runs': 0} %}
-                        {% do params.update(additional_params) %}
-                        {{ util.href(cdedblink(endpoint, params), gettext("LaTeX"), icon='download') }}
-                    </td>
-                    <td>
-                        {% set params = {'runs': 2} %}
-                        {% do params.update(additional_params) %}
-                        {{ util.href(cdedblink(endpoint, params), gettext("PDF"), icon='file') }}
-                    </td>
-                </tr>
-            {% endfor %}
+            <tr>
+                <td>{% trans -%}Nametags{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_nametags', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_nametags', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+            <tr>
+                <td>{% trans -%}Course Attendee Lists{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+            <tr>
+                <td>{% trans -%}Lodgment Inhabitant Lists{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+            <tr>
+                <td>{% trans -%}Course Puzzle{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+            <tr>
+                <td>{% trans -%}Lodgement Puzzle{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+        </tbody>
+    </table>
 
+    <h3>{% trans -%}Participant Lists{%- endtrans %}</h3>
+    {% trans -%}
+        The public lists only contain those who gave their consent to be on the list. Only these may be sent to the participants beforehand.
+    {%- endtrans %}
+    {% trans -%}
+        The orga lists contain all participants and are for orgas only. They may however be displayed publicly at the event iteself.
+    {%- endtrans %}
+    <table class="table table-slim">
+        <tbody>
+            {% set endpoint = 'event/download_participant_list' %}
+            <tr>
+                <td>{% trans -%}Public List{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+            <tr>
+                <td>{% trans -%}Public List (Landscape){%- endtrans %}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'landscape': True}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'landscape': True}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+            <tr>
+                <td>{% trans -%}Orga List{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'orgas_only': True}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'orgas_only': True}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+            <tr>
+                <td>{% trans -%}Orga List (Landscape){%- endtrans %}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'orgas_only': True, 'landscape': True}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'orgas_only': True, 'landscape': True}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+{#            {% set endpoint = 'event/download_participant_list_by_part' %}#}
+            <tr>
+                <td>{% trans -%}Public Lists by part{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2}), gettext("PDF"), icon='file') }}</td>
+            </tr>
+            <tr>
+                <td>{% trans -%}Public Lists by part{%- endtrans %}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'orgas_only': True}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'orgas_only': True}), gettext("PDF"), icon='file') }}</td>
+            </tr>
         </tbody>
     </table>
 
