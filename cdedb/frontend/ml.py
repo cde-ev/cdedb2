@@ -356,6 +356,8 @@ class MlFrontend(AbstractUserFrontend):
     def management(self, rs, mailinglist_id):
         """Render form."""
         subscribers = self.mlproxy.subscribers(rs, mailinglist_id)
+        explicits = self.mlproxy.subscribers(
+            rs, mailinglist_id, explicits_only=True)
         requests = self.mlproxy.list_requests(rs, mailinglist_id)
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscribers.keys()) | set(requests))
@@ -364,7 +366,7 @@ class MlFrontend(AbstractUserFrontend):
                              key=lambda anid: name_key(personas[anid]))
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
-            'personas': personas})
+            'personas': personas, 'explicits': explicits})
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("moderator_id", "cdedbid"))

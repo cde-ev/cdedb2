@@ -348,16 +348,20 @@ class MlBackend(AbstractBackend):
             return ret
 
     @access("ml")
-    def subscribers(self, rs, mailinglist_id):
+    def subscribers(self, rs, mailinglist_id, explicits_only=False):
         """Compile a list of subscribers.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
+        :type explicits_only: bool
+        :param explicits_only: If this is True, only subscribers that have
+            explicitely changed their subscription address are returned.
         :rtype: {int: str}
         :returns: A dict mapping ids of subscribers to their subscribed
           email addresses.
         """
         mailinglist_id = affirm("id", mailinglist_id)
+        explicits_only = affirm("bool", explicits_only)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         event_list_query = glue(
@@ -405,10 +409,13 @@ class MlBackend(AbstractBackend):
                 ret = {e['id']: None for e in personas}
             ret = {k: v for k, v in ret.items() if k not in excludes}
             ret.update(explicits)
-            defaults = tuple(k for k, v in ret.items() if not v)
-            emails = self.sql_select(rs, "core.personas",
-                                     ("id", "username"), defaults)
-            ret.update({e['id']: e['username'] for e in emails})
+            if not explicits_only:
+                defaults = tuple(k for k, v in ret.items() if not v)
+                emails = self.sql_select(rs, "core.personas",
+                                         ("id", "username"), defaults)
+                ret.update({e['id']: e['username'] for e in emails})
+            else:
+                ret = {k: v for k, v in ret.items() if v}
             return ret
 
     @access("ml")
