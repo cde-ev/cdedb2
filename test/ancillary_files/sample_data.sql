@@ -95,9 +95,9 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 --
 -- events
 --
-INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, iban, mail_text, notes, offline_lock, lodge_field, reserve_field) VALUES
-    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96370205000008068901', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL),
-    (2, 'CdE-Party 2050', 1, 'Let''s have a party!', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96370205000008068901', '', 'Wird anstrengend …', False, NULL, NULL);
+INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, iban, mail_text, notes, offline_lock, lodge_field, reserve_field, course_room_field) VALUES
+    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96370205000008068901', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL, NULL),
+    (2, 'CdE-Party 2050', 1, 'Let''s have a party!', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96370205000008068901', '', 'Wird anstrengend …', False, NULL, NULL, NULL);
 INSERT INTO event.event_parts (id, event_id, title, shortname, part_begin, part_end, fee) VALUES
     (1, 1, 'Warmup', 'Wu', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte', '1.H.', date '2222-11-01', date '2222-11-11', 123.00),
@@ -114,7 +114,7 @@ INSERT INTO event.field_definitions (id, event_id, field_name, kind, association
     (4, 1, 'may_reserve', 2, 1, NULL),
     (5, 1, 'room', 1, 2, NULL),
     (6, 1, 'contamination', 1, 3, '{{"high", "lots of radiation"}, {"medium", "elevated level of radiation"}, {"low", "some radiation"}, {"none", "no radiation"}}');
-UPDATE event.events SET lodge_field = 3, reserve_field = 4 WHERE id = 1;
+UPDATE event.events SET lodge_field = 3, reserve_field = 4, course_room_field = 2 WHERE id = 1;
 INSERT INTO event.courses (id, event_id, title, description, nr, shortname, instructors, max_size, min_size, notes, fields) VALUES
     (1, 1, 'Planetenretten für Anfänger', 'Wir werden die Bäume drücken.', 'α', 'Heldentum', 'ToFi & Co', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.', '{"room": "Wald"}'::jsonb),
     (2, 1, 'Lustigsein für Fortgeschrittene', 'Inklusive Post, Backwaren und frühzeitigem Ableben.', 'β', 'Kabarett', 'Bernd Lucke', 20, 10, 'Kursleiter hat Sekt angefordert.', '{"room": "Theater"}'::jsonb),
