@@ -1793,6 +1793,10 @@ class EventFrontend(AbstractUserFrontend):
             courses, rs.ambience['event'], registrations, key="course_id",
             personas=personas)
         instructors = {}
+        # Look for the field name of the course_room_field.
+        cr_field_id = rs.ambience['event']['course_room_field']
+        cr_field = rs.ambience['event']['fields'].get(cr_field_id, {})
+        cr_field_name = cr_field.get('field_name')
         for c_id, course in courses.items():
             for t_id in course['active_segments']:
                 instructors[(c_id, t_id)] = [
@@ -1801,12 +1805,10 @@ class EventFrontend(AbstractUserFrontend):
                     if (registrations[r_id]['tracks'][t_id]['course_instructor']
                         == c_id)
                 ]
-            if 'course_id' in course['fields']:
-                del course['fields']['course_id']
         tex = self.fill_template(rs, "tex", "course_lists", {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'attendees': attendees,
-            'instructors': instructors,
+            'instructors': instructors, 'course_room_field': cr_field_name,
         })
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
@@ -1818,8 +1820,14 @@ class EventFrontend(AbstractUserFrontend):
                 src = path
             else:
                 src = self.conf.REPOSITORY_PATH / "misc/logo.png"
+            shutil_copy(src, work_dir / "event-logo.png")
             for course_id in courses:
-                shutil_copy(src, work_dir / "logo-{}.png".format(course_id))
+                dest = work_dir / "course-logo-{}.png".format(course_id)
+                path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
+                if path.exists():
+                    shutil_copy(path, dest)
+                else:
+                    shutil_copy(src, dest)
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 "course_lists.tex", runs)
