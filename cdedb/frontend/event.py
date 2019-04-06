@@ -2304,11 +2304,12 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def registration_status(self, rs, event_id):
         """Present current state of own registration."""
-        registration_id = unwrap(self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id), keys=True)
-        if not registration_id:
+        reg_list = self.eventproxy.list_registrations(
+            rs, event_id, persona_id=rs.user.persona_id)
+        if not reg_list:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
+        registration_id = unwrap(reg_list, keys=True)
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
@@ -2316,8 +2317,8 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         fee = sum(rs.ambience['event']['parts'][part_id]['fee']
-                  for part_id, entry in registration['parts'].items()
-                  if const.RegistrationPartStati(entry['status']).is_involved())
+                  for part_id, e in registration['parts'].items()
+                  if const.RegistrationPartStati(e['status']).is_involved())
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'fee': fee})
