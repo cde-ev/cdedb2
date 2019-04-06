@@ -816,7 +816,6 @@ class CoreBackend(AbstractBackend):
         :type change_note: str or None
         :rtype: int
         :returns: default return code
-
         """
         persona_id = affirm("id", persona_id)
         balance = affirm("non_negative_decimal", balance)
@@ -839,6 +838,8 @@ class CoreBackend(AbstractBackend):
                 self.finance_log(rs, log_code, persona_id,
                                  balance - current['balance'], balance)
                 return ret
+            else:
+                return 0
 
     @access("core_admin", "cde_admin")
     def change_membership(self, rs, persona_id, is_member):
