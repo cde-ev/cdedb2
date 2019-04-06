@@ -1049,6 +1049,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.money_transfers_form(rs)
         elif transfers_file:
             rs.values["transfers"] = transfers_file
+            transfers = transfers_file
             transferlines = transfers_file.splitlines()
         elif transfers:
             transferlines = transfers.splitlines()
