@@ -1413,7 +1413,7 @@ class CdEFrontend(AbstractUserFrontend):
         sepapain_file = self.create_sepapain(rs, new_transactions)
         if not sepapain_file:
             rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
-            return self.redirect(rs, "cde/lastschrift_index")
+            return self.lastschrift_index(rs)
         return self.send_file(rs, data=sepapain_file, inline=False,
                               filename="sepa.cdd")
 
