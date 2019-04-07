@@ -1154,7 +1154,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
                                              suffix=".txt", delete=False) as f:
-                f.write(str(msg))
+                f.write(escape_filter(str(msg)))
                 self.logger.debug("Stored mail to {}.".format(f.name))
                 ret = f.name
         self.logger.info("Sent email with subject '{}' to '{}'".format(
