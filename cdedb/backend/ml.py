@@ -631,7 +631,7 @@ class MlBackend(AbstractBackend):
                 # Only admins may add non-matching users
                 return 0
             gateway = False
-            if subscribe and ml['gateway']:
+            if subscribe and not privileged and ml['gateway']:
                 gateway = self.is_subscribed(rs, persona_id, ml['gateway'])
             policy = const.SubscriptionPolicy
             if (subscribe and not privileged and not gateway

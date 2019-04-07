@@ -248,6 +248,14 @@ class TestMlFrontend(FrontendTest):
         self.assertIn('subscribeform', self.response.forms)
 
     @as_users("janis")
+    def test_moderator_add_subscriber(self, user):
+        self.get("/ml/mailinglist/7/management")
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_id'] = "DB-1-9"
+        self.submit(f)
+        self.assertPresence("Anton Armin A. Administrator")
+
+    @as_users("janis")
     def test_change_sub_address(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},)
