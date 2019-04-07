@@ -111,6 +111,8 @@ class CdEFrontend(AbstractUserFrontend):
                 periods_left += 1
             if period['balance_done'] and today.month in (1, 7):
                 periods_left -= 1
+            if period['balance_done']:
+                periods_left += 1
             # Initialize deadline
             deadline = now().date().replace(day=1)
             month = 7 if deadline.month >= 7 else 1
