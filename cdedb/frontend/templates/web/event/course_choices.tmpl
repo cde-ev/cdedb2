@@ -88,9 +88,9 @@
             <div class="p">
                 {% trans select4=util.input_text(name='ids', aclass="form-control input-slim input-sm",
                                    arialabel=gettext("Filter: Registration IDs")),
-                         checkbox=util.input_checkbox('include_active', gettext("Show pending registrations")) %}
+                         checkbox=util.input_checkbox('include_active', gettext("Show pending registrations")) -%}
                     Only include these IDs: {{ select4 }}, but {{ checkbox }}.
-                {% endtrans %}
+                {%- endtrans %}
             </div>
             <p class="nosp">
                 {{ util.input_submit(value=gettext("Go!"), icon="search") }}

@@ -48,11 +48,11 @@
                 {% trans -%}
                     The course attendee and choice statistics include all active
                     registrations (registration status “Participant”, “Guest”,
-                    “Waitlist” and “Applied”)
+                    “Waitlist” and “Applied”).
                 {%- endtrans %}
             </p>
             <p>
-                {{ util.href(cdedblink("event/course_stats"), gettext('Back to Participants only'),
+                {{ util.href(cdedblink("event/course_stats"), gettext('Only show participants'),
                              aclass='btn btn-default btn-sm', icon='arrow-left') }}
             </p>
         </div>
