@@ -1240,10 +1240,11 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
                  ("position", "infinite_enum_coursefilterpositions_or_None"),
-                 ("ids", "int_csv_list_or_None"))
+                 ("ids", "int_csv_list_or_None"),
+                 ("include_active", "bool_or_None"))
     @event_guard()
     def course_choices_form(self, rs, event_id, course_id, track_id, position,
-                            ids):
+                            ids, include_active):
         """Provide an overview of course choices.
 
         This allows flexible filtering of the displayed registrations.
@@ -1253,6 +1254,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
         all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
+        stati = const.RegistrationPartStati
 
         if rs.errors:
             registration_ids = all_reg_ids
@@ -1260,15 +1262,21 @@ class EventFrontend(AbstractUserFrontend):
             personas = self.coreproxy.get_personas(rs, (r['persona_id'] for r in
                                                         registrations.values()))
         else:
+            if include_active:
+                include_states = tuple(
+                    status for status in const.RegistrationPartStati if
+                    status.is_involved())
+            else:
+                include_states = (const.RegistrationPartStati.participant,)
             registration_ids = self.eventproxy.registrations_by_course(
-                rs, event_id, course_id, track_id, position, ids)
+                rs, event_id, course_id, track_id, position, ids,
+                include_states)
             registrations = self.eventproxy.get_registrations(
                 rs, registration_ids.keys())
             personas = self.coreproxy.get_personas(
                 rs, registration_ids.values())
 
         course_infos = {}
-        stati = const.RegistrationPartStati
         reg_part = lambda registration, track_id: \
             registration['parts'][tracks[track_id]['part_id']]
         for course_id, course in courses.items():
@@ -1339,11 +1347,13 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
                  ("position", "infinite_enum_coursefilterpositions_or_None"),
                  ("ids", "int_csv_list_or_None"),
+                 ("include_active", "bool_or_None"),
                  ("registration_ids", "[int]"), ("assign_track_ids", "[int]"),
                  ("assign_action", "infinite_enum_coursechoicetoolactions"),
                  ("assign_course_id", "id_or_None"))
     @event_guard(check_offline=True)
     def course_choices(self, rs, event_id, course_id, track_id, position, ids,
+                       include_active,
                        registration_ids, assign_track_ids, assign_action,
                        assign_course_id):
         """Manipulate course choices.
@@ -1412,16 +1422,24 @@ class EventFrontend(AbstractUserFrontend):
                              {'course_id': course_id, 'track_id': track_id,
                               'position': position.value
                                           if position is not None else None,
-                              'ids': ids})
+                              'ids': ids, 'include_active': include_active})
 
     @access("event")
     @event_guard()
-    def course_stats(self, rs, event_id):
+    @REQUESTdata(("include_active", "bool_or_None"))
+    def course_stats(self, rs, event_id, include_active):
         """List courses.
 
         Provide an overview of the number of choices and assignments for
         all courses.
         """
+        if include_active:
+            include_states = tuple(
+                status for status in const.RegistrationPartStati
+                if status.is_involved())
+        else:
+            include_states = (const.RegistrationPartStati.participant,)
+
         event = rs.ambience['event']
         tracks = event['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -1435,7 +1453,7 @@ class EventFrontend(AbstractUserFrontend):
                     if (len(reg['tracks'][track_id]['choices']) > i
                         and reg['tracks'][track_id]['choices'][i] == course_id
                         and (reg['parts'][tracks[track_id]['part_id']]['status']
-                             == const.RegistrationPartStati.participant)))
+                             in include_states)))
                 for track_id, track in tracks.items()
                 for i in range(track['num_choices'])
             }
@@ -1447,14 +1465,14 @@ class EventFrontend(AbstractUserFrontend):
                     1 for reg in registrations.values()
                     if (reg['tracks'][track_id]['course_id'] == course_id
                         and (reg['parts'][track['part_id']]['status']
-                             == const.RegistrationPartStati.participant)))
+                             in include_states)))
                 for track_id, track in tracks.items()
             }
             for course_id in course_ids
         }
         return self.render(rs, "course_stats", {
             'courses': courses, 'choice_counts': choice_counts,
-            'assign_counts': assign_counts})
+            'assign_counts': assign_counts, 'include_active': include_active})
 
     @access("event")
     @event_guard(check_offline=True)

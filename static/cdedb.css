@@ -853,6 +853,10 @@ td.b-left, th.b-left {
     text-align: center;
     cursor: default;
 }
+.event_course_id.nopart {
+    color: rgba(255, 255, 255, .8);
+    background-color: rgba(45, 129, 156, 0.5);
+}
 tr td.course-primary {
     background-color: #e6e6e6;
 }

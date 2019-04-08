@@ -92,7 +92,7 @@
                     if (list.length == 0)
                         return;
                     location.href =
-                        "{{ cdedblink('event/course_choices_form', magic_placeholders=['ids']) }}"
+                        "{{ cdedblink('event/course_choices_form', {'include_active': True}, magic_placeholders=['ids'])|safe }}"
                             .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
                 });
                 $('#btn-set-field').click(function(){

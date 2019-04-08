@@ -19,7 +19,8 @@
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
-{% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, filtered=False) %}
+{% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, filtered=False,
+                     not_participating=False) %}
     {% if course_id %}
         {% with course = courses[course_id] %}
             {% set attendees = course_infos[(course_id, track_id)]['assigned'] %}
@@ -39,7 +40,7 @@
                                 {%- endtrans %})
                             {%- endif %}"
                       data-id="{{ course_id }}"
-                      class="event_course_id">
+                      class="event_course_id{% if not_participating %} nopart{% endif %}">
                    {{ course['nr'] }}
                 </span>
             </td>
@@ -63,7 +64,7 @@
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form') }}" method="GET" id="choicefilterform"
               aria-label="{% trans -%}Filter{%- endtrans %}">
-            <p>
+            <div class="p">
                 {% if ambience['event']['tracks']|length > 1 %}
                     {% set select1 = gettext("in Track %s")|e|format(util.input_select(
                         name="track_id", nulloption=gettext("— any —"),
@@ -79,17 +80,21 @@
                                 aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Course")),
                         select3=util.input_select(name="position", entries=filter_entries,
                                 aclass="form-control input-slim input-sm", nulloption=gettext("— no Filter —"),
-                                arialabel=gettext("Filter: Course Operator")),
-                        select4=util.input_text(name='ids', aclass="form-control input-slim input-sm",
-                                   arialabel=gettext("Filter: Registration IDs"))
+                                arialabel=gettext("Filter: Course Operator"))
                         -%}
-                    Show participants who {{ select3 }} the course {{ select2 }} {{ select1 }},
-                    with one of these participant IDs: {{ select4 }}
+                    Show only participants who {{ select3 }} the course {{ select2 }} {{ select1 }}
                 {%- endtrans %}
-            </p>
+            </div>
+            <div class="p">
+                {% trans select4=util.input_text(name='ids', aclass="form-control input-slim input-sm",
+                                   arialabel=gettext("Filter: Registration IDs")),
+                         checkbox=util.input_checkbox('include_active', gettext("Show pending registrations")) -%}
+                    Only include these IDs: {{ select4 }}, but {{ checkbox }}.
+                {%- endtrans %}
+            </div>
             <p class="nosp">
                 {{ util.input_submit(value=gettext("Go!"), icon="search") }}
-                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show All"), icon="remove",
+                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show all participants"), icon="remove",
                              aclass="btn btn-default") }}
             </p>
         </form>
@@ -102,6 +107,7 @@
         {{ util.input_hidden(name="course_id") }}
         {{ util.input_hidden(name="position") }}
         {{ util.input_hidden(name="ids") }}
+        {{ util.input_hidden(name="include_active") }}
         {% call util.bootstrap_panel(title=gettext("Assignment"), icon="screenshot", aclass='panel-warning',
                                      anid="assignment-options") %}
             {% if ambience['event']['tracks']|length == 1 %}
@@ -221,15 +227,18 @@
                         </td>
                         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                             {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
-                            {% if registration['parts'][track['part_id']]['status'] == enums['RegistrationPartStati'].participant %}
+                            {% if registration['parts'][track['part_id']]['status'] != enums['RegistrationPartStati'].not_applied %}
+                                {% set is_participant = registration['parts'][track['part_id']]['status']
+                                                            == enums['RegistrationPartStati'].participant %}
                                 {{ course_cell(registration['tracks'][track_id]['course_id'], track_id, border_left=True,
-                                               complain_empty=True, primary=True) }}
+                                               complain_empty=is_participant, primary=True,
+                                               not_participating=not is_participant) }}
                                 {{ course_cell(registration['tracks'][track_id]['course_instructor'], track_id,
-                                               border_left=True) }}
+                                               border_left=True, not_participating=not is_participant) }}
                                 {% for j in range(track['num_choices']) %}
                                     {{ course_cell(registration['tracks'][track_id]['choices'][j]
                                                    if registration['tracks'][track_id]['choices']|length > j else None,
-                                                   track_id) }}
+                                                   track_id, not_participating=not is_participant) }}
                                 {% endfor %}
                             {% else %}
                                 <td class="b-left"></td>

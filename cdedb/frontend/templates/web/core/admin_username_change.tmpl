@@ -15,8 +15,8 @@
             class="form-horizontal">
         {{ util.anti_csrf_token('core/admin_username_change') }}
         {{ util.form_input_static(label=gettext("User"), value=(data['given_names'] +" "+ data['family_name'])) }}
-        {{ util.form_input_static(label=gettext("Old email address"), value=data['username']) }}
-        {{ util.form_input_text(name="new_username", label=gettext("New email address"), type="email") }}
-        {{ util.form_input_submit(value=gettext("Edit email address"), cancellink=show_user_link(values['persona_id'])) }}
+        {{ util.form_input_static(label=gettext("Old Email Address"), value=data['username']) }}
+        {{ util.form_input_text(name="new_username", label=gettext("New Email Address"), type="email") }}
+        {{ util.form_input_submit(value=gettext("Edit Email Address"), cancellink=show_user_link(values['persona_id'])) }}
     </form>
 {% endblock %}
