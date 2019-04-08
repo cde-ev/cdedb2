@@ -448,10 +448,13 @@ Mitglied.</pre>
                                 <form action="{{ cdedblink('core/archive_persona') }}" method="POST"
                                  id="archivepersonaform">
                                     {{ util.anti_csrf_token('core/archive_persona') }}
-                                    {{ util.form_input_text(name="note", label=gettext("Note")) }}
-                                    {{ util.form_input_submit(value=gettext("Archive Account"), icon="erase",
-                                            aclass="btn btn-danger btn-sm", horizontal=False) }}
-                                    {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+
+                                    <div class="form-group">
+                                        {{ util.input_submit(value=gettext("Archive Account"), icon="erase",
+                                            aclass="btn btn-danger btn-sm") }}
+                                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                    </div>
+                                    {{ util.form_input_text(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
                                 <script type="text/javascript" nonce="{{ csp_nonce }}">
                                     $('#archivepersonaform').cdedbProtectAction(
