@@ -1180,7 +1180,8 @@ class EventFrontend(AbstractUserFrontend):
 
         # Calculate problematic course lists
         # course_problems will have the structure {key: [(reg_id, [track_id])]}
-        max_course_no_len = max(len(c['nr']) for c in courses.values())
+        max_course_no_len = max((len(c['nr']) for c in courses.values()),
+                                default=0)
         course_problems = {}
         for key, test in course_tests.items():
             problems = []

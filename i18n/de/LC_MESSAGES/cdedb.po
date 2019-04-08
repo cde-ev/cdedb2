@@ -8898,9 +8898,13 @@ msgstr "Prüfung"
 msgid "Course Assignment Checks"
 msgstr "Kurseinteilungsprüfung"
 
-#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:28
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:29
 msgid "instead of"
 msgstr "statt"
+
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:31
+msgid "not assigned to"
+msgstr "nicht eingeteilt in"
 
 #: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:37
 msgid "Cancelled courses with participants"

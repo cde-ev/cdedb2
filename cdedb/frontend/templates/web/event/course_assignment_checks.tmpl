@@ -21,11 +21,15 @@
 
 {# A macro to place a "[1] instead of [2]" text for miss-assigned course instructors #}
 {% macro wrong_course_block(reg_id, track_id) %}
-    {% set course = courses[registrations[reg_id]['tracks'][track_id]['course_id']] %}
-    {% set inst_course = courses[registrations[reg_id]['tracks'][track_id]['course_instructor']] %}
-    <span class="event_course_id" title="{{ course['nr'] }}. {{ course['shortname'] }}" data-id="{{ course['id'] }}">
-        {{- course['nr'] }}</span>
-    {% trans %}instead of{% endtrans %}
+    {%- set course = courses[registrations[reg_id]['tracks'][track_id]['course_id']] %}
+    {%- set inst_course = courses[registrations[reg_id]['tracks'][track_id]['course_instructor']] %}
+    {%- if course %}
+        <span class="event_course_id" title="{{ course['nr'] }}. {{ course['shortname'] }}" data-id="{{ course['id'] }}">
+            {{- course['nr'] }}</span>
+        {%- trans %}instead of{% endtrans %}
+    {%- else %}
+        {%- trans %}not assigned to{% endtrans %}
+    {% endif %}
     <span class="event_course_id" title="{{ inst_course['nr'] }}. {{ inst_course['shortname'] }}"
             data-id="{{ inst_course['id'] }}">
         {{- inst_course['nr'] }}</span>
