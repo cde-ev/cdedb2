@@ -760,7 +760,8 @@ class EventBackend(AbstractBackend):
             if len(edata) > 1:
                 indirect_fields = filter(
                     lambda x: x,
-                    [edata.get('lodge_field'), edata.get('reserve_field')])
+                    [edata.get('lodge_field'), edata.get('reserve_field'),
+                     edata.get('course_room_field')])
                 if indirect_fields:
                     indirect_data = self.sql_select(
                         rs, "event.field_definitions",
@@ -775,7 +776,8 @@ class EventBackend(AbstractBackend):
                         if (lodge_data['event_id'] != data['id']
                                 or lodge_data['kind'] != correct_datatype
                                 or lodge_data['association'] != correct_assoc):
-                            raise ValueError(n_("Unfit field for lodge_field"))
+                            raise ValueError(n_("Unfit field for %(field)s"),
+                                             {'field': 'lodge_field'})
                     correct_datatype = const.FieldDatatypes.bool
                     if edata.get('reserve_field'):
                         reserve_data = unwrap(
@@ -785,8 +787,22 @@ class EventBackend(AbstractBackend):
                                 or reserve_data['kind'] != correct_datatype
                                 or reserve_data[
                                     'association'] != correct_assoc):
-                            raise ValueError(
-                                n_("Unfit field for reserve_field"))
+                            raise ValueError(n_("Unfit field for %(field)s"),
+                                             {'field': 'reserve_field'})
+                    correct_assoc = const.FieldAssociations.course
+                    # TODO make this include lodgement datatype per Issue #71
+                    correct_datatypes = {const.FieldDatatypes.str}
+                    if edata.get('course_room_field'):
+                        course_room_data = unwrap(
+                            [x for x in indirect_data
+                             if x['id'] == edata['course_room_field']])
+                        if (course_room_data['event_id'] != data['id']
+                                or course_room_data[
+                                    'kind'] not in correct_datatypes
+                                or course_room_data[
+                                    'association'] != correct_assoc):
+                            raise ValueError(n_("Unfit field for %(field)s"),
+                                             {'field': 'course_room_field'})
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])
