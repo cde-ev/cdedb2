@@ -83,6 +83,10 @@
                                                 aclass="input-sm") }}
                     </div>
                 </div>
+            {% if is_admin -%}
+                    {{ util.output_info(gettext("This search only finds searchable and active members."
+                "For all CdE users use the “Manage Users” page.")) }}
+            {%- endif %}
             </div>
             <div class="panel-footer text-right">
                 {{ util.input_submit(gettext("Search"), icon='search') }}
