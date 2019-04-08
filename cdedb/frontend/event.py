@@ -1265,7 +1265,7 @@ class EventFrontend(AbstractUserFrontend):
             if include_active:
                 include_states = tuple(
                     status for status in const.RegistrationPartStati if
-                    status.is_involved)
+                    status.is_involved())
             else:
                 include_states = (const.RegistrationPartStati.participant,)
             registration_ids = self.eventproxy.registrations_by_course(
@@ -1436,7 +1436,7 @@ class EventFrontend(AbstractUserFrontend):
         if include_active:
             include_states = tuple(
                 status for status in const.RegistrationPartStati
-                if status.is_involved)
+                if status.is_involved())
         else:
             include_states = (const.RegistrationPartStati.participant,)
 
