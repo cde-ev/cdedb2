@@ -1012,7 +1012,7 @@ class CoreBackend(AbstractBackend):
                 "= (%s, %s, %s, %s)",
                 "WHERE persona_id = %s")
             if lastschrift:
-                self.query_exec(rs, query, (0, 0, "", "", "", persona_id))
+                self.query_exec(rs, query, (0, 0, "", "", persona_id))
             #
             # 6. Handle event realm
             #
