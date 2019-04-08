@@ -6,6 +6,7 @@ import cgitb
 from collections import OrderedDict, Counter
 import copy
 import csv
+import hashlib
 import decimal
 import itertools
 import os
@@ -1476,7 +1477,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def batch_fees_form(self, rs, event_id, data=None, csvfields=None):
+    def batch_fees_form(self, rs, event_id, data=None, csvfields=None,
+                        saldo=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -1487,7 +1489,8 @@ class EventFrontend(AbstractUserFrontend):
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         csv_position['persona_id'] = csv_position.pop('id', -1)
         return self.render(rs, "batch_fees",
-                           {'data': data, 'csvfields': csv_position})
+                           {'data': data, 'csvfields': csv_position,
+                            'saldo': saldo})
 
     def examine_fee(self, rs, datum):
         """Check one line specifying a paid fee.
@@ -1611,10 +1614,12 @@ class EventFrontend(AbstractUserFrontend):
         return True, count
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("force", "bool"), ("fee_data", "str_or_None"))
+    @REQUESTdata(("force", "bool"), ("fee_data", "str_or_None"),
+                 ("checksum", "str_or_None"))
     @REQUESTfile("fee_data_file")
     @event_guard(check_offline=True)
-    def batch_fees(self, rs, event_id, force, fee_data, fee_data_file):
+    def batch_fees(self, rs, event_id, force, fee_data, fee_data_file,
+                   checksum):
         """Allow orgas to add lots paid of participant fee at once."""
         fee_data_file = check(rs, "csvfile_or_None", fee_data_file, 
                               "fee_data_file")
@@ -1626,6 +1631,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.batch_fees_form(rs, event_id)
         elif fee_data_file:
             rs.values["fee_data"] = fee_data_file
+            fee_data = fee_data_file
             fee_data_lines = fee_data_file.splitlines()
         elif fee_data:
             fee_data_lines = fee_data.splitlines()
@@ -1649,11 +1655,18 @@ class EventFrontend(AbstractUserFrontend):
             rs.errors.append(("fee_data",
                               ValueError(n_("Lines didn’t match up."))))
         open_issues = any(e['problems'] for e in data)
+        saldo = sum(e['amount'] for e in data if e['amount'])
         if not force:
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.errors or not data or open_issues:
             return self.batch_fees_form(rs, event_id, data=data,
                                         csvfields=fields)
+
+        current_checksum = hashlib.md5(fee_data.encode()).hexdigest()
+        if checksum != current_checksum:
+            rs.values['checksum'] = current_checksum
+            return self.batch_fees_form(rs, event_id, data=data,
+                                        csvfields=fields, saldo=saldo)
 
         # Here validation is finished
         success, num = self.book_fees(rs, data)

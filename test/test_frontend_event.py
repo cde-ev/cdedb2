@@ -947,6 +947,9 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         f = self.response.forms['batchfeesform']
         f['force'].checked = True
+        self.submit(f, check_notification=False)
+        # submit again because of checksum
+        f = self.response.forms['batchfeesform']
         self.submit(f)
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})

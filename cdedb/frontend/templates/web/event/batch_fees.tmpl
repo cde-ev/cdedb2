@@ -21,6 +21,7 @@
 {% block content %}
     <form action="{{ cdedblink('event/batch_fees') }}" method="POST" id="batchfeesform" enctype="multipart/form-data">
         {{ util.anti_csrf_token('event/batch_fees') }}
+        {{ util.input_hidden(name="checksum") }}
         {{ util.form_input_checkbox(name="force", horizontal=False, label=gettext("Ignore Warnings")) }}
         {{ util.form_input_file(name="fee_data_file", horizontal=False, label=gettext("Transfers")) }}
         {{ util.form_input_textarea(name="fee_data", horizontal=False, rows="10",
@@ -36,9 +37,6 @@
         <p class="help-block">
             z.B. <code>01.04.2018;123.00;DB-9-4;Iota;Inga</code>
         </p>
-
-        {{ util.form_input_submit(value=gettext("Enter"), horizontal=False) }}
-    </form>
 
     {% if data %}
         <h2>{% trans -%}Validation Results{%- endtrans %}</h2>
@@ -96,4 +94,19 @@
             });
         </script>
     {% endif %}
+
+        {% if saldo %}
+            {% trans -%}Saldo{%- endtrans %}: {{ saldo|money(lang=lang) }}
+        {% endif %}
+
+        {% if values['checksum'] %}
+            <p class="help-block">
+                {{ util.make_icon('info-sign') }}
+                {% trans -%}If the input changed, the validation results will be displayed again.{%- endtrans %}
+            </p>
+            {{ util.form_input_submit(value=gettext("Confirm"), horizontal=False) }}
+        {% else %}
+            {{ util.form_input_submit(value=gettext("Validate"), horizontal=False) }}
+        {% endif %}
+    </form>
 {% endblock %}
