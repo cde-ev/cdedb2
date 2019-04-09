@@ -454,7 +454,7 @@ Mitglied.</pre>
                                             aclass="btn btn-danger btn-sm") }}
                                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                     </div>
-                                    {{ util.form_input_text(name="note", label=gettext("Note"), horizontal=False) }}
+                                    {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
                                 <script type="text/javascript" nonce="{{ csp_nonce }}">
                                     $('#archivepersonaform').cdedbProtectAction(
