@@ -882,7 +882,7 @@ class CoreBackend(AbstractBackend):
             return ret
 
     @access("core_admin", "cde_admin")
-    def archive_persona(self, rs, persona_id):
+    def archive_persona(self, rs, persona_id, note):
         """Move a persona to the attic.
 
         This clears most of the data we have about the persona. The
@@ -904,10 +904,12 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
+        :type note: str
         :rtype: int
         :returns: default return code
         """
         persona_id = affirm("id", persona_id)
+        note = affirm("str", note)
         with Atomizer(rs):
             persona = unwrap(self.get_total_personas(rs, (persona_id,)))
             #
@@ -941,7 +943,7 @@ class CoreBackend(AbstractBackend):
                 # 'password_hash' already adjusted
                 'username': None,
                 'is_active': False,
-                'notes': None,
+                'notes': note,  # Note on why the persona was archived.
                 'is_admin': False,
                 'is_core_admin': False,
                 'is_cde_admin': False,
@@ -1011,7 +1013,7 @@ class CoreBackend(AbstractBackend):
                 "= (%s, %s, %s, %s)",
                 "WHERE persona_id = %s")
             if lastschrift:
-                self.query_exec(rs, query, (0, 0, "", "", "", persona_id))
+                self.query_exec(rs, query, (0, 0, "", "", persona_id))
             #
             # 6. Handle event realm
             #

@@ -267,7 +267,8 @@ class CoreFrontend(AbstractFrontend):
     @ml_usage
     @REQUESTdata(("confirm_id", "#int"), ("quote_me", "bool"),
                  ("event_id", "id_or_None"), ("ml_id", "id_or_None"))
-    def show_user(self, rs, persona_id, confirm_id, quote_me, event_id, ml_id):
+    def show_user(self, rs, persona_id, confirm_id, quote_me, event_id, ml_id,
+                  internal=False):
         """Display user details.
 
         This has an additional encoded parameter to make links to this
@@ -283,8 +284,12 @@ class CoreFrontend(AbstractFrontend):
         users. This has the additional property, that event/ml admins count
         as if they are always orga/moderator (otherwise they would observe
         breakage).
+
+        The internal parameter signals that the call is from another
+        frontend function and not an incoming request. This allows to access
+        this endpoint without a redirect to preserve validation results.
         """
-        if persona_id != confirm_id or rs.errors:
+        if (persona_id != confirm_id or rs.errors) and not internal:
             return self.index(rs)
         if (rs.ambience['persona']['is_archived']
                 and "core_admin" not in rs.user.roles):
@@ -1649,16 +1654,20 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/list_pending_changes")
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
-    def archive_persona(self, rs, persona_id, ack_delete):
+    @REQUESTdata(("ack_delete", "bool"), ("note", "str"))
+    def archive_persona(self, rs, persona_id, ack_delete, note):
         """Move a persona to the attic."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
+            rs.errors.append(("ack_delete",
+                              ValueError(n_("Must be checked."))))
+        if not note:
+            rs.notify("error", n_("Must supply archival note."))
         if rs.errors:
-            return self.redirect_show_user(rs, persona_id)
+            return self.show_user(rs, persona_id, confirm_id=persona_id,
+                                  internal=True)
 
         try:
-            code = self.coreproxy.archive_persona(rs, persona_id)
+            code = self.coreproxy.archive_persona(rs, persona_id, note)
         except ArchiveError as e:
             rs.notify("error", e.args[0])
             code = 0
@@ -1680,7 +1689,8 @@ class CoreFrontend(AbstractFrontend):
     def purge_persona(self, rs, persona_id, ack_delete):
         """Delete all identifying information for a persona."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
+            rs.errors.append(("ack_delete",
+                              ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
 

@@ -631,6 +631,15 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Zirkusstadt")
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
+        self.submit(f, check_notification=False)
+        self.assertPresence("Archivierungsnotiz muss angegeben werden.",
+                            div="notifications")
+        self.assertTitle("Charly C. Clown")
+        self.assertNonPresence("Der Benutzer ist archiviert.")
+        self.assertPresence("Zirkusstadt")
+        f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = True
+        f['note'] = "Archived for testing."
         self.submit(f)
         self.assertTitle("Charly C. Clown")
         self.assertPresence("Der Benutzer ist archiviert.")

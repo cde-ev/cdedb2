@@ -8899,6 +8899,7 @@ msgid "Course Assignment Checks"
 msgstr "Kurseinteilungsprüfung"
 
 #: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:29
+#: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:28
 msgid "instead of"
 msgstr "statt"
 
@@ -11662,5 +11663,12 @@ msgstr "Kurslogo"
 msgid "Remove Minor Form"
 msgstr "Miderjährigenformular entfernen"
 
-msgid "This search only finds searchable and active members. For all CdE users use the %(link)s page."
-msgstr "Diese Suche findet nur suchbare, aktive Mitglieder. Um alle CdE-Benutzer zu finden, nutze die %(link)s."
+msgid ""
+"This search only finds searchable and active members. For all CdE users use "
+"the %(link)s page."
+msgstr ""
+"Diese Suche findet nur suchbare, aktive Mitglieder. Um alle CdE-Benutzer zu "
+"finden, nutze die %(link)s."
+
+msgid "Must supply archival note."
+msgstr "Archivierungsnotiz muss angegeben werden."
