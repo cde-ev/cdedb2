@@ -625,27 +625,29 @@ class MlBackend(AbstractBackend):
                 return self.write_subscription_state(
                     rs, mailinglist_id, persona_id, subscribe, address)
             # (2) Handle actual transitions
-            policy = const.AudiencePolicy(ml['audience_policy'])
-            roles = extract_roles(self.core.get_persona(rs, persona_id))
-            if not policy.check(roles) and not self.is_admin(rs):
-                # Only admins may add non-matching users
-                return 0
-            gateway = False
-            if subscribe and not privileged and ml['gateway']:
-                gateway = self.is_subscribed(rs, persona_id, ml['gateway'])
-            policy = const.SubscriptionPolicy
-            if (subscribe and not privileged and not gateway
-                    and ml['sub_policy'] == policy.moderated_opt_in):
-                self.ml_log(rs, const.MlLogCodes.subscription_requested,
-                            mailinglist_id, persona_id=persona_id)
-                request = {
-                    'mailinglist_id': mailinglist_id,
-                    'persona_id': persona_id,
-                }
-                return -self.sql_insert(rs, "ml.subscription_requests", request)
-            if (policy(ml['sub_policy']).privileged_transition(subscribe)
-                    and not privileged and not gateway):
-                raise PrivilegeError(n_("Must be moderator."))
+            if not privileged:
+                policy = const.AudiencePolicy(ml['audience_policy'])
+                roles = extract_roles(self.core.get_persona(rs, persona_id))
+                if not policy.check(roles):
+                    # Only moderators may add non-matching users
+                    return 0
+                gateway = False
+                if subscribe and ml['gateway']:
+                    gateway = self.is_subscribed(rs, persona_id, ml['gateway'])
+                policy = const.SubscriptionPolicy
+                if (subscribe and not gateway
+                        and ml['sub_policy'] == policy.moderated_opt_in):
+                    self.ml_log(rs, const.MlLogCodes.subscription_requested,
+                                mailinglist_id, persona_id=persona_id)
+                    request = {
+                        'mailinglist_id': mailinglist_id,
+                        'persona_id': persona_id,
+                    }
+                    return -self.sql_insert(rs, "ml.subscription_requests",
+					                        request)
+                if (policy(ml['sub_policy']).privileged_transition(subscribe)
+                        and not gateway):
+                    raise PrivilegeError(n_("Must be moderator."))
             if subscribe:
                 code = const.MlLogCodes.subscribed
             else:

@@ -11509,10 +11509,10 @@ msgstr ""
 msgid "Remove Logo"
 msgstr "Logo entfernen"
 
-msgid "Only Admins may add users outside of the configured audience."
+msgid "Users outside of the configured audience can only be added by entering their ID."
 msgstr ""
-"Nur Administratoren können Benutzer außerhalb des konfigurierten "
-"Empfängerkreises hinzufügen."
+"Benutzer außerhalb des konfigurierten Empfängerkreises können nur durch Eingabe ihrer "
+"ID hinzugefügt werden."
 
 #: cdedb/frontend/event.py:294
 msgid "Minor form has been removed."

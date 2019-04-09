@@ -139,6 +139,19 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertIn("removesubscriberform9", self.response.forms)
 
+    @as_users("anton", "berta")
+    def test_mailinglist_management_outside_audience(self, user):
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/5'},
+                      {'href': '/ml/mailinglist/5/management'})
+        self.assertTitle("Sozialistischer Kampfbrief – Verwalten")
+        self.assertNonPresence("Janis Jalapeño")
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_id'] = "DB-10-8"
+        self.submit(f)
+        self.assertTitle("Sozialistischer Kampfbrief – Verwalten")
+        self.assertPresence("Janis Jalapeño")
+
     @as_users("anton")
     def test_create_mailinglist(self, user):
         self.traverse({'href': '/ml/$'})
