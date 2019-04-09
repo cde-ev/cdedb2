@@ -85,8 +85,8 @@
                 </div>
             {% if is_admin -%}
                     {{ util.output_info(gettext("This search only finds searchable and active members. "
-                            "For all CdE users use the %(link)s page.")|format(
-                                link=util.href(cdedblink("cde/user_search"), label=gettext("“Manage Users”")))|s) }}
+                            "For all CdE users use the “%(link)s” page.")|format(
+                                link=util.href(cdedblink("cde/user_search"), label=gettext("Manage Users")))|s) }}
             {%- endif %}
             </div>
             <div class="panel-footer text-right">
