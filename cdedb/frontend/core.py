@@ -1658,14 +1658,14 @@ class CoreFrontend(AbstractFrontend):
     def archive_persona(self, rs, persona_id, ack_delete, note):
         """Move a persona to the attic."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
+            rs.errors.append(("ack_delete",
+                              ValueError(n_("Must be checked."))))
         if not note:
             rs.errors.append(("archival_note",
                               ValueError(n_("Must supply archival note."))))
-            rs.values['confirm_id'] = self.encode_parameter(
-                "core/show_user", "confirm_id", persona_id, timeout=None)
         if rs.errors:
-            return self.show_user(rs, persona_id, internal=True)
+            return self.show_user(rs, persona_id, confirm_id=persona_id,
+                                  internal=True)
 
         try:
             code = self.coreproxy.archive_persona(rs, persona_id, note)
@@ -1690,7 +1690,8 @@ class CoreFrontend(AbstractFrontend):
     def purge_persona(self, rs, persona_id, ack_delete):
         """Delete all identifying information for a persona."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
+            rs.errors.append(("ack_delete",
+                              ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
 
