@@ -546,9 +546,9 @@
                                 {%- endtrans %}
                             </p>
                             <p>
-                                {% trans tab="<kbd>{key}</kbd>"|s|format(key=gettext("TAB")),
-                                         enter="<kbd>{key}</kbd>"|s|format(key=gettext("ENTER")),
-                                         space="<kbd>{key}</kbd>"|s|format(key=gettext("Space")) -%}
+                                {% trans tab="<kbd>%(key)s</kbd>"|s|format(key=gettext("TAB")),
+                                         enter="<kbd>%(key)s</kbd>"|s|format(key=gettext("ENTER")),
+                                         space="<kbd>%(key)s</kbd>"|s|format(key=gettext("Space")) -%}
                                     There are three ways of moving Candidates: Drag’n’Drop them into a different box or
                                     click on a Candidate and then on a box. Or You can select a Candidate with {{ tab }},
                                     confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
