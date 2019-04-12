@@ -36,15 +36,15 @@
         {% endif %}
         <div class="col-sm-1 text-center {% if not label %}col-sm-offset-4{% endif %}">
             <div class="checkbox" title="
-                {% if label %}
+                {%- if label -%}
                     {% trans label=label -%}
-                        Overwrite ”{{ label }}”
+                        Overwrite “{{ label }}”
                     {%- endtrans %}
-                {% else %}
+                {%- else -%}
                     {% trans -%}
                         Overwrite this field
                     {%- endtrans %}
-                {% endif %}
+                {%- endif -%}
             ">
                 <label>
                     <input type="checkbox" name="enable_{{ name }}" value="True" class="enable-input"

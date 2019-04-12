@@ -8428,7 +8428,7 @@ msgstr "Anmeldungen bearbeiten"
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:40
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:55
 #, python-format
-msgid "Overwrite ”%(label)s”"
+msgid "Overwrite “%(label)s”"
 msgstr "„%(label)s“ überschreiben"
 
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:44
