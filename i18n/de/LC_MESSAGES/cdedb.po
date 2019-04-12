@@ -8540,7 +8540,7 @@ msgstr "in Kursschiene %s"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:70
 msgid "— any —"
-msgstr "– egal –"
+msgstr "— egal —"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:72
 msgid "Filter: Coursetrack"
@@ -8557,7 +8557,7 @@ msgstr "Filter: Kurs"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:82
 msgid "— no Filter —"
-msgstr "– kein Filter –"
+msgstr "— kein Filter —"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:83
 msgid "Filter: Course Operator"
@@ -9307,7 +9307,7 @@ msgstr "Abfrage"
 
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:49
 msgid "— Only Text —"
-msgstr "– Nur Text –"
+msgstr "— Nur Text —"
 
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:53
 msgid "Input Size"
