@@ -109,16 +109,17 @@
                             <td class="text-right course-primary {{ aclass }}">
                                 {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                                 'course_id': course_id,
-                                                                                'position': 6,
+                                                                                'position': enums.CourseFilterPositions.assigned.value,
+                                                                                'include_active': include_active,
                                                                                 'submitform': True}),
                                              assign_counts[course_id][track_id]) }}
                             </td>
                             {% for i in range(track['num_choices']) %}
                                 <td class="text-right">
-                                    {# FIXME position does not work for arbitrary number of choices #}
                                     {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                                     'course_id': course_id,
                                                                                     'position': i,
+                                                                                    'include_active': include_active,
                                                                                     'submitform': True}),
                                              choice_counts[course_id][(track_id, i)]) }}
                             {% endfor %}
