@@ -7988,6 +7988,8 @@ msgstr "Anmeldung für %(title)s ändern"
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:15
 #: cdedb/frontend/templates/web/event/base.tmpl:16
+#: cdedb/frontend/templates/web/event/change_registration.tmpl:54
+#: cdedb/frontend/templates/web/event/change_registrations.tmpl:101
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:12
 msgid "My Registration"
 msgstr "Meine Anmeldung"
@@ -8381,6 +8383,19 @@ msgstr "Anmeldung von %(given_names)s %(family_name)s bearbeiten (%(title)s)"
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:31
 msgid "Full Name"
 msgstr "Name"
+
+#: cdedb/frontend/templates/web/event/change_registration.tmpl:54
+#: cdedb/frontend/templates/web/event/change_registrations.tmpl:101
+#, python-format
+msgid ""
+"The registered people are able to see their current registration status, "
+"the payment status and – for\n"
+"                minors – the status of the parental consent at "
+"“%(my_registration)s”."
+msgstr ""
+"Die Teilnehmer und Angemeldeten können unter „%(my_registration)s“ ihren "
+"aktuellen Teilnahme-Status, den Status des Teilnehmerbeitrags und – bei "
+"Minderjährigen – den Status der Einverständniserklärung einsehen."
 
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:66
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:133

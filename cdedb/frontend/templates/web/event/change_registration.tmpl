@@ -49,6 +49,13 @@
         {{ util.form_input_textarea(name="reg.orga_notes", label=gettext("Orga-Notes"), rows="5") }}
 
         <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
+        <p class="text-info">
+            {{ util.make_icon('info-sign') }}
+            {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) -%}
+                The registered people are able to see their current registration status, the payment status and – for
+                minors – the status of the parental consent at “{{ my_registration }}”.
+            {%- endtrans %}
+        </p>
         {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
