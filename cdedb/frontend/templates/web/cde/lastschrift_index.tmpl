@@ -89,8 +89,10 @@
     </form>
     {% if errors %}
         <ul>
-        {% for name, error in errors.items() %}
-            <li>{{ name }}: {{ util.format_error(error) }}</li>
+        {% for name in errors %}
+            {% for error in errors.get(name, []) if error %}
+                <li>{{ name }}: {{ util.format_error(error) }}</li>
+            {% endfor %}
         {% endfor %}
         </ul>
     {% endif %}
