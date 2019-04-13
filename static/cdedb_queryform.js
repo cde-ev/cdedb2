@@ -334,12 +334,13 @@
                 })
                     .val(values[1]);
 
+                var $inputs = $i1.add($i2);
+                $inputs.attr('type', inputTypes[f.type])
                 if (f.type == 'date')
-                    $($i1[0], $i2[0]).attr('placeholder','YYYY-MM-DD').attr('type', 'date');
+                    $inputs.attr('placeholder','YYYY-MM-DD');
                 else if (f.type == 'datetime')
-                    $($i1[0], $i2[0]).attr('placeholder','YYYY-MM-DDThh:mm').attr('type', 'datetime-local');
-
-                $i1.add($i2).change(function() {
+                    $inputs.attr('placeholder','YYYY-MM-DDThh:mm');
+                $inputs.change(function() {
                     var val = escape($i1.val()) + ',' + escape($i2.val());
                     f.input_filter_value.val(val);
                 });
