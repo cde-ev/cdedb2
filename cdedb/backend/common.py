@@ -526,7 +526,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 if operator == _ops.oneof:
                     phrase = "{} = ANY(%s)".format(sql_param_str)
                 else:
-                    phrase = "{} != ANY(%s)".format(sql_param_str)
+                    phrase = "NOT({} = ANY(%s))".format(sql_param_str)
                 params.extend((tuple(caser(x) for x in value),) * len(columns))
             elif operator in (_ops.similar, _ops.dissimilar):
                 if operator == _ops.similar:
