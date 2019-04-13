@@ -360,6 +360,11 @@ class EventBackend(AbstractBackend):
                  operator, value)
                 for column, operator, value in query.constraints
             ]
+            query.order = [
+                (".".join(atom if atom.islower() else '"{}"'.format(atom)
+                          for atom in entry.split(".")),
+                 ascending)
+                for entry, ascending in query.order]
             for field, _, _ in query.constraints:
                 if '"' in field:
                     query.spec[field] = query.spec[field.replace('"', '')]
