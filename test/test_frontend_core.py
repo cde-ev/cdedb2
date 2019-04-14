@@ -237,7 +237,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(' Wiederholungen wie \'abcabcabc\' sind nur geringfügig schwieriger zu erraten als \'abc\'.')
+        self.assertPresence(' Wiederholungen wie „abcabcabc“ sind nur geringfügig schwieriger zu erraten als „abc“.')
         self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence('Vermeide Wiederholungen von Wörtern und Buchstaben.')
         # Password three: Common German words

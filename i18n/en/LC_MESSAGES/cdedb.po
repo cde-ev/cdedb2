@@ -872,20 +872,20 @@ msgid "Use a longer keyboard pattern with more turns."
 msgstr ""
 
 #: cdedb/i18n_additional.py:215
-msgid "Repeats like “aaa” are easy to guess."
-msgstr ""
+msgid "Repeats like \"aaa\" are easy to guess."
+msgstr "Repeats like “aaa” are easy to guess."
 
 #: cdedb/i18n_additional.py:216
-msgid "Repeats like “abcabcabc” are only slightly harder to guess than “abc”."
-msgstr ""
+msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\"."
+msgstr "Repeats like “abcabcabc” are only slightly harder to guess than “abc”."
 
 #: cdedb/i18n_additional.py:218
 msgid "Avoid repeated words and characters."
 msgstr ""
 
 #: cdedb/i18n_additional.py:219
-msgid "Sequences like “abc“ or “6543” are easy to guess."
-msgstr ""
+msgid "Sequences like \"abc\" or \"6543\" are easy to guess."
+msgstr "Sequences like “abc“ or “6543” are easy to guess."
 
 #: cdedb/i18n_additional.py:220
 msgid "Avoid sequences."
@@ -936,20 +936,20 @@ msgid "Common names and surnames are easy to guess."
 msgstr ""
 
 #: cdedb/i18n_additional.py:232
-msgid "Capitalization doesn’t help very much."
-msgstr ""
+msgid "Capitalization doesn't help very much."
+msgstr "Capitalization doesn’t help very much."
 
 #: cdedb/i18n_additional.py:233
 msgid "All-uppercase is almost as easy to guess as all-lowercase."
 msgstr ""
 
 #: cdedb/i18n_additional.py:234
-msgid "Reversed words aren’t much harder to guess."
-msgstr ""
+msgid "Reversed words aren't much harder to guess."
+msgstr "Reversed words aren’t much harder to guess."
 
 #: cdedb/i18n_additional.py:235
-msgid "Predictable substitutions like “@” instead of “a” don’t help very much."
-msgstr ""
+msgid "Predictable substitutions like \"@\" instead of \"a\" don't help very much."
+msgstr "Predictable substitutions like “@” instead of “a” don’t help very much."
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:114
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:33

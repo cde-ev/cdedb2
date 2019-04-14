@@ -872,13 +872,13 @@ msgid "Use a longer keyboard pattern with more turns."
 msgstr "Benutze ein längeres Tastaturmuster mit mehr Wendungen."
 
 #: cdedb/i18n_additional.py:215
-msgid "Repeats like “aaa” are easy to guess."
+msgid "Repeats like \"aaa\" are easy to guess."
 msgstr "Wiederholungen wie „aaa“ sind einfach zu erraten."
 
 #: cdedb/i18n_additional.py:216
-msgid "Repeats like “abcabcabc” are only slightly harder to guess than “abc”."
+msgid "Repeats like \"abcabcabc\" are only slightly harder to guess than \"abc\"."
 msgstr ""
-"Wiederholungen wie „abcabcab“‚ sind nur geringfügig schwieriger zu "
+"Wiederholungen wie „abcabcabc“ sind nur geringfügig schwieriger zu "
 "erraten als „abc“."
 
 #: cdedb/i18n_additional.py:218
@@ -886,7 +886,7 @@ msgid "Avoid repeated words and characters."
 msgstr "Vermeide Wiederholungen von Wörtern und Buchstaben."
 
 #: cdedb/i18n_additional.py:219
-msgid "Sequences like “abc“ or “6543” are easy to guess."
+msgid "Sequences like \"abc\" or \"6543\" are easy to guess."
 msgstr "Abfolgen wie „abc“ oder „6543“ sind einfach zu erraten."
 
 #: cdedb/i18n_additional.py:220
@@ -938,7 +938,7 @@ msgid "Common names and surnames are easy to guess."
 msgstr "Häufige Vornamen und Nachnamen sind einfach zu erraten."
 
 #: cdedb/i18n_additional.py:232
-msgid "Capitalization doesn’t help very much."
+msgid "Capitalization doesn't help very much."
 msgstr "Großschreibung hilft nicht wirklich."
 
 #: cdedb/i18n_additional.py:233
@@ -948,11 +948,11 @@ msgstr ""
 "kleinzuschreiben."
 
 #: cdedb/i18n_additional.py:234
-msgid "Reversed words aren’t much harder to guess."
+msgid "Reversed words aren't much harder to guess."
 msgstr "Umgedrehte Wörter sind nicht viel schwieriger zu erraten."
 
 #: cdedb/i18n_additional.py:235
-msgid "Predictable substitutions like “@” instead of “a” don’t help very much."
+msgid "Predictable substitutions like \"@\" instead of \"a\" don't help very much."
 msgstr "Vorhersehbare Ersetzungen wie „@“ statt „a“ helfen nicht wirklich."
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:114
