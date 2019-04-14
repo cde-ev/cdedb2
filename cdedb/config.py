@@ -241,7 +241,7 @@ _DEFAULTS = {
     # default return path for bounced mail
     "DEFAULT_RETURN_PATH": "bounces@cde-ev.de",
     # default sender address for mails
-    "DEFAULT_SENDER": '"CdE-Mitgliederverwaltung" <verwaltung@cde-ev.de>',
+    "DEFAULT_SENDER": '"CdE-Datenbank" <datenbank@cde-ev.de>',
     # domain for emails (determines message id)
     "MAIL_DOMAIN": "db.cde-ev.de",
     # host to use for sending emails
