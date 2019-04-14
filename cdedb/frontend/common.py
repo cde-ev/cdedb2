@@ -1070,6 +1070,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "domain": self.conf.MAIL_DOMAIN,
                     }
         merge_dicts(headers, defaults)
+        if headers["From"] == headers["Reply-To"]:
+            headers["Reply-To"] = ""
         msg = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
