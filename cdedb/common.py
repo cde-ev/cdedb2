@@ -1528,8 +1528,8 @@ MAILINGLIST_SUBSCRIPTION_FIELDS = (
     "is_override")
 
 #: Fields of an assembly
-ASSEMBLY_FIELDS = ("id", "title", "description", "signup_end", "is_active",
-                   "notes")
+ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
+                   "is_active", "notes")
 
 #: Fields of a ballot
 BALLOT_FIELDS = (

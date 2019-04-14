@@ -219,8 +219,8 @@ INSERT INTO event.log (ctime, code, submitted_by, event_id, persona_id, addition
 --
 -- assembly
 --
-INSERT INTO assembly.assemblies (id, title, description, signup_end) VALUES
-    (1, 'Internationaler Kongress', 'Proletarier aller Länder vereinigt Euch!', date '2111-11-11');
+INSERT INTO assembly.assemblies (id, title, description, mail_address, signup_end) VALUES
+    (1, 'Internationaler Kongress', 'Proletarier aller Länder vereinigt Euch!', 'kongress@example.cde', date '2111-11-11');
 
 INSERT INTO assembly.ballots (id, assembly_id, title, description, vote_begin, vote_end, vote_extension_end, extended, use_bar, quorum, votes, is_tallied, notes) VALUES
     (1, 1, 'Antwort auf die letzte aller Fragen', 'Nach dem Leben, dem Universum und dem ganzen Rest.', timestamp with time zone '2002-02-22 22:22:22.222222+02', timestamp with time zone '2002-02-23 22:22:22.222222+02', now(), True, True, 2, NULL, False, NULL),

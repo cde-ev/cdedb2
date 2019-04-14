@@ -27,6 +27,8 @@
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+        {{ util.form_input_text(name="mail_address", label=gettext("Mail Address"), 
+                                    info=gettext("This email will be the default address for replies to mails sent for this assembly.")) }}
         {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), placeholder="YYYY-MM-DDThh:ii",
                                 type="datetime-local") }}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",

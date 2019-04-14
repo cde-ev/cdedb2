@@ -207,7 +207,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "change_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description", "signup_end", "notes")
+    @REQUESTdatadict("title", "description", "mail_address", "signup_end",
+                     "notes")
     def change_assembly(self, rs, assembly_id, data):
         """Modify an assembly."""
         data['id'] = assembly_id
