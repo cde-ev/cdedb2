@@ -251,6 +251,8 @@ _DEFAULTS = {
     "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
     # email for ml account requests
     "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
+    # email for replies to assembly mails
+    "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
 
     # logs
     "CORE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-core.log"),
