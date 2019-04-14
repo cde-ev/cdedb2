@@ -2325,10 +2325,15 @@ class EventFrontend(AbstractUserFrontend):
         fee = sum(rs.ambience['event']['parts'][part_id]['fee']
                   for part_id, entry in registration['parts'].items()
                   if const.RegistrationPartStati(entry['status']).is_involved())
+
+        subject = "[CdE] Anmeldung für {}".format(rs.ambience['event']['title'])
+        reply_to = (rs.ambience['event']['orga_address'] or
+                    self.confEVENT_ADMIN_ADDRESS)
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
-             'Subject': "Anmeldung für CdE Veranstaltung"},
+             'Subject': subject,
+             'Reply-To': reply_to},
             {'fee': fee, 'age': age, 'meta_info': meta_info})
         self.notify_return_code(rs, new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")
