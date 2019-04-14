@@ -1471,9 +1471,9 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname",
     "registration_start", "registration_soft_limit", "registration_hard_limit",
-    "iban", "mail_text", "use_questionnaire", "notes", "offline_lock",
-    "is_visible", "is_course_list_visible", "is_archived", "lodge_field",
-    "reserve_field")
+    "iban", "orga_address", "mail_text", "use_questionnaire", "notes",
+    "offline_lock", "is_visible", "is_course_list_visible", "is_archived",
+    "lodge_field", "reserve_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
