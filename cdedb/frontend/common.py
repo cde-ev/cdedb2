@@ -492,7 +492,7 @@ def linebreaks_filter(val, replacement="<br>"):
         return None
     # escape the input. This function consumes an unescaped string or a
     # jinja2.Markup safe html object and returns an escaped string.
-    val = jinja2.Markup(val)
+    val = jinja2.escape(val)
     return val.replace('\n', jinja2.Markup(replacement))
 
 
@@ -1154,7 +1154,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
                                              suffix=".txt", delete=False) as f:
-                f.write(escape_filter(str(msg)))
+                f.write(str(msg))
                 self.logger.debug("Stored mail to {}.".format(f.name))
                 ret = f.name
         self.logger.info("Sent email with subject '{}' to '{}'".format(
