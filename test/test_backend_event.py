@@ -934,29 +934,31 @@ class TestEventBackend(BackendTest):
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {'birthday': datetime.date(2012, 6, 2),
-             'xfield_brings_balls': True,
-             'xfield_contamination_2': 'high',
-             'course_id2': None,
-             'family_name': 'Eventis',
-             'id': 2,
-             'lodgement_id1': None,
-             'payment': datetime.date(2014, 2, 2),
+             'reg_fields.xfield_brings_balls': True,
+             'lodge_fields2.xfield_contamination_2': 'high',
+             'track2.course_id2': None,
+             'persona.family_name': 'Eventis',
+             'reg.id': 2,
+             'id': 2,  # un-aliased id from QUERY_PRIMARIES / ordering
+             'part1.lodgement_id1': None,
+             'reg.payment': datetime.date(2014, 2, 2),
              'is_cde_realm': False,
-             'xfield_room_1': None,
-             'status3': 2,
-             'xfield_transportation': 'pedes'},
+             'course_fields1.xfield_room_1': None,
+             'part3.status3': 2,
+             'reg_fields.xfield_transportation': 'pedes'},
             {'birthday': datetime.date(2222, 1, 1),
-             'xfield_brings_balls': False,
-             'xfield_contamination_2': None,
-             'course_id2': None,
-             'family_name': 'Iota',
-             'id': 4,
-             'lodgement_id1': None,
-             'payment': datetime.date(2014, 4, 4),
+             'reg_fields.xfield_brings_balls': False,
+             'lodge_fields2.xfield_contamination_2': None,
+             'track2.course_id2': None,
+             'persona.family_name': 'Iota',
+             'reg.id': 4,
+             'id': 4,  # un-aliased id from QUERY_PRIMARIES / ordering
+             'part1.lodgement_id1': None,
+             'reg.payment': datetime.date(2014, 4, 4),
              'is_cde_realm': True,
-             'xfield_room_1': None,
-             'status3': 2,
-             'xfield_transportation': 'etc'})
+             'course_fields1.xfield_room_1': None,
+             'part3.status3': 2,
+             'reg_fields.xfield_transportation': 'etc'})
         self.assertEqual(expectation, result)
 
     @as_users("anton", "garcia")

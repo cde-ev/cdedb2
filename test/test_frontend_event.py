@@ -983,10 +983,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement_id2"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="part2.lodgement_id2"]')[0].text.strip(),
             "Einzelzelle")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement_id2"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="part2.lodgement_id2"]')[0].text.strip(),
             "")
 
     @as_users("garcia")
