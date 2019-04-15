@@ -787,6 +787,6 @@ PYTHON_TO_SQL_MAP = {
     "str": "varchar",
     "float": "double precision",
     "date": "date",
-    "datetime": "timestamp",
+    "datetime": "timestamp with time zone",
     "bool": "boolean",
 }
