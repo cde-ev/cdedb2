@@ -118,8 +118,7 @@ class MlFrontend(AbstractUserFrontend):
             if download:
                 fields = []
                 for csvfield in query.fields_of_interest:
-                    for field in csvfield.split(','):
-                        fields.append(field.split('.')[-1])
+                    fields.extend(csvfield.split(','))
                 if download == "csv":
                     csv_data = csv_output(result, fields)
                     return self.send_file(
