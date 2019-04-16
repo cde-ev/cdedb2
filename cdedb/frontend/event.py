@@ -1384,36 +1384,36 @@ class EventFrontend(AbstractUserFrontend):
                 'id': registration_id,
                 'tracks': {}
             }
-            for track_id in assign_track_ids:
+            for atrack_id in assign_track_ids:
                 reg_part = registrations[registration_id]['parts'][
-                    tracks[track_id]['part_id']]
-                reg_track = registrations[registration_id]['tracks'][track_id]
+                    tracks[atrack_id]['part_id']]
+                reg_track = registrations[registration_id]['tracks'][atrack_id]
                 if (reg_part['status']
                         != const.RegistrationPartStati.participant):
                     continue
                 if assign_action.enum == CourseChoiceToolActions.specific_rank:
                     choice = reg_track['choices'][assign_action.int]
-                    tmp['tracks'][track_id] = {'course_id': choice}
+                    tmp['tracks'][atrack_id] = {'course_id': choice}
                 elif assign_action.enum == CourseChoiceToolActions.assign_fixed:
-                    tmp['tracks'][track_id] = {'course_id': assign_course_id}
+                    tmp['tracks'][atrack_id] = {'course_id': assign_course_id}
                 elif assign_action.enum == CourseChoiceToolActions.assign_auto:
                     cid = reg_track['course_id']
-                    if cid and track_id in courses[cid]['active_segments']:
+                    if cid and atrack_id in courses[cid]['active_segments']:
                         # Do not modify a valid assignment
                         continue
                     instructor = reg_track['course_instructor']
                     if (instructor
-                            and track_id in courses[instructor]
+                            and atrack_id in courses[instructor]
                             ['active_segments']):
                         # Let instructors instruct
-                        tmp['tracks'][track_id] = {'course_id': instructor}
+                        tmp['tracks'][atrack_id] = {'course_id': instructor}
                         continue
                     for choice in (
                             reg_track['choices'][
-                            :tracks[track_id]['num_choices']]):
-                        if track_id in courses[choice]['active_segments']:
+                            :tracks[atrack_id]['num_choices']]):
+                        if atrack_id in courses[choice]['active_segments']:
                             # Assign first possible choice
-                            tmp['tracks'][track_id] = {'course_id': choice}
+                            tmp['tracks'][atrack_id] = {'course_id': choice}
                             break
                     else:
                         rs.notify("error", n_("No choice available."))
