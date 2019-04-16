@@ -1301,6 +1301,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['choicefilterform']
         f['track_id'] = ''
         f['course_id'] = 2
+        f['position'] = -7
         self.submit(f)
         self.assertNonPresence("Anton Armin")
         self.assertPresence("Emilia")
@@ -1370,6 +1371,26 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
+
+        # Test filtering for unassigned participants
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = ''
+        f['track_id'] = ''
+        f['position'] = -6
+        self.submit(f)
+        self.assertNonPresence("Inga")
+        self.assertPresence("Garcia")
+        f = self.response.forms['choicefilterform']
+        f['track_id'] = 2
+        self.submit(f)
+        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Emilia")
+
+        # Test including all open registrations
+        f = self.response.forms['choicefilterform']
+        f['include_active'].checked = True
+        self.submit(f)
+        self.assertPresence("Emilia")
 
     @as_users("garcia")
     def test_automatic_assignment(self, user):

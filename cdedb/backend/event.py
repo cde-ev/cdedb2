@@ -1271,28 +1271,32 @@ class EventBackend(AbstractBackend):
         if track_id:
             query = glue(query, "AND course_tracks.id = %s")
             params += (track_id,)
-        if course_id:
+        if position is not None:
             cfp = CourseFilterPositions
-            if position is None:
-                position = InfiniteEnum(cfp.anywhere, None)
             conditions = []
             if position.enum in (cfp.instructor, cfp.anywhere):
-                conditions.append("rtracks.course_instructor = %s")
-                params += (course_id,)
-            if position.enum in (cfp.any_choice, cfp.anywhere):
+                if course_id:
+                    conditions.append("rtracks.course_instructor = %s")
+                    params += (course_id,)
+                else:
+                    conditions.append("rtracks.course_instructor IS NULL")
+            if position.enum in (cfp.any_choice, cfp.anywhere) and course_id:
                 conditions.append(
                     "(choices.course_id = %s AND "
                     " choices.rank < course_tracks.num_choices)")
                 params += (course_id,)
-            if position.enum == cfp.specific_rank:
+            if position.enum == cfp.specific_rank and course_id:
                 conditions.append(
                     "(choices.course_id = %s AND choices.rank = %s)")
                 params += (course_id, position.int)
             if position.enum in (cfp.assigned, cfp.anywhere):
-                conditions.append("rtracks.course_id = %s")
-                params += (course_id,)
-            condition = " OR ".join(conditions)
-            query = glue(query, "AND (", condition, ")")
+                if course_id:
+                    conditions.append("rtracks.course_id = %s")
+                    params += (course_id,)
+                else:
+                    conditions.append("rtracks.course_id IS NULL")
+            if conditions:
+                query = glue(query, "AND (", " OR ".join(conditions), ")")
         if reg_ids:
             query = glue(query, "AND regs.id = ANY(%s)")
             params += (reg_ids,)
