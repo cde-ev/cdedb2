@@ -9851,6 +9851,14 @@ msgid "Course Attendees Statistics"
 msgstr "Kursteilnehmer-Statistik"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:84
+msgid "Course Offers"
+msgstr "Kursangebote"
+
+#: cdedb/frontend/templates/web/event/stats.tmpl:85
+msgid "Cancelled Courses"
+msgstr "Ausfallende Kurse"
+
+#: cdedb/frontend/templates/web/event/stats.tmpl:84
 msgid "(Potential) Instructor"
 msgstr "Kursleiter (theoretisch)"
 

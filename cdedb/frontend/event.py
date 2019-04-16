@@ -899,7 +899,8 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        courses = self.eventproxy.list_db_courses(rs, event_id)
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
         stati = const.RegistrationPartStati
@@ -965,7 +966,17 @@ class EventFrontend(AbstractUserFrontend):
                     if test(rs.ambience['event'], r, r['parts'][part_id]))
                 for part_id in rs.ambience['event']['parts']}
 
+        # Test for course statistics
         tests2 = OrderedDict((
+            ('courses', lambda c, t: (
+                    t in c['segments'])),
+            ('cancelled courses', lambda c, t: (
+                    t in c['segments']
+                    and t not in c['active_segments'])),
+        ))
+
+        # Tests for course attendee statistics
+        tests3 = OrderedDict((
             ('all instructors', (lambda e, r, p, t: (
                     p['status'] == stati.participant
                     and t['course_instructor']))),
@@ -983,16 +994,24 @@ class EventFrontend(AbstractUserFrontend):
                     and r['persona_id'] not in e['orgas']))),))
         per_track_statistics = OrderedDict()
         if tracks:
+            # Additional dynamic tests for course attendee statistics
             for i in range(max(t['num_choices'] for t in tracks.values())):
-                tests2[rs.gettext('In {}. Choice').format(i + 1)] = (
+                tests3[rs.gettext('In {}. Choice').format(i + 1)] = (
                     functools.partial(
                         lambda e, r, p, t, j: (
                             p['status'] == stati.participant
                             and t['course_id']
                             and len(t['choices']) > j
                             and (t['choices'][j] == t['course_id'])),
-                    j=i))
+                        j=i))
+
             for key, test in tests2.items():
+                per_track_statistics[key] = {
+                    track_id: sum(
+                        1 for c in courses.values()
+                        if test(c, track_id))
+                    for track_id in tracks}
+            for key, test in tests3.items():
                 per_track_statistics[key] = {
                     track_id: sum(
                         1 for r in registrations.values()
