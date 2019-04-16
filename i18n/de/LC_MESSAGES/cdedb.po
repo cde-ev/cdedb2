@@ -9778,8 +9778,8 @@ msgstr "Löscht die Anmeldung inklusive aller hier angezeigten Informationen."
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:5
 #, python-format
-msgid "Participant Statistics %(title)s"
-msgstr "Teilnehmer-Statistik (%(title)s)"
+msgid "Statistics (%(title)s)"
+msgstr "Statistik (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:23
 msgid "Total Registrations"
@@ -9847,8 +9847,8 @@ msgid "Count"
 msgstr "Anzahl"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:82
-msgid "Course Attendees Statistics"
-msgstr "Kursteilnehmer-Statistik"
+msgid "Course Statistics"
+msgstr "Kursstatistik"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:84
 msgid "Course Offers"

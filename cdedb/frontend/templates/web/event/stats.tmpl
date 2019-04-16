@@ -3,13 +3,13 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['event']['title']-%}
-    	Participant Statistics {{ title }}
+    	Statistics ({{ title }})
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/stats"), gettext("Participant Statistics"), active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/stats"), gettext("Statistics"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -79,7 +79,7 @@
         </table>
     {% endwith %}
     {% if ambience['event']['tracks'] %}
-        <h3>{% trans -%}Course Attendees Statistics{%- endtrans %}</h3>
+        <h3>{% trans -%}Course Statistics{%- endtrans %}</h3>
         {% with HEADINGS = {
             'courses': gettext("Course Offers"),
             'cancelled courses': gettext("Cancelled Courses"),

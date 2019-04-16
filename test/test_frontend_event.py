@@ -1254,12 +1254,10 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_stats(self, user):
-        ## first check stats
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/stats'},)
-        self.assertTitle("Teilnehmer-Statistik (Große Testakademie 2222)")
-        self.assertNonPresence("Inga Iota")
+        self.assertTitle("Statistik (Große Testakademie 2222)")
 
     @as_users("garcia")
     def test_course_stats(self, user):

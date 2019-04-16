@@ -30,7 +30,7 @@
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/registration_query", {"event_id": data['id']}), gettext("Registrations"),
                     aclass="list-group-item", icon="list", active=(sidenav_active == 'event_registration')) }}
-            {{ util.href(cdedblink("event/stats", {"event_id": data['id']}), gettext("Participant Statistics"),
+            {{ util.href(cdedblink("event/stats", {"event_id": data['id']}), gettext("Statistics"),
                     aclass="list-group-item", icon="stats", active=(sidenav_active == 'event_stats')) }}
 
             {% if data['tracks'] %}
