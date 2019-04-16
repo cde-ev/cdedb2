@@ -535,7 +535,11 @@
     {% else %}
         <script type="text/javascript" nonce="{{ csp_nonce }}">
             $(function(){
-                $('.ls-list').cdedbListSelect();
+                $('.ls-list').cdedbListSelect({
+                    'callback': function () {
+                        $('#label-select-num').text($(this).find('.ls-selected').length.toString());
+                    }
+                });
                 $('#btn-select-all').click(function(){
                     $('#query-result').data('listSelect').selectAll();
                 });
@@ -557,6 +561,7 @@
                 });
                 $('#result-container').cdedbMoveToWidePage($('.btn-trigger-wide'));
                 $('#js-button-group').css('display', 'block');
+                $('#js-select-num').css('display', 'inline-block');
             });
         </script>
         <div class="p softhide" id="js-button-group">
@@ -583,7 +588,7 @@
         <table class="table table-condensed table-hover ls-list" id="query-result">
             <thead>
                 <tr>
-                    <th></th>
+                    <th><span class="softhide" id="js-select-num">(<span id="label-select-num">0</span>)</span></th>
                     <th></th>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}

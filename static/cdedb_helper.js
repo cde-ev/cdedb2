@@ -236,17 +236,25 @@
     };
 
     /** jQuery Plugin method */
-    $.fn.cdedbListSelect = function() {
+    $.fn.cdedbListSelect = function(options) {
+        // Add or amend rowCallback handler to update rowSelector checkbox
+        options = options || {};
+        var originalRowCallback = options.rowCallback || function(){};
+        options.rowCallback = function() {
+            $(this).find('.rowSelector').prop('checked', $(this).hasClass('ls-selected'));
+            originalRowCallback.bind(this);
+        };
+
         $(this).each(function() {
+            // Skip, if ListSelect object exists already on this DOM object
             if ($(this).data('listSelect'))
                 return;
 
-            var obj = new ListSelect(this, {
-                rowCallback: function() {
-                    $(this).find('.rowSelector').prop('checked', $(this).hasClass('ls-selected'));
-                }
-            });
+            // Add ListSelect object to DOM object and make it focusable
+            var obj = new ListSelect(this, options);
+            $(this).data('listSelect',obj).attr('tabindex','0');
 
+            // Add event handlers to rowSelector checkbox
             $(this).find('.rowSelector')
                 .change(function() {
                     if (this.checked)
@@ -261,11 +269,11 @@
                     if (this.checked)
                         $(this).closest('.ls-item').addClass('ls-selected');
                 });
+
+            // Prevent clicks on links inside rows from updating selection
             $(this).find('a').click(function(e){
                 e.stopPropagation();
             });
-
-            $(this).data('listSelect',obj).attr('tabindex','0');
         });
         return this;
     };
