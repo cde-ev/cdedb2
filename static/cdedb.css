@@ -488,10 +488,13 @@ p.textbox {
 tr.ls-selected td {
     background: #d9edf7;
 }
-.ls-list:focus tr.ls-cursor {
-    border-color: #23527c;
+.ls-item {
     border-width: 2px;
     border-style: none solid;
+    border-color: transparent;
+}
+.ls-list:focus tr.ls-item.ls-cursor {
+    border-color: #23527c;
 }
 
 
