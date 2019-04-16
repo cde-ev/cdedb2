@@ -238,7 +238,7 @@ class TestCdEFrontend(FrontendTest):
 3;Charly C.;Clown;charly@example.cde;1984-05-13;True;
 4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;
 6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;
-'''.encode('utf-8')
+'''.encode('utf-8-sig')
         self.assertEqual(expectation, self.response.body)
 
     @as_users("anton")
