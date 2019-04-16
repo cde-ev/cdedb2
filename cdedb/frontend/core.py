@@ -814,7 +814,7 @@ class CoreFrontend(AbstractFrontend):
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"))
+                        filename=rs.gettext("result.csv"), encoding='utf-8-sig')
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)
@@ -867,7 +867,7 @@ class CoreFrontend(AbstractFrontend):
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"))
+                        filename=rs.gettext("result.csv"), encoding='utf-8-sig')
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)

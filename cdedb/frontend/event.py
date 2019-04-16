@@ -180,7 +180,7 @@ class EventFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"))
+                        filename=rs.gettext("result.csv"), encoding='utf-8-sig')
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)
@@ -1978,7 +1978,8 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
         file = self.send_file(
-            rs, data=csv_data, inline=False, filename="courses.csv")
+            rs, data=csv_data, inline=False, filename="courses.csv",
+            encoding='utf-8-sig')
         if file:
             return file
         else:
@@ -2008,7 +2009,7 @@ class EventFrontend(AbstractUserFrontend):
                               columns)
         file = self.send_file(
             rs, data=csv_data, inline=False,
-            filename="lodgements.csv")
+            filename="lodgements.csv", encoding='utf-8-sig')
         if file:
             return file
         else:
@@ -2150,7 +2151,7 @@ class EventFrontend(AbstractUserFrontend):
                               columns)
         file = self.send_file(
             rs, data=csv_data, inline=False,
-            filename="registrations.csv")
+            filename="registrations.csv", encoding='utf-8-sig')
         if file:
             return file
         else:
@@ -3886,7 +3887,7 @@ class EventFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"))
+                        filename=rs.gettext("result.csv"), encoding='utf-8-sig')
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)

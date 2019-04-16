@@ -909,7 +909,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     @staticmethod
     def send_file(rs, mimetype=None, filename=None, inline=True, *,
-                  path=None, afile=None, data=None):
+                  path=None, afile=None, data=None, encoding='utf-8'):
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
@@ -928,6 +928,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type afile: file like
         :param afile: should be opened in binary mode
         :type data: str or bytes
+        :param encoding: The character encoding to be uses, if `data` is given
+          as str
+        :type encoding: str
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         if not path and not afile and not data:
@@ -942,7 +945,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif data is not None:
             afile = io.BytesIO()
             if isinstance(data, str):
-                afile.write(data.encode('utf-8'))
+                afile.write(data.encode(encoding))
             else:
                 afile.write(data)
             afile.seek(0)
