@@ -373,7 +373,8 @@
                 {# Tab controls to switch to javascript preferential voting form #}
                 <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
                     <li role="presentation" class="active">
-                        <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab">
+                        <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab"
+                           id="tablink-textform">
                             {{ util.make_icon('console') }} {% trans -%}Text-based voting{%- endtrans %}
                         </a>
                     </li>
@@ -522,11 +523,20 @@
                                     'spacer_lowest': gettext('Below box with lowest priority'),
                                     }|json|s }}
                             );
-                            /* Register callback to refresh fancy form every time the tab is shown */
-                            $('#tablink-jsform').on('show.bs.tab',
-                                                    $('#prefvote_container').data('cdedbPrefVote').readPreferenceList);
+                            /* Register callback to refresh fancy form every time the tab is shown.
+                             * Additionally register handlers to set or reset 'prefvote_nojs' cookie. */
+                            $('#tablink-jsform')
+                                .on('show.bs.tab',
+                                    $('#prefvote_container').data('cdedbPrefVote').readPreferenceList)
+                                .on('shown.bs.tab',
+                                    function(){eraseCookie('prefvote_nojs');});
+                            $('#tablink-textform')
+                                .on('shown.bs.tab',
+                                    function(){createCookie('prefvote_nojs','true',10*365);});
                             /* Show the tab */
-                            $('#tablink-jsform').tab('show');
+                            if (!readCookie('prefvote_nojs')) {
+                                $('#tablink-jsform').tab('show');
+                            }
                             $('#button-jsvote').click(function(){$('#voteform').submit();});
                         </script>
 
