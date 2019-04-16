@@ -661,7 +661,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             vote = unwrap(request_extractor(rs, (("vote", "str"),)))
         vote = check(rs, "vote", vote, "vote", ballot=ballot)
         if rs.errors:
-            return self.redirect(rs, "assembly/show_ballot")
+            return self.show_ballot(rs, assembly_id, ballot_id)
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
