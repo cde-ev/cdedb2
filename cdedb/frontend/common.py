@@ -2001,8 +2001,7 @@ def csv_output(data, fields, writeheader=True, replace_newlines=False,
     outfile = io.StringIO()
     writer = csv.DictWriter(
         outfile, fields, delimiter=';', quoting=csv.QUOTE_MINIMAL,
-        quotechar='"', doublequote=False, escapechar='\\',
-        lineterminator='\n')
+        quotechar='"', doublequote=True, lineterminator='\n')
     if writeheader:
         writer.writeheader()
     for original in data:
