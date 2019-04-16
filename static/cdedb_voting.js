@@ -394,6 +394,14 @@ if (!String.prototype.format) {
 
             updateAriaLabels();
         };
+
+        /**
+         * Write back the preference list to the text only form, based on the current arrangement of the dynamic form's
+         * DOM elements.
+         */
+        this.writeBackPreferenceList = function() {
+            updatePreferenceList();
+        };
     };
 
 

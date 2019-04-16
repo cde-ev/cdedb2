@@ -537,7 +537,10 @@
                             if (!readCookie('prefvote_nojs')) {
                                 $('#tablink-jsform').tab('show');
                             }
-                            $('#button-jsvote').click(function(){$('#voteform').submit();});
+                            $('#button-jsvote').click(function(){
+                                $('#prefvote_container').data('cdedbPrefVote').writeBackPreferenceList();
+                                $('#voteform').submit();
+                            });
                         </script>
 
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
