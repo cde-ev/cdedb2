@@ -3,6 +3,7 @@
 """Services for the event realm."""
 
 import cgitb
+import functools
 from collections import OrderedDict, Counter
 import copy
 import csv
@@ -984,11 +985,13 @@ class EventFrontend(AbstractUserFrontend):
         if tracks:
             for i in range(max(t['num_choices'] for t in tracks.values())):
                 tests2[rs.gettext('In {}. Choice').format(i + 1)] = (
-                    lambda e, r, p, t: (
-                        p['status'] == stati.participant
-                        and t['course_id']
-                        and len(t['choices']) > i
-                        and (t['choices'][i] == t['course_id'])))
+                    functools.partial(
+                        lambda e, r, p, t, j: (
+                            p['status'] == stati.participant
+                            and t['course_id']
+                            and len(t['choices']) > j
+                            and (t['choices'][j] == t['course_id'])),
+                    j=i))
             for key, test in tests2.items():
                 per_track_statistics[key] = {
                     track_id: sum(
