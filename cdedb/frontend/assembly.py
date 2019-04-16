@@ -626,13 +626,13 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Not privileged."))
         ballot = rs.ambience['ballot']
+        candidates = tuple(e['moniker']
+                           for e in ballot['candidates'].values())
         if ballot['votes']:
             voted = unwrap(
                 request_extractor(rs, (("vote", "[str]"),)))
             if rs.errors:
                 return self.show_ballot(rs, assembly_id, ballot_id)
-            candidates = tuple(e['moniker']
-                               for e in ballot['candidates'].values())
             if voted == (ASSEMBLY_BAR_MONIKER,):
                 if not ballot['use_bar']:
                     raise ValueError(n_("Option not available."))
@@ -658,7 +658,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                 else:
                     vote = winners + losers
         else:
-            vote = unwrap(request_extractor(rs, (("vote", "str"),)))
+            vote = unwrap(request_extractor(rs, (("vote", "str_or_None"),)))
+            # Empty preferential vote counts as abstaining
+            if not vote:
+                vote = "=".join(candidates)
+                if ballot['use_bar']:
+                    vote += "={}".format(ASSEMBLY_BAR_MONIKER)
         vote = check(rs, "vote", vote, "vote", ballot=ballot)
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)
