@@ -175,7 +175,7 @@ files = {
           'title': 'Aktiventreffen PfingstAkademie 2014'},
     191: {'assembly_id': new_id,
           'filename': 'aktiventreffen_2015.pdf',
-          'title': 'Aktiventreffen PfingstAkademie 2015'},
+          'title': 'Aktiventreffen MayFestspiele 2015'},
     193: {'assembly_id': new_id,
           'filename': 'aktiventreffen_2016.pdf',
           'title': 'Aktiventreffen PfingstAkademie 2016'},
