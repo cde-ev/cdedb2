@@ -52,7 +52,7 @@
                 {% elif ambience['ballot']['quorum'] %}
                     <br />
                     {% trans quorum=anbience['ballot']['quorum'] -%}
-                    No Extension neccessary, because {{ quorum }} votes were reached.
+                    No extension neccessary, because {{ quorum }} votes were reached.
                     {%- endtrans %}
                 {% endif %}
             {% endif %}
@@ -60,23 +60,23 @@
         <dt>{% trans -%}Status{%- endtrans %}</dt>
         <dd>
             {% if now() < ambience['ballot']['vote_begin'] %}
-                <strong>{% trans -%}This Ballot has not yet begun.{%- endtrans %}</strong><br />
+                <strong>{% trans -%}This ballot has not yet begun.{%- endtrans %}</strong><br />
                 {% trans -%}Admins can still make changes to description, files and candidates.{%- endtrans %}
                 {% if is_admin %}
                     {% trans -%}
                         All CdE-Members and external assembly participants can already
-                        see this Ballot and all associated information.
+                        see this ballot and all associated information.
                     {%- endtrans %}
                 {% endif %}
             {% elif ambience['ballot']['is_tallied'] %}
-                <strong>{% trans -%}This Ballot has been concluded.{%- endtrans %}</strong><br />
+                <strong>{% trans -%}This ballot has been concluded.{%- endtrans %}</strong><br />
                 {% trans -%}You can see the results below.{%- endtrans %}
             {% elif not attends %}
                 {% trans -%}
-                    You are not participating in this assembly, therefore You cannot vote in this ballot.
+                    You are not participating in this assembly, therefore you cannot vote in this ballot.
                 {%- endtrans %}
             {% elif ambience['ballot']['is_voting'] %}
-                <strong>{% trans -%}This Ballot is currently open for voting.{%- endtrans %}</strong><br />
+                <strong>{% trans -%}This ballot is currently open for voting.{%- endtrans %}</strong><br />
                 {% if voted %}
                     {% if split_vote|length == 1 %}
                         <span class='text-warning'>{% trans -%}You have abstained.{%- endtrans %}</span>
@@ -154,11 +154,11 @@
             <p class="text-info">
                 {% if ambience['ballot']['votes'] %}
                     {% trans against_all=gettext("Against all Candidates") -%}
-                        The following Candidates have less votes than the {{ against_all }} choice.
+                        The following candidates have less votes than the {{ against_all }} choice.
                     {%- endtrans %}
                 {% else %}
                     {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
-                        The following Candidates lost against the bar ({{ abm }}).
+                        The following candidates lost against the bar ({{ abm }}).
                     {%- endtrans %}
                 {% endif %}
             <ol>
@@ -194,7 +194,7 @@
             {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                 <p>
                     {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
-                        This vote was a Preferential Vote. Voters arranged the candidates according to their preference.
+                        This vote was a preferential vote. Voters arranged the candidates according to their preference.
                         The preferences of all participants were evaluated using the {{ link }},
                         to determine the winner.
                     {%- endtrans %}
@@ -202,27 +202,27 @@
                 <p>
                     {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
                         The summary shows the combined preference list of all participant.
-                        The Greater-Than character {{ gt }} means that the Candidate, represented by their
+                        The greater-than character {{ gt }} means that the candidate, represented by their
                         shortname, on the left has higher overall preference than the one on the right.
-                        The Equals character {{ eq }} means that two or more Candidates have the same overall
+                        The equals character {{ eq }} means that two or more candidates have the same overall
                         preference across all participants.
                     {%- endtrans %}
                 </p>
                 {% if ambience['ballot']['use_bar'] %}
                     <p>
                         {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
-                            Additionally the moniker {{ abm }} shows where in the Rejection Bar was ranked in the
+                            Additionally the moniker {{ abm }} shows where in the rejection bar was ranked in the
                             overall preference list.
-                            Should no Candidate have won against the bar, the board may take additional measures.
+                            Should no candidate have won against the bar, the board may take additional measures.
                         {%- endtrans %}
                     </p>
                 {% endif %}
             {% endcall %}
         {% endif %}
 
-        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download results"), icon="download") }}</p>
+        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
 
-        <h3>{% trans -%}Your vote{%- endtrans %}</h3>
+        <h3>{% trans -%}Your Vote{%- endtrans %}</h3>
         <p>
             {# Show own vote under result: Classical vote #}
             {% if not attends %}
@@ -236,9 +236,9 @@
                     {% if split_vote|length == 1 %}
                         {% trans -%}You abstained.{%- endtrans %}
                     {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
-                        {% trans -%}You voted against all Candidates.{%- endtrans %}
+                        {% trans -%}You voted against all candidates.{%- endtrans %}
                     {% else %}
-                        {% trans -%}You voted for the following Candidates:{%- endtrans %}<br />
+                        {% trans -%}You voted for the following candidates:{%- endtrans %}<br />
                         {% for voted in split_vote[0] %}
                             {{ candidates[voted]['description'] }}{% if not loop.last %},{% endif %}
                         {% endfor %}
@@ -279,7 +279,7 @@
                         {{ util.form_input_checkboxes(
                             "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER, gettext("Against all Candidates"))],
                             small=True, radio=(ambience['ballot']['votes'] == 1),
-                            info=gettext("With this option you reject all Candidates. "
+                            info=gettext("With this option you reject all candidates. "
                                          "If this gets a majority the board may take additional measures.")) }}
                     {% endif %}
                     {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
@@ -329,7 +329,7 @@
                 </ul>
                 {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                     <script type="text/javascript" nonce="{{ csp_nonce }}">
-                        $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The Candidate will be removed.") }}");
+                        $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The candidate will be removed.") }}");
                     </script>
                 {% endif %}
             {% endif %}
@@ -362,7 +362,7 @@
             </ul>
             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
-                    $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The Candidate will be removed.") }}");
+                    $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The candidate will be removed.") }}");
                 </script>
             {% endif %}
 
@@ -375,13 +375,13 @@
                     <li role="presentation" class="active">
                         <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab"
                            id="tablink-textform">
-                            {{ util.make_icon('console') }} {% trans -%}Text-based voting{%- endtrans %}
+                            {{ util.make_icon('console') }} {% trans -%}Text-based Voting{%- endtrans %}
                         </a>
                     </li>
                     <li role="presentation">
                         <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
                                 id="tablink-jsform">
-                            {{ util.make_icon('flash') }} {% trans -%}Interactive voting{%- endtrans %}
+                            {{ util.make_icon('flash') }} {% trans -%}Interactive Voting{%- endtrans %}
                         </a>
                     </li>
                 </ul>
@@ -402,35 +402,35 @@
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
                                 {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
-                                    This vote is an Preferential Vote. You can arrange the Candidates in the field above
-                                    according to Your personal preference. The preferences of all participants will be
+                                    This vote is a preferential vote. You can arrange the candidates in the field above
+                                    according to your personal preference. The preferences of all participants will be
                                     evaluated using the {{ link }}, to determine the winner.
                                 {%- endtrans %}
                             </p>
                             <p>
                                 {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
-                                    To enter Your preferencelist, use the Shortnames given in the list of Candidates and the
-                                    {{ gt }} and {{ eq }} characters. Use the Greater-Than character {{ gt }}
-                                    to give the Candidates left of the character higher preference, than those on the right.
-                                    Use the Equals character to give two Candidates the same preference. You need to have all
-                                    Candidates in Your preferencelist.
+                                    To enter your preferencelist, use the shortnames given in the list of candidates and the
+                                    {{ gt }} and {{ eq }} characters. Use the greater-than character {{ gt }}
+                                    to give the candidates left of the character higher preference than those on the right.
+                                    Use the equals character to give two candidates the same preference. You need to have all
+                                    candidates in your preferencelist.
                                 {%- endtrans %}
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
                                     {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
-                                        Additionally You need to use the Rejection Bar {{ abm }} in Your preferencelist.
-                                        Use it in Your preferencelist like You would a Candidate. Put all
-                                        Candidates You deem suitable higher than {{ abm }} and all
-                                        Candidates You reject lower, i. e. to the right of {{ abm }}.
-                                        Should no Candidate win against the bar, the board may take additional measures.
+                                        Additionally you need to use the rejection bar {{ abm }} in your preferencelist.
+                                        Use it in your preferencelist like you would a candidate. Put all
+                                        candidates you deem suitable higher than {{ abm }} and all
+                                        candidates you reject lower, i. e. to the right of {{ abm }}.
+                                        Should no candidate win against the bar, the board may take additional measures.
                                     {%- endtrans %}
                                 </p>
                             {% endif %}
                             <p>
                                 <strong>{% trans -%}Examples{%- endtrans %}:</strong>
                                 {% trans -%}
-                                    Take the following examplatory Candidate list:
+                                    Take the following examplatory candidate list:
                                 {%- endtrans %}
                             </p>
                             <ul>
@@ -445,12 +445,12 @@
                             {% if ambience['ballot']['use_bar'] %}
                                 <ul>
                                     <li>{% trans -%}
-                                            You deem all candidates suitable, but You like Leia the best,
-                                            with no difference between the other Candidate.
+                                            You deem all candidates suitable, but you like Leia the best,
+                                            with no difference between the other candidates.
                                         {%- endtrans %}<br />
                                         <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}</code></li>
                                     <li>{% trans -%}
-                                            You deem Leia and Obi-Wan (equally) suitable, You want to reject Luke
+                                            You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke
                                             and you absolutely can’t stand Han Solo.
                                         {%- endtrans %}<br />
                                         <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}&gt;Luke&gt;Han</code></li>
@@ -467,7 +467,7 @@
                             {% else %}
                                 <ul>
                                     <li>{% trans -%}
-                                            You like Leia the most, but You see no difference between the others.
+                                            You like Leia the most, but you see no difference between the others.
                                         {%- endtrans %}<br />
                                         <code>Leia&gt;Luke=Han=ObiWan</code></li>
                                     <li>{% trans -%}
@@ -492,13 +492,13 @@
                     <div role="tabpanel" class="tab-pane" id="tab-jsform">
                         <p class="sr-only">
                             {% trans -%}
-                                This is the interactive voting form. It is inconvenient to used with a Keyboard only.
+                                This is the interactive voting form. It is inconvenient to used with a keyboard only.
                                 Use the link above to switch to the text-based form.
                             {%- endtrans %}
                         </p>
                         <div class="prefvote_container" id="prefvote_container">
                             <div class="indicator">
-                                {% trans -%}Incr. preference{%- endtrans %} →
+                                {% trans -%}Incr. Preference{%- endtrans %} →
                             </div>
                         </div>
                         <div class="p clearfix">
@@ -546,24 +546,24 @@
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
                                 {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
-                                    This vote is an Preferential Vote. You can arrange the Candidates in the field above
-                                    according to Your personal preference. The preferences of all participants will be
+                                    This vote is a preferential vote. You can arrange the candidates in the field above
+                                    according to your personal preference. The preferences of all participants will be
                                     evaluated using the {{ link }}, to determine the winner.
                                 {%- endtrans %}
                             </p>
                             <p>
                                 {% trans -%}
-                                    To arrange the Candidates, move them into one of the shaded boxes. The higher up the box,
-                                    the higher Your preference for that Candidate. Candidates within the same box will be
-                                    evaluated with the same preference. Move a Candidate between two boxes to create a new box.
+                                    To arrange the candidates, move them into one of the shaded boxes. The higher up the box,
+                                    the higher your preference for that candidate. Candidates within the same box will be
+                                    evaluated with the same preference. Move a candidate between two boxes to create a new box.
                                 {%- endtrans %}
                             </p>
                             <p>
                                 {% trans tab="<kbd>%(key)s</kbd>"|s|format(key=gettext("TAB")),
                                          enter="<kbd>%(key)s</kbd>"|s|format(key=gettext("ENTER")),
                                          space="<kbd>%(key)s</kbd>"|s|format(key=gettext("Space")) -%}
-                                    There are three ways of moving Candidates: Drag’n’Drop them into a different box or
-                                    click on a Candidate and then on a box. Or You can select a Candidate with {{ tab }},
+                                    There are three ways of moving candidates: Drag’n’Drop them into a different box or
+                                    click on a candidate and then on a box. Or you can select a candidate with {{ tab }},
                                     confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
                                     and confirm the selection with {{ enter }} or {{ space }}.
                                 {%- endtrans %}
@@ -571,18 +571,18 @@
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
                                     {% trans -%}
-                                        One of the boxes is marked as “Neutral”. Please place Candidates You deem suitable
-                                        above this box (they will be highlighted in green) and Candidates you want to reject
-                                        below this box (they will be highlighted in red). Should all Candidates be rejected,
+                                        One of the boxes is marked as “Neutral”. Please place candidates cou deem suitable
+                                        above this box (they will be highlighted in green) and candidates you want to reject
+                                        below this box (they will be highlighted in red). Should all candidates be rejected,
                                         the board may take additional measures.
                                     {%- endtrans %}
                                 </p>
                                 <p>
-                                    {% trans -%}To abstain, place all Candidates in the neutral box.{%- endtrans %}
+                                    {% trans -%}To abstain, place all candidates in the neutral box.{%- endtrans %}
                                 </p>
                             {% else %}
                                 <p>
-                                    {% trans -%}To abstain, place all Candidates in the same box.{%- endtrans %}
+                                    {% trans -%}To abstain, place all candidates in the same box.{%- endtrans %}
                                 </p>
                             {% endif %}
 
@@ -637,7 +637,7 @@
                          <script type="text/javascript" nonce="{{ csp_nonce }}">
                              $(function() {
                                  $('#deleteballotform').cdedbProtectAction(
-                                     "{{ gettext("This Ballot and all its Data will be permanently deleted.") }}");
+                                     "{{ gettext("This ballot and all its data will be permanently deleted.") }}");
                                  $('#deleteballotform').find('[name="ack_delete"]').prop('checked', true)
                                      .parent().hide();
                              });
@@ -646,7 +646,7 @@
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        {% trans -%}Deletes the Ballot and all associated Settings and Candidates.{%- endtrans %}
+                        {% trans -%}Deletes the ballot and all associated settings and candidates.{%- endtrans %}
                     </p>
                 </div>
             </div>
