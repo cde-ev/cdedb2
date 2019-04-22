@@ -178,9 +178,9 @@ class EventFrontend(AbstractUserFrontend):
                         fields.append(field.split('.')[-1])
                 if download == "csv":
                     csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_file(
+                    return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"), encoding='utf-8-sig')
+                        filename=rs.gettext("result.csv"))
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)
@@ -1977,9 +1977,8 @@ class EventFrontend(AbstractUserFrontend):
                 if field['association'] == const.FieldAssociations.course})
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
-        file = self.send_file(
-            rs, data=csv_data, inline=False, filename="courses.csv",
-            encoding='utf-8-sig')
+        file = self.send_csv_file(
+            rs, data=csv_data, inline=False, filename="courses.csv")
         if file:
             return file
         else:
@@ -2007,9 +2006,8 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(lodgements.values(),
                                      key=lambda c: c['id']),
                               columns)
-        file = self.send_file(
-            rs, data=csv_data, inline=False,
-            filename="lodgements.csv", encoding='utf-8-sig')
+        file = self.send_csv_file(
+            rs, data=csv_data, inline=False, filename="lodgements.csv")
         if file:
             return file
         else:
@@ -2149,9 +2147,8 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(registrations.values(),
                                      key=lambda c: c['id']),
                               columns)
-        file = self.send_file(
-            rs, data=csv_data, inline=False,
-            filename="registrations.csv", encoding='utf-8-sig')
+        file = self.send_csv_file(
+            rs, data=csv_data, inline=False, filename="registrations.csv")
         if file:
             return file
         else:
@@ -3885,9 +3882,9 @@ class EventFrontend(AbstractUserFrontend):
                         fields.append(field.split('.')[-1])
                 if download == "csv":
                     csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_file(
+                    return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"), encoding='utf-8-sig')
+                        filename=rs.gettext("result.csv"))
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)

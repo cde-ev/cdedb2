@@ -122,9 +122,9 @@ class MlFrontend(AbstractUserFrontend):
                         fields.append(field.split('.')[-1])
                 if download == "csv":
                     csv_data = csv_output(result, fields)
-                    return self.send_file(
+                    return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"), encoding='utf-8-sig')
+                        filename=rs.gettext("result.csv"))
                 elif download == "json":
                     json_data = query_result_to_json(result, fields)
                     return self.send_file(
