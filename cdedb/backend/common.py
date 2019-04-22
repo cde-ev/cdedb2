@@ -464,7 +464,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :returns: all results of the query
         """
         self.logger.debug("Performing general query {}.".format(query))
-        select = ", ".join("{} AS \"{}\"".format(column, column.replace('"', ''))
+        select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
                            for field in query.fields_of_interest
                            for column in field.split(','))
         if query.order:
