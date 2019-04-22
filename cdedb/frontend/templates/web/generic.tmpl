@@ -633,24 +633,22 @@
                         {% for field in csvfield.split(',') %}
                             {# NOTE that we split off any possible schema specification since they're not preserved
                                     by the query #}
-                            {% with afield = field.split('.')[-1] %}
-                                <td data-col="{{ afield }}">  {# The data-col attribute is mainly used for testing #}
+                                <td data-col="{{ field }}">  {# The data-col attribute is mainly used for testing #}
                                     {% if field in ("personas.id", "persona.id")
                                             or (query.scope == "qview_persona" and field == "id") %}
-                                        <span class="nowrap">{{ row[afield]|cdedbid }}</span>
+                                        <span class="nowrap">{{ row[field]|cdedbid }}</span>
                                     {% elif query.spec[csvfield] == "date" %}
-                                        {{ row.get(afield, None)|date(lang=lang) }}
+                                        {{ row.get(field, None)|date(lang=lang) }}
                                     {% elif query.spec[csvfield] == "datetime" %}
-                                        {{ row.get(afield, None)|datetime(lang=lang) }}
+                                        {{ row.get(field, None)|datetime(lang=lang) }}
                                     {% elif query.spec[csvfield] == "bool" %}
-                                        {{ util.deko_checkbox(row.get(afield, None), titles=(gettext('false'),
+                                        {{ util.deko_checkbox(row.get(field, None), titles=(gettext('false'),
                                                                                              gettext('true'))) }}
                                     {% else %}
-                                        {{ choices.get(csvfield, {}).get(row.get(afield),
-                                                                         row.get(afield, "UNDEFINED")) }}
+                                        {{ choices.get(csvfield, {}).get(row.get(field),
+                                                                         row.get(field, "UNDEFINED")) }}
                                     {% endif %}
                                 </td>
-                            {% endwith %}
                         {% endfor %}
                     {% endfor %}
                 </tr>
