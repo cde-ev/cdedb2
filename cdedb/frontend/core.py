@@ -811,7 +811,7 @@ class CoreFrontend(AbstractFrontend):
                     fields.extend(csvfield.split(','))
                 if download == "csv":
                     csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_file(
+                    return self.send_csv_file(
                         rs, data=csv_data, inline=False,
                         filename=rs.gettext("result.csv"))
                 elif download == "json":
@@ -863,7 +863,7 @@ class CoreFrontend(AbstractFrontend):
                     fields.extend(csvfield.split(','))
                 if download == "csv":
                     csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_file(
+                    return self.send_csv_file(
                         rs, data=csv_data, inline=False,
                         filename=rs.gettext("result.csv"))
                 elif download == "json":

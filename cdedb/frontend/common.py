@@ -908,8 +908,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return t.render(**data)
 
     @staticmethod
+    def send_csv_file(rs, mimetype=None, filename=None, inline=True, *,
+                      path=None, afile=None, data=None):
+        """Wrapper around :py:meth:`send_file` for CSV files.
+
+        This makes Excel happy by adding a BOM at the beginning of the
+        file. All parameters (except for encoding) are as in the wrapped
+        method.
+        """
+        return AbstractFrontend.send_file(
+            rs, mimetype=mimetype, filename=filename, inline=inline, path=path,
+            afile=afile, data=data, encoding='utf-8-sig')
+
+    @staticmethod
     def send_file(rs, mimetype=None, filename=None, inline=True, *,
-                  path=None, afile=None, data=None):
+                  path=None, afile=None, data=None, encoding='utf-8'):
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
@@ -928,6 +941,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type afile: file like
         :param afile: should be opened in binary mode
         :type data: str or bytes
+        :param encoding: The character encoding to be uses, if `data` is given
+          as str
+        :type encoding: str
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         if not path and not afile and not data:
@@ -942,7 +958,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif data is not None:
             afile = io.BytesIO()
             if isinstance(data, str):
-                afile.write(data.encode('utf-8'))
+                afile.write(data.encode(encoding))
             else:
                 afile.write(data)
             afile.seek(0)
@@ -2000,8 +2016,7 @@ def csv_output(data, fields, writeheader=True, replace_newlines=False,
     outfile = io.StringIO()
     writer = csv.DictWriter(
         outfile, fields, delimiter=';', quoting=csv.QUOTE_MINIMAL,
-        quotechar='"', doublequote=False, escapechar='\\',
-        lineterminator='\n')
+        quotechar='"', doublequote=True, lineterminator='\n')
     if writeheader:
         writer.writeheader()
     for original in data:

@@ -180,7 +180,7 @@ class EventFrontend(AbstractUserFrontend):
                     fields.extend(csvfield.split(','))
                 if download == "csv":
                     csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_file(
+                    return self.send_csv_file(
                         rs, data=csv_data, inline=False,
                         filename=rs.gettext("result.csv"))
                 elif download == "json":
@@ -2062,7 +2062,7 @@ class EventFrontend(AbstractUserFrontend):
                 if field['association'] == const.FieldAssociations.course})
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
-        file = self.send_file(
+        file = self.send_csv_file(
             rs, data=csv_data, inline=False, filename="courses.csv")
         if file:
             return file
@@ -2091,9 +2091,8 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(lodgements.values(),
                                      key=lambda c: c['id']),
                               columns)
-        file = self.send_file(
-            rs, data=csv_data, inline=False,
-            filename="lodgements.csv")
+        file = self.send_csv_file(
+            rs, data=csv_data, inline=False, filename="lodgements.csv")
         if file:
             return file
         else:
@@ -2233,9 +2232,8 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(registrations.values(),
                                      key=lambda c: c['id']),
                               columns)
-        file = self.send_file(
-            rs, data=csv_data, inline=False,
-            filename="registrations.csv")
+        file = self.send_csv_file(
+            rs, data=csv_data, inline=False, filename="registrations.csv")
         if file:
             return file
         else:
@@ -3973,7 +3971,7 @@ class EventFrontend(AbstractUserFrontend):
                     fields.extend(csvfield.split(','))
                 if download == "csv":
                     csv_data = csv_output(result, fields, substitutions=choices)
-                    return self.send_file(
+                    return self.send_csv_file(
                         rs, data=csv_data, inline=False,
                         filename=rs.gettext("result.csv"))
                 elif download == "json":
