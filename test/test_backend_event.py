@@ -103,6 +103,8 @@ class TestEventBackend(BackendTest):
         data['is_visible'] = False
         data['lodge_field'] = None
         data['reserve_field'] = None
+        data['course_room_field'] = None
+        data['orga_address'] = None
         data['begin'] = datetime.date(2109, 8, 7)
         data['end'] = datetime.date(2110, 8, 20)
         data['is_open'] = True
@@ -1374,7 +1376,8 @@ class TestEventBackend(BackendTest):
                                       'part_end': datetime.date(2222, 11, 30),
                                       'shortname': '2.H.',
                                       'title': 'Zweite Hälfte'}},
-            'event.events': {1: {'description': 'Everybody come!',
+            'event.events': {1: {'course_room_field': 2,
+                                 'description': 'Everybody come!',
                                  'iban': 'DE96370205000008068901',
                                  'id': 1,
                                  'institution': 1,
@@ -1390,6 +1393,7 @@ class TestEventBackend(BackendTest):
                                  'Teilnehmerliste warten.',
                                  'notes': 'Todoliste ... just kidding ;)',
                                  'offline_lock': False,
+                                 'orga_address': 'aka@example.cde',
                                  'registration_hard_limit': datetime.datetime(2220, 10, 30, 0, 0, tzinfo=pytz.utc),
                                  'registration_soft_limit': datetime.datetime(2200, 10, 30, 0, 0, tzinfo=pytz.utc),
                                  'registration_start': datetime.datetime(2000, 10, 30, 0, 0, tzinfo=pytz.utc),

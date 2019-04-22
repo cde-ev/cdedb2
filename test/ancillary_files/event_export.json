@@ -995,6 +995,7 @@
     },
     "event.events": {
         "1": {
+            "course_room_field": 2,
             "is_visible": true,
             "iban": "DE96370205000008068901",
             "shortname": "TestAka",
@@ -1004,6 +1005,7 @@
             "institution": 1,
             "lodge_field": 3,
             "offline_lock": false,
+            "orga_address": "aka@example.cde",
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",
             "id": 1,
             "registration_hard_limit": "2220-10-30T00:00:00+00:00",

@@ -2875,8 +2875,9 @@ _ASSEMBLY_COMMON_FIELDS = lambda: {
     'signup_end': _datetime,
     'notes': _str_or_None,
 }
-_ASSEMBLY_OPTIONAL_FIELDS = {
+_ASSEMBLY_OPTIONAL_FIELDS = lambda: {
     'is_active': _bool,
+    'mail_address': _str_or_None,
 }
 
 
@@ -2897,11 +2898,11 @@ def _assembly(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
-        optional_fields = _ASSEMBLY_OPTIONAL_FIELDS
+        optional_fields = _ASSEMBLY_OPTIONAL_FIELDS()
     else:
         mandatory_fields = {'id': _id}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
-                               **_ASSEMBLY_OPTIONAL_FIELDS)
+                               **_ASSEMBLY_OPTIONAL_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
 

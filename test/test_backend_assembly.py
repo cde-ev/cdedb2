@@ -46,6 +46,7 @@ class TestAssemblyBackend(BackendTest):
             'description': 'Proletarier aller Länder vereinigt Euch!',
             'id': 1,
             'is_active': True,
+            'mail_address': 'kongress@example.cde',
             'notes': None,
             'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
             'title': 'Internationaler Kongress'}
@@ -70,6 +71,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(2, self.assembly.create_assembly(self.key, data))
         expectation = data
         expectation['id'] = 2
+        expectation['mail_address'] = None
         expectation['is_active'] = True
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 2))
