@@ -1471,9 +1471,9 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname",
     "registration_start", "registration_soft_limit", "registration_hard_limit",
-    "iban", "mail_text", "use_questionnaire", "notes", "offline_lock",
-    "is_visible", "is_course_list_visible", "is_archived", "lodge_field",
-    "reserve_field")
+    "iban", "orga_address", "mail_text", "use_questionnaire", "notes",
+    "offline_lock", "is_visible", "is_course_list_visible", "is_archived",
+    "lodge_field", "reserve_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
@@ -1528,8 +1528,8 @@ MAILINGLIST_SUBSCRIPTION_FIELDS = (
     "is_override")
 
 #: Fields of an assembly
-ASSEMBLY_FIELDS = ("id", "title", "description", "signup_end", "is_active",
-                   "notes")
+ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",
+                   "is_active", "notes")
 
 #: Fields of a ballot
 BALLOT_FIELDS = (

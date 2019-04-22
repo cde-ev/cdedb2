@@ -537,6 +537,7 @@ CREATE TABLE event.events (
         -- automatically warned about registering late
         registration_hard_limit timestamp WITH TIME ZONE,
         iban                    varchar,
+        orga_address            varchar,
         mail_text               varchar,
         use_questionnaire       boolean NOT NULL DEFAULT False,
         notes                   varchar,
@@ -775,6 +776,7 @@ CREATE TABLE assembly.assemblies (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
         description             varchar,
+        mail_address            varchar,
         -- after which time are you not allowed to sign up any more
         signup_end              timestamp WITH TIME ZONE NOT NULL,
         -- concluded assemblies get deactivated and all related secrets are

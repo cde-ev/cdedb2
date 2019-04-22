@@ -241,7 +241,7 @@ _DEFAULTS = {
     # default return path for bounced mail
     "DEFAULT_RETURN_PATH": "bounces@cde-ev.de",
     # default sender address for mails
-    "DEFAULT_SENDER": '"CdE-Mitgliederverwaltung" <verwaltung@cde-ev.de>',
+    "DEFAULT_SENDER": '"CdE-Datenbank" <datenbank@cde-ev.de>',
     # domain for emails (determines message id)
     "MAIL_DOMAIN": "db.cde-ev.de",
     # host to use for sending emails
@@ -251,6 +251,8 @@ _DEFAULTS = {
     "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
     # email for ml account requests
     "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
+    # email for replies to assembly mails
+    "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
 
     # logs
     "CORE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-core.log"),

@@ -206,7 +206,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "change_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description", "signup_end", "notes")
+    @REQUESTdatadict("title", "description", "mail_address", "signup_end",
+                     "notes")
     def change_assembly(self, rs, assembly_id, data):
         """Modify an assembly."""
         data['id'] = assembly_id
@@ -255,10 +256,15 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'path': self.conf.REPOSITORY_PATH / "bin/verify_votes.py",
                 'filename': 'verify_votes.py',
                 'mimetype': 'text/plain'}
+            subject = "[CdE] Teilnahme an {}".format(
+                rs.ambience['assembly']['title'])
+            reply_to = (rs.ambience['assembly']['mail_address'] or
+                        self.conf.ASSEMBLY_ADMIN_ADDRESS)
             self.do_mail(
                 rs, "signup",
                 {'To': (persona['username'],),
-                 'Subject': "Teilnahme an CdE Versammlung"},
+                 'Subject': subject,
+                 'Reply-To': reply_to},
                 {'secret': secret, 'persona': persona},
                 attachments=(attachment,))
         else:

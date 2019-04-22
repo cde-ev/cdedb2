@@ -780,6 +780,21 @@ class MlBackend(AbstractBackend):
             }
             return self.sql_update(rs, "ml.subscription_states", update)
 
+    @access("persona")
+    def verify_existence(self, rs, address):
+        """
+        Check whether a mailinglist with the given address is known.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type address: str
+        :rtype: bool
+        """
+        address = affirm("email", address)
+
+        query = "SELECT COUNT(*) AS num FROM ml.mailinglists WHERE address = %s"
+        data = self.query_one(rs, query, (address,))
+        return bool(data['num'])
+
     @access("ml_script")
     def export_overview(self, rs):
         """Get a summary of all existing mailing lists.

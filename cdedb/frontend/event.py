@@ -34,6 +34,7 @@ from cdedb.common import (
     CourseFilterPositions, diacritic_patterns, open_utf8, shutil_copy)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
+from cdedb.backend.ml import MlBackend
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -50,6 +51,7 @@ class EventFrontend(AbstractUserFrontend):
         super().__init__(configpath)
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
+        self.mlproxy = ProxyShim(MlBackend(configpath))
 
     def finalize_session(self, rs, connpool, auxilliary=False):
         super().finalize_session(rs, connpool, auxilliary=auxilliary)
@@ -245,9 +247,9 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
-        "registration_hard_limit", "iban", "mail_text", "use_questionnaire",
-        "notes", "lodge_field", "reserve_field", "is_visible",
-        "is_course_list_visible")
+        "registration_hard_limit", "iban", "orga_address", "mail_text",
+        "use_questionnaire", "notes", "lodge_field", "reserve_field",
+        "is_visible", "is_course_list_visible")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -737,17 +739,25 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
-                 ("orga_ids", "str"))
+                 ("orga_ids", "str"), ("create_orga_list", "bool"),
+                 ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
         "registration_hard_limit", "iban", "mail_text", "use_questionnaire",
         "notes")
-    def create_event(self, rs, event_begin, event_end, orga_ids, data):
+    def create_event(self, rs, event_begin, event_end, orga_ids, data,
+                     create_orga_list, create_participant_list):
         """Create a new event organized via DB."""
         if orga_ids:
             data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
                              for anid in orga_ids.split(",")}
+        if create_orga_list and "ml_admin" in rs.user.roles:
+            orga_ml_address = "{}@aka.cde-ev.de".format(data['shortname'])
+            # This will set the orga_address even if the list already existed
+            data['orga_address'] = orga_ml_address
+        else:
+            data['orga_address'] = None
         # multi part events will have to edit this later on
         data['parts'] = {
             -1: {
@@ -764,6 +774,60 @@ class EventFrontend(AbstractUserFrontend):
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
         # TODO create mailing lists
+        if create_orga_list and "ml_admin" in rs.user.roles:
+            orga_ml_data = {
+                'title': "{} Orgateam".format(data['title']),
+                'address': data['orga_address'],
+                'description': None,
+                'sub_policy': const.SubscriptionPolicy.invitation_only,
+                'mod_policy': const.ModerationPolicy.unmoderated,
+                'attachment_policy': const.AttachmentPolicy.allow,
+                'audience_policy': const.AudiencePolicy.require_event,
+                'subject_prefix': data['shortname'],
+                'maxsize': 1024,
+                'is_active': True,
+                'gateway': None,
+                'event_id': new_id,
+                'registration_stati': [],
+                'assembly_id': None,
+                'notes': None,
+                'moderators': data['orgas'],
+            }
+            if not self.mlproxy.verify_existence(rs, data['orga_address']):
+                code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
+                self.notify_return_code(
+                    rs, code, success=n_("Orga mailinglist created."))
+            else:
+                rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                          {'address': data['orga_address']})
+        if create_participant_list and "ml_admin" in rs.user.roles:
+            participant_ml_address = "{}-all@cde-ev.de".format(
+                data['shortname'])
+            participant_ml_data = {
+                'title': "{} Teilnehmer".format(data['title']),
+                'address': participant_ml_address,
+                'description': None,
+                'sub_policy': const.SubscriptionPolicy.invitation_only,
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'attachment_policy': const.AttachmentPolicy.pdf_only,
+                'audience_policy': const.AudiencePolicy.require_event,
+                'subject_prefix': data['shortname'],
+                'maxsize': 1024,
+                'is_active': True,
+                'gateway': None,
+                'event_id': new_id,
+                'registration_stati': [const.RegistrationPartStati.participant],
+                'assembly_id': None,
+                'notes': None,
+                'moderators': data['orgas'],
+            }
+            if not self.mlproxy.verify_existence(rs, participant_ml_address):
+                code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
+                self.notify_return_code(
+                    rs, code, success=n_("Participant mailinglist created."))
+            else:
+                rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                          {'address': participant_ml_address})
         self.notify_return_code(rs, new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
@@ -1643,7 +1707,7 @@ class EventFrontend(AbstractUserFrontend):
     def batch_fees(self, rs, event_id, force, fee_data, fee_data_file,
                    checksum):
         """Allow orgas to add lots paid of participant fee at once."""
-        fee_data_file = check(rs, "csvfile_or_None", fee_data_file, 
+        fee_data_file = check(rs, "csvfile_or_None", fee_data_file,
                               "fee_data_file")
         if rs.errors:
             return self.batch_fees_form(rs, event_id)
@@ -2346,10 +2410,15 @@ class EventFrontend(AbstractUserFrontend):
         fee = sum(rs.ambience['event']['parts'][part_id]['fee']
                   for part_id, entry in registration['parts'].items()
                   if const.RegistrationPartStati(entry['status']).is_involved())
+
+        subject = "[CdE] Anmeldung für {}".format(rs.ambience['event']['title'])
+        reply_to = (rs.ambience['event']['orga_address'] or
+                    self.confEVENT_ADMIN_ADDRESS)
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
-             'Subject': "Anmeldung für CdE Veranstaltung"},
+             'Subject': subject,
+             'Reply-To': reply_to},
             {'fee': fee, 'age': age, 'meta_info': meta_info})
         self.notify_return_code(rs, new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")

@@ -1780,6 +1780,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'orgas': _iterable,
     'parts': _mapping,
     'fields': _mapping,
+    'orga_address': _email_or_None,
     'lodge_field': _id_or_None,
     'reserve_field': _id_or_None,
 }
