@@ -214,7 +214,7 @@ I18N_STRINGS = (
     n_('Use a longer keyboard pattern with more turns.'),
     n_('Repeats like "aaa" are easy to guess.'),
     n_('Repeats like "abcabcabc" are only slightly harder to guess than '
-       '“abc”.'),
+       '"abc".'),
     n_('Avoid repeated words and characters.'),
     n_('Sequences like "abc" or "6543" are easy to guess.'),
     n_('Avoid sequences.'),
