@@ -1783,6 +1783,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'orga_address': _email_or_None,
     'lodge_field': _id_or_None,
     'reserve_field': _id_or_None,
+    'course_room_field': _id_or_None,
 }
 
 

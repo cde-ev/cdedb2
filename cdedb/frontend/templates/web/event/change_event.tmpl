@@ -72,6 +72,15 @@
         {{ util.form_input_select(name="reserve_field", label=gettext("Field for Camping Mat"), entries=myentries,
                                   nulloption="", info=gettext("The custom field in which the participants’ "
                                   "willingness to sleep on a camping mat will be saved. Fieldtype: Yes/No")) }}
+        {#- jinja does not support list comprehension ... #}
+        {%- set myentries = [] %}
+        {%- for field_id, field in ambience['event']['fields']|dictsort
+                if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].course %}
+            {%- do myentries.append((field_id, field['field_name'])) %}
+        {%- endfor %}
+        {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course"), entries=myentries,
+                                  nulloption="", info=gettext("The custom field in which the course’s "
+                                  "assigned course room will be saved. Fieldtype: Text")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event')) }}
     </form>

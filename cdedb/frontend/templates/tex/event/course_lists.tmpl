@@ -25,7 +25,7 @@
                 , <<< instructors[key]|length|te >>> Kursleiter
             \end{minipage}
             \begin{minipage}[c][\logosize\textwidth][t]{\logosize\linewidth}
-                \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./logo-<<< course_id|te >>>}
+                \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./course-logo-<<< course_id|te >>>}
             \end{minipage}
             \begin{itemize}
                 <<% for registration_id in attendees[(course_id, track_id)] %>>
@@ -50,11 +50,9 @@
             \end{itemize}
             \vspace{\fill}
             \begin{minipage}[t]{\textwidth}
-                <<% if course['fields'] %>>
-                    <<% for key, value in course['fields'].items() %>>
-                        <<< key|te >>>: <<< value|te >>>\\
-                    <<% endfor %>>
-                <<% endif %>>
+                <<% if course_room_field -%>>
+                    Kursraum: <<< course['fields'].get(course_room_field, "") >>>
+                <<%- endif %>>
             \end{minipage}
             \clearpage
         <<% endfor %>>

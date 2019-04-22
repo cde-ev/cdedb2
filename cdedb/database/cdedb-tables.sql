@@ -548,7 +548,8 @@ CREATE TABLE event.events (
         -- JSON field for lodgement preference functionality
         lodge_field             integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         -- JSON field for reserve functionality
-        reserve_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        reserve_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        course_room_field       integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
@@ -605,6 +606,7 @@ GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
 -- create previously impossible reference
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (reserve_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
