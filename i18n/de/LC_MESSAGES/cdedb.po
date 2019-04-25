@@ -6475,6 +6475,12 @@ msgstr "Bankdaten"
 msgid "Confirm"
 msgstr "Bestätigen"
 
+#: cdedb/frontend/templates/web/cde/list_past_events.tmpl:4
+#: cdedb/frontend/templates/web/event/index.tmpl:70
+#: cdedb/frontend/templates/web/event/index.tmpl:72
+msgid "Past Events (long)"
+msgstr "Vergangene Veranstaltungen"
+
 #: cdedb/frontend/templates/web/cde/list_past_events.tmpl:26
 #, python-format
 msgid "%(count)s Course"
@@ -9077,6 +9083,16 @@ msgstr "Organisierte Veranstaltungen"
 #: cdedb/frontend/templates/web/event/index.tmpl:57
 msgid "Other Events"
 msgstr "Weitere Veranstaltungen"
+
+#: cdedb/frontend/templates/web/event/index.tmpl:72
+#, python-format
+msgid ""
+"Previous CdE events, including their courses and participants, can be "
+"found at %(link)s – together with Junior- and SchülerAkademien."
+msgstr ""
+"Die früheren CdE-Veranstaltungen mit ihren Teilnehmern und Kursen "
+"findest Du gemeinsam mit den Schüler- und JuniorAkademien bei den "
+"%(link)s."
 
 #: cdedb/frontend/templates/web/event/list_db_events.tmpl:22
 #, python-format

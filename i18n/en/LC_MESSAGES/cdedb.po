@@ -6258,6 +6258,12 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/list_past_events.tmpl:4
+#: cdedb/frontend/templates/web/event/index.tmpl:70
+#: cdedb/frontend/templates/web/event/index.tmpl:72
+msgid "Past Events (long)"
+msgstr "Past Events"
+
 #: cdedb/frontend/templates/web/cde/list_past_events.tmpl:26
 #, python-format
 msgid "%(count)s Course"
