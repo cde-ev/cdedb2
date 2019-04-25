@@ -8657,7 +8657,7 @@ msgstr "Kurs ist zu voll"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:285
 msgid "not assigned or course is cancelled"
-msgstr "keine Kurseinteilung oder in abgesagten Kurs eingeteilt"
+msgstr "keine Kurseinteilung oder Kurs fällt aus"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:288
 msgid "Double-Click the course number to view the course."
