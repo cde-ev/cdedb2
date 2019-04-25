@@ -56,6 +56,16 @@
             <p class="text-muted">{% trans -%}No custom fields for courses available.{%- endtrans %}</p>
         {% endfor %}
 
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                <div class="form-control-static text-info">
+                    {{ util.make_icon('info-sign') }}
+                    {{ gettext("Warning: The description will be publicly visible once courselist visibility "
+                    "is activated in the configuration. Course instructors will be visible to event users.") }}
+                </div>
+            </div>
+        </div>
+
         {{ util.form_input_submit(value=gettext("Add"), cancellink=cdedblink('event/course_stats')) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">

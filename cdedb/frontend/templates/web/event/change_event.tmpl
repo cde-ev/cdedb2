@@ -30,13 +30,13 @@
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_checkbox(name="is_visible", label=gettext("Visibility of the Event"),
-                                info=gettext("If this is checked, all event users can view the event. "
+                                info=gettext("If this is checked, all event users can see the event and anyone with the link can access it. "
                                 "If this is unchecked, event users can still register within the "
                                 "registration period by accessing the registration link directly.")) }}
         {{ util.form_input_checkbox(name="is_course_list_visible", label=gettext("Visibility of the Courselist"),
-                                info=gettext("If this is unchecked, event users cannot see the courselist. "
-                                "If this is checked, but the event is not visible, event users can still view the "
-                                "courselist by accessing the link directly.")) }}
+                                info=gettext("If this is unchecked, no one can see the courselist. "
+                                "If this is checked, but the event is not visible, anyone with the link can access the "
+                                "courselist.")) }}
         {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local',
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
