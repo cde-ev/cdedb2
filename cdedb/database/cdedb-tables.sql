@@ -553,7 +553,7 @@ CREATE TABLE event.events (
         -- The references above are not yet possible, but will be added later on.
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
-GRANT INSERT ON event.events TO cdb_admin;
+GRANT INSERT, DELETE ON event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
 
 CREATE TABLE event.event_parts (

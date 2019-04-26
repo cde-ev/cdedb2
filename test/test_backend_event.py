@@ -270,6 +270,12 @@ class TestEventBackend(BackendTest):
         self.assertEqual(cdata, self.event.get_course(
             self.key, new_course_id))
 
+        self.login(USER_DICT["anton"])
+        self.assertLess(0, self.event.delete_event(self.key, new_id,
+            ("event_parts", "course_tracks", "field_definitions", "courses",
+             "orgas", "lodgements", "registrations", "questionnaire", "log",
+             "mailinglists")))
+
     @as_users("anton", "garcia")
     def test_json_fields_with_dates(self, user):
         event_id = 1

@@ -964,6 +964,160 @@ class EventBackend(AbstractBackend):
         self.event_log(rs, const.EventLogCodes.event_created, new_id)
         return new_id
 
+    @access("event_admin")
+    def delete_event_blockers(self, rs, event_id):
+        """Determine whether an event is deletable.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
+        event_id = affirm("id", event_id)
+        blockers = {}
+
+        field_definitions = self.sql_select(
+            rs, "event.field_definitions", ("id",), (event_id,),
+            entity_key="event_id")
+        if field_definitions:
+            blockers["field_definitions"] = [e["id"] for e in field_definitions]
+
+        courses = self.sql_select(
+            rs, "event.courses", ("id",), (event_id,), entity_key="event_id")
+        if courses:
+            blockers["courses"] = [e["id"] for e in courses]
+
+        event_parts = self.sql_select(rs, "event.event_parts", ("id",),
+                                      (event_id,), entity_key="event_id")
+        if event_parts:
+            blockers["event_parts"] = [e["id"] for e in event_parts]
+            course_tracks = self.sql_select(
+                rs, "event.course_tracks", ("id",), blockers["event_parts"],
+                entity_key="part_id")
+            if course_tracks:
+                blockers["course_tracks"] = [e["id"] for e in course_tracks]
+
+        orgas = self.sql_select(
+            rs, "event.orgas", ("id",), (event_id,), entity_key="event_id")
+        if orgas:
+            blockers["orgas"] = [e["id"] for e in orgas]
+
+        lodgements = self.sql_select(
+            rs, "event.lodgements", ("id",), (event_id,), entity_key="event_id")
+        if lodgements:
+            blockers["lodgements"] = [e["id"] for e in lodgements]
+
+        registrations = self.sql_select(
+            rs, "event.registrations", ("id",), (event_id,),
+            entity_key="event_id")
+        if registrations:
+            blockers["registrations"] = [e["id"] for e in registrations]
+
+        questionnaire_rows = self.sql_select(
+            rs, "event.questionnaire_rows", ("id",), (event_id,),
+            entity_key="event_id")
+        if questionnaire_rows:
+            blockers["questionnaire"] = [e["id"] for e in questionnaire_rows]
+
+        log = self.sql_select(
+            rs, "event.log", ("id",), (event_id,), entity_key="event_id")
+        if log:
+            blockers["log"] = [e["id"] for e in log]
+
+        mailinglists = self.sql_select(
+            rs, "ml.mailinglists", ("id",), (event_id,), entity_key="event_id")
+        if mailinglists:
+            blockers["mailinglists"] = [e["id"] for e in mailinglists]
+
+        return blockers
+
+    @access("event_admin")
+    def delete_event(self, rs, event_id, cascade=None):
+        """Remove event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        :rtype: int
+        :returns: default return code
+        """
+        event_id = affirm("id", event_id)
+        blockers = self.delete_event_blockers(rs, event_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "event",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        with Atomizer(rs):
+            event = self.get_event(rs, event_id)
+            if cascade:
+                if "field_definitions" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.field_definitions",
+                        blockers["field_definitions"])
+                if "courses" in cascade:
+                    with Silencer(rs):
+                        for course_id in blockers["courses"]:
+                            ret *= self.delete_course(
+                                rs, course_id,
+                                ("attendees", "course_choices",
+                                 "course_segments", "instructors"))
+                if "course_tracks" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.course_tracks", blockers["course_tracks"])
+                if "event_parts" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.event_parts", blockers["event_parts"])
+                if "orgas" in cascade:
+                    ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
+                if "lodgements" in cascade:
+                    ret *= self.sql_delete(rs, "event.lodgements",
+                                           blockers["lodgements"])
+                if "registrations" in cascade:
+                    with Silencer(rs):
+                        for reg_id in blockers["registrations"]:
+                            ret *= self.delete_course(
+                                rs, reg_id,
+                                ("registration_parts", "course_choices",
+                                 "registration_tracks"))
+                if "questionnaire" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.questionnaire_rows",
+                        blockers["questionnaire"])
+                if "log" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.log", blockers["log"])
+                if "mailinglists" in cascade:
+                    for anid in blockers["mailinglists"]:
+                        deletor = {
+                            'event_id': None,
+                            'id': anid
+                        }
+                        ret *= self.sql_update(rs, "ml.mailinglists", deletor)
+
+                blockers = self.delete_event_blockers(rs, event_id)
+
+            if not blockers:
+                ret *= self.sql_delete_one(
+                    rs, "event.events", event_id)
+                self.event_log(rs, const.EventLogCodes.event_deleted,
+                               event_id=None, additional_info=event["title"])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "event", "block": blockers.keys()})
+        return ret
+
     @access("event")
     @singularize("get_course")
     def get_courses(self, rs, ids):
