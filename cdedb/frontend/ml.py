@@ -318,8 +318,9 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.management(rs, mailinglist_id)
 
-        code = self.mlproxy.delete_mailinglist(rs, mailinglist_id,
-                                               cascade=True)
+        code = self.mlproxy.delete_mailinglist(
+            rs, mailinglist_id, cascade={"gateway", "subscriptions", "log",
+                                         "requests", "whitelist", "moderators"})
 
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/list_mailinglists")
