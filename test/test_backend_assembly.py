@@ -76,6 +76,10 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 2))
 
+        self.assertLess(0, self.assembly.delete_assembly(
+            self.key, 2, ("ballots", "attendees", "attachments", "log",
+                          "mailinglists")))
+
     @as_users("anton")
     def test_ticket_176(self, user):
         data = {
