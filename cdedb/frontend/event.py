@@ -3027,7 +3027,12 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_registration(rs, event_id, registration_id)
 
-        code = self.eventproxy.delete_registration(rs, registration_id)
+        blockers = self.eventproxy.delete_registration_blockers(
+            rs, registration_id)
+        # maybe exclude some blockers
+        code = self.eventproxy.delete_registration(
+            rs, registration_id, {"registration_parts", "registration_tracks",
+                                  "course_choices"})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/registration_query")
 

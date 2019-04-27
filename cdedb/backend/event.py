@@ -1735,30 +1735,96 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
-    def delete_registration(self, rs, registration_id):
+    def delete_registration_blockers(self, rs, registration_id):
+        """Determine what keeps a registration from beeing deleted.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type registration_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
+        registration_id = affirm("id", registration_id)
+        blockers = {}
+
+        reg_parts = self.sql_select(
+            rs, "event.registration_parts", ("id",), (registration_id,),
+            entity_key="registration_id")
+        if reg_parts:
+            blockers["registration_parts"] = [e["id"] for e in reg_parts]
+
+        reg_tracks = self.sql_select(
+            rs, "event.registration_tracks", ("id",), (registration_id,),
+            entity_key="registration_id")
+        if reg_tracks:
+            blockers["registration_tracks"] = [e["id"] for e in reg_tracks]
+
+        course_choices = self.sql_select(
+            rs, "event.course_choices", ("id",), (registration_id,),
+            entity_key="registration_id")
+        if course_choices:
+            blockers["course_choices"] = [e["id"] for e in course_choices]
+
+        return blockers
+
+    @access("event")
+    def delete_registration(self, rs, registration_id, cascade=None):
         """Remove a registration.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type registration_id: int
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly remove
+            or ignore. If None or empty, cascade none.
         :rtype: int
-        :returns: default return code
+        :returns: standard return code
         """
         registration_id = affirm("id", registration_id)
-        reg = unwrap(self.get_registrations(rs, (registration_id,)))
+        reg = self.get_registration(rs, registration_id)
         if (not self.is_orga(rs, event_id=reg['event_id'])
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=reg['event_id'])
+
+        blockers = self.delete_registration_blockers(rs, registration_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "registration",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
         with Atomizer(rs):
-            self.sql_delete(rs, "event.registration_parts", (registration_id,),
-                            entity_key="registration_id")
-            self.sql_delete(rs, "event.registration_tracks", (registration_id,),
-                            entity_key="registration_id")
-            self.sql_delete(rs, "event.course_choices", (registration_id,),
-                            entity_key="registration_id")
-            ret = self.sql_delete(rs, "event.registrations", (registration_id,))
-        self.event_log(rs, const.EventLogCodes.registration_deleted,
-                       reg['event_id'], persona_id=reg['persona_id'])
+            # cascade specified blockers
+            if cascade:
+                if "registration_parts" in cascade:
+                    ret *= self.sql_delete(rs, "event.registration_parts",
+                                           blockers["registration_parts"])
+                if "registration_tracks" in cascade:
+                    ret *= self.sql_delete(rs, "event.registration_tracks",
+                                           blockers["registration_tracks"])
+                if "course_choices" in cascade:
+                    ret *= self.sql_delete(rs, "event.course_choices",
+                                           blockers["course_choices"])
+
+                # check if registration is deletable after cascading
+                blockers = self.delete_registration_blockers(
+                    rs, registration_id)
+
+            if not blockers:
+                ret *= self.sql_delete_one(
+                    rs, "event.registrations", registration_id)
+                self.event_log(rs, const.EventLogCodes.registration_deleted,
+                               reg['event_id'], persona_id=reg['persona_id'])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "registration", "block": blockers.keys()})
         return ret
 
     @access("event")
