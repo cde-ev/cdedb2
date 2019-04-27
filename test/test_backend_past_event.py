@@ -60,13 +60,15 @@ class TestPastEventBackend(BackendTest):
     @as_users("anton")
     def test_delete_past_course_cascade(self, user):
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
-        self.pastevent.delete_past_course(self.key, 1, cascade=True)
+        self.pastevent.delete_past_course(
+            self.key, 1, cascade=("participants",))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
     @as_users("anton")
     def test_delete_past_event_cascade(self, user):
         self.assertIn(1, self.pastevent.list_past_events(self.key))
-        self.pastevent.delete_past_event(self.key, 1, cascade=True)
+        self.pastevent.delete_past_event(
+            self.key, 1, cascade=("courses", "participants", "log"))
         self.assertNotIn(1, self.pastevent.list_past_events(self.key))
 
     @as_users("anton")
