@@ -3415,8 +3415,8 @@ class EventFrontend(AbstractUserFrontend):
             rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_lodgement(rs, event_id, lodgement_id)
-
-        code = self.eventproxy.delete_lodgement(rs, lodgement_id, cascade=True)
+        code = self.eventproxy.delete_lodgement(
+            rs, lodgement_id, cascade={"inhabitants"})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/lodgements")
 

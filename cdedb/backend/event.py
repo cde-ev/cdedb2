@@ -1977,7 +1977,28 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
-    def delete_lodgement(self, rs, lodgement_id, cascade=False):
+    def delete_lodgement_blockers(self, rs, lodgement_id):
+        """Determine what keeps a lodgement from beeing deleted.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type lodgement_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
+        lodgement_id = affirm("id", lodgement_id)
+        blockers = {}
+
+        inhabitants = self.sql_select(
+            rs, "event.registration_parts", ("id",), (lodgement_id,),
+            entity_key="lodgement_id")
+        if inhabitants:
+            blockers["inhabitants"] = [e["id"] for e in inhabitants]
+
+        return blockers
+
+    @access("event")
+    def delete_lodgement(self, rs, lodgement_id, cascade=None):
         """Make a new lodgement.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -1990,34 +2011,48 @@ class EventBackend(AbstractBackend):
         :returns: default return code
         """
         lodgement_id = affirm("id", lodgement_id)
-        cascade = affirm("bool", cascade)
+        lodgement = self.get_lodgement(rs, lodgement_id)
+        event_id = lodgement["event_id"]
+        if (not self.is_orga(rs, event_id=event_id)
+                and not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=event_id)
+
+        blockers = self.delete_lodgement_blockers(rs, lodgement_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "lodgement",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
         with Atomizer(rs):
-            current = self.sql_select_one(
-                rs, "event.lodgements", ("event_id", "moniker"), lodgement_id)
-            event_id, moniker = current['event_id'], current['moniker']
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
-                raise PrivilegeError(n_("Not privileged."))
-            self.assert_offline_lock(rs, event_id=event_id)
             if cascade:
-                reg_ids = self.list_registrations(rs, event_id)
-                registrations = self.get_registrations(rs, reg_ids)
-                for registration_id, registration in registrations.items():
-                    update = {}
-                    for part_id, part in registration['parts'].items():
-                        if part['lodgement_id'] == lodgement_id:
-                            update[part_id] = {'lodgement_id': None}
-                    if update:
-                        new_registration = {
-                            'id': registration_id,
-                            'parts': update
+                if "inhabitants" in cascade:
+                    for anid in blockers["inhabitants"]:
+                        deletor = {
+                            'lodgement_id': None,
+                            'id': anid,
                         }
-                        self.set_registration(rs, new_registration)
-            ret = self.sql_delete_one(rs, "event.lodgements", lodgement_id)
-            self.event_log(
-                rs, const.EventLogCodes.lodgement_deleted, event_id,
-                additional_info=moniker)
-            return ret
+                        ret *= self.sql_update(
+                            rs, "event.registration_parts", deletor)
+
+                blockers = self.delete_lodgement_blockers(rs, lodgement_id)
+                
+            if not blockers:
+                ret *= self.sql_delete_one(rs, "event.lodgements", lodgement_id)
+                self.event_log(rs, const.EventLogCodes.lodgement_deleted,
+                               event_id, additional_info=lodgement["moniker"])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "lodgement", "block": blockers.keys()})
+        return ret
 
     @access("event")
     def get_questionnaire(self, rs, event_id):
