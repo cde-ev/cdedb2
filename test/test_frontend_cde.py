@@ -860,7 +860,7 @@ class TestCdEFrontend(FrontendTest):
 
         ## validate
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Verg. Veranstaltungen")
+        self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Willy Brandt")
@@ -1436,13 +1436,13 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_list_past_events(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Verg. Veranstaltungen")
+        self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
 
     @as_users("anton")
     def test_show_past_event_course(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Verg. Veranstaltungen")
+        self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
@@ -1511,14 +1511,14 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_delete_past_event(self, user):
         self.get("/cde/past/event/list")
-        self.assertTitle("Verg. Veranstaltungen")
+        self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("2014")
         self.get("/cde/past/event/1/show")
         self.assertTitle("PfingstAkademie 2014")
         f = self.response.forms['deletepasteventform']
         f['ack_delete'].checked = True
         self.submit(f)
-        self.assertTitle("Verg. Veranstaltungen")
+        self.assertTitle("Vergangene Veranstaltungen")
         self.assertNonPresence("2014")
 
     @as_users("anton")
