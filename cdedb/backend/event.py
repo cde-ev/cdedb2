@@ -1239,6 +1239,27 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event")
+    def get_registration_map(self, rs, event_ids):
+        """Retrieve a map of personas to their registrations.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_ids: [int]
+        :rtype {(int, int): int}
+        """
+        event_ids = affirm_set("id", event_ids)
+        if (not all(self.is_orga(rs, event_id=anid) for anid in event_ids) and
+                not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+
+        data = self.sql_select(
+            rs, "event.registrations", ("id", "persona_id", "event_id"),
+            event_ids, entity_key="event_id")
+        ret = {(e["event_id"], e["persona_id"]): e["id"] for e in data}
+
+        return ret
+
+
+    @access("event")
     def registrations_by_course(self, rs, event_id, course_id=None,
             track_id=None, position=None, reg_ids=None,
             reg_states=(const.RegistrationPartStati.participant,)):

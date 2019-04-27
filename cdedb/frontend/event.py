@@ -4234,11 +4234,12 @@ class EventFrontend(AbstractUserFrontend):
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         event_ids = {entry['event_id'] for entry in log if entry['event_id']}
+        registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         events = self.eventproxy.get_events(rs, event_ids)
         all_events = self.eventproxy.list_db_events(rs)
         return self.render(rs, "view_log", {
             'log': log, 'personas': personas, 'events': events,
-            'all_events': all_events})
+            'all_events': all_events, 'registration_map': registration_map})
 
     @access("event")
     @event_guard()
@@ -4262,6 +4263,8 @@ class EventFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
         return self.render(rs, "view_event_log", {
             'log': log, 'personas': personas,
+            'registration_map': registration_map,
         })

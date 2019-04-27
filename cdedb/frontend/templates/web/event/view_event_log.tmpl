@@ -50,7 +50,15 @@
                 </td>
                 <td>
                     {% if entry['persona_id'] %}
-                        {{ util.persona_anchor(personas[entry['persona_id']], event_id=ambience['event']['id']) }}
+                        {% if (entry['event_id'], entry['persona_id']) in registration_map %}
+                            {{ util.href(cdedblink('event/show_registration',
+                                    {'registration_id': registration_map[(entry['event_id'], entry['persona_id'])],
+                                     'event_id': entry['event_id']}),
+                                    label="{} {}".format(personas[entry['persona_id']]['given_names'],
+                                                         personas[entry['persona_id']]['family_name'])) }}
+                        {% else %}
+                            {{ util.persona_anchor(personas[entry['persona_id']], event_id=ambience['event']['id']) }}
+                        {% endif %}
                     {% else %}
                         –
                     {% endif %}
