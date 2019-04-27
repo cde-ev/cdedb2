@@ -1187,6 +1187,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € (Überwiesen am 17.03.19)")
 
     @as_users("anton")
+    def test_money_transfer_low_balance(self, user):
+        self.admin_view_profile("daniel")
+        self.assertPresence("Guthaben 0,00 €")
+        self.get("/core/persona/4/membership/change")
+        self.assertPresence("Zum Mitglied machen")
+        self.get("/cde/transfers")
+        f = self.response.forms["transfersform"]
+        f["transfers"] = "1.00;DB-4-3;Dino;Daniel D.;"
+        self.submit(f, check_notification=False)
+        f = self.response.forms["transfersform"]
+        self.submit(f)
+        self.get("/core/persona/4/membership/change")
+        self.assertPresence("Zum Mitglied machen")
+
+    @as_users("anton")
     def test_semester(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/semester/show'})

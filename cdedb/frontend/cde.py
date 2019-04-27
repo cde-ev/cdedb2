@@ -992,7 +992,7 @@ class CdEFrontend(AbstractUserFrontend):
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
                         change_note=note)
-                    if new_balance > 0:
+                    if new_balance >= self.conf.MEMBERSHIP_FEE:
                         memberships_gained += self.coreproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)
         except psycopg2.extensions.TransactionRollbackError:
