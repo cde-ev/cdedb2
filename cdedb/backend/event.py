@@ -1164,31 +1164,6 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
-    @singularize("is_course_removable")
-    def are_courses_removable(self, rs, ids):
-        """Check if deleting these courses preserves referential integrity.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ids: [int]
-        :rtype: {int: bool}
-        """
-        ids = affirm_set("id", ids)
-        if (not self.is_admin(rs)
-                and (len(ids) != 1
-                     or not self.is_orga(rs, course_id=unwrap(ids)))):
-            raise PrivilegeError(n_("Not privileged."))
-        with Atomizer(rs):
-            used = set()
-            data = self.sql_select(rs, "event.registration_tracks",
-                                   ("course_id",), ids, entity_key="course_id")
-            used |= {e['course_id'] for e in data}
-            data = self.sql_select(rs, "event.course_choices",
-                                   ("course_id",), ids, entity_key="course_id")
-            used |= {e['course_id'] for e in data}
-            ret = {course_id: course_id not in used for course_id in ids}
-        return ret
-
-    @access("event")
     def delete_course_blockers(self, rs, course_id):
         """Determine what keeps a course from beeing deleted.
 
