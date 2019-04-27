@@ -2635,7 +2635,10 @@ class EventBackend(AbstractBackend):
                 elif new_registration is None:
                     rdelta[registration_id] = None
                     if not dryrun:
-                        self.delete_registration(rs, registration_id)
+                        self.delete_registration(
+                            rs, registration_id, ("registration_parts",
+                                                  "registration_tracks",
+                                                  "course_choices"))
                 elif registration_id < 0:
                     rdelta[registration_id] = new_registration
                     if not dryrun:
@@ -2661,7 +2664,8 @@ class EventBackend(AbstractBackend):
                 elif new_lodgement is None:
                     ldelta[lodgement_id] = None
                     if not dryrun:
-                        self.delete_lodgement(rs, lodgement_id)
+                        self.delete_lodgement(
+                            rs, lodgement_id, ("inhabitants",))
                 elif lodgement_id < 0:
                     rdelta[lodgement_id] = new_lodgement
                     if not dryrun:
@@ -2689,7 +2693,10 @@ class EventBackend(AbstractBackend):
                 elif new_course is None:
                     cdelta[course_id] = None
                     if not dryrun:
-                        self.delete_course(rs, course_id)
+                        # this will fail to delete a course with attendees
+                        self.delete_course(
+                            rs, course_id, ("instructors", "course_choices",
+                                            "course_segments"))
                 elif course_id < 0:
                     rdelta[course_id] = new_course
                     if not dryrun:
@@ -2726,4 +2733,4 @@ class EventBackend(AbstractBackend):
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'])
-            return code, delta
+            return code, total_delta
