@@ -674,7 +674,10 @@ class CoreBackend(AbstractBackend):
         if (set(data) & admin_keys
                 and ("admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
-            raise PrivilegeError(n_("Admin privelege modification prevented."))
+            # Only require superadmin for setting adminbit, not for unsetting
+            if any(data[key] for key in admin_keys):
+                raise PrivilegeError(
+                    n_("Admin privelege modification prevented."))
         if ("is_member" in data
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
                      or "membership" not in allow_specials)):

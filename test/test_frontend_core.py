@@ -509,7 +509,6 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Findus")
         self.assertPresence("Generalis")
 
-
     @as_users("anton")
     def test_privilege_change(self,  user):
         self.admin_view_profile('berta')
@@ -528,6 +527,22 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual(False, f['is_admin'].checked)
         self.assertEqual(True, f['is_core_admin'].checked)
         self.assertEqual(True, f['is_cde_admin'].checked)
+
+    def test_archival_admin_requirement(self):
+        self.login(USER_DICT["anton"])
+        self.get("/core/persona/2/privileges")
+        f = self.response.forms['privilegechangeform']
+        f['is_core_admin'].checked = True
+        f['is_cde_admin'].checked = True
+        self.submit(f)
+        self.logout()
+        self.login(USER_DICT["berta"])
+        self.admin_view_profile("daniel")
+        f = self.response.forms["archivepersonaform"]
+        f["note"] = "Archived for testing."
+        f["ack_delete"].checked = True
+        self.submit(f)
+        self.assertPresence("Der Benutzer ist archiviert.")
 
     @as_users("anton", "berta")
     def test_get_foto(self, user):
