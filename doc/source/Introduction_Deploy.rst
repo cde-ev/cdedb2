@@ -7,7 +7,7 @@ following steps to deploy a new revision.
 * Locally set the stable branch to the desired revision::
 
     git checkout stable
-    git merge master # or another branch or an explicit commit 12345678
+    git merge master # or another branch or an explicit commit
 
 * Run the push-stable.sh script. If any new commits with deployment
   relevance are present (marked by a line starting with "Deploy:" in the
@@ -24,8 +24,7 @@ following steps to deploy a new revision.
   execute the cdedb-update.sh script::
 
     ssh cde-db2 # replace with your alias from your ssh config
-    sudo -i
-    cdedb-update.sh
+    sudo cdedb-update.sh
 
   If commits with deployment relevance exist, the call to the script needs
   to be replaced by the commands inside the script interspersed with the
