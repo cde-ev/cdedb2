@@ -293,29 +293,89 @@ class PastEventBackend(AbstractBackend):
         self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
         return ret
 
-    @access("cde_admin", "event_admin")
-    def delete_past_event(self, rs, pevent_id, cascade=False):
+    @access("cde_admin")
+    def delete_past_event_blockers(self, rs, pevent_id):
+        """Determine whether an event is deletable.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type pevent_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
+        pevent_id = affirm("id", pevent_id)
+        blockers = {}
+
+        participants = self.sql_select(rs, "past_event.participants", ("id",),
+                                       (pevent_id,), entity_key="pevent_id")
+        if participants:
+            blockers["participants"] = [e["id"] for e in participants]
+
+        courses = self.sql_select(rs, "past_event.courses", ("id",),
+                                  (pevent_id,), entity_key="pevent_id")
+        if courses:
+            blockers["courses"] = [e["id"] for e in courses]
+
+        log = self.sql_select(rs, "past_event.log", ("id",), (pevent_id,),
+                              entity_key="pevent_id")
+        if log:
+            blockers["log"] = [e["id"] for e in log]
+
+        return blockers
+
+    @access("cde_admin")
+    def delete_past_event(self, rs, pevent_id, cascade=None):
+        """Remove past event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type pevent_id: int
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        :rtype: int
+        :returns: default return code
+        """
 
         pevent_id = affirm("id", pevent_id)
-        cascade = affirm("bool", cascade)
-        pevent = self.get_past_event(rs, pevent_id)
+        blockers = self.delete_past_event_blockers(rs, pevent_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "past_event",
+                                 "block": blockers.keys() - cascade,
+                             })
+
         ret = 1
         with Atomizer(rs):
+            pevent = self.get_past_event(rs, pevent_id)
             if cascade:
-                with Silencer(rs):
-                    for pcourse_id in self.list_past_courses(rs, pevent_id):
-                        # Delete courses cascadingly
-                        ret *= self.delete_past_course(rs, pcourse_id, True)
-                    for pid, _ in self.list_participants(
-                            rs, pevent_id=pevent_id):
-                        # Remove participants without course
-                        ret *= self.remove_participant(rs, pevent_id, None, pid)
-                ret *= self.sql_delete(rs, "past_event.log", (pevent_id,),
-                                       entity_key="pevent_id")
-            ret *= self.sql_delete_one(rs, "past_event.events", pevent_id)
-            self.past_event_log(rs, const.PastEventLogCodes.event_deleted,
-                                pevent_id=None, persona_id=None,
-                                additional_info=pevent['title'])
+                if "participants" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "past_event.participants", blockers["participants"])
+                if "courses" in cascade:
+                    with Silencer(rs):
+                        for pcourse_id in blockers["courses"]:
+                            ret *= self.delete_past_course(
+                                rs, pcourse_id, ("participants",))
+                if "log" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "past_event.log", blockers["log"])
+
+                blockers = self.delete_past_event_blockers(rs, pevent_id)
+
+            if not blockers:
+                ret *= self.sql_delete_one(rs, "past_event.events", pevent_id)
+                self.past_event_log(rs, const.PastEventLogCodes.event_deleted,
+                                    pevent_id=None, persona_id=None,
+                                    additional_info=pevent['title'])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "past_event", "block": blockers.keys()})
         return ret
 
     @access("persona")
@@ -381,37 +441,66 @@ class PastEventBackend(AbstractBackend):
                             data['pevent_id'], additional_info=data['title'])
         return ret
 
-    @access("cde_admin", "event_admin")
-    def delete_past_course(self, rs, pcourse_id, cascade=False):
-        """Remove a concluded course.
-
-        Because of referrential integrity only courses with no
-        participants can be removed. This function can first remove all
-        participants and then remove the course.
+    @access("cde_admin")
+    def delete_past_course_blockers(self, rs, pcourse_id):
+        """Determine whether a past course is deletable.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type pcourse_id: int
-        :type cascade: bool
-        :param cascade: If True participants are removed first, if False the
-          operation fails if participants exist.
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
+        pcourse_id = affirm("id", pcourse_id)
+        blockers = {}
+
+        participants = self.sql_select(rs, "past_event.participants", ("id",),
+                                       (pcourse_id,), entity_key="pcourse_id")
+        if participants:
+            blockers["participants"] = [e["id"] for e in participants]
+
+        return blockers
+
+    @access("cde_admin")
+    def delete_past_course(self, rs, pcourse_id, cascade=None):
+        """Remove past course.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type pcourse_id: int
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
         :rtype: int
         :returns: default return code
         """
         pcourse_id = affirm("id", pcourse_id)
-        cascade = affirm("bool", cascade)
-        current = unwrap(self.get_past_courses(rs, (pcourse_id,)))
+        blockers = self.delete_past_course_blockers(rs, pcourse_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "past_course",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
         with Atomizer(rs):
-            if cascade and self.list_participants(rs, pcourse_id=pcourse_id):
-                course = unwrap(self.get_past_courses(rs, (pcourse_id,)))
-                with Silencer(rs):
-                    for pid, _ in self.list_participants(rs,
-                                                         pcourse_id=pcourse_id):
-                        self.remove_participant(rs, course['pevent_id'],
-                                                pcourse_id, pid)
-            ret = self.sql_delete_one(rs, "past_event.courses", pcourse_id)
-            self.past_event_log(
-                rs, const.PastEventLogCodes.course_deleted,
-                current['pevent_id'], additional_info=current['title'])
+            pcourse = self.get_past_course(rs, pcourse_id)
+            if cascade:
+                if "participants" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "past_event.participants", blockers["participants"])
+
+                blockers = self.delete_past_course_blockers(rs, pcourse_id)
+
+            if not blockers:
+                ret *= self.sql_delete_one(rs, "past_event.courses", pcourse_id)
+                self.past_event_log(
+                    rs, const.PastEventLogCodes.course_deleted,
+                    pcourse['pevent_id'], additional_info=pcourse['title'])
         return ret
 
     @access("cde_admin", "event_admin")
