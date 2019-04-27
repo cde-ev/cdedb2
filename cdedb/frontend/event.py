@@ -854,8 +854,9 @@ class EventFrontend(AbstractUserFrontend):
             params['personas'] = personas
             params['registrations'] = registrations
             params['attendees'] = attendees
-            params['is_removable'] = self.eventproxy.is_course_removable(
-                rs, course_id)
+            params['blockers'] = self.eventproxy.delete_course_blockers(
+                rs, course_id).keys() - {"instructors", "course_choices",
+                                         "course_segments"}
             params['logo_present'] = (self.conf.STORAGE_DIR / "course_logo" /
                                       str(course_id)).exists()
         return self.render(rs, "show_course", params)
@@ -948,10 +949,14 @@ class EventFrontend(AbstractUserFrontend):
             rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_course(rs, event_id, course_id)
-        if not self.eventproxy.is_course_removable(rs, course_id):
-            rs.notify("error", n_("Course in use cannot be deleted."))
-            return self.redirect(rs, 'event/show_course')
-        code = self.eventproxy.delete_course(rs, course_id)
+        blockers = self.eventproxy.delete_course_blockers(rs, course_id)
+        # Do not allow deletion of course with attendees
+        if "attendees" in blockers:
+            rs.notify("error", n_("Course cannot be deleted, because it still "
+                                  "has attendees."))
+            return self.redirect(rs, "event/show_course")
+        code = self.eventproxy.delete_course(
+            rs, course_id, {"instructors", "course_choices", "course_segments"})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/course_stats")
 

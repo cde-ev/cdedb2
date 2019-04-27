@@ -343,7 +343,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton", "garcia")
     def test_course_non_removable(self, user):
-        self.assertEqual(False, self.event.is_course_removable(self.key, 1))
+        self.assertNotEqual({}, self.event.delete_course_blockers(self.key, 1))
 
     @as_users("anton", "garcia")
     def test_course_delete(self, user):
