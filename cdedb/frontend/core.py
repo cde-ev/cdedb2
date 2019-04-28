@@ -1166,15 +1166,12 @@ class CoreFrontend(AbstractFrontend):
                               ValueError(n_("Passwords don’t match."))))
             rs.notify("error", n_("Passwords don’t match."))
             return self.change_password_form(rs)
-        # Provide user-specific data to consider it when calculating
-        # password strength.
-        inputs = (rs.user.username.replace('@', ' ').split() +
-                  rs.user.given_names.replace('-', ' ').split() +
-                  rs.user.family_name.replace('-', ' ').split())
-        admin = any("admin" in role for role in rs.user.roles)
-        new_password = check(rs, "password_strength", new_password,
-                             "new_password", admin=admin,
-                             inputs=inputs)
+
+        new_password, errs = self.coreproxy.check_password_strength(
+            rs, new_password, persona_id=rs.user.persona_id,
+            argname="new_password")
+        rs.errors.extend(errs)
+
         if rs.errors:
             if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))
@@ -1302,11 +1299,10 @@ class CoreFrontend(AbstractFrontend):
                               ValueError(n_("Passwords don’t match."))))
             rs.notify("error", n_("Passwords don’t match."))
             return self.change_password_form(rs)
-        # Provide user-specific data to consider it when calculating
-        # password strength.
-        inputs = email.replace('@', ' ').split()
-        new_password = check(rs, "password_strength", new_password,
-                             "new_password", inputs=inputs)
+        new_password, errs = self.coreproxy.check_password_strength(
+            rs, new_password, email=email, argname="new_password")
+        rs.errors.extend(errs)
+
         if rs.errors:
             if any(name == "new_password" for name, _ in rs.errors):
                 rs.notify("error", n_("Password too weak."))

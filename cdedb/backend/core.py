@@ -1716,6 +1716,59 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("anonymous")
+    def check_password_strength(self, rs, password, *, email=None,
+                                persona_id=None, argname=None):
+        """Check the password strength using some additional userdate.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type password: str
+        :type email: str or None
+        :type persona_id: int or None
+        :type argname: str or None
+        :rtype: str
+        """
+        password = affirm("str", password)
+        email = affirm("str_or_None", email)
+        persona_id = affirm("id_or_None", persona_id)
+        argname = affirm("str_or_None", argname)
+
+        if email is None and persona_id is None:
+            raise ValueError(n_("No input provided."))
+        elif email and persona_id:
+            raise ValueError(n_("More than one input provided."))
+        if email:
+            persona_id = unwrap(self.sql_select_one(
+                rs, "core.personas", ("id",), email, entity_key="username"))
+
+        columns_of_interest = [
+            "is_cde_realm", "is_admin", "is_core_admin", "is_cde_admin",
+            "is_event_admin", "is_ml_admin", "is_assembly_admin", "username",
+            "given_names", "family_name", "display_name", "title",
+            "name_supplement", "birthday"]
+
+        persona = self.sql_select_one(
+            rs, "core.personas", columns_of_interest, persona_id)
+
+        admin = any(persona[admin] for admin in
+                    ("is_admin", "is_core_admin", "is_cde_admin",
+                     "is_event_admin", "is_ml_admin", "is_assembly_admin"))
+        inputs = (persona['username'].split('@') +
+                  persona['given_names'].replace('-', ' ').split() +
+                  persona['family_name'].replace('-', ' ').split() +
+                  persona['display_name'].replace('-', ' ').split())
+        if persona['title']:
+            inputs.extend(persona['title'].replace('-', ' ').split())
+        if persona['name_supplement']:
+            inputs.extend(persona['name_supplement'].replace('-', ' ').split())
+        if persona['birthday']:
+            inputs.extend(persona['birthday'].isoformat().split('-'))
+
+        password, errs = validate._password_strength(
+            password, argname, admin=admin, inputs=inputs)
+
+        return password, errs
+
+    @access("anonymous")
     def make_reset_cookie(self, rs, email, timeout=None):
         """Perform preparation for a recovery.
 
