@@ -1763,7 +1763,7 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate._password_strength(
+        password, errs = validate.check_password_strength(
             password, argname, admin=admin, inputs=inputs)
 
         return password, errs
