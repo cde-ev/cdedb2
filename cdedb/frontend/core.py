@@ -602,7 +602,7 @@ class CoreFrontend(AbstractFrontend):
                                 if {"core_admin", "admin"} & rs.user.roles
                                 else self.conf.NUM_PREVIEW_PERSONAS)
         if kind == "admin_persona":
-            if not {"core_admin", "admin"} & rs.user.roles:
+            if not {"core_admin", "cde_admin", "admin"} & rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
         elif kind == "past_event_user":
             if "cde_admin" not in rs.user.roles:

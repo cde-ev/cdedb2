@@ -2476,7 +2476,7 @@ class CdEFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        pevent_ids = {entry['pevent_id'] for entry in log if entry['pevent_id']}
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
         return self.render(rs, "view_past_log", {
             'log': log, 'personas': personas, 'pevents': pevents})
