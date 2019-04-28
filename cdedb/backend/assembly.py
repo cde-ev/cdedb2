@@ -707,28 +707,22 @@ class AssemblyBackend(AbstractBackend):
             current = self.get_ballot(rs, ballot_id)
             # cascade specified blockers
             if cascade:
-                with Silencer(rs):
-                    if "vote_begin" in cascade:
-                        raise ValueError(n_("Unable to cascade %(blocker)s."),
-                                         {"blocker": "vote_begin"})
-                    if "candidates" in cascade:
-                        deletor = {
-                            'id': ballot_id,
-                            'candidates': {
-                                cid: None for cid in blockers['candidates']
-                            },
-                        }
-                        ret *= self.set_ballot(rs, deletor)
-                    if "attachments" in cascade:
-                        for aid in blockers["attachments"]:
-                            self.remove_attachment(rs, aid)
-                    if "voters" in cascade:
-                        # There is no function for this so we do it manually
-                        self.sql_delete_one(rs, "assembly.voter_register",
-                                            ballot_id, entity_key="ballot_id")
+                if "vote_begin" in cascade:
+                    raise ValueError(n_("Unable to cascade %(blocker)s."),
+                                     {"blocker": "vote_begin"})
+                if "candidates" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "assembly.candidates", blockers["candidates"])
+                if "attachments" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "assembly.attachments", blockers["attachments"])
+                if "voters" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "assembly.voter_register", blockers["voters"])
 
-            # check if ballot is deletable after maybe cascading
-            blockers = self.delete_ballot_blockers(rs, ballot_id)
+                # check if ballot is deletable after maybe cascading
+                blockers = self.delete_ballot_blockers(rs, ballot_id)
+
             if not blockers:
                 ret *= self.sql_delete_one(rs, "assembly.ballots", ballot_id)
                 self.assembly_log(
