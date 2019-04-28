@@ -1455,7 +1455,7 @@ class CoreBackend(AbstractBackend):
                     "VALUES (%s, %s, %s)")
                 self.query_exec(rs, query, (data["id"], ip, sessionkey))
 
-            # Escalate db privilige role in case of successful login.
+            # Escalate db privilege role in case of successful login.
             # This will not be deescalated.
             if rs.conn.is_contaminated:
                 raise RuntimeError(n_("Atomized – impossible to escalate."))
@@ -1675,7 +1675,7 @@ class CoreBackend(AbstractBackend):
             return False, n_("No new password provided.")
         if not validate.is_password_strength(new_password):
             return False, n_("Password too weak.")
-        # escalate db privilige role in case of resetting passwords
+        # escalate db privilege role in case of resetting passwords
         orig_conn = None
         try:
             if reset_cookie and "persona" not in rs.user.roles:
@@ -1720,6 +1720,9 @@ class CoreBackend(AbstractBackend):
                                 persona_id=None, argname=None):
         """Check the password strength using some additional userdate.
 
+        This escalates database connection privileges in the case of an
+        anonymous request, that is for a password reset.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type password: str
         :type email: str or None
@@ -1746,8 +1749,21 @@ class CoreBackend(AbstractBackend):
             "given_names", "family_name", "display_name", "title",
             "name_supplement", "birthday"]
 
-        persona = self.sql_select_one(
-            rs, "core.personas", columns_of_interest, persona_id)
+        # escalate db privilege role in case of resetting passwords
+        orig_conn = None
+        try:
+            if "persona" not in rs.user.roles:
+                if rs.conn.is_contaminated:
+                    raise RuntimeError(
+                        n_("Atomized – impossible to escalate."))
+                orig_conn = rs.conn
+                rs.conn = self.connpool['cdb_persona']
+            persona = self.sql_select_one(
+                rs, "core.personas", columns_of_interest, persona_id)
+        finally:
+            # deescalate
+            if orig_conn:
+                rs.conn = orig_conn
 
         admin = any(persona[admin] for admin in
                     ("is_admin", "is_core_admin", "is_cde_admin",
