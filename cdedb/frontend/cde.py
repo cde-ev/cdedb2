@@ -2295,7 +2295,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.show_past_event(rs, pevent_id)
 
         code = self.pasteventproxy.delete_past_event(
-            rs, pevent_id, cascade=True)
+            rs, pevent_id, cascade=("courses", "participants", "log"))
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/list_past_events")
 
@@ -2346,8 +2346,8 @@ class CdEFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
-        code = self.pasteventproxy.delete_past_course(rs, pcourse_id,
-                                                      cascade=True)
+        code = self.pasteventproxy.delete_past_course(
+            rs, pcourse_id, cascade=("participants",))
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/show_past_event")
 

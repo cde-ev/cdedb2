@@ -270,6 +270,12 @@ class TestEventBackend(BackendTest):
         self.assertEqual(cdata, self.event.get_course(
             self.key, new_course_id))
 
+        self.login(USER_DICT["anton"])
+        self.assertLess(0, self.event.delete_event(self.key, new_id,
+            ("event_parts", "course_tracks", "field_definitions", "courses",
+             "orgas", "lodgements", "registrations", "questionnaire", "log",
+             "mailinglists")))
+
     @as_users("anton", "garcia")
     def test_json_fields_with_dates(self, user):
         event_id = 1
@@ -343,7 +349,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton", "garcia")
     def test_course_non_removable(self, user):
-        self.assertEqual(False, self.event.is_course_removable(self.key, 1))
+        self.assertNotEqual({}, self.event.delete_course_blockers(self.key, 1))
 
     @as_users("anton", "garcia")
     def test_course_delete(self, user):
@@ -364,8 +370,11 @@ class TestEventBackend(BackendTest):
             'min_size': 23,
         }
         new_id = self.event.create_course(self.key, data)
-        self.assertEqual(True, self.event.is_course_removable(self.key, new_id))
-        self.assertLess(0, self.event.delete_course(self.key, new_id))
+        self.assertEqual(
+            self.event.delete_course_blockers(self.key, new_id).keys(),
+            {"course_segments"})
+        self.assertLess(0, self.event.delete_course(
+            self.key, new_id, ("course_segments",)))
 
     @as_users("anton", "garcia")
     def test_visible_events(self, user):
@@ -747,7 +756,9 @@ class TestEventBackend(BackendTest):
     def test_registration_delete(self, user):
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9},
                          self.event.list_registrations(self.key, 1))
-        self.event.delete_registration(self.key, 1)
+        self.assertLess(0, self.event.delete_registration(
+            self.key, 1, ("registration_parts", "registration_tracks",
+                          "course_choices")))
         self.assertEqual({2: 5, 3: 7, 4: 9},
                          self.event.list_registrations(self.key, 1))
 

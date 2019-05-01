@@ -343,6 +343,126 @@ class AssemblyBackend(AbstractBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.assembly_created, new_id)
         return new_id
 
+    @access("assembly_admin")
+    def delete_assembly_blockers(self, rs, assembly_id):
+        """Determine whether an assembly is deletable.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
+        assembly_id = affirm("id", assembly_id)
+        blockers = {}
+
+        ballots = self.sql_select(
+            rs, "assembly.ballots", ("id",), (assembly_id,),
+            entity_key="assembly_id")
+        if ballots:
+            blockers["ballots"] = [e["id"] for e in ballots]
+            for ballot_id in ballots:
+                if "vote_begin" in self.delete_ballot_blockers(rs, ballot_id):
+                    if "vote_begin" not in blockers:
+                        blockers["vote_begin"] = []
+                    blockers["vote_begin"].append(ballot_id)
+            
+        attendees = self.sql_select(
+            rs, "assembly.attendees", ("id",), (assembly_id,),
+            entity_key="assembly_id")
+        if attendees:
+            blockers["attendees"] = [e["id"] for e in attendees]
+            
+        attachments = self.sql_select(
+            rs, "assembly.attendees", ("id",), (assembly_id,),
+            entity_key="assembly_id")
+        if attachments:
+            blockers["attachments"] = [e["id"] for e in attachments]
+            
+        log = self.sql_select(
+            rs, "assembly.log", ("id",), (assembly_id,),
+            entity_key="assembly_id")
+        if log:
+            blockers["log"] = [e["id"] for e in log]
+            
+        mailinglists = self.sql_select(
+            rs, "ml.mailinglists", ("id",), (assembly_id,),
+            entity_key="assembly_id")
+        if mailinglists:
+            blockers["mailinglists"] = [e["id"] for e in mailinglists]
+            
+        return blockers
+
+    @access("assembly_admin")
+    def delete_assembly(self, rs, assembly_id, cascade=None):
+        """Remove an assembly.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        :rtype: int
+        :returns: default return code
+        """
+        assembly_id = affirm("id", assembly_id)
+        blockers = self.delete_assembly_blockers(rs, assembly_id)
+        if {"vote_begin"} <= blockers.keys():
+            raise ValueError(n_("Unable to remove active ballot."))
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "assembly",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        with Atomizer(rs):
+            assembly = self.get_assembly(rs, assembly_id)
+            if cascade:
+                if "vote_begin" in cascade:
+                    raise ValueError(n_("Unable to cascade %(blocker)s."),
+                                     {"blocker": "vote_begin"})
+                if "ballots" in cascade:
+                    with Silencer(rs):
+                        for ballot_id in blockers["ballots"]:
+                            ret *= self.delete_ballot(rs, ballot_id)
+                if "attendees" in cascade:
+                    ret *= self.sql_delete(rs, "assembly.attendees",
+                                           blockers["attendees"])
+                if "attachments" in cascade:
+                    with Silencer(rs):
+                        for attachment_id in blockers["attachments"]:
+                            ret *= self.remove_attachment(rs, attachment_id)
+                if "log" in cascade:
+                    ret *= self.sql_delete(rs, "assembly.log", blockers["log"])
+                if "mailinglists" in cascade:
+                    for ml_id in blockers["amilinglists"]:
+                        deletor = {
+                            'assembly_id': None,
+                            'id': ml_id,
+                        }
+                        ret *= self.sql_update(rs, "ml.mailinglists", deletor)
+
+                blockers = self.delete_assembly_blockers(rs, assembly_id)
+
+            if not blockers:
+                ret *= self.sql_delete_one(
+                    rs, "assembly.assemblies", assembly_id)
+                self.assembly_log(
+                    rs, const.AssemblyLogCodes.assembly_deleted,
+                    assembly_id=None, additional_info=assembly["title"])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "assembly", "block": blockers.keys()})
+
+        return ret
+
     @access("assembly")
     def list_ballots(self, rs, assembly_id):
         """List all ballots of an assembly.
@@ -516,7 +636,41 @@ class AssemblyBackend(AbstractBackend):
         return new_id
 
     @access("assembly_admin")
-    def delete_ballot(self, rs, ballot_id, cascade=False):
+    def delete_ballot_blockers(self, rs, ballot_id):
+        """Determine whether a ballot is deletable.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ballot_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
+        ballot_id = affirm("id", ballot_id)
+        blockers = {}
+
+        ballot = self.get_ballot(rs, ballot_id)
+        if now() > ballot['vote_begin']:
+            # Unable to remove active ballot
+            blockers["vote_begin"] = ballot_id
+        if ballot['candidates']:
+            # Ballot still has candidates
+            blockers["candidates"] = [anid for anid in ballot["candidates"]]
+
+        attachments = self.list_attachments(rs, ballot_id=ballot_id)
+        if attachments:
+            # Ballot still has attachments
+            blockers["attachments"] = [anid for anid in attachments]
+
+        voters = self.sql_select(rs, "assembly.voter_register", ("id", ),
+                                 (ballot_id,), entity_key="ballot_id")
+        if voters:
+            # Ballot still has voters
+            blockers["voters"] = [e["id"] for e in voters]
+
+        return blockers
+
+    @access("assembly_admin")
+    def delete_ballot(self, rs, ballot_id, cascade=None):
         """Remove a ballot.
 
         .. note:: As with modification of ballots this is forbidden
@@ -527,38 +681,57 @@ class AssemblyBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
-        :type cascade: bool
-        :param cascade: If True we remove all associated data (candidates,
-          attachments, voter register).
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
         :rtype: int
         :returns: default return code
         """
         ballot_id = affirm("id", ballot_id)
-        cascade = affirm("bool", cascade)
+        blockers = self.delete_ballot_blockers(rs, ballot_id)
+        if {"vote_begin"} <= blockers.keys():
+            raise ValueError(n_("Unable to remove active ballot."))
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "ballot",
+                                 "block": blockers.keys() - cascade,
+                             })
+
         ret = 1
         with Atomizer(rs):
-            current = unwrap(self.get_ballots(rs, (ballot_id,)))
-            if now() > current['vote_begin']:
-                raise ValueError(n_("Unable to remove active ballot."))
+            current = self.get_ballot(rs, ballot_id)
+            # cascade specified blockers
             if cascade:
-                with Silencer(rs):
-                    if current['candidates']:
-                        deletor = {
-                            'id': ballot_id,
-                            'candidates': {cid: None
-                                           for cid in current['candidates']},
-                        }
-                        ret *= self.set_ballot(rs, deletor)
-                    attachments = self.list_attachments(rs, ballot_id=ballot_id)
-                    for aid in attachments:
-                        self.remove_attachment(rs, aid)
-                # Manually delete entries which are not otherwise accessible
-                self.sql_delete_one(rs, "assembly.voter_register", ballot_id,
-                                    entity_key="ballot_id")
-            ret *= self.sql_delete_one(rs, "assembly.ballots", ballot_id)
-            self.assembly_log(
-                rs, const.AssemblyLogCodes.ballot_deleted,
-                current['assembly_id'], additional_info=current['title'])
+                if "vote_begin" in cascade:
+                    raise ValueError(n_("Unable to cascade %(blocker)s."),
+                                     {"blocker": "vote_begin"})
+                if "candidates" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "assembly.candidates", blockers["candidates"])
+                if "attachments" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "assembly.attachments", blockers["attachments"])
+                if "voters" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "assembly.voter_register", blockers["voters"])
+
+                # check if ballot is deletable after maybe cascading
+                blockers = self.delete_ballot_blockers(rs, ballot_id)
+
+            if not blockers:
+                ret *= self.sql_delete_one(rs, "assembly.ballots", ballot_id)
+                self.assembly_log(
+                    rs, const.AssemblyLogCodes.ballot_deleted,
+                    current['assembly_id'], additional_info=current['title'])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "ballot", "block": blockers.keys()})
         return ret
 
     @access("assembly")

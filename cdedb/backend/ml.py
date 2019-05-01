@@ -308,44 +308,121 @@ class MlBackend(AbstractBackend):
         return new_id
 
     @access("ml_admin")
-    def delete_mailinglist(self, rs, mailinglist_id, cascade=False):
+    def delete_mailinglist_blockers(self, rs, mailinglist_id):
+        """Determine whether a ballot is deletable.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ballot_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
+        mailinglist_id = affirm("id", mailinglist_id)
+        blockers = {}
+
+        gateway = self.sql_select(rs, "ml.mailinglists", ("id",),
+                                   (mailinglist_id,), entity_key="gateway")
+        if gateway:
+            blockers["gateway"] = [e["id"] for e in gateway]
+
+        subscriptions = self.sql_select(
+            rs, "ml.subscription_states", ("id",), (mailinglist_id,),
+            entity_key="mailinglist_id")
+        if subscriptions:
+            blockers["subscriptions"] = [e["id"] for e in subscriptions]
+
+        requests = self.sql_select(
+            rs, "ml.subscription_requests", ("id",), (mailinglist_id,),
+            entity_key="mailinglist_id")
+        if requests:
+            blockers["requests"] = [e["id"] for e in requests]
+
+        whitelist = self.sql_select(
+            rs, "ml.whitelist", ("id",), (mailinglist_id,),
+            entity_key="mailinglist_id")
+        if whitelist:
+            blockers["whitelist"] = [e["id"] for e in whitelist]
+
+        moderators = self.sql_select(
+            rs, "ml.moderators", ("id",), (mailinglist_id,),
+            entity_key="mailinglist_id")
+        if moderators:
+            blockers["moderators"] = [e["id"] for e in moderators]
+
+        log = self.sql_select(rs, "ml.log", ("id",), (mailinglist_id,),
+                              entity_key="mailinglist_id")
+        if log:
+            blockers["log"] = [e["id"] for e in log]
+
+        return blockers
+
+    @access("ml_admin")
+    def delete_mailinglist(self, rs, mailinglist_id, cascade=None):
         """Remove a mailinglist.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
-        :type cascade: bool
-        :param cascade: If False, there must be no references to the list
-          first (i.e. there have to be no subscriptions, moderators,
-          ...). If True, this function first removes all refering entities.
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
         :rtype: int
         :returns: default return code
         """
         mailinglist_id = affirm("id", mailinglist_id)
-        cascade = affirm("bool", cascade)
+        blockers = self.delete_mailinglist_blockers(rs, mailinglist_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "mailinglist",
+                                 "block": blockers.keys() - cascade,
+                             })
+
         ret = 1
         with Atomizer(rs):
-            data = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             if cascade:
-                with Silencer(rs):
-                    deletor = {
-                        'id': mailinglist_id,
-                        'moderators': tuple(),
-                        'whitelist': tuple(),
-                    }
-                    ret *= self.set_mailinglist(rs, deletor)
-                    requests = self.list_requests(rs, mailinglist_id)
-                    for persona_id in requests:
-                        ret *= self.decide_request(rs, mailinglist_id,
-                                                   persona_id, ack=False)
-                # Manually delete entries which are not otherwise accessible
-                for table in ("ml.subscription_states", "ml.log"):
-                    self.sql_delete(rs, table, (mailinglist_id,),
-                                    entity_key="mailinglist_id")
-            ret *= self.sql_delete_one(rs, "ml.mailinglists", mailinglist_id)
-            self.ml_log(rs, const.MlLogCodes.list_deleted, mailinglist_id=None,
-                        additional_info="{} ({})".format(
-                            data['title'], data['address']))
-            return ret
+                if "gateway" in cascade:
+                    for anid in blockers["gateway"]:
+                        deletor = {
+                            'gateway': None,
+                            'id': anid,
+                        }
+                        ret *= self.sql_update(rs, "ml.mailinglists", deletor)
+                if "subscriptions" in cascade:
+                    ret *= self.sql_delete(rs, "ml.subscription_states",
+                                           blockers["subscriptions"])
+                if "requests" in cascade:
+                    ret *= self.sql_delete(rs, "ml.subscription_requests",
+                                           blockers["requests"])
+                if "whitelist" in cascade:
+                    ret *= self.sql_delete(rs, "ml.whitelist",
+                                           blockers["whitelist"])
+                if "moderators" in cascade:
+                    ret *= self.sql_delete(rs, "ml.moderators",
+                                           blockers["moderators"])
+                if "log" in cascade:
+                    # TODO modify log entries instead of deleting them
+                    ret *= self.sql_delete(rs, "ml.log", blockers["log"])
+
+                # check if mailinglist is deletable after cascading
+                blockers = self.delete_mailinglist_blockers(rs, mailinglist_id)
+
+            if not blockers:
+                ml_data = self.get_mailinglist(rs, mailinglist_id)
+                ret *= self.sql_delete_one(
+                    rs, "ml.mailinglists", mailinglist_id)
+                self.ml_log(rs, const.MlLogCodes.list_deleted,
+                            mailinglist_id=None, additional_info="{} ({})".
+                            format(ml_data['title'], ml_data['address']))
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "mailinglist", "block": blockers.keys()})
+
+        return ret
 
     @access("ml")
     def subscribers(self, rs, mailinglist_id, explicits_only=False):

@@ -155,8 +155,9 @@ class TestMlBackend(BackendTest):
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
         self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))
-        self.assertLess(0, self.ml.delete_mailinglist(self.key, new_id,
-                                                      cascade=True))
+        self.assertLess(0, self.ml.delete_mailinglist(
+            self.key, new_id, cascade=("gateway", "subscriptions", "requests",
+                                       "whitelist", "moderators", "log")))
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
 
     @as_users("anton", "berta")
@@ -326,7 +327,9 @@ class TestMlBackend(BackendTest):
             'notes': "secrecy is important",
             'whitelist': {'che@example.cde',}}
         self.ml.create_mailinglist(self.key, new_data)
-        self.ml.delete_mailinglist(self.key, 3, cascade=True)
+        self.ml.delete_mailinglist(
+            self.key, 3, cascade=("gateway", "subscriptions", "requests",
+                                  "whitelist", "moderators", "log"))
 
         ## now check it
         expectation = (

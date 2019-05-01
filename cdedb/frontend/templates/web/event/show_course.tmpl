@@ -183,30 +183,28 @@
             {{ util.output_errors("course_logo") }}
         </form>
     {% endcall %}
-    {% if is_removable %}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
-            <div class="row">
-                <div class="col-sm-4">
-                    <div class="p">
-                        <form action="{{ cdedblink('event/delete_course') }}" method="POST" id="deletecourseform"
-                                style="display: inline;">
-                            {{ util.anti_csrf_token('event/delete_course') }}
-                            {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
-                                                 aclass="btn btn-danger", icon="folder-close") }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
-                        </form>
-                    </div>
-                </div>
-                <div class="col-sm-8">
-                    <p class="text-muted">
-                        {% trans -%}Delete the Course.{%- endtrans %}
-                    </p>
+    {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="p">
+                    <form action="{{ cdedblink('event/delete_course') }}" method="POST" id="deletecourseform"
+                            style="display: inline;">
+                        {{ util.anti_csrf_token('event/delete_course') }}
+                        {{ util.input_submit(value=gettext("Delete"), readonly=is_locked or blockers,
+                                             aclass="btn btn-danger", icon="folder-close", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
+                        {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                    </form>
                 </div>
             </div>
-        {% endcall %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
-            $('#deletecourseform').cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}");
-            $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-        </script>
-    {% endif %}
+            <div class="col-sm-8">
+                <p class="text-muted">
+                    {% trans -%}Delete the Course.{%- endtrans %}
+                </p>
+            </div>
+        </div>
+    {% endcall %}
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
+        $('#deletecourseform').cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}");
+        $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+    </script>
 {% endblock %}

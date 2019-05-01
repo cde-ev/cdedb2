@@ -553,7 +553,7 @@ CREATE TABLE event.events (
         -- The references above are not yet possible, but will be added later on.
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
-GRANT INSERT ON event.events TO cdb_admin;
+GRANT INSERT, DELETE ON event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
 
 CREATE TABLE event.event_parts (
@@ -787,7 +787,7 @@ CREATE TABLE assembly.assemblies (
         notes                   varchar
 );
 GRANT SELECT ON assembly.assemblies TO cdb_persona;
-GRANT INSERT, UPDATE ON assembly.assemblies TO cdb_admin;
+GRANT INSERT, UPDATE, DELETE ON assembly.assemblies TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.assemblies_id_seq TO cdb_admin;
 
 CREATE TABLE assembly.ballots (
@@ -911,7 +911,7 @@ CREATE TABLE assembly.log (
 );
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
 CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
-GRANT SELECT ON assembly.log TO cdb_admin;
+GRANT SELECT, DELETE ON assembly.log TO cdb_admin;
 GRANT INSERT ON assembly.log TO cdb_persona;
 GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_persona;
 

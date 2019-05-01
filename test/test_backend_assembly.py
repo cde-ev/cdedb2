@@ -76,6 +76,10 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 2))
 
+        self.assertLess(0, self.assembly.delete_assembly(
+            self.key, 2, ("ballots", "attendees", "attachments", "log",
+                          "mailinglists")))
+
     @as_users("anton")
     def test_ticket_176(self, user):
         data = {
@@ -254,7 +258,8 @@ class TestAssemblyBackend(BackendTest):
         })
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
 
-        self.assertLess(0, self.assembly.delete_ballot(self.key, 2, cascade=True))
+        self.assertLess(0, self.assembly.delete_ballot(
+            self.key, 2, cascade=("candidates", "attachments", "voters")))
         expectation = {
             1: 'Antwort auf die letzte aller Fragen',
             3: 'Bester Hof',
@@ -483,9 +488,9 @@ class TestAssemblyBackend(BackendTest):
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
-            {'additional_info': None,
-             'assembly_id': 2,
-             'code': 1,
+            {'additional_info': "Außerordentliche Mitgliederversammlung",
+             'assembly_id': None,
+             'code': 4,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
