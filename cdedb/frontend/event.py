@@ -182,13 +182,13 @@ class EventFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"))
+                        filename="result.csv")
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)
                     return self.send_file(
                         rs, data=json_data, inline=False,
-                        filename=rs.gettext("result.json"))
+                        filename="result.json")
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -272,7 +272,7 @@ class EventFrontend(AbstractUserFrontend):
         path = self.conf.STORAGE_DIR / "minor_form" / str(event_id)
         return self.send_file(
             rs, mimetype="application/pdf",
-            filename=rs.gettext("minor_form.pdf"), path=path)
+            filename="{}_minor_form.pdf".format(rs.ambience['event']['shortname']), path=path)
 
     @access("event", modi={"POST"})
     @REQUESTfile("minor_form")
@@ -1854,7 +1854,7 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "course_puzzle", {
             'courses': courses, 'counts': counts,
             'registrations': registrations, 'personas': personas})
-        file = self.serve_latex_document(rs, tex, "course_puzzle", runs)
+        file = self.serve_latex_document(rs, tex, "{}_course_puzzle".format(rs.ambience['event']['shortname']), runs)
         if file:
             return file
         else:
@@ -1885,7 +1885,7 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas})
-        file = self.serve_latex_document(rs, tex, "lodgement_puzzle", runs)
+        file = self.serve_latex_document(rs, tex, "{}_lodgement_puzzle".format(rs.ambience['event']['shortname']), runs)
         if file:
             return file
         else:
@@ -2019,7 +2019,7 @@ class EventFrontend(AbstractUserFrontend):
             'orientation': "landscape" if landscape else "portrait",
             'orgas_only': orgas_only,
         })
-        file = self.serve_latex_document(rs, tex, "participant_list", runs)
+        file = self.serve_latex_document(rs, tex, "{}_participant_list".format(rs.ambience['event']['shortname']), runs)
         if file:
             return file
         else:
@@ -2034,7 +2034,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "expuls", {'courses': courses})
         file = self.send_file(rs, data=tex, inline=False,
-                              filename="expuls.tex")
+                              filename="{}_expuls.tex".format(rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -2071,7 +2071,7 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
         file = self.send_csv_file(
-            rs, data=csv_data, inline=False, filename="courses.csv")
+            rs, data=csv_data, inline=False, filename="{}_courses.csv".format(rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -2100,7 +2100,7 @@ class EventFrontend(AbstractUserFrontend):
                                      key=lambda c: c['id']),
                               columns)
         file = self.send_csv_file(
-            rs, data=csv_data, inline=False, filename="lodgements.csv")
+            rs, data=csv_data, inline=False, filename="{}_lodgements.csv".format(rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -2241,7 +2241,7 @@ class EventFrontend(AbstractUserFrontend):
                                      key=lambda c: c['id']),
                               columns)
         file = self.send_csv_file(
-            rs, data=csv_data, inline=False, filename="registrations.csv")
+            rs, data=csv_data, inline=False, filename="{}_registrations.csv".format(rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -2256,7 +2256,7 @@ class EventFrontend(AbstractUserFrontend):
         data = self.eventproxy.export_event(rs, event_id)
         json = json_serialize(data)
         file = self.send_file(rs, data=json, inline=False,
-                              filename="export_event.json")
+                              filename="{}_export_event.json".format(rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -3981,13 +3981,13 @@ class EventFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"))
+                        filename="{}_result.csv".format(rs.ambience['event']['shortname']))
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)
                     return self.send_file(
                         rs, data=json_data, inline=False,
-                        filename=rs.gettext("result.json"))
+                        filename="{}_result.json".format(rs.ambience['event']['shortname']))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "registration_query", params)

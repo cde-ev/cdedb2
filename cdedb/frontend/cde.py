@@ -256,13 +256,13 @@ class CdEFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"))
+                        filename="result.csv")
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)
                     return self.send_file(
                         rs, data=json_data, inline=False,
-                        filename=rs.gettext("result.json"))
+                        filename="result.json")
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)

@@ -123,12 +123,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields)
                     return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename=rs.gettext("result.csv"))
+                        filename="result.csv")
                 elif download == "json":
                     json_data = query_result_to_json(result, fields)
                     return self.send_file(
                         rs, data=json_data, inline=False,
-                        filename=rs.gettext("result.json"))
+                        filename="result.json")
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -686,7 +686,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_ballot(rs, assembly_id, ballot_id)
         path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
         return self.send_file(rs, path=path, inline=False,
-                              filename=rs.gettext("result.json"))
+                              filename="result.json")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("moniker", "restrictive_identifier"), ("description", "str"))
