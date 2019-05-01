@@ -18,6 +18,14 @@
     </h1>
 {% endblock %}
 {% block content %}
+    {% if ambience['event']['use_questionnaire'] %}
+        <div class="alert alert-info">
+             {{ util.make_icon('info-sign') }}
+             {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("here")) -%}
+            	The questionnaire can be filled in {{ link }}.
+            {%- endtrans %}
+        </div>
+    {% endif %}
     {% if not registration['payment'] %}
         <h3 class="heading-underline">{% trans -%}Bank Transfer{%- endtrans %}</h3>
         <p>
