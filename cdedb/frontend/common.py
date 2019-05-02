@@ -1320,9 +1320,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             self.logger.info("Invoking {}".format(args))
             subprocess.check_call(args, stdout=subprocess.DEVNULL,
                                   cwd=str(tmp_dir))
+            if tex_file_name.endswith('.tex'):
+                tex_file = "{}.tar.gz".format(tex_file_name[:-4])
+            else:
+                tex_file = "{}.tar.gz".format(tex_file_name)
             return self.send_file(
                 rs, path=target, inline=False,
-                filename="{}.tar.gz".format(work_dir_name))
+                filename=tex_file)
         else:
             work_dir = pathlib.Path(tmp_dir, work_dir_name)
             if tex_file_name.endswith('.tex'):

@@ -123,12 +123,12 @@ class MlFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields)
                     return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename="result.csv")
+                        filename="user_search_result.csv")
                 elif download == "json":
                     json_data = query_result_to_json(result, fields)
                     return self.send_file(
                         rs, data=json_data, inline=False,
-                        filename="result.json")
+                        filename="user_search_result.json")
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)

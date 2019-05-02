@@ -182,13 +182,13 @@ class EventFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename="result.csv")
+                        filename="user_search_result.csv")
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)
                     return self.send_file(
                         rs, data=json_data, inline=False,
-                        filename="result.json")
+                        filename="user_search_result.json")
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -1800,7 +1800,7 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
-            with open_utf8(work_dir / "nametags.tex", 'w') as f:
+            with open_utf8(work_dir / "{}_nametags.tex".format(rs.ambience['event']['shortname']), 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
@@ -1815,7 +1815,7 @@ class EventFrontend(AbstractUserFrontend):
                 shutil_copy(src, work_dir / "logo-{}.png".format(course_id))
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                "nametags.tex", runs)
+                "{}_nametags.tex".format(rs.ambience['event']['shortname']), runs)
             if file:
                 return file
             else:
@@ -1930,7 +1930,7 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
-            with open_utf8(work_dir / "course_lists.tex", 'w') as f:
+            with open_utf8(work_dir / "{}_course_lists.tex".format(rs.ambience['event']['shortname']), 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
@@ -1947,7 +1947,7 @@ class EventFrontend(AbstractUserFrontend):
                     shutil_copy(src, dest)
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                "course_lists.tex", runs)
+                "{}_course_lists.tex".format(rs.ambience['event']['shortname']), runs)
             if file:
                 return file
             else:
@@ -1974,7 +1974,7 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
-            with open_utf8(work_dir / "lodgement_lists.tex", 'w') as f:
+            with open_utf8(work_dir / "{}_lodgement_lists.tex".format(rs.ambience['event']['shortname']), 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
@@ -1984,7 +1984,7 @@ class EventFrontend(AbstractUserFrontend):
             shutil_copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                "lodgement_lists.tex", runs)
+                "{}_lodgement_lists.tex".format(rs.ambience['event']['shortname']), runs)
             if file:
                 return file
             else:
