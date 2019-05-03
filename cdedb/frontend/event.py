@@ -2424,7 +2424,7 @@ class EventFrontend(AbstractUserFrontend):
 
         subject = "[CdE] Anmeldung für {}".format(rs.ambience['event']['title'])
         reply_to = (rs.ambience['event']['orga_address'] or
-                    self.confEVENT_ADMIN_ADDRESS)
+                    self.conf.EVENT_ADMIN_ADDRESS)
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
