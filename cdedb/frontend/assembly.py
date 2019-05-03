@@ -686,7 +686,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_ballot(rs, assembly_id, ballot_id)
         path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
         return self.send_file(rs, path=path, inline=False,
-                              filename="result.json")
+                              filename="ballot_{}_result.json".format(ballot_id))
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("moniker", "restrictive_identifier"), ("description", "str"))
