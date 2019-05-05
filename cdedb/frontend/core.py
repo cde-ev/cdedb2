@@ -18,7 +18,7 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
-    csv_output, query_result_to_json, enum_entries_filter)
+    csv_output, query_result_to_json, enum_entries_filter, periodic)
 from cdedb.common import (
     n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
     now, merge_dicts, ArchiveError, open_utf8, implied_realms,
@@ -1494,17 +1494,33 @@ class CoreFrontend(AbstractFrontend):
                        "You will be notified by mail."))
         if not code:
             return self.redirect(rs, "core/genesis_request_form")
-        notify = self.conf.MANAGEMENT_ADDRESS
-        if realm == "event":
-            notify = self.conf.EVENT_ADMIN_ADDRESS
-        if realm == "ml":
-            notify = self.conf.ML_ADMIN_ADDRESS
-        self.do_mail(
-            rs, "genesis_request",
-            {'To': (notify,),
-             'Subject': "CdEDB Accountanfrage verifizieren",
-             })
         return self.redirect(rs, "core/index")
+
+    @periodic("genesis_remind")
+    def genesis_remind(self, rs, store):
+        ret = {
+            'reminded': {},
+        }
+        data = self.coreproxy.genesis_list_cases(
+            rs, stati=(const.GenesisStati.to_review,))
+        cutoff = now().timestamp() - 24*60*60
+        remind = False
+        memory = store.get('reminded', {})
+        for id in data:
+            if str(id) not in memory or memory[str(id)] < cutoff:
+                remind = True
+            if str(id) in memory:
+                ret['remind'][str(id)] = memory[str(id)]
+        if remind:
+            # FIXME this needs a new email template
+            self.do_mail(
+                rs, "genesis_request",
+                {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                 'Subject': "CdEDB Accountanfrage verifizieren",
+                 })
+            tstamp = now().timestamp()
+            ret['remind'] = {id: tstamp for id in data}
+        return ret
 
     @access("core_admin", "event_admin", "ml_admin")
     def genesis_list_cases(self, rs):
@@ -1769,3 +1785,9 @@ class CoreFrontend(AbstractFrontend):
             rawtext = f.read()
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
         return self.render(rs, "debug_email", {'emailtext': emailtext})
+
+    def get_cron_store(self, rs, name):
+        return self.coreproxy.get_cron_store(rs, name)
+
+    def set_cron_store(self, rs, name, data):
+        return self.coreproxy.set_cron_store(rs, name, data)

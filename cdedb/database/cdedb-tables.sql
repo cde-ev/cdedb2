@@ -316,6 +316,15 @@ GRANT UPDATE (change_status) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
+CREATE TABLE core.cron_store
+(
+        id                      serial PRIMARY KEY,
+        moniker                 varchar NOT NULL UNIQUE,
+        store                   jsonb NOT NULL
+);
+GRANT SELECT, UPDATE ON core.cron_store_id_seq TO cdb_admin;
+GRANT INSERT, SELECT, UPDATE ON core.cron_store TO cdb_admin;
+
 ---
 --- SCHEMA cde
 ---

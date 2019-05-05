@@ -1534,6 +1534,28 @@ def access(*roles, modi=None, check_anti_csrf=None):
     return decorator
 
 
+def periodic(name, period=1):
+    """This decorator marks a function of a frontend for periodic execution.
+
+    This just adds a flag and all of the actual work is done by the
+    CronFrontend.
+
+    :type name: str
+    :param name: the name of this job
+    :type period: int
+    :param period: the interval in which to execute this job (e.g. period ==
+      2 means every second invocation of the CronFrontend)
+    """
+    def decorator(fun):
+        fun.cron = {
+            'name': name,
+            'period': period,
+        }
+        return fun
+
+    return decorator
+
+
 def cdedburl(rs, endpoint, params=None, force_external=False,
              magic_placeholders=None):
     """Construct an HTTP URL.
