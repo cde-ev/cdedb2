@@ -11,7 +11,6 @@ import pytz
 import re
 import unittest
 import subprocess
-import tempfile
 import webtest
 
 from cdedb.config import BasicConfig, SecretsConfig

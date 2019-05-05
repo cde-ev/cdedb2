@@ -18,7 +18,7 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
-    csv_output, query_result_to_json, enum_entries_filter)
+    csv_output, query_result_to_json, enum_entries_filter, periodic)
 from cdedb.common import (
     n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
     now, merge_dicts, ArchiveError, open_utf8, implied_realms,
@@ -1494,17 +1494,36 @@ class CoreFrontend(AbstractFrontend):
                        "You will be notified by mail."))
         if not code:
             return self.redirect(rs, "core/genesis_request_form")
-        notify = self.conf.MANAGEMENT_ADDRESS
-        if realm == "event":
-            notify = self.conf.EVENT_ADMIN_ADDRESS
-        if realm == "ml":
-            notify = self.conf.ML_ADMIN_ADDRESS
-        self.do_mail(
-            rs, "genesis_request",
-            {'To': (notify,),
-             'Subject': "CdEDB Accountanfrage verifizieren",
-             })
         return self.redirect(rs, "core/index")
+
+    @periodic("genesis_remind")
+    def genesis_remind(self, rs, store):
+        """Cron job for genesis cases to review.
+
+        Send a reminder after four hours and then daily.
+        """
+        current = now()
+        data = self.coreproxy.genesis_list_cases(
+            rs, stati=(const.GenesisStati.to_review,))
+        old = set(store.get('ids', [])) & set(data)
+        new = set(data) - set(old)
+        remind = False
+        if any(data[id]['ctime'] + datetime.timedelta(hours=4) < current
+               for id in new):
+            remind = True
+        if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
+            remind = True
+        if remind:
+            self.do_mail(
+                rs, "genesis_request",
+                {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                 'Subject': "CdEDB Accountanfrage verifizieren"},
+                {'count': len(data)})
+            store = {
+                'tstamp': current.timestamp(),
+                'ids': list(data),
+            }
+        return store
 
     @access("core_admin", "event_admin", "ml_admin")
     def genesis_list_cases(self, rs):
@@ -1769,3 +1788,9 @@ class CoreFrontend(AbstractFrontend):
             rawtext = f.read()
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
         return self.render(rs, "debug_email", {'emailtext': emailtext})
+
+    def get_cron_store(self, rs, name):
+        return self.coreproxy.get_cron_store(rs, name)
+
+    def set_cron_store(self, rs, name, data):
+        return self.coreproxy.set_cron_store(rs, name, data)
