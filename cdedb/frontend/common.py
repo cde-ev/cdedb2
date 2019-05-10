@@ -1004,11 +1004,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 "We have is_multithreaded={}; is_multiprocess={};",
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
                 "method={} ; remote_addr={} ; values={}, ambience={},",
-                "errors={}").format(
+                "errors={}, time={}").format(
                 rs.request.is_multithread, rs.request.is_multiprocess,
                 rs.request.base_url, rs.request.cookies, rs.request.url,
                 rs.request.is_secure, rs.request.method,
-                rs.request.remote_addr, rs.values, rs.ambience, rs.errors)
+                rs.request.remote_addr, rs.values, rs.ambience, rs.errors,
+                now())
             params['debugstring'] = debugstring
         if rs.errors and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
