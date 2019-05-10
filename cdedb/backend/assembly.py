@@ -1027,7 +1027,7 @@ class AssemblyBackend(AbstractBackend):
                 x['moniker'] for x in ballot['candidates'].values())
             if ballot['use_bar']:
                 monikers += (ASSEMBLY_BAR_MONIKER,)
-            result = schulze_evaluate({e['vote'] for e in votes}, monikers)
+            result = schulze_evaluate([e['vote'] for e in votes], monikers)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
