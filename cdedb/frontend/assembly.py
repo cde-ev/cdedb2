@@ -554,6 +554,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         split_vote = None
         if vote:
             split_vote = tuple(x.split('=') for x in vote.split('>'))
+        voted = bool(vote)
         if ballot['votes']:
             if split_vote:
                 if len(split_vote) == 1:
@@ -565,8 +566,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             if result:
                 counts = {e['moniker']: 0
                           for e in ballot['candidates'].values()}
-                for vote in result['votes']:
-                    raw = vote['vote']
+                for v in result['votes']:
+                    raw = v['vote']
                     if '>' in raw:
                         selected = raw.split('>')[0].split('=')
                         for s in selected:
@@ -579,9 +580,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
                 "bar (options below this are declined)")
         return self.render(rs, "show_ballot", {
-            'attachments': attachments, 'split_vote': split_vote, 'voted': vote,
-            'result': result, 'candidates': candidates, 'attends': attends,
-            'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER})
+            'attachments': attachments, 'split_vote': split_vote,
+            'voted': voted, 'result': result, 'candidates': candidates,
+            'attends': attends, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER})
 
     @access("assembly_admin")
     def change_ballot_form(self, rs, assembly_id, ballot_id):
