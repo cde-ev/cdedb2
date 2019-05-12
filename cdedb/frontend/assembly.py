@@ -550,10 +550,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         own_vote = None
         if attends:
             own_vote = self.assemblyproxy.get_vote(rs, ballot_id, secret=None)
-        merge_dicts(rs.values, {'vote': vote})
+        merge_dicts(rs.values, {'vote': own_vote})
         split_vote = None
         if own_vote:
-            split_vote = tuple(x.split('=') for x in vote.split('>'))
+            split_vote = tuple(x.split('=') for x in own_vote.split('>'))
         if ballot['votes']:
             if split_vote:
                 if len(split_vote) == 1:
