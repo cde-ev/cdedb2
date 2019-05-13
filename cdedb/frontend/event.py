@@ -207,8 +207,9 @@ class EventFrontend(AbstractUserFrontend):
     def show_event(self, rs, event_id):
         """Display event organized via DB."""
         params = {}
-        params['orgas'] = self.coreproxy.get_personas(
-            rs, rs.ambience['event']['orgas'])
+        params['orgas'] = [(e['id'], e) for e in sorted(
+            self.coreproxy.get_personas(
+                rs, rs.ambience['event']['orgas']).values(), key=name_key)]
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (self.conf.STORAGE_DIR / 'minor_form'

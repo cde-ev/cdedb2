@@ -62,7 +62,7 @@
         {% endif %}
         <dt>{% trans -%}Orgas{%- endtrans %}</dt>
         <dd>
-            {% for anid, entry in orgas|dictsort %}
+            {% for anid, entry in orgas %} {# This is already sorted. #}
                 {{util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
@@ -101,7 +101,7 @@
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title="Orgas", icon='user') %}
                 <ul>
-                    {% for anid, entry in orgas|dictsort %}
+                    {% for anid, entry in orgas %} {# This is already sorted. #}
                         <li>
                             {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
                             {% if is_admin or anid != user.persona_id %}
