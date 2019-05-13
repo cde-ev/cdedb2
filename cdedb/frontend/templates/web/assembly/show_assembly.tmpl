@@ -52,7 +52,7 @@
                 <div class="col-sm-6">
                     <h4>{% trans -%}General Files{%- endtrans %}</h4>
                     <ul class="slim">
-                        {% for attachment_id, attachment in attachments|dictsort %}
+                        {% for attachment_id, attachment in attachments|xdictsort("title") %}
                             <li>
                                 {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                         attachment['title']) }}
