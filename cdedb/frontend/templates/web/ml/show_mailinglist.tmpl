@@ -53,8 +53,8 @@
         <dd>{{ util.href('mailto:' + ambience['mailinglist']['address'], ambience['mailinglist']['address']) }}</dd>
         <dt>{% trans -%}Moderators{%- endtrans %}</dt>
         <dd>
-            {% for moderator in ambience['mailinglist']['moderators'] %}
-                {{ util.persona_anchor(personas[moderator]) }}{% if not loop.last %},{% endif %}
+            {% for moderator, persona in moderators %} {# This is already sorted. #}
+                {{ util.persona_anchor(persona) }}{% if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
     </dl>
