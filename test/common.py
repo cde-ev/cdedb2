@@ -6,22 +6,18 @@ import email.parser
 import email.policy
 import functools
 import gettext
-import inspect
 import pathlib
 import pytz
-import quopri
 import re
 import unittest
 import subprocess
-import sys
-import time
+import tempfile
 import webtest
 
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.frontend.application import Application
 from cdedb.common import (
-    do_singularization, ProxyShim, extract_roles, RequestState, User,
-    roles_to_db_role, PrivilegeError, open_utf8)
+    ProxyShim, RequestState, roles_to_db_role, PrivilegeError, open_utf8, glue)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.cde import CdEBackend
@@ -52,7 +48,7 @@ class NearlyNow(datetime.datetime):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    
+
 def nearly_now():
     """Create a NearlyNow."""
     now = datetime.datetime.now(pytz.utc)
@@ -113,9 +109,9 @@ class BackendShim(ProxyShim):
         if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
             rs.user.orga = self._backend.orga_info(rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(self._backend, "moderator_info"):
-            rs.user.moderator = self._backend.moderator_info(rs, rs.user.persona_id)
+            rs.user.moderator = self._backend.moderator_info(
+                rs, rs.user.persona_id)
         return rs
-
 
     def _wrapit(self, fun):
         """
@@ -128,6 +124,7 @@ class BackendShim(ProxyShim):
                 access_list = fun.internal_access_list
             else:
                 raise
+
         @functools.wraps(fun)
         def new_fun(key, *args, **kwargs):
             rs = self._setup_requeststate(key)
@@ -136,6 +133,7 @@ class BackendShim(ProxyShim):
             else:
                 raise PrivilegeError("Not in access list.")
         return new_fun
+
 
 class BackendUsingTest(unittest.TestCase):
     used_backends = None
@@ -157,21 +155,26 @@ class BackendUsingTest(unittest.TestCase):
         }
         for backend in cls.used_backends:
             if backend == "session":
-                setattr(cls, backend, cls.initialize_raw_backend(classes[backend]))
+                setattr(cls, backend,
+                        cls.initialize_raw_backend(classes[backend]))
             else:
                 setattr(cls, backend, cls.initialize_backend(classes[backend]))
 
     def setUp(self):
-        subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call(("make", "sample-data-test-shallow"),
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
 
     @staticmethod
     def initialize_raw_backend(backendcls):
-        return backendcls(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
+        return backendcls(_BASICCONF.REPOSITORY_PATH
+                          / _BASICCONF.TESTCONFIG_PATH)
 
     @staticmethod
     def initialize_backend(backendcls):
         return BackendShim(BackendUsingTest.initialize_raw_backend(backendcls),
                            internal=True)
+
 
 class BackendTest(BackendUsingTest):
     used_backends = ("core",)
@@ -181,8 +184,10 @@ class BackendTest(BackendUsingTest):
         self.key = None
 
     def login(self, user, ip="127.0.0.0"):
-        self.key = self.core.login(None, user['username'], user['password'], ip)
+        self.key = self.core.login(None, user['username'], user['password'],
+                                   ip)
         return self.key
+
 
 USER_DICT = {
     "anton": {
@@ -295,6 +300,7 @@ USER_DICT = {
     },
 }
 
+
 def as_users(*users):
     def wrapper(fun):
         @functools.wraps(fun)
@@ -309,6 +315,28 @@ def as_users(*users):
         return new_fun
     return wrapper
 
+
+def prepsql(sql):
+    def decorator(fun):
+        @functools.wraps(fun)
+        def new_fun(*args, **kwargs):
+            execsql(sql)
+            return fun(*args, **kwargs)
+        return new_fun
+    return decorator
+
+
+def execsql(sql):
+    path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
+    chmod = ("chmod", "0644")
+    psql = ("sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb_test", "-f")
+    null = subprocess.DEVNULL
+    with open_utf8(path, "w") as f:
+        f.write(sql)
+    subprocess.check_call(chmod + (str(path),), stdout=null, stderr=null)
+    subprocess.check_call(psql + (str(path),), stdout=null, stderr=null)
+
+
 class FrontendTest(unittest.TestCase):
     lock_file = None
 
@@ -318,21 +346,27 @@ class FrontendTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = Application(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
+        app = Application(_BASICCONF.REPOSITORY_PATH
+                          / _BASICCONF.TESTCONFIG_PATH)
         cls.app = webtest.TestApp(app, extra_environ={
             'REMOTE_ADDR': "127.0.0.0",
             'SERVER_PROTOCOL': "HTTP/1.1",
             'wsgi.url_scheme': 'https'})
 
     def setUp(self):
-        subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call(("make", "sample-data-test-shallow"),
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
         self.app.reset()
         self.response = None
 
     def basic_validate(self):
         if b"cgitb" in self.response.body:
-            # This is a manual implementation of assertNotIn() to make the test output less verbose on failure.
-            raise AssertionError("Found 'cgitb' in response body. A Python Exception seems to have occured.")
+            # This is a manual implementation of assertNotIn() to make the
+            # test output less verbose on failure.
+            raise AssertionError(glue(
+                "Found 'cgitb' in response body.",
+                "A Python Exception seems to have occured."))
         if self.response.content_type == "text/html":
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
@@ -371,7 +405,7 @@ class FrontendTest(unittest.TestCase):
         self.follow()
         self.basic_validate()
         if method == "POST" and check_notification:
-            ## check that we acknowledged the POST with a notification
+            # check that we acknowledged the POST with a notification
             self.assertIn("alert alert-success", self.response.text)
 
     def traverse(self, *links):
@@ -400,7 +434,8 @@ class FrontendTest(unittest.TestCase):
         f['phrase'] = u["DB-ID"]
         self.submit(f)
         if check:
-            self.assertTitle("{} {}".format(u['given_names'], u['family_name']))
+            self.assertTitle("{} {}".format(u['given_names'],
+                                            u['family_name']))
 
     def realm_admin_view_profile(self, user, realm):
         u = USER_DICT[user]
@@ -415,12 +450,15 @@ class FrontendTest(unittest.TestCase):
         self.traverse({'description': 'Profil'})
 
     def fetch_mail(self):
-        elements = self.response.lxml.xpath("//div[@class='alert alert-info']/span/text()")
+        elements = self.response.lxml.xpath(
+            "//div[@class='alert alert-info']/span/text()")
+
         def _extract_path(s):
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
             ret = re.match(regex, s).group(1)
             return ret
-        mails = [_extract_path(x) for x in elements if x.startswith("E-Mail als ")]
+        mails = [_extract_path(x)
+                 for x in elements if x.startswith("E-Mail als ")]
         ret = []
         for path in mails:
             with open_utf8(path) as f:
@@ -438,7 +476,8 @@ class FrontendTest(unittest.TestCase):
         return ret
 
     def assertTitle(self, title):
-        components = tuple(x.strip() for x in self.response.lxml.xpath('/html/head/title/text()'))
+        components = tuple(x.strip() for x in self.response.lxml.xpath(
+            '/html/head/title/text()'))
         self.assertEqual("CdEDB –", components[0][:7])
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
         self.assertEqual(title.strip(), normalized)

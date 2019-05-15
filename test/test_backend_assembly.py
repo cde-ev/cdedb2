@@ -6,10 +6,11 @@ import time
 
 import pytz
 
-from test.common import BackendTest, as_users, USER_DICT, nearly_now
+from test.common import BackendTest, as_users, USER_DICT, nearly_now, prepsql
 from cdedb.query import QUERY_SPECS, QueryOperators
 from cdedb.common import PrivilegeError, FUTURE_TIMESTAMP, now
 import cdedb.database.constants as const
+
 
 class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
@@ -424,6 +425,19 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.remove_attachment(self.key, 1))
         expectation = {2: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
+
+    @as_users("anton")
+    @prepsql("""INSERT INTO assembly.assemblies
+        (id, title, description, mail_address, signup_end) VALUES
+        (2, 'Umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
+         date '2111-11-11');""")
+    def test_prepsql(self, user):
+        expectation = {
+            1: {'id': 1, 'is_active': True,
+                'title': 'Internationaler Kongress'},
+            2: {'id': 2, 'is_active': True, 'title': 'Umfrage'}
+        }
+        self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 
     @as_users("anton")
     def test_log(self, user):
