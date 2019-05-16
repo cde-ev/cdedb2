@@ -889,7 +889,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'safe_ngettext': safe_ngettext,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
-            'request_url': rs.request.url,
+            'original_request': rs.request,
             'show_user_link': _show_user_link,
             'user': rs.user,
             'values': rs.values,

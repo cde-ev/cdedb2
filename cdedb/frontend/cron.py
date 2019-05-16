@@ -13,6 +13,8 @@ import json
 import pathlib
 import sys
 
+import werkzeug.wrappers
+
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
@@ -57,20 +59,6 @@ class CronFrontend(BaseApp):
                 raise RuntimeError(n_("Refusing to start in debug mode."))
 
         self.core = CoreFrontend(configpath)
-        rs = self.make_request_state()
-        self.state = self.core.get_cron_store(rs, "_base")
-        if not self.state:
-            self.state = {
-                'tstamp': 0,
-                'period': -1,
-            }
-        if self.state['tstamp'] + 10*60 > now().timestamp():
-            print("Last execution at {} skipping this round.".format(
-                self.state['tstamp']))
-            sys.exit()
-        self.state['tstamp'] = now().timestamp()
-        self.state['period'] += 1
-
         self.cde = CdEFrontend(configpath)
         self.event = EventFrontend(configpath)
         self.assembly = AssemblyFrontend(configpath)
@@ -94,8 +82,9 @@ class CronFrontend(BaseApp):
             "decode_notification": self.decode_notification,
         }
         urls = self.urlmap.bind("db.cde-ev.de")
+        request = werkzeug.wrappers.Request
         rs = RequestState(
-            None, user, None, None, [], urls, None,
+            None, user, None, None, [], urls, {},
             self.urlmap, [], {}, lang,
             self.translations[lang].gettext,
             self.translations[lang].ngettext, coders, None,
@@ -109,6 +98,19 @@ class CronFrontend(BaseApp):
         :type jobs: [str]
         """
         rs = self.make_request_state()
+        base_state = self.core.get_cron_store(rs, "_base")
+        if not base_state:
+            base_state = {
+                'tstamp': 0,
+                'period': -1,
+            }
+        if base_state['tstamp'] + 10*60 > now().timestamp():
+            print("Last execution at {} skipping this round.".format(
+                base_state['tstamp']))
+            return False
+        base_state['tstamp'] = now().timestamp()
+        base_state['period'] += 1
+
         banner = glue(">>>\n>>>\n>>>\n>>> Exception while executing {}",
                       "<<<\n<<<\n<<<\n<<<")
         try:
@@ -117,7 +119,7 @@ class CronFrontend(BaseApp):
                 for hook in self.find_periodics(frontend):
                     if jobs and hook.cron['name'] not in jobs:
                         continue
-                    if self.state['period'] % hook.cron['period'] == 0:
+                    if base_state['period'] % hook.cron['period'] == 0:
                         rs.begin = now()
                         state = self.core.get_cron_store(rs, hook.cron['name'])
                         try:
@@ -128,9 +130,12 @@ class CronFrontend(BaseApp):
                             self.logger.error("SECOND TRY CGITB")
                             self.logger.error(cgitb.text(sys.exc_info(),
                                                          context=7))
-                        self.core.set_cron_store(rs, hook.cron['name'], tmp)
+                        else:
+                            self.core.set_cron_store(rs, hook.cron['name'],
+                                                     tmp)
         finally:
-            self.core.set_cron_store(rs, "_base", self.state)
+            self.core.set_cron_store(rs, "_base", base_state)
+        return True
 
     @staticmethod
     def find_periodics(frontend):
