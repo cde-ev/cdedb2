@@ -51,7 +51,7 @@
             \vspace{\fill}
             \begin{minipage}[t]{\textwidth}
                 <<% if course_room_field -%>>
-                    Kursraum: <<< course['fields'].get(course_room_field, "") >>>
+                    Kursraum: <<< course['fields'].get(course_room_field, "")|te >>>
                 <<%- endif %>>
             \end{minipage}
             \clearpage

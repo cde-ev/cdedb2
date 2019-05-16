@@ -1890,7 +1890,8 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas})
-        file = self.serve_latex_document(rs, tex, "{}_lodgement_puzzle".format(rs.ambience['event']['shortname']), runs)
+        file = self.serve_latex_document(rs, tex, "{}_lodgement_puzzle".format(
+            rs.ambience['event']['shortname']), runs)
         if file:
             return file
         else:
