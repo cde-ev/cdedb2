@@ -175,7 +175,7 @@ class TestEventFrontend(FrontendTest):
     def test_orga_rate_limit(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
-        for i in range(7):
+        for i in range(11):
             self.assertTitle("Große Testakademie 2222")
             self.assertNonPresence("Bertålotta")
             f = self.response.forms['addorgaform']
