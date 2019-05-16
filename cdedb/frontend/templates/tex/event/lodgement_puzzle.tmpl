@@ -36,14 +36,14 @@
                      <<< personas[registration['persona_id']]['birthday'].year|te >>>%
                      <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>
                         ~[Gast]
-                     <<%- endif %>>}
+                     <<%- endif %>>}%
                     {<<% if not registration['mixed_lodging'] %>>getrennt<<% endif %>>}%
                     {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
                     {<<% if ambience['event']['reserve_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
                         Isomatte
-                     <<%- endif %>>}
+                     <<%- endif %>>}%
                     {<<% if ambience['event']['lodge_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
                         Wunsch: <<< registration['fields'].get(ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>\par
                      <<% endif -%>>}
