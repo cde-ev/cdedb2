@@ -1885,6 +1885,9 @@ class EventFrontend(AbstractUserFrontend):
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
                 event['begin'])
+        key = lambda id: personas[registrations[id]['persona_id']]['birthday']
+        registrations = OrderedDict(
+            (id, registrations[id]) for id in sorted(registrations, key=key))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
