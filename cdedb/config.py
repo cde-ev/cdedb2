@@ -334,7 +334,7 @@ _DEFAULTS = {
     ),
     # Rate limit for orgas adding persons to their event
     # number of persons per day
-    "ORGA_ADD_LIMIT": 6,
+    "ORGA_ADD_LIMIT": 10,
 
     #
     # past event stuff
