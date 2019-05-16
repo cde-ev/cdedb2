@@ -32,10 +32,11 @@
             <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %>>
                 \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
                              <<< personas[registration['persona_id']]['family_name']|te >>>}%
-                    {<<< part['title']|te >>>%
+                    {<<% if ambience['event']['parts']|length > 1 %>><<< part['title']|te >>>; <<% endif %>>%
+                     <<< personas[registration['persona_id']]['birthday'].year|te >>>%
                      <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>
                         ~[Gast]
-                     <<%- endif %>>; <<< personas[registration['persona_id']]['birthday'].year|te >>>}%
+                     <<%- endif %>>}
                     {<<% if not registration['mixed_lodging'] %>>getrennt<<% endif %>>}%
                     {<<% if registration['age'] == enums['AgeClasses'].u16 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
