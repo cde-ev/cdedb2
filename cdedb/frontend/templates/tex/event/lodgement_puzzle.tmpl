@@ -38,7 +38,7 @@
                         ~[Gast]
                      <<%- endif %>>}
                     {<<% if not registration['mixed_lodging'] %>>getrennt<<% endif %>>}%
-                    {<<% if registration['age'] == enums['AgeClasses'].u16 %>>U18<<% endif -%>>
+                    {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
                     {<<% if ambience['event']['reserve_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
