@@ -1515,9 +1515,9 @@ class CoreFrontend(AbstractFrontend):
             remind = True
         if remind:
             self.do_mail(
-                rs, "genesis_request",
+                rs, "genesis_requests_pending",
                 {'To': (self.conf.MANAGEMENT_ADDRESS,),
-                 'Subject': "CdEDB Accountanfrage verifizieren"},
+                 'Subject': "Offene CdEDB Accountanfragen"},
                 {'count': len(data)})
             store = {
                 'tstamp': current.timestamp(),

@@ -504,10 +504,11 @@ class FrontendTest(unittest.TestCase):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
 
+
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])
 MailTrace = collections.namedtuple(
     "MailTrace", ['realm', 'template', 'args', 'kwargs'])
-        
+
 
 class CronTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -541,7 +542,7 @@ class CronTest(unittest.TestCase):
                          self.cron.assembly, self.cron.ml):
             original_do_mail = frontend.do_mail
 
-            def latebindinghack(original_fun=original_do_mail front=frontend):
+            def latebindinghack(original_fun=original_do_mail, front=frontend):
                 @functools.wraps(original_fun)
                 def new_do_mail(self_, rs, name, *args, **kwargs):
                     self.mails.append(MailTrace(front.realm, name, args,
@@ -551,11 +552,10 @@ class CronTest(unittest.TestCase):
 
             frontend.do_mail = types.MethodType(latebindinghack(), frontend)
 
-    def run(self, *args, check_stores=True):
+    def execute(self, *args, check_stores=True):
         if not args:
             raise ValueError("Must specify jobs to run.")
         self.cron.execute(args)
         if check_stores:
             expectation = set(args) | {"_base"}
             self.assertEqual(expectation, set(s.cron for s in self.stores))
-        
