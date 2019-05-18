@@ -1514,9 +1514,18 @@ class CoreFrontend(AbstractFrontend):
         if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
             remind = True
         if remind:
+            event_count = len(self.coreproxy.genesis_list_cases(
+                rs, stati=(const.GenesisStati.to_review,), realms=["event"]))
+            ml_count = len(self.coreproxy.genesis_list_cases(
+                rs, stati=(const.GenesisStati.to_review,), realms=["ml"]))
+            notify = {self.conf.MANAGEMENT_ADDRESS}
+            if event_count:
+                notify |= {self.conf.EVENT_ADMIN_ADDRESS}
+            if ml_count:
+                notify |= {self.conf.ML_ADMIN_ADDRESS}
             self.do_mail(
                 rs, "genesis_requests_pending",
-                {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                {'To': tuple(notify),
                  'Subject': "Offene CdEDB Accountanfragen"},
                 {'count': len(data)})
             store = {
