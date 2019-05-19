@@ -8,6 +8,7 @@ provided exported event. The VM is then put into offline mode.
 
 import argparse
 import collections
+import copy
 import json
 import pathlib
 import subprocess
@@ -26,6 +27,7 @@ DEFAULTS = {
         'is_event_realm': True,
         'is_searchable': False,
         'is_active': True,
+        'balance': 0,
         'birth_name': None,
         'address_supplement2': None,
         'address2': None,
@@ -46,6 +48,7 @@ DEFAULTS = {
     }
 }
 
+
 def populate_table(cur, table, data):
     """Insert the passed data into the DB.
 
@@ -53,7 +56,7 @@ def populate_table(cur, table, data):
     :type table: str
     :type data: {str: object}
     """
-    for entry in data:
+    for entry in data.values():
         if table in DEFAULTS:
             entry = {**DEFAULTS[table], **entry}
         for k, v in entry.items():
@@ -68,6 +71,20 @@ def populate_table(cur, table, data):
         params = tuple(entry[key] for key in keys)
         cur.execute(query, params)
 
+
+def make_institution(cur, institution_id):
+    query = """INSERT INTO past_event.institutions (id, title, moniker)
+               VALUES (%s, %s, %s)"""
+    params = (institution_id, 'Veranstaltungsservice', 'CdE')
+    cur.execute(query, params)
+
+
+def make_meta_info(cur):
+    query = """INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb)"""
+    params = tuple()
+    cur.execute(query, params)
+
+
 def work(args):
     print("Loading exported event")
     with open(args.data_path, encoding='UTF-8') as infile:
@@ -76,7 +93,7 @@ def work(args):
     if data["CDEDB_EXPORT_EVENT_VERSION"] != 1:
         raise RuntimeError("Version mismatch -- aborting.")
     print("Found data for event '{}' exported {}.".format(
-        data['event.events'][0]['title'], data['timestamp']))
+        data['event.events'][str(data['id'])]['title'], data['timestamp']))
 
     print("Clean current instance")
     if input("Are you sure (type uppercase YES)? ").strip() != "YES":
@@ -87,9 +104,17 @@ def work(args):
         ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-f",
          str(clean_script)], stderr=subprocess.DEVNULL)
 
+    # Fix uneditable table
+    subprocess.check_call(
+        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
+         """GRANT SELECT, INSERT, UPDATE ON core.meta_info TO cdb_anonymous;
+            GRANT SELECT, UPDATE ON core.meta_info_id_seq TO cdb_anonymous;
+            INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb);"""],
+        stderr=subprocess.DEVNULL)
+    
     print("Connect to database")
     connection_string = "dbname={} user={} password={} port={}".format(
-        'cdb', 'cdb', '987654321098765432109876543210', 5432)
+        'cdb', 'cdb_admin', '9876543210abcdefghijklmnopqrst', 5432)
     conn = psycopg2.connect(connection_string,
                             cursor_factory=psycopg2.extras.RealDictCursor)
     conn.set_client_encoding("UTF8")
@@ -103,9 +128,18 @@ def work(args):
         'event.course_choices', 'event.questionnaire_rows')
     with conn as con:
         with con.cursor() as cur:
+            make_institution(
+                cur, data['event.events'][str(data['id'])]['institution'])
+            make_meta_info(cur)
             for table in tables:
                 print("Populating table {}".format(table))
-                populate_table(cur, table, data[table])
+                values = copy.deepcopy(data[table])
+                # Prevent forward references
+                if table == 'event.events':
+                    for key in ('lodge_field', 'reserve_field',
+                                'course_room_field'):
+                        values[str(data['id'])][key] = None
+                populate_table(cur, table, values)
 
     print("Enabling offline mode")
     config_path = args.repopath / "cdedb/localconfig.py"
