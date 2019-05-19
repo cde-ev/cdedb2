@@ -193,6 +193,6 @@ unlocking the event via the corresponding button on the event overview
 page. This overwrites all data of your event in the online instance with
 data from the offline VM (potentially deleting things).
 
-You can test the offline deployment without locking the online instance and
-then directly scrapping your offline test instance to see whether there are
-any pitfalls.
+.. note:: You can test the offline deployment to see whether there are any
+   pitfalls. Simply do not lock the online instance. You have to dispose of
+   your trial offline instance of course.
