@@ -7,7 +7,7 @@ provided exported event. The VM is then put into offline mode.
 """
 
 import argparse
-import collections
+import collections.abc
 import copy
 import json
 import pathlib
@@ -20,10 +20,14 @@ import psycopg2.extensions
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
-#: Add some default values for specific tables
+# This is 'secret' the hashed
+PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
+         "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/")
+
+# Add some default values for specific tables
 DEFAULTS = {
     'core.personas': {
-        'password_hash': '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/',
+        'password_hash': PHASH,
         'is_event_realm': True,
         'is_searchable': False,
         'is_active': True,
@@ -60,7 +64,7 @@ def populate_table(cur, table, data):
         if table in DEFAULTS:
             entry = {**DEFAULTS[table], **entry}
         for k, v in entry.items():
-            if isinstance(v, collections.Mapping):
+            if isinstance(v, collections.abc.Mapping):
                 # No special care for serialization needed, since the data
                 # comes from a json load operation
                 entry[k] = psycopg2.extras.Json(v)
@@ -85,6 +89,15 @@ def make_meta_info(cur):
     cur.execute(query, params)
 
 
+def update_event(cur, event):
+    query = """UPDATE event.events
+               SET (lodge_field, reserve_field, course_room_field)
+               = (%s, %s, %s)"""
+    params = (event['lodge_field'], event['reserve_field'],
+              event['course_room_field'])
+    cur.execute(query, params)
+
+
 def work(args):
     print("Loading exported event")
     with open(args.data_path, encoding='UTF-8') as infile:
@@ -92,6 +105,8 @@ def work(args):
 
     if data["CDEDB_EXPORT_EVENT_VERSION"] != 1:
         raise RuntimeError("Version mismatch -- aborting.")
+    if data["kind"] != "full":
+        raise RuntimeError("Not a full export -- aborting.")
     print("Found data for event '{}' exported {}.".format(
         data['event.events'][str(data['id'])]['title'], data['timestamp']))
 
@@ -111,7 +126,7 @@ def work(args):
             GRANT SELECT, UPDATE ON core.meta_info_id_seq TO cdb_anonymous;
             INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb);"""],
         stderr=subprocess.DEVNULL)
-    
+
     print("Connect to database")
     connection_string = "dbname={} user={} password={} port={}".format(
         'cdb', 'cdb_admin', '9876543210abcdefghijklmnopqrst', 5432)
@@ -121,7 +136,7 @@ def work(args):
 
     tables = (
         'core.personas', 'event.events', 'event.event_parts',
-        'event.courses', 'event.course_segments', 'event.course_tracks',
+        'event.courses', 'event.course_tracks', 'event.course_segments',
         'event.orgas', 'event.field_definitions', 'event.lodgements',
         'event.registrations', 'event.registration_parts',
         'event.registration_tracks',
@@ -140,6 +155,8 @@ def work(args):
                                 'course_room_field'):
                         values[str(data['id'])][key] = None
                 populate_table(cur, table, values)
+            # Fix forward references
+            update_event(cur, data['event.events'][str(data['id'])])
 
     print("Enabling offline mode")
     config_path = args.repopath / "cdedb/localconfig.py"
