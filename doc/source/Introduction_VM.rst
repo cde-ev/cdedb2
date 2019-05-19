@@ -162,18 +162,16 @@ pushed from ``cdedb2/`` to the server.
 Offline Usage
 -------------
 
-The following assumes that you successfully set up the VM (i.e. what
-is covered in the first four sections of this document until the
-development specific bits start).
+The following assumes that you successfully set up the VM (i.e. what is
+covered in the first four sections of this document until the development
+specific bits start). This will now guide you through the steps to make the
+VM suitable for offline usage during an event.
 
-Making the VM suitable for offline usage during an event now involves
-the following steps.
-
-First you have to export the event from the online instance thereby
-locking the online instance disabling further changes. For this point
-your browser at the event overview page and hit the corresponding
-button. This will download a JSON-file containing the data of the
-event. Store it safely.
+First you have to lock the event in the online instance disabling further
+changes. For this point your browser at the event overview page and hit the
+corresponding button. Then you export the event from the online instance by
+retrieving the corresponding download from the event's download page. This
+will result in a JSON-file containing the data of the event.
 
 Now copy this file via ``scp`` into the VM and run the offline
 initialization script inside the VM::
@@ -186,16 +184,15 @@ event.
 Now the VM is ready to be used for offline deployment. Access it via
 browser. For security reasons the VM does not contain your real login
 password. Everyone can log in with their normal username (i.e. their
-email address) and the password ``secret``.
+email address) and the fixed password ``secret``.
 
-After the event you export the data from the offline instance the same
-way you exported the online instance, receiving a JSON-file with the
-data of the offline instance. This file you upload into the online
-instance thereby unlocking the event. This overwrites all data of your
-event in the online instance with data from the offline VM
-(potentially deleting things).
+After the event you export the data from the offline instance the same way
+you exported the online instance, receiving a JSON-file with the data of the
+offline instance. This file you upload into the online instance thereby
+unlocking the event via the corresponding button on the event overview
+page. This overwrites all data of your event in the online instance with
+data from the offline VM (potentially deleting things).
 
-You can test the lock/unlock procedure by unlocking the online
-instance directly after locking it by uploading the file you just
-downloaded. This has no effect since the event data is replaced by
-itself.
+You can test the offline deployment without locking the online instance and
+then directly scrapping your offline test instance to see whether there are
+any pitfalls.
