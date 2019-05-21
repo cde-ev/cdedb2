@@ -260,6 +260,7 @@ _DEFAULTS = {
     "EVENT_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-event.log"),
     "ML_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-ml.log"),
     "ASSEMBLY_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-assembly.log"),
+    "CRON_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cron.log"),
 
     #################
     # Backend stuff #

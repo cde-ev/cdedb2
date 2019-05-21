@@ -6,7 +6,6 @@ import sys
 if __name__ == "__main__":
     name = None
     filename = None
-    exact_test = None
     if len(sys.argv) > 1 and sys.argv[1].startswith('test_'):
         name = sys.argv[1]
     if len(sys.argv) > 2 and sys.argv[2].startswith('test_'):

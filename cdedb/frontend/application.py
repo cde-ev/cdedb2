@@ -52,7 +52,6 @@ class Application(BaseApp):
         self.ml = MlFrontend(configpath)
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
-        self.conf = Config(configpath)
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets, self.conf.DB_PORT)

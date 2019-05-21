@@ -889,7 +889,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'safe_ngettext': safe_ngettext,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
-            'request_url': rs.request.url,
+            'original_request': rs.request,
             'show_user_link': _show_user_link,
             'user': rs.user,
             'values': rs.values,
@@ -1530,6 +1530,28 @@ def access(*roles, modi=None, check_anti_csrf=None):
              if check_anti_csrf is not None
              else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
         return new_fun
+
+    return decorator
+
+
+def periodic(name, period=1):
+    """This decorator marks a function of a frontend for periodic execution.
+
+    This just adds a flag and all of the actual work is done by the
+    CronFrontend.
+
+    :type name: str
+    :param name: the name of this job
+    :type period: int
+    :param period: the interval in which to execute this job (e.g. period ==
+      2 means every second invocation of the CronFrontend)
+    """
+    def decorator(fun):
+        fun.cron = {
+            'name': name,
+            'period': period,
+        }
+        return fun
 
     return decorator
 

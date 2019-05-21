@@ -11,11 +11,12 @@ import pytz
 import re
 import unittest
 import subprocess
-import tempfile
+import types
 import webtest
 
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.frontend.application import Application
+from cdedb.frontend.cron import CronFrontend
 from cdedb.common import (
     ProxyShim, RequestState, roles_to_db_role, PrivilegeError, open_utf8, glue)
 from cdedb.backend.core import CoreBackend
@@ -338,8 +339,6 @@ def execsql(sql):
 
 
 class FrontendTest(unittest.TestCase):
-    lock_file = None
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.maxDiff = None
@@ -504,3 +503,59 @@ class FrontendTest(unittest.TestCase):
     def assertLogin(self, name):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
+
+
+StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])
+MailTrace = collections.namedtuple(
+    "MailTrace", ['realm', 'template', 'args', 'kwargs'])
+
+
+class CronTest(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.maxDiff = None
+        self.stores = []
+
+    @classmethod
+    def setUpClass(cls):
+        cls.cron = CronFrontend(_BASICCONF.REPOSITORY_PATH
+                                / _BASICCONF.TESTCONFIG_PATH)
+
+    def setUp(self):
+        subprocess.check_call(("make", "sample-data-test-shallow"),
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL)
+        self.stores = []
+        self.mails = []
+
+        original_store = self.cron.core.set_cron_store
+
+        @functools.wraps(self.cron.core.set_cron_store)
+        def new_store(self_, rs, name, data):
+            self.stores.append(StoreTrace(name, data))
+            return original_store(rs, name, data)
+
+        self.cron.core.set_cron_store = types.MethodType(new_store,
+                                                         self.cron.core)
+
+        for frontend in (self.cron.core, self.cron.cde, self.cron.event,
+                         self.cron.assembly, self.cron.ml):
+            original_do_mail = frontend.do_mail
+
+            def latebindinghack(original_fun=original_do_mail, front=frontend):
+                @functools.wraps(original_fun)
+                def new_do_mail(self_, rs, name, *args, **kwargs):
+                    self.mails.append(MailTrace(front.realm, name, args,
+                                                kwargs))
+                    return original_fun(rs, name, *args, **kwargs)
+                return new_do_mail
+
+            frontend.do_mail = types.MethodType(latebindinghack(), frontend)
+
+    def execute(self, *args, check_stores=True):
+        if not args:
+            raise ValueError("Must specify jobs to run.")
+        self.cron.execute(args)
+        if check_stores:
+            expectation = set(args) | {"_base"}
+            self.assertEqual(expectation, set(s.cron for s in self.stores))

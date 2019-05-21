@@ -2115,6 +2115,46 @@ class CoreBackend(AbstractBackend):
             return self.query_exec(rs, query, (PsycoJson(meta_info),))
 
     @access("core_admin")
+    def get_cron_store(self, rs, name):
+        """Retrieve the persistent store of a cron job.
+
+        If no entry exists, an empty dict ist returned.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type name: str
+        :param name: name of the cron job
+        :rtype: {str: object}
+        """
+        ret = self.sql_select_one(rs, "core.cron_store", ("store",),
+                                  name, entity_key="moniker")
+        if ret:
+            ret = unwrap(ret)
+        else:
+            ret = {}
+        return ret
+
+    @access("core_admin")
+    def set_cron_store(self, rs, name, data):
+        """Update the store of a cron job.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :type name: str
+        :rtype: int
+        :returns: Standard return code.
+        """
+        update = {
+            'moniker': name,
+            'store': PsycoJson(data),
+        }
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "core.cron_store", update,
+                                  entity_key='moniker')
+            if not ret:
+                ret = self.sql_insert(rs, "core.cron_store", update)
+            return ret
+
+    @access("core_admin")
     def submit_general_query(self, rs, query):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.

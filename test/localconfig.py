@@ -6,6 +6,7 @@ CDB_DATABASE_NAME = "cdb_test"
 SERVER_NAME_TEMPLATE = "test_{}_server"
 STORAGE_DIR = pathlib.Path("/tmp/cdedb-store/")
 FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend.log")
+CRON_FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend-cron.log")
 BACKEND_LOG = pathlib.Path("/tmp/test-cdedb-backend.log")
 CORE_FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend-core.log")
 CORE_BACKEND_LOG = pathlib.Path("/tmp/test-cdedb-backend-core.log")
