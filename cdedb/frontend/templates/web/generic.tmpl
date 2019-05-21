@@ -323,7 +323,7 @@
                                                         {{ util.input_checkbox(name, aclass='outputSelector',
                                                                 value=True,
                                                                 defaultvalue=('True' if field in selection_default
-                                                                                     else ''),
+                                                                        and not values['is_search'] else ''),
                                                                 arialabel=(gettext("show %s")
                                                                            |format(titles.get(field, field)))) }}
                                                     {% else %}
