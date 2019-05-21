@@ -149,11 +149,16 @@
                             {%- endtrans %}
                             <form action="{{ cdedblink("event/change_minor_form") }}" method="POST"
                                 id="removeminorformform">
-                            {{ util.anti_csrf_token("event/change_minor_form") }}
-                            {{ util.input_hidden(name="delete", value=True) }}
-                            {{ util.input_submit(value=gettext("Remove Minor Form"), readonly=is_locked,
-                                                 icon="trash", aclass='btn btn-danger') }}
-                        </form>
+                                {{ util.anti_csrf_token("event/change_minor_form") }}
+                                {{ util.input_hidden(name="delete", value=True) }}
+                                {{ util.input_submit(value=gettext("Remove Minor Form"), readonly=is_locked,
+                                                     icon="trash", aclass='btn btn-danger') }}
+                                {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                            </form>
+                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                $('#removeminorformform').cdedbProtectAction("{{ gettext("The minor form will be permanently deleted.") }}");
+                                $('#removeminorformform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                            </script>
                         {% else %}
                             <strong>{{ util.make_icon('warning-sign') }}
                                 {% trans -%}No Form present – Minors cannot register{%- endtrans %}
@@ -223,15 +228,20 @@
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Event Logo"), icon="picture") %}
                     {% if logo_present %}
-                        <img src="{{ cdedblink('event/get_event_logo') }}"
-                             alt="{{ gettext("Event Logo") }}" class="profilepic img-thumbnail">
+                        <embed src="{{ cdedblink('event/get_event_logo') }}#view=Fit&scrollbar=0&toolbar=0"
+                               type="application/pdf" width="150px" height="150px" />
                         <form action="{{ cdedblink('event/set_event_logo') }}" method="POST"
                                 id="removeeventlogoform">
                             {{ util.anti_csrf_token('event/set_event_logo') }}
                             {{ util.input_hidden(name="delete", value=True) }}
+                            {{ util.input_checkbox(name="logo_ack_delete", label=gettext("Are you sure?")) }}
                             {{ util.input_submit(value=gettext("Remove Logo"), readonly=is_locked,
                                                  icon='trash', aclass='btn btn-danger') }}
                         </form>
+                        <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            $('#removeeventlogoform').cdedbProtectAction("{{ gettext("The event logo will be permanently deleted.") }}");
+                            $('#removeeventlogoform').find('[name="logo_ack_delete"]').prop('checked', true).parent().hide();
+                        </script>
                     {% else %}
                         {% trans -%}No logo set.{%- endtrans %}
                     {% endif %}

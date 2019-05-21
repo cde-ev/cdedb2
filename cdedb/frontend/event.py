@@ -16,6 +16,7 @@ import re
 import sys
 import tempfile
 import operator
+import subprocess
 
 import magic
 import psycopg2.extensions
@@ -312,14 +313,14 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @REQUESTfile("event_logo")
-    @REQUESTdata(("delete", "bool"))
+    @REQUESTdata(("delete", "bool"), ("logo_ack_delete", "bool"))
     @event_guard(check_offline=True)
-    def set_event_logo(self, rs, event_id, event_logo, delete):
+    def set_event_logo(self, rs, event_id, event_logo, delete, logo_ack_delete):
         """Change the logo of the event.
 
         This is used in the pdf downloads provided in the DB.
         """
-        event_logo = check(rs, 'profilepic_or_None', event_logo, "event_logo")
+        event_logo = check(rs, 'pdffile_or_None', event_logo, "event_logo")
         if not event_logo and not delete:
             rs.errors.append(
                 ("event_logo", ValueError(n_("Mustn’t be empty."))))
@@ -327,6 +328,12 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
         if delete and not event_logo:
+            if not logo_ack_delete:
+                rs.errors.append(
+                    ("logo_ack_delete",
+                     ValueError(n_("Must be checked."))))
+                return self.show_event(rs, event_id)
+
             if path.exists():
                 path.unlink()
                 rs.notify("success", n_("Logo has been removed."))
@@ -347,15 +354,16 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @REQUESTfile("course_logo")
-    @REQUESTdata(("delete", "bool"))
+    @REQUESTdata(("delete", "bool"), ("logo_ack_delete", "bool"))
     @event_guard(check_offline=True)
-    def set_course_logo(self, rs, event_id, course_id, course_logo, delete):
+    def set_course_logo(self, rs, event_id, course_id, course_logo, delete,
+                        logo_ack_delete):
         """
         Set or change a course logo.
 
         These are used in the PDF downloads provided by the DB.
         """
-        course_logo = check(rs, 'profilepic_or_None', course_logo, "course_logo")
+        course_logo = check(rs, 'pdffile_or_None', course_logo, "course_logo")
         if not course_logo and not delete:
             rs.errors.append(
                 ("course_logo", ValueError(n_("Mustn't be empty."))))
@@ -363,6 +371,12 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_course(rs, event_id, course_id)
         path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
         if delete and not course_logo:
+            if not logo_ack_delete:
+                rs.errors.append(
+                    ("logo_ack_delete",
+                     ValueError(n_("Must be checked."))))
+                return self.show_event(rs, event_id)
+
             if path.exists():
                 path.unlink()
                 rs.notify("success", n_("Logo has been removed."))
@@ -2028,7 +2042,10 @@ class EventFrontend(AbstractUserFrontend):
             'orientation': "landscape" if landscape else "portrait",
             'orgas_only': orgas_only,
         })
-        file = self.serve_latex_document(rs, tex, "{}_participant_list".format(rs.ambience['event']['shortname']), runs)
+        file = self.serve_latex_document(
+            rs, tex, "{}_participant_list".format(
+                rs.ambience['event']['shortname']),
+            runs)
         if file:
             return file
         else:
@@ -2080,7 +2097,8 @@ class EventFrontend(AbstractUserFrontend):
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
         file = self.send_csv_file(
-            rs, data=csv_data, inline=False, filename="{}_courses.csv".format(rs.ambience['event']['shortname']))
+            rs, data=csv_data, inline=False, filename="{}_courses.csv".format(
+                rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -2109,7 +2127,9 @@ class EventFrontend(AbstractUserFrontend):
                                      key=lambda c: c['id']),
                               columns)
         file = self.send_csv_file(
-            rs, data=csv_data, inline=False, filename="{}_lodgements.csv".format(rs.ambience['event']['shortname']))
+            rs, data=csv_data, inline=False,
+            filename="{}_lodgements.csv".format(
+                rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -2250,7 +2270,9 @@ class EventFrontend(AbstractUserFrontend):
                                      key=lambda c: c['id']),
                               columns)
         file = self.send_csv_file(
-            rs, data=csv_data, inline=False, filename="{}_registrations.csv".format(rs.ambience['event']['shortname']))
+            rs, data=csv_data, inline=False,
+            filename="{}_registrations.csv".format(
+                rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -2264,13 +2286,48 @@ class EventFrontend(AbstractUserFrontend):
         instance."""
         data = self.eventproxy.export_event(rs, event_id)
         json = json_serialize(data)
-        file = self.send_file(rs, data=json, inline=False,
-                              filename="{}_export_event.json".format(rs.ambience['event']['shortname']))
+        file = self.send_file(
+            rs, data=json, inline=False,filename="{}_export_event.json".format(
+                rs.ambience['event']['shortname']))
         if file:
             return file
         else:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
+
+    @access("event")
+    @event_guard()
+    def download_assets(self, rs, event_id):
+        """Retrieve all assets for this event and provide download."""
+        courses = self.eventproxy.list_db_courses(rs, event_id)
+        shortname = rs.ambience['event']['shortname']
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
+            work_dir.mkdir()
+            asset_dir = work_dir / "assets"
+            asset_dir.mkdir()
+
+            # Get event logo
+            path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
+            if path.exists():
+                shutil_copy(path, asset_dir / "aka-logo.pdf")
+
+            for course_id in courses:
+                path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
+                if path.exists():
+                    shutil_copy(
+                        path, asset_dir / "{}.pdf".format(str(course_id)))
+
+            target = pathlib.Path(
+                tmp_dir, "{}.tar.gz".format(shortname))
+            args = ("tar", "-vczf", str(target), shortname)
+            self.logger.info("Invoking {}".format(args))
+            subprocess.check_call(args, stdout=subprocess.DEVNULL,
+                                  cwd=str(tmp_dir))
+            return self.send_file(
+                rs, path=target, inline=False,
+                filename="{}_assets.tar.gz".format(shortname))
 
     @access("event")
     def register_form(self, rs, event_id):

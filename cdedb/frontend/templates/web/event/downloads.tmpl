@@ -103,6 +103,13 @@
                 <td>{{ util.href(cdedblink('event/download_export'), gettext("JSON-File"), icon='download') }}</td>
             </tr>
             <tr>
+                <td>
+                    {% trans -%}Assets{%- endtrans %}<br />
+                    <small>({% trans -%}collection of all course logos and event logo{%- endtrans %})</small>
+                </td>
+                <td>{{ util.href(cdedblink('event/download_assets'), gettext("Archive"), icon='donwload') }}</td>
+            </tr>
+            <tr>
                 <td>{% trans -%}Registrations{%- endtrans %}</td>
                 <td>{{ util.href(cdedblink('event/download_csv_registrations'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
