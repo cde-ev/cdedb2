@@ -1192,7 +1192,7 @@ class AssemblyBackend(AbstractBackend):
                           assembly_id, additional_info=data['title'])
 
         path = (self.conf.STORAGE_DIR / 'assembly_attachment'
-                / str(attachment_id))
+                / str(ret))
         with open(str(path), 'wb') as f:
             f.write(attachment)
 

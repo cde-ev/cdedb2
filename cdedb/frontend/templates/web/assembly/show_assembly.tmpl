@@ -62,9 +62,14 @@
                                             method="POST" id="removeattachmentform{{ attachment_id }}",
                                             style="display: inline;">
                                         {{ util.anti_csrf_token('assembly/remove_attachment') }}
+                                        {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
                                         {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
                                                 title=gettext("Delete File")) }}
                                     </form>
+                                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                        $('#removeattachmentform{{ attachment_id }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
+                                        $('#removeattachmentform{{ attachment_id }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
+                                    </script>
                                 {% endif %}
                             </li>
                         {% endfor %}

@@ -338,6 +338,7 @@ class TestAssemblyFrontend(FrontendTest):
             self.assertEqual(f.read(), self.response.body)
         self.response = saved_response
         f = self.response.forms['removeattachmentform2']
+        f['attachment_ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertNonPresence("Magenta wie die Telekom")

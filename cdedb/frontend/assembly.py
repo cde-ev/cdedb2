@@ -444,9 +444,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("attachment_ack_delete", "bool"))
     # ballot_id is optional, but comes semantically before attachment_id
-    def remove_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
+    def remove_attachment(self, rs, assembly_id, attachment_id,
+                          attachment_ack_delete, ballot_id=None):
         """Delete an attachment."""
+        if not attachment_ack_delete:
+            rs.errors.append(
+                ("attachment_ack_delete", ValueError(n_("Must be checked."))))
         if rs.errors:
             if ballot_id:
                 return self.show_ballot(rs, assembly_id, ballot_id)
