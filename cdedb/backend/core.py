@@ -1858,11 +1858,69 @@ class CoreBackend(AbstractBackend):
         if self.conf.LOCKDOWN and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
-        # TODO: maybe delete all unverified cases with the provided email
-        # address?
         ret = self.sql_insert(rs, "core.genesis_cases", data)
         self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
                       additional_info=data['username'])
+        return ret
+
+    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
+            "ml_admin")
+    def delete_genesis_case_blockers(self, case_id):
+        """Determine whether a genesis case can be deleted."""
+
+        case_id = affirm("id", case_id)
+        blockers = {}
+
+        case = self.genesis_get_case(rs, case_id)
+        if (case["status"] == const.GenesisStati.unconfirmed and
+                now() < case["ctime"] + self.conf.PARAMETER_TIMEOUT):
+            blockers["unconfirmed"] = case_id
+        if case["status"] in {const.GenesisStati.to_review,
+                              const.GenesisStati.approved}:
+            blockers["status"] = case["status"]
+
+        return blockers
+
+    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
+            "ml_admin")
+    def delete_genesis_case(self, case_id, cascade=None):
+        """Remove a genesis case."""
+
+        case_id = affirm("id", case_id)
+        blockers = self.delete_genesis_blockers(rs, case_id)
+        if "unconfirmed" in blockers.keys():
+            raise ValueError(n_("Unable to remove unconfirmed genesis case "
+                                "before confirmation timeout."))
+        if "status" in blockers.keys():
+            raise ValueError(n_("Unable to remove genesis case with status {}")
+                             .format(blockers["status"]))
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade) & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "genesis case",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        with Atomizer(rs):
+            if cascade:
+                if "unconfirmed" in cascade:
+                    raise ValueError(n_("Unable to cascade %(blocker)s."),
+                                     {"blocker": "unconfirmed"})
+                if "status" in cascade:
+                    raise ValueError(n_("Unable to cascade %(blocker)s."),
+                                     {"blocker": "status"})
+
+            if not blockers:
+                ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "assembly", "block": blockers.keys()})
+
         return ret
 
     @access("anonymous")
