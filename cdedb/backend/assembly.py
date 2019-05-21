@@ -714,8 +714,9 @@ class AssemblyBackend(AbstractBackend):
                     ret *= self.sql_delete(
                         rs, "assembly.candidates", blockers["candidates"])
                 if "attachments" in cascade:
-                    ret *= self.sql_delete(
-                        rs, "assembly.attachments", blockers["attachments"])
+                    with Silencer(rs):
+                        for attachment_id in blockers["attachments"]:
+                            ret *= self.remove_attachment(rs, attachment_id)
                 if "voters" in cascade:
                     ret *= self.sql_delete(
                         rs, "assembly.voter_register", blockers["voters"])
@@ -1168,11 +1169,12 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly_admin")
-    def add_attachment(self, rs, data):
+    def add_attachment(self, rs, data, attachment):
         """Create a new attachment.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
+        :type attachment: bytes
         :rtype: int
         :returns: id of the new attachment
         """
@@ -1188,14 +1190,17 @@ class AssemblyBackend(AbstractBackend):
             assembly_id = ballot['assembly_id']
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                           assembly_id, additional_info=data['title'])
+
+        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+                / str(attachment_id))
+        with open(str(path), 'wb') as f:
+            f.write(attachment)
+
         return ret
 
     @access("assembly_admin")
     def remove_attachment(self, rs, attachment_id):
         """Delete an attachment.
-
-        .. note:: This only takes care of the entry in the database the
-          actual file handling has to be done in the frontend.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type attachment_id: int
@@ -1215,4 +1220,10 @@ class AssemblyBackend(AbstractBackend):
             assembly_id = ballot['assembly_id']
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
                           assembly_id, additional_info=current['title'])
+
+        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+                / str(attachment_id))
+        if path.exists():
+            path.unlink()
+
         return ret

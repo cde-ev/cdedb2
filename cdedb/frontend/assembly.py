@@ -435,11 +435,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             data['ballot_id'] = ballot_id
         else:
             data['assembly_id'] = assembly_id
-        attachment_id = self.assemblyproxy.add_attachment(rs, data)
-        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
-                / str(attachment_id))
-        with open(str(path), 'wb') as f:
-            f.write(attachment)
+        attachment_id = self.assemblyproxy.add_attachment(rs, data, attachment)
         self.notify_return_code(rs, attachment_id,
                                 success=n_("Attachment added."))
         if ballot_id:
@@ -459,10 +455,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         with Atomizer(rs):
             code = self.assemblyproxy.remove_attachment(rs, attachment_id)
             self.notify_return_code(rs, code)
-            path = (self.conf.STORAGE_DIR / 'assembly_attachment'
-                    / str(attachment_id))
-            if path.exists():
-                path.unlink()
         if ballot_id:
             return self.redirect(rs, "assembly/show_ballot")
         else:
@@ -623,13 +615,6 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # Specify what to cascade
         cascade = {"candidates", "attachments", "voters"} & blockers.keys()
-        if "attachments" in cascade:
-            # Filehandling is left to the frontend so we do this manually
-            for attachment_id in blockers["attachments"]:
-                path = (self.conf.STORAGE_DIR / 'assembly_attachment'
-                        / str(attachment_id))
-                if path.exists():
-                    path.unlink()
         code = self.assemblyproxy.delete_ballot(rs, ballot_id, cascade=cascade)
 
         self.notify_return_code(rs, code)
