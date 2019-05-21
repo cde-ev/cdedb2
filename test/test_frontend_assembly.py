@@ -210,6 +210,33 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Drittes CdE-Konzil")
 
     @as_users("anton")
+    def test_preferential_vote_result(self, user):
+        self.get('/assembly/assembly/1/ballot/1/show')
+        self.follow()  # Redirect because ballot has not been tallied yet.
+        self.assertTitle("Antwort auf die letzte aller Fragen "
+                         "(Internationaler Kongress)")
+        self.assertPresence("Du hast mit 2>3>_bar_>1=4 abgestimmt.")
+
+    @as_users("garcia")
+    def test_show_ballot_without_vote(self, user):
+        self.get('/assembly/assembly/1/show')
+        f = self.response.forms['signupform']
+        self.submit(f)
+        self.get('/assembly/assembly/1/ballot/1/show')
+        self.follow()  # Redirect because ballot has not been tallied yet.
+        self.assertTitle("Antwort auf die letzte aller Fragen "
+                         "(Internationaler Kongress)")
+        self.assertPresence("Du nimmst nicht an der Versammlung teil.")
+
+    @as_users("garcia")
+    def test_show_ballot_without_attendance(self, user):
+        self.get('/assembly/assembly/1/ballot/1/show')
+        self.follow()  # Redirect because ballot has not been tallied yet.
+        self.assertTitle("Antwort auf die letzte aller Fragen "
+                         "(Internationaler Kongress)")
+        self.assertPresence("Du nimmst nicht an der Versammlung teil.")
+
+    @as_users("anton")
     def test_entity_ballot_simple(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
