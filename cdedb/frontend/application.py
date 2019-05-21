@@ -171,7 +171,7 @@ class Application(BaseApp):
                 lang = self.get_locale(request)
                 rs = RequestState(
                     sessionkey, None, request, None, [], urls, args,
-                    self.urlmap, [], {}, lang,
+                    [], {}, lang,
                     self.translations[lang].gettext,
                     self.translations[lang].ngettext, coders, begin,
                     scriptkey)

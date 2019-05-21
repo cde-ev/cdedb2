@@ -6,31 +6,22 @@ This expects a period of 15 minutes.
 """
 
 import cgitb
-import datetime
 import gettext
 import inspect
-import json
 import pathlib
 import sys
-
-import werkzeug.wrappers
 
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
-from cdedb.common import (
-    n_, glue, QuotaException, PrivilegeError, now,
-    roles_to_db_role, RequestState, User, extract_roles, ANTI_CSRF_TOKEN_NAME)
-from cdedb.frontend.common import (
-    BaseApp, construct_redirect, Response, sanitize_None, staticurl,
-    docurl, JINJA_FILTERS, check_validation)
-from cdedb.config import SecretsConfig, Config
+from cdedb.common import n_, glue, now, RequestState, User
+from cdedb.frontend.common import BaseApp
+from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.backend.session import SessionBackend
 
 
 class CronFrontend(BaseApp):
@@ -82,10 +73,9 @@ class CronFrontend(BaseApp):
             "decode_notification": self.decode_notification,
         }
         urls = self.urlmap.bind("db.cde-ev.de")
-        request = werkzeug.wrappers.Request
         rs = RequestState(
             None, user, None, None, [], urls, {},
-            self.urlmap, [], {}, lang,
+            [], {}, lang,
             self.translations[lang].gettext,
             self.translations[lang].ngettext, coders, None,
             None)

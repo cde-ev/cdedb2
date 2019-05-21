@@ -180,7 +180,7 @@ class TestEventFrontend(FrontendTest):
             self.assertNonPresence("Bertålotta")
             f = self.response.forms['addorgaform']
             f['orga_id'] = "DB-2-7"
-            if i == 6:
+            if i == 10:
                 break
             self.submit(f)
             self.assertTitle("Große Testakademie 2222")

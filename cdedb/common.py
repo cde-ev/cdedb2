@@ -36,7 +36,7 @@ class RequestState:
     """
 
     def __init__(self, sessionkey, user, request, response, notifications,
-                 mapadapter, requestargs, urlmap, errors, values, lang, gettext,
+                 mapadapter, requestargs, errors, values, lang, gettext,
                  ngettext, coders, begin, scriptkey):
         """
         :type sessionkey: str or None
@@ -54,8 +54,6 @@ class RequestState:
         :param mapadapter: URL generator (specific for this request)
         :type requestargs: {str: object}
         :param requestargs: verbatim copy of the arguments contained in the URL
-        :type urlmap: :py:class:`werkzeug.routing.Map`
-        :param urlmap: abstract URL information
         :type errors: [(str, exception)]
         :param errors: Validation errors, consisting of a pair of (parameter
           name, the actual error). The exceptions have one or two
@@ -91,7 +89,6 @@ class RequestState:
         self.notifications = notifications
         self.urls = mapadapter
         self.requestargs = requestargs
-        self.urlmap = urlmap
         self.errors = errors
         if not isinstance(values, werkzeug.datastructures.MultiDict):
             values = werkzeug.datastructures.MultiDict(values)

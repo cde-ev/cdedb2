@@ -99,7 +99,7 @@ class BackendShim(ProxyShim):
     def _setup_requeststate(self, key):
         rs = RequestState(
             key, None, None, None, [], None, None,
-            None, [], {}, "de", self.translator.gettext,
+            [], {}, "de", self.translator.gettext,
             self.translator.ngettext, None, None, key)
         rs.user = self.sessionproxy.lookupsession(key, "127.0.0.0")
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]

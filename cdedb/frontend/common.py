@@ -1369,7 +1369,7 @@ class Worker(threading.Thread):
         """
         rrs = RequestState(
             rs.sessionkey, rs.user, rs.request, None, [], rs.urls,
-            rs.requestargs, rs.urlmap, [], copy.deepcopy(rs.values),
+            rs.requestargs, [], copy.deepcopy(rs.values),
             rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin,
             rs.scriptkey)
         secrets = SecretsConfig(conf._configpath)
@@ -1607,7 +1607,7 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
     # Second we come to the normal case
     allparams = werkzeug.datastructures.MultiDict()
     for arg in rs.requestargs:
-        if rs.urlmap.is_endpoint_expecting(endpoint, arg):
+        if rs.urls.map.is_endpoint_expecting(endpoint, arg):
             allparams[arg] = rs.requestargs[arg]
     if isinstance(params, werkzeug.datastructures.MultiDict):
         for key in params:
