@@ -64,7 +64,7 @@
                         {% if is_admin or moderator != user.persona_id %}
                             <form action="{{ cdedblink('ml/remove_moderator') }}"
                                   method="POST"
-                                  id="removemoderatorform{{ anid }}"
+                                  id="removemoderatorform{{ moderator }}"
                                   style="display: inline;">
                                 {{ util.anti_csrf_token('ml/remove_moderator') }}
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
@@ -183,7 +183,7 @@
                             {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
                             <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                   method="POST"
-                                  id="removesubscriberform{{ anid }}"
+                                  id="removesubscriberform{{ subscriber }}"
                                   style="display: inline;">
                                 {{ util.anti_csrf_token('ml/remove_subscriber') }}
                                 {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
