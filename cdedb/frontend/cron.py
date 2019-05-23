@@ -72,7 +72,8 @@ class CronFrontend(BaseApp):
             "encode_notification": self.encode_notification,
             "decode_notification": self.decode_notification,
         }
-        urls = self.urlmap.bind("db.cde-ev.de/db", url_scheme='https')
+        urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
+                                url_scheme="https")
         rs = RequestState(
             None, user, None, None, [], urls, {},
             [], {}, lang,
