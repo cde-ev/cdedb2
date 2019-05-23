@@ -1512,6 +1512,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertTrue(len(self.response.body) > 1000)
 
+        self.response = save.click(href='/event/event/1/download/assets')
+        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
+        self.assertTrue(len(self.response.body) > 1000)
+
     @as_users("garcia")
     def test_download_export(self, user):
         self.traverse({'href': '/event/$'},
