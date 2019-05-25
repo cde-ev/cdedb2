@@ -32,7 +32,7 @@
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
-    <<% for registration in registrations.values() %>>
+    <<% for registration in registrations.values() %>> <<# This is already sorted. #>>
         <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %>>
                 \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
