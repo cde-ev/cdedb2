@@ -4,11 +4,6 @@ Elektronisches Wahlverfahren
 Hier wird das elektronische Wahlverfahren, dass für die Abstimmungen in der
 CdE-Datenbank verwendet wird erklärt.
 
-.. note::
-
-   Dies beschreibt noch nicht den Ist-Zustand, sondern wie es in Zukunft
-   sein soll.
-
 Einleitung
 ----------
 
@@ -36,19 +31,21 @@ Sobald die Abstimmung beendet ist, erstellt die Datenbank eine
 Ergebnisdatei, die die gesamten Informationen zur Abstimmung enthält. Diese
 Datei, sowie das reine Ergebnis sind dann auf der Abstimmungsseite in der DB
 verfügbar. Außerdem wird die Ergebnisdatei direkt nach der Erstellung auf
-eine spezielle Mailingliste `bekanntmachungsliste`_ veröffentlicht. Dadurch
+eine spezielle Mailingliste [#bekanntmachungsliste]_ veröffentlicht. Dadurch
 wird ein Commitment erzeugt, sodass das Ergebnis nicht nachträglich
 manipuliert werden kann.
 
 Zur Verifikation der Ergebnisdatei gibt es außerdem zwei Pythonskripte:
-* mit `ergebnisverifizierungsskript`_ kann überprüft werden, welchen
+
+* mit [#ergebnisverifizierungsskript]_ kann überprüft werden, welchen
   Wahlausgang die in der Ergebnisdatei verzeichneten Stimmen ergeben.
-* mit `stimmverifizierungsskript`_ kann überprüft werden, ob die eigene
+* mit [#stimmverifizierungsskript]_ kann überprüft werden, ob die eigene
   Stimme korrekt in der Ergebnisdatei verzeichnet wurde. Hierfür wird das
   anfangs per Mail übermittelte Geheimnis benötigt um die Zuordnung
   herstellen zu können.
-Bei Skripte benötigen als einzige Abhängigkeit Python 3.
 
-.. _bekanntmachungsliste: https://db.cde-ev.de/db/ml/mailinglist/91/show
-.. _ergebnisverifizierungsskript: https://db.cde-ev.de/static/verify_result.py
-.. _stimmverifizierungsskript: https://db.cde-ev.de/static/verify_vote.py
+Beide Skripte benötigen als einzige Abhängigkeit Python 3.
+
+.. [#bekanntmachungsliste] https://db.cde-ev.de/db/ml/mailinglist/91/show
+.. [#ergebnisverifizierungsskript] https://db.cde-ev.de/static/verify_result.py
+.. [#stimmverifizierungsskript] https://db.cde-ev.de/static/verify_vote.py
