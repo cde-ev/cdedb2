@@ -2,13 +2,13 @@
 import csv
 import json
 import datetime
-import unittest
 import webtest
-from test.common import as_users, USER_DICT, FrontendTest, nearly_now
+from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
 from cdedb.common import now
 from cdedb.database.constants import FieldDatatypes, FieldAssociations
+
 
 class TestEventFrontend(FrontendTest):
     @as_users("emilia")
@@ -31,7 +31,8 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("emilia")
     def test_changeuser(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
+        self.traverse({'href': '/core/self/show'},
+                      {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location'] = "Hyrule"
@@ -39,7 +40,8 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Hyrule")
         self.assertEqual(
             "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content().strip())
+            self.response.lxml.get_element_by_id(
+                'displayname').text_content().strip())
 
     @as_users("anton", "ferdinand")
     def test_adminchangeuser(self, user):
@@ -59,12 +61,14 @@ class TestEventFrontend(FrontendTest):
         self.realm_admin_view_profile('emilia', 'event')
         self.assertEqual(
             True,
-            self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
+            self.response.lxml.get_element_by_id(
+                'activity_checkbox').get('data-checked') == 'True')
         f = self.response.forms['activitytoggleform']
         self.submit(f)
         self.assertEqual(
             False,
-            self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
+            self.response.lxml.get_element_by_id(
+                'activity_checkbox').get('data-checked') == 'True')
 
     @as_users("anton", "ferdinand")
     def test_user_search(self, user):
@@ -97,7 +101,7 @@ class TestEventFrontend(FrontendTest):
             "birthday": "5.6.1987",
             "gender": "1",
             "telephone": "030456790",
-            ## "mobile"
+            # "mobile"
             "address": "Street 7",
             "address_supplement": "on the left",
             "postal_code": "12345",
@@ -144,7 +148,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
-        ## basic event data
+        # basic event data
         f = self.response.forms['changeeventform']
         self.assertEqual(f['registration_start'].value, "2000-10-30T01:00:00")
         f['title'] = "Universale Akademie"
@@ -159,7 +163,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("30.10.2000")
         self.assertPresence("30.10.2001")
-        ## orgas
+        # orgas
         self.assertNonPresence("Bertålotta")
         f = self.response.forms['addorgaform']
         f['orga_id'] = "DB-2-7"
@@ -300,7 +304,7 @@ class TestEventFrontend(FrontendTest):
         f['title_5'] = "Größere Hälfte"
         f['fee_5'] = "99.99"
         self.submit(f)
-        ## and now for tracks
+        # and now for tracks
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('track_5_5', f.fields)
@@ -323,7 +327,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('track_title_5_5', f.fields)
-        ## finally deletion
+        # finally deletion
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Größere Hälfte", f['title_5'].value)
@@ -417,7 +421,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
-        ## fields
+        # fields
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
         self.assertNotIn('field_name_10', f.fields)
@@ -1118,7 +1122,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
-        
+
     @as_users("garcia")
     def test_add_illegal_registration(self, user):
         self.get("/event/event/1/registration/add")
@@ -1465,25 +1469,25 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence('Planetenretten für Anfänger')
         self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
         self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=0')
         self.assertPresence('documentclass')
         self.assertPresence('Kalte Kammer')
         self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
         self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
         self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
         self.response = save.click(href='/event/event/1/download/courselists\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
         self.response = save.click(href='/event/event/1/download/courselists\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
         self.response = save.click(href='/event/event/1/download/expuls')
         self.assertPresence('\\kurs')
         self.assertPresence('Planetenretten für Anfänger')
@@ -1502,19 +1506,19 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/participantlist\\?runs=2',
                                    index=0)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
         with open("/tmp/output.tar.gz", 'wb') as f:
             f.write(self.response.body)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(1000, len(self.response.body))
 
         self.response = save.click(href='/event/event/1/download/assets')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.assertTrue(len(self.response.body) > 1000)
+        self.assertLess(100, len(self.response.body))
 
     @as_users("garcia")
     def test_download_export(self, user):
@@ -1753,7 +1757,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
-        ## prepare dates
+        # prepare dates
         self.traverse({'href': '/event/event/1/change'})
         f = self.response.forms["changeeventform"]
         f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
@@ -1770,7 +1774,7 @@ etc;anything else""", f['entries_2'].value)
         f['part_end_3'] = "2003-11-30"
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
-        ## do it
+        # do it
         self.traverse({'href': '/event/event/1/show'})
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
@@ -1802,8 +1806,10 @@ etc;anything else""", f['entries_2'].value)
         # Add registration
         self.traverse({'href': '/event/event/2/registration/query'},
                       {'href': '/event/event/2/registration/add'})
-        self.assertNonPresence('Partywoche')  # We have only one part, thus it should not be named
-        self.assertNonPresence('Chillout')  # We have only one track, thus it should not be named
+        # We have only one part, thus it should not be named
+        self.assertNonPresence('Partywoche')
+        # We have only one track, thus it should not be named
+        self.assertNonPresence('Chillout')
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-2-7"
         f['part4.status'] = 1
@@ -1829,7 +1835,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence('Chillout')
 
     def test_log(self):
-        ## First: generate data
+        # First: generate data
         self.test_register()
         self.logout()
         self.test_create_delete_course()
@@ -1841,7 +1847,7 @@ etc;anything else""", f['entries_2'].value)
         self.test_manage_attendees()
         self.logout()
 
-        ## Now check it
+        # Now check it
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})

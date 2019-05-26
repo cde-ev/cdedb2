@@ -254,6 +254,9 @@ _DEFAULTS = {
     # email for replies to assembly mails
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
 
+    # email for ballot tallies
+    "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",
+
     # logs
     "CORE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-core.log"),
     "CDE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cde.log"),

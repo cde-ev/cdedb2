@@ -1,0 +1,1 @@
+../static/verify_result.py

@@ -3,8 +3,8 @@
 """Services for the assembly realm."""
 
 import copy
+import hashlib
 import json
-import os
 import pathlib
 
 from cdedb.frontend.common import (
@@ -252,10 +252,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         persona = self.coreproxy.get_persona(rs, persona_id)
         if secret:
             rs.notify("success", n_("Signed up."))
-            attachment = {
-                'path': self.conf.REPOSITORY_PATH / "bin/verify_votes.py",
-                'filename': 'verify_votes.py',
-                'mimetype': 'text/plain'}
             subject = "[CdE] Teilnahme an {}".format(
                 rs.ambience['assembly']['title'])
             reply_to = (rs.ambience['assembly']['mail_address'] or
@@ -265,8 +261,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 {'To': (persona['username'],),
                  'Subject': subject,
                  'Reply-To': reply_to},
-                {'secret': secret, 'persona': persona},
-                attachments=(attachment,))
+                {'secret': secret, 'persona': persona})
         else:
             rs.notify("info", n_("Already signed up."))
 
@@ -496,25 +491,22 @@ class AssemblyFrontend(AbstractUserFrontend):
         if finished and not ballot['is_tallied']:
             did_tally = self.assemblyproxy.tally_ballot(rs, ballot_id)
             if did_tally:
-                attendee_ids = self.assemblyproxy.list_attendees(rs,
-                                                                 assembly_id)
-                attendees = self.coreproxy.get_assembly_users(rs, attendee_ids)
-                mails = tuple(x['username'] for x in attendees.values())
-                attachment_script = {
-                    'path': self.conf.REPOSITORY_PATH / "bin/verify_votes.py",
-                    'filename': 'verify_votes.py',
-                    'mimetype': 'text/plain'}
+                path = self.conf.STORAGE_DIR / "ballot_result" / str(ballot_id)
                 attachment_result = {
-                    'path': (self.conf.STORAGE_DIR / "ballot_result"
-                             / str(ballot_id)),
+                    'path': path,
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
+                to = [self.conf.BALLOT_TALLY_ADDRESS]
+                if rs.ambience['assembly']['mail_address']:
+                    to.append(rs.ambience['assembly']['mail_address'])
+                subject = "Abstimmung '{}' ausgezählt".format(ballot['title'])
+                hasher = hashlib.sha512()
+                with open(path, 'rb') as resultfile:
+                    hasher.update(resultfile.read())
                 self.do_mail(
-                    rs, "ballot_tallied",
-                    {'To': (self.conf.MANAGEMENT_ADDRESS,),
-                     'Bcc': mails,
-                     'Subject': "Abstimmung wurde ausgezählt."},
-                    attachments=(attachment_script, attachment_result,))
+                    rs, "ballot_tallied", {'To': to, 'Subject': subject},
+                    attachments=(attachment_result,),
+                    params={'sha': hasher.hexdigest()})
             return self.redirect(rs, "assembly/show_ballot")
         # initial checks done, present the ballot
         ballot['is_voting'] = (

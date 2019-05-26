@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
 import datetime
-import email.parser
 import time
-import unittest
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.common import ASSEMBLY_BAR_MONIKER, now
 from cdedb.query import QueryOperators
+
 
 class TestAssemblyFrontend(FrontendTest):
     @as_users("anton", "berta", "kalif")
@@ -24,13 +23,15 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("kalif")
     def test_changeuser(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
+        self.traverse({'href': '/core/self/show'},
+                      {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         self.submit(f)
         self.assertEqual(
             "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content().strip())
+            self.response.lxml.get_element_by_id(
+                'displayname').text_content().strip())
 
     @as_users("anton", "ferdinand")
     def test_adminchangeuser(self, user):
@@ -49,16 +50,19 @@ class TestAssemblyFrontend(FrontendTest):
         self.realm_admin_view_profile('kalif', 'assembly')
         self.assertEqual(
             True,
-            self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
+            self.response.lxml.get_element_by_id(
+                'activity_checkbox').get('data-checked') == 'True')
         f = self.response.forms['activitytoggleform']
         self.submit(f)
         self.assertEqual(
             False,
-            self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
+            self.response.lxml.get_element_by_id(
+                'activity_checkbox').get('data-checked') == 'True')
 
     @as_users("anton", "ferdinand")
     def test_user_search(self, user):
-        self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user'})
+        self.traverse({'href': '/assembly/$'},
+                      {'href': '/assembly/search/user'})
         self.assertTitle("Versammlungs-Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.similar.value
@@ -73,7 +77,8 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton", "ferdinand")
     def test_create_user(self, user):
-        self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user'},
+        self.traverse({'href': '/assembly/$'},
+                      {'href': '/assembly/search/user'},
                       {'href': '/assembly/user/create'})
         self.assertTitle("Neuen Versammlungsnutzer anlegen")
         data = {
@@ -126,11 +131,6 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Internationaler Kongress")
         self.assertNotIn('signupform', self.response.forms)
-        mail = self.fetch_mail()[0]
-        attachment = next(mail.iter_attachments())
-        value = attachment.get_payload(decode=True)
-        with open("./bin/verify_votes.py", 'rb') as f:
-            self.assertEqual(f.read(), value)
 
     @as_users("anton", "ferdinand")
     def test_external_signup(self, user):
@@ -150,11 +150,6 @@ class TestAssemblyFrontend(FrontendTest):
         f['persona_id'] = "DB-11-6"
         self.submit(f)
         self.assertTitle('Anwesenheitsliste (Drittes CdE-Konzil)')
-        mail = self.fetch_mail()[0]
-        attachment = next(mail.iter_attachments())
-        value = attachment.get_payload(decode=True)
-        with open("./bin/verify_votes.py", 'rb') as f:
-            self.assertEqual(f.read(), value)
         self.traverse({'href': '/assembly/2/attendees'})
         self.assertPresence("Kalif")
 
@@ -226,7 +221,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
-        self.assertPresence("Du nimmst nicht an der Versammlung teil.")
+        self.assertPresence("Du hast nicht abgestimmt.")
 
     @as_users("garcia")
     def test_show_ballot_without_attendance(self, user):

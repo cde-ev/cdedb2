@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Skript um Ergebnisdateien von Wahlen zu verifizieren.
+"""Skript um Stimmen in Ergebnisdateien von Wahlen zu verifizieren.
 
 Dies kann auf keine anderen Dateien der CdEDB zugreifen, weshalb wir
 eine gewisse unvermeidbare Duplikation haben.
@@ -9,6 +9,8 @@ eine gewisse unvermeidbare Duplikation haben.
 import argparse
 import hmac
 import json
+import pathlib
+
 
 def encrypt_vote(salt, secret, vote):
     """Berechne Hash zum Datensatz einer Stimme."""
@@ -17,6 +19,7 @@ def encrypt_vote(salt, secret, vote):
     h.update(vote.encode('ascii'))
     return h.hexdigest()
 
+
 def retrieve_vote(votes, secret):
     """Ermittle Stimme, die mit dem Geheimnis abgegeben wurde."""
     for v in votes:
@@ -24,28 +27,37 @@ def retrieve_vote(votes, secret):
             return v
     return None
 
+
 if __name__ == "__main__":
-    ## Analysiere Kommandozeilenargumente
+    # Analysiere Kommandozeilenargumente
     parser = argparse.ArgumentParser(
         description='Verifiziere die eigene Stimme in Ergebnisdateien.')
     parser.add_argument('secret', help="persönliches Geheimnis")
     parser.add_argument('results', help="Pfad zu Ergebnisdateien", nargs='+')
     args = parser.parse_args()
 
-    ## Iteriere durch Ergebnisdateien ...
+    # Iteriere durch Ergebnisdateien ...
+    first = True
     for path in args.results:
+        path = pathlib.Path(path)
+        if not path.exists():
+            print("Datei {} nicht gefunden".format(path))
+            continue
         with open(path, encoding='UTF-8') as f:
             data = json.load(f)
+        if not first:
+            print("\n")
+        first = False
         print("Versammlung: {}".format(data['assembly']))
         print("Abstimmung: {}".format(data['ballot']))
         candidates = ", ".join(
             "{} ({})".format(value, key)
             for key, value in sorted(data['candidates'].items()))
         print("Optionen: {}".format(candidates))
-        ## ... und ermittle die eigene Stimme
+        # ... und ermittle die eigene Stimme
         vote = retrieve_vote(data['votes'], args.secret)
-        if vote:
-            print("Eigene Stimme: {}".format(vote['vote']))
+        if not vote:
+            vote = "Keine Stimme abgegeben"
         else:
-            print("Keine Stimme abgegeben")
-        print(80*"-")
+            vote = vote['vote']
+        print("Eigene Stimme: {}".format(vote))

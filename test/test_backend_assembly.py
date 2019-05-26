@@ -388,19 +388,19 @@ class TestAssemblyBackend(BackendTest):
             "title": "Rechenschaftsbericht",
             "filename": "rechen.pdf",
         }
-        self.assertLess(0, self.assembly.add_attachment(self.key, data))
+        self.assertLess(0, self.assembly.add_attachment(self.key, data, b'123'))
         data = {
             "assembly_id": 1,
             "title": "Verfassung des Staates der CdEler",
             "filename": "verf.pdf",
         }
-        self.assertLess(0, self.assembly.add_attachment(self.key, data))
+        self.assertLess(0, self.assembly.add_attachment(self.key, data, b'123'))
         data = {
             "ballot_id": 2,
             "title": "Beschlussvorlage",
             "filename": "beschluss.pdf",
         }
-        self.assertLess(0, self.assembly.add_attachment(self.key, data))
+        self.assertLess(0, self.assembly.add_attachment(self.key, data, b'123'))
         expectation = {1: 'Rechenschaftsbericht', 2: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
         expectation = {3: 'Beschlussvorlage'}
