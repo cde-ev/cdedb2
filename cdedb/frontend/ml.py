@@ -4,7 +4,7 @@
 
 import copy
 import itertools
-
+import collections
 import werkzeug
 
 from cdedb.frontend.common import (
@@ -261,8 +261,9 @@ class MlFrontend(AbstractUserFrontend):
             may_toggle = True
         personas = self.coreproxy.get_personas(
             rs, rs.ambience['mailinglist']['moderators'])
-        moderators = [(anid, personas[anid]) for anid in sorted(
-            personas, key=lambda anid: name_key(personas[anid]))]
+        moderators = collections.OrderedDict(
+            (anid, personas[anid]) for anid in sorted(
+                personas, key=lambda anid: name_key(personas[anid])))
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'is_subscribed': is_subscribed,
             'gateway': gateway, 'event': event, 'assembly': assembly,
@@ -364,13 +365,16 @@ class MlFrontend(AbstractUserFrontend):
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        subscribers = [(anid, personas[anid]) for anid in sorted(
-            subscribers, key=lambda anid: name_key(personas[anid]))]
-        moderators = [(anid, personas[anid]) for anid in sorted(
-            rs.ambience['mailinglist']['moderators'],
-            key=lambda anid: name_key(personas[anid]))]
-        requests = [(anid, personas[anid]) for anid in sorted(
-            requests, key=lambda anid: name_key(personas[anid]))]
+        subscribers = collections.OrderedDict(
+            (anid, personas[anid]) for anid in sorted(
+                subscribers, key=lambda anid: name_key(personas[anid])))
+        moderators = collections.OrderedDict(
+            (anid, personas[anid]) for anid in sorted(
+                rs.ambience['mailinglist']['moderators'],
+                key=lambda anid: name_key(personas[anid])))
+        requests = collections.OrderedDict(
+            (anid, personas[anid]) for anid in sorted(
+            requests, key=lambda anid: name_key(personas[anid])))
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits})

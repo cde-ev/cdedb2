@@ -6,6 +6,7 @@ import copy
 import json
 import os
 import pathlib
+import collections
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
@@ -299,9 +300,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Not privileged."))
         attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
-        attendees = sorted(
-            self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
-            key=name_key)
+        attendees = collections.OrderedDict(
+            (e['id'], e) for e in sorted(
+                self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
+                key=name_key))
         return self.render(rs, "list_attendees", {"attendees": attendees})
 
     @access("assembly_admin", modi={"POST"})

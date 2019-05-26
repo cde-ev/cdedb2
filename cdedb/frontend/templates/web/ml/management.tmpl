@@ -58,7 +58,7 @@
             </form>
 
             <ul>
-                {% for moderator, persona in moderators %} {# This is already sorted. #}
+                {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                     <li>
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                         {% if is_admin or moderator != user.persona_id %}
@@ -84,7 +84,7 @@
             {# TODO Restyle #}
             {% if requests|length > 0 %}
                 <ul>
-                    {% for request, persona in requests %} {# This is already sorted. #}
+                    {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li>
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                             <span class="nowrap">
