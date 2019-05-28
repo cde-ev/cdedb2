@@ -2,6 +2,7 @@
 
 import collections.abc
 import datetime
+import decimal
 import json
 import numbers
 
@@ -48,6 +49,67 @@ def genesis_template(**kwargs):
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("core.genesis_cases", data)
+
+
+def changelog_template(**kwargs):
+    defaults = {
+        'address': 'Im Garten 55',
+        'address2': 'Strange Road 1 3/4',
+        'address_supplement': 'bei Spielfraus',
+        'address_supplement2': 'in between',
+        'affiliation': 'nobody',
+        'balance': decimal.Decimal('12.50'),
+        'birth_name': 'Gemeinser',
+        'birthday': datetime.date(1980, 2, 11),
+        'bub_search': True,
+        'change_note': 'Radical change.',
+        'change_status': const.MemberChangeStati.pending.value,
+        'country': None,
+        'country2': 'Further Away',
+        'ctime': now(),
+        'decided_search': True,
+        'display_name': 'Zelda',
+        'family_name': 'Zeruda-Hime',
+        'foto': 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',
+        'free_form': 'stuff she said',
+        'gender': const.Genders.female.value,
+        'generation': 2,
+        'given_names': 'Zelda',
+        'interests': 'never',
+        'is_active': True,
+        'is_admin': False,
+        'is_archived': False,
+        'is_assembly_admin': False,
+        'is_assembly_realm': True,
+        'is_cde_admin': False,
+        'is_cde_realm': True,
+        'is_core_admin': False,
+        'is_event_admin': False,
+        'is_event_realm': True,
+        'is_member': True,
+        'is_ml_admin': False,
+        'is_ml_realm': True,
+        'is_searchable': True,
+        'location': 'Dystopia',
+        'location2': 'Random City',
+        'mobile': '0163/987654321',
+        'name_supplement': 'a.D.',
+        'notes': 'Not Link.',
+        'persona_id': 2,
+        'postal_code': '34576',
+        'postal_code2': '9XA 45-$',
+        'reviewed_by': None,
+        'specialisation': 'nix',
+        'submitted_by': 2,
+        'telephone': '+49 (5432) 123456789',
+        'timeline': 'nirgendwo',
+        'title': 'Prof.',
+        'trial_member': False,
+        'username': 'zelda@example.cde',
+        'weblink': 'https://www.uni.cde'
+    }
+    data = {**defaults, **kwargs}
+    return format_insert_sql("core.changelog", data)
 
 
 def cron_template(**kwargs):
@@ -121,3 +183,38 @@ class TestCron(CronTest):
     def test_genesis_forget_recent_unconfirmed(self):
         self.execute('genesis_forget')
         self.assertEqual({1}, set(self.core.genesis_list_cases()))
+
+    def test_changelog_remind_empty(self):
+        self.cron.execute(['pending_changelog_remind'])
+
+    @prepsql(changelog_template(
+        ctime=now() - datetime.timedelta(hours=10)))
+    def test_changelog_remind_new(self):
+        self.execute('pending_changelog_remind')
+        self.assertEqual(["changelog_requests_pending"],
+                         [mail.template for mail in self.mails])
+
+    @prepsql(changelog_template())
+    def test_changelog_remind_newer(self):
+        self.execute('pending_changelog_remind')
+        self.assertEqual([], [mail.template for mail in self.mails])
+
+    @prepsql(
+        changelog_template(ctime=now() - datetime.timedelta(hours=10))
+        + cron_template(
+            moniker="pending_changelog_remind",
+            store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
+                   "ids": ['2/2']}))
+    def test_changelog_remind_old(self):
+        self.execute('pending_changelog_remind')
+        self.assertEqual([], [mail.template for mail in self.mails])
+
+    @prepsql(
+        changelog_template(ctime=now() - datetime.timedelta(hours=10))
+        + cron_template(
+            moniker="pending_changelog_remind",
+            store={"tstamp": 1, "ids": ['2/2']}))
+    def test_changelog_remind_older(self):
+        self.execute('pending_changelog_remind')
+        self.assertEqual(["changelog_requests_pending"],
+                         [mail.template for mail in self.mails])

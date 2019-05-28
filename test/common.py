@@ -335,8 +335,8 @@ def execsql(sql):
     null = subprocess.DEVNULL
     with open_utf8(path, "w") as f:
         f.write(sql)
-    subprocess.check_call(chmod + (str(path),), stdout=null, stderr=null)
-    subprocess.check_call(psql + (str(path),), stdout=null, stderr=null)
+    subprocess.check_call(chmod + (str(path),), stdout=null)
+    subprocess.check_call(psql + (str(path),), stdout=null)
 
 
 class FrontendTest(unittest.TestCase):

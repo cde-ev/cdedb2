@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-import unittest
 import copy
-import json
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.query import QueryOperators
+
 
 class TestCoreFrontend(FrontendTest):
     def test_login(self):
@@ -22,13 +21,15 @@ class TestCoreFrontend(FrontendTest):
                 self.submit(f, check_notification=False)
                 self.assertEqual(
                     user['display_name'],
-                    self.response.lxml.get_element_by_id('displayname').text_content().strip())
+                    self.response.lxml.get_element_by_id(
+                        'displayname').text_content().strip())
 
     @as_users("anton", "berta", "emilia")
     def test_logout(self, user):
         self.assertEqual(
             user['display_name'],
-            self.response.lxml.get_element_by_id('displayname').text_content().strip())
+            self.response.lxml.get_element_by_id(
+                'displayname').text_content().strip())
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False)
         self.assertNonPresence(user['display_name'])

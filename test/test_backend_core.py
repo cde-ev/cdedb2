@@ -3,7 +3,6 @@
 import copy
 import datetime
 import decimal
-import subprocess
 
 import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
@@ -51,6 +50,7 @@ PERSONA_TEMPLATE = {
     'bub_search': None,
     'foto': None,
 }
+
 
 class TestCoreBackend(BackendTest):
     used_backends = ("core",)
