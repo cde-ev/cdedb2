@@ -177,9 +177,9 @@
         {% for list in subscribers | slice(3 if subscribers|length > 10 else (2 if subscribers|length > 5 else 1)) %}
             <div class="col-sm-{{ col_width }}">
                 <ul class="nosp slim">
-                    {% for subscriber, persona in list %}
+                    {% for subscriber in list %}
                         <li>
-                            {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
+                            {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id']) }}
                             {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
                             <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                   method="POST"
@@ -189,8 +189,8 @@
                                 {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
                                 {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger",
                                         title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
-                                            given_names=persona['given_names'],
-                                            family_name=persona['family_name'])) }}
+                                            given_names=subscribers[subscriber]['given_names'],
+                                            family_name=subscribers[subscriber]['family_name'])) }}
                             </form>
                         </li>
                     {% endfor %}
