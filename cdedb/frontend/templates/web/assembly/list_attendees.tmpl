@@ -55,11 +55,12 @@
 
     <p>{{ gettext("%(count)s participants total.")|format(count=attendees|length) }}</p>
     <div class="row">
-        {% for list in attendees | dictsort | slice(3 if attendees|length > 20 else
-                                                    2 if attendees|length > 10 else 1) %}
+        {# This is already sorted. #}
+        {% for list in attendees.values() | slice((3 if attendees|length > 20 else 2)
+                                                     if attendees|length > 10 else 1) %}
             <div class="col-sm-4">
                 <ul class="slim nosp">
-                    {% for persona_id, persona in list %}
+                    {% for persona in list %}
                         <li>{{ persona['given_names'] }} {{ persona['family_name'] }}</li>
                     {% endfor %}
                 </ul>

@@ -6,6 +6,7 @@ import copy
 import hashlib
 import json
 import pathlib
+import collections
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
@@ -14,7 +15,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, unwrap, now, ProxyShim, PrivilegeError,
-    ASSEMBLY_BAR_MONIKER, open_utf8)
+    ASSEMBLY_BAR_MONIKER, open_utf8, name_key)
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.database.connection import Atomizer
@@ -294,7 +295,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Not privileged."))
         attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
-        attendees = self.coreproxy.get_assembly_users(rs, attendee_ids)
+        attendees = collections.OrderedDict(
+            (e['id'], e) for e in sorted(
+                self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
+                key=name_key))
         return self.render(rs, "list_attendees", {"attendees": attendees})
 
     @access("assembly_admin", modi={"POST"})

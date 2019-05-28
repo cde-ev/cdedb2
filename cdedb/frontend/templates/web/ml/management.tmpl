@@ -58,9 +58,9 @@
             </form>
 
             <ul>
-                {% for moderator in ambience['mailinglist']['moderators']|sort %}
+                {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                     <li>
-                        {{ util.persona_anchor(personas[moderator], ml_id=ambience['mailinglist']['id']) }}
+                        {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                         {% if is_admin or moderator != user.persona_id %}
                             <form action="{{ cdedblink('ml/remove_moderator') }}"
                                   method="POST"
@@ -70,8 +70,8 @@
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
                                 {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
                                         title=gettext("Remove %(given_names)s %(family_name)s as moderator")|format(
-                                            given_names=personas[moderator]['given_names'],
-                                            family_name=personas[moderator]['family_name'])) }}
+                                            given_names=persona['given_names'],
+                                            family_name=persona['family_name'])) }}
                             </form>
                         {% endif %}
                     </li>
@@ -84,9 +84,9 @@
             {# TODO Restyle #}
             {% if requests|length > 0 %}
                 <ul>
-                    {% for request in requests|sort %}
+                    {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li>
-                            {{ util.persona_anchor(personas[request], ml_id=ambience['mailinglist']['id']) }}
+                            {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                             <span class="nowrap">
                                 <form action="{{ cdedblink('ml/decide_request') }}"
                                       method="POST"
@@ -177,20 +177,20 @@
         {% for list in subscribers | slice(3 if subscribers|length > 10 else (2 if subscribers|length > 5 else 1)) %}
             <div class="col-sm-{{ col_width }}">
                 <ul class="nosp slim">
-                    {% for anid in list %}
+                    {% for subscriber, persona in list %}
                         <li>
-                            {{ util.persona_anchor(personas[anid], ml_id=ambience['mailinglist']['id']) }}
-                            {% if anid in explicits %}({{ explicits[anid] }}){% endif %}
+                            {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
+                            {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
                             <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                   method="POST"
-                                  id="removesubscriberform{{ anid }}"
+                                  id="removesubscriberform{{ subscriber }}"
                                   style="display: inline;">
                                 {{ util.anti_csrf_token('ml/remove_subscriber') }}
-                                {{ util.input_hidden(name="subscriber_id", value=anid) }}
+                                {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
                                 {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger",
                                         title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
-                                            given_names=personas[anid]['given_names'],
-                                            family_name=personas[anid]['family_name'])) }}
+                                            given_names=persona['given_names'],
+                                            family_name=persona['family_name'])) }}
                             </form>
                         </li>
                     {% endfor %}

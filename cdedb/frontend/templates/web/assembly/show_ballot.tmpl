@@ -598,7 +598,7 @@
         {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
             {% if attachments %}
                 <ul>
-                    {% for attachment_id, attachment in attachments|dictsort %}
+                    {% for attachment_id, attachment in attachments|xdictsort("title") %}
                         <li>
                             {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                     attachment['title']) }}
