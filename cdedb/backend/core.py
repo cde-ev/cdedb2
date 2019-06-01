@@ -1865,35 +1865,35 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    def delete_genesis_case_blockers(self, case_id):
+    def delete_genesis_case_blockers(self, rs, case_id):
         """Determine whether a genesis case can be deleted."""
 
         case_id = affirm("id", case_id)
         blockers = {}
 
         case = self.genesis_get_case(rs, case_id)
-        if (case["status"] == const.GenesisStati.unconfirmed and
+        if (case["case_status"] == const.GenesisStati.unconfirmed and
                 now() < case["ctime"] + self.conf.PARAMETER_TIMEOUT):
             blockers["unconfirmed"] = case_id
-        if case["status"] in {const.GenesisStati.to_review,
+        if case["case_status"] in {const.GenesisStati.to_review,
                               const.GenesisStati.approved}:
-            blockers["status"] = case["status"]
+            blockers["case_status"] = case["case_status"]
 
         return blockers
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    def delete_genesis_case(self, case_id, cascade=None):
+    def delete_genesis_case(self, rs, case_id, cascade=None):
         """Remove a genesis case."""
 
         case_id = affirm("id", case_id)
-        blockers = self.delete_genesis_blockers(rs, case_id)
+        blockers = self.delete_genesis_case_blockers(rs, case_id)
         if "unconfirmed" in blockers.keys():
             raise ValueError(n_("Unable to remove unconfirmed genesis case "
                                 "before confirmation timeout."))
-        if "status" in blockers.keys():
+        if "case_status" in blockers.keys():
             raise ValueError(n_("Unable to remove genesis case with status {}")
-                             .format(blockers["status"]))
+                             .format(blockers["case_status"]))
         if not cascade:
             cascade = set()
         cascade = affirm_set("str", cascade) & blockers.keys()
@@ -1910,9 +1910,9 @@ class CoreBackend(AbstractBackend):
                 if "unconfirmed" in cascade:
                     raise ValueError(n_("Unable to cascade %(blocker)s."),
                                      {"blocker": "unconfirmed"})
-                if "status" in cascade:
+                if "case_status" in cascade:
                     raise ValueError(n_("Unable to cascade %(blocker)s."),
-                                     {"blocker": "status"})
+                                     {"blocker": "case_status"})
 
             if not blockers:
                 ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)

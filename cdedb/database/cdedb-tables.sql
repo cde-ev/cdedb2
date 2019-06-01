@@ -178,7 +178,7 @@ CREATE INDEX idx_genesis_cases_case_status ON core.genesis_cases(case_status);
 GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
 GRANT SELECT, UPDATE ON core.genesis_cases_id_seq TO cdb_anonymous;
 GRANT UPDATE (case_status) ON core.genesis_cases TO cdb_anonymous;
-GRANT UPDATE ON core.genesis_cases TO cdb_admin;
+GRANT UPDATE, DELETE ON core.genesis_cases TO cdb_admin;
 
 -- this table serves as access log, so entries are never deleted
 CREATE TABLE core.sessions (

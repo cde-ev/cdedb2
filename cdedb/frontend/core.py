@@ -1546,15 +1546,15 @@ class CoreFrontend(AbstractFrontend):
 
         # Use store to log the number of deletions.
         for status in stati:
-            if str(status) not in store:
-                store[str(status)] = 0
+            if status.value not in store:
+                store[status.value] = 0
 
         delete = tuple(case["id"] for case in cases.values() if
                        case["ctime"] < now() - self.conf.PARAMETER_TIMEOUT)
 
         for case_id in delete:
             case = cases[case_id]
-            store[str(case["status"])] += self.coreproxy.delete_genesis_case(
+            store[case["case_status"]] += self.coreproxy.delete_genesis_case(
                 rs, case_id)
 
         return store
