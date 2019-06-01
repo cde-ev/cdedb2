@@ -258,7 +258,7 @@
             {% if data['weblink'] %}
                 <dt>{% trans -%}WWW{%- endtrans %}</dt>
                 {# TODO maybe add links or so - must be validated before! #}
-                <dd>{{ data['weblink'] }}</dd>
+                <dd>{{ util.href('https://%s'|format(data['weblink']), data['weblink']) }}</dd>
             {% endif %}
         </dl>
 
