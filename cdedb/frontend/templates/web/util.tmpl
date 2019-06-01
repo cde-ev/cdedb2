@@ -145,6 +145,14 @@
     {%- endif -%}
 {% endmacro %}
 
+{% macro web_link(weblink) %}
+    {%- if weblink[0:4] == "http" -%}
+        {{ util.href(weblink, weblink) }}
+    {%- else -%}
+        {{ util.href('https://%s'|format(weblink), weblink) }}
+    {%- endif -%}
+{% endmacro %}
+
 {# Macro to generate breadcrumb links. Should be used like this in individual templates:
 
        {% block breadcrumb %}
