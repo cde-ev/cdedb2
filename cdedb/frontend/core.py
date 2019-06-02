@@ -1544,14 +1544,11 @@ class CoreFrontend(AbstractFrontend):
         cases = self.coreproxy.genesis_list_cases(
             rs, stati=stati)
 
-        store["timestamp"] = now().timestamp()
-
         delete = tuple(case["id"] for case in cases.values() if
                        case["ctime"] < now() - self.conf.PARAMETER_TIMEOUT)
 
         count = 0
         for case_id in delete:
-            case = cases[case_id]
             count += self.coreproxy.delete_genesis_case(
                 rs, case_id)
 
