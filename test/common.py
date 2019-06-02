@@ -6,6 +6,7 @@ import email.parser
 import email.policy
 import functools
 import gettext
+import inspect
 import pathlib
 import pytz
 import re
@@ -510,6 +511,32 @@ MailTrace = collections.namedtuple(
     "MailTrace", ['realm', 'template', 'args', 'kwargs'])
 
 
+class CronBackendShim:
+    def __init__(self, cron, proxy, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cron = cron
+        self._proxy = proxy
+
+        self._funs = {}
+        for name, fun in proxy._funs.items():
+            self._funs[name] = self._wrapit(fun)
+
+    def _wrapit(self, fun):
+        @functools.wraps(fun)
+        def new_fun(*args, **kwargs):
+            rs = self._cron.make_request_state()
+            return fun(rs, *args, **kwargs)
+        return new_fun
+
+    def __getattr__(self, name):
+        if name in {"_funs", "_proxy", "_cron"}:
+            raise AttributeError()
+        try:
+            return self._funs[name]
+        except KeyError as e:
+            raise AttributeError from e
+
+
 class CronTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -520,6 +547,11 @@ class CronTest(unittest.TestCase):
     def setUpClass(cls):
         cls.cron = CronFrontend(_BASICCONF.REPOSITORY_PATH
                                 / _BASICCONF.TESTCONFIG_PATH)
+        cls.core = CronBackendShim(cls.cron, cls.cron.core.coreproxy)
+        cls.cde = CronBackendShim(cls.cron, cls.cron.core.cdeproxy)
+        cls.event = CronBackendShim(cls.cron, cls.cron.core.eventproxy)
+        cls.assembly = CronBackendShim(cls.cron, cls.cron.core.assemblyproxy)
+        cls.ml = CronBackendShim(cls.cron, cls.cron.core.mlproxy)
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),

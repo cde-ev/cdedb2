@@ -1534,6 +1534,30 @@ class CoreFrontend(AbstractFrontend):
             }
         return store
 
+    @periodic("genesis_forget", period=96)
+    def genesis_forget(self, rs, store):
+        """Cron job for deleting unconfirmed or rejected genesis cases.
+
+        This allows the username to be used once more.
+        """
+        stati = (const.GenesisStati.unconfirmed, const.GenesisStati.rejected)
+        cases = self.coreproxy.genesis_list_cases(
+            rs, stati=stati)
+
+        delete = tuple(case["id"] for case in cases.values() if
+                       case["ctime"] < now() - self.conf.PARAMETER_TIMEOUT)
+
+        count = 0
+        for case_id in delete:
+            count += self.coreproxy.delete_genesis_case(
+                rs, case_id)
+
+        if count:
+            self.logger.info(
+                "genesis_forget: Deleted {} genesis cases.".format(count))
+
+        return store
+
     @access("core_admin", "event_admin", "ml_admin")
     def genesis_list_cases(self, rs):
         """Compile a list of genesis cases to review."""
