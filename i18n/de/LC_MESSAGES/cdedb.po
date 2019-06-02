@@ -9732,7 +9732,7 @@ msgstr "Formular vorhanden: %(link)s"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:154
 msgid "Remove Minor Form"
-msgstr "Miderjährigenformular entfernen"
+msgstr "Minderjährigenformular entfernen"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:159
 msgid "No Form present – Minors cannot register"
@@ -10491,3 +10491,5 @@ msgstr "Mailinglisten-Log"
 #~ msgid "Course in use cannot be deleted."
 #~ msgstr "Kurse mit Kurswahlen oder Teilnehmern können nicht gelöscht werden."
 
+msgid "The minor form will be permanently deleted."
+msgstr "Das Minderjähgigenformular wird erndgülig gelöscht werden."
