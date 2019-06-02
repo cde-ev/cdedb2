@@ -1534,7 +1534,7 @@ class CoreFrontend(AbstractFrontend):
             }
         return store
 
-    @periodic("genesis_forget")
+    @periodic("genesis_forget", period=96)
     def genesis_forget(self, rs, store):
         """Cron job for deleting unconfirmed or rejected genesis cases.
 
@@ -1544,18 +1544,20 @@ class CoreFrontend(AbstractFrontend):
         cases = self.coreproxy.genesis_list_cases(
             rs, stati=stati)
 
-        # Use store to log the number of deletions.
-        for status in stati:
-            if status.value not in store:
-                store[status.value] = 0
+        store["timestamp"] = now().timestamp()
 
         delete = tuple(case["id"] for case in cases.values() if
                        case["ctime"] < now() - self.conf.PARAMETER_TIMEOUT)
 
+        count = 0
         for case_id in delete:
             case = cases[case_id]
-            store[case["case_status"]] += self.coreproxy.delete_genesis_case(
+            count += self.coreproxy.delete_genesis_case(
                 rs, case_id)
+
+        if count:
+            self.logger.info(
+                "genesis_forget: Deleted {} genesis cases.".format(count))
 
         return store
 
