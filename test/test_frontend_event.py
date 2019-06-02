@@ -640,13 +640,18 @@ etc;anything else""", f['entries_2'].value)
         f['input3'] = "Other Text"
         self.submit(f)
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.assertPresence("Anton Armin A.")
+        self.assertPresence("Garcia G.")
+        self.assertPresence("Emilia E.")
+        self.assertPresence("Example Text")
         f = self.response.forms['queryform']
         f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
         f['qop_reg_fields.xfield_CapitalLetters'] = 2  # 2: is not empty
         self.submit(f)
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Garcia G.")
-        #self.assertPresence("Other Text")
+        self.assertNonPresence("Emilia E.")
+        self.assertPresence("Other Text")
 
     @as_users("anton", "garcia")
     def test_change_minor_form(self, user):

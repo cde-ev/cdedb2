@@ -4221,7 +4221,18 @@ class EventFrontend(AbstractUserFrontend):
                 }
                 code *= self.eventproxy.set_registration(rs, new)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/registration_query")
+
+        # redirect to query filtered by registration_ids
+        query = Query(
+            "qview_registration",
+            self.make_registration_query_spec(rs.ambience['event']),
+            ("reg.id", "persona.given_names", "persona.family_name",
+             "persona.username", "reg_fields.xfield_{}".format(field["field_name"])),
+            (("reg.id", QueryOperators.oneof, registration_ids),),
+            (("persona.family_name", True), ("persona.given_names", True),)
+        )
+        return self.redirect(rs, "event/registration_query",
+                             querytoparams_filter(query))
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
