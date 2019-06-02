@@ -6,6 +6,7 @@ import csv
 import re
 import unittest
 import time
+import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.query import QueryOperators
@@ -1185,6 +1186,20 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile("daniel")
         self.traverse({"description": "Änderungs-Historie"})
         self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € (Überwiesen am 17.03.19)")
+
+    @as_users("anton")
+    def test_money_transfers_file(self, user):
+        self.get("/cde/transfers")
+        f = self.response.forms['transfersform']
+        # This file has a newline at the end, which needs to be stripped or it
+        # causes the checksum to differ and require a third round.
+        with open("/tmp/cdedb-store/testfiles/money_transfers_valid.csv", 'rb') as datafile:
+            data = datafile.read()
+        f['transfers_file'] = webtest.Upload("money_transfers_valid.csv", data, "text/csv")
+        self.submit(f, check_notification=False)
+        f = self.response.forms['transfersform']
+        self.submit(f)
+
 
     @as_users("anton")
     def test_money_transfer_low_balance(self, user):

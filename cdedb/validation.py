@@ -1306,7 +1306,7 @@ def _csvfile(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError(n_("Only text/csv allowed."))))
     if errs:
         return None, errs
-    val = val.decode()
+    val = val.decode().strip()
     return val, errs
 
 
