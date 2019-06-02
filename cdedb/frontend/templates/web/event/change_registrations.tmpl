@@ -93,6 +93,9 @@
         {% else %}
             {{ util.form_input_static(label=gettext("Gender"), value="unterschiedlich") }}
         {% endif %}
+        {% call form_input_optional("reg.orga_notes", label=gettext("Orga Notes"), anid="input_reg_orga_notes") %}
+            {{ util.input_textarea("reg.orga_notes", rows=5, anid="input_reg_orga_notes") }}
+        {% endcall %}
 
         <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
 
@@ -169,6 +172,9 @@
                 {{ util.input_checkbox(name="reg.list_consent", anid="input_reg_list_consent",
                                        label=gettext("Participant List Consent")) }}
             </div>
+        {% endcall %}
+        {% call form_input_optional("reg.notes", anid="input_reg_notes", label=gettext("Notes")) %}
+            {{ util.input_textarea(name="reg.notes", rows="5", anid="input_reg_notes") }}
         {% endcall %}
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% set course_entries = courses|xdictsort('nr', pad=True)
