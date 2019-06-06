@@ -511,7 +511,7 @@ def get_bleach_cleaner():
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
-        'sup', 'br']
+        'sup', 'sub', 'br', 'u', 'dl', 'dt', 'dd',]
     ATTRIBUTES = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -522,8 +522,9 @@ def get_bleach_cleaner():
         'thead': ['valign'],
         'tbody': ['valign'],
         'table': ['border'],
-        'tr': ['colspan'],
-        'th': ['colspan'],
+        'tr': ['colspan', 'rowspan'],
+        'th': ['colspan', 'rowspan'],
+        'td': ['colspan', 'rowspan'],
         'div': ['id'],
         'h4': ['id'],
         'h5': ['id'],
@@ -570,13 +571,22 @@ def get_markdown_parser():
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:
-        md = markdown.Markdown(extensions=["footnotes", "toc", "fenced_code"],
+        md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty", "toc"],
                                extension_configs={
                                    "toc": {
                                        "baselevel": 4,
                                        "permalink": True,
                                        "slugify": md_id_wrapper,
-                                   }})
+                                   },
+                                   'smarty': {
+                                       'substitutions': {
+                                           'left-single-quote': '&sbquo;',
+                                           'right-single-quote': '&lsquo;',
+                                           'left-double-quote': '&bdquo;',
+                                           'right-double-quote': '&ldquo;'
+                                       }
+                                   }
+                               })
 
         MARKDOWN_PARSER.md = md
     else:
@@ -585,7 +595,7 @@ def get_markdown_parser():
 
 
 def md_filter(val):
-    """Custom jinja filter to convert rst to html.
+    """Custom jinja filter to convert markdown to html.
 
     :type val: str
     :rtype: str
