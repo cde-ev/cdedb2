@@ -578,6 +578,7 @@ class CoreFrontend(AbstractFrontend):
           event as cde_admin
         - ``pure_assembly_user``: Search for an assembly only user as
           assembly_admin
+        - ``ml_admin_user``: Search for a mailinglist user as ml_admin
         - ``mod_ml_user``: Search for a mailinglist user as a moderator
         - ``event_admin_user``: Search an event user as event_admin (for
           creating events)
@@ -616,6 +617,11 @@ class CoreFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
+        elif kind == "ml_admin_user":
+            if "ml_admin" not in rs.user.roles:
+                raise PrivilegeError(n_("Not privileged."))
+            search_additions.append(
+                ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "mod_ml_user" and aux:
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
             if "ml_admin" not in rs.user.roles:
