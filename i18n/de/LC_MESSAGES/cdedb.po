@@ -5837,7 +5837,7 @@ msgstr ""
 "im Internet von anderen CdElern eingesehen werden können. (Die Daten sind"
 " passwortgeschützt und werden verschlüsselt übertragen. Nur bei "
 "Einverständnis mit der Speicherung kann Dir der CdE Mails mit wichtigen "
-"Informationen und Erinnerungen an zu zahlende Beiträge scchicken.)"
+"Informationen und Erinnerungen an zu zahlende Beiträge schicken.)"
 
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:71
 msgid ""
@@ -9484,7 +9484,7 @@ msgid ""
 msgstr ""
 "Im Rahmen dieser Veranstaltung werden Fotos und Aufnahmen entstehen, die "
 "für die Veranstaltungsdokumentation und eine CdE-interne, "
-"passwortgeschützte Mediensammlung verwendet werden. Einzeile Fotos und "
+"passwortgeschützte Mediensammlung verwendet werden. Einzelne Fotos und "
 "Aufnahmen können auf gesonderten Wunsch hin davon ausgenommen werden."
 
 #: cdedb/frontend/templates/web/event/register.tmpl:138
