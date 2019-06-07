@@ -90,7 +90,8 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def retrieve_log(self, rs, codes=None, mailinglist_id=None, start=None,
-                     stop=None, additional_info=None, time_start=None,
+                     stop=None, persona_id=None, submitted_by=None,
+                     additional_info=None, time_start=None,
                      time_stop=None):
         """Get recorded activity.
 
@@ -102,6 +103,8 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int or None
         :type start: int or None
         :type stop: int or None
+        :type persona_id: int or None
+        :type submitted_by: int or None
         :type additional_info: str or None
         :type time_start: datetime or None
         :type time_stop: datetime or None
@@ -112,7 +115,8 @@ class MlBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, "enum_mllogcodes", "mailinglist", "ml.log", codes,
-            mailinglist_id, start, stop, additional_info=additional_info,
+            mailinglist_id, start, stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
 
     @access("ml_admin")
