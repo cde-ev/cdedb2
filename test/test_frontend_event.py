@@ -1461,7 +1461,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("α", 'problem_instructor_wrong_course')
         self.assertPresence("δ", 'problem_instructor_wrong_course')
 
-
     @as_users("garcia")
     def test_downloads(self, user):
         self.traverse({'href': '/event/$'},
@@ -1680,7 +1679,6 @@ etc;anything else""", f['entries_2'].value)
         # ... but the checkin is still valid
         self.assertPresence("eingecheckt:")
 
-
     @as_users("garcia")
     def test_manage_attendees(self, user):
         self.traverse({'href': '/event/$'},
@@ -1851,12 +1849,14 @@ etc;anything else""", f['entries_2'].value)
         self.logout()
         self.test_manage_attendees()
         self.logout()
+        self.test_add_empty_registration()
+        self.logout()
 
         # Now check it
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [0–10]")
+        self.assertTitle("Veranstaltungen-Log [0–11]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
@@ -1869,3 +1869,12 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
         self.assertTitle("Große Testakademie 2222: Log [0–6]")
+
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/log'})
+        self.assertTitle("Veranstaltungen-Log [0–11]")
+        f = self.response.forms['logshowform']
+        f['persona_id'] = "DB-5-1"
+        f['submitted_by'] = "DB-1-9"
+        self.submit(f)
+        self.assertTitle("Veranstaltungen-Log [0–1]")
