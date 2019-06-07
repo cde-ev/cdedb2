@@ -62,5 +62,5 @@
         </tbody>
     </table>
 
-    {{ generic.log_filter(cdedblink('assembly/view_log'), enums['AssemblyLogCodes'], 'assembly_id') }}
+    {{ generic.log_filter(cdedblink('assembly/view_log'), enums['AssemblyLogCodes'], 'assembly_admin_user', 'assembly_id') }}
 {% endblock %}

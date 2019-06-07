@@ -610,6 +610,11 @@ class CoreFrontend(AbstractFrontend):
                 raise PrivilegeError(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
+        elif kind == "assembly_admin_user":
+            if "assembly_admin" not in rs.user.roles:
+                raise PrivilegeError(n_("Not privileged."))
+            search_additions.append(
+                ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             if "assembly_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
@@ -1759,17 +1764,18 @@ class CoreFrontend(AbstractFrontend):
                  ("stop", "non_negative_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_changelog_meta(self, rs, stati, start, stop, submitted_by,
-                            reviewed_by, persona_id, additional_info,
-                            time_start, time_stop):
+    def view_changelog_meta(self, rs, stati, start, stop, persona_id,
+                            submitted_by, additional_info, time_start,
+                            time_stop, reviewed_by):
         """View changelog activity."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.coreproxy.retrieve_changelog_meta(
-            rs, stati, start, stop, submitted_by, reviewed_by, persona_id,
-            additional_info, time_start, time_stop)
+            rs, stati, start, stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -1782,21 +1788,23 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_log(self, rs, codes, persona_id, start, stop, additional_info,
-                 time_start, time_stop):
+    def view_log(self, rs, codes, start, stop, persona_id, submitted_by,
+                 additional_info, time_start, time_stop):
         """View activity."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.coreproxy.retrieve_log(rs, codes, persona_id, start, stop,
-                                          additional_info, time_start,
-                                          time_stop)
+        log = self.coreproxy.retrieve_log(
+            rs, codes, start, stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}

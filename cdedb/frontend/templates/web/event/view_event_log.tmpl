@@ -69,5 +69,5 @@
         </tbody>
     </table>
 
-    {{ generic.log_filter(cdedblink('event/view_event_log'), 'enums['EventLogCodes'], 'orga_event_user', aux=ambience['event']['id']) }}
+    {{ generic.log_filter(cdedblink('event/view_event_log'), enums['EventLogCodes'], 'orga_event_user', aux=ambience['event']['id']) }}
 {% endblock %}

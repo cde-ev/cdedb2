@@ -668,26 +668,18 @@
                         anid="input-submitted_by") }}
             {{ util.form_input_text(name="persona_id", label=gettext("Affected"), small=True,
                         anid="input-persona_id") }}
+            {{ util.cdedb_script('cdedb_searchpersona.js') }}
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#input-submitted_by').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
                                              false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
-                $('#input-reviewed_by').cdedbSearchPerson(
+                $('#input-persona_id').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
                                              false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
-            {% if filter_name == "persona_id" %}
-                {{ util.form_input_text(name="persona_id", label=gettext("Account"), small=True, anid="input-persona_id") }}
-                {{ util.cdedb_script('cdedb_searchpersona.js') }}
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
-                    $('#input-persona_id').cdedbSearchPerson(
-                        '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
-                                             false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
-                    );
-                </script>
-            {% elif filter_name == "assembly_id" %}
+            {% if filter_name == "assembly_id" %}
                 {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
                         entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
             {% elif filter_name == "pevent_id" %}
@@ -702,9 +694,8 @@
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}
-                {{ util.cdedb_script('cdedb_searchpersona.js') }}
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
-                    $('#input-persona_id').cdedbSearchPerson(
+                    $('#input-reviewed_by').cdedbSearchPerson(
                         '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
                                              false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                     );
