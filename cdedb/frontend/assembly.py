@@ -513,11 +513,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     params={'sha': hasher.hexdigest()})
             return self.redirect(rs, "assembly/show_ballot")
         # initial checks done, present the ballot
-        ballot['is_voting'] = (
-                timestamp > ballot['vote_begin']
-                and (timestamp < ballot['vote_end']
-                     or (ballot['extended']
-                         and timestamp < ballot['vote_extension_end'])))
+        ballot['is_voting'] = self.assemblyproxy.is_ballot_voting(rs, ballot_id)
         result = None
         if ballot['is_tallied']:
             path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
