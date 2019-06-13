@@ -368,6 +368,7 @@ class TestAssemblyBackend(BackendTest):
         ballot_id = self.assembly.create_ballot(self.key, data)
         time.sleep(1)
         self.assembly.check_voting_priod_extension(self.key, ballot_id)
+        self.assertTrue(self.assembly.tally_ballot(self.key, ballot_id))
         self.assembly.external_signup(self.key, new_id,
                                       persona_id=USER_DICT['kalif']['id'])
         update = {
