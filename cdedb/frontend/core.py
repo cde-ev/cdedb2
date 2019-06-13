@@ -610,11 +610,6 @@ class CoreFrontend(AbstractFrontend):
                 raise PrivilegeError(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
-        elif kind == "assembly_admin_user":
-            if "assembly_admin" not in rs.user.roles:
-                raise PrivilegeError(n_("Not privileged."))
-            search_additions.append(
-                ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             if "assembly_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
