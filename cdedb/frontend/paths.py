@@ -491,6 +491,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
             sub('/assembly/<int:assembly_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_assembly"),
+                rule("/delete", methods=_POST,
+                     endpoint="delete_assembly"),
                 rule("/change", methods=_GET,
                      endpoint="change_assembly_form"),
                 rule("/change", methods=_POST,

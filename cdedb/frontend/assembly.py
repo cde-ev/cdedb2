@@ -169,12 +169,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Present an assembly."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Not privileged."))
+
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+
         has_ballot_attachments = False
         ballot_attachments = {}
         for ballot_id in ballot_ids:
@@ -184,19 +186,20 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs, ballot_attachment_ids)
             has_ballot_attachments = has_ballot_attachments or bool(
                 ballot_attachment_ids)
-        timestamp = now()
-        has_activity = False
-        if timestamp < rs.ambience['assembly']['signup_end']:
-            has_activity = True
-        if any((ballot['extended'] is None
-                or timestamp < ballot['vote_end']
-                or (ballot['extended']
-                    and timestamp < ballot['vote_extension_end']))
-               for ballot in ballots.values()):
-            has_activity = True
+
+        if self.is_admin(rs):
+            conclude_blockers = self.assemblyproxy.conclude_assembly_blockers(
+                rs, assembly_id)
+            delete_blockers = self.assemblyproxy.delete_assembly_blockers(
+                rs, assembly_id)
+        else:
+            conclude_blockers = {"is_admin": False}
+            delete_blockers = {"is_admin": False}
+
         return self.render(rs, "show_assembly", {
-            "attachments": attachments, "attends": attends,
-            "has_activity": has_activity, "ballots": ballots,
+            "attachments": attachments, "attends": attends, "ballots": ballots,
+            "delete_blockers": delete_blockers,
+            "conclude_blockers": conclude_blockers,
             "ballot_attachments": ballot_attachments,
             "has_ballot_attachments": has_ballot_attachments})
 
@@ -235,6 +238,29 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, new_id)
         return self.redirect(rs, "assembly/show_assembly", {
             'assembly_id': new_id})
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("ack_delete", "bool"))
+    def delete_assembly(self, rs, assembly_id, ack_delete):
+        if not ack_delete:
+            rs.errors.append(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.errors:
+            return self.show_assembly(rs, assembly_id)
+        blockers = self.assemblyproxy.delete_assembly_blockers(rs, assembly_id)
+        if "vote_begin" in blockers:
+            rs.notify("error",
+                      ValueError(n_("Unable to remove active ballot.")))
+            return self.show_assembly(rs, assembly_id)
+
+        # Specify what to cascade
+        cascade = {"ballots", "attendees", "attachments", "log",
+                   "mailinglists"} & blockers.keys()
+        code = self.assemblyproxy.delete_assembly(
+            rs, assembly_id, cascade=cascade)
+
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/index")
 
     def process_signup(self, rs, assembly_id, persona_id=None):
         """Helper to actually perform signup.
