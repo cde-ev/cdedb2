@@ -10493,3 +10493,6 @@ msgstr "Mailinglisten-Log"
 
 msgid "The minor form will be permanently deleted."
 msgstr "Das Minderjähgigenformular wird erndgülig gelöscht werden."
+
+msgid "TAR-GZ-File"
+msgstr "TAR-GZ-Archiv"
