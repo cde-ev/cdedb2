@@ -37,7 +37,8 @@ class RequestState:
 
     def __init__(self, sessionkey, user, request, response, notifications,
                  mapadapter, requestargs, errors, values, lang, gettext,
-                 ngettext, coders, begin, scriptkey):
+                 ngettext, coders, begin, scriptkey, default_gettext=None,
+                 default_ngettext=None):
         """
         :type sessionkey: str or None
         :type user: :py:class:`User`
@@ -71,7 +72,7 @@ class RequestState:
         :type gettext: callable
         :param gettext: translation function as in the gettext module
         :type ngettext: callable
-        :param lang: translation function as in the gettext module
+        :param ngettext: translation function as in the gettext module
         :type coders: {str: callable}
         :param coders: Functions for encoding and decoding parameters primed
           with secrets. This is hacky, but sadly necessary.
@@ -80,6 +81,12 @@ class RequestState:
         :type scriptkey: str or None
         :param scriptkey: Like a sessionkey, but for scripts. This is simply
           stored, so each frontend can take separate action.
+        :type default_gettext: callable
+        :param default_gettext: default translation function used to ensure
+            stability across different locales
+        :type default_ngettext: callable
+        :param default_ngettext: default translation function used to ensure
+            stability across different locales
         """
         self.ambience = {}
         self.sessionkey = sessionkey
@@ -96,6 +103,8 @@ class RequestState:
         self.lang = lang
         self.gettext = gettext
         self.ngettext = ngettext
+        self.default_gettext = default_gettext or gettext
+        self.default_ngettext = default_ngettext or ngettext
         self._coders = coders
         self.begin = begin
         self.scriptkey = scriptkey
