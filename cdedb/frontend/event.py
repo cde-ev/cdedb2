@@ -2027,7 +2027,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
 
-        if part_ids is None:
+        if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
             rs.notify("error", n_("Unknown Part."))

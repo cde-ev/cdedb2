@@ -364,8 +364,7 @@ class CdEBackend(AbstractBackend):
                     const.FinanceLogCodes.lastschrift_transaction_success,
                     change_note="Erfolgreicher Lastschrifteinzug.")
                 if new_balance >= self.conf.MEMBERSHIP_FEE:
-                    ret *= self.core.change_membership(
-                        rs, datum['persona_id'], is_member=True)
+                    self.core.change_membership(rs, persona_id, is_member=True)
                 # Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:
