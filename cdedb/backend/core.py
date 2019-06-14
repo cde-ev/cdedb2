@@ -1892,7 +1892,7 @@ class CoreBackend(AbstractBackend):
             raise ValueError(n_("Unable to remove unconfirmed genesis case "
                                 "before confirmation timeout."))
         if "case_status" in blockers.keys():
-            raise ValueError(n_("Unable to remove genesis case with status {}")
+            raise ValueError(n_("Unable to remove genesis case with status {}.")
                              .format(blockers["case_status"]))
         if not cascade:
             cascade = set()

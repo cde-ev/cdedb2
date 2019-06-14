@@ -16,6 +16,7 @@ I18N_STRINGS = (
     n_("AssemblyLogCodes.assembly_created"),
     n_("AssemblyLogCodes.assembly_changed"),
     n_("AssemblyLogCodes.assembly_concluded"),
+    n_("AssemblyLogCodes.assembly_deleted"),
     n_("AssemblyLogCodes.ballot_created"),
     n_("AssemblyLogCodes.ballot_changed"),
     n_("AssemblyLogCodes.ballot_deleted"),
@@ -53,6 +54,7 @@ I18N_STRINGS = (
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),
+    n_("EventLogCodes.event_deleted"),
     n_("EventLogCodes.orga_added"),
     n_("EventLogCodes.orga_removed"),
     n_("EventLogCodes.part_created"),
