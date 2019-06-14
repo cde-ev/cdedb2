@@ -163,7 +163,9 @@ class EventFrontend(AbstractUserFrontend):
             'pevent_id': OrderedDict(
                 sorted(events.items(), key=operator.itemgetter(0))),
             'gender': OrderedDict(
-                enum_entries_filter(const.Genders, rs.gettext))
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
         }
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         default_queries = self.conf.DEFAULT_QUERIES['qview_event_user']
