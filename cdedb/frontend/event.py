@@ -3815,21 +3815,28 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def make_registration_query_aux(rs, event, courses,
-                                    lodgements):
+                                    lodgements, fixed_gettext=None):
         """Un-inlined code to prepare input for template.
 
         :type rs: :py:class:`FrontendRequestState`
         :type event: {str: object}
         :type courses: {int: {str: object}}
         :type lodgements: {int: {str: object}}
+        :type fixed_gettext: callable
+        :param fixed_gettext: function to call to produce localized readable
+            output from things like enums.
         :rtype: ({str: dict}, {str: str})
         :returns: Choices for select inputs and titles for columns.
         """
         tracks = event['tracks']
+
+        if fixed_gettext is None:
+            fixed_gettext = rs.gettext
+
         # First we construct the choices
         choices = {
             'persona.gender': OrderedDict(
-                enum_entries_filter(const.Genders, rs.gettext))
+                enum_entries_filter(const.Genders, fixed_gettext))
         }
         lodgement_choices = OrderedDict(
             sorted(((lodgement_id, lodgement['moniker'])
@@ -3839,7 +3846,7 @@ class EventFrontend(AbstractUserFrontend):
             choices.update({
                 "part{0}.status{0}".format(part_id):
                     OrderedDict(enum_entries_filter(
-                        const.RegistrationPartStati, rs.gettext)),
+                        const.RegistrationPartStati, fixed_gettext)),
                 "part{0}.lodgement_id{0}".format(part_id): lodgement_choices,
             })
             choices.update({
@@ -3882,7 +3889,7 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("part{0}.status{0}".format(part_id)
                          for part_id in event['parts']): OrderedDict(
                     enum_entries_filter(const.RegistrationPartStati,
-                                        rs.gettext)),
+                                        fixed_gettext)),
                 ",".join("part{0}.lodgement{0}".format(part_id)
                          for part_id in event['parts']): lodgement_choices,
             })
@@ -3902,7 +3909,7 @@ class EventFrontend(AbstractUserFrontend):
         if len(tracks) > 1:
             for track_id, track in tracks.items():
                 titles.update({
-                    "track{0}.course_id{0}".format(track_id): rs.gettext(
+                    "track{0}.course_id{0}".format(track_id): fixed_gettext(
                         "{title}: course ").format(
                         title=track['title']),
                     "track{0}.course_instructor{0}".format(
@@ -3916,7 +3923,7 @@ class EventFrontend(AbstractUserFrontend):
                 })
                 titles.update({
                     "course_fields{0}.xfield_{1}_{0}".format(
-                        track_id, field['field_name']): rs.gettext(
+                        track_id, field['field_name']): fixed_gettext(
                         "{title} course: {field}").format(
                         field=field['field_name'], title=track['title'])
                     for field in event['fields'].values()
@@ -3925,19 +3932,19 @@ class EventFrontend(AbstractUserFrontend):
                 })
             titles.update({
                 ",".join("track{0}.course_id{0}".format(track_id)
-                         for track_id in tracks): rs.gettext(
+                         for track_id in tracks): fixed_gettext(
                     "any track: course"),
                 ",".join("track{0}.course_instructor{0}".format(track_id)
-                         for track_id in tracks): rs.gettext(
+                         for track_id in tracks): fixed_gettext(
                     "any track: course instuctor"),
                 ",".join("track{0}.is_course_instructor{0}".format(track_id)
-                         for track_id in tracks): rs.gettext(
+                         for track_id in tracks): fixed_gettext(
                     "any track: instructs their course"),
             })
             titles.update({
                 ",".join("course_fields{0}.xfield_{1}_{0}".format(
                     track_id, field['field_name'])
-                         for track_id in tracks): rs.gettext(
+                         for track_id in tracks): fixed_gettext(
                     "any track course: {field}").format(
                     field=field['field_name'])
                 for field in event['fields'].values()
@@ -3946,32 +3953,32 @@ class EventFrontend(AbstractUserFrontend):
         elif len(tracks) == 1:
             track_id, track = next(iter(tracks.items()))
             titles.update({
-                "track{0}.course_id{0}".format(track_id): rs.gettext("course"),
+                "track{0}.course_id{0}".format(track_id): fixed_gettext("course"),
                 "track{0}.course_instructor{0}".format(track_id):
-                    rs.gettext("course instructor"),
+                    fixed_gettext("course instructor"),
                 "track{0}.is_course_instructor{0}".format(track_id):
-                    rs.gettext("instructs their course"),
+                    fixed_gettext("instructs their course"),
             })
             titles.update({
                 "course_fields{0}.xfield_{1}_{0}".format(
-                    track_id, field['field_name']): rs.gettext(
+                    track_id, field['field_name']): fixed_gettext(
                     "course: {field}").format(field=field['field_name'])
                 for field in event['fields'].values()
                 if field['association'] == const.FieldAssociations.course})
         if len(event['parts']) > 1:
             for part_id, part in event['parts'].items():
                 titles.update({
-                    "part{0}.status{0}".format(part_id): rs.gettext(
+                    "part{0}.status{0}".format(part_id): fixed_gettext(
                         "{title}: registration status").format(
                         title=part['title']),
-                    "part{0}.lodgement_id{0}".format(part_id): rs.gettext(
+                    "part{0}.lodgement_id{0}".format(part_id): fixed_gettext(
                         "{title}: lodgement").format(title=part['title']),
-                    "part{0}.is_reserve{0}".format(part_id): rs.gettext(
-                        "{title}: camping mat user").format(title=part['title']),
+                    "part{0}.is_reserve{0}".format(part_id): fixed_gettext(
+                        "{title}: camping mat user").format(title=part['title'])
                 })
                 titles.update({
                     "lodge_fields{0}.xfield_{1}_{0}".format(
-                        part_id, field['field_name']): rs.gettext(
+                        part_id, field['field_name']): fixed_gettext(
                         "{title} lodgement: {field}").format(
                         field=field['field_name'], title=part['title'])
                     for field in event['fields'].values()
@@ -3979,18 +3986,18 @@ class EventFrontend(AbstractUserFrontend):
                 })
             titles.update({
                 ",".join("part{0}.status{0}".format(part_id)
-                         for part_id in event['parts']): rs.gettext(
+                         for part_id in event['parts']): fixed_gettext(
                     "any part: registration status"),
                 ",".join("part{0}.lodgement{0}".format(part_id)
-                         for part_id in event['parts']): rs.gettext(
+                         for part_id in event['parts']): fixed_gettext(
                     "any part: lodgement"),
                 ",".join("part{0}.is_reserve{0}".format(part_id)
-                         for part_id in event['parts']): rs.gettext(
+                         for part_id in event['parts']): fixed_gettext(
                     "any part: camping mat user")})
             titles.update({
                 ",".join("lodge_fields{0}.xfield_{1}_{0}".format(
                     part_id, field['field_name'])
-                         for part_id in event['parts']): rs.gettext(
+                         for part_id in event['parts']): fixed_gettext(
                     "any part lodgement: {field}").format(
                     field=field['field_name'])
                 for field in event['fields'].values()
@@ -4000,15 +4007,15 @@ class EventFrontend(AbstractUserFrontend):
             part_id, part = next(iter(event['parts'].items()))
             titles.update({
                 "part{0}.status{0}".format(part_id):
-                    rs.gettext("registration status"),
+                    fixed_gettext("registration status"),
                 "part{0}.lodgement_id{0}".format(part_id):
-                    rs.gettext("lodgement"),
+                    fixed_gettext("lodgement"),
                 "part{0}.is_reserve{0}".format(part_id):
-                    rs.gettext("camping mat user"),
+                    fixed_gettext("camping mat user"),
             })
             titles.update({
                 "lodge_fields{0}.xfield_{1}_{0}".format(
-                    part_id, field['field_name']): rs.gettext(
+                    part_id, field['field_name']): fixed_gettext(
                     "lodgement: {field}").format(field=field['field_name'])
                 for field in event['fields'].values()
                 if field['association'] == const.FieldAssociations.lodgement})
@@ -4035,8 +4042,12 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        if download is None:
+            fixed_gettext = rs.gettext
+        else:
+            fixed_gettext = rs.default_gettext
         choices, titles = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements)
+            rs, rs.ambience['event'], courses, lodgements, fixed_gettext)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
