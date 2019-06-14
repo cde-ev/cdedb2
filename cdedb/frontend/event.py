@@ -2166,12 +2166,14 @@ class EventFrontend(AbstractUserFrontend):
         }
 
         # Construct CSV columns
-        columns = ['id', 'persona.id', 'persona.birthday', 'persona.telephone',
-                   'persona.mobile', 'persona.address',
-                   'persona.address_supplement', 'persona.postal_code',
-                   'persona.location', 'persona.country', 'payment',
-                   'parental_agreement', 'mixed_lodging', 'list_consent',
-                   'notes', 'orga_notes', 'checkin',
+        columns = ['id', 'persona.id', 'persona.title', 'persona.given_names',
+                   'persona.display_name', 'persona.family_name',
+                   'persona.name_supplement', 'persona.birthday',
+                   'persona.gender', 'persona.telephone', 'persona.mobile',
+                   'persona.address', 'persona.address_supplement',
+                   'persona.postal_code', 'persona.location', 'persona.country',
+                   'payment', 'parental_agreement', 'mixed_lodging',
+                   'list_consent', 'notes', 'orga_notes', 'checkin',
                    # 'creation_time', 'modification_time',
                    ]
         columns.extend('fields.' + field['field_name']
