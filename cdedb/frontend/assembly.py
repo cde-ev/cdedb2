@@ -206,6 +206,9 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def change_assembly_form(self, rs, assembly_id):
         """Render form."""
+        if not rs.ambience['assembly']['is_active']:
+            rs.notify("warning", n_("Assembly already concluded."))
+            return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, rs.ambience['assembly'])
         return self.render(rs, "change_assembly")
 
@@ -340,7 +343,17 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_assembly(rs, assembly_id)
 
-        code = self.assemblyproxy.conclude_assembly(rs, assembly_id)
+        blockers = self.assemblyproxy.conclude_assembly_blockers(
+            rs, assembly_id)
+
+        if "ballot" in blockers:
+            rs.notify("error",
+                      ValueError(n_("Unable to conclude assembly with "
+                                    "open ballot.")))
+            return self.show_assembly(rs, assembly_id)
+
+        cascade = {"signup_end"}
+        code = self.assemblyproxy.conclude_assembly(rs, assembly_id, cascade)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
 
