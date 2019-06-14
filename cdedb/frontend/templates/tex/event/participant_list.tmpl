@@ -28,9 +28,12 @@
     \begin{longtable}{
     |llll
     <<%- if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
-        <<<- ('l'*(ambience['event']['tracks']|length))|te ->>>
-        <<%- for ep_id, ep in ambience['event']['parts'].items() if ep['tracks']|length < 1 -%>>
-            l
+        <<%- for ep_id, ep in parts.items() -%>>
+            <<%- if ep['tracks']|length > 1 -%>>
+                <<<- ('l'*ep['tracks']|length) ->>>
+            <<%- else -%>>
+                <<<- 'l' ->>>
+            <<%- endif -%>>
         <<%- endfor -%>>
     <<%- endif -%>>
     |}
@@ -41,7 +44,7 @@
 			& \head{E-Mail}
 			& \head{PLZ \& Ort}
             % Kursschienen/Eventparts
-            <<% for ep_id, ep in ambience['event']['parts']|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+            <<% for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
 			    <<% if ep['tracks']|length < 1 -%>>
                     & \head{<<< ep.shortname|te >>>}
                 <<% endif -%>>
@@ -68,7 +71,7 @@
                 <<<- personas[registration['persona_id']]['country']|te ->>>
             <<% endif -%>>
             % Kurse
-            <<% for ep_id, ep in ambience['event']['parts']|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+            <<% for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
                 <<% if ep['tracks']|length < 1 -%>>
                     <<% if registration['parts'][ep_id]['status'] == participant -%>>
                         & \checkmark

@@ -8979,6 +8979,9 @@ msgstr "Orga-Liste (Querformat)"
 msgid "Public Lists by part"
 msgstr "Öffentliche Listen nach Veranstaltungsteil"
 
+msgid "Orga Lists by part"
+msgstr "Orga-Listen nach Veranstaltungsteil"
+
 #: cdedb/frontend/templates/web/event/downloads.tmpl:95
 msgid "Export"
 msgstr "Datenexport"

@@ -2017,20 +2017,29 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("runs", "single_digit_int"), ("landscape", "bool"),
-                 ("orgas_only", "bool"))
+                 ("orgas_only", "bool"), ("part_ids", "[id]"))
     @event_guard()
     def download_participant_list(self, rs, event_id, runs, landscape,
-                                  orgas_only):
+                                  orgas_only, part_ids=None):
         """Create list to send to all participants."""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+
+        if part_ids is None:
+            part_ids = rs.ambience['event']['parts'].keys()
+        if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
+            rs.notify("error", n_("Unknown Part."))
+            return self.redirect(rs, "event/downloads")
+        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
+
         registrations = {
             k: v
-            for k, v in (self.eventproxy.get_registrations(rs, registration_ids)
-                         .items())
-            if any(part['status'] == const.RegistrationPartStati.participant
-                   for part in v['parts'].values())}
+            for k, v in registrations.items()
+            if any(v['parts'][part_id]['status'] ==
+                   const.RegistrationPartStati.participant
+                   for part_id in parts)}
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
         ordered = sorted(
@@ -2041,7 +2050,7 @@ class EventFrontend(AbstractUserFrontend):
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered,
             'orientation': "landscape" if landscape else "portrait",
-            'orgas_only': orgas_only,
+            'orgas_only': orgas_only, 'parts': parts,
         })
         file = self.serve_latex_document(
             rs, tex, "{}_participant_list".format(
