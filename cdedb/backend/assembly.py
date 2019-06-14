@@ -361,7 +361,7 @@ class AssemblyBackend(AbstractBackend):
             entity_key="assembly_id")
         if ballots:
             blockers["ballots"] = [e["id"] for e in ballots]
-            for ballot_id in ballots:
+            for ballot_id in blockers["ballots"]:
                 if "vote_begin" in self.delete_ballot_blockers(rs, ballot_id):
                     if "vote_begin" not in blockers:
                         blockers["vote_begin"] = []
@@ -374,7 +374,7 @@ class AssemblyBackend(AbstractBackend):
             blockers["attendees"] = [e["id"] for e in attendees]
             
         attachments = self.sql_select(
-            rs, "assembly.attendees", ("id",), (assembly_id,),
+            rs, "assembly.attachments", ("id",), (assembly_id,),
             entity_key="assembly_id")
         if attachments:
             blockers["attachments"] = [e["id"] for e in attachments]
@@ -407,12 +407,10 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm("id", assembly_id)
         blockers = self.delete_assembly_blockers(rs, assembly_id)
-        if {"vote_begin"} <= blockers.keys():
+        if "vote_begin" in blockers:
             raise ValueError(n_("Unable to remove active ballot."))
-        if not cascade:
-            cascade = set()
-        cascade = affirm_set("str", cascade)
-        cascade = cascade & blockers.keys()
+        cascade = affirm_set("str", cascade or set()) & blockers.keys()
+
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -710,12 +708,10 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm("id", ballot_id)
         blockers = self.delete_ballot_blockers(rs, ballot_id)
-        if {"vote_begin"} <= blockers.keys():
+        if "vote_begin" in blockers:
             raise ValueError(n_("Unable to remove active ballot."))
-        if not cascade:
-            cascade = set()
-        cascade = affirm_set("str", cascade)
-        cascade = cascade & blockers.keys()
+        cascade = affirm_set("str", cascade or set()) & blockers.keys()
+
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {

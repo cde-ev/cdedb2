@@ -627,7 +627,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Remove a ballot."""
         if not ack_delete:
             rs.errors.append(
-                ("ack_conclude", ValueError(n_("Must be checked."))))
+                ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)
         blockers = self.assemblyproxy.delete_ballot_blockers(rs, ballot_id)
