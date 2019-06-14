@@ -1758,6 +1758,21 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
     @as_users("anton")
+    def test_delete_event(self, user):
+        self.traverse({'href': '/event'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        f = self.response.forms['deleteeventform']
+        f['ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("Veranstaltungen")
+        self.assertNonPresence("Testakademie")
+        self.traverse({'href': '/cde'},
+                      {'href': '/cde/past/event/list'})
+        self.assertTitle("Vergangene Veranstaltungen")
+        self.assertNonPresence("Testakademie")
+
+    @as_users("anton")
     def test_archive(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
