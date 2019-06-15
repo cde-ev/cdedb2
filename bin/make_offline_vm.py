@@ -129,6 +129,18 @@ def work(args):
         ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-f",
          str(clean_script)], stderr=subprocess.DEVNULL)
 
+    print("Make orgas into admins")
+    orgas = {e['persona_id'] for e in data['event.orgas'].values()}
+    for persona in data['core.personas'].values():
+        if persona['id'] in orgas:
+            bits = (
+                "is_active", "is_core_admin", "is_cde_admin",
+                "is_event_admin", "is_ml_admin", "is_cde_realm",
+                "is_event_realm", "is_ml_realm")
+            for bit in bits:
+                persona[bit] = True
+
+    print("Prepare database.")
     # Fix uneditable table
     subprocess.check_call(
         ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
