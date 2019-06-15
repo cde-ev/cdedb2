@@ -74,6 +74,12 @@ def populate_table(cur, table, data):
                              placeholders=", ".join(("%s",) * len(keys)))
         params = tuple(entry[key] for key in keys)
         cur.execute(query, params)
+    query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
+        table, max(int(id) for id in data) + 1)
+    # we need elevated privileges for sequences
+    subprocess.check_call(
+        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
+         query], stderr=subprocess.DEVNULL)
 
 
 def make_institution(cur, institution_id):
