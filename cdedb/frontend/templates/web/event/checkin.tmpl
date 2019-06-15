@@ -33,6 +33,9 @@
                         {{ personas[registration['persona_id']]['given_names'] }}
                         {{ personas[registration['persona_id']]['family_name'] }}
                     </span>
+                    {% if registration['age'].is_minor() %}
+                        {{ gettext(registration['age']|string) }}
+                    {% endif %}
                     {% if ambience['event']['parts']|length > 1 %}
                         <br />
                         <span class="small text-muted">

@@ -4078,21 +4078,15 @@ class EventFrontend(AbstractUserFrontend):
     def checkin_form(self, rs, event_id):
         """Render form."""
         today = now().date()
-        for part_id, part in rs.ambience['event']['parts'].items():
-            if part['part_begin'] <= today <= part['part_end']:
-                current_part = part_id
-                if part['part_end'] > today:
-                    break
-        else:
-            current_part = None
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        there = lambda registration, part_id: const.RegistrationPartStati(
+            registration['parts'][part_id]['status']).is_present()
         registrations = {
             k: v
-            for k, v in (self.eventproxy.get_registrations(rs, registration_ids)
-                         .items())
+            for k, v in registrations.items()
             if (not v['checkin']
-                and (not current_part or const.RegistrationPartStati(
-                    v['parts'][current_part]['status']).is_present()))}
+                and any(there(v, id) for id in rs.ambience['event']['parts']))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
