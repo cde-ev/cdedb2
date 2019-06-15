@@ -110,6 +110,10 @@ def work(args):
     print("Found data for event '{}' exported {}.".format(
         data['event.events'][str(data['id'])]['title'], data['timestamp']))
 
+    if not data['event.events'][str(data['id'])]['offline_lock']:
+        print("Event not locked in online instance. Fixing for offline use.")
+        data['event.events'][str(data['id'])]['offline_lock'] = True
+
     print("Clean current instance")
     if input("Are you sure (type uppercase YES)? ").strip() != "YES":
         print("Aborting.")
