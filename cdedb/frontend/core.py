@@ -792,9 +792,13 @@ class CoreFrontend(AbstractFrontend):
             query = check(rs, "query_input", query_input, "query",
                           spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
+        choices = {
+            'pevent_id': collections.OrderedDict(
+                sorted(events.items(), key=operator.itemgetter(0)))}
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
         params = {
-            'spec': spec, 'choices_lists': choices_lists,
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
@@ -806,12 +810,13 @@ class CoreFrontend(AbstractFrontend):
                 for csvfield in query.fields_of_interest:
                     fields.extend(csvfield.split(','))
                 if download == "csv":
-                    csv_data = csv_output(result, fields)
+                    csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_csv_file(
                         rs, data=csv_data, inline=False,
                         filename="user_search_result.csv")
                 elif download == "json":
-                    json_data = query_result_to_json(result, fields)
+                    json_data = query_result_to_json(result, fields,
+                                                     substitutions=choices)
                     return self.send_file(
                         rs, data=json_data, inline=False,
                         filename="user_search_result.json")
