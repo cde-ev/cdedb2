@@ -2099,7 +2099,7 @@ def _past_course(val, argname=None, *, creation=False, _convert=True):
 _COURSE_COMMON_FIELDS = lambda: {
     'title': _str,
     'description': _str_or_None,
-    'nr': _str_or_None,
+    'nr': _str,
     'shortname': _str,
     'instructors': _str_or_None,
     'max_size': _int_or_None,
