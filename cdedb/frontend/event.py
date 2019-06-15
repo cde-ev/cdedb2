@@ -1905,9 +1905,35 @@ class EventFrontend(AbstractUserFrontend):
             (id, registrations[id]) for id in sorted(registrations, key=key))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+
+        reverse_wish = {}
+        if event['lodge_field']:
+            for reg_id, reg in registrations.items():
+                rwish = set()
+                persona = personas[reg['persona_id']]
+                checks = {
+                    diacritic_patterns("{} {}".format(
+                        given_name, persona['family_name']))
+                    for given_name in persona['given_names'].split()}
+                checks.add(diacritic_patterns("{} {}".format(
+                    persona['display_name'], persona['family_name'])))
+                for oid, other in registrations.items():
+                    owish = other['fields'].get(
+                        event['fields'][event['lodge_field']]['field_name'])
+                    if not owish:
+                        continue
+                    if any(re.search(acheck, owish, flags=re.IGNORECASE)
+                                     for acheck in checks):
+                        rwish.add(oid)
+                reverse_wish[reg_id] = ", ".join(
+                    "{} {}".format(
+                        personas[registrations[id]['persona_id']]['given_names'],
+                        personas[registrations[id]['persona_id']]['family_name'])
+                    for id in rwish)
+
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas})
+            'personas': personas, 'reverse_wish': reverse_wish})
         file = self.serve_latex_document(rs, tex, "{}_lodgement_puzzle".format(
             rs.ambience['event']['shortname']), runs)
         if file:

@@ -15,10 +15,11 @@
         \vspace{.5cm}
         \hrule
         }
-    \newcommand\participant[6]{
+    \newcommand\participant[7]{
         \section*{#1 (#2)}
         #3 #4 #5~\par
-        #6
+        #6\par
+	#7
         \vspace{.5cm}
         \hrule}
 
@@ -32,7 +33,7 @@
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
-    <<% for registration in registrations.values() %>> <<# This is already sorted. #>>
+    <<% for registration_id, registration in registrations.items() %>> <<# This is already sorted. #>>
         <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %>>
                 \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
@@ -46,11 +47,19 @@
                     {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
-                    {<<% if ambience['event']['reserve_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
+                    {<<% if ambience['event']['reserve_field'] and
+                            registration['fields'].get(
+                                ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
                         Isomatte
-                     <<%- endif %>>}%
-                    {<<% if ambience['event']['lodge_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
-                        Wunsch: <<< registration['fields'].get(ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>\par
+                     <<%- endif %>>}% ID <<< registration_id|te >>>
+                    {<<% if ambience['event']['lodge_field']
+                            and registration['fields'].get(
+                                ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
+                        Wunsch: <<< registration['fields'].get(
+                                    ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>
+                     <<% endif -%>>}%
+                    {<<% if reverse_wish.get(registration_id) -%>>%
+                        Revers-Wunsch-Heuristik: <<< reverse_wish[registration_id]|te >>>
                      <<% endif -%>>}
             <<% endif %>>
         <<% endfor %>>
