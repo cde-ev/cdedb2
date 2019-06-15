@@ -654,8 +654,8 @@ class CoreBackend(AbstractBackend):
         :returns: default return code
         """
         if not change_note:
-            self.logger.info("No change note specified (persona_id={}).".format(
-                data['id']))
+            self.logger.info(
+                "No change note specified (persona_id={}).".format(data['id']))
             change_note = "Allgemeine Änderung"
 
         current = self.sql_select_one(
@@ -1399,7 +1399,8 @@ class CoreBackend(AbstractBackend):
             # remove unlogged attributes
             del data['password_hash']
             del data['fulltext']
-            self.sql_insert(rs, "core.changelog", data)
+            if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+                self.sql_insert(rs, "core.changelog", data)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
         return new_id
 
