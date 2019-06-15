@@ -123,7 +123,7 @@
                         <li {% if mainnav_active == 'core' %}class="active" aria-current="page"{% endif %}>
                             {{ util.href(cdedblink("core/index"), gettext("Index"), icon="home") }}
                             </li>
-                        {% if "cde" in user.roles %}
+                        {% if "cde" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'cde' %}class="active" aria-current="page"{% endif %}>
                                 {{ util.href(cdedblink("cde/index"), gettext("Members"), icon="education") }}
                                 </li>
@@ -133,12 +133,12 @@
                                 {{ util.href(cdedblink("event/index"), gettext("Events"), icon="blackboard") }}
                             </li>
                         {% endif %}
-                        {% if "ml" in user.roles %}
+                        {% if "ml" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'ml' %}class="active" aria-current="page"{% endif %}>
                                 {{ util.href(cdedblink("ml/index"), gettext("Mailinglists"), icon="envelope") }}
                             </li>
                         {% endif %}
-                        {% if "assembly" in user.roles %}
+                        {% if "assembly" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'assembly' %}class="active" aria-current="page"{% endif %}>
                                 {{ util.href(cdedblink("assembly/index"), gettext("Assemblies"), icon="bullhorn") }}
                             </li>
