@@ -180,6 +180,26 @@ def work(args):
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
 
+    print("Checking whether everything was transferred.")
+    fails = []
+    with conn as con:
+        with con.cursor() as cur:
+            for table in tables:
+                target_count = len(data[table])
+                query = "SELECT COUNT(*) AS count FROM {}".format(table)
+                cur.execute(query)
+                real_count = cur.fetchone()['count']
+                if target_count != real_count:
+                    fails.append("Table {} has {} not {} entries".format(
+                        table, real_count, target_count))
+    if fails:
+        print("Errors detected.")
+        for fail in fails:
+            print(fail)
+        raise RuntimeError("Data transfer was not successful.")
+    else:
+        print("Everything in place.")
+
     print("Enabling offline mode")
     config_path = args.repopath / "cdedb/localconfig.py"
     subprocess.check_call(
