@@ -4077,7 +4077,6 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def checkin_form(self, rs, event_id):
         """Render form."""
-        today = now().date()
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         there = lambda registration, part_id: const.RegistrationPartStati(
@@ -4089,6 +4088,10 @@ class EventFrontend(AbstractUserFrontend):
                 and any(there(v, id) for id in rs.ambience['event']['parts']))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()))
+        ordered = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         for registration in registrations.values():
@@ -4097,7 +4100,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['begin'])
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
-            'lodgements': lodgements})
+            'ordered': ordered, 'lodgements': lodgements})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("registration_id", "id"))
