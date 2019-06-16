@@ -162,7 +162,7 @@ def work(args):
         'event.orgas', 'event.field_definitions', 'event.lodgements',
         'event.registrations', 'event.registration_parts',
         'event.registration_tracks',
-        'event.course_choices', 'event.questionnaire_rows')
+        'event.course_choices', 'event.questionnaire_rows', 'event.log')
     with conn as con:
         with con.cursor() as cur:
             make_institution(
