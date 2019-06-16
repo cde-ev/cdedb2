@@ -2412,7 +2412,7 @@ class EventBackend(AbstractBackend):
         for e in data.values():
             if e != current.get(e['id']):
                 new_e = self.translate(e, translations, extra_translations)
-                if e['id'] in current:
+                if new_e['id'] in current:
                     ret *= self.sql_update(rs, table, new_e)
                 else:
                     if 'id' in new_e:
@@ -2479,18 +2479,7 @@ class EventBackend(AbstractBackend):
                 ret *= self.synchronize_table(
                     rs, table, data[table], current[table], translations,
                     entity=entity, extra_translations=extra_translations)
-            # Third fix the ids embedded in json
-            for entity in ('registration', 'lodgement', 'course'):
-                id_string = '{}_id'.format(entity)
-                table_string = 'event.{}s'.format(entity)
-                for entity_id in translations[id_string].values():
-                    json = self.sql_select_one(
-                        rs, table_string, ('id', 'fields'), entity_id)
-                    if json['fields'][id_string] != entity_id:
-                        json['fields'][id_string] = entity_id
-                        json['fields'] = PsycoJson(json['fields'])
-                        self.sql_update(rs, table_string, json)
-            # Fourth unlock the event
+            # Third unlock the event
             update = {
                 'id': data['id'],
                 'offline_lock': False,
