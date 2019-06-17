@@ -403,11 +403,12 @@ class EventBackend(AbstractBackend):
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.course
             }
-            json_course_fields_select_gen = lambda track_id: ", ".join(
+            course_fields_select_gen = lambda track_id: ", ".join(
                 ['''(fields->>'{}')::{} AS "xfield_{}_{}"'''.format(
                     name, kind, name, track_id)
                  for name, kind in course_fields.items()]
-                + ["id AS nonfield_course_id_{}".format(track_id)])
+                + ["id", "nr", "title", "shortname"]
+            )
             track_table_template = glue(
                 # first the per track table
                 "LEFT OUTER JOIN (SELECT registration_id, {track_columns}",
@@ -415,11 +416,17 @@ class EventBackend(AbstractBackend):
                 "AS track{track_id} ON",
                 "reg.id = track{track_id}.registration_id",
                 # second the associated course fields
-                "LEFT OUTER JOIN (SELECT {json_course_fields_select} FROM",
+                "LEFT OUTER JOIN (SELECT {course_fields_select} FROM",
                 "event.courses WHERE event_id={event_id})",
-                "AS course_fields{track_id}",
+                "AS course{track_id}",
                 "ON track{track_id}.course_id{track_id}",
-                "= course_fields{track_id}.nonfield_course_id_{track_id}",
+                "= course{track_id}.id",
+                # third the fields for the instructed course
+                "LEFT OUTER JOIn (SELECT {course_fields_select} FROM",
+                "event.courses WHERE event_id={event_id})"
+                "AS course_instructor{track_id}",
+                "ON track{track_id}.course_instructor{track_id}",
+                "= course_instructor{track_id}.id",
             )
             track_atoms = ("course_id", "course_instructor",)
             # This needs an additional hack to dynamically generate the
@@ -468,7 +475,7 @@ class EventBackend(AbstractBackend):
                 event_id=event_id)
             track_table_gen = lambda track_id: track_table_template.format(
                 track_columns=track_columns_gen(track_id),
-                json_course_fields_select=json_course_fields_select_gen(track_id),
+                course_fields_select=course_fields_select_gen(track_id),
                 track_id=track_id, event_id=event_id)
             view = _REGISTRATION_VIEW_TEMPLATE.format(
                 event_id=event_id,
