@@ -429,9 +429,10 @@ class EventBackend(AbstractBackend):
                     "{col} AS {col}{track_id}".format(col=col,
                                                       track_id=track_id)
                     for col in track_atoms)
-                + glue(", (course_id = course_instructor) AS "
-                       "is_course_instructor{track_id}").format(
-                           track_id=track_id))
+                + ", " +
+                "(NOT(course_id IS NULL AND course_instructor IS NOT NULL) AND"
+                " course_id = course_instructor) "
+                "AS is_course_instructor{track_id}".format(track_id=track_id))
             creation_date = glue(
                 "LEFT OUTER JOIN (",
                 "SELECT persona_id, MAX(ctime) AS creation_time",
