@@ -3737,73 +3737,95 @@ class EventFrontend(AbstractUserFrontend):
 
         # First we construct the choices
         choices = {
+            # Genders enum
             'persona.gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders, enum_gettext, raw=fixed_gettext))
         }
+
+        # Precompute some choices
         lodgement_choices = OrderedDict(
             sorted(((lodgement_id, lodgement['moniker'])
                     for lodgement_id, lodgement in lodgements.items()),
                    key=operator.itemgetter(1)))
+        course_choices = OrderedDict(
+            (course_id, "{}. {}".format(courses[course_id]['nr'],
+                                        courses[course_id]['shortname']))
+            for course_id, course
+            in xdictsort_filter(courses, 'nr', pad=True))
+        reg_part_stati_choices = OrderedDict(
+            enum_entries_filter(
+                const.RegistrationPartStati, enum_gettext, raw=fixed_gettext))
+        lodge_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.lodgement
+            and field['entries']
+            }
+        course_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.course
+            and field['entries']
+            }
+        reg_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.registration
+            and field['entries']
+            }
+
         for part_id in event['parts']:
             choices.update({
-                "part{0}.status{0}".format(part_id):
-                    OrderedDict(enum_entries_filter(
-                        const.RegistrationPartStati, enum_gettext,
-                        raw=fixed_gettext)),
+                # RegistrationPartStati enum
+                "part{0}.status{0}".format(part_id): reg_part_stati_choices,
+                # Lodgement id -> moniker
                 "part{0}.lodgement_id{0}".format(part_id): lodgement_choices,
             })
-            choices.update({
-                "lodge_fields{0}.xfield_{1}_{0}".format(
-                    part_id, field['field_name']): OrderedDict(field['entries'])
-                for field in event['fields'].values()
-                if (field['association'] == const.FieldAssociations.lodgement
-                    and field['entries'])})
+            if not fixed_gettext:
+                # Lodgement fields value -> description
+                key = "lodge_fields{0}.xfield_{1}_{0}"
+                choices.update({
+                    key.format(part_id, field['field_name']):
+                        OrderedDict(field['entries'])
+                    for field in lodge_fields.values()
+                })
         for track_id in tracks:
-            course_choices = OrderedDict(
-                (course_id, "{}. {}".format(courses[course_id]['nr'],
-                                            courses[course_id]['shortname']))
-                for course_id, course
-                in xdictsort_filter(courses, 'nr', pad=True)
-                if track_id in course['segments'])
+            # Course id -> nr. shortname
             choices.update({
                 "track{0}.course_id{0}".format(track_id):
                     course_choices,
                 "track{0}.course_instructor{0}".format(track_id):
                     course_choices})
-            key = "course_fields{0}.xfield_{1}_{0}"
-            choices.update({
-                key.format(track_id, field['field_name']):
-                    OrderedDict(field['entries'])
-                for field in event['fields'].values()
-                if (field['association'] == const.FieldAssociations.course
-                    and field['entries'])})
+            if not fixed_gettext:
+                # Course fields value -> description
+                key = "course_fields{0}.xfield_{1}_{0}"
+                choices.update({
+                   key.format(track_id, field['field_name']):
+                       OrderedDict(field['entries'])
+                   for field in course_fields.values()
+                })
         if len(tracks) > 1:
-            course_choices = OrderedDict(
-                (course_id, "{}. {}".format(courses[course_id]['nr'],
-                                            courses[course_id]['shortname']))
-                for course_id, course
-                in xdictsort_filter(courses, 'nr', pad=True))
-            choices[",".join("track{0}.course_id{0}".format(track_id)
-                             for track_id in tracks)] = course_choices
-            choices[",".join("track{0}.course_instructor{0}".format(track_id)
-                             for track_id in tracks)] = course_choices
+            # Course id -> nr. shorname
+            choices.update({
+                ",".join("track{0}.course_id{0}".format(track_id)
+                         for track_id in tracks): course_choices,
+                ",".join("track{0}.course_instructor{0}".format(track_id)
+                         for track_id in tracks): course_choices,
+            })
         if len(event['parts']) > 1:
             choices.update({
+                # RegistrationPartStati enum
                 ",".join("part{0}.status{0}".format(part_id)
-                         for part_id in event['parts']): OrderedDict(
-                    enum_entries_filter(
-                        const.RegistrationPartStati, enum_gettext,
-                        raw=fixed_gettext)),
+                         for part_id in event['parts']): reg_part_stati_choices,
+                # Lodgement id -> moniker
                 ",".join("part{0}.lodgement_id{0}".format(part_id)
                          for part_id in event['parts']): lodgement_choices,
             })
-        choices.update({
-            "reg_fields.xfield_{}".format(field['field_name']):
-                OrderedDict(field['entries'])
-            for field in event['fields'].values()
-            if (field['association'] == const.FieldAssociations.registration
-                and field['entries'])})
+        if not fixed_gettext:
+            # Registration fields value -> description
+            choices.update({
+                "reg_fields.xfield_{}".format(field['field_name']):
+                    OrderedDict(field['entries'])
+                for field in reg_fields.values()
+            })
 
         # Second we construct the titles
         titles = {
