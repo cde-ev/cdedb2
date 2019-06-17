@@ -7,7 +7,7 @@ from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
 from cdedb.common import now
-from cdedb.database.constants import FieldDatatypes, FieldAssociations
+import cdedb.database.constants as const
 
 
 class TestEventFrontend(FrontendTest):
@@ -427,8 +427,8 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn('field_name_10', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
-        f['association_-1'] = FieldAssociations.registration.value
-        f['kind_-1'] = FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.str.value
         f['entries_-1'] = """all;everything goes
         vegetarian;no meat
         vegan;plants only"""
@@ -461,8 +461,8 @@ etc;anything else""", f['entries_2'].value)
         f['delete_1'].checked = True
         f['create_-1'].checked = True
         f['field_name_-1'] = f['field_name_1'].value
-        f['association_-1'] = FieldAssociations.registration.value
-        f['kind_-1'] = FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.str.value
         self.submit(f, check_notification=False)
         self.assertPresence("Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
@@ -483,12 +483,12 @@ etc;anything else""", f['entries_2'].value)
 
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
-        f['association_-1'] = FieldAssociations.registration.value
-        f['kind_-1'] = FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.str.value
         f['create_-2'].checked = True
         f['field_name_-2'] = "food_stuff"
-        f['association_-2'] = FieldAssociations.registration.value
-        f['kind_-2'] = FieldDatatypes.str.value
+        f['association_-2'] = const.FieldAssociations.registration.value
+        f['kind_-2'] = const.FieldDatatypes.str.value
         self.submit(f, check_notification=False)
         self.assertPresence("Feldname nicht eindeutig.")
 
@@ -498,7 +498,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
-        f['association_-1'] = FieldAssociations.registration.value
+        f['association_-1'] = const.FieldAssociations.registration.value
         f['kind_-1'].force_value("invalid")
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
@@ -506,8 +506,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Ungültige Eingabe für eine Ganzzahl.")
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
-        f['association_-1'] = FieldAssociations.registration.value
-        f['kind_-1'].force_value(sum(x for x in FieldDatatypes))
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'].force_value(sum(x for x in const.FieldDatatypes))
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
@@ -530,15 +530,15 @@ etc;anything else""", f['entries_2'].value)
         # options, delete and recreate "lodge" field with int type.
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
-        f['kind_2'] = FieldDatatypes.datetime.value
+        f['kind_2'] = const.FieldDatatypes.datetime.value
         f['entries_2'] = ""
         f['delete_3'].checked = True
         self.submit(f)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "lodge"
-        f['association_-1'] = FieldAssociations.registration.value
-        f['kind_-1'] = FieldDatatypes.int.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.int.value
         self.submit(f)
 
         # No page of the orga area should be broken by this
@@ -566,8 +566,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
-        f['association_-1'] = FieldAssociations.registration.value
-        f['kind_-1'] = FieldDatatypes.bool.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.bool.value
         f['entries_-1'] = """True;definitely
         False;no way!"""
         self.submit(f)
@@ -597,8 +597,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
-        f['association_-1'] = FieldAssociations.registration.value
-        f['kind_-1'] = FieldDatatypes.date.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.date.value
         f['entries_-1'] = """2018-01-01;new year
         2018-10-03;party!
         2018-04-01;April fools"""
@@ -627,8 +627,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "CapitalLetters"
-        f['association_-1'] = FieldAssociations.registration.value
-        f['kind_-1'] = FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.str.value
         self.submit(f)
         self.get("/event/event/1/field/setselect")
         f = self.response.forms['selectfieldform']
@@ -1558,10 +1558,10 @@ etc;anything else""", f['entries_2'].value)
                                      dialect=dialect))
         self.assertIn('2222-01-01', tuple(row['persona.birthday']
                                           for row in result))
-        self.assertIn('high', tuple(row['part3.lodgement.fields.contamination']
+        self.assertIn('high', tuple(row['lodge_fields3.xfield_contamination_3']
                                     for row in result))
-        self.assertIn('5', tuple(row['part2.status']
-                                 for row in result))
+        self.assertIn(const.RegistrationPartStati.cancelled.name,
+                      tuple(row['part2.status2'] for row in result))
         self.response = save.click(href='/event/event/1/download/csv_courses')
 
         result = list(csv.DictReader(self.response.text.split('\n'),
