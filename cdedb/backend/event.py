@@ -376,22 +376,22 @@ class EventBackend(AbstractBackend):
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.lodgement
             }
-            json_lodge_fields_select_gen = lambda part_id: ", ".join(
+            lodge_fields_select_gen = lambda part_id: ", ".join(
                 ['''(fields->>'{}')::{} AS "xfield_{}_{}"'''.format(
                     name, kind, name, part_id)
                  for name, kind in lodgement_fields.items()]
-                + ["id AS nonfield_lodgement_id_{}".format(part_id)])
+                + ["id", "moniker", "notes"])
             part_table_template = glue(
                 # first the per part table
                 "LEFT OUTER JOIN (SELECT registration_id, {part_columns}",
                 "FROM event.registration_parts WHERE part_id = {part_id})",
                 "AS part{part_id} ON reg.id = part{part_id}.registration_id",
                 # second the associated lodgement fields
-                "LEFT OUTER JOIN (SELECT {json_lodge_fields_select} FROM",
+                "LEFT OUTER JOIN (SELECT {lodge_fields_select} FROM",
                 "event.lodgements WHERE event_id={event_id})",
-                "AS lodge_fields{part_id}",
+                "AS lodgement{part_id}",
                 "ON part{part_id}.lodgement_id{part_id}",
-                "= lodge_fields{part_id}.nonfield_lodgement_id_{part_id}",
+                "= lodgement{part_id}.id",
             )
             part_atoms = ("status", "lodgement_id", "is_reserve")
             part_columns_gen = lambda part_id: ", ".join(
@@ -407,7 +407,7 @@ class EventBackend(AbstractBackend):
                 ['''(fields->>'{}')::{} AS "xfield_{}_{}"'''.format(
                     name, kind, name, track_id)
                  for name, kind in course_fields.items()]
-                + ["id", "nr", "title", "shortname"]
+                + ["id", "nr", "title", "shortname", "notes"]
             )
             track_table_template = glue(
                 # first the per track table
@@ -423,7 +423,7 @@ class EventBackend(AbstractBackend):
                 "= course{track_id}.id",
                 # third the fields for the instructed course
                 "LEFT OUTER JOIn (SELECT {course_fields_select} FROM",
-                "event.courses WHERE event_id={event_id})"
+                "event.courses WHERE event_id={event_id})",
                 "AS course_instructor{track_id}",
                 "ON track{track_id}.course_instructor{track_id}",
                 "= course_instructor{track_id}.id",
@@ -471,7 +471,7 @@ class EventBackend(AbstractBackend):
                 + ["id AS nonfield_reg_id"])
             part_table_gen = lambda part_id: part_table_template.format(
                 part_columns=part_columns_gen(part_id), part_id=part_id,
-                json_lodge_fields_select=json_lodge_fields_select_gen(part_id),
+                lodge_fields_select=lodge_fields_select_gen(part_id),
                 event_id=event_id)
             track_table_gen = lambda track_id: track_table_template.format(
                 track_columns=track_columns_gen(track_id),

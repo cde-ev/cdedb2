@@ -3653,42 +3653,49 @@ class EventFrontend(AbstractUserFrontend):
         # note that spec is an ordered dict and we should respect the order
         for part_id in event['parts']:
             spec["part{0}.status{0}".format(part_id)] = "int"
-            spec["part{0}.lodgement_id{0}".format(part_id)] = "id"
             spec["part{0}.is_reserve{0}".format(part_id)] = "bool"
+            spec["lodgement{0}.id".format(part_id)] = "id"
+            spec["lodgement{0}.moniker".format(part_id)] = "str"
+            spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in sorted(event['fields'].values(),
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.lodgement:
-                    temp = "lodge_fields{0}.xfield_{1}_{0}"
+                    temp = "lodgement{0}.xfield_{1}_{0}"
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[temp.format(part_id, f['field_name'])] = kind
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.is_course_instructor{0}".format(track_id)] \
                     = "bool"
                 for temp in ("course", "course_instructor",):
-                    spec["track{0}.{1}{0}.id".format(track_id, temp)] = "id"
-                    spec["track{0}.{1}{0}.nr".format(track_id, temp)] = "str"
-                    spec["track{0}.{1}{0}.title".format(track_id, temp)] = "str"
-                    spec["track{0}.{1}{0}.shortname".format(track_id, temp)] = \
-                        "str"
+                    spec["{1}{0}.id".format(track_id, temp)] = "id"
+                    spec["{1}{0}.nr".format(track_id, temp)] = "str"
+                    spec["{1}{0}.title".format(track_id, temp)] = "str"
+                    spec["{1}{0}.short" \
+                         "name".format(track_id, temp)] = "str"
+                    spec["{1}{0}.notes".format(track_id, temp)] = "str"
                     for f in sorted(event['fields'].values(),
                                     key=lambda f: f['field_name']):
                         if f['association'] == const.FieldAssociations.course:
-                            key = "track{0}.{1}{0}.xfield_{2}_{0}".format(
+                            key = "{1}{0}.xfield_{2}_{0}".format(
                                 track_id, temp, f['field_name'])
                             kind = const.FieldDatatypes(f['kind']).name
                             spec[key] = kind
         if len(event['parts']) > 1:
             spec[",".join("part{0}.status{0}".format(part_id)
                           for part_id in event['parts'])] = "int"
-            spec[",".join("part{0}.lodgement_id{0}".format(part_id)
-                          for part_id in event['parts'])] = "id"
             spec[",".join("part{0}.is_reserve{0}".format(part_id)
                           for part_id in event['parts'])] = "bool"
+            spec[",".join("lodgement{0}.id".format(part_id)
+                          for part_id in event['parts'])] = "id"
+            spec[",".join("lodgement{0}.moniker".format(part_id)
+                          for part_id in event['parts'])] = "str"
+            spec[",".join("lodgement{0}.notes".format(part_id)
+                          for part_id in event['parts'])] = "str"
             for f in sorted(event['fields'].values(),
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.lodgement:
                     key = ",".join(
-                        "lodge_fields{0}.xfield_{1}_{0}".format(
+                        "lodgement{0}.xfield_{1}_{0}".format(
                             part_id, f['field_name'])
                         for part_id in event['parts'])
                     kind = const.FieldDatatypes(f['kind']).name
@@ -3697,18 +3704,20 @@ class EventFrontend(AbstractUserFrontend):
             spec[",".join("track{0}.is_course_instructor{0}".format(track_id)
                           for track_id in tracks)] = "bool"
             for temp in ("course", "course_instructor",):
-                spec[",".join("track{0}.{1}{0}.id".format(track_id, temp)
+                spec[",".join("{1}{0}.id".format(track_id, temp)
                               for track_id in tracks)] = "id"
-                spec[",".join("track{0}.{1}{0}.nr".format(track_id, temp)
+                spec[",".join("{1}{0}.nr".format(track_id, temp)
                               for track_id in tracks)] = "str"
-                spec[",".join("track{0}.{1}{0}.title".format(track_id, temp)
+                spec[",".join("{1}{0}.title".format(track_id, temp)
                               for track_id in tracks)] = "str"
-                spec[",".join("track{0}.{1}{0}.shortname".format(track_id, temp)
+                spec[",".join("{1}{0}.shortname".format(track_id, temp)
+                              for track_id in tracks)] = "str"
+                spec[",".join("{1}{0}.notes".format(track_id, temp)
                               for track_id in tracks)] = "str"
                 for f in sorted(event['fields'].values(),
                                 key=lambda f: f['field_name']):
                     if f['association'] == const.FieldAssociations.course:
-                        key = ",".join("track{0}.{1}{0}.xfield_{2}_{0}".format(
+                        key = ",".join("{1}{0}.xfield_{2}_{0}".format(
                             track_id, temp, f['field_name'])
                                        for track_id in tracks)
                         kind = const.FieldDatatypes(f['kind']).name
