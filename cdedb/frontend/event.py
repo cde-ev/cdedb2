@@ -3757,28 +3757,20 @@ class EventFrontend(AbstractUserFrontend):
             sorted(((lodgement_id, lodgement['moniker'])
                     for lodgement_id, lodgement in lodgements.items()),
                    key=operator.itemgetter(1)))
-        course_choices = OrderedDict(
-            (course_id, "{}. {}".format(courses[course_id]['nr'],
-                                        courses[course_id]['shortname']))
-            for course_id, course
-            in xdictsort_filter(courses, 'nr', pad=True))
         reg_part_stati_choices = OrderedDict(
             enum_entries_filter(
                 const.RegistrationPartStati, enum_gettext, raw=fixed_gettext))
         lodge_fields = {
             field_id: field for field_id, field in event['fields'].items()
             if field['association'] == const.FieldAssociations.lodgement
-            and field['entries']
             }
         course_fields = {
             field_id: field for field_id, field in event['fields'].items()
             if field['association'] == const.FieldAssociations.course
-            and field['entries']
             }
         reg_fields = {
             field_id: field for field_id, field in event['fields'].items()
             if field['association'] == const.FieldAssociations.registration
-            and field['entries']
             }
 
         for part_id in event['parts']:
@@ -3794,31 +3786,17 @@ class EventFrontend(AbstractUserFrontend):
                 choices.update({
                     key.format(part_id, field['field_name']):
                         OrderedDict(field['entries'])
-                    for field in lodge_fields.values()
+                    for field in lodge_fields.values() if field['entries']
                 })
         for track_id in tracks:
-            # Course id -> nr. shortname
-            choices.update({
-                "track{0}.course_id{0}".format(track_id):
-                    course_choices,
-                "track{0}.course_instructor{0}".format(track_id):
-                    course_choices})
             if not fixed_gettext:
                 # Course fields value -> description
                 key = "course_fields{0}.xfield_{1}_{0}"
                 choices.update({
                    key.format(track_id, field['field_name']):
                        OrderedDict(field['entries'])
-                   for field in course_fields.values()
+                   for field in course_fields.values() if field['entries']
                })
-        if len(tracks) > 1:
-            # Course id -> nr. shorname
-            choices.update({
-                ",".join("track{0}.course_id{0}".format(track_id)
-                         for track_id in tracks): course_choices,
-                ",".join("track{0}.course_instructor{0}".format(track_id)
-                         for track_id in tracks): course_choices,
-            })
         if len(event['parts']) > 1:
             choices.update({
                 # RegistrationPartStati enum
@@ -3833,90 +3811,126 @@ class EventFrontend(AbstractUserFrontend):
             choices.update({
                 "reg_fields.xfield_{}".format(field['field_name']):
                     OrderedDict(field['entries'])
-                for field in reg_fields.values()
+                for field in reg_fields.values() if field['entries']
             })
 
         # Second we construct the titles
         titles = {
             "reg_fields.xfield_{}".format(field['field_name']):
                 field['field_name']
-            for field in reg_fields.values()
+            for field in reg_fields.values() if field['entries']
         }
-        if len(tracks) > 1:
-            for track_id, track in tracks.items():
-                titles.update({
-                    "track{0}.course_id{0}".format(track_id):
-                        gettext("{title}: course ").format(
-                            title=track['title']),
-                    "track{0}.course_instructor{0}".format(track_id):
-                        gettext("{title}: course instructor").format(
-                            title=track['title']),
-                    "track{0}.is_course_instructor{0}".format(track_id):
-                        gettext("{title}: instructs their course").format(
-                            title=track['title']),
-                })
-                key = "course_fields{0}.xfield_{1}_{0}"
-                titles.update({
-                    key.format(track_id, field['field_name']):
-                        gettext("{title} course: {field}").format(
-                            field=field['field_name'], title=track['title'])
-                    for field in course_fields.values()
-                })
+        for track_id, track in tracks.items():
             titles.update({
-                ",".join("track{0}.course_id{0}".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: course"),
-                ",".join("track{0}.course_instructor{0}".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: course instuctor"),
+                "track{0}.is_course_instructor{0}".format(track_id):
+                    gettext("{title}: instructs their course").format(
+                        title=track['title']),
+                "track{0}.course{0}.id".format(track_id):
+                    gettext("{title}: Course ID").format(
+                        title=track['title']),
+                "track{0}.course{0}.nr".format(track_id):
+                    gettext("{title}: course nr").format(
+                        title=track['title']),
+                "track{0}.course{0}.title".format(track_id):
+                    gettext("{title}: course title").format(
+                        title=track['title']),
+                "track{0}.course{0}.shortname".format(track_id):
+                    gettext("{title}: course shortname").format(
+                        title=track['title']),
+                "track{0}.course_instructor{0}.id".format(track_id):
+                    gettext("{title}: course instructor ID").format(
+                        title=track['title']),
+                "track{0}.course_instructor{0}.nr".format(track_id):
+                    gettext("{title}: course instructor nr").format(
+                        title=track['title']),
+                "track{0}.course_instructor{0}.title".format(track_id):
+                    gettext("{title}: course instructor title").format(
+                        title=track['title']),
+                "track{0}.course_instructor{0}.shortname".format(track_id):
+                    gettext("{title}: course instructor shortname").format(
+                        title=track['title']),
+            })
+            key = "track{0}.course{0}.xfield_{1}_{0}"
+            titles.update({
+                key.format(track_id, field['field_name']):
+                    gettext("{title} course: {field}").format(
+                        field=field['field_name'], title=track['title'])
+                for field in course_fields.values()
+            })
+            key = "track{0}.course_instructor{0}.xfield_{1}_{0}"
+            titles.update({
+                key.format(track_id, field['field_name']):
+                    gettext("{title} course instructor: {field}").format(
+                        field=field['field_name'], title=track['title'])
+                for field in course_fields.values()
+            })
+        if len(event['tracks']) > 1:
+            titles.update({
                 ",".join("track{0}.is_course_instructor{0}".format(track_id)
                          for track_id in tracks):
                     gettext("any track: instructs their course"),
+                ",".join("track{0}.course{0}.id".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course ID"),
+                ",".join("track{0}.course{0}.nr".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course nr"),
+                ",".join("track{0}.course{0}.title".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course title"),
+                ",".join("track{0}.course{0}.shortname".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course shortname"),
+                ",".join("track{0}.course_instructor{0}.id".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course instuctor ID"),
+                ",".join("track{0}.course_instructor{0}.nr".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course instuctor nr"),
+                ",".join("track{0}.course_instructor{0}.title".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course instuctor title"),
+                ",".join("track{0}.course_instructor{0}.shortname".format(
+                    track_id)
+                         for track_id in tracks):
+                    gettext("any track: course instuctor shortname"),
             })
+            key = "track{0}.course{0}.xfield_{1}_{0}"
             titles.update({
-                ",".join("course_fields{0}.xfield_{1}_{0}".format(
-                    track_id, field['field_name'])
+                ",".join(key.format(track_id, field['field_name'])
                          for track_id in tracks):
                     gettext("any track course: {field}").format(
                         field=field['field_name'])
                 for field in course_fields.values()
             })
-        elif len(tracks) == 1:
-            track_id, track = next(iter(tracks.items()))
+            key = "track{0}.course_instructor{0}.xfield_{1}_{0}"
             titles.update({
-                "track{0}.course_id{0}".format(track_id):
-                    gettext("course"),
-                "track{0}.course_instructor{0}".format(track_id):
-                    gettext("course instructor"),
-                "track{0}.is_course_instructor{0}".format(track_id):
-                    gettext("instructs their course"),
-            })
-            key = "course_fields{0}.xfield_{1}_{0}"
-            titles.update({
-                key.format(track_id, field['field_name']):
-                    gettext("course: {field}").format(field=field['field_name'])
+                ",".join(key.format(track_id, field['field_name'])
+                         for track_id in tracks):
+                    gettext("any track course instructor: {field}").format(
+                        field=field['field_name'])
                 for field in course_fields.values()
             })
+        for part_id, part in event['parts'].items():
+            titles.update({
+                "part{0}.status{0}".format(part_id):
+                    gettext("{title}: registration status").format(
+                        title=part['title']),
+                "part{0}.lodgement_id{0}".format(part_id):
+                    gettext("{title}: lodgement").format(
+                        title=part['title']),
+                "part{0}.is_reserve{0}".format(part_id):
+                    gettext("{title}: camping mat user").format(
+                        title=part['title'])
+            })
+            key = "lodge_fields{0}.xfield_{1}_{0}"
+            titles.update({
+                key.format(part_id, field['field_name']):
+                    gettext("{title} lodgement: {field}").format(
+                        field=field['field_name'], title=part['title'])
+                for field in lodge_fields.values()
+            })
         if len(event['parts']) > 1:
-            for part_id, part in event['parts'].items():
-                titles.update({
-                    "part{0}.status{0}".format(part_id):
-                        gettext("{title}: registration status").format(
-                            title=part['title']),
-                    "part{0}.lodgement_id{0}".format(part_id):
-                        gettext("{title}: lodgement").format(
-                            title=part['title']),
-                    "part{0}.is_reserve{0}".format(part_id):
-                        gettext("{title}: camping mat user").format(
-                            title=part['title'])
-                })
-                key = "lodge_fields{0}.xfield_{1}_{0}"
-                titles.update({
-                    key.format(part_id, field['field_name']):
-                        gettext("{title} lodgement: {field}").format(
-                            field=field['field_name'], title=part['title'])
-                    for field in lodge_fields.values()
-                })
             titles.update({
                 ",".join("part{0}.status{0}".format(part_id)
                          for part_id in event['parts']):
@@ -3933,23 +3947,6 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join(key.format(part_id, field['field_name'])
                          for part_id in event['parts']):
                     gettext("any part lodgement: {field}").format(
-                        field=field['field_name'])
-                for field in lodge_fields.values()
-            })
-        elif len(event['parts']) == 1:
-            part_id, part = next(iter(event['parts'].items()))
-            titles.update({
-                "part{0}.status{0}".format(part_id):
-                    gettext("registration status"),
-                "part{0}.lodgement_id{0}".format(part_id):
-                    gettext("lodgement"),
-                "part{0}.is_reserve{0}".format(part_id):
-                    gettext("camping mat user"),
-            })
-            key = "lodge_fields{0}.xfield_{1}_{0}"
-            titles.update({
-                key.format(part_id, field['field_name']):
-                    gettext("lodgement: {field}").format(
                         field=field['field_name'])
                 for field in lodge_fields.values()
             })
