@@ -292,7 +292,7 @@ class EventBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
-    @access("persona")
+    @access("anonymous")
     def list_visible_events(self, rs):
         """List all events which are visible and not archived.
 
