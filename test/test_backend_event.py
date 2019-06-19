@@ -924,8 +924,8 @@ class TestEventBackend(BackendTest):
             spec=dict(QUERY_SPECS["qview_registration"]),
             fields_of_interest=(
                 "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
-                "birthday", "part1.lodgement_id1", "part3.status3", "track2.course_id2",
-                "lodge_fields2.xfield_contamination_2", "course_fields1.xfield_room_1",
+                "birthday", "lodgement1.id", "part3.status3", "course2.id",
+                "lodgement2.xfield_contamination_2", "course1.xfield_room_1",
                 "reg_fields.xfield_brings_balls", "reg_fields.xfield_transportation"),
             constraints=[("reg.id", QueryOperators.nonempty, None),
                            ("persona.given_names", QueryOperators.regex, '[aeiou]'),
@@ -935,11 +935,11 @@ class TestEventBackend(BackendTest):
 
         ## fix query spec (normally done by frontend)
         query.spec.update({
-            'part1.lodgement_id1': "int",
+            'lodgement1.id': "int",
             'part3.status3': "int",
-            'track2.course_id2': "int",
-            'lodge_fields2.xfield_contamination_2': "str",
-            'course_fields1.xfield_room_1': "str",
+            'course2.id': "int",
+            'lodgement2.xfield_contamination_2': "str",
+            'course1.xfield_room_1': "str",
             'reg_fields.xfield_brings_balls': "bool",
             'reg_fields.xfield_transportation': "str",
             'part2.status2': "int",
@@ -948,28 +948,28 @@ class TestEventBackend(BackendTest):
         expectation = (
             {'birthday': datetime.date(2012, 6, 2),
              'reg_fields.xfield_brings_balls': True,
-             'lodge_fields2.xfield_contamination_2': 'high',
-             'track2.course_id2': None,
+             'lodgement2.xfield_contamination_2': 'high',
+             'course2.id': None,
              'persona.family_name': 'Eventis',
              'reg.id': 2,
              'id': 2,  # un-aliased id from QUERY_PRIMARIES / ordering
-             'part1.lodgement_id1': None,
+             'lodgement1.id': None,
              'reg.payment': datetime.date(2014, 2, 2),
              'is_cde_realm': False,
-             'course_fields1.xfield_room_1': None,
+             'course1.xfield_room_1': None,
              'part3.status3': 2,
              'reg_fields.xfield_transportation': 'pedes'},
             {'birthday': datetime.date(2222, 1, 1),
              'reg_fields.xfield_brings_balls': False,
-             'lodge_fields2.xfield_contamination_2': None,
-             'track2.course_id2': None,
+             'lodgement2.xfield_contamination_2': None,
+             'course2.id': None,
              'persona.family_name': 'Iota',
              'reg.id': 4,
              'id': 4,  # un-aliased id from QUERY_PRIMARIES / ordering
-             'part1.lodgement_id1': None,
+             'lodgement1.id': None,
              'reg.payment': datetime.date(2014, 4, 4),
              'is_cde_realm': True,
-             'course_fields1.xfield_room_1': None,
+             'course1.xfield_room_1': None,
              'part3.status3': 2,
              'reg_fields.xfield_transportation': 'etc'})
         self.assertEqual(expectation, result)

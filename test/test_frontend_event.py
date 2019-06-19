@@ -1002,10 +1002,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="part2.lodgement_id2"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
             "Einzelzelle")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="part2.lodgement_id2"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
             "")
 
     @as_users("garcia")
@@ -1558,7 +1558,7 @@ etc;anything else""", f['entries_2'].value)
                                      dialect=dialect))
         self.assertIn('2222-01-01', tuple(row['persona.birthday']
                                           for row in result))
-        self.assertIn('high', tuple(row['lodge_fields3.xfield_contamination_3']
+        self.assertIn('high', tuple(row['lodgement3.xfield_contamination_3']
                                     for row in result))
         self.assertIn(const.RegistrationPartStati.cancelled.name,
                       tuple(row['part2.status2'] for row in result))
