@@ -277,7 +277,7 @@ class EventBackend(AbstractBackend):
             start, stop, additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)
 
-    @access("persona")
+    @access("anonymous")
     def list_db_events(self, rs, visible_only=False):
         """List all events organized via DB.
 
@@ -1118,7 +1118,7 @@ class EventBackend(AbstractBackend):
                     {"type": "event", "block": blockers.keys()})
         return ret
 
-    @access("event")
+    @access("anonymous")
     @singularize("get_course")
     def get_courses(self, rs, ids):
         """Retrieve data for some courses organized via DB.
