@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-06-14 19:14+0200\n"
+"POT-Creation-Date: 2019-06-19 22:14+0200\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -2141,7 +2141,7 @@ msgstr ""
 #: cdedb/frontend/core.py:1739 cdedb/frontend/event.py:335
 #: cdedb/frontend/event.py:378 cdedb/frontend/event.py:964
 #: cdedb/frontend/event.py:3088 cdedb/frontend/event.py:3477
-#: cdedb/frontend/event.py:4282 cdedb/frontend/event.py:4303
+#: cdedb/frontend/event.py:4282 cdedb/frontend/event.py:4308
 #: cdedb/frontend/ml.py:320 cdedb/frontend/ml.py:490
 msgid "Must be checked."
 msgstr ""
@@ -2936,15 +2936,21 @@ msgstr ""
 msgid "Event already archived."
 msgstr ""
 
-#: cdedb/frontend/event.py:4289
-msgid "Event archived."
+#: cdedb/frontend/event.py:4287 cdedb/frontend/event.py:4313
+#: cdedb/frontend/templates/web/event/show_event.tmpl:275
+#: cdedb/frontend/templates/web/event/show_event.tmpl:303
+msgid "Event is not concluded yet."
 msgstr ""
 
 #: cdedb/frontend/event.py:4294
+msgid "Event archived."
+msgstr ""
+
+#: cdedb/frontend/event.py:4299
 msgid "Created multiple past events."
 msgstr ""
 
-#: cdedb/frontend/event.py:4316
+#: cdedb/frontend/event.py:4325
 msgid "Event deleted."
 msgstr ""
 
@@ -4823,8 +4829,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/show_course.tmpl:200
 #: cdedb/frontend/templates/web/event/show_event.tmpl:155
 #: cdedb/frontend/templates/web/event/show_event.tmpl:236
-#: cdedb/frontend/templates/web/event/show_event.tmpl:275
-#: cdedb/frontend/templates/web/event/show_event.tmpl:302
+#: cdedb/frontend/templates/web/event/show_event.tmpl:276
+#: cdedb/frontend/templates/web/event/show_event.tmpl:304
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:143
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:267
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:61
@@ -5364,7 +5370,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:639
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:33
 #: cdedb/frontend/templates/web/event/show_course.tmpl:198
-#: cdedb/frontend/templates/web/event/show_event.tmpl:300
+#: cdedb/frontend/templates/web/event/show_event.tmpl:301
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:141
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:265
 #: cdedb/frontend/templates/web/ml/management.tmpl:210
@@ -6535,7 +6541,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:173
-#: cdedb/frontend/templates/web/event/show_event.tmpl:316
+#: cdedb/frontend/templates/web/event/show_event.tmpl:318
 msgid "The event will be permanently deleted."
 msgstr ""
 
@@ -9450,18 +9456,18 @@ msgstr ""
 msgid "The event logo will be permanently deleted."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:281
+#: cdedb/frontend/templates/web/event/show_event.tmpl:282
 msgid ""
 "Archives the event. This creates a new “Past Event” in the CdE-Realm and "
 "transfers\n"
 "                            course and participant information there."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:289
+#: cdedb/frontend/templates/web/event/show_event.tmpl:290
 msgid "The event will be permanently archived."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:308
+#: cdedb/frontend/templates/web/event/show_event.tmpl:310
 msgid ""
 "Deletes the event, including all course and participant information.\n"
 "                            This should usually not be done before the "

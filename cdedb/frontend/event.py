@@ -4282,6 +4282,11 @@ class EventFrontend(AbstractUserFrontend):
                 ("ack_archivee", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_event(rs, event_id)
+
+        if rs.ambience['event']['end'] >= now().date():
+            rs.notify("error", n_("Event is not concluded yet."))
+            return self.redirect(rs, "event/show_event")
+
         new_ids, message = self.pasteventproxy.archive_event(rs, event_id)
         if not new_ids:
             rs.notify("warning", message)
@@ -4303,6 +4308,10 @@ class EventFrontend(AbstractUserFrontend):
             rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_event(rs, event_id)
+
+        if rs.ambience['event']['end'] >= now().date():
+            rs.notify("error", n_("Event is not concluded yet."))
+            return self.redirect(rs, "event/show_event")
 
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
         cascade = {"registrations", "courses", "lodgements",
