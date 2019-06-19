@@ -311,7 +311,7 @@ class EventBackend(AbstractBackend):
             data = self.query_all(rs, query, tuple())
             return {e['id']: e['title'] for e in data}
 
-    @access("persona")
+    @access("anonymous")
     def list_db_courses(self, rs, event_id):
         """List all courses organized via DB.
 
