@@ -502,7 +502,7 @@ class EventBackend(AbstractBackend):
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, view=view)
 
-    @access("event")
+    @access("anonymous")
     @singularize("get_event")
     def get_events(self, rs, ids):
         """Retrieve data for some events organized via DB.
