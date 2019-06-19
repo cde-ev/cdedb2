@@ -1760,8 +1760,17 @@ etc;anything else""", f['entries_2'].value)
     @as_users("anton")
     def test_delete_event(self, user):
         self.traverse({'href': '/event'},
-                      {'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/part/summary'})
+        self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
+        f = self.response.forms['partsummaryform']
+        past_date = now().date() - datetime.timedelta(days=1)
+        f['part_end_1'] = past_date
+        f['part_end_2'] = past_date
+        f['part_end_3'] = past_date
+        self.submit(f)
+
+        self.traverse({'href': '/event/event/1/show'})
         f = self.response.forms['deleteeventform']
         f['ack_delete'].checked = True
         self.submit(f)
