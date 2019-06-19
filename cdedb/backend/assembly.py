@@ -172,9 +172,10 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm("id_or_None", assembly_id)
         return self.generic_retrieve_log(
             rs, "enum_assemblylogcodes", "assembly", "assembly.log", codes,
-            assembly_id, start, stop, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
-            time_start=time_start, time_stop=time_stop)
+            entity_id=assembly_id, start=start, stop=stop,
+            persona_id=persona_id, submitted_by=submitted_by,
+            additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("assembly_admin")
     def submit_general_query(self, rs, query):

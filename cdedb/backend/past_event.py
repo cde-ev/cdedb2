@@ -112,7 +112,7 @@ class PastEventBackend(AbstractBackend):
         """
         return self.generic_retrieve_log(
             rs, "enum_pasteventlogcodes", "pevent", "past_event.log", codes,
-            pevent_id, start, stop, persona_id=persona_id,
+            entity_id=pevent_id, start=start, stop=stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
 

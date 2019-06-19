@@ -204,8 +204,8 @@ class CoreBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
-            rs, "enum_corelogcodes", "persona", "core.log", codes, start, stop,
-            persona_id=persona_id, submitted_by=submitted_by,
+            rs, "enum_corelogcodes", "persona", "core.log", codes, start=start,
+            stop=stop, persona_id=persona_id, submitted_by=submitted_by,
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)
 

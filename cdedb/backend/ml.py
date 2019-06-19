@@ -115,9 +115,10 @@ class MlBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, "enum_mllogcodes", "mailinglist", "ml.log", codes,
-            mailinglist_id, start, stop, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
-            time_start=time_start, time_stop=time_stop)
+            entity_id=mailinglist_id, start=start, stop=stop,
+            persona_id=persona_id, submitted_by=submitted_by,
+            additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("ml_admin")
     def submit_general_query(self, rs, query):

@@ -1797,7 +1797,7 @@ class CoreFrontend(AbstractFrontend):
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.coreproxy.retrieve_log(
-            rs, codes, start, stop, persona_id=persona_id,
+            rs, codes=codes, start=start, stop=stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (

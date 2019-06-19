@@ -275,10 +275,10 @@ class EventBackend(AbstractBackend):
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
-            rs, "enum_eventlogcodes", "event", "event.log", codes, event_id,
-            start, stop, persona_id=persona_id, submitted_by=submitted_by,
-            additional_info=additional_info, time_start=time_start,
-            time_stop=time_stop)
+            rs, "enum_eventlogcodes", "event", "event.log", codes,
+            entity_id=event_id, start=start, stop=stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
 
     @access("persona")
     def list_db_events(self, rs, visible_only=False):
