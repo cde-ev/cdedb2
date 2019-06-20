@@ -94,7 +94,7 @@ class CoreBackend(AbstractBackend):
         :type password: str
         :rtype: str
         """
-        return sha512_crypt.encrypt(password)
+        return sha512_crypt.hash(password)
 
     @staticmethod
     def create_fulltext(persona):
