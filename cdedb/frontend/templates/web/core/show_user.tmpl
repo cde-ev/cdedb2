@@ -249,16 +249,16 @@
             </dd>
             {% if data['telephone'] %}
                 <dt>{% trans -%}Phone{%- endtrans %}</dt>
-                <dd>{{ data['telephone'] }}</dd>
+                <dd>{{ util.tel_link(data['telephone']) }}</dd>
             {% endif %}
             {% if data['mobile'] %}
                 <dt>{% trans -%}Mobile Phone{%- endtrans %}</dt>
-                <dd>{{ data['mobile'] }}</dd>
+                <dd>{{ util.tel_link(data['mobile']) }}</dd>
             {% endif %}
             {% if data['weblink'] %}
                 <dt>{% trans -%}WWW{%- endtrans %}</dt>
                 {# TODO maybe add links or so - must be validated before! #}
-                <dd>{{ data['weblink'] }}</dd>
+                <dd>{{ util.web_link(data['weblink']) }}</dd>
             {% endif %}
         </dl>
 
