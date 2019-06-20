@@ -950,6 +950,23 @@ class TestCoreFrontend(FrontendTest):
         f['country'] = "Arkadien"
         self.submit(f)
 
+    def test_genesis_missing_data(self):
+        self.get('/')
+        self.traverse({'href': '/core/genesis/request'})
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "event"
+        f['gender'] = "1"
+        f['birthday'] = "5.6.1987"
+        f['postal_code'] = "Z-12345"
+        f['location'] = "Marcuria"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Ungültige Postleitzahl.")
+
     def test_log(self):
         ## First: generate data
         self.test_set_foto()

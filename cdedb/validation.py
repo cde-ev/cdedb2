@@ -1245,6 +1245,14 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
+
+    if ((not val.get('country') or val.get('country') == "Deutschland")
+            and val.get('postal_code')):
+        postal_code, e = _german_postal_code(
+            val['postal_code'], 'postal_code',_convert=_convert)
+        val['postal_code'] = postal_code
+        errs.extend(e)
+
     if 'realm' in val:
         if val['realm'] == "cde":
             errs.append(
@@ -1265,12 +1273,6 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         else:
             errs.append(('realm', ValueError(n_("Invalid target realm."))))
 
-    if ((not val.get('country') or val.get('country') == "Deutschland")
-            and val.get('postal_code')):
-        postal_code, e = _german_postal_code(
-            val['postal_code'], 'postal_code',_convert=_convert)
-        val['postal_code'] = postal_code
-        errs.extend(e)
     return val, errs
 
 
