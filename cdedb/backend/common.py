@@ -577,7 +577,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     def generic_retrieve_log(self, rs, code_validator, entity_name, table,
                              codes=None, entity_id=None, start=None, stop=None,
-                             additional_columns=None, additional_info=None,
+                             additional_columns=None, persona_id=None,
+                             submitted_by=None, additional_info=None,
                              time_start=None, time_stop=None):
         """Get recorded activity.
 
@@ -614,6 +615,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
           entries (works like python sequence slices).
         :type additional_columns: [str] or None
         :param additional_columns: Extra values to retrieve.
+        :type persona_id: int or None
+        :param persona_id: Filter for persona_id column.
+        :type submitted_by: int or None
+        :param submitted_by: Filter for submitted_by column.
         :type additional_info: str or None
         :param additional_info: Filter for additional_info column
         :type time_start: datetime or None
@@ -628,7 +633,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         stop = affirm_validation("int_or_None", stop)
         additional_columns = affirm_set_validation(
             "restrictive_identifier", additional_columns, allow_None=True)
+        persona_id = affirm_validation("id_or_None", persona_id)
+        submitted_by = affirm_validation("id_or_None", submitted_by)
         additional_info = affirm_validation("str_or_None", additional_info)
+        time_start = affirm_validation("datetime_or_None", time_start)
+        time_stop = affirm_validation("datetime_or_None", time_stop)
+
         start = start or 0
         additional_columns = additional_columns or tuple()
         if stop:
@@ -644,38 +654,39 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         extra_columns = ", ".join(additional_columns)
         if extra_columns:
             extra_columns = ", " + extra_columns
-        connector = "WHERE"
-        condition = ""
+
+        conditions = []
         params = []
         if codes:
-            condition = glue(condition, "{} code = ANY(%s)").format(connector)
-            connector = "AND"
+            conditions.append("code = ANY(%s)")
             params.append(codes)
         if entity_id:
-            condition = glue(
-                condition, "{} {}_id = %s").format(connector, entity_name)
-            connector = "AND"
+            conditions.append("{}_id = %s".format(entity_name))
             params.append(entity_id)
+        if persona_id:
+            conditions.append("persona_id = %s")
+            params.append(persona_id)
+        if submitted_by:
+            conditions.append("submitted_by = %s")
+            params.append(submitted_by)
         if additional_info:
-            condition = glue(
-                condition, "{} lower(additional_info) SIMILAR to %s").format(
-                connector)
-            connector = "AND"
+            conditions.append("lower(additional_info) SIMILAR to %s")
             value = "%{}%".format(diacritic_patterns(additional_info.lower()))
             params.append(value)
         if time_start and time_stop:
-            condition = glue(condition,
-                             "{} %s <= ctime AND ctime <= %s".format(connector))
-            connector = "AND"
+            conditions.append("%s <= ctime AND ctime <= %s")
             params.extend((time_start, time_stop))
         elif time_start:
-            condition = glue(condition, "{} %s <= ctime".format(connector))
-            connector = "AND"
+            conditions.append("%s <= ctime")
             params.append(time_start)
         elif time_stop:
-            condition = glue(condition, "{} ctime <= %s".format(connector))
-            connector = "AND"
+            conditions.append("ctime <= %s")
             params.append(time_stop)
+
+        if conditions:
+            condition = "WHERE {}".format(" AND ".join(conditions))
+        else:
+            condition = ""
         query = query.format(entity=entity_name, extra_columns=extra_columns,
                              table=table, condition=condition)
         return self.query_all(rs, query, params)

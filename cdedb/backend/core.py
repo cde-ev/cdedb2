@@ -184,9 +184,9 @@ class CoreBackend(AbstractBackend):
             return self.sql_insert(rs, "cde.finance_log", data)
 
     @access("core_admin")
-    def retrieve_log(self, rs, codes=None, persona_id=None, start=None,
-                     stop=None, additional_info=None, time_start=None,
-                     time_stop=None):
+    def retrieve_log(self, rs, codes=None, start=None, stop=None,
+                     persona_id=None, submitted_by=None,
+                     additional_info=None, time_start=None, time_stop=None):
         """Get recorded activity.
 
         See
@@ -194,24 +194,26 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
-        :type persona_id: int or None
         :type start: int or None
         :type stop: int or None
+        :type persona_id: int or None
+        :type submitted_by: int or None
         :type additional_info: str or None
         :type time_start: datetime or None
         :type time_stop: datetime or None
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
-            rs, "enum_corelogcodes", "persona", "core.log", codes, persona_id,
-            start, stop, additional_info=additional_info, time_start=time_start,
+            rs, "enum_corelogcodes", "persona", "core.log", codes, start=start,
+            stop=stop, persona_id=persona_id, submitted_by=submitted_by,
+            additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)
 
     @access("core_admin")
     def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None,
-                                submitted_by=None, reviewed_by=None,
-                                persona_id=None, additional_info=None,
-                                time_start=None, time_stop=None):
+                                persona_id=None, submitted_by=None,
+                                additional_info=None, time_start=None,
+                                time_stop=None, reviewed_by=None):
         """Get changelog activity.
 
         Similar to
@@ -221,21 +223,24 @@ class CoreBackend(AbstractBackend):
         :type stati: [int] or None
         :type start: int or None
         :type stop: int or None
-        :type submitted_by: id or None
-        :type reviewed_by: id or None
         :type persona_id: id or None
+        :type submitted_by: id or None
         :type additional_info: str or None
         :type time_start: datetime or None
         :type time_stop: datetime or None
+        :type reviewed_by: id or None
         :rtype: [{str: object}]
         """
         stati = affirm_set("enum_memberchangestati", stati, allow_None=True)
         start = affirm("int_or_None", start)
         stop = affirm("int_or_None", stop)
-        submitted_by = affirm("id_or_None", submitted_by)
-        reviewed_by = affirm("id_or_None", reviewed_by)
         persona_id = affirm("id_or_None", persona_id)
+        submitted_by = affirm("id_or_None", submitted_by)
         additional_info = affirm("str_or_None", additional_info)
+        reviewed_by = affirm("id_or_None", reviewed_by)
+        time_start = affirm("datetime_or_None", time_start)
+        time_stop = affirm("datetime_or_None", time_stop)
+
         start = start or 0
         if stop:
             stop = max(start, stop)

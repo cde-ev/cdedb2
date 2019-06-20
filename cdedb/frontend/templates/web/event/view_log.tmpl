@@ -68,5 +68,5 @@
         </tbody>
     </table>
 
-    {{ generic.log_filter(cdedblink('event/view_log'), enums['EventLogCodes'], "event_id") }}
+    {{ generic.log_filter(cdedblink('event/view_log'), enums['EventLogCodes'], 'event_admin_user', 'event_id') }}
 {% endblock %}

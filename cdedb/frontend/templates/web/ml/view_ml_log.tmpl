@@ -54,5 +54,5 @@
         </tbody>
     </table>
 
-    {{ generic.log_filter(cdedblink('ml/view_ml_log'), enums['MlLogCodes']) }}
+    {{ generic.log_filter(cdedblink('ml/view_ml_log'), enums['MlLogCodes'], 'mod_ml_user', aux=ambience['mailinglist']['id']) }}
 {% endblock %}

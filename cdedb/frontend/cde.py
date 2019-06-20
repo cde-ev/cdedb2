@@ -2406,21 +2406,23 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_cde_log(self, rs, codes, persona_id, start, stop, additional_info,
-                     time_start, time_stop):
+    def view_cde_log(self, rs, codes, start, stop, persona_id, submitted_by,
+                     additional_info, time_start, time_stop):
         """View general activity."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.cdeproxy.retrieve_cde_log(
-            rs, codes, persona_id, start, stop, additional_info, time_start,
-            time_stop)
+            rs, codes, start, stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -2431,12 +2433,13 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_finance_log(self, rs, codes, persona_id, start, stop,
+    def view_finance_log(self, rs, codes, start, stop, persona_id, submitted_by,
                          additional_info, time_start, time_stop):
         """View financial activity."""
         start = start or 0
@@ -2444,8 +2447,9 @@ class CdEFrontend(AbstractUserFrontend):
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.cdeproxy.retrieve_finance_log(
-            rs, codes, persona_id, start, stop, additional_info, time_start,
-            time_stop)
+            rs, codes, start, stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}
@@ -2456,21 +2460,24 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
+                 ("persona_id", "cdedbid_or_None"),
+                 ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
                  ("start", "non_negative_int_or_None"),
                  ("stop", "non_negative_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_past_log(self, rs, codes, pevent_id, start, stop, additional_info,
-                      time_start, time_stop):
+    def view_past_log(self, rs, codes, pevent_id, start, stop, persona_id,
+                      submitted_by, additional_info, time_start, time_stop):
         """View activities concerning concluded events."""
         start = start or 0
         stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
         log = self.pasteventproxy.retrieve_past_log(
-            rs, codes, pevent_id, start, stop, additional_info, time_start,
-            time_stop)
+            rs, codes, pevent_id, start, stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
         persona_ids = (
                 {entry['submitted_by'] for entry in log if
                  entry['submitted_by']}

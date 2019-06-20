@@ -62,5 +62,5 @@
         </tbody>
     </table>
 
-    {{ generic.log_filter(cdedblink('ml/view_log'), enums['MlLogCodes'], 'mailinglist_id') }}
+    {{ generic.log_filter(cdedblink('ml/view_log'), enums['MlLogCodes'], 'ml_admin_user', 'mailinglist_id') }}
 {% endblock %}

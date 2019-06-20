@@ -62,9 +62,9 @@ class CdEBackend(AbstractBackend):
         return self.sql_insert(rs, "cde.log", data)
 
     @access("cde_admin")
-    def retrieve_cde_log(self, rs, codes=None, persona_id=None, start=None,
-                         stop=None, additional_info=None, time_start=None,
-                         time_stop=None):
+    def retrieve_cde_log(self, rs, codes=None, start=None, stop=None,
+                         persona_id=None, submitted_by=None,
+                         additional_info=None, time_start=None, time_stop=None):
         """Get recorded activity.
 
         See
@@ -73,6 +73,7 @@ class CdEBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type persona_id: int or None
+        :type submitted_by: int or None
         :type start: int or None
         :type stop: int or None
         :type additional_info: str or None
@@ -81,13 +82,15 @@ class CdEBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
-            rs, "enum_cdelogcodes", "persona", "cde.log", codes, persona_id,
-            start, stop, additional_info=additional_info, time_start=time_start,
+            rs, "enum_cdelogcodes", "persona", "cde.log", codes, start=start,
+            stop=stop, persona_id=persona_id, submitted_by=submitted_by,
+            additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)
 
     @access("core_admin", "cde_admin")
-    def retrieve_finance_log(self, rs, codes=None, persona_id=None, start=None,
-                             stop=None, additional_info=None, time_start=None,
+    def retrieve_finance_log(self, rs, codes=None, start=None, stop=None,
+                             persona_id=None, submitted_by=None,
+                             additional_info=None, time_start=None,
                              time_stop=None):
         """Get financial activity.
 
@@ -96,9 +99,10 @@ class CdEBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
-        :type persona_id: int or None
         :type start: int or None
         :type stop: int or None
+        :type persona_id: int or None
+        :type submitted_by: int or None
         :type additional_info: str or None
         :type time_start: datetime or None
         :type time_stop: datetime or None
@@ -107,8 +111,10 @@ class CdEBackend(AbstractBackend):
         additional_columns = ["delta", "new_balance", "members", "total"]
         return self.generic_retrieve_log(
             rs, "enum_financelogcodes", "persona", "cde.finance_log", codes,
-            persona_id, start, stop, additional_columns, additional_info,
-            time_start, time_stop)
+            start=start, stop=stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_columns=additional_columns,
+            additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("member")
     def list_lastschrift(self, rs, persona_ids=None, active=True):
