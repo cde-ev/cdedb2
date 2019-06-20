@@ -19,7 +19,7 @@
                 {{ util.href(cdedblink("event/questionnaire_form", {"event_id": data['id']}), gettext("Questionnaire"),
                         aclass="list-group-item", icon="edit", active=(sidenav_active == 'event_quest')) }}
             {% endif %}
-        {% elif data['is_open'] %}
+        {% elif data['is_open'] and "event" in user.roles %}
             {{ util.href(cdedblink("event/register_form", {"event_id": data['id']}), gettext("Register"),
                     readonly=is_locked, aclass="list-group-item", icon="log-in",
                     active=(sidenav_active == 'event_register')) }}

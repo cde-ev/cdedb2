@@ -527,7 +527,7 @@ GRANT DELETE ON past_event.log TO cdb_admin;
 ---
 DROP SCHEMA IF EXISTS event;
 CREATE SCHEMA event;
-GRANT USAGE ON SCHEMA event TO cdb_persona;
+GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous;
 
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
@@ -564,6 +564,7 @@ CREATE TABLE event.events (
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
 GRANT INSERT, DELETE ON event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
+GRANT SELECT ON event.events to cdb_anonymous;
 
 CREATE TABLE event.event_parts (
         id                      serial PRIMARY KEY,
@@ -579,6 +580,7 @@ CREATE TABLE event.event_parts (
 CREATE INDEX idx_event_parts_event_id ON event.event_parts(event_id);
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.event_parts_id_seq TO cdb_persona;
+GRANT SELECT ON event.event_parts TO cdb_anonymous;
 
 -- each course can take place in an arbitrary number of tracks
 CREATE TABLE event.course_tracks (
@@ -592,6 +594,7 @@ CREATE TABLE event.course_tracks (
 CREATE INDEX idx_course_tracks_part_id ON event.course_tracks(part_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_tracks TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_tracks_id_seq TO cdb_persona;
+GRANT SELECT ON event.course_tracks TO cdb_anonymous;
 
 CREATE TABLE event.field_definitions (
         id                      serial PRIMARY KEY,
@@ -611,6 +614,7 @@ CREATE TABLE event.field_definitions (
 CREATE UNIQUE INDEX idx_field_definitions_event_id ON event.field_definitions(event_id, field_name);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.field_definitions TO cdb_persona;
 GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
+GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 
 -- create previously impossible reference
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
@@ -638,6 +642,7 @@ CREATE TABLE event.courses (
 CREATE INDEX idx_courses_event_id ON event.courses(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.courses TO cdb_persona;
 GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_persona;
+GRANT SELECT ON event.courses TO cdb_anonymous;
 
 -- not an array inside event.courses since no ELEMENT REFERENCES in postgres
 CREATE TABLE event.course_segments (
@@ -649,6 +654,7 @@ CREATE TABLE event.course_segments (
 CREATE INDEX idx_course_segments_course_id ON event.course_segments(course_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_segments TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_segments_id_seq TO cdb_persona;
+GRANT SELECT ON event.course_segments TO cdb_anonymous;
 
 CREATE TABLE event.orgas (
         id                      serial PRIMARY KEY,
@@ -659,6 +665,7 @@ CREATE INDEX idx_orgas_persona_id ON event.orgas(persona_id);
 CREATE INDEX idx_orgas_event_id ON event.orgas(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.orgas TO cdb_persona;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_persona;
+GRANT SELECT ON event.orgas TO cdb_anonymous;
 
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,

@@ -44,9 +44,11 @@
                     {% if ambience['event']['id'] in user.orga or is_admin %}
                         <span class="label label-primary">{{ entry['shortname'] }}</span>
                     {% endif %}
-                    {% trans instructors=entry['instructors'] -%}
-                        by {{ instructors }}
-                    {%- endtrans %}
+                    {% if "event" in user.roles %}
+                        {% trans instructors=entry['instructors'] -%}
+                            by {{ instructors }}
+                        {%- endtrans %}
+                    {% endif %}
                     {% if ambience['event']['tracks']|length > 1 %}
                         – <span class="text-info">
                         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')

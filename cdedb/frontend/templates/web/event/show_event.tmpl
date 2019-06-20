@@ -17,8 +17,9 @@
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard", active=True) }}
 {% endblock %}
 {% block content %}
-    
-    {{ ambience['event']['description']|md }}
+    {% if "event" in user.roles %}
+        {{ ambience['event']['description']|md }}
+    {% endif %}
 
     <dl class="dl-horizontal">
         {% if ambience['event']['parts']|length > 0 %}
@@ -60,12 +61,14 @@
                 {% endif %}
             </dd>
         {% endif %}
-        <dt>{% trans -%}Orgas{%- endtrans %}</dt>
-        <dd>
-            {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                {{util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
-            {% endfor %}
-        </dd>
+        {% if "event" in user.roles %}
+            <dt>{% trans -%}Orgas{%- endtrans %}</dt>
+            <dd>
+                {% for anid, entry in orgas.items() %} {# This is already sorted. #}
+                    {{util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                {% endfor %}
+            </dd>
+        {% endif %}
     </dl>
     {% if values['event_id'] in user.orga or is_admin %}
         <dl class="dl-horizontal">

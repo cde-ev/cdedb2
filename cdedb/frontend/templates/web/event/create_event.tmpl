@@ -59,6 +59,17 @@
             {{ util.form_input_checkbox(name="create_participant_list", label=gettext("Create Participant Mailinglist")) }}
         {% endif %}
         {{ util.input_hidden(name="use_questionnaire", value=False) }}
+
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                <div class="form-control-static text-info">
+                    {{ util.make_icon('info-sign') }}
+                    {{ gettext("Warning: The description and the timeframe will be publicly visible once "
+                    "visibility is activated in the configuration.") }}
+                </div>
+            </div>
+        </div>
+
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_db_events")) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">

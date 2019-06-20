@@ -142,6 +142,12 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
 
+    def test_course_list_public(self):
+        self.get('/event/event/1/course/list')
+        self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("ToFi")
+        self.assertPresence("Wir werden die Bäume drücken.")
+
     @as_users("anton", "garcia", "ferdinand")
     def test_change_event(self, user):
         self.traverse({'href': '/event/$'},
