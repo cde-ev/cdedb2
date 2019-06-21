@@ -380,7 +380,10 @@ class EventBackend(AbstractBackend):
                 ['''(fields->>'{}')::{} AS "xfield_{}_{}"'''.format(
                     name, kind, name, part_id)
                  for name, kind in lodgement_fields.items()]
-                + ["id", "moniker", "notes"])
+                + [col.format(part_id) for col in
+                   ("id AS id_{}", "moniker AS moniker_{}",
+                    "notes AS notes_{}")]
+            )
             part_table_template = glue(
                 # first the per part table
                 "LEFT OUTER JOIN (SELECT registration_id, {part_columns}",
@@ -391,7 +394,7 @@ class EventBackend(AbstractBackend):
                 "event.lodgements WHERE event_id={event_id})",
                 "AS lodgement{part_id}",
                 "ON part{part_id}.lodgement_id{part_id}",
-                "= lodgement{part_id}.id",
+                "= lodgement{part_id}.id_[part_id}",
             )
             part_atoms = ("status", "lodgement_id", "is_reserve")
             part_columns_gen = lambda part_id: ", ".join(
@@ -407,7 +410,9 @@ class EventBackend(AbstractBackend):
                 ['''(fields->>'{}')::{} AS "xfield_{}_{}"'''.format(
                     name, kind, name, track_id)
                  for name, kind in course_fields.items()]
-                + ["id", "nr", "title", "shortname", "notes"]
+                + [col.format(track_id) for col in
+                   ("id AS id_{}", "nr AS nr_{}", "title AS title_{}",
+                    "shortname AS shortname_{}", "notes AS notes_{}")]
             )
             track_table_template = glue(
                 # first the per track table
@@ -420,13 +425,13 @@ class EventBackend(AbstractBackend):
                 "event.courses WHERE event_id={event_id})",
                 "AS course{track_id}",
                 "ON track{track_id}.course_id{track_id}",
-                "= course{track_id}.id",
+                "= course{track_id}.id_{track_id}",
                 # third the fields for the instructed course
                 "LEFT OUTER JOIn (SELECT {course_fields_select} FROM",
                 "event.courses WHERE event_id={event_id})",
                 "AS course_instructor{track_id}",
                 "ON track{track_id}.course_instructor{track_id}",
-                "= course_instructor{track_id}.id",
+                "= course_instructor{track_id}.id_{track_id}",
             )
             track_atoms = ("course_id", "course_instructor",)
             # This needs an additional hack to dynamically generate the
@@ -436,10 +441,12 @@ class EventBackend(AbstractBackend):
                     "{col} AS {col}{track_id}".format(col=col,
                                                       track_id=track_id)
                     for col in track_atoms)
-                + ", " +
-                "(NOT(course_id IS NULL AND course_instructor IS NOT NULL) AND"
-                " course_id = course_instructor) "
-                "AS is_course_instructor{track_id}".format(track_id=track_id))
+                + ", "
+                + glue(
+                    "(NOT(course_id IS NULL AND course_instructor IS NOT NULL)",
+                    "AND course_id = course_instructor)",
+                    "AS is_course_instructor{track_id}").format(
+                    track_id=track_id))
             creation_date = glue(
                 "LEFT OUTER JOIN (",
                 "SELECT persona_id, MAX(ctime) AS creation_time",
