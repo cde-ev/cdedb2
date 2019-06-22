@@ -249,7 +249,7 @@ class TestEventBackend(BackendTest):
         new_events = self.event.list_db_events(self.key)
         self.assertIn(new_id, new_events)
 
-        new_course = {
+        cdata = {
             'event_id': new_id,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
@@ -263,63 +263,15 @@ class TestEventBackend(BackendTest):
             'notes': "Beware of dragons.",
             'segments': {5},  # hardcoded value 5
         }
-        new_course_id = self.event.create_course(self.key, new_course)
-        new_course['id'] = new_course_id
-        new_course['active_segments'] = new_course['segments']
-        new_course['fields'] = {}
-        self.assertEqual(new_course, self.event.get_course(
+        new_course_id = self.event.create_course(self.key, cdata)
+        cdata['id'] = new_course_id
+        cdata['active_segments'] = cdata['segments']
+        cdata['fields'] = {}
+        self.assertEqual(cdata, self.event.get_course(
             self.key, new_course_id))
 
-        new_lodgement = {
-            'capacity': 42,
-            'event_id': new_id,
-            'moniker': 'Hyrule',
-            'notes': "Notizen",
-            'reserve': 11,
-        }
-        new_lodge_id = self.event.create_lodgement(self.key, new_lodgement)
-        self.assertLess(0, new_lodge_id)
-        new_lodgement['id'] = new_lodge_id
-        new_lodgement['fields'] = {}
-        self.assertEqual(new_lodgement, self.event.get_lodgement(
-            self.key, new_lodge_id))
-
-        new_reg = {
-            'checkin': None,
-            'event_id': new_id,
-            'list_consent': True,
-            'mixed_lodging': False,
-            'orga_notes': None,
-            'notes': None,
-            'parental_agreement': None,
-            'parts': {
-                part_map["Second coming"]: {'lodgement_id': new_lodge_id,
-                                            'status': 1
-                                            },
-                part_map["Third coming"]: {'lodgement_id': new_lodge_id,
-                                           'status': 1
-                                           },
-
-            },
-            'tracks': {
-                5: {'choices': [new_course_id],
-                    'course_id': None,
-                    'course_instructor': None
-                    },
-                6: {'course_id': None,
-                    'course_instructor': None
-                    },
-            },
-            'payment': None,
-            'persona_id': 2,
-            'real_persona_id': None
-        }
-        new_reg_id = self.event.create_registration(self.key, new_reg)
-        self.assertLess(0, new_reg_id)
-
         self.login(USER_DICT["anton"])
-        self.assertLess(0, self.event.delete_event(
-            self.key, new_id,
+        self.assertLess(0, self.event.delete_event(self.key, new_id,
             ("event_parts", "course_tracks", "field_definitions", "courses",
              "orgas", "lodgements", "registrations", "questionnaire", "log",
              "mailinglists")))
@@ -1797,6 +1749,7 @@ class TestEventBackend(BackendTest):
             'timestamp': nearly_now()
         }
         self.assertEqual(expectation, self.event.export_event(self.key, 1))
+
 
     @as_users("anton")
     def test_import_event(self, user):

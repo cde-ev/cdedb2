@@ -4312,7 +4312,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         if not ack_archive:
             rs.errors.append(
-                ("ack_archivee", ValueError(n_("Must be checked."))))
+                ("ack_conclude", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_event(rs, event_id)
         new_ids, message = self.pasteventproxy.archive_event(rs, event_id)
@@ -4326,28 +4326,6 @@ class EventFrontend(AbstractUserFrontend):
         else:
             rs.notify("info", n_("Created multiple past events."))
             return self.redirect(rs, "event/show_event")
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
-    @event_guard(check_offline=True)
-    def delete_event(self, rs, event_id, ack_delete):
-        """Remove an event."""
-        if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
-            return self.show_event(rs, event_id)
-
-        blockers = self.eventproxy.delete_event_blockers(rs, event_id)
-        cascade = {"registrations", "courses", "lodgements",
-                   "field_definitions", "course_tracks", "event_parts", "orgas",
-                   "questionnaire", "log", "mailinglists"} & blockers.keys()
-
-        code = self.eventproxy.delete_event(rs, event_id, cascade)
-        if not code:
-            return self.show_event(rs, event_id)
-        else:
-            rs.notify("success", n_("Event deleted."))
-            return self.redirect(rs, "event/index")
 
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
