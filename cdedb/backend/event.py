@@ -1064,10 +1064,13 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
             if cascade:
-                if "field_definitions" in cascade:
-                    ret *= self.sql_delete(
-                        rs, "event.field_definitions",
-                        blockers["field_definitions"])
+                if "registrations" in cascade:
+                    with Silencer(rs):
+                        for reg_id in blockers["registrations"]:
+                            ret *= self.delete_registration(
+                                rs, reg_id,
+                                ("registration_parts", "course_choices",
+                                 "registration_tracks"))
                 if "courses" in cascade:
                     with Silencer(rs):
                         for course_id in blockers["courses"]:
@@ -1075,6 +1078,24 @@ class EventBackend(AbstractBackend):
                                 rs, course_id,
                                 ("attendees", "course_choices",
                                  "course_segments", "instructors"))
+                if "lodgements" in cascade:
+                    ret *= self.sql_delete(rs, "event.lodgements",
+                                           blockers["lodgements"])
+                if "questionnaire" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.questionnaire_rows",
+                        blockers["questionnaire"])
+                if "field_definitions" in cascade:
+                    deletor = {
+                        'id': event_id,
+                        'course_room_field': None,
+                        'lodge_field': None,
+                        'reserve_field': None,
+                    }
+                    ret *= self.sql_update(rs, "event.events", deletor)
+                    ret *= self.sql_delete(
+                        rs, "event.field_definitions",
+                        blockers["field_definitions"])
                 if "course_tracks" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.course_tracks", blockers["course_tracks"])
@@ -1083,20 +1104,6 @@ class EventBackend(AbstractBackend):
                         rs, "event.event_parts", blockers["event_parts"])
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
-                if "lodgements" in cascade:
-                    ret *= self.sql_delete(rs, "event.lodgements",
-                                           blockers["lodgements"])
-                if "registrations" in cascade:
-                    with Silencer(rs):
-                        for reg_id in blockers["registrations"]:
-                            ret *= self.delete_registration(
-                                rs, reg_id,
-                                ("registration_parts", "course_choices",
-                                 "registration_tracks"))
-                if "questionnaire" in cascade:
-                    ret *= self.sql_delete(
-                        rs, "event.questionnaire_rows",
-                        blockers["questionnaire"])
                 if "log" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.log", blockers["log"])
@@ -1104,7 +1111,8 @@ class EventBackend(AbstractBackend):
                     for anid in blockers["mailinglists"]:
                         deletor = {
                             'event_id': None,
-                            'id': anid
+                            'id': anid,
+                            'is_active': False,
                         }
                         ret *= self.sql_update(rs, "ml.mailinglists", deletor)
 
