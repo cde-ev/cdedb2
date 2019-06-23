@@ -924,54 +924,58 @@ class TestEventBackend(BackendTest):
             spec=dict(QUERY_SPECS["qview_registration"]),
             fields_of_interest=(
                 "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
-                "birthday", "lodgement1.id", "part3.status3", "course2.id",
-                "lodgement2.xfield_contamination_2", "course1.xfield_room_1",
-                "reg_fields.xfield_brings_balls", "reg_fields.xfield_transportation"),
-            constraints=[("reg.id", QueryOperators.nonempty, None),
-                           ("persona.given_names", QueryOperators.regex, '[aeiou]'),
-                           ("part2.status2", QueryOperators.nonempty, None),
-                           ("reg_fields.xfield_transportation", QueryOperators.oneof, ['pedes', 'etc'])],
+                "birthday", "lodgement1.lodgement1_id", "part3.status3",
+                "course2.course2_id", "course1.xfield_course1_room",
+                "lodgement2.xfield_lodgement2_contamination",
+                "reg_fields.xfield_reg_brings_balls",
+                "reg_fields.xfield_reg_transportation"),
+            constraints=[
+                ("reg.id", QueryOperators.nonempty, None),
+                ("persona.given_names", QueryOperators.regex, '[aeiou]'),
+                ("part2.status2", QueryOperators.nonempty, None),
+                ("reg_fields.xfield_reg_transportation", QueryOperators.oneof,
+                 ['pedes', 'etc'])],
             order=(("reg.id", True),),)
 
         ## fix query spec (normally done by frontend)
         query.spec.update({
-            'lodgement1.id': "int",
+            'lodgement1.lodgement1_id': "int",
             'part3.status3': "int",
-            'course2.id': "int",
-            'lodgement2.xfield_contamination_2': "str",
-            'course1.xfield_room_1': "str",
-            'reg_fields.xfield_brings_balls': "bool",
-            'reg_fields.xfield_transportation': "str",
+            'course2.course2_id': "int",
+            'lodgement2.xfield_lodgement2_contamination': "str",
+            'course1.xfield_course1_room': "str",
+            'reg_fields.xfield_reg_brings_balls': "bool",
+            'reg_fields.xfield_reg_transportation': "str",
             'part2.status2': "int",
             })
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {'birthday': datetime.date(2012, 6, 2),
-             'reg_fields.xfield_brings_balls': True,
-             'lodgement2.xfield_contamination_2': 'high',
-             'course2.id': None,
+             'reg_fields.xfield_reg_brings_balls': True,
+             'lodgement2.xfield_lodgement2_contamination': 'high',
+             'course2.course2_id': None,
              'persona.family_name': 'Eventis',
              'reg.id': 2,
              'id': 2,  # un-aliased id from QUERY_PRIMARIES / ordering
-             'lodgement1.id': None,
+             'lodgement1.lodgement1_id': None,
              'reg.payment': datetime.date(2014, 2, 2),
              'is_cde_realm': False,
-             'course1.xfield_room_1': None,
+             'course1.xfield_course1_room': None,
              'part3.status3': 2,
-             'reg_fields.xfield_transportation': 'pedes'},
+             'reg_fields.xfield_reg_transportation': 'pedes'},
             {'birthday': datetime.date(2222, 1, 1),
-             'reg_fields.xfield_brings_balls': False,
-             'lodgement2.xfield_contamination_2': None,
-             'course2.id': None,
+             'reg_fields.xfield_reg_brings_balls': False,
+             'lodgement2.xfield_lodgement2_contamination': None,
+             'course2.course2_id': None,
              'persona.family_name': 'Iota',
              'reg.id': 4,
              'id': 4,  # un-aliased id from QUERY_PRIMARIES / ordering
-             'lodgement1.id': None,
+             'lodgement1.lodgement1_id': None,
              'reg.payment': datetime.date(2014, 4, 4),
              'is_cde_realm': True,
-             'course1.xfield_room_1': None,
+             'course1.xfield_course1_room': None,
              'part3.status3': 2,
-             'reg_fields.xfield_transportation': 'etc'})
+             'reg_fields.xfield_reg_transportation': 'etc'})
         self.assertEqual(expectation, result)
 
     @as_users("anton", "garcia")

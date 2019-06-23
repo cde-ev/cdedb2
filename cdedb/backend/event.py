@@ -116,9 +116,9 @@ _REGISTRATION_VIEW_TEMPLATE = glue(
     "{track_tables}",  # per track details will be filled in here
     "{creation_date}",
     "{modification_date}",
-    "LEFT OUTER JOIN (SELECT {json_reg_fields_select} FROM",
-    " event.registrations WHERE event_id={event_id}) AS reg_fields",
-    "ON reg.id = reg_fields.nonfield_reg_id",
+    "LEFT OUTER JOIN (SELECT {reg_columns} FROM",
+    "event.registrations WHERE event_id={event_id}) AS reg_fields",
+    "ON reg.id = reg_fields.reg_id",
 )
 
 #: Version tag, so we know that we don't run out of sync with exported event
@@ -376,13 +376,13 @@ class EventBackend(AbstractBackend):
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.lodgement
             }
-            lodge_fields_select_gen = lambda part_id: ", ".join(
-                ['''(fields->>'{}')::{} AS "xfield_{}_{}"'''.format(
-                    name, kind, name, part_id)
+            lodge_columns_gen = lambda part_id: ", ".join(
+                ['''(fields->>'{}')::{} AS "xfield_lodgement{}_{}"'''.format(
+                    name, kind, part_id, name)
                  for name, kind in lodgement_fields.items()]
                 + [col.format(part_id) for col in
-                   ("id AS id_{}", "moniker AS moniker_{}",
-                    "notes AS notes_{}")]
+                   ("id AS lodgement{}_id", "moniker AS lodgement{}_moniker",
+                    "notes AS lodgement{}_notes")]
             )
             part_table_template = glue(
                 # first the per part table
@@ -390,11 +390,11 @@ class EventBackend(AbstractBackend):
                 "FROM event.registration_parts WHERE part_id = {part_id})",
                 "AS part{part_id} ON reg.id = part{part_id}.registration_id",
                 # second the associated lodgement fields
-                "LEFT OUTER JOIN (SELECT {lodge_fields_select} FROM",
+                "LEFT OUTER JOIN (SELECT {lodge_columns} FROM",
                 "event.lodgements WHERE event_id={event_id})",
                 "AS lodgement{part_id}",
                 "ON part{part_id}.lodgement_id{part_id}",
-                "= lodgement{part_id}.id_[part_id}",
+                "= lodgement{part_id}.lodgement{part_id}_id",
             )
             part_atoms = ("status", "lodgement_id", "is_reserve")
             part_columns_gen = lambda part_id: ", ".join(
@@ -406,13 +406,13 @@ class EventBackend(AbstractBackend):
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.course
             }
-            course_fields_select_gen = lambda track_id: ", ".join(
-                ['''(fields->>'{}')::{} AS "xfield_{}_{}"'''.format(
-                    name, kind, name, track_id)
+            course_columns_gen = lambda track_id, identifier: ", ".join(
+                ['''(fields->>'{}')::{} AS "xfield_{}{}_{}"'''.format(
+                    name, kind, identifier, track_id, name)
                  for name, kind in course_fields.items()]
-                + [col.format(track_id) for col in
-                   ("id AS id_{}", "nr AS nr_{}", "title AS title_{}",
-                    "shortname AS shortname_{}", "notes AS notes_{}")]
+                + [col.format(identifier, track_id) for col in
+                   ("id AS {}{}_id", "nr AS {}{}_nr", "title AS {}{}_title",
+                    "shortname AS {}{}_shortname", "notes AS {}{}_notes")]
             )
             track_table_template = glue(
                 # first the per track table
@@ -421,17 +421,17 @@ class EventBackend(AbstractBackend):
                 "AS track{track_id} ON",
                 "reg.id = track{track_id}.registration_id",
                 # second the associated course fields
-                "LEFT OUTER JOIN (SELECT {course_fields_select} FROM",
+                "LEFT OUTER JOIN (SELECT {course_columns} FROM",
                 "event.courses WHERE event_id={event_id})",
                 "AS course{track_id}",
                 "ON track{track_id}.course_id{track_id}",
-                "= course{track_id}.id_{track_id}",
+                "= course{track_id}.course{track_id}_id",
                 # third the fields for the instructed course
-                "LEFT OUTER JOIn (SELECT {course_fields_select} FROM",
+                "LEFT OUTER JOIN (SELECT {course_instructor_columns} FROM",
                 "event.courses WHERE event_id={event_id})",
                 "AS course_instructor{track_id}",
                 "ON track{track_id}.course_instructor{track_id}",
-                "= course_instructor{track_id}.id_{track_id}",
+                "= course_instructor{track_id}.course_instructor{track_id}_id",
             )
             track_atoms = ("course_id", "course_instructor",)
             # This needs an additional hack to dynamically generate the
@@ -442,14 +442,16 @@ class EventBackend(AbstractBackend):
                                                       track_id=track_id)
                     for col in track_atoms)
                 + ", "
+                # This gives a boolean for all potential course instructors
+                # and NULL for other registrations
                 + glue(
                     "(NOT(course_id IS NULL AND course_instructor IS NOT NULL)",
                     "AND course_id = course_instructor)",
                     "AS is_course_instructor{track_id}").format(
                     track_id=track_id))
             creation_date = glue(
-                "LEFT OUTER JOIN (",
-                "SELECT persona_id, MAX(ctime) AS creation_time",
+                "LEFT OUTER JOIN",
+                "(SELECT persona_id, MAX(ctime) AS creation_time",
                 "FROM event.log",
                 "WHERE event_id = {event_id} AND code = {reg_create_code}",
                 "GROUP BY persona_id)",
@@ -457,8 +459,8 @@ class EventBackend(AbstractBackend):
                 event_id=event_id,
                 reg_create_code=const.EventLogCodes.registration_created)
             modification_date = glue(
-                "LEFT OUTER JOIN (",
-                "SELECT persona_id, MAX(ctime) AS modification_time",
+                "LEFT OUTER JOIN",
+                "(SELECT persona_id, MAX(ctime) AS modification_time",
                 "FROM event.log",
                 "WHERE event_id = {event_id} AND code = {reg_mod_code}",
                 "GROUP BY persona_id)",
@@ -471,18 +473,20 @@ class EventBackend(AbstractBackend):
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.registration
             }
-            json_reg_fields_select = ", ".join(
-                ['''(fields->>'{}')::{} AS "xfield_{}"'''.format(
+            reg_columns = ", ".join(
+                ['''(fields->>'{}')::{} AS "xfield_reg_{}"'''.format(
                     name, kind, name)
                  for name, kind in reg_fields.items()]
-                + ["id AS nonfield_reg_id"])
+                + ["id AS reg_id"])
             part_table_gen = lambda part_id: part_table_template.format(
                 part_columns=part_columns_gen(part_id), part_id=part_id,
-                lodge_fields_select=lodge_fields_select_gen(part_id),
+                lodge_columns=lodge_columns_gen(part_id),
                 event_id=event_id)
             track_table_gen = lambda track_id: track_table_template.format(
                 track_columns=track_columns_gen(track_id),
-                course_fields_select=course_fields_select_gen(track_id),
+                course_columns=course_columns_gen(track_id, "course"),
+                course_instructor_columns=course_columns_gen(
+                    track_id, "course_instructor"),
                 track_id=track_id, event_id=event_id)
             view = _REGISTRATION_VIEW_TEMPLATE.format(
                 event_id=event_id,
@@ -493,7 +497,7 @@ class EventBackend(AbstractBackend):
                                       for track_id in part['tracks']),
                 creation_date=creation_date,
                 modification_date=modification_date,
-                json_reg_fields_select=json_reg_fields_select,
+                reg_columns=reg_columns,
             )
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
