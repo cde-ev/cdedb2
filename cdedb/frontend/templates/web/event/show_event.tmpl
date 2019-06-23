@@ -294,34 +294,34 @@
                 $('#archiveeventform').cdedbProtectAction("{{ gettext("The event will be permanently archived.") }}");
                 $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
             </script>
-        {% endif %}
-        {% if is_admin %}
-            <div class="row">
-                <div class="col-sm-4">
-                    <div class="p">
-                        <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"
-                              style="display: inline;">
-                            {{ util.anti_csrf_token('event/delete_event') }}
-                            {{ util.input_submit(value=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
-                                                 aclass="btn btn-danger", icon="trash",
-                                                 title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
-                        </form>
+            {% if is_admin %}
+                <div class="row">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"
+                                  style="display: inline;">
+                                {{ util.anti_csrf_token('event/delete_event') }}
+                                {{ util.input_submit(value=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
+                                                     aclass="btn btn-danger", icon="trash",
+                                                     title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
+                                {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <div class="p text-muted">
+                            {% trans -%}
+                                Deletes the event, including all course and participant information.
+                                This should usually not be done before the event has been archived.
+                            {%- endtrans %}
+                        </div>
                     </div>
                 </div>
-                <div class="col-sm-8">
-                    <div class="p text-muted">
-                        {% trans -%}
-                            Deletes the event, including all course and participant information.
-                            This should usually not be done before the event has been archived.
-                        {%- endtrans %}
-                    </div>
-                </div>
-            </div>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
-                $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
-                $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-            </script>
-        {% endif %}
-    {% endcall %}
+                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
+                    $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                </script>
+            {% endif %}
+        {% endcall %}
+    {% endif %}
 {% endblock %}
