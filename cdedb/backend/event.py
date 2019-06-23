@@ -29,86 +29,124 @@ from cdedb.validation import parse_date, parse_datetime
 # disfigure the query code.
 #
 # The end result may look something like the following::
-#
-# event.registrations AS reg
-# JOIN core.personas AS persona ON reg.persona_id = persona.id
-# LEFT OUTER JOIN (SELECT registration_id, status AS status1,
-#                  lodgement_id AS lodgement_id1, is_reserve AS is_reserve1
-#                  FROM event.registration_parts WHERE part_id = 1)
-#     AS part1 ON reg.id = part1.registration_id
-# LEFT OUTER JOIN (SELECT (fields->>'contamination')::varchar
-#                      AS "xfield_contamination_1",
-#                  id AS nonfield_lodgement_id_1
-#                  FROM event.lodgements WHERE event_id=1)
-#     AS lodge_fields1
-#     ON part1.lodgement_id1 = lodge_fields1.nonfield_lodgement_id_1
-# LEFT OUTER JOIN (SELECT registration_id, status AS status2,
-#                  lodgement_id AS lodgement_id2, is_reserve AS is_reserve2
-#                  FROM event.registration_parts WHERE part_id = 2)
-#     AS part2 ON reg.id = part2.registration_id
-# LEFT OUTER JOIN (SELECT (fields->>'contamination')::varchar
-#                      AS "xfield_contamination_2",
-#                  id AS nonfield_lodgement_id_2
-#                  FROM event.lodgements WHERE event_id=1)
-#     AS lodge_fields2
-#     ON part2.lodgement_id2 = lodge_fields2.nonfield_lodgement_id_2
-# LEFT OUTER JOIN (SELECT registration_id, status AS status3,
-#                  lodgement_id AS lodgement_id3, is_reserve AS is_reserve3
-#                  FROM event.registration_parts WHERE part_id = 3)
-#     AS part3 ON reg.id = part3.registration_id
-# LEFT OUTER JOIN (SELECT (fields->>'contamination')::varchar
-#                      AS "xfield_contamination_3",
-#                  id AS nonfield_lodgement_id_3
-#                  FROM event.lodgements WHERE event_id=1)
-#     AS lodge_fields3
-#     ON part3.lodgement_id3 = lodge_fields3.nonfield_lodgement_id_3
-# LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1,
-#                  course_instructor AS course_instructor1,
-#                  (course_id = course_instructor) AS is_course_instructor1
-#                  FROM event.registration_tracks WHERE track_id = 1)
-#     AS track1 ON reg.id = track1.registration_id
-# LEFT OUTER JOIN (SELECT (fields->>'room')::varchar AS "xfield_room_1",
-#                  id AS nonfield_course_id_1
-#                  FROM event.courses WHERE event_id=1)
-#     AS course_fields1
-#     ON track1.course_id1 = course_fields1.nonfield_course_id_1
-# LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id2,
-#                  course_instructor AS course_instructor2,
-#                  (course_id = course_instructor) AS is_course_instructor2
-#                  FROM event.registration_tracks WHERE track_id = 2)
-#     AS track2 ON reg.id = track2.registration_id
-# LEFT OUTER JOIN (SELECT (fields->>'room')::varchar AS "xfield_room_2",
-#                  id AS nonfield_course_id_2
-#                  FROM event.courses WHERE event_id=1)
-#     AS course_fields2
-#     ON track2.course_id2 = course_fields2.nonfield_course_id_2
-# LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id3,
-#                  course_instructor AS course_instructor3,
-#                  (course_id = course_instructor) AS is_course_instructor3
-#                  FROM event.registration_tracks WHERE track_id = 3)
-#     AS track3 ON reg.id = track3.registration_id
-# LEFT OUTER JOIN (SELECT (fields->>'room')::varchar AS "xfield_room_3",
-#                  id AS nonfield_course_id_3
-#                  FROM event.courses WHERE event_id=1)
-#     AS course_fields3
-#     ON track3.course_id3 = course_fields3.nonfield_course_id_3
-# LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS creation_time
-#                  FROM event.log WHERE event_id = 1 AND code = 50
-#                  GROUP BY persona_id)
-#     AS ctime ON ctime.persona_id = reg.persona_id
-# LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS modification_time
-#                  FROM event.log WHERE event_id = 1 AND code = 51
-#                  GROUP BY persona_id)
-#     AS mtime ON mtime.persona_id = reg.persona_id
-# LEFT OUTER JOIN (SELECT (fields->>'brings_balls')::boolean
-#                      AS "xfield_brings_balls",
-#                  (fields->>'transportation')::varchar
-#                      AS "xfield_transportation",
-#                  (fields->>'lodge')::varchar AS "xfield_lodge",
-#                  (fields->>'may_reserve')::boolean AS "xfield_may_reserve",
-#                  id AS nonfield_reg_id
-#                  FROM event.registrations WHERE event_id=1)
-#     AS reg_fields ON reg.id = reg_fields.nonfield_reg_id
+"""
+event.registrations AS reg
+JOIN core.personas AS persona ON reg.persona_id = persona.id
+LEFT OUTER JOIN (SELECT registration_id, status AS status1,
+                 lodgement_id AS lodgement_id1, is_reserve AS is_reserve1
+                 FROM event.registration_parts WHERE part_id = 1)
+    AS part1 ON reg.id = part1.registration_id
+LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
+                     AS "xfield_lodgement1_contamination",
+                 id AS lodgement1_id, moniker AS lodgement1_moniker,
+                 notes AS lodgement1_notes
+                 FROM event.lodgements WHERE event_id=1)
+    AS lodgement1 ON part1.lodgement_id1 = lodgement1.lodgement1_id
+LEFT OUTER JOIN (SELECT registration_id, status AS status2,
+                 lodgement_id AS lodgement_id2, is_reserve AS is_reserve2
+                 FROM event.registration_parts WHERE part_id = 2)
+    AS part2 ON reg.id = part2.registration_id
+LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
+                     AS "xfield_lodgement2_contamination",
+                 id AS lodgement2_id, moniker AS lodgement2_moniker,
+                 notes AS lodgement2_notes
+                 FROM event.lodgements WHERE event_id=1)
+    AS lodgement2 ON part2.lodgement_id2 = lodgement2.lodgement2_id
+LEFT OUTER JOIN (SELECT registration_id, status AS status3,
+                 lodgement_id AS lodgement_id3, is_reserve AS is_reserve3
+                 FROM event.registration_parts WHERE part_id = 3)
+    AS part3 ON reg.id = part3.registration_id
+LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
+                     AS "xfield_lodgement3_contamination",
+                 id AS lodgement3_id, moniker AS lodgement3_moniker,
+                 notes AS lodgement3_notes
+                 FROM event.lodgements WHERE event_id=1)
+    AS lodgement3 ON part3.lodgement_id3 = lodgement3.lodgement3_id
+LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1,
+                 course_instructor AS course_instructor1,
+                 (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
+                      AND course_id = course_instructor)
+                      AS is_course_instructor1
+                 FROM event.registration_tracks WHERE track_id = 1)
+    AS track1 ON reg.id = track1.registration_id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_course1_room",
+                 id AS course1_id, nr AS course1_nr, title AS course1_title,
+                 shortname AS course1_shortname, notes AS course1_notes
+                 FROM event.courses WHERE event_id=1)
+    AS course1 ON track1.course_id1 = course1.course1_id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar
+                     AS "xfield_course_instructor1_room",
+                 id AS course_instructor1_id, nr AS course_instructor1_nr,
+                 title AS course_instructor1_title,
+                 shortname AS course_instructor1_shortname,
+                 notes AS course_instructor1_notes
+                 FROM event.courses WHERE event_id=1)
+    AS course_instructor1
+        ON track1.course_instructor1 = course_instructor1.course_instructor1_id
+LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id2,
+                 course_instructor AS course_instructor2,
+                 (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
+                      AND course_id = course_instructor)
+                      AS is_course_instructor2
+                 FROM event.registration_tracks WHERE track_id = 2)
+    AS track2 ON reg.id = track2.registration_id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_course2_room",
+                 id AS course2_id, nr AS course2_nr, title AS course2_title,
+                 shortname AS course2_shortname, notes AS course2_notes
+                 FROM event.courses WHERE event_id=1)
+    AS course2 ON track2.course_id2 = course2.course2_id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar
+                     AS "xfield_course_instructor2_room",
+                 id AS course_instructor2_id, nr AS course_instructor2_nr,
+                 title AS course_instructor2_title,
+                 shortname AS course_instructor2_shortname,
+                 notes AS course_instructor2_notes
+                 FROM event.courses WHERE event_id=1)
+    AS course_instructor2
+        ON track2.course_instructor2 = course_instructor2.course_instructor2_id
+LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id3,
+                 course_instructor AS course_instructor3,
+                 (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
+                      AND course_id = course_instructor)
+                      AS is_course_instructor3
+                 FROM event.registration_tracks WHERE track_id = 3)
+    AS track3 ON reg.id = track3.registration_id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_course3_room",
+                 id AS course3_id, nr AS course3_nr, title AS course3_title,
+                 shortname AS course3_shortname, notes AS course3_notes
+                 FROM event.courses WHERE event_id=1)
+    AS course3 ON track3.course_id3 = course3.course3_id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar
+                     AS "xfield_course_instructor3_room",
+                 id AS course_instructor3_id, nr AS course_instructor3_nr,
+                 title AS course_instructor3_title,
+                 shortname AS course_instructor3_shortname,
+                 notes AS course_instructor3_notes
+                 FROM event.courses WHERE event_id=1)
+    AS course_instructor3
+        ON track3.course_instructor3 = course_instructor3.course_instructor3_id
+LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS creation_time
+                 FROM event.log WHERE event_id = 1 AND code = 50
+                    GROUP BY persona_id)
+    AS ctime ON ctime.persona_id = reg.persona_id
+LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS modification_time
+                 FROM event.log WHERE event_id = 1 AND code = 51
+                    GROUP BY persona_id)
+    AS mtime ON mtime.persona_id = reg.persona_id
+LEFT OUTER JOIN (SELECT (fields->>\'brings_balls\')::boolean
+                     AS "xfield_reg_brings_balls",
+                 (fields->>\'transportation\')::varchar
+                     AS "xfield_reg_transportation",
+                 (fields->>\'lodge\')::varchar
+                     AS "xfield_reg_lodge",
+                 (fields->>\'may_reserve\')::boolean
+                     AS "xfield_reg_may_reserve",
+                 id AS reg_id
+                 FROM  event.registrations WHERE event_id=1)
+    AS reg_fields ON reg.id = reg_fields.reg_id
+WHERE (event_id = 1)
+"""
+
 _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations AS reg",
     "JOIN core.personas AS persona ON reg.persona_id = persona.id",
