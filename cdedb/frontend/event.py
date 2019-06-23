@@ -4312,7 +4312,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         if not ack_archive:
             rs.errors.append(
-                ("ack_conclude", ValueError(n_("Must be checked."))))
+                ("ack_archive", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_event(rs, event_id)
 
