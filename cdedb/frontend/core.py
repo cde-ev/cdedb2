@@ -1690,21 +1690,16 @@ class CoreFrontend(AbstractFrontend):
         current = now()
         data = self.coreproxy.changelog_get_changes(
             rs, stati=(const.MemberChangeStati.pending,))
-        self.logger.warning("XXX1 data={}.".format(data))
         ids = {"{}/{}".format(id, e['generation']) for id, e in data.items()}
         old = set(store.get('ids', [])) & ids
         new = ids - set(old)
-        self.logger.warning("XXX2 ids={}, old={}, new={}.".format(ids, old, new))
         remind = False
         if any(data[int(id.split('/')[0])]['ctime']
                + datetime.timedelta(hours=8) < current
                for id in new):
-            self.logger.warning("XXX3 found new")
             remind = True
         if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
-            self.logger.warning("XXX5 found old")
             remind = True
-        self.logger.warning("XXX5 remind={}".format(remind))
         if remind:
             self.do_mail(
                 rs, "changelog_requests_pending",
