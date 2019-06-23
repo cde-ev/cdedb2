@@ -275,7 +275,9 @@ class EventFrontend(AbstractUserFrontend):
         path = self.conf.STORAGE_DIR / "minor_form" / str(event_id)
         return self.send_file(
             rs, mimetype="application/pdf",
-            filename="{}_minor_form.pdf".format(rs.ambience['event']['shortname']), path=path)
+            filename="{}_minor_form.pdf".format(
+                rs.ambience['event']['shortname']),
+            path=path)
 
     @access("event", modi={"POST"})
     @REQUESTfile("minor_form")
@@ -1259,8 +1261,8 @@ class EventFrontend(AbstractUserFrontend):
                         if (reg['tracks'][track_id]['course_id'] == course_id
                             and (reg['parts'][track['part_id']]['status']
                                  == stati.participant)
-                            and reg['tracks'][track_id]['course_instructor']
-                                == course_id)))
+                            and (reg['tracks'][track_id]['course_instructor']
+                                 == course_id))))
                 for track_id, track in tracks.items()
             }
             for course_id in courses
@@ -1526,11 +1528,11 @@ class EventFrontend(AbstractUserFrontend):
             if tmp['tracks']:
                 code *= self.eventproxy.set_registration(rs, tmp)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/course_choices_form",
-                             {'course_id': course_id, 'track_id': track_id,
-                              'position': position.value
-                                          if position is not None else None,
-                              'ids': ids, 'include_active': include_active})
+        return self.redirect(
+            rs, "event/course_choices_form",
+            {'course_id': course_id, 'track_id': track_id,
+             'position': position.value if position is not None else None,
+             'ids': ids, 'include_active': include_active})
 
     @access("event")
     @event_guard()
@@ -1821,7 +1823,9 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
-            with open_utf8(work_dir / "{}_nametags.tex".format(rs.ambience['event']['shortname']), 'w') as f:
+            filename = "{}_nametags.tex".format(
+                rs.ambience['event']['shortname'])
+            with open_utf8(work_dir / filename, 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
@@ -1836,7 +1840,8 @@ class EventFrontend(AbstractUserFrontend):
                 shutil_copy(src, work_dir / "logo-{}.png".format(course_id))
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                "{}_nametags.tex".format(rs.ambience['event']['shortname']), runs)
+                "{}_nametags.tex".format(rs.ambience['event']['shortname']),
+                runs)
             if file:
                 return file
             else:
@@ -1875,7 +1880,9 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "course_puzzle", {
             'courses': courses, 'counts': counts,
             'registrations': registrations, 'personas': personas})
-        file = self.serve_latex_document(rs, tex, "{}_course_puzzle".format(rs.ambience['event']['shortname']), runs)
+        file = self.serve_latex_document(
+            rs, tex,
+            "{}_course_puzzle".format(rs.ambience['event']['shortname']), runs)
         if file:
             return file
         else:
@@ -1901,9 +1908,10 @@ class EventFrontend(AbstractUserFrontend):
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
                 event['begin'])
-        key = lambda id: personas[registrations[id]['persona_id']]['birthday']
+        key = (lambda reg_id:
+               personas[registrations[reg_id]['persona_id']]['birthday'])
         registrations = OrderedDict(
-            (id, registrations[id]) for id in sorted(registrations, key=key))
+            (reg_id, registrations[reg_id]) for reg_id in sorted(registrations, key=key))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
@@ -1981,7 +1989,9 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
-            with open_utf8(work_dir / "{}_course_lists.tex".format(rs.ambience['event']['shortname']), 'w') as f:
+            filename = "{}_course_lists.tex".format(
+                rs.ambience['event']['shortname'])
+            with open_utf8(work_dir / filename, 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
@@ -1998,7 +2008,8 @@ class EventFrontend(AbstractUserFrontend):
                     shutil_copy(src, dest)
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                "{}_course_lists.tex".format(rs.ambience['event']['shortname']), runs)
+                "{}_course_lists.tex".format(rs.ambience['event']['shortname']),
+                runs)
             if file:
                 return file
             else:
@@ -2025,7 +2036,9 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
-            with open_utf8(work_dir / "{}_lodgement_lists.tex".format(rs.ambience['event']['shortname']), 'w') as f:
+            filename = "{}_lodgement_lists.tex".format(
+                rs.ambience['event']['shortname'])
+            with open_utf8(work_dir / filename, 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
@@ -2035,7 +2048,9 @@ class EventFrontend(AbstractUserFrontend):
             shutil_copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
-                "{}_lodgement_lists.tex".format(rs.ambience['event']['shortname']), runs)
+                "{}_lodgement_lists.tex".format(
+                    rs.ambience['event']['shortname']),
+                runs)
             if file:
                 return file
             else:
@@ -2096,8 +2111,9 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "expuls", {'courses': courses})
-        file = self.send_file(rs, data=tex, inline=False,
-                              filename="{}_expuls.tex".format(rs.ambience['event']['shortname']))
+        file = self.send_file(
+            rs, data=tex, inline=False,
+            filename="{}_expuls.tex".format(rs.ambience['event']['shortname']))
         if file:
             return file
         else:
@@ -2324,7 +2340,7 @@ class EventFrontend(AbstractUserFrontend):
         data = self.eventproxy.export_event(rs, event_id)
         json = json_serialize(data)
         file = self.send_file(
-            rs, data=json, inline=False,filename="{}_export_event.json".format(
+            rs, data=json, inline=False, filename="{}_export_event.json".format(
                 rs.ambience['event']['shortname']))
         if file:
             return file
