@@ -549,11 +549,11 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'})
         f = self.response.forms['queryform']
-        f['qsel_reg_fields.xfield_reg_lodge'].checked = True
-        f['qsel_reg_fields.xfield_reg_transportation'].checked = True
+        f['qsel_reg_fields.xfield_lodge'].checked = True
+        f['qsel_reg_fields.xfield_transportation'].checked = True
         self.submit(f)
         f = self.response.forms['queryform']
-        f['qop_reg_fields.xfield_reg_transportation'] = QueryOperators.empty.value
+        f['qop_reg_fields.xfield_transportation'] = QueryOperators.empty.value
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/1/show'},
                       {'href': '/event/event/1/registration/1/change'})
@@ -645,8 +645,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia E.")
         self.assertPresence("Example Text")
         f = self.response.forms['queryform']
-        f['qsel_reg_fields.xfield_reg_CapitalLetters'].checked = True
-        f['qop_reg_fields.xfield_reg_CapitalLetters'] = QueryOperators.nonempty.value
+        f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
+        f['qop_reg_fields.xfield_CapitalLetters'] = QueryOperators.nonempty.value
         self.submit(f)
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Garcia G.")
@@ -1002,10 +1002,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement2.lodgement2_moniker"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
             "Einzelzelle")
         self.assertEqual(
-            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.lodgement2_moniker"]')[0].text.strip(),
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
             "")
 
     @as_users("garcia")
@@ -1557,10 +1557,10 @@ etc;anything else""", f['entries_2'].value)
                                      dialect=dialect))
         self.assertIn('2222-01-01', tuple(row['persona.birthday']
                                           for row in result))
-        self.assertIn('high', tuple(row['lodgement3.xfield_lodgement3_contamination']
+        self.assertIn('high', tuple(row['lodgement3.xfield_contamination']
                                     for row in result))
         self.assertIn(const.RegistrationPartStati.cancelled.name,
-                      tuple(row['part2.status2'] for row in result))
+                      tuple(row['part2.status'] for row in result))
         self.response = save.click(href='/event/event/1/download/csv_courses')
 
         result = list(csv.DictReader(self.response.text.split('\n'),

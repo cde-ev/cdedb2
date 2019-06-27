@@ -32,119 +32,86 @@ from cdedb.validation import parse_date, parse_datetime
 """
 event.registrations AS reg
 JOIN core.personas AS persona ON reg.persona_id = persona.id
-LEFT OUTER JOIN (SELECT registration_id, status AS status1,
-                 lodgement_id AS lodgement_id1, is_reserve AS is_reserve1
+LEFT OUTER JOIN (SELECT registration_id, status, lodgement_id, is_reserve
                  FROM event.registration_parts WHERE part_id = 1)
     AS part1 ON reg.id = part1.registration_id
 LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
-                     AS "xfield_lodgement1_contamination",
-                 id AS lodgement1_id, moniker AS lodgement1_moniker,
-                 notes AS lodgement1_notes
+                    AS "xfield_contamination",
+                 id, moniker, notes
                  FROM event.lodgements WHERE event_id=1)
-    AS lodgement1 ON part1.lodgement_id1 = lodgement1.lodgement1_id
-LEFT OUTER JOIN (SELECT registration_id, status AS status2,
-                 lodgement_id AS lodgement_id2, is_reserve AS is_reserve2
+    AS lodgement1 ON part1.lodgement_id = lodgement1.id
+LEFT OUTER JOIN (SELECT registration_id, status, lodgement_id, is_reserve
                  FROM event.registration_parts WHERE part_id = 2)
     AS part2 ON reg.id = part2.registration_id
 LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
-                     AS "xfield_lodgement2_contamination",
-                 id AS lodgement2_id, moniker AS lodgement2_moniker,
-                 notes AS lodgement2_notes
+                     AS "xfield_contamination",
+                 id, moniker, notes
                  FROM event.lodgements WHERE event_id=1)
-    AS lodgement2 ON part2.lodgement_id2 = lodgement2.lodgement2_id
-LEFT OUTER JOIN (SELECT registration_id, status AS status3,
-                 lodgement_id AS lodgement_id3, is_reserve AS is_reserve3
+    AS lodgement2 ON part2.lodgement_id = lodgement2.id
+LEFT OUTER JOIN (SELECT registration_id, status, lodgement_id, is_reserve
                  FROM event.registration_parts WHERE part_id = 3)
     AS part3 ON reg.id = part3.registration_id
 LEFT OUTER JOIN (SELECT (fields->>\'contamination\')::varchar
-                     AS "xfield_lodgement3_contamination",
-                 id AS lodgement3_id, moniker AS lodgement3_moniker,
-                 notes AS lodgement3_notes
+                     AS "xfield_contamination",
+                 id, moniker, notes
                  FROM event.lodgements WHERE event_id=1)
-    AS lodgement3 ON part3.lodgement_id3 = lodgement3.lodgement3_id
-LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1,
-                 course_instructor AS course_instructor1,
+    AS lodgement3 ON part3.lodgement_id = lodgement3.id
+LEFT OUTER JOIN (SELECT registration_id, course_id, course_instructor,
                  (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                      AND course_id = course_instructor)
-                      AS is_course_instructor1
+                  AND course_id = course_instructor) AS is_course_instructor
                  FROM event.registration_tracks WHERE track_id = 1)
     AS track1 ON reg.id = track1.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_course1_room",
-                 id AS course1_id, nr AS course1_nr, title AS course1_title,
-                 shortname AS course1_shortname, notes AS course1_notes
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
+                 id, nr, title, shortname, notes
                  FROM event.courses WHERE event_id=1)
-    AS course1 ON track1.course_id1 = course1.course1_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar
-                     AS "xfield_course_instructor1_room",
-                 id AS course_instructor1_id, nr AS course_instructor1_nr,
-                 title AS course_instructor1_title,
-                 shortname AS course_instructor1_shortname,
-                 notes AS course_instructor1_notes
+    AS course1 ON track1.course_id = course1.id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
+                 id, nr, title, shortname, notes
                  FROM event.courses WHERE event_id=1)
-    AS course_instructor1
-        ON track1.course_instructor1 = course_instructor1.course_instructor1_id
-LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id2,
-                 course_instructor AS course_instructor2,
+    AS course_instructor1 ON track1.course_instructor = course_instructor1.id
+LEFT OUTER JOIN (SELECT registration_id, course_id, course_instructor,
                  (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                      AND course_id = course_instructor)
-                      AS is_course_instructor2
+                  AND course_id = course_instructor) AS is_course_instructor
                  FROM event.registration_tracks WHERE track_id = 2)
     AS track2 ON reg.id = track2.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_course2_room",
-                 id AS course2_id, nr AS course2_nr, title AS course2_title,
-                 shortname AS course2_shortname, notes AS course2_notes
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
+                 id, nr, title, shortname, notes
                  FROM event.courses WHERE event_id=1)
-    AS course2 ON track2.course_id2 = course2.course2_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar
-                     AS "xfield_course_instructor2_room",
-                 id AS course_instructor2_id, nr AS course_instructor2_nr,
-                 title AS course_instructor2_title,
-                 shortname AS course_instructor2_shortname,
-                 notes AS course_instructor2_notes
+    AS course2 ON track2.course_id = course2.id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
+                 id, nr, title, shortname, notes
                  FROM event.courses WHERE event_id=1)
-    AS course_instructor2
-        ON track2.course_instructor2 = course_instructor2.course_instructor2_id
-LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id3,
-                 course_instructor AS course_instructor3,
+    AS course_instructor2 ON track2.course_instructor = course_instructor2.id
+LEFT OUTER JOIN (SELECT registration_id, course_id, course_instructor,
                  (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
-                      AND course_id = course_instructor)
-                      AS is_course_instructor3
+                  AND course_id = course_instructor) AS is_course_instructor
                  FROM event.registration_tracks WHERE track_id = 3)
     AS track3 ON reg.id = track3.registration_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_course3_room",
-                 id AS course3_id, nr AS course3_nr, title AS course3_title,
-                 shortname AS course3_shortname, notes AS course3_notes
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
+                 id, nr, title, shortname, notes
                  FROM event.courses WHERE event_id=1)
-    AS course3 ON track3.course_id3 = course3.course3_id
-LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar
-                     AS "xfield_course_instructor3_room",
-                 id AS course_instructor3_id, nr AS course_instructor3_nr,
-                 title AS course_instructor3_title,
-                 shortname AS course_instructor3_shortname,
-                 notes AS course_instructor3_notes
+    AS course3 ON track3.course_id = course3.id
+LEFT OUTER JOIN (SELECT (fields->>\'room\')::varchar AS "xfield_room",
+                 id, nr, title, shortname, notes
                  FROM event.courses WHERE event_id=1)
-    AS course_instructor3
-        ON track3.course_instructor3 = course_instructor3.course_instructor3_id
+    AS course_instructor3 ON track3.course_instructor = course_instructor3.id
 LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS creation_time
                  FROM event.log WHERE event_id = 1 AND code = 50
-                    GROUP BY persona_id)
+                 GROUP BY persona_id)
     AS ctime ON ctime.persona_id = reg.persona_id
 LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS modification_time
                  FROM event.log WHERE event_id = 1 AND code = 51
-                    GROUP BY persona_id)
+                 GROUP BY persona_id)
     AS mtime ON mtime.persona_id = reg.persona_id
 LEFT OUTER JOIN (SELECT (fields->>\'brings_balls\')::boolean
-                     AS "xfield_reg_brings_balls",
+                    AS "xfield_brings_balls",
                  (fields->>\'transportation\')::varchar
-                     AS "xfield_reg_transportation",
-                 (fields->>\'lodge\')::varchar
-                     AS "xfield_reg_lodge",
-                 (fields->>\'may_reserve\')::boolean
-                     AS "xfield_reg_may_reserve",
+                    AS "xfield_transportation",
+                 (fields->>\'lodge\')::varchar AS "xfield_lodge",
+                 (fields->>\'may_reserve\')::boolean AS "xfield_may_reserve",
                  id AS reg_id
-                 FROM  event.registrations WHERE event_id=1)
+                 FROM event.registrations WHERE event_id=1)
     AS reg_fields ON reg.id = reg_fields.reg_id
-WHERE (event_id = 1)
 """
 
 _REGISTRATION_VIEW_TEMPLATE = glue(
@@ -415,29 +382,24 @@ class EventBackend(AbstractBackend):
                 if e['association'] == const.FieldAssociations.lodgement
             }
             lodge_columns_gen = lambda part_id: ", ".join(
-                ['''(fields->>'{}')::{} AS "xfield_lodgement{}_{}"'''.format(
-                    name, kind, part_id, name)
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
                  for name, kind in lodgement_fields.items()]
-                + [col.format(part_id) for col in
-                   ("id AS lodgement{}_id", "moniker AS lodgement{}_moniker",
-                    "notes AS lodgement{}_notes")]
+                + [col for col in ("id", "moniker", "notes")]
             )
             part_table_template = glue(
                 # first the per part table
-                "LEFT OUTER JOIN (SELECT registration_id, {part_columns}",
+                "LEFT OUTER JOIN (SELECT registration_id, status,",
+                "lodgement_id, is_reserve",
                 "FROM event.registration_parts WHERE part_id = {part_id})",
                 "AS part{part_id} ON reg.id = part{part_id}.registration_id",
                 # second the associated lodgement fields
                 "LEFT OUTER JOIN (SELECT {lodge_columns} FROM",
                 "event.lodgements WHERE event_id={event_id})",
                 "AS lodgement{part_id}",
-                "ON part{part_id}.lodgement_id{part_id}",
-                "= lodgement{part_id}.lodgement{part_id}_id",
+                "ON part{part_id}.lodgement_id",
+                "= lodgement{part_id}.id",
             )
-            part_atoms = ("status", "lodgement_id", "is_reserve")
-            part_columns_gen = lambda part_id: ", ".join(
-                "{col} AS {col}{part_id}".format(col=col, part_id=part_id)
-                for col in part_atoms)
             course_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
@@ -445,16 +407,18 @@ class EventBackend(AbstractBackend):
                 if e['association'] == const.FieldAssociations.course
             }
             course_columns_gen = lambda track_id, identifier: ", ".join(
-                ['''(fields->>'{}')::{} AS "xfield_{}{}_{}"'''.format(
-                    name, kind, identifier, track_id, name)
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
                  for name, kind in course_fields.items()]
-                + [col.format(identifier, track_id) for col in
-                   ("id AS {}{}_id", "nr AS {}{}_nr", "title AS {}{}_title",
-                    "shortname AS {}{}_shortname", "notes AS {}{}_notes")]
+                + [col for col in ("id", "nr", "title", "shortname", "notes")]
             )
             track_table_template = glue(
                 # first the per track table
-                "LEFT OUTER JOIN (SELECT registration_id, {track_columns}",
+                "LEFT OUTER JOIN (SELECT registration_id, course_id,",
+                "course_instructor, ",
+                "(NOT(course_id IS NULL AND course_instructor IS NOT NULL)",
+                "AND course_id = course_instructor)",
+                "AS is_course_instructor",
                 "FROM event.registration_tracks WHERE track_id = {track_id})",
                 "AS track{track_id} ON",
                 "reg.id = track{track_id}.registration_id",
@@ -462,31 +426,15 @@ class EventBackend(AbstractBackend):
                 "LEFT OUTER JOIN (SELECT {course_columns} FROM",
                 "event.courses WHERE event_id={event_id})",
                 "AS course{track_id}",
-                "ON track{track_id}.course_id{track_id}",
-                "= course{track_id}.course{track_id}_id",
+                "ON track{track_id}.course_id",
+                "= course{track_id}.id",
                 # third the fields for the instructed course
                 "LEFT OUTER JOIN (SELECT {course_instructor_columns} FROM",
                 "event.courses WHERE event_id={event_id})",
                 "AS course_instructor{track_id}",
-                "ON track{track_id}.course_instructor{track_id}",
-                "= course_instructor{track_id}.course_instructor{track_id}_id",
+                "ON track{track_id}.course_instructor",
+                "= course_instructor{track_id}.id",
             )
-            track_atoms = ("course_id", "course_instructor",)
-            # This needs an additional hack to dynamically generate the
-            # is_course_instructor field.
-            track_columns_gen = lambda track_id: (
-                ", ".join(
-                    "{col} AS {col}{track_id}".format(col=col,
-                                                      track_id=track_id)
-                    for col in track_atoms)
-                + ", "
-                # This gives a boolean for all potential course instructors
-                # and NULL for other registrations
-                + glue(
-                    "(NOT(course_id IS NULL AND course_instructor IS NOT NULL)",
-                    "AND course_id = course_instructor)",
-                    "AS is_course_instructor{track_id}").format(
-                    track_id=track_id))
             creation_date = glue(
                 "LEFT OUTER JOIN",
                 "(SELECT persona_id, MAX(ctime) AS creation_time",
@@ -512,16 +460,15 @@ class EventBackend(AbstractBackend):
                 if e['association'] == const.FieldAssociations.registration
             }
             reg_columns = ", ".join(
-                ['''(fields->>'{}')::{} AS "xfield_reg_{}"'''.format(
-                    name, kind, name)
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
                  for name, kind in reg_fields.items()]
                 + ["id AS reg_id"])
             part_table_gen = lambda part_id: part_table_template.format(
-                part_columns=part_columns_gen(part_id), part_id=part_id,
+                part_id=part_id,
                 lodge_columns=lodge_columns_gen(part_id),
                 event_id=event_id)
             track_table_gen = lambda track_id: track_table_template.format(
-                track_columns=track_columns_gen(track_id),
                 course_columns=course_columns_gen(track_id, "course"),
                 course_instructor_columns=course_columns_gen(
                     track_id, "course_instructor"),
