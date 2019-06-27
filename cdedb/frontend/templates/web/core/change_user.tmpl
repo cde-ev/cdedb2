@@ -34,11 +34,6 @@
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
         {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
 
-        {% if values['is_cde_realm'] %}
-            <h4 class="heading-underline">{% trans -%}Account{%- endtrans %}</h4>
-            {{ util.form_input_checkbox(name="bub_search", label=gettext("Searchable for BuB")) }}
-        {% endif %}
-
         <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}

@@ -217,14 +217,6 @@
                                 {% endif %}
                             {% endif %}
                         </dd>
-
-                        <dt>{% trans -%}Searchable for BuB{%- endtrans %}</dt>
-                        <dd>
-                            {{ util.deko_checkbox(checked=data['bub_search']) }}
-                            {% if data['bub_search'] %}
-                                {% trans -%}Active{%- endtrans %}
-                            {% endif %}
-                        </dd>
                     {% endif %}
                 </dl>
             {% endif %}

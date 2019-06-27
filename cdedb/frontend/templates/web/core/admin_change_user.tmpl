@@ -42,7 +42,6 @@
         <h4 class="heading-underline">Account</h4>
         {% if values['is_cde_realm'] and 'cde' in admin_bits %}
             {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable")) }}
-            {{ util.form_input_checkbox(name="bub_search", label=gettext("Searchable for BuB")) }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7",
                                     info=gettext("Visible to all Admins, supports %(infolink)s with auto linebreaks.")|format(

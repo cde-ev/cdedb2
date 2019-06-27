@@ -755,7 +755,7 @@ class CoreFrontend(AbstractFrontend):
                 "postal_code", "location", "country",
                 "address_supplement2", "address2", "postal_code2", "location2",
                 "country2", "weblink", "specialisation", "affiliation",
-                "timeline", "interests", "free_form", "bub_search",
+                "timeline", "interests", "free_form",
                 "birth_name"}
         }
         attributes = REALM_ATTRIBUTES['persona']
@@ -950,7 +950,7 @@ class CoreFrontend(AbstractFrontend):
                 "birth_name", "address_supplement2", "address2", "postal_code2",
                 "location2", "country2", "weblink", "specialisation",
                 "affiliation", "timeline", "interests", "free_form",
-                "bub_search", "is_searchable"}
+                "is_searchable"}
         }
         attributes = REALM_ATTRIBUTES['persona']
         roles = extract_roles(rs.ambience['persona'])
