@@ -1873,7 +1873,20 @@ class CoreBackend(AbstractBackend):
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
     def delete_genesis_case_blockers(self, rs, case_id):
-        """Determine whether a genesis case can be deleted."""
+        """Determine what keeps a genesis case from being deleted.
+
+        Possible blockers:
+            unconfirmed: A genesis case with status unconfirmed may only be
+                    deleted after the timeout period has passed.
+            case_status: A genesis case may not be deleted if it has one of the
+                    following stati: to_review, approved.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type case_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The Values of the dict are
+            the ids of the blockers.
+        """
 
         case_id = affirm("id", case_id)
         blockers = {}
@@ -1883,7 +1896,7 @@ class CoreBackend(AbstractBackend):
                 now() < case["ctime"] + self.conf.PARAMETER_TIMEOUT):
             blockers["unconfirmed"] = case_id
         if case["case_status"] in {const.GenesisStati.to_review,
-                              const.GenesisStati.approved}:
+                                   const.GenesisStati.approved}:
             blockers["case_status"] = case["case_status"]
 
         return blockers
