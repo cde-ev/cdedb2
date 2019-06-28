@@ -969,7 +969,23 @@ class EventBackend(AbstractBackend):
 
     @access("event_admin")
     def delete_event_blockers(self, rs, event_id):
-        """Determine whether an event is deletable.
+        """Determine what keeps an event from being deleted.
+
+        Possible blockers:
+            field_definitions: A custom datafield associated with the event.
+            courses: A course associated with the event. This can have it's own
+                    blockers.
+            course_tracks: A course track of the event.
+            orgas: An orga of the event.
+            lodgements: A lodgement associated with the event. This can have
+                    it's own blockers.
+            registrations: A registration associated with the event. This can
+                    have it's own blockers.
+            questionnaire: A questionnaire row configured for the event.
+            log: A log entry for the event.
+            mailinglists: A mailinglist associated with the event. This
+                    reference will be removed but the mailinglist will not be
+                    deleted.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
@@ -1331,6 +1347,14 @@ class EventBackend(AbstractBackend):
     @access("event")
     def delete_course_blockers(self, rs, course_id):
         """Determine what keeps a course from beeing deleted.
+
+        Possible blockers:
+            attendees: A registration track that assigns a registration to
+                    the course as an attendee.
+            instructors: A registration track that references the course meaning
+                    the participant is (potentially) the course's instructor.
+            course_choices: A course choice of the course.
+            course_segments: The course segments of the course.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type course_id: int
@@ -1897,7 +1921,12 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def delete_registration_blockers(self, rs, registration_id):
-        """Determine what keeps a registration from beeing deleted.
+        """Determine what keeps a registration from being deleted.
+
+        Possible blockers:
+            registration_parts: The registration's registration parts.
+            registration_tracks: The registration's registration tracks.
+            course_choices: The registrations course choices.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type registration_id: int
@@ -2140,6 +2169,10 @@ class EventBackend(AbstractBackend):
     @access("event")
     def delete_lodgement_blockers(self, rs, lodgement_id):
         """Determine what keeps a lodgement from beeing deleted.
+
+        Possible blockers:
+            inhabitants: A registration part that assigns a registration to the
+                    lodgement as an inhabitant.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type lodgement_id: int
