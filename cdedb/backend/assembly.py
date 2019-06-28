@@ -347,6 +347,17 @@ class AssemblyBackend(AbstractBackend):
     def delete_assembly_blockers(self, rs, assembly_id):
         """Determine whether an assembly is deletable.
 
+
+        Possible blockers:
+            ballots: These can have their own blockers like vote_begin.
+            vote_begin: Ballots where voting has begun. Prevents deletion.
+            attendees: Rows of the assembly.attendees table.
+            attachments: All attachments associated with the assembly and it's
+                    ballots
+            log: All log entries associated with this assembly.
+            mailinglists: Mailinglists referencing this assembly. The
+                    references will be removed, but the lists won't be deleted.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
         :rtype: {str: [int]}
@@ -657,6 +668,15 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly_admin")
     def delete_ballot_blockers(self, rs, ballot_id):
         """Determine whether a ballot is deletable.
+
+        Possible blockers:
+            vote_begin: Whether voting on the ballot has begun.
+                    Prevents deletion.
+            candidates: Rows in the assembly.candidates table.
+            attachments: All attachments associated with this ballot.
+            voters: Rows in the assembly.voters table. These do not actually
+                    mean that anyone has voted for that ballot, as they are
+                    created upon assembly signup and/or ballot creation.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
@@ -1091,7 +1111,17 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def conclude_assembly_blockers(self, rs, assembly_id):
-        """Determine whether an assembly may be concluded."""
+        """Determine whether an assembly may be concluded.
+
+        Possible blockers:
+            is_active: Only active assemblies may be concluded.
+            signup_end: An Assembly may only be concluded when signup is over.
+            ballot: An Assembly may only be concluded when all ballots are
+                    tallied.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        """
         assembly_id = affirm("id", assembly_id)
         blockers = {}
 
@@ -1170,10 +1200,10 @@ class AssemblyBackend(AbstractBackend):
                     'secret': None
                 }
                 # Don't include in ret, because this may be empty.
-                self.sql_update(rs, "assembly.attendees", update,
-                                       entity_key="assembly_id")
-                self.assembly_log(rs, const.AssemblyLogCodes.assembly_concluded,
-                                  assembly_id)
+                self.sql_update(
+                    rs, "assembly.attendees", update, entity_key="assembly_id")
+                self.assembly_log(
+                    rs, const.AssemblyLogCodes.assembly_concluded, assembly_id)
             else:
                 raise ValueError(
                     n_("Conclusion of assembly blocked by %(block)s)"),
