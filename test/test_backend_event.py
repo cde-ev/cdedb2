@@ -978,6 +978,103 @@ class TestEventBackend(BackendTest):
              'reg_fields.xfield_transportation': 'etc'})
         self.assertEqual(expectation, result)
 
+    @as_users("anton")
+    def test_is_instructor_query(self, user):
+        registrations = (
+            {
+                "id": 1,
+                "parts": {
+                    2: {
+                        "status": const.RegistrationPartStati.participant.value
+                    }
+                },
+                "tracks": {
+                    1: {
+                        "course_id": 1,
+                        "course_instructor": 1,
+                    }
+                },
+            },
+            {
+                "id": 2,
+                "parts": {
+                    2: {
+                        "status": const.RegistrationPartStati.participant.value
+                    }
+                },
+                "tracks": {
+                    1: {
+                        "course_id": 1,
+                        "course_instructor": None,
+                    }
+                },
+            },
+            {
+                "id": 3,
+                "parts": {
+                    2: {
+                        "status": const.RegistrationPartStati.participant.value
+                    }
+                },
+                "tracks": {
+                    1: {
+                        "course_id": None,
+                        "course_instructor": 1,
+                    }
+                },
+            },
+            {
+                "id": 4,
+                "parts": {
+                    2: {
+                        "status": const.RegistrationPartStati.participant.value
+                    }
+                },
+                "tracks": {
+                    1: {
+                        "course_id": None,
+                        "course_instructor": None,
+                    }
+                },
+            },
+        )
+
+        for reg in registrations:
+            self.assertLess(0, self.event.set_registration(self.key, reg))
+
+        query = Query(
+            scope="qview_registration",
+            spec=dict(QUERY_SPECS["qview_registration"]),
+            fields_of_interest=("reg.id", "track1.is_course_instructor"),
+            constraints=[],
+            order=(("reg.id", True),)
+        )
+
+        result = self.event.submit_general_query(self.key, query, event_id=1)
+        expectation = (
+            {
+                "id": 1,
+                "reg.id": 1,
+                "track1.is_course_instructor": True,
+            },
+            {
+                "id": 2,
+                "reg.id": 2,
+                "track1.is_course_instructor": None,
+            },
+            {
+                "id": 3,
+                "reg.id": 3,
+                "track1.is_course_instructor": False,
+            },
+            {
+                "id": 4,
+                "reg.id": 4,
+                "track1.is_course_instructor": None,
+            },
+        )
+        self.assertEqual(expectation, result)
+
     @as_users("anton", "garcia")
     def test_lock_event(self, user):
         self.assertTrue(self.event.lock_event(self.key, 1))
