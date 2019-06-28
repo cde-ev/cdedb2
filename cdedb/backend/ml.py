@@ -314,10 +314,20 @@ class MlBackend(AbstractBackend):
 
     @access("ml_admin")
     def delete_mailinglist_blockers(self, rs, mailinglist_id):
-        """Determine whether a ballot is deletable.
+        """Determine what blocks a mailinglist from being deleted.
+
+        Possible blockers:
+            gateway: A mailinglist specifying this mailinglist as a gateway.
+                    This reference will be removed, but that other mailinglist
+                    will not be deleted.
+            subscriptions: An _explicit_ subscription to the mailinglist.
+            requests: A pending request to subscribe to the mailinglist.
+            whitelist: An entry on the whitelist of the mailinglist.
+            moderator: A moderator of the mailinglist.
+        log: A log entry for the mailinglist.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_id: int
+        :type mailinglist_id: int
         :rtype: {str: [int]}
         :return: List of blockers, separated by type. The Values of the dict are
             the ids of the blockers.
@@ -325,8 +335,9 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm("id", mailinglist_id)
         blockers = {}
 
-        gateway = self.sql_select(rs, "ml.mailinglists", ("id",),
-                                   (mailinglist_id,), entity_key="gateway")
+        gateway = self.sql_select(
+            rs, "ml.mailinglists", ("id",), (mailinglist_id,),
+            entity_key="gateway")
         if gateway:
             blockers["gateway"] = [e["id"] for e in gateway]
 
@@ -354,8 +365,9 @@ class MlBackend(AbstractBackend):
         if moderators:
             blockers["moderators"] = [e["id"] for e in moderators]
 
-        log = self.sql_select(rs, "ml.log", ("id",), (mailinglist_id,),
-                              entity_key="mailinglist_id")
+        log = self.sql_select(
+            rs, "ml.log", ("id",), (mailinglist_id,),
+            entity_key="mailinglist_id")
         if log:
             blockers["log"] = [e["id"] for e in log]
 
@@ -409,7 +421,6 @@ class MlBackend(AbstractBackend):
                     ret *= self.sql_delete(rs, "ml.moderators",
                                            blockers["moderators"])
                 if "log" in cascade:
-                    # TODO modify log entries instead of deleting them
                     ret *= self.sql_delete(rs, "ml.log", blockers["log"])
 
                 # check if mailinglist is deletable after cascading
