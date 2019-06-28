@@ -299,7 +299,12 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin")
     def delete_past_event_blockers(self, rs, pevent_id):
-        """Determine whether an event is deletable.
+        """Determine what keeps a past event from being deleted.
+
+        Possible blockers:
+            participants: A participant of the past event or one of its courses.
+            courses: A course associated with the past event.
+            log: A log entry for the past event.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type pevent_id: int
@@ -447,7 +452,10 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin")
     def delete_past_course_blockers(self, rs, pcourse_id):
-        """Determine whether a past course is deletable.
+        """Determine what keeps a past course from being deleted.
+
+        Possible blockers:
+            participants: Participants of the past course.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type pcourse_id: int
