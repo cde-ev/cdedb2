@@ -13,7 +13,7 @@
                 {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), gettext("Ballots"),
                         aclass="list-group-item", icon="thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
 
-            {% if is_admin %}
+            {% if is_admin and ambience['assembly']['is_active'] %}
                 {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),
                         aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
             {% endif %}

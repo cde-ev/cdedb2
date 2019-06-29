@@ -122,6 +122,16 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertPresence("Häretiker")
         self.assertPresence("Aprilscherz")
 
+    @as_users("anton")
+    def test_delete_assembly(self, user):
+        self.logout()
+        self.test_create_assembly()
+        f = self.response.forms['deleteassemblyform']
+        f['ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("Versammlungen")
+        self.assertNonPresence("Drittes CdE-Konzil")
+
     @as_users("charly")
     def test_signup(self, user):
         self.traverse({'href': '/assembly/$'},
@@ -499,7 +509,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/log'})
-        self.assertTitle("\nVersammlungs-Log [0–16]\n")
+        self.assertTitle("\nVersammlungs-Log [0–15]\n")
         f = self.response.forms['logshowform']
         f['codes'] = [0, 1, 2, 10, 11, 12, 14]
         f['assembly_id'] = 1

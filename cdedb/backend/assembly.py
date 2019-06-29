@@ -351,6 +351,17 @@ class AssemblyBackend(AbstractBackend):
     def delete_assembly_blockers(self, rs, assembly_id):
         """Determine whether an assembly is deletable.
 
+
+        Possible blockers:
+            ballots: These can have their own blockers like vote_begin.
+            vote_begin: Ballots where voting has begun. Prevents deletion.
+            attendees: Rows of the assembly.attendees table.
+            attachments: All attachments associated with the assembly and it's
+                    ballots
+            log: All log entries associated with this assembly.
+            mailinglists: Mailinglists referencing this assembly. The
+                    references will be removed, but the lists won't be deleted.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
         :rtype: {str: [int]}
@@ -365,7 +376,7 @@ class AssemblyBackend(AbstractBackend):
             entity_key="assembly_id")
         if ballots:
             blockers["ballots"] = [e["id"] for e in ballots]
-            for ballot_id in ballots:
+            for ballot_id in blockers["ballots"]:
                 if "vote_begin" in self.delete_ballot_blockers(rs, ballot_id):
                     if "vote_begin" not in blockers:
                         blockers["vote_begin"] = []
@@ -378,7 +389,7 @@ class AssemblyBackend(AbstractBackend):
             blockers["attendees"] = [e["id"] for e in attendees]
             
         attachments = self.sql_select(
-            rs, "assembly.attendees", ("id",), (assembly_id,),
+            rs, "assembly.attachments", ("id",), (assembly_id,),
             entity_key="assembly_id")
         if attachments:
             blockers["attachments"] = [e["id"] for e in attachments]
@@ -411,12 +422,10 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm("id", assembly_id)
         blockers = self.delete_assembly_blockers(rs, assembly_id)
-        if {"vote_begin"} <= blockers.keys():
+        if "vote_begin" in blockers:
             raise ValueError(n_("Unable to remove active ballot."))
-        if not cascade:
-            cascade = set()
-        cascade = affirm_set("str", cascade)
-        cascade = cascade & blockers.keys()
+        cascade = affirm_set("str", cascade or set()) & blockers.keys()
+
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -643,6 +652,15 @@ class AssemblyBackend(AbstractBackend):
     def delete_ballot_blockers(self, rs, ballot_id):
         """Determine whether a ballot is deletable.
 
+        Possible blockers:
+            vote_begin: Whether voting on the ballot has begun.
+                    Prevents deletion.
+            candidates: Rows in the assembly.candidates table.
+            attachments: All attachments associated with this ballot.
+            voters: Rows in the assembly.voters table. These do not actually
+                    mean that anyone has voted for that ballot, as they are
+                    created upon assembly signup and/or ballot creation.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
         :rtype: {str: [int]}
@@ -693,12 +711,10 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm("id", ballot_id)
         blockers = self.delete_ballot_blockers(rs, ballot_id)
-        if {"vote_begin"} <= blockers.keys():
+        if "vote_begin" in blockers:
             raise ValueError(n_("Unable to remove active ballot."))
-        if not cascade:
-            cascade = set()
-        cascade = affirm_set("str", cascade)
-        cascade = cascade & blockers.keys()
+        cascade = affirm_set("str", cascade or set()) & blockers.keys()
+
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -1077,7 +1093,42 @@ class AssemblyBackend(AbstractBackend):
         return True
 
     @access("assembly_admin")
-    def conclude_assembly(self, rs, assembly_id):
+    def conclude_assembly_blockers(self, rs, assembly_id):
+        """Determine whether an assembly may be concluded.
+
+        Possible blockers:
+            is_active: Only active assemblies may be concluded.
+            signup_end: An Assembly may only be concluded when signup is over.
+            ballot: An Assembly may only be concluded when all ballots are
+                    tallied.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        """
+        assembly_id = affirm("id", assembly_id)
+        blockers = {}
+
+        assembly = self.get_assembly(rs, assembly_id)
+        if not assembly['is_active']:
+            blockers['is_active'] = assembly_id
+
+        timestamp = now()
+        if timestamp < assembly['signup_end']:
+            blockers["signup_end"] = assembly['signup_end']
+
+        ballots = self.sql_select(
+            rs, "assembly.ballots", ("id", "is_tallied"), (assembly_id,),
+            entity_key="assembly_id")
+        for ballot in ballots:
+            if not ballot["is_tallied"]:
+                if "ballot" not in blockers:
+                    blockers["ballot"] = []
+                blockers["ballot"].append(ballot["id"])
+
+        return blockers
+        
+    @access("assembly_admin")
+    def conclude_assembly(self, rs, assembly_id, cascade=None):
         """Do housekeeping after an assembly has ended.
 
         This mainly purges the secrets which are no longer required for
@@ -1085,39 +1136,61 @@ class AssemblyBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
+        :type cascade: {str} or None
+        :param cascade: Specify which conclusion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
         :rtype: int
         :returns: default return code
         """
         assembly_id = affirm("id", assembly_id)
+        blockers = self.conclude_assembly_blockers(rs, assembly_id)
+        if "is_active" in blockers:
+            raise ValueError(n_("Assembly is not active."))
+        if "ballot" in blockers:
+            raise ValueError(n_("Assembly has open ballots."))
+        cascade = affirm_set("str", cascade or set()) & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Conclusion of assembly blocked by %(block)s."),
+                             {"block": blockers.keys() - cascade})
 
+        ret = 1
         with Atomizer(rs):
-            assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
-            if not assembly['is_active']:
-                raise ValueError(n_("Assembly not active."))
-            ballots = self.get_ballots(rs, self.list_ballots(rs, assembly_id))
-            timestamp = now()
-            if any((ballot['extended'] is None
-                    or timestamp < ballot['vote_end']
-                    or (ballot['extended']
-                        and timestamp < ballot['vote_extension_end']))
-                   for ballot in ballots.values()):
-                raise ValueError(n_("Open ballots remain."))
-            if timestamp < assembly['signup_end']:
-                raise ValueError(n_("Signup still possible."))
+            # cascade specified blockers
+            if cascade:
+                if "is_active" in cascade:
+                    ValueError(n_("Unable to cascade %(blocker)s."),
+                               {"blocker": "is_active"})
+                if "ballot" in cascade:
+                    ValueError(n_("Unable to cascade %(blocker)s."),
+                               {"blocker": "ballot"})
+                if "signup_end" in cascade:
+                    update = {
+                        'id': assembly_id,
+                        'signup_end': now(),
+                    }
+                    ret *= self.sql_update(rs, "assembly.assemblies", update)
 
-            update = {
-                'id': assembly_id,
-                'is_active': False,
-            }
-            ret = self.set_assembly(rs, update)
-            update = {
-                'assembly_id': assembly_id,
-                'secret': None
-            }
-            self.sql_update(rs, "assembly.attendees", update,
-                            entity_key="assembly_id")
-            self.assembly_log(rs, const.AssemblyLogCodes.assembly_concluded,
-                              assembly_id)
+                blockers = self.conclude_assembly_blockers(rs, assembly_id)
+
+            if not blockers:
+                update = {
+                    'id': assembly_id,
+                    'is_active': False,
+                }
+                ret *= self.sql_update(rs, "assembly.assemblies", update)
+                update = {
+                    'assembly_id': assembly_id,
+                    'secret': None
+                }
+                # Don't include in ret, because this may be empty.
+                self.sql_update(
+                    rs, "assembly.attendees", update, entity_key="assembly_id")
+                self.assembly_log(
+                    rs, const.AssemblyLogCodes.assembly_concluded, assembly_id)
+            else:
+                raise ValueError(
+                    n_("Conclusion of assembly blocked by %(block)s)"),
+                    {"block": blockers.keys()})
         return ret
 
     @access("assembly")
