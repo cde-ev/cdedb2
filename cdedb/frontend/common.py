@@ -625,7 +625,7 @@ def xdictsort_filter(value, attribute, pad=False, reverse=False):
     return sorted(value.items(), key=key, reverse=reverse)
 
 
-def enum_entries_filter(enum, processing=None):
+def enum_entries_filter(enum, processing=None, raw=False):
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -636,13 +636,20 @@ def enum_entries_filter(enum, processing=None):
     :param processing: A function to be applied on the value's string
         representation before adding it to the result tuple. Typically this is
         gettext()
+    :type raw: bool
+    :param raw: If this is True, the enum entries are passed to processing as
+        is, otherwise they are converted to str first.
     :rtype: [(object, object)]
     :return: A list of tuples to be used in the input_checkboxes or
         input_select macros.
     """
     if processing is None:
         processing = lambda x: x
-    return sorted((entry.value, processing(str(entry))) for entry in enum)
+    if raw:
+        pre = lambda x: x
+    else:
+        pre = str
+    return sorted((entry.value, processing(pre(entry))) for entry in enum)
 
 
 def dict_entries_filter(items, *args):

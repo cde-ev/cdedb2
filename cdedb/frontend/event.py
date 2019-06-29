@@ -163,7 +163,9 @@ class EventFrontend(AbstractUserFrontend):
             'pevent_id': OrderedDict(
                 sorted(events.items(), key=operator.itemgetter(0))),
             'gender': OrderedDict(
-                enum_entries_filter(const.Genders, rs.gettext))
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
         }
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         default_queries = self.conf.DEFAULT_QUERIES['qview_event_user']
@@ -2194,134 +2196,30 @@ class EventFrontend(AbstractUserFrontend):
     def download_csv_registrations(self, rs, event_id):
         """Create CSV file with all registrations"""
         # Get data
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
-        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         all_tracks = {
             track_id: track
             for part in rs.ambience['event']['parts'].values()
             for track_id, track in part['tracks'].items()
         }
 
-        # Construct CSV columns
-        columns = ['id', 'persona.id', 'persona.birthday', 'persona.telephone',
-                   'persona.mobile', 'persona.address',
-                   'persona.address_supplement', 'persona.postal_code',
-                   'persona.location', 'persona.country', 'payment',
-                   'parental_agreement', 'mixed_lodging', 'list_consent',
-                   'notes', 'orga_notes', 'checkin',
-                   # 'creation_time', 'modification_time',
-                   ]
-        columns.extend('fields.' + field['field_name']
-                       for field in rs.ambience['event']['fields'].values()
-                       if field['association'] ==
-                       const.FieldAssociations.registration)
-        # Construct columns for parts and lodgement data
-        for part_id in sorted(rs.ambience['event']['parts'].keys()):
-            columns.extend("part{}.{}".format(part_id, f)
-                           for f in ('status', 'lodgement.id', 'is_reserve',
-                                     'lodgement.moniker'))
-            columns.extend(
-                "part{}.lodgement.fields.{}".format(part_id,
-                                                    field['field_name'])
-                for field in rs.ambience['event']['fields'].values()
-                if field['association'] == const.FieldAssociations.lodgement)
-        # Construct columns for courses' data for each track
-        for part in sorted(rs.ambience['event']['parts'].values(),
-                           key=lambda x: x['part_begin']):
-            for track_id in sorted(part['tracks']):
-                columns.extend(
-                    'track{}.{}'.format(track_id, f)
-                    for f in ('course.id', 'course.nr', 'course.shortname',
-                              'course.title'))
-                columns.extend([
-                    "track{}.course.fields.{}".format(track_id,
-                                                      field['field_name'])
-                    for field in rs.ambience['event']['fields'].values()
-                    if field['association'] == const.FieldAssociations.course])
-                columns.extend('track{}.choice{}.{}'.format(track_id, i, f)
-                               for i in range(part['tracks'][track_id]
-                                              ['num_choices'])
-                               for f in ('id', 'nr'))
-                columns.extend(
-                    'track{}.course_instructor.{}'.format(track_id, f)
-                    for f in ('id', 'nr'))
+        spec = self.make_registration_query_spec(rs.ambience['event'])
+        fields_of_interest = list(spec.keys())
+        query = Query('qview_registration', spec, fields_of_interest, [], [])
+        result = self.eventproxy.submit_general_query(
+            rs, query, event_id=event_id)
 
-        # Flatten registrations and insert course/lodement data:
-        for registration in registrations.values():
-            # Persona data and data fields
-            registration.update({
-                'persona.{}'.format(k): v
-                for k, v in personas[registration['persona_id']].items()})
-            registration.update(
-                {
-                    'fields.{}'.format(field['field_name']):
-                        registration['fields'].get(field['field_name'], '')
-                    for field in rs.ambience['event']['fields'].values()
-                    if (field['association'] ==
-                        const.FieldAssociations.registration)}
-            )
-            # Parts and lodgement data
-            for part_id, part in registration['parts'].items():
-                registration.update({'part{}.{}'.format(part_id, k): v
-                                     for k, v in part.items()})
-                registration.update({
-                    'part{}.lodgement.{}'.format(part_id, f):
-                        lodgements[part['lodgement_id']][f]
-                        if part['lodgement_id'] else ''
-                    for f in ('id', 'moniker')})
-                registration.update({
-                    'part{}.lodgement.fields.{}'.format(
-                        part_id, field['field_name']): (
-                        lodgements[part['lodgement_id']]['fields'].get(
-                            field['field_name'], '') if part['lodgement_id']
-                        else '')
-                    for field in rs.ambience['event']['fields'].values()
-                    if (field['association'] ==
-                        const.FieldAssociations.lodgement)
-                })
-            # Courses' data for each track
-            for track_id, track in registration['tracks'].items():
-                registration.update({
-                    'track{}.course.{}'.format(track_id, f):
-                        courses[track['course_id']][f]
-                        if track['course_id'] else ''
-                    for f in ('id', 'nr', 'shortname', 'title')
-                })
-                registration.update({
-                    'track{}.course.fields.{}'.format(
-                        track_id, field['field_name']): (
-                        courses[track['course_id']]['fields'].get(
-                            field['field_name'], '') if track['course_id']
-                        else '')
-                    for field in rs.ambience['event']['fields'].values()
-                    if (field['association'] ==
-                        const.FieldAssociations.course)
-                })
-                for i, choice in enumerate(track['choices']):
-                    registration.update({
-                        'track{}.choice{}.{}'.format(track_id, i, f):
-                            courses[choice][f] if choice else ''
-                        for f in ('id', 'nr')})
-                for i in range(len(track['choices']),
-                               all_tracks[track_id]['num_choices']):
-                    registration.update({
-                        'track{}.choice{}.{}'.format(track_id, i, f): ''
-                        for f in ('id', 'nr')})
-                registration.update({
-                    'track{}.course_instructor.{}'.format(track_id, f):
-                        courses[track['course_instructor']][f]
-                        if track['course_instructor'] else ''
-                    for f in ('id', 'nr')})
+        fields = []
+        for csvfield in query.fields_of_interest:
+            fields.extend(csvfield.split(','))
 
-        csv_data = csv_output(sorted(registrations.values(),
-                                     key=lambda c: c['id']),
-                              columns)
+        choices, _ = self.make_registration_query_aux(
+            rs, rs.ambience['event'], courses, lodgements, fixed_gettext=True)
+        csv_data = csv_output(result, fields, substitutions=choices)
+
         file = self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename="{}_registrations.csv".format(
@@ -3797,58 +3695,75 @@ class EventFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_registration'])
         # note that spec is an ordered dict and we should respect the order
         for part_id in event['parts']:
-            spec["part{0}.status{0}".format(part_id)] = "int"
-            spec["part{0}.lodgement_id{0}".format(part_id)] = "id"
-            spec["part{0}.is_reserve{0}".format(part_id)] = "bool"
+            spec["part{0}.status".format(part_id)] = "int"
+            spec["part{0}.is_reserve".format(part_id)] = "bool"
+            spec["lodgement{0}.id".format(part_id)] = "id"
+            spec["lodgement{0}.moniker".format(part_id)] = "str"
+            spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in sorted(event['fields'].values(),
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.lodgement:
-                    temp = "lodge_fields{0}.xfield_{1}_{0}"
+                    temp = "lodgement{0}.xfield_{1}"
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[temp.format(part_id, f['field_name'])] = kind
             for track_id in event['parts'][part_id]['tracks']:
-                spec["track{0}.course_id{0}".format(track_id)] = "id"
-                spec["track{0}.course_instructor{0}".format(track_id)] = "id"
-                spec["track{0}.is_course_instructor{0}".format(track_id)] \
+                spec["track{0}.is_course_instructor".format(track_id)] \
                     = "bool"
-                for f in sorted(event['fields'].values(),
-                                key=lambda f: f['field_name']):
-                    if f['association'] == const.FieldAssociations.course:
-                        temp = "course_fields{0}.xfield_{1}_{0}"
-                        kind = const.FieldDatatypes(f['kind']).name
-                        spec[temp.format(track_id, f['field_name'])] = kind
+                for temp in ("course", "course_instructor",):
+                    spec["{1}{0}.id".format(track_id, temp)] = "id"
+                    spec["{1}{0}.nr".format(track_id, temp)] = "str"
+                    spec["{1}{0}.title".format(track_id, temp)] = "str"
+                    spec["{1}{0}.shortname".format(track_id, temp)] = "str"
+                    spec["{1}{0}.notes".format(track_id, temp)] = "str"
+                    for f in sorted(event['fields'].values(),
+                                    key=lambda f: f['field_name']):
+                        if f['association'] == const.FieldAssociations.course:
+                            key = "{1}{0}.xfield_{2}".format(
+                                track_id, temp, f['field_name'])
+                            kind = const.FieldDatatypes(f['kind']).name
+                            spec[key] = kind
         if len(event['parts']) > 1:
-            spec[",".join("part{0}.status{0}".format(part_id)
+            spec[",".join("part{0}.status".format(part_id)
                           for part_id in event['parts'])] = "int"
-            spec[",".join("part{0}.lodgement{0}".format(part_id)
-                          for part_id in event['parts'])] = "id"
-            spec[",".join("part{0}.is_reserve{0}".format(part_id)
+            spec[",".join("part{0}.is_reserve".format(part_id)
                           for part_id in event['parts'])] = "bool"
+            spec[",".join("lodgement{0}.id".format(part_id)
+                          for part_id in event['parts'])] = "id"
+            spec[",".join("lodgement{0}.moniker".format(part_id)
+                          for part_id in event['parts'])] = "str"
+            spec[",".join("lodgement{0}.notes".format(part_id)
+                          for part_id in event['parts'])] = "str"
             for f in sorted(event['fields'].values(),
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.lodgement:
                     key = ",".join(
-                        "lodge_fields{0}.xfield_{1}_{0}".format(
+                        "lodgement{0}.xfield_{1}".format(
                             part_id, f['field_name'])
                         for part_id in event['parts'])
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[key] = kind
         if len(tracks) > 1:
-            spec[",".join("track{0}.course_id{0}".format(track_id)
-                          for track_id in tracks)] = "id"
-            spec[",".join("track{0}.course_instructor{0}".format(track_id)
-                          for track_id in tracks)] = "id"
-            spec[",".join("track{0}.is_course_instructor{0}".format(track_id)
+            spec[",".join("track{0}.is_course_instructor".format(track_id)
                           for track_id in tracks)] = "bool"
-            for f in sorted(event['fields'].values(),
-                            key=lambda f: f['field_name']):
-                if f['association'] == const.FieldAssociations.course:
-                    key = ",".join(
-                        "course_fields{0}.xfield_{1}_{0}".format(
-                            track_id, f['field_name'])
-                        for track_id in tracks)
-                    kind = const.FieldDatatypes(f['kind']).name
-                    spec[key] = kind
+            for temp in ("course", "course_instructor",):
+                spec[",".join("{1}{0}.id".format(track_id, temp)
+                              for track_id in tracks)] = "id"
+                spec[",".join("{1}{0}.nr".format(track_id, temp)
+                              for track_id in tracks)] = "str"
+                spec[",".join("{1}{0}.title".format(track_id, temp)
+                              for track_id in tracks)] = "str"
+                spec[",".join("{1}{0}.shortname".format(track_id, temp)
+                              for track_id in tracks)] = "str"
+                spec[",".join("{1}{0}.notes".format(track_id, temp)
+                              for track_id in tracks)] = "str"
+                for f in sorted(event['fields'].values(),
+                                key=lambda f: f['field_name']):
+                    if f['association'] == const.FieldAssociations.course:
+                        key = ",".join("{1}{0}.xfield_{2}".format(
+                            track_id, temp, f['field_name'])
+                                       for track_id in tracks)
+                        kind = const.FieldDatatypes(f['kind']).name
+                        spec[key] = kind
         for f in sorted(event['fields'].values(),
                         key=lambda f: f['field_name']):
             if f['association'] == const.FieldAssociations.registration:
@@ -3858,203 +3773,252 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def make_registration_query_aux(rs, event, courses,
-                                    lodgements):
+                                    lodgements, fixed_gettext=False):
         """Un-inlined code to prepare input for template.
 
         :type rs: :py:class:`FrontendRequestState`
         :type event: {str: object}
         :type courses: {int: {str: object}}
         :type lodgements: {int: {str: object}}
+        :type fixed_gettext: bool
+        :param fixed_gettext: whether or not to use a fixed translation
+            function. True means static, False means localized.
         :rtype: ({str: dict}, {str: str})
         :returns: Choices for select inputs and titles for columns.
         """
         tracks = event['tracks']
+
+        if fixed_gettext:
+            gettext = rs.default_gettext
+            enum_gettext = lambda x: x.name
+        else:
+            gettext = rs.gettext
+            enum_gettext = rs.gettext
+
         # First we construct the choices
         choices = {
+            # Genders enum
             'persona.gender': OrderedDict(
-                enum_entries_filter(const.Genders, rs.gettext))
+                enum_entries_filter(
+                    const.Genders, enum_gettext, raw=fixed_gettext))
         }
-        lodgement_choices = OrderedDict(
-            sorted(((lodgement_id, lodgement['moniker'])
-                    for lodgement_id, lodgement in lodgements.items()),
-                   key=operator.itemgetter(1)))
+
+        # Precompute some choices
+        reg_part_stati_choices = OrderedDict(
+            enum_entries_filter(
+                const.RegistrationPartStati, enum_gettext, raw=fixed_gettext))
+        lodge_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.lodgement
+            }
+        course_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.course
+            }
+        reg_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.registration
+            }
+
         for part_id in event['parts']:
             choices.update({
-                "part{0}.status{0}".format(part_id):
-                    OrderedDict(enum_entries_filter(
-                        const.RegistrationPartStati, rs.gettext)),
-                "part{0}.lodgement_id{0}".format(part_id): lodgement_choices,
+                # RegistrationPartStati enum
+                "part{0}.status".format(part_id): reg_part_stati_choices,
             })
-            choices.update({
-                "lodge_fields{0}.xfield_{1}_{0}".format(
-                    part_id, field['field_name']): OrderedDict(field['entries'])
-                for field in event['fields'].values()
-                if (field['association'] == const.FieldAssociations.lodgement
-                    and field['entries'])})
+            if not fixed_gettext:
+                # Lodgement fields value -> description
+                key = "lodgement{0}.xfield_{1}"
+                choices.update({
+                    key.format(part_id, field['field_name']):
+                        OrderedDict(field['entries'])
+                    for field in lodge_fields.values() if field['entries']
+                })
         for track_id in tracks:
-            course_choices = OrderedDict(
-                (course_id, "{}. {}".format(courses[course_id]['nr'],
-                                            courses[course_id]['shortname']))
-                for course_id, course
-                in xdictsort_filter(courses, 'nr', pad=True)
-                if track_id in course['segments'])
-            choices.update({
-                "track{0}.course_id{0}".format(track_id):
-                    course_choices,
-                "track{0}.course_instructor{0}".format(track_id):
-                    course_choices})
-            key = "course_fields{0}.xfield_{1}_{0}"
-            choices.update({
-                key.format(track_id, field['field_name']):
-                    OrderedDict(field['entries'])
-                for field in event['fields'].values()
-                if (field['association'] == const.FieldAssociations.course
-                    and field['entries'])})
-        if len(tracks) > 1:
-            course_choices = OrderedDict(
-                (course_id, "{}. {}".format(courses[course_id]['nr'],
-                                            courses[course_id]['shortname']))
-                for course_id, course
-                in xdictsort_filter(courses, 'nr', pad=True))
-            choices[",".join("track{0}.course_id{0}".format(track_id)
-                             for track_id in tracks)] = course_choices
-            choices[",".join("track{0}.course_instructor{0}".format(track_id)
-                             for track_id in tracks)] = course_choices
+            if not fixed_gettext:
+                # Course fields value -> description
+                for temp in ("course", "course_instructor"):
+                    key = "{1}{0}.xfield_{2}"
+                    choices.update({
+                       key.format(track_id, temp, field['field_name']):
+                           OrderedDict(field['entries'])
+                       for field in course_fields.values() if field['entries']
+                    })
         if len(event['parts']) > 1:
             choices.update({
+                # RegistrationPartStati enum
                 ",".join("part{0}.status{0}".format(part_id)
-                         for part_id in event['parts']): OrderedDict(
-                    enum_entries_filter(const.RegistrationPartStati,
-                                        rs.gettext)),
-                ",".join("part{0}.lodgement{0}".format(part_id)
-                         for part_id in event['parts']): lodgement_choices,
+                         for part_id in event['parts']): reg_part_stati_choices,
             })
-        choices.update({
-            "reg_fields.xfield_{}".format(field['field_name']):
-                OrderedDict(field['entries'])
-            for field in event['fields'].values()
-            if (field['association'] == const.FieldAssociations.registration
-                and field['entries'])})
+        if not fixed_gettext:
+            # Registration fields value -> description
+            choices.update({
+                "reg_fields.xfield_{}".format(field['field_name']):
+                    OrderedDict(field['entries'])
+                for field in reg_fields.values() if field['entries']
+            })
 
         # Second we construct the titles
         titles = {
-            "reg_fields.xfield_{}".format(field['field_name']): field[
-                'field_name']
-            for field in event['fields'].values()
-            if field['association'] == const.FieldAssociations.registration}
-        if len(tracks) > 1:
-            for track_id, track in tracks.items():
-                titles.update({
-                    "track{0}.course_id{0}".format(track_id): rs.gettext(
-                        "{title}: course ").format(
+            "reg_fields.xfield_{}".format(field['field_name']):
+                field['field_name']
+            for field in reg_fields.values()
+        }
+        for track_id, track in tracks.items():
+            titles.update({
+                "track{0}.is_course_instructor".format(track_id):
+                    gettext("{title}: instructs their course").format(
                         title=track['title']),
-                    "track{0}.course_instructor{0}".format(
-                        track_id): rs.gettext(
-                        "{title}: course instructor").format(
+                "course{0}.id".format(track_id):
+                    gettext("{title}: Course ID").format(
                         title=track['title']),
-                    "track{0}.is_course_instructor{0}".format(track_id):
-                        rs.gettext(
-                            "{title}: instructs their course").format(
-                            title=track['title']),
-                })
-                titles.update({
-                    "course_fields{0}.xfield_{1}_{0}".format(
-                        track_id, field['field_name']): rs.gettext(
-                        "{title} course: {field}").format(
+                "course{0}.nr".format(track_id):
+                    gettext("{title}: course nr").format(
+                        title=track['title']),
+                "course{0}.title".format(track_id):
+                    gettext("{title}: course title").format(
+                        title=track['title']),
+                "course{0}.shortname".format(track_id):
+                    gettext("{title}: course shortname").format(
+                        title=track['title']),
+                "course{0}.notes".format(track_id):
+                    gettext("{title}: course notes").format(
+                        title=track['title']),
+                "course_instructor{0}.id".format(track_id):
+                    gettext("{title}: course instructor ID").format(
+                        title=track['title']),
+                "course_instructor{0}.nr".format(track_id):
+                    gettext("{title}: course instructor nr").format(
+                        title=track['title']),
+                "course_instructor{0}.title".format(
+                    track_id):
+                    gettext("{title}: course instructor title").format(
+                        title=track['title']),
+                "course_instructor{0}.shortname".format(
+                    track_id):
+                    gettext("{title}: course instructor shortname").format(
+                        title=track['title']),
+                "course_instructor{0}.notes".format(
+                    track_id):
+                    gettext("{title}: course instructor notes").format(
+                        title=track['title']),
+            })
+            key = "course{0}.xfield_{1}"
+            titles.update({
+                key.format(track_id, field['field_name']):
+                    gettext("{title} course: {field}").format(
                         field=field['field_name'], title=track['title'])
-                    for field in event['fields'].values()
-                    if (field['association'] ==
-                        const.FieldAssociations.course)
-                })
-            titles.update({
-                ",".join("track{0}.course_id{0}".format(track_id)
-                         for track_id in tracks): rs.gettext(
-                    "any track: course"),
-                ",".join("track{0}.course_instructor{0}".format(track_id)
-                         for track_id in tracks): rs.gettext(
-                    "any track: course instuctor"),
-                ",".join("track{0}.is_course_instructor{0}".format(track_id)
-                         for track_id in tracks): rs.gettext(
-                    "any track: instructs their course"),
+                for field in course_fields.values()
             })
+            key = "course_instructor{0}.xfield_{1}"
             titles.update({
-                ",".join("course_fields{0}.xfield_{1}_{0}".format(
-                    track_id, field['field_name'])
-                         for track_id in tracks): rs.gettext(
-                    "any track course: {field}").format(
-                    field=field['field_name'])
-                for field in event['fields'].values()
-                if field['association'] == const.FieldAssociations.course
+                key.format(track_id, field['field_name']):
+                    gettext("{title} course instructor: {field}").format(
+                        field=field['field_name'], title=track['title'])
+                for field in course_fields.values()
             })
-        elif len(tracks) == 1:
-            track_id, track = next(iter(tracks.items()))
+        if len(event['tracks']) > 1:
             titles.update({
-                "track{0}.course_id{0}".format(track_id): rs.gettext("course"),
-                "track{0}.course_instructor{0}".format(track_id):
-                    rs.gettext("course instructor"),
-                "track{0}.is_course_instructor{0}".format(track_id):
-                    rs.gettext("instructs their course"),
+                ",".join("track{0}.is_course_instructor".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: instructs their course"),
+                ",".join("course{0}.id".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course ID"),
+                ",".join("course{0}.nr".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course nr"),
+                ",".join("course{0}.title".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course title"),
+                ",".join("course{0}.shortname".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course shortname"),
+                ",".join("course{0}.notes".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course notes"),
+                ",".join("course_instructor{0}.id".
+                         format(track_id) for track_id in tracks):
+                    gettext("any track: course instuctor ID"),
+                ",".join("course_instructor{0}.nr".
+                         format(track_id) for track_id in tracks):
+                    gettext("any track: course instuctor nr"),
+                ",".join("course_instructor{0}.title".
+                         format(track_id) for track_id in tracks):
+                    gettext("any track: course instuctor title"),
+                ",".join("course_instructor{0}.shortname".
+                         format(track_id) for track_id in tracks):
+                    gettext("any track: course instuctor shortname"),
+                ",".join("course_instructor{0}.notes".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course instuctor notes"),
             })
+            key = "course{0}.xfield_{1}"
             titles.update({
-                "course_fields{0}.xfield_{1}_{0}".format(
-                    track_id, field['field_name']): rs.gettext(
-                    "course: {field}").format(field=field['field_name'])
-                for field in event['fields'].values()
-                if field['association'] == const.FieldAssociations.course})
-        if len(event['parts']) > 1:
-            for part_id, part in event['parts'].items():
-                titles.update({
-                    "part{0}.status{0}".format(part_id): rs.gettext(
-                        "{title}: registration status").format(
+                ",".join(key.format(track_id, field['field_name'])
+                         for track_id in tracks):
+                    gettext("any track course: {field}").format(
+                        field=field['field_name'])
+                for field in course_fields.values()
+            })
+            key = "course_instructor{0}.xfield_{1}"
+            titles.update({
+                ",".join(key.format(track_id, field['field_name'])
+                         for track_id in tracks):
+                    gettext("any track course instructor: {field}").format(
+                        field=field['field_name'])
+                for field in course_fields.values()
+            })
+        for part_id, part in event['parts'].items():
+            titles.update({
+                "part{0}.status".format(part_id):
+                    gettext("{title}: registration status").format(
                         title=part['title']),
-                    "part{0}.lodgement_id{0}".format(part_id): rs.gettext(
-                        "{title}: lodgement").format(title=part['title']),
-                    "part{0}.is_reserve{0}".format(part_id): rs.gettext(
-                        "{title}: camping mat user").format(title=part['title']),
-                })
-                titles.update({
-                    "lodge_fields{0}.xfield_{1}_{0}".format(
-                        part_id, field['field_name']): rs.gettext(
-                        "{title} lodgement: {field}").format(
+                "part{0}.is_reserve".format(part_id):
+                    gettext("{title}: camping mat user").format(
+                        title=part['title']),
+                "lodgement{0}.id".format(part_id):
+                    gettext("{title}: lodgement ID").format(
+                        title=part['title']),
+                "lodgement{0}.moniker".format(part_id):
+                    gettext("{title}: lodgement moniker").format(
+                        title=part['title']),
+                "lodgement{0}.notes".format(part_id):
+                    gettext("{title}: lodgement notes").format(
+                        title=part['title']),
+            })
+            key = "lodgement{0}.xfield_{1}"
+            titles.update({
+                key.format(part_id, field['field_name']):
+                    gettext("{title} lodgement: {field}").format(
                         field=field['field_name'], title=part['title'])
-                    for field in event['fields'].values()
-                    if field['association'] == const.FieldAssociations.lodgement
-                })
-            titles.update({
-                ",".join("part{0}.status{0}".format(part_id)
-                         for part_id in event['parts']): rs.gettext(
-                    "any part: registration status"),
-                ",".join("part{0}.lodgement{0}".format(part_id)
-                         for part_id in event['parts']): rs.gettext(
-                    "any part: lodgement"),
-                ",".join("part{0}.is_reserve{0}".format(part_id)
-                         for part_id in event['parts']): rs.gettext(
-                    "any part: camping mat user")})
-            titles.update({
-                ",".join("lodge_fields{0}.xfield_{1}_{0}".format(
-                    part_id, field['field_name'])
-                         for part_id in event['parts']): rs.gettext(
-                    "any part lodgement: {field}").format(
-                    field=field['field_name'])
-                for field in event['fields'].values()
-                if field['association'] == const.FieldAssociations.lodgement
+                for field in lodge_fields.values()
             })
-        elif len(event['parts']) == 1:
-            part_id, part = next(iter(event['parts'].items()))
+        if len(event['parts']) > 1:
             titles.update({
-                "part{0}.status{0}".format(part_id):
-                    rs.gettext("registration status"),
-                "part{0}.lodgement_id{0}".format(part_id):
-                    rs.gettext("lodgement"),
-                "part{0}.is_reserve{0}".format(part_id):
-                    rs.gettext("camping mat user"),
+                ",".join("part{0}.status".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: registration status"),
+                ",".join("part{0}.is_reserve".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: camping mat user"),
+                ",".join("lodgement{0}.id".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement ID"),
+                ",".join("lodgement{0}.moniker".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement moniker"),
+                ",".join("lodgement{0}.notes".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement notes"),
             })
+            key = "lodgement{0}.xfield_{1}"
             titles.update({
-                "lodge_fields{0}.xfield_{1}_{0}".format(
-                    part_id, field['field_name']): rs.gettext(
-                    "lodgement: {field}").format(field=field['field_name'])
-                for field in event['fields'].values()
-                if field['association'] == const.FieldAssociations.lodgement})
+                ",".join(key.format(part_id, field['field_name'])
+                         for part_id in event['parts']):
+                    gettext("any part lodgement: {field}").format(
+                        field=field['field_name'])
+                for field in lodge_fields.values()
+            })
         return choices, titles
 
     @access("event")
@@ -4079,7 +4043,8 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         choices, titles = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements)
+            rs, rs.ambience['event'], courses, lodgements,
+            fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
@@ -4101,17 +4066,18 @@ class EventFrontend(AbstractUserFrontend):
                 fields = []
                 for csvfield in query.fields_of_interest:
                     fields.extend(csvfield.split(','))
+                shortname = rs.ambience['event']['shortname']
                 if download == "csv":
                     csv_data = csv_output(result, fields, substitutions=choices)
                     return self.send_csv_file(
                         rs, data=csv_data, inline=False,
-                        filename="{}_result.csv".format(rs.ambience['event']['shortname']))
+                        filename="{}_result.csv".format(shortname))
                 elif download == "json":
                     json_data = query_result_to_json(result, fields,
                                                      substitutions=choices)
                     return self.send_file(
                         rs, data=json_data, inline=False,
-                        filename="{}_result.json".format(rs.ambience['event']['shortname']))
+                        filename="{}_result.json".format(shortname))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "registration_query", params)
@@ -4275,8 +4241,8 @@ class EventFrontend(AbstractUserFrontend):
         query = Query(
             "qview_registration",
             self.make_registration_query_spec(rs.ambience['event']),
-            ("reg.id", "persona.given_names", "persona.family_name",
-             "persona.username", "reg_fields.xfield_{}".format(field["field_name"])),
+            ("persona.given_names", "persona.family_name", "persona.username",
+             "reg.id", "reg_fields.xfield_{}".format(field["field_name"])),
             (("reg.id", QueryOperators.oneof, registration_ids),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )

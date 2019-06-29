@@ -972,54 +972,155 @@ class TestEventBackend(BackendTest):
             spec=dict(QUERY_SPECS["qview_registration"]),
             fields_of_interest=(
                 "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
-                "birthday", "part1.lodgement_id1", "part3.status3", "track2.course_id2",
-                "lodge_fields2.xfield_contamination_2", "course_fields1.xfield_room_1",
-                "reg_fields.xfield_brings_balls", "reg_fields.xfield_transportation"),
-            constraints=[("reg.id", QueryOperators.nonempty, None),
-                           ("persona.given_names", QueryOperators.regex, '[aeiou]'),
-                           ("part2.status2", QueryOperators.nonempty, None),
-                           ("reg_fields.xfield_transportation", QueryOperators.oneof, ['pedes', 'etc'])],
+                "birthday", "lodgement1.id", "part3.status",
+                "course2.id", "course1.xfield_room",
+                "lodgement2.xfield_contamination",
+                "reg_fields.xfield_brings_balls",
+                "reg_fields.xfield_transportation"),
+            constraints=[
+                ("reg.id", QueryOperators.nonempty, None),
+                ("persona.given_names", QueryOperators.regex, '[aeiou]'),
+                ("part2.status", QueryOperators.nonempty, None),
+                ("reg_fields.xfield_transportation", QueryOperators.oneof,
+                 ['pedes', 'etc'])],
             order=(("reg.id", True),),)
 
         ## fix query spec (normally done by frontend)
         query.spec.update({
-            'part1.lodgement_id1': "int",
-            'part3.status3': "int",
-            'track2.course_id2': "int",
-            'lodge_fields2.xfield_contamination_2': "str",
-            'course_fields1.xfield_room_1': "str",
+            'lodgement1.id': "int",
+            'part3.status': "int",
+            'course2.id': "int",
+            'lodgement2.xfield_contamination': "str",
+            'course1.xfield_room': "str",
             'reg_fields.xfield_brings_balls': "bool",
             'reg_fields.xfield_transportation': "str",
-            'part2.status2': "int",
+            'part2.status': "int",
             })
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {'birthday': datetime.date(2012, 6, 2),
              'reg_fields.xfield_brings_balls': True,
-             'lodge_fields2.xfield_contamination_2': 'high',
-             'track2.course_id2': None,
+             'lodgement2.xfield_contamination': 'high',
+             'course2.id': None,
              'persona.family_name': 'Eventis',
              'reg.id': 2,
              'id': 2,  # un-aliased id from QUERY_PRIMARIES / ordering
-             'part1.lodgement_id1': None,
+             'lodgement1.id': None,
              'reg.payment': datetime.date(2014, 2, 2),
              'is_cde_realm': False,
-             'course_fields1.xfield_room_1': None,
-             'part3.status3': 2,
+             'course1.xfield_room': None,
+             'part3.status': 2,
              'reg_fields.xfield_transportation': 'pedes'},
             {'birthday': datetime.date(2222, 1, 1),
              'reg_fields.xfield_brings_balls': False,
-             'lodge_fields2.xfield_contamination_2': None,
-             'track2.course_id2': None,
+             'lodgement2.xfield_contamination': None,
+             'course2.id': None,
              'persona.family_name': 'Iota',
              'reg.id': 4,
              'id': 4,  # un-aliased id from QUERY_PRIMARIES / ordering
-             'part1.lodgement_id1': None,
+             'lodgement1.id': None,
              'reg.payment': datetime.date(2014, 4, 4),
              'is_cde_realm': True,
-             'course_fields1.xfield_room_1': None,
-             'part3.status3': 2,
+             'course1.xfield_room': None,
+             'part3.status': 2,
              'reg_fields.xfield_transportation': 'etc'})
+        self.assertEqual(expectation, result)
+
+    @as_users("anton")
+    def test_is_instructor_query(self, user):
+        registrations = (
+            {
+                "id": 1,
+                "parts": {
+                    2: {
+                        "status": const.RegistrationPartStati.participant.value
+                    }
+                },
+                "tracks": {
+                    1: {
+                        "course_id": 1,
+                        "course_instructor": 1,
+                    }
+                },
+            },
+            {
+                "id": 2,
+                "parts": {
+                    2: {
+                        "status": const.RegistrationPartStati.participant.value
+                    }
+                },
+                "tracks": {
+                    1: {
+                        "course_id": 1,
+                        "course_instructor": None,
+                    }
+                },
+            },
+            {
+                "id": 3,
+                "parts": {
+                    2: {
+                        "status": const.RegistrationPartStati.participant.value
+                    }
+                },
+                "tracks": {
+                    1: {
+                        "course_id": None,
+                        "course_instructor": 1,
+                    }
+                },
+            },
+            {
+                "id": 4,
+                "parts": {
+                    2: {
+                        "status": const.RegistrationPartStati.participant.value
+                    }
+                },
+                "tracks": {
+                    1: {
+                        "course_id": None,
+                        "course_instructor": None,
+                    }
+                },
+            },
+        )
+
+        for reg in registrations:
+            self.assertLess(0, self.event.set_registration(self.key, reg))
+
+        query = Query(
+            scope="qview_registration",
+            spec=dict(QUERY_SPECS["qview_registration"]),
+            fields_of_interest=("reg.id", "track1.is_course_instructor"),
+            constraints=[],
+            order=(("reg.id", True),)
+        )
+
+        result = self.event.submit_general_query(self.key, query, event_id=1)
+        expectation = (
+            {
+                "id": 1,
+                "reg.id": 1,
+                "track1.is_course_instructor": True,
+            },
+            {
+                "id": 2,
+                "reg.id": 2,
+                "track1.is_course_instructor": None,
+            },
+            {
+                "id": 3,
+                "reg.id": 3,
+                "track1.is_course_instructor": False,
+            },
+            {
+                "id": 4,
+                "reg.id": 4,
+                "track1.is_course_instructor": None,
+            },
+        )
         self.assertEqual(expectation, result)
 
     @as_users("anton", "garcia")

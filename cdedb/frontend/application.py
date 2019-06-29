@@ -170,11 +170,15 @@ class Application(BaseApp):
                 }
                 lang = self.get_locale(request)
                 rs = RequestState(
-                    sessionkey, None, request, None, [], urls, args,
-                    [], {}, lang,
-                    self.translations[lang].gettext,
-                    self.translations[lang].ngettext, coders, begin,
-                    scriptkey)
+                    sessionkey=sessionkey, user=None, request=request,
+                    response=None, notifications=[], mapadapter=urls,
+                    requestargs=args, errors=[], values={}, lang=lang,
+                    gettext=self.translations[lang].gettext,
+                    ngettext=self.translations[lang].ngettext,
+                    coders=coders, begin=begin, scriptkey=scriptkey,
+                    default_gettext=self.translations["en"].gettext,
+                    default_ngettext=self.translations["en"].ngettext
+                )
                 rs.values.update(args)
                 component, action = endpoint.split('/')
                 raw_notifications = rs.request.cookies.get("displaynote")
