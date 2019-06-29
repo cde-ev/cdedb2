@@ -45,6 +45,19 @@ class AssemblyFrontend(AbstractUserFrontend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
+    @staticmethod
+    def is_ballot_voting(ballot):
+        """Determine whether a ballot is open for voting.
+
+        :type ballot: {str: object}
+        :rtype: bool
+        """
+        timestamp = now()
+        return (ballot['extended'] is None
+                or timestamp < ballot['vote_end']
+                or (ballot['extended']
+                    and timestamp < ballot['vote_extension_end']))
+
     def may_assemble(self, rs, *, assembly_id=None, ballot_id=None):
         """Helper to check authorization.
 
@@ -552,7 +565,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     params={'sha': hasher.hexdigest()})
             return self.redirect(rs, "assembly/show_ballot")
         # initial checks done, present the ballot
-        ballot['is_voting'] = self.assemblyproxy.is_ballot_voting(rs, ballot_id)
+        ballot['is_voting'] = self.is_ballot_voting(ballot)
         result = None
         if ballot['is_tallied']:
             path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)

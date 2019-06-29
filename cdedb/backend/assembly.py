@@ -473,27 +473,6 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    @singularize("is_ballot_voting")
-    def are_ballots_voting(self, rs, ballot_ids):
-        """Determine whether a ballot is open for voting.
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ballot_ids: [int]
-        :rtype: {int: bool}
-        """
-        ballot_id = affirm_set("id", ballot_ids)
-
-        ballots = self.get_ballots(rs, ballot_ids)
-
-        timestamp = now()
-        ret = {ballot["id"]: (ballot['extended'] is None
-                              or timestamp < ballot['vote_end']
-                              or (ballot['extended']
-                                  and timestamp < ballot['vote_extension_end']))
-               for ballot in ballots.values()}
-
-        return ret
-
-    @access("assembly")
     def list_ballots(self, rs, assembly_id):
         """List all ballots of an assembly.
 
