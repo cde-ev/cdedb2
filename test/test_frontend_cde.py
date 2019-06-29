@@ -363,11 +363,9 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['newuserform']
         self.assertEqual(None, self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
         self.assertFalse(self.response.lxml.get_element_by_id('input_checkbox_trial_member').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('input_checkbox_bub_search').checked)
         f['is_searchable'].checked = True
         f['is_member'].checked = True
         f['trial_member'].checked = True
-        f['bub_search'].checked = True
         for key, value in data.items():
             f.set(key, value)
         self.submit(f)
