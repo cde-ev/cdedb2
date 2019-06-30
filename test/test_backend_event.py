@@ -2340,10 +2340,10 @@ class TestEventBackend(BackendTest):
         # second check the token functionality
         with self.assertRaises(PartialImportError):
             self.event.partial_import_event(self.key, data, dryrun=False,
-                                            target=token1 + "wrong")
+                                            token=token1 + "wrong")
         # now for real
         token2, delta = self.event.partial_import_event(
-            self.key, data, dryrun=False, target=token1)
+            self.key, data, dryrun=False, token=token1)
         self.assertEqual(token1, token2)
 
         updated = self.event.partial_export_event(self.key, 1)
@@ -2410,12 +2410,12 @@ class TestEventBackend(BackendTest):
             self.key, data, dryrun=True)
         # second a real run
         token2, delta = self.event.partial_import_event(
-            self.key, data, dryrun=False, target=token1)
+            self.key, data, dryrun=False, token=token1)
         self.assertEqual(token1, token2)
         # third another concurrent real run
         with self.assertRaises(PartialImportError):
             self.event.partial_import_event(
-                self.key, data, dryrun=False, target=token1)
+                self.key, data, dryrun=False, token=token1)
         token3, delta = self.event.partial_import_event(
             self.key, data, dryrun=True)
         self.assertNotEqual(token1, token3)
@@ -2430,21 +2430,15 @@ class TestEventBackend(BackendTest):
                              'segments': {1: False, 3: True},
                              'shortname': 'Blitz',
                              'title': 'Blitzkurs'},
-                        1: {'segments': {}},
                         3: None,
-                        4: {'segments': {1: None}},
-                        5: {'segments': {}}},
+                        4: {'segments': {1: None}}},
             'lodgements': {-1: {'capacity': 12,
                                 'fields': {'contamination': 'none'},
                                 'moniker': 'Geheimkabinett',
                                 'notes': 'Einfach den unsichtbaren Schildern folgen.',
                                 'reserve': 2},
                            3: None},
-            'registrations': {1: {'tracks': {1: {}}},
-                              2: {'fields': {},
-                        'parts': {2: {}, 3: {}},
-                        'tracks': {2: {}, 3: {}}},
-                    4: None}}
+            'registrations': {4: None}}
         self.assertEqual(expectation, delta)
 
     @as_users("anton")
