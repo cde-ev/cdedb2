@@ -53,6 +53,7 @@ I18N_STRINGS = (
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),
+    n_("EventLogCodes.event_deleted"),
     n_("EventLogCodes.orga_added"),
     n_("EventLogCodes.orga_removed"),
     n_("EventLogCodes.part_created"),
@@ -148,6 +149,7 @@ I18N_STRINGS = (
 
     n_("PastEventLogCodes.event_created"),
     n_("PastEventLogCodes.event_changed"),
+    n_("PastEventLogCodes.event_deleted"),
     n_("PastEventLogCodes.course_created"),
     n_("PastEventLogCodes.course_changed"),
     n_("PastEventLogCodes.course_deleted"),
