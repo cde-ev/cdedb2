@@ -2641,7 +2641,7 @@ class EventBackend(AbstractBackend):
             return ret
 
     @access("event")
-    def partial_import_event(self, rs, data, dryrun, target=None):
+    def partial_import_event(self, rs, data, dryrun, token=None):
         """Incorporate changes into an event.
 
         In contrast to the full import in this case the data describes a
@@ -2651,8 +2651,8 @@ class EventBackend(AbstractBackend):
         :type data: dict
         :type dryrun: bool
         :param dryrun: If True we do not modify any state.
-        :type target: str
-        :param target: Expected transaction token. If the transaction would
+        :type token: str
+        :param token: Expected transaction token. If the transaction would
           generate a different token a PartialImportError is raised.
         :rtype: (str, dict)
         :returns: A tuple of a transaction token and the datasets that
@@ -2840,7 +2840,7 @@ class EventBackend(AbstractBackend):
             m.update(json_serialize(total_delta, sort_keys=True).encode(
                 'utf-8'))
             result = m.hexdigest()
-            if target is not None and result != target:
+            if token is not None and result != token:
                 raise PartialImportError("The delta changed.")
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,

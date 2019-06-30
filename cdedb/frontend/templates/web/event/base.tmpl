@@ -43,8 +43,8 @@
                     aclass="list-group-item", icon="home", active=(sidenav_active == 'event_lodgements')) }}
             {{ util.href(cdedblink("event/downloads", {"event_id": data['id']}), gettext("Downloads"), aclass="list-group-item",
                     icon="save-file", active=(sidenav_active == 'event_downloads')) }}
-            {{ util.href(cdedblink("event/json_import_form", {"event_id": data['id']}), gettext("Partial Import"), aclass="list-group-item",
-                    icon="cloud-upload ", active=(sidenav_active == 'json_import')) }}
+            {{ util.href(cdedblink("event/partial_import_form", {"event_id": data['id']}), gettext("Partial Import"), aclass="list-group-item",
+                    icon="cloud-upload ", active=(sidenav_active == 'partial_import')) }}
             {{ util.href(cdedblink("event/batch_fees_form", {"event_id": data['id']}), gettext("Enter Money Transfers"),
                          aclass="list-group-item", icon="euro", readonly=is_locked,
                          active=(sidenav_active == 'event_batch_fees')) }}

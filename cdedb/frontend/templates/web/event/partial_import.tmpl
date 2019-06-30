@@ -1,15 +1,16 @@
-{% set sidenav_active='json_import' %}
+{% set sidenav_active='partial_import' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}Daten-Import zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/json_import_form"), "Daten-Import", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/partial_import_form"), "Daten-Import", active=True) }}
 {% endblock %}
+{# FIXME translate to english #}
 {% block heading %}
     <h1 class="title">
-        Daten-Import <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        Partieller Daten-Import <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -19,8 +20,10 @@
         Upload wird eine Übersicht der Änderungen gezeigt und der Import muss bestätigt werden.
     </p>
 
-    <form action="{{ cdedblink('event/json_import_check')|e }}" method="POST" id="importform" class="form-horizontal">
-        {{ util.form_input_file('file', label='JSON-Datei') }}
+    <form action="{{ cdedblink('event/partial_import')|e }}" method="POST" id="importform"
+      enctype="multipart/form-data" class="form-horizontal">
+        {{ util.anti_csrf_token('event/partial_import') }}
+        {{ util.form_input_file('json_file', label='JSON-Datei') }}
         {{ util.form_input_submit('Validieren …') }}
     </form>
 

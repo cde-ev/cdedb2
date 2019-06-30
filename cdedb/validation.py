@@ -2589,7 +2589,7 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "serialized_event"
+    argname = argname or "serialized_partial_event"
     ## First a basic check
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:

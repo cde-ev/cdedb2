@@ -1,0 +1,210 @@
+{% set sidenav_active='partial_import' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['event']['title'] -%}
+    	Partial Import Validation ({{ title }})
+    {%- endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Partial Import{% endtrans %} <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+    </h1>
+{% endblock %}
+{% macro format_diff(key, old, new) %}
+    {% if new is mapping %}
+        <li>
+            <p>{{ key }}</p>
+            <ul>
+                {% for key, val in new|dictsort %}
+                    {{ format_diff(key, old[key], val) }}
+                {% endfor %}
+            </ul>
+        </li>
+    {% else %}
+        <li> {{ key }}: {{ old }} -> {{ new }} </li>
+    {% endif %}
+{% endmacro %}
+{% block content %}
+    {% if states['changed_registrations'] or states['new_registrations'] or states['deleted_registrations'] %}
+        <h2>{% trans %}Registrations{% endtrans %}</h2>
+        {% if states['changed_registrations'] %}
+            {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info', icon='user') %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <ul class="slim">
+                            {% for reg_id, registration in delta['registrations']|dictsort %}
+                                {% if reg_id > 0 and registration %}
+                                    {{ format_diff(
+                                           "{} {}".format(
+                                               personas[registrations[reg_id]['persona_id']]['given_names'],
+                                               personas[registrations[reg_id]['persona_id']]['family_name']),
+                                           registrations[reg_id], registration) }}
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endcall %}
+        {% endif %}
+        <div class="row">
+            {% if states['new_registrations'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel panel-success', icon='user') %}
+                        <ul class="slim">
+                            {% for reg_id, registration in delta['registrations']|dictsort %}
+                                {% if reg_id < 0 %}
+                                    <li>{{ personas[registration['persona_id']]['given_names'] }}
+                                        {{ personas[registration['persona_id']]['family_name'] }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+            {% if states['deleted_registrations'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel panel-danger', icon='user') %}
+                        <ul class="slim">
+                            {% for reg_id, registration in delta['registrations']|dictsort %}
+                                {% if registration is none %}
+                                    {% if reg_id in registrations %}
+                                        <li>{{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
+                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}</li>
+                                    {% else %}
+                                        <li>{% trans %}Double deletion of registration {{ reg_id }}.{% endtrans %}</li>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if states['changed_courses'] or states['new_courses'] or states['deleted_courses'] %}
+        <h2>{% trans %}Courses{% endtrans %}</h2>
+        {% if states['changed_courses'] %}
+            {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book') %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <ul class="slim">
+                            {% for course_id, course in delta['courses']|dictsort %}
+                                {% if course_id > 0 and course %}
+                                    {{ format_diff("{} {}".format(courses[course_id]['nr'],
+                                                                  courses[course_id]['title']),
+                                                   courses[course_id], course) }}
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endcall %}
+        {% endif %}
+        <div class="row">
+            {% if states['new_courses'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='book') %}
+                        <ul class="slim">
+                            {% for course_id, course in delta['courses']|dictsort %}
+                                {% if course_id < 0 %}
+                                    <li>{{ course['nr'] }} {{ course['title'] }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+            {% if states['deleted_courses'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='book') %}
+                        <ul class="slim">
+                            {% for course_id, course in delta['courses']|dictsort %}
+                                {% if course is none %}
+                                    {% if course_id in courses %}
+                                        <li>{{ courses[course_id]['nr'] }} {{ courses[course_id]['title'] }}</li>
+                                    {% else %}
+                                        <li>{% trans %}Double deletion of course {{ course_id }}.{% endtrans %}</li>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if states['changed_lodgements'] or states['new_lodgements'] or states['deleted_lodgements'] %}
+        <h2>{% trans %}Lodgements{% endtrans %}</h2>
+        {% if states['changed_lodgements'] %}
+            {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home') %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <ul class="slim">
+                            {% for lodgement_id, lodgement in delta['lodgements']|dictsort %}
+                                {% if lodgement_id > 0 and lodgement %}
+                                    {{ format_diff(lodgements[lodgement_id]['moniker'], lodgements[lodgement_id],
+                                                   lodgement) }}
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endcall %}
+        {% endif %}
+        <div class="row">
+            {% if states['new_lodgements'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='home') %}
+                        <ul class="slim">
+                            {% for lodgement_id, lodgement in delta['lodgements']|dictsort %}
+                                {% if lodgement_id < 0 %}
+                                    <li>{{ lodgement['moniker'] }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+            {% if states['deleted_lodgements'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel panel-danger', icon='home') %}
+                        <ul class="slim">
+                            {% for lodgement_id, lodgement in delta['lodgements']|dictsort %}
+                                {% if lodgement is none %}
+                                    {% if lodgement_id in lodgements %}
+                                        <li>{{ lodgements[lodgement_id]['moniker'] }}</li>
+                                    {% else %}
+                                        <li>
+                                            {% trans %}Double deletion of lodgement {{ lodgement_id }}.{% endtrans %}
+                                        </li>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if not states['changed_registrations'] and not states['new_registrations'] and not states['deleted_registrations']
+            and not states['changed_courses'] and not states['new_courses'] and not states['deleted_courses']
+            and not states['changed_lodgements'] and not states['new_lodgements'] and not states['deleted_lodgements'] %}
+        {% trans %}The input produced an empty diff.{% endtrans %}
+    {% endif %}
+
+    <form action="{{ cdedblink('event/partial_import') }}" method="POST" id="importexecuteform" class="form-horizontal">
+        {{ util.anti_csrf_token('event/partial_import') }}
+        {{ util.input_hidden(name='token') }}
+        {{ util.input_hidden(name='partial_import_data') }}
+        {{ util.form_input_submit(value=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form')) }}
+    </form>
+{% endblock %}

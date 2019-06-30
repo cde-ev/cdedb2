@@ -3,20 +3,21 @@
 """Services for the event realm."""
 
 import cgitb
-import functools
 from collections import OrderedDict, Counter
 import copy
 import csv
-import hashlib
 import decimal
+import functools
+import hashlib
 import itertools
+import json
+import operator
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import tempfile
-import operator
-import subprocess
 
 import magic
 import psycopg2.extensions
@@ -32,7 +33,8 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    CourseFilterPositions, diacritic_patterns, open_utf8, shutil_copy)
+    CourseFilterPositions, diacritic_patterns, open_utf8, shutil_copy,
+    PartialImportError)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -2319,55 +2321,111 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def json_import_form(self, rs, event_id):
-        """1. Step of JSON import process: Render form to upload file"""
-        return self.render(rs, "json_import")
+    def partial_import_form(self, rs, event_id):
+        """First step of partial import process: Render form to upload file"""
+        return self.render(rs, "partial_import")
 
     @access("event", modi={"POST"})
-    @event_guard()
-    def json_import_check(self, rs, event_id):
-        """2. Step of JSON import process: Validate and save file, show
-        list of affected data to the user"""
+    @REQUESTfile("json_file")
+    @REQUESTdata(("partial_import_data", "str_or_None"),
+                 ("token", "str_or_None"))
+    @event_guard(check_offline=True)
+    def partial_import(self, rs, event_id, json_file, partial_import_data,
+                       token):
+        """Further steps of partial import process
+
+        This takes the changes and generates a transaction token. If the new
+        token agrees with the submitted token, the change were successfully
+        applied, otherwise a diff-view of the changes is displayed.
+
+        In the first iteration the data is extracted from a file upload and
+        in further iterations it is embedded in the page.
+        """
+        if partial_import_data:
+            data = check(rs, "serialized_partial_event",
+                         json.loads(partial_import_data))
+        else:
+            data = check(rs, "serialized_partial_event_upload", json_file)
+        if rs.errors:
+            return self.partial_import_form(rs, event_id)
+        if event_id != data['id']:
+            rs.notify("error", n_("Data from wrong event."))
+            return self.partial_import_form(rs, event_id)
+
+        # First gather infos for comparison
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids).values()
-        personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations))
+        registrations = self.eventproxy.get_registrations(
+            rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids).values()
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids).values()
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        persona_ids = (
+            ({e['persona_id'] for e in registrations.values()}
+             | {e.get('persona_id')
+                for e in data.get('registrations', {}).values() if e})
+            - {None})
+        personas = self.coreproxy.get_event_users(rs, persona_ids)
 
-        # TODO
+        # Second invoke partial import
+        try:
+            new_token, delta = self.eventproxy.partial_import_event(
+                rs, data, dryrun=(not bool(token)), token=token)
+        except PartialImportError:
+            rs.notify("warning",
+                      n_("The data changed, please review the difference."))
+            token = None
+            new_token, delta = self.eventproxy.partial_import_event(
+                rs, data, dryrun=True)
 
-        # Testdata
-        rfields = set(itertools.chain(*(r.keys() for r in registrations)))
-        cfields = set(itertools.chain(*(c.keys() for c in courses)))
-        lfields = set(itertools.chain(*(l.keys() for l in lodgements)))
-        template_data = {
-            'new_registrations': registrations,
-            'changed_registrations': registrations,
-            'changed_registration_fields': rfields,
-            'deleted_registrations': registrations,
-            'new_courses': courses,
-            'changed_courses': courses,
-            'changed_course_fields': cfields,
-            'deleted_courses': courses,
-            'new_lodgements': lodgements,
-            'changed_lodgements': lodgements,
-            'changed_lodgement_fields': lfields,
-            'deleted_lodgements': lodgements,
-            'personas': personas
+        # Third check if we were successful
+        if token == new_token:
+            rs.notify("success", n_("Changes applied."))
+            return self.redirect(rs, "event/show_event")
+
+        # Fourth prepare and render diff
+        rs.values['token'] = new_token
+        rs.values['partial_import_data'] = json_serialize(data)
+        states = {
+            'changed_registrations': any(
+                id > 0 and val
+                for id, val in delta.get('registrations', {}).items()),
+            'new_registrations': any(
+                id < 0 for id in delta.get('registrations', {})),
+            'deleted_registrations': any(
+                val is None
+                for val in delta.get('registrations', {}).values()),
+            'changed_courses': any(
+                id > 0 and val
+                for id, val in delta.get('courses', {}).items()),
+            'new_courses': any(
+                id < 0 for id in delta.get('courses', {})),
+            'deleted_courses': any(
+                val is None
+                for val in delta.get('courses', {}).values()),
+            'changed_lodgements': any(
+                id > 0 and val
+                for id, val in delta.get('lodgements', {}).items()),
+            'new_lodgements': any(
+                id < 0 for id in delta.get('lodgements', {})),
+            'deleted_lodgements': any(
+                val is None
+                for val in delta.get('lodgements', {}).values()),
         }
-        
-        return self.render(rs, "json_import_check", template_data)
-
-    @access("event", modi={"POST"})
-    @event_guard()
-    def json_import_commit(self, rs, event_id):
-        """3. Step of JSON import process: Read saved file and commit changes
-        to the database."""
-        # TODO
-        raise NotImplementedError()
+        for course in courses.values():
+            course['segments'] = {
+                id: id in course['active_segments']
+                for id in course['segments']
+            }
+        template_data = {
+            'delta': delta,
+            'registrations': registrations,
+            'lodgements': lodgements,
+            'courses': courses,
+            'personas': personas,
+            'states': states,
+        }
+        return self.render(rs, "partial_import_check", template_data)
 
     @access("event")
     def register_form(self, rs, event_id):

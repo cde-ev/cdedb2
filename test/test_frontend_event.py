@@ -1762,6 +1762,46 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
     @as_users("anton")
+    def test_partial_import_normal(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/import'})
+        self.assertTitle("Daten-Import zur Veranstaltung Große Testakademie 2222")
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json", 'rb') as datafile:
+            data = datafile.read()
+        f = self.response.forms["importform"]
+        f['json_file'] = webtest.Upload("partial_event_import.json", data,
+                                        "application/octet-stream")
+        self.submit(f, check_notification=False)
+        self.assertTitle("Partial Import Validation (Große Testakademie 2222)")
+        f = self.response.forms["importexecuteform"]
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+
+    @as_users("anton")
+    def test_partial_import_interleaved(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/import'})
+        self.assertTitle("Daten-Import zur Veranstaltung Große Testakademie 2222")
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json", 'rb') as datafile:
+            data = datafile.read()
+        f = self.response.forms["importform"]
+        f['json_file'] = webtest.Upload("partial_event_import.json", data,
+                                        "application/octet-stream")
+        self.submit(f, check_notification=False)
+        saved = self.response
+        self.assertTitle("Partial Import Validation (Große Testakademie 2222)")
+        f = self.response.forms["importexecuteform"]
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        self.response = saved
+        f = self.response.forms["importexecuteform"]
+        self.submit(f, check_notification=False)
+        self.assertTitle("Partial Import Validation (Große Testakademie 2222)")
+        self.assertPresence("The input produced an empty diff.")
+
+    @as_users("anton")
     def test_delete_event(self, user):
         self.traverse({'href': '/event'},
                       {'href': '/event/event/1/show'},
