@@ -1192,12 +1192,13 @@ class TestCdEFrontend(FrontendTest):
         # This file has a newline at the end, which needs to be stripped or it
         # causes the checksum to differ and require a third round.
         with open("/tmp/cdedb-store/testfiles/money_transfers_valid.csv", 'rb') as datafile:
-            data = datafile.read()
+            data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
+
+        self.assertIn(b"\r\n", data)
         f['transfers_file'] = webtest.Upload("money_transfers_valid.csv", data, "text/csv")
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
         self.submit(f)
-
 
     @as_users("anton")
     def test_money_transfer_low_balance(self, user):
