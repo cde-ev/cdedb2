@@ -2688,12 +2688,28 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             event = unwrap(self.get_events(rs, (data['id'],)))
             all_current_data = self.partial_export_event(rs, data['id'])
+            oregistration_ids = self.list_registrations(rs, data['id'])
+            old_registrations = self.get_registrations(rs, oregistration_ids)
+
             total_delta = {}
             total_previous = {}
             rdelta = {}
             rprevious = {}
             data_regs = data.get('registrations', {})
+
+            def duplicate_reg(reg):
+                for old_reg in old_registrations.values():
+                    if old_reg['persona_id'] == reg['persona_id']:
+                        return old_reg['id']
+                return None
+
             for registration_id, new_registration in data_regs.items():
+                if registration_id < 0 and duplicate_reg(new_registration):
+                    # the process got out of sync and the registration was
+                    # already created, so we fix this
+                    registration_id =  duplicate_reg(new_registration)
+                    del new_registration['persona_id']
+
                 current = all_current_data['registrations'].get(
                     registration_id)
                 if registration_id > 0 and current is None:

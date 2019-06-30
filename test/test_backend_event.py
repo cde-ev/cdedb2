@@ -2399,6 +2399,53 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, updated)
 
     @as_users("anton")
+    def test_partial_import_event_twice(self, user):
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") as datafile:
+            data = json.load(datafile)
+
+        # first a test run
+        token1, delta = self.event.partial_import_event(
+            self.key, data, dryrun=True)
+        # second a real run
+        token2, delta = self.event.partial_import_event(
+            self.key, data, dryrun=False, target=token1)
+        self.assertEqual(token1, token2)
+        # third another concurrent real run
+        with self.assertRaises(PartialImportError):
+            self.event.partial_import_event(
+                self.key, data, dryrun=False, target=token1)
+        token3, delta = self.event.partial_import_event(
+            self.key, data, dryrun=True)
+        self.assertNotEqual(token1, token3)
+        expectation = {
+            'courses': {-1: {'description': 'Ein Lichtstrahl traf uns',
+                             'fields': {'room': 'Wintergarten'},
+                             'instructors': 'The Flash',
+                             'max_size': None,
+                             'min_size': None,
+                             'notes': None,
+                             'nr': 'ζ',
+                             'segments': {1: False, 3: True},
+                             'shortname': 'Blitz',
+                             'title': 'Blitzkurs'},
+                        1: {'segments': {}},
+                        3: None,
+                        4: {'segments': {1: None}},
+                        5: {'segments': {}}},
+            'lodgements': {-1: {'capacity': 12,
+                                'fields': {'contamination': 'none'},
+                                'moniker': 'Geheimkabinett',
+                                'notes': 'Einfach den unsichtbaren Schildern folgen.',
+                                'reserve': 2},
+                           3: None},
+            'registrations': {1: {'tracks': {1: {}}},
+                              2: {'fields': {},
+                        'parts': {2: {}, 3: {}},
+                        'tracks': {2: {}, 3: {}}},
+                    4: None}}
+        self.assertEqual(expectation, delta)
+
+    @as_users("anton")
     def test_log(self, user):
         # first generate some data
         data = {
