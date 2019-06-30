@@ -2697,17 +2697,17 @@ class EventBackend(AbstractBackend):
             rprevious = {}
             data_regs = data.get('registrations', {})
 
-            def duplicate_reg(reg):
-                for old_reg in old_registrations.values():
-                    if old_reg['persona_id'] == reg['persona_id']:
-                        return old_reg['id']
-                return None
+            dup_lookup = {
+                old_reg['persona_id']: old_reg['id']
+                for old_reg in old_registrations.values()
+            }
 
             for registration_id, new_registration in data_regs.items():
-                if registration_id < 0 and duplicate_reg(new_registration):
+                if (registration_id < 0
+                        and dup_lookup.get(new_registration['persona_id'])):
                     # the process got out of sync and the registration was
                     # already created, so we fix this
-                    registration_id =  duplicate_reg(new_registration)
+                    registration_id = dup_lookup(new_registration)
                     del new_registration['persona_id']
 
                 current = all_current_data['registrations'].get(

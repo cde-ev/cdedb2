@@ -2383,7 +2383,24 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("success", n_("Changes applied."))
             return self.redirect(rs, "event/show_event")
 
-        # Fourth prepare and render diff
+        # Fourth look for double creations
+        all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
+        suspicious_courses = []
+        for course_id, course in delta.get('courses', {}).items():
+            if course_id < 0:
+                for current in all_current_data['courses'].values():
+                    if current == course:
+                        suspicious_courses.append(course_id)
+                        break
+        suspicious_lodgements = []
+        for lodgement_id, lodgement in delta.get('lodgements', {}).items():
+            if lodgement_id < 0:
+                for current in all_current_data['lodgements'].values():
+                    if current == lodgement:
+                        suspicious_lodgements.append(lodgement_id)
+                        break
+
+        # Fifth prepare and render diff
         rs.values['token'] = new_token
         rs.values['partial_import_data'] = json_serialize(data)
         states = {
@@ -2421,7 +2438,9 @@ class EventFrontend(AbstractUserFrontend):
             'delta': delta,
             'registrations': registrations,
             'lodgements': lodgements,
+            'suspicious_lodgements': suspicious_lodgements,
             'courses': courses,
+            'suspicious_courses': suspicious_courses,
             'personas': personas,
             'states': states,
         }

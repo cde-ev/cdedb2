@@ -114,7 +114,16 @@
                         <ul class="slim">
                             {% for course_id, course in delta['courses']|dictsort %}
                                 {% if course_id < 0 %}
-                                    <li>{{ course['nr'] }} {{ course['title'] }}</li>
+                                    <li>
+                                        {{ course['nr'] }} {{ course['title'] }}
+                                        {% if course_id in suspicious_courses %}
+                                            <emph>
+                                                {% trans -%}
+                                                    (Warning: Similar course found; risk of double creation.)
+                                                {%- endtrans %}
+                                            </emph>
+                                        {% endif %}
+                                    </li>
                                 {% endif %}
                             {% endfor %}
                         </ul>
@@ -166,7 +175,16 @@
                         <ul class="slim">
                             {% for lodgement_id, lodgement in delta['lodgements']|dictsort %}
                                 {% if lodgement_id < 0 %}
-                                    <li>{{ lodgement['moniker'] }}</li>
+                                    <li>
+                                        {{ lodgement['moniker'] }}
+                                        {% if lodgement_id in suspicious_lodgements %}
+                                            <emph>
+                                                {% trans -%}
+                                                    (Warning: Similar lodgement found; risk of double creation.)
+                                                {%- endtrans %}
+                                            </emph>
+                                        {% endif %}
+                                    </li>
                                 {% endif %}
                             {% endfor %}
                         </ul>

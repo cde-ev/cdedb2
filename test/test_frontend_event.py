@@ -1799,7 +1799,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms["importexecuteform"]
         self.submit(f, check_notification=False)
         self.assertTitle("Partial Import Validation (Große Testakademie 2222)")
-        self.assertPresence("The input produced an empty diff.")
+        self.assertPresence("Double deletion")
 
     @as_users("anton")
     def test_delete_event(self, user):
