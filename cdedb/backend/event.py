@@ -2679,7 +2679,9 @@ class EventBackend(AbstractBackend):
                     if value == old[key]:
                         pass
                     elif isinstance(value, collections.abc.Mapping):
-                        delta[key], previous[key] = dict_diff(old[key], value)
+                        d, p = dict_diff(old[key], value)
+                        if d:
+                            delta[key], previous[key] = d, p
                     else:
                         delta[key] = value
                         previous[key] = old[key]
