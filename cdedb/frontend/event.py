@@ -4257,8 +4257,9 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
-    @access("event_admin", modi={"POST"})
+    @access("event", modi={"POST"})
     @REQUESTfile("json")
+    @event_guard()
     def unlock_event(self, rs, event_id, json):
         """Unlock an event after offline usage and incorporate the offline
         changes."""
