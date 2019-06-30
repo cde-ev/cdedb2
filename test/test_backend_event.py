@@ -12,7 +12,7 @@ from test.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.backend.common import cast_fields
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
-from cdedb.common import PERSONA_EVENT_FIELDS
+from cdedb.common import PERSONA_EVENT_FIELDS, PartialImportError
 from cdedb.enums import ENUMS_DICT
 import cdedb.database.constants as const
 
@@ -2331,22 +2331,27 @@ class TestEventBackend(BackendTest):
             data = json.load(datafile)
 
         # first a test run
-        code, delta = self.event.partial_import_event(self.key, data, True)
-        self.assertLess(0, code)
+        token1, delta = self.event.partial_import_event(self.key, data,
+                                                        dryrun=True)
         expectation = copy.deepcopy(delta)
         self.assertEqual(expectation, delta)
+        # second check the token functionality
+        with self.assertRaises(PartialImportError):
+            self.event.partial_import_event(self.key, data, dryrun=False,
+                                            target=token1 + "wrong")
         # now for real
-        code, delta = self.event.partial_import_event(self.key, data, False)
-        self.assertLess(0, code)
+        token2, delta = self.event.partial_import_event(
+            self.key, data, dryrun=False, target=token1)
+        self.assertEqual(token1, token2)
 
         updated = self.event.partial_export_event(self.key, 1)
         expectation = previous
         delta = json_keys_to_int(data)
 
         CMAP = {
-            ('courses', -1): 6,
-            ('lodgements', -1): 5,
-            ('registrations', -1): 5,
+            ('courses', -1): 7,
+            ('lodgements', -1): 6,
+            ('registrations', -1): 6,
         }
         TMAP = {
             'courses': {'segments': {}, 'fields': {}},

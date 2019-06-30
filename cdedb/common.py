@@ -414,6 +414,14 @@ class ArchiveError(RuntimeError):
     pass
 
 
+class PartialImportError(RuntimeError):
+    """Exception for signalling a checksum mismatch in the partial import.
+
+    Making this an exception rolls back the database transaction.
+    """
+    pass
+
+
 # TODO decide whether we sort by first or last name
 def name_key(entry):
     """Create a sorting key associated to a persona dataset.
@@ -544,13 +552,13 @@ class CustomJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def json_serialize(data):
+def json_serialize(data, **kwargs):
     """Do beefed up JSON serialization.
 
     :type data: obj
     :rtype: str
     """
-    return json.dumps(data, indent=4, cls=CustomJSONEncoder)
+    return json.dumps(data, indent=4, cls=CustomJSONEncoder, **kwargs)
 
 
 class PsycoJson(psycopg2.extras.Json):

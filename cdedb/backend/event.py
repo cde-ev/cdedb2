@@ -6,6 +6,7 @@ variant for external participants.
 
 import collections
 import copy
+import hashlib
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
@@ -17,7 +18,8 @@ from cdedb.common import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
     CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
-    REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms, InfiniteEnum)
+    REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms, json_serialize,
+    PartialImportError)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -2639,7 +2641,7 @@ class EventBackend(AbstractBackend):
             return ret
 
     @access("event")
-    def partial_import_event(self, rs, data, dryrun):
+    def partial_import_event(self, rs, data, dryrun, target=None):
         """Incorporate changes into an event.
 
         In contrast to the full import in this case the data describes a
@@ -2649,11 +2651,15 @@ class EventBackend(AbstractBackend):
         :type data: dict
         :type dryrun: bool
         :param dryrun: If True we do not modify any state.
-        :rtype: (int, dict)
-        :returns: A tuple of a standard return code and the datasets that
-          are changed by the operation (in the state after the change).
+        :type target: str
+        :param target: Expected transaction token. If the transaction would
+          generate a different token a PartialImportError is raised.
+        :rtype: (str, dict)
+        :returns: A tuple of a transaction token and the datasets that
+          are changed by the operation (in the state after the change). The
+          transaction token describes the change and can be submitted to
+          guarantee a certain effect.
         """
-        # TODO maybe add hash validation to ensure deteministic semantics
         data = affirm("serialized_partial_event", data)
         dryrun = affirm("bool", dryrun)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
@@ -2663,26 +2669,29 @@ class EventBackend(AbstractBackend):
             raise ValueError(n_("Version mismatch – aborting."))
 
         def dict_diff(old, new):
-            ret = {}
+            delta = {}
+            previous = {}
             # keys missing in the new dict are simply ignored
             for key, value in new.items():
                 if key not in old:
-                    ret[key] = value
+                    delta[key] = value
                 else:
                     if value == old[key]:
                         pass
                     elif isinstance(value, collections.abc.Mapping):
-                        ret[key] = dict_diff(old[key], value)
+                        delta[key], previous[key] = dict_diff(old[key], value)
                     else:
-                        ret[key] = value
-            return ret
+                        delta[key] = value
+                        previous[key] = old[key]
+            return delta, previous
 
         with Atomizer(rs):
             event = unwrap(self.get_events(rs, (data['id'],)))
-            code = 1
             all_current_data = self.partial_export_event(rs, data['id'])
             total_delta = {}
+            total_previous = {}
             rdelta = {}
+            rprevious = {}
             data_regs = data.get('registrations', {})
             for registration_id, new_registration in data_regs.items():
                 current = all_current_data['registrations'].get(
@@ -2690,8 +2699,10 @@ class EventBackend(AbstractBackend):
                 if registration_id > 0 and current is None:
                     # registration was deleted online in the meantime
                     rdelta[registration_id] = None
+                    rprevious[registration_id] = None
                 elif new_registration is None:
                     rdelta[registration_id] = None
+                    rprevious[registration_id] = current
                     if not dryrun:
                         self.delete_registration(
                             rs, registration_id, ("registration_parts",
@@ -2699,47 +2710,59 @@ class EventBackend(AbstractBackend):
                                                   "course_choices"))
                 elif registration_id < 0:
                     rdelta[registration_id] = new_registration
+                    rprevious[registration_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_registration)
                         new['event_id'] = data['id']
                         self.create_registration(rs, new)
                 else:
-                    delta = dict_diff(current, new_registration)
+                    delta, previous = dict_diff(current, new_registration)
                     if delta:
                         rdelta[registration_id] = delta
+                        rprevious[registration_id] = previous
                         if not dryrun:
-                            delta['id'] = registration_id
-                            self.set_registration(rs, delta)
+                            todo = copy.deepcopy(delta)
+                            todo['id'] = registration_id
+                            self.set_registration(rs, todo)
             if rdelta:
                 total_delta['registrations'] = rdelta
+                total_previous['registrations'] = rprevious
             ldelta = {}
+            lprevious = {}
             for lodgement_id, new_lodgement in data.get('lodgements',
                                                         {}).items():
                 current = all_current_data['lodgements'].get(lodgement_id)
                 if lodgement_id > 0 and current is None:
                     # lodgement was deleted online in the meantime
                     ldelta[lodgement_id] = None
+                    lprevious[lodgement_id] = None
                 elif new_lodgement is None:
                     ldelta[lodgement_id] = None
+                    lprevious[lodgement_id] = current
                     if not dryrun:
                         self.delete_lodgement(
                             rs, lodgement_id, ("inhabitants",))
                 elif lodgement_id < 0:
-                    rdelta[lodgement_id] = new_lodgement
+                    ldelta[lodgement_id] = new_lodgement
+                    lprevious[lodgement_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_lodgement)
                         new['event_id'] = data['id']
                         self.create_lodgement(rs, new)
                 else:
-                    delta = dict_diff(current, new_lodgement)
+                    delta, previous = dict_diff(current, new_lodgement)
                     if delta:
                         ldelta[lodgement_id] = delta
+                        lprevious[lodgement_id] = previous
                         if not dryrun:
-                            delta['id'] = lodgement_id
-                            self.set_lodgement(rs, delta)
+                            todo = copy.deepcopy(delta)
+                            todo['id'] = lodgement_id
+                            self.set_lodgement(rs, todo)
             if ldelta:
                 total_delta['lodgements'] = ldelta
+                total_previous['lodgements'] = lprevious
             cdelta = {}
+            cprevious = {}
             check_seg = lambda track_id, delta, original: (
                  (track_id in delta and delta[track_id] is not None)
                  or (track_id not in delta and track_id in original))
@@ -2748,15 +2771,18 @@ class EventBackend(AbstractBackend):
                 if course_id > 0 and current is None:
                     # course was deleted online in the meantime
                     cdelta[course_id] = None
+                    cprevious[course_id] = None
                 elif new_course is None:
                     cdelta[course_id] = None
+                    cprevious[course_id] = current
                     if not dryrun:
                         # this will fail to delete a course with attendees
                         self.delete_course(
                             rs, course_id, ("instructors", "course_choices",
                                             "course_segments"))
                 elif course_id < 0:
-                    rdelta[course_id] = new_course
+                    cdelta[course_id] = new_course
+                    cprevious[course_id] = None
                     if not dryrun:
                         new = copy.deepcopy(new_course)
                         new['event_id'] = data['id']
@@ -2766,29 +2792,41 @@ class EventBackend(AbstractBackend):
                                                   if segments[key]]
                         self.create_course(rs, new)
                 else:
-                    delta = dict_diff(current, new_course)
+                    delta, previous = dict_diff(current, new_course)
                     if delta:
                         cdelta[course_id] = delta
+                        cprevious[course_id] = previous
                         if not dryrun:
-                            segments = delta.pop('segments', None)
+                            todo = copy.deepcopy(delta)
+                            segments = todo.pop('segments', None)
                             if segments:
-                                internal = unwrap(self.get_courses(
-                                    rs, (course_id,)))
-                                orig_seg = internal['segments']
+                                orig_seg = current['segments']
                                 new_segments = [
                                     x for x in event['tracks']
                                     if check_seg(x, segments, orig_seg)]
-                                delta['segments'] = new_segments
-                                orig_active = internal['active_segments']
+                                todo['segments'] = new_segments
+                                orig_active = [
+                                    s for s, a in current['segments'].items()
+                                    if a]
                                 new_active = [
                                     x for x in event['tracks']
                                     if segments.get(x, x in orig_active)]
-                                delta['active_segments'] = new_active
-                            delta['id'] = course_id
-                            self.set_course(rs, delta)
+                                todo['active_segments'] = new_active
+                            todo['id'] = course_id
+                            self.set_course(rs, todo)
             if cdelta:
                 total_delta['courses'] = cdelta
+                total_previous['courses'] = cprevious
+
+            m = hashlib.sha512()
+            m.update(json_serialize(total_previous, sort_keys=True).encode(
+                'utf-8'))
+            m.update(json_serialize(total_delta, sort_keys=True).encode(
+                'utf-8'))
+            result = m.hexdigest()
+            if target is not None and result != target:
+                raise PartialImportError("The delta changed.")
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'])
-            return code, total_delta
+            return result, total_delta
