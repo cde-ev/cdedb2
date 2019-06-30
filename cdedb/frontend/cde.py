@@ -706,8 +706,10 @@ class CdEFrontend(AbstractUserFrontend):
         :type statement: str or None
         :type statement_file: file or None
         """
+
+        # The statements from BFS are encoded in latin-1
         statement_file = check(rs, "csvfile_or_None", statement_file,
-                               "statement_file")
+                               "statement_file", encoding="latin-1")
         if rs.errors:
             return self.parse_statement_form(rs)
 
@@ -742,7 +744,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         for i, line in enumerate(reversed(list(reader))):
             if not len(line) == 23:
-                p = ("statement",
+                p = (i, "statement",
                      ValueError(n_("Line %(lineno)s does not have "
                                    "the correct number of "
                                    "columns."),
@@ -757,7 +759,7 @@ class CdEFrontend(AbstractUserFrontend):
             t.match_member(rs, self.coreproxy.get_persona)
             t.match_event(event_names)
 
-            problems.extend(t.problems)
+            problems.extend((t.t_id, key, p) for key, p in t.problems)
 
             transactions.append(t)
             if (t.type in {TransactionType.EventFee}
@@ -926,7 +928,7 @@ class CdEFrontend(AbstractUserFrontend):
                 problems.append(('persona_id',
                                  ValueError(
                                      n_("No Member with ID %(p_id)s found."),
-                                     persona_id)))
+                                     {'p_id': persona_id})))
             else:
                 if persona['is_archived']:
                     problems.append(('persona_id',

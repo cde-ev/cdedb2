@@ -1293,7 +1293,7 @@ def _input_file(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _csvfile(val, argname=None, *, _convert=True):
+def _csvfile(val, argname=None, *, encoding="utf-8", _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1308,7 +1308,7 @@ def _csvfile(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError(n_("Only text/csv allowed."))))
     if errs:
         return None, errs
-    val = val.decode().strip()
+    val = val.decode(encoding).strip()
     return val, errs
 
 
