@@ -12,6 +12,8 @@
                     icon="triangle-right", active=(sidenav_active=='core_index')) }}
             {{ util.href(cdedblink("core/mydata"), gettext("My Data"), aclass="list-group-item",
                     icon="user", active=(sidenav_active=='core_mydata')) }}
+            {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
+                    icon="wrench", active=(sidenav_active=='core_admins')) }}
         </div>
         {% if is_admin or "event_admin" in user.roles or "ml_admin" in user.roles %}
             <div class="list-group tear-down">

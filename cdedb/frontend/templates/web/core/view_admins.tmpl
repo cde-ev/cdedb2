@@ -1,0 +1,32 @@
+{% set sidenav_active = "core_admins" %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans -%}
+        Admin Overview
+    {%- endtrans %}
+{% endblock %}
+{% block content %}
+    <p>
+        {% trans -%}
+        	On this page you can see all admins who have access to your data.
+        {%- endtrans %}
+    </p>
+
+    {% set titles = {"persona": gettext("Super-Admins"),
+                      "core": gettext("Core-Admins"),
+                      "cde": gettext("CdE-Admins"),
+                      "event": gettext("Event-Admins"),
+                      "assembly": gettext("Assembly-Admins"),
+                      "ml": gettext("Mailinglist-Admins")} %}
+    {% for realm, adminlist in admins.items() %}
+        {% if realm in user.roles %}
+            <h3>{{ titles[realm] }}</h3>
+            <ul>
+                {% for admin in adminlist %}
+                    <li>{{ util.persona_anchor(personas[admin]) }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endfor %}
+{% endblock %}

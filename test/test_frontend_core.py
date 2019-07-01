@@ -536,10 +536,10 @@ class TestCoreFrontend(FrontendTest):
             new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
         self.assertEqual(False, f['is_admin'].checked)
-        self.assertEqual(False, f['is_core_admin'].checked)
-        self.assertEqual(False, f['is_cde_admin'].checked)
-        f['is_core_admin'].checked = True
-        f['is_cde_admin'].checked = True
+        self.assertEqual(False, f['is_event_admin'].checked)
+        self.assertEqual(False, f['is_assembly_admin'].checked)
+        f['is_event_admin'].checked = True
+        f['is_assembly_admin'].checked = True
         self.submit(f)
         self.logout()
         # Confirm privilege change.
@@ -554,8 +554,8 @@ class TestCoreFrontend(FrontendTest):
             new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
         self.assertEqual(False, f['is_admin'].checked)
-        self.assertEqual(True, f['is_core_admin'].checked)
-        self.assertEqual(True, f['is_cde_admin'].checked)
+        self.assertEqual(True, f['is_event_admin'].checked)
+        self.assertEqual(True, f['is_assembly_admin'].checked)
 
     def test_archival_admin_requirement(self):
         admin1 = USER_DICT["anton"]
@@ -793,6 +793,24 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn('<a class="btn btn-xs btn-warning" href="http://www.cde-ev.de">',
                       self.response.text)
 
+    def test_admin_overview(self):
+        # Makes Berta Event + CdE Admin
+        self.test_privilege_change()
+        self.traverse({"href": "/core/admins"})
+        self.assertTitle("Administratorenübersicht")
+        self.assertPresence(
+            "Super-Admins Anton Armin A. Administrator Martin Meister")
+        self.assertPresence(
+            "CdE-Admins Anton Armin A. Administrator Bertålotta Beispiel")
+        self.assertPresence(
+            "Veranstaltungsadmins Anton Armin A. Administrator "
+            "Ferdinand F. FindusBertålotta Beispiel")
+        self.logout()
+        self.login(USER_DICT["janis"])
+        self.traverse({"href": "/core/admins"})
+        self.assertTitle("Administratorenübersicht")
+        self.assertPresence("Anton Armin A. Administrator")
+        self.assertNonPresence("Bertålotta Beispiel")
 
     @as_users("anton")
     def test_trivial_promotion(self, user):

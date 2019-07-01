@@ -976,6 +976,40 @@ class CoreBackend(AbstractBackend):
             ret = None
         return ret
 
+    @access("persona")
+    def list_admins(self, rs, realm):
+        """List all personas with admin privilidges in a given realm.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type realm: str
+        :rtype: [int]
+        """
+        realm = affirm("str", realm)
+
+        query = "SELECT id from core.personas WHERE {constraint}"
+
+        constraint = None
+        if realm == "admin":
+            constraint = "is_admin = TRUE"
+        elif realm == "core":
+            constraint = "is_core_admin = TRUE"
+        elif realm == "cde":
+            constraint = "is_cde_admin = TRUE"
+        elif realm == "event":
+            constraint = "is_event_admin = TRUE"
+        elif realm == "ml":
+            constraint = "is_ml_admin = TRUE"
+        elif realm == "assembly":
+            constraint = "is_assembly_admin = TRUE"
+
+        if constraint is None:
+            raise ValueError(n_("Must provide realm."))
+
+        query = query.format(constraint=constraint)
+        result = self.query_all(rs, query, tuple())
+
+        return [e["id"] for e in result]
+
     @access("core_admin", "cde_admin")
     def change_persona_balance(self, rs, persona_id, balance, log_code,
                                change_note=None):

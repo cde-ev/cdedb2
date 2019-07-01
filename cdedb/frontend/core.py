@@ -978,6 +978,28 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
+    @access("persona")
+    def view_admins(self, rs):
+        """Render list of all admins of the users realms."""
+
+        admins = {
+            # Superadmins
+            "persona": self.coreproxy.list_admins(rs, "admin"),
+            "core": self.coreproxy.list_admins(rs, "admin"),
+        }
+
+        for realm in ("cde", "event", "ml", "assembly"):
+            if realm in rs.user.roles:
+                admins[realm] = self.coreproxy.list_admins(rs, realm)
+
+        persona_ids = set()
+        for adminlist in admins.values():
+            persona_ids |= set(adminlist)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        return self.render(
+            rs, "view_admins", {"admins": admins, 'personas': personas})
+
     @access("admin")
     def change_privileges_form(self, rs, persona_id):
         """Render form."""
