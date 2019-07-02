@@ -21,9 +21,10 @@ from cdedb.common import (
     n_, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles, User,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
-    privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
-    merge_dicts, PERSONA_DEFAULTS, ArchiveError, extract_realms,
-    implied_realms, encode_parameter, decode_parameter)
+    PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
+    PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
+    ArchiveError, extract_realms, implied_realms, encode_parameter,
+    decode_parameter)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -797,19 +798,183 @@ class CoreBackend(AbstractBackend):
             allow_specials=("foto",))
 
     @access("admin")
-    def change_admin_bits(self, rs, data):
-        """Special modification function for privileges.
+    def initialize_privilege_change(self, rs, data):
+        """Initialize a change to a users admin bits.
+
+        This has to be approved by another admin.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
         """
-        data = affirm("persona", data)
-        return self.set_persona(
-            rs, data, may_wait=False,
-            change_note="Admin-Privilegien geändert.",
-            allow_specials=("admins",))
+        data['submitted_by'] = rs.user.persona_id
+        data['status'] = const.PrivilegeChangeStati.pending
+        data = affirm("privilege_change", data)
+
+        if "new_is_admin" in data and data['persona_id'] == rs.user.persona_id:
+            raise PrivilegeError(n_("Cannot modify own superadmin privileges."))
+        if self.get_pending_privilege_change(rs, data['persona_id']):
+            raise ValueError(n_("Pending privilege change."))
+
+        self.core_log(
+            rs, const.CoreLogCodes.privilege_change_pending, data['persona_id'],
+            additional_info="Änderung der Admin-Privilegien angestoßen.")
+
+        return self.sql_insert(rs, "core.privilege_changes", data)
+
+    @access("admin")
+    def finalize_privilege_change(self, rs, case_id, case_status):
+        """Finalize a pending change to a users admin bits.
+
+        This has to be done by a different admin.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type case_id: int
+        :type case_status: int
+        :rtype: int
+        :returns: default return code
+        """
+        case_id = affirm("id", case_id)
+        case_status = affirm("enum_privilegechangestati", case_status)
+
+        case = self.get_privilege_change(rs, case_id)
+        if case['status'] != const.PrivilegeChangeStati.pending:
+            raise ValueError(n_("Invalid privilege change state: %(status)s."),
+                             {"status": case["status"]})
+
+        data = {
+            "id": case_id,
+            "ftime": now(),
+            "reviewer": rs.user.persona_id,
+            "status": case_status,
+        }
+        with Atomizer(rs):
+            if case_status == const.PrivilegeChangeStati.approved:
+                if (case["new_is_admin"] is not None
+                    and case['persona_id'] == rs.user.persona_id):
+                    raise PrivilegeError(
+                        n_("Cannot modify own superadmin privileges."))
+                if case['submitted_by'] == rs.user.persona_id:
+                    raise PrivilegeError(
+                        n_("Only a different admin than the submitter "
+                           "may approve a privilege change."))
+
+                ret = self.sql_update(rs, "core.privilege_changes", data)
+
+                self.core_log(
+                    rs, const.CoreLogCodes.privilege_change_approved,
+                    persona_id=case['persona_id'],
+                    additional_info="Änderung der Admin-Privilegien bestätigt.")
+                data = {
+                    "id": case["persona_id"]
+                }
+                if case["new_is_admin"] is not None:
+                    data["is_admin"] = case["new_is_admin"]
+                if case["new_is_core_admin"] is not None:
+                    data["is_core_admin"] = case["new_is_core_admin"]
+                if case["new_is_cde_admin"] is not None:
+                    data["is_cde_admin"] = case["new_is_cde_admin"]
+                if case["new_is_event_admin"] is not None:
+                    data["is_event_admin"] = case["new_is_event_admin"]
+                if case["new_is_ml_admin"] is not None:
+                    data["is_ml_admin"] = case["new_is_ml_admin"]
+                if case["new_is_assembly_admin"] is not None:
+                    data["is_assembly_admin"] = case["new_is_assembly_admin"]
+
+                data = affirm("persona", data)
+                ret *= self.set_persona(
+                    rs, data, may_wait=False,
+                    change_note="Admin-Privilegien geändert.",
+                    allow_specials=("admins",))
+
+                # Mark case as successful
+                data = {
+                    "id": case_id,
+                    "status": const.PrivilegeChangeStati.successful,
+                }
+                ret *= self.sql_update(rs, "core.privilege_changes", data)
+
+            elif case_status == const.PrivilegeChangeStati.rejected:
+                ret = self.sql_update(rs, "core.privilege_changes", data)
+
+                self.core_log(
+                    rs, const.CoreLogCodes.privilege_change_rejected,
+                    persona_id=case['persona_id'],
+                    additional_info="Änderung der Admin-Privilegien verworfen.")
+            else:
+                raise ValueError(n_("Invalid new privilege change status."))
+
+        return ret
+
+    @access("admin")
+    def list_privilege_changes(self, rs, stati=None):
+        """List privilge changes.
+
+        Can be restricted to certain stati.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type stati: [int] or None
+        :rtype: {int: {str: object}}
+        :returns: dict mapping case ids to dicts containing information about
+            the change
+        """
+        stati = stati or set()
+        stati = affirm_set("enum_privilegechangestati", stati)
+
+        query = glue("SELECT id, persona_id, status",
+                     "FROM core.privilege_changes")
+
+        constraints = []
+        params = []
+        if stati:
+            constraints.append("status = ANY(%s)")
+            params.append(stati)
+
+        if constraints:
+            query = glue(query,
+                         "WHERE",
+                         " AND ".join(constraints))
+
+        data = self.query_all(rs, query, params)
+        return {e["id"]: e for e in data}
+
+    @access("admin")
+    @singularize("get_privilege_change")
+    def get_privilege_changes(self, rs, ids):
+        """Retrieve datasets for priviledge changes.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ids: [int]
+        :rtype: {int: {str: object}}
+        :returns: dict mapping ids to the requested data.
+        """
+        ids = affirm_set("id", ids)
+        data = self.sql_select(
+            rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, ids)
+        return {e["id"]: e for e in data}
+
+    @access("admin")
+    def get_pending_privilege_change(self, rs, persona_id):
+        """Get a pending privilege change for a persona if any.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :rtype: int or None
+        :returns: ID of pending privilege change or None if none exists.
+        """
+        persona_id = affirm("id", persona_id)
+
+        query = ("SELECT id FROM core.privilege_changes "
+                 "WHERE persona_id = %s AND status = %s")
+        params = (persona_id, const.PrivilegeChangeStati.pending)
+
+        data = self.query_one(rs, query, params)
+        if data:
+            ret = data["id"]
+        else:
+            ret = None
+        return ret
 
     @access("core_admin", "cde_admin")
     def change_persona_balance(self, rs, persona_id, balance, log_code,

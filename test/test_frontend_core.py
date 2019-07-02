@@ -489,32 +489,51 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('loginform', self.response.forms)
         self.assertLogin(new_berta['display_name'])
 
-    @as_users("anton")
-    def test_any_admin_query(self, user):
-        self.admin_view_profile('garcia')
-        self.traverse({'href': '/persona/7/privileges'})
+    def test_any_admin_query(self):
+        admin1 = USER_DICT["anton"]
+        admin2 = USER_DICT["martin"]
+        new_admin1 = USER_DICT["garcia"]
+        new_admin2 = USER_DICT["berta"]
+        # Grant new admin privileges.
+        self.login(admin1)
+        self.get('/core/persona/{}/privileges'.format(new_admin1["id"]))
         f = self.response.forms['privilegechangeform']
         f['is_ml_admin'].checked = True
         self.submit(f)
-        self.admin_view_profile('berta')
-        self.traverse({'href': '/persona/2/privileges'})
+        self.get('/core/persona/{}/privileges'.format(new_admin2["id"]))
         f = self.response.forms['privilegechangeform']
         f['is_assembly_admin'].checked = True
         self.submit(f)
+        self.logout()
+        # Confirm privilege changes.
+        self.login(admin2)
+        self.get('/core/privileges/list')
+        self.traverse({"description": new_admin1["given_names"]})
+        f = self.response.forms["ackprivilegechangeform"]
+        self.submit(f)
+        self.traverse({"description": new_admin2["given_names"]})
+        f = self.response.forms["ackprivilegechangeform"]
+        self.submit(f)
+        # Check results of Any Admin query.
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
-        self.assertPresence("Ergebnis [4]")
+        self.assertPresence("Ergebnis [5]")
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Beispiel")
         self.assertPresence("Findus")
         self.assertPresence("Generalis")
+        self.assertPresence("Meister")
 
-    @as_users("anton")
-    def test_privilege_change(self,  user):
-        self.admin_view_profile('berta')
-        self.traverse({'href': '/persona/2/privileges'})
-        self.assertTitle("Privilegien ändern für Bertålotta Beispiel")
+    def test_privilege_change(self):
+        admin1 = USER_DICT["anton"]
+        admin2 = USER_DICT["martin"]
+        new_admin = USER_DICT["berta"]
+        # Grant new admin privileges.
+        self.login(admin1)
+        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
+        self.assertTitle("Privilegien ändern für {} {}".format(
+            new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
         self.assertEqual(False, f['is_admin'].checked)
         self.assertEqual(False, f['is_core_admin'].checked)
@@ -522,22 +541,43 @@ class TestCoreFrontend(FrontendTest):
         f['is_core_admin'].checked = True
         f['is_cde_admin'].checked = True
         self.submit(f)
-        self.traverse({'href': '/persona/2/privileges'})
-        self.assertTitle("Privilegien ändern für Bertålotta Beispiel")
+        self.logout()
+        # Confirm privilege change.
+        self.login(admin2)
+        self.get("/core/privileges/list")
+        self.traverse({"description": new_admin["given_names"]})
+        f = self.response.forms["ackprivilegechangeform"]
+        self.submit(f)
+        # Check success.
+        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
+        self.assertTitle("Privilegien ändern für {} {}".format(
+            new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
         self.assertEqual(False, f['is_admin'].checked)
         self.assertEqual(True, f['is_core_admin'].checked)
         self.assertEqual(True, f['is_cde_admin'].checked)
 
     def test_archival_admin_requirement(self):
-        self.login(USER_DICT["anton"])
-        self.get("/core/persona/2/privileges")
+        admin1 = USER_DICT["anton"]
+        admin2 = USER_DICT["martin"]
+        new_admin = USER_DICT["berta"]
+        # First grant admin privileges to new admin.
+        self.login(admin1)
+        self.get("/core/persona/{}/privileges".format(new_admin["id"]))
         f = self.response.forms['privilegechangeform']
         f['is_core_admin'].checked = True
         f['is_cde_admin'].checked = True
         self.submit(f)
         self.logout()
-        self.login(USER_DICT["berta"])
+        # This requires confirmation.
+        self.login(admin2)
+        self.get("/core/privileges/list")
+        self.traverse({"description": "{}".format(new_admin["given_names"])})
+        f = self.response.forms["ackprivilegechangeform"]
+        self.submit(f)
+        self.logout()
+        # Now login and test archival.
+        self.login(new_admin)
         self.admin_view_profile("daniel")
         f = self.response.forms["archivepersonaform"]
         f["note"] = "Archived for testing."

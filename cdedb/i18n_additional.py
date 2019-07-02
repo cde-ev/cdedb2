@@ -50,6 +50,9 @@ I18N_STRINGS = (
     n_("CoreLogCodes.genesis_request"),
     n_("CoreLogCodes.genesis_approved"),
     n_("CoreLogCodes.genesis_rejected"),
+    n_("CoreLogCodes.privilege_change_pending"),
+    n_("CoreLogCodes.privilege_change_approved"),
+    n_("CoreLogCodes.privilege_change_rejected"),
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),
@@ -166,6 +169,11 @@ I18N_STRINGS = (
     n_("PastEventLogCodes.institution_changed"),
     n_("PastEventLogCodes.institution_deleted"),
 
+    n_("PrivilegeChangeStati.pending"),
+    n_("PrivilegeChangeStati.approved"),
+    n_("PrivilegeChangeStati.successful"),
+    n_("PrivilegeChangeStati.rejected"),
+
     n_("RegistrationPartStati.not_applied"),
     n_("RegistrationPartStati.applied"),
     n_("RegistrationPartStati.participant"),
@@ -215,6 +223,20 @@ I18N_STRINGS = (
     #
     n_("day is out of range for month"),
     n_("[<class 'decimal.ConversionSyntax'>]"),
+
+    # admin bits and privilege changes
+    n_("is_admin"),
+    n_("is_core_admin"),
+    n_("is_cde_admin"),
+    n_("is_event_admin"),
+    n_("is_ml_admin"),
+    n_("is_assembly_admin"),
+    n_("new_is_admin"),
+    n_("new_is_core_admin"),
+    n_("new_is_cde_admin"),
+    n_("new_is_event_admin"),
+    n_("new_is_ml_admin"),
+    n_("new_is_assembly_admin"),
 
     # zxcvbn feedback
     n_('Use a few words, avoid common phrases.'),

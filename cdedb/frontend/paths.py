@@ -147,6 +147,14 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="genesis_modify"),
                 rule("/decide", methods=_POST,
                      endpoint="genesis_decide"),)),
+            sub('/privileges', (
+                rule("/list", methods=_GET,
+                     endpoint="list_privilege_changes"),)),
+            sub('/privileges/<int:case_id>', (
+                rule("/decide", methods=_GET,
+                     endpoint="show_privilege_change"),
+                rule("/decide", methods=_POST,
+                     endpoint="decide_privilege_change"),)),
         )),)),
     werkzeug.routing.EndpointPrefix('cde/', (
         sub('/cde', (

@@ -984,6 +984,13 @@ class CoreFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
+
+        case_id = self.coreproxy.get_pending_privilege_change(rs, persona_id)
+        if case_id:
+            rs.notify("error", n_("Resolve pending privilege change first."))
+            return self.redirect(
+                rs, "core/show_privilege_change", {"case_id": case_id})
+
         merge_dicts(rs.values, rs.ambience['persona'])
         return self.render(rs, "change_privileges")
 
@@ -991,25 +998,124 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(
         ("is_admin", "bool"), ("is_core_admin", "bool"),
         ("is_cde_admin", "bool"), ("is_event_admin", "bool"),
-        ("is_ml_admin", "bool"), ("is_assembly_admin", "bool"))
+        ("is_ml_admin", "bool"), ("is_assembly_admin", "bool"),
+        ("notes", "str_or_None"))
     def change_privileges(self, rs, persona_id, is_admin, is_core_admin,
                           is_cde_admin, is_event_admin, is_ml_admin,
-                          is_assembly_admin):
+                          is_assembly_admin, notes):
         """Grant or revoke admin bits."""
         if rs.errors:
             return self.change_privileges_form(rs, persona_id)
+
+        case_id = self.coreproxy.get_pending_privilege_change(rs, persona_id)
+        if case_id:
+            rs.notify("error", n_("Resolve pending privilege change first."))
+            return self.redirect(
+                rs, "core/show_privilege_change", {"case_id": case_id})
+
+        persona = self.coreproxy.get_persona(rs, persona_id)
+
         data = {
-            "id": persona_id,
-            "is_admin": is_admin,
-            "is_core_admin": is_core_admin,
-            "is_cde_admin": is_cde_admin,
-            "is_event_admin": is_event_admin,
-            "is_ml_admin": is_ml_admin,
-            "is_assembly_admin": is_assembly_admin,
+            "persona_id": persona_id,
+            "notes": notes,
         }
-        code = self.coreproxy.change_admin_bits(rs, data)
-        self.notify_return_code(rs, code)
+
+        if is_admin != persona["is_admin"]:
+            data["new_is_admin"] = is_admin
+        if is_core_admin != persona["is_core_admin"]:
+            data["new_is_core_admin"] = is_core_admin
+        if is_cde_admin != persona["is_cde_admin"]:
+            data["new_is_cde_admin"] = is_cde_admin
+        if is_event_admin != persona["is_event_admin"]:
+            data["new_is_event_admin"] = is_event_admin
+        if is_ml_admin != persona["is_ml_admin"]:
+            data["new_is_ml_admin"] = is_ml_admin
+        if is_assembly_admin != persona["is_assembly_admin"]:
+            data["new_is_assembly_admin"] = is_assembly_admin
+
+        if "new_is_admin" in data and data["persona_id"] == rs.user.persona_id:
+            rs.notify("error", n_("Cannot modify own superadmin privileges."))
+            return self.redirect_show_user(rs, persona_id)
+
+        new_admin_keys = {"new_is_admin", "new_is_core_admin",
+                          "new_id_cde_admin", "new_is_event_admin",
+                          "new_is_ml_admin", "new_is_assembly_admin"}
+        if new_admin_keys & data.keys():
+            code = self.coreproxy.initialize_privilege_change(rs, data)
+            self.notify_return_code(
+                rs, code, success=n_("Privilege change waiting for approval by "
+                                     "another Super-Admin."))
+        else:
+            rs.notify("info", n_("No changes were made."))
         return self.redirect_show_user(rs, persona_id)
+
+    @access("admin")
+    def list_privilege_changes(self, rs):
+        """Show list of privilege changes pending review."""
+        case_ids = self.coreproxy.list_privilege_changes(
+            rs, stati=(const.PrivilegeChangeStati.pending,))
+
+        cases = self.coreproxy.get_privilege_changes(rs, case_ids)
+        cases = {e["persona_id"]: e for e in cases.values()}
+
+        personas = self.coreproxy.get_personas(rs, cases.keys())
+
+        cases = collections.OrderedDict(
+            sorted(cases.items(), key=lambda item: name_key(personas[item[0]])))
+
+        return self.render(rs, "list_privilege_changes",
+                           {"cases": cases, "personas": personas})
+
+    @access("admin")
+    def show_privilege_change(self, rs, case_id):
+        """Show detailed infromation about pending privilege change."""
+        case = self.coreproxy.get_privilege_change(rs, case_id)
+        if case["status"] != const.PrivilegeChangeStati.pending:
+            rs.notify("error", n_("Privilege change not pending."))
+            return self.redirect(rs, "core/list_privilege_changes")
+
+        if (case["new_is_admin"] is not None
+            and case["persona_id"] == rs.user.persona_id):
+            rs.notify(
+                "info", n_("This privilege change is affecting your Super-Admin"
+                           " privileges, so it has to be approved by another "
+                           "Super-Admin."))
+        if case["submitted_by"] == rs.user.persona_id:
+            rs.notify(
+                "info", n_("This privilege change was submitted by you, so it "
+                           "has to be approved by another Super-Admin."))
+
+        persona = self.coreproxy.get_persona(rs, case["persona_id"])
+        submitter = self.coreproxy.get_persona(rs, case["submitted_by"])
+
+        return self.render(rs, "show_privilege_change",
+                           {"case": case, "persona": persona,
+                            "submitter": submitter})
+
+    @access("admin", modi={"POST"})
+    @REQUESTdata(("ack", "bool"))
+    def decide_privilege_change(self, rs, case_id, ack):
+        """Approve or reject a privilege change."""
+        case = self.coreproxy.get_privilege_change(rs, case_id)
+        if case["status"] != const.PrivilegeChangeStati.pending:
+            rs.notify("error", n_("Privilege change not pending."))
+            return self.redirect(rs, "core/list_privilege_changes")
+        if not ack:
+            case_status = const.PrivilegeChangeStati.rejected
+        else:
+            case_status = const.PrivilegeChangeStati.approved
+            if (case["new_is_admin"] is not None
+                and case['persona_id'] == rs.user.persona_id):
+                raise PrivilegeError(
+                    n_("Cannot modify own superadmin privileges."))
+            if rs.user.persona_id == case["submitted_by"]:
+                raise PrivilegeError(
+                    n_("Only a different admin than the submitter "
+                       "may approve a privilege change."))
+        code = self.coreproxy.finalize_privilege_change(
+            rs, case_id, case_status)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "core/list_privilege_changes")
 
     @access("core_admin")
     @REQUESTdata(("target_realm", "realm_or_None"))
@@ -1103,8 +1209,8 @@ class CoreFrontend(AbstractFrontend):
                     rs, lastschrift_ids=active_permits,
                     stati=(const.LastschriftTransactionStati.issued,))
                 if transaction_ids:
-                    subject = glue("Einzugsermächtigung zu ausstehender"
-                                   "Lastschrift widerrufen.")
+                    subject = ("Einzugsermächtigung zu ausstehender"
+                               "Lastschrift widerrufen.")
                     self.do_mail(rs, "pending_lastschrift_revoked",
                                  {'To': (self.conf.MANAGEMENT_ADDRESS,),
                                   'Subject': subject},

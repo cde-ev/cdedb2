@@ -7,7 +7,7 @@ import decimal
 import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError)
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now)
 
 PERSONA_TEMPLATE = {
     'username': "zelda@example.cde",
@@ -183,7 +183,7 @@ class TestCoreBackend(BackendTest):
                 'gender': None,
                 'generation': 1,
                 'given_names': 'Zelda',
-                'id': 13,
+                'id': new_id,
                 'interests': None,
                 'is_active': True,
                 'is_admin': False,
@@ -633,11 +633,87 @@ class TestCoreBackend(BackendTest):
         data = self.core.get_total_persona(self.key, 8)
         self.assertEqual("N.", data['given_names'])
 
+    def test_privilege_change(self):
+        # This is somewhat hacky for now, because we need a second superadmin
+        # for this to work with the new pending PrivilegeChange system
+        admin1 = USER_DICT["anton"]
+        admin2 = USER_DICT["martin"]
+        new_admin = USER_DICT["berta"]
+
+        self.login(admin1)
+        data = {
+            "persona_id": new_admin["id"],
+            "notes": "Granting admin privileges for testing.",
+            "new_is_event_admin": True,
+            "new_is_assembly_admin": True,
+        }
+
+        case_id = self.core.initialize_privilege_change(self.key, data)
+        self.assertLess(0, case_id)
+
+        persona = self.core.get_persona(self.key, new_admin["id"])
+        self.assertEqual(False, persona["is_event_admin"])
+        self.assertEqual(False, persona["is_assembly_admin"])
+
+        self.login(admin2)
+        self.core.finalize_privilege_change(
+            self.key, case_id, const.PrivilegeChangeStati.approved)
+
+        persona = self.core.get_persona(self.key, new_admin["id"])
+        self.assertEqual(True, persona["is_event_admin"])
+        self.assertEqual(True, persona["is_assembly_admin"])
+
+        core_log_expectation = (
+            # Modifying the admin bits.
+            {
+                'additional_info': "Änderung eingetragen.",
+                'code': const.CoreLogCodes.persona_change.value,
+                'ctime': nearly_now(),
+                'persona_id': new_admin["id"],
+                'submitted_by': admin2["id"],
+            },
+            # Finalizing the privilege process.
+            {
+                'additional_info': "Änderung der Admin-Privilegien bestätigt.",
+                'code': const.CoreLogCodes.privilege_change_approved.value,
+                'ctime': nearly_now(),
+                'persona_id': new_admin["id"],
+                'submitted_by': admin2["id"],
+            },
+            # Starting the privilege change process.
+            {
+                'additional_info': "Änderung der Admin-Privilegien angestoßen.",
+                'code': const.CoreLogCodes.privilege_change_pending.value,
+                'ctime': nearly_now(),
+                'persona_id': new_admin["id"],
+                'submitted_by': admin1["id"],
+            },
+        )
+        result = self.core.retrieve_log(self.key)
+        self.assertEqual(core_log_expectation, result)
+
+        changelog_expectation = (
+            # Committing the changed admin bits.
+            {
+                'change_note': 'Admin-Privilegien geändert.',
+                'change_status': const.MemberChangeStati.committed.value,
+                'ctime': nearly_now(),
+                'generation': 2,
+                'persona_id': new_admin["id"],
+                'reviewed_by': None,
+                'submitted_by': admin2["id"],
+            },
+        )
+        # Set start and stop to avoid selecting the Init. changelog entries.
+        result = self.core.retrieve_changelog_meta(
+            self.key, start=0, stop=1)
+        self.assertEqual(changelog_expectation, result)
+
     @as_users("anton")
     def test_log(self, user):
         ## first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
-        self.core.create_persona(self.key, data)
+        new_id = self.core.create_persona(self.key, data)
         data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
@@ -675,13 +751,20 @@ class TestCoreBackend(BackendTest):
             {'additional_info': None,
              'code': 1,
              'ctime': nearly_now(),
-             'persona_id': 13,
+             'persona_id': new_id,
              'submitted_by': 1})
         self.assertEqual(expectation, self.core.retrieve_log(self.key))
 
     @as_users("anton")
     def test_changelog_meta(self, user):
         expectation = (
+            {'change_note': 'Init.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 13,
+             'reviewed_by': None,
+             'submitted_by': 1},
             {'change_note': 'Init.',
              'change_status': 2,
              'ctime': nearly_now(),

@@ -180,6 +180,34 @@ GRANT SELECT, UPDATE ON core.genesis_cases_id_seq TO cdb_anonymous;
 GRANT UPDATE (case_status) ON core.genesis_cases TO cdb_anonymous;
 GRANT UPDATE, DELETE ON core.genesis_cases TO cdb_admin;
 
+-- this table tracks pending priviledge changes
+CREATE TABLE core.privilege_changes (
+        id                      bigserial PRIMARY KEY,
+        -- creation time
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        -- finalization time
+        ftime                   TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        -- enum
+        -- see cdedb.database.constants.PrivilegeChangeStati
+        status                  integer NOT NULL DEFAULT 0,
+        -- changes to the admin bits. NULL is for no change.
+        new_is_admin            boolean DEFAULT NULL,
+        new_is_core_admin       boolean DEFAULT NULL,
+        new_is_cde_admin        boolean DEFAULT NULL,
+        new_is_event_admin      boolean DEFAULT NULL,
+        new_is_ml_admin         boolean DEFAULT NULL,
+        new_is_assembly_admin   boolean DEFAULT NULL,
+        -- justification supplied by the submitter
+        notes                   varchar,
+        -- persona who approved the change
+        reviewer                integer REFERENCES core.personas(id) DEFAULT NULL
+);
+CREATE INDEX idx_privilege_changes_status ON core.privilege_changes(status);
+GRANT SELECT, INSERT, UPDATE, DELETE ON core.privilege_changes TO cdb_admin;
+GRANT SELECT, UPDATE ON core.privilege_changes_id_seq TO cdb_admin;
+
 -- this table serves as access log, so entries are never deleted
 CREATE TABLE core.sessions (
         id                      bigserial PRIMARY KEY,

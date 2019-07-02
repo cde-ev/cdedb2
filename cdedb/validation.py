@@ -1255,7 +1255,7 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
     if ((not val.get('country') or val.get('country') == "Deutschland")
             and val.get('postal_code')):
         postal_code, e = _german_postal_code(
-            val['postal_code'], 'postal_code',_convert=_convert)
+            val['postal_code'], 'postal_code', _convert=_convert)
         val['postal_code'] = postal_code
         errs.extend(e)
 
@@ -1278,6 +1278,44 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
                 errs.extend(e)
         else:
             errs.append(('realm', ValueError(n_("Invalid target realm."))))
+
+    return val, errs
+
+
+_PRIVILEGE_CHANGE_COMMON_FIELDS = lambda: {
+    'persona_id': _id,
+    'submitted_by': _id,
+    'status': _enum_privilegechangestati,
+    'notes': _str_or_None,
+}
+
+_PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {
+    'new_is_admin': _bool_or_None,
+    'new_is_core_admin': _bool_or_None,
+    'new_is_cde_admin': _bool_or_None,
+    'new_is_event_admin': _bool_or_None,
+    'new_is_ml_admin': _bool_or_None,
+    'new_is_assembly_admin': _bool_or_None,
+}
+
+
+@_addvalidator
+def _privilege_change(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)]
+    """
+    argname = argname or "privilege_change"
+
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+
+    val, errs = _examine_dictionary_fields(
+        val, _PRIVILEGE_CHANGE_COMMON_FIELDS(),
+        _PRIVILEGE_CHANGE_OPTIONAL_FIELDS(), _convert=_convert)
 
     return val, errs
 

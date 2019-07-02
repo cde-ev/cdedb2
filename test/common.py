@@ -300,6 +300,15 @@ USER_DICT = {
         'given_names': "Lisa",
         'family_name': "Lost",
     },
+    "martin": {
+        'id': 13,
+        'DB-ID': "DB-13-2",
+        'username': "martin@example.cde",
+        'password': "secret",
+        'display_name': "Martin",
+        'given_names': "Martin",
+        "family_name": "Meister",
+    },
 }
 
 

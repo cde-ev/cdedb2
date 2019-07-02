@@ -106,6 +106,19 @@ class GenesisStati(enum.IntEnum):
 
 
 @enum.unique
+class PrivilegeChangeStati(enum.IntEnum):
+    """Spec for field status of core.privilege_changes."""
+    #: initialized, pending for review
+    pending = 1
+    #: approved by another admin
+    approved = 2
+    #: successfully applied
+    successful = 3
+    #: rejected by another admin
+    rejected = 10
+
+
+@enum.unique
 class SubscriptionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: everybody is subscribed (think CdE-all)
@@ -262,6 +275,9 @@ class CoreLogCodes(enum.IntEnum):
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
+    privilege_change_pending = 30  #:
+    privilege_change_approved = 31  #:
+    privilege_change_rejected = 32  #:
 
 
 @enum.unique

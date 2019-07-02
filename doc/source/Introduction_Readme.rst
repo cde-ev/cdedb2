@@ -48,22 +48,23 @@ Sample Data
 There is a default data set for the development it contains some users
 (according to the table below).
 
-  ======================= ========== ======================================= =========
-   User                    Password   Notes                                   ID
-  ======================= ========== ======================================= =========
-   anton@example.cde       secret     admin with all privileges               DB-1-9
-   berta@example.cde       secret     canonical example member                DB-2-7
-   charly@example.cde      secret     member, but not searchable              DB-3-5
-   daniel@example.cde      secret     former member                           DB-4-3
-   emilia@example.cde      secret     event user                              DB-5-2
-   ferdinand@example.cde   secret     admin in all realms, but not globally   DB-6-X
-   garcia@example.cde      secret     orga of an event                        DB-7-8
-   hades                   secret     archived member                         DB-8-6
-   inga@example.cde        secret     minor member                            DB-9-4
-   janis@example.cde       secret     mailinglist user                        DB-10-8
-   kalif@example.cde       secret     assembly user                           DB-11-6
-   lisa                    secret     member with whacked data                DB-12-4
-  ======================= ========== ======================================= =========
+  ======================= ========== ================================================ =========
+   User                    Password   Notes                                            ID
+  ======================= ========== ================================================ =========
+   anton@example.cde       secret     admin with all privileges                        DB-1-9
+   berta@example.cde       secret     canonical example member                         DB-2-7
+   charly@example.cde      secret     member, but not searchable                       DB-3-5
+   daniel@example.cde      secret     former member                                    DB-4-3
+   emilia@example.cde      secret     event user                                       DB-5-1
+   ferdinand@example.cde   secret     admin in all realms, but not globally            DB-6-X
+   garcia@example.cde      secret     orga of an event                                 DB-7-8
+   hades                   secret     archived member                                  DB-8-6
+   inga@example.cde        secret     minor member                                     DB-9-4
+   janis@example.cde       secret     mailinglist user                                 DB-10-8
+   kalif@example.cde       secret     assembly user                                    DB-11-6
+   lisa                    secret     member with whacked data                         DB-12-4
+   martin@example.cde      secret     second superadmin to confirm privilege changes   DB-13-2
+  ======================= ========== ================================================ =========
 
 Random Thoughts
 ---------------
