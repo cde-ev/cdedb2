@@ -2788,8 +2788,8 @@ msgid "Event locked."
 msgstr "Veranstaltungssperre aktiviert."
 
 #: cdedb/frontend/event.py:2305 cdedb/frontend/event.py:2427
-msgid "No minors may register."
-msgstr "Minderjährige können sich nicht anmelden."
+msgid "No minors may register. Please contact the Orgateam."
+msgstr "Minderjährige können sich nicht anmelden. Kontaktiere bitte das Orgateam."
 
 #: cdedb/frontend/event.py:2364
 msgid "Must select at least one part."
