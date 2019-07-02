@@ -159,7 +159,7 @@ def generate_event_registration_default_queries(event, spec):
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),
-             ("reg.parental_agreement", QueryOperators.empty, None)),
+             ("reg.parental_agreement", QueryOperators.equal, False)),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
         n_("60_query_dokuteam_course_export"): Query(

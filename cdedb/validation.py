@@ -2177,7 +2177,7 @@ _REGISTRATION_COMMON_FIELDS = lambda: {
     'tracks': _mapping,
 }
 _REGISTRATION_OPTIONAL_FIELDS = lambda: {
-    'parental_agreement': _bool_or_None,
+    'parental_agreement': _bool,
     'real_persona_id': _id_or_None,
     'orga_notes': _str_or_None,
     'payment': _date_or_None,

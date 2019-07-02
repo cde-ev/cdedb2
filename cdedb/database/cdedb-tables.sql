@@ -696,8 +696,8 @@ CREATE TABLE event.registrations (
         notes                   varchar,
         orga_notes              varchar DEFAULT NULL,
         payment                 date DEFAULT NULL,
-        -- parental consent for minors (NULL if not (yet) given, e.g. non-minors)
-        parental_agreement      boolean DEFAULT NULL,
+        -- parental consent for minors (defaults to True for non-minors)
+        parental_agreement      boolean NOT NULL DEFAULT False,
         mixed_lodging           boolean NOT NULL,
         checkin                 timestamp WITH TIME ZONE DEFAULT NULL,
         -- consent to information being included in participant list send to all participants.

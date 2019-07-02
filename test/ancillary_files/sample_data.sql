@@ -144,10 +144,10 @@ INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, f
     (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.', '{"contamination": "low"}'::jsonb),
     (4, 1, 'Einzelzelle', 1, 0, NULL, '{"contamination": "high"}'::jsonb);
 INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, payment, parental_agreement, mixed_lodging, checkin, list_consent, fields) VALUES
-    (1, 1, 1, NULL, NULL, NULL, NULL, True, NULL, True, '{"lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
-    (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', NULL, True, NULL, True, '{"brings_balls": true, "transportation": "pedes"}'::jsonb),
-    (3, 7, 1, NULL, NULL, date '2014-03-03', NULL, True, NULL, False, '{"transportation": "car"}'::jsonb),
-    (4, 9, 1, NULL, NULL, date '2014-04-04', NULL, False, NULL, True, '{"brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb);
+    (1, 1, 1, NULL, NULL, NULL, True, True, NULL, True, '{"lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
+    (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', True, True, NULL, True, '{"brings_balls": true, "transportation": "pedes"}'::jsonb),
+    (3, 7, 1, NULL, NULL, date '2014-03-03', True, True, NULL, False, '{"transportation": "car"}'::jsonb),
+    (4, 9, 1, NULL, NULL, date '2014-04-04', False, False, NULL, True, '{"brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb);
 INSERT INTO event.registration_parts (registration_id, part_id, status, lodgement_id, is_reserve) VALUES
     (1, 1, -1, NULL, False),
     (1, 2, 1, NULL, False),

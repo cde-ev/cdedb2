@@ -2426,6 +2426,7 @@ class EventFrontend(AbstractUserFrontend):
         if not minor_form_present and age.is_minor():
             rs.notify("error", n_("No minors may register."))
             return self.redirect(rs, "event/show_event")
+        registration['parental_agreement'] = not age.is_minor()
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
         new_id = self.eventproxy.create_registration(rs, registration)
