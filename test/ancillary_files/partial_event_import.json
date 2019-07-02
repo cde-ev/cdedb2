@@ -110,7 +110,7 @@
             "payment": "2014-03-04",
             "list_consent": false,
             "notes": "Reingelegt",
-            "parental_agreement": null,
+            "parental_agreement": true,
             "tracks": {
                 "3": {
                     "course_id": 1,
@@ -187,7 +187,7 @@
             "list_consent": true,
             "persona_id": 2,
             "notes": null,
-            "parental_agreement": null,
+            "parental_agreement": true,
             "tracks": {
                 "3": {
                     "course_id": null,

@@ -1540,7 +1540,7 @@ etc;anything else""", f['entries_2'].value)
         with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
-        expectation['timestamp'] = result['timestamp'] # nearly_now() won't do
+        expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
@@ -1668,9 +1668,9 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_checkin_concurrent_modification(self, user):
-        """Test the special measures of the 'Edit' button at the Checkin page,
-        that ensure that the checkin state is not overriden by the
-        change_registration form"""
+        # Test the special measures of the 'Edit' button at the Checkin page,
+        # that ensure that the checkin state is not overriden by the
+        # change_registration form
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/checkin'})

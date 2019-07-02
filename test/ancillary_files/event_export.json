@@ -128,7 +128,7 @@
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "payment": "2014-02-02",
             "id": 2,
-            "parental_agreement": false,
+            "parental_agreement": true,
             "mixed_lodging": true,
             "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
             "real_persona_id": null

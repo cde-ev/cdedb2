@@ -291,7 +291,7 @@ class TestEventBackend(BackendTest):
             'mixed_lodging': False,
             'orga_notes': None,
             'notes': None,
-            'parental_agreement': None,
+            'parental_agreement': True,
             'parts': {
                 part_map["Second coming"]: {'lodgement_id': new_lodge_id,
                                             'status': 1
@@ -503,7 +503,7 @@ class TestEventBackend(BackendTest):
             'list_consent': True,
             'mixed_lodging': False,
             'orga_notes': None,
-            'parental_agreement': None,
+            'parental_agreement': True,
             'parts': {
                 1: {'is_reserve': False,
                     'lodgement_id': None,
@@ -1948,7 +1948,7 @@ class TestEventBackend(BackendTest):
             'mixed_lodging': True,
             'notes': None,
             'orga_notes': None,
-            'parental_agreement': None,
+            'parental_agreement': True,
             'payment': None,
             'persona_id': 2000,
             'real_persona_id': 2}
@@ -2058,7 +2058,7 @@ class TestEventBackend(BackendTest):
             'mixed_lodging': True,
             'notes': None,
             'orga_notes': None,
-            'parental_agreement': None,
+            'parental_agreement': True,
             'payment': None,
             'persona_id': 2,
             'real_persona_id': None}
@@ -2604,7 +2604,7 @@ class TestEventBackend(BackendTest):
             'list_consent': True,
             'mixed_lodging': False,
             'orga_notes': None,
-            'parental_agreement': None,
+            'parental_agreement': True,
             'parts': {
                 1: {'lodgement_id': None,
                     'status': 1
