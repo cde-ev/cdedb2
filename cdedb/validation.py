@@ -2359,8 +2359,8 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
-    'capacity': _int,
-    'reserve': _int,
+    'capacity': _non_negative_int,
+    'reserve': _non_negative_int,
     'notes': _str_or_None,
 }
 _LODGEMENT_OPTIONAL_FIELDS = {
@@ -2691,8 +2691,8 @@ def _partial_course(val, argname=None, *, creation=False, _convert=True):
 
 _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
-    'capacity': _int,
-    'reserve': _int,
+    'capacity': _non_negative_int,
+    'reserve': _non_negative_int,
     'notes': _str_or_None,
 }
 _PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
