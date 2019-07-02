@@ -1655,21 +1655,16 @@ msgstr "Die Abstimmung ist noch nicht zu Ende."
 
 #: cdedb/backend/assembly.py:1148
 msgid "Assembly is not active."
-msgstr ""
+msgstr "Versammlung ist nicht aktiv."
 
 #: cdedb/backend/assembly.py:1150
 msgid "Assembly has open ballots."
-msgstr ""
+msgstr "Versammlung hat noch offene Abstimmungen"
 
 #: cdedb/backend/assembly.py:1153
 #, python-format
 msgid "Conclusion of assembly blocked by %(block)s."
-msgstr ""
-
-#: cdedb/backend/assembly.py:1192
-#, python-format
-msgid "Conclusion of assembly blocked by %(block)s)"
-msgstr ""
+msgstr "Archivierung der Versammlung blockert durch %(block)s."
 
 #: cdedb/backend/cde.py:205 cdedb/frontend/cde.py:1239
 msgid "Multiple active permits are disallowed."
@@ -1936,12 +1931,12 @@ msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr "Accountanfrage kann vor Ablauf der Verifizierung nicht gelöscht werden."
 
 #: cdedb/backend/core.py:1915
-msgid "Unable to remove genesis case with status {}"
-msgstr ""
+msgid "Unable to remove genesis case with status {}."
+msgstr "Kann Accountanfrage mit Status {} nicht löschen."
 
 #: cdedb/backend/core.py:2107
 msgid "Invalid genesis state."
-msgstr "Ungültiger Zustand für Accountantrag."
+msgstr "Ungültiger Zustand für Accountanfrage."
 
 #: cdedb/backend/core.py:2111
 msgid "Wrong target realm."
@@ -2175,7 +2170,7 @@ msgstr "Bereits angemeldet."
 
 #: cdedb/frontend/assembly.py:367
 msgid "Unable to conclude assembly with open ballot."
-msgstr ""
+msgstr "Kann Versammlung mit offenen Abstimmungen nicht abschließen."
 
 #: cdedb/frontend/assembly.py:463
 msgid "Voting has already begun."
@@ -2765,7 +2760,7 @@ msgstr "Leeres PDF."
 
 #: cdedb/frontend/event.py:2077
 msgid "Unknown Part."
-msgstr ""
+msgstr "Unbekannter Veranstaltungsteil."
 
 #: cdedb/frontend/event.py:2122 cdedb/frontend/event.py:2160
 #: cdedb/frontend/event.py:2191 cdedb/frontend/event.py:2230
@@ -2862,52 +2857,52 @@ msgid "{title}: instructs their course"
 msgstr "{title}: Hält seinen/ihren Kurs"
 
 #: cdedb/frontend/event.py:3872
-msgid "{title}: Course ID"
-msgstr ""
+msgid "{title}: course ID"
+msgstr "{title}: Kurs-ID"
 
 #: cdedb/frontend/event.py:3875
 msgid "{title}: course nr"
-msgstr ""
+msgstr "{title}: Kursnummer"
 
 #: cdedb/frontend/event.py:3878
 msgid "{title}: course title"
-msgstr ""
+msgstr "{title}: Kurstitel"
 
 #: cdedb/frontend/event.py:3881
 msgid "{title}: course shortname"
-msgstr ""
+msgstr "{title}: Kurskurzname"
 
 #: cdedb/frontend/event.py:3884
 msgid "{title}: course notes"
-msgstr ""
+msgstr "{title}: Kursnotizen"
 
 #: cdedb/frontend/event.py:3887
 msgid "{title}: course instructor ID"
-msgstr ""
+msgstr "{title}: Kursleiter-ID"
 
 #: cdedb/frontend/event.py:3890
 msgid "{title}: course instructor nr"
-msgstr ""
+msgstr "{title}: Kursleiternummer"
 
 #: cdedb/frontend/event.py:3894
 msgid "{title}: course instructor title"
-msgstr ""
+msgstr "{title}: Kursleitertitel"
 
 #: cdedb/frontend/event.py:3898
 msgid "{title}: course instructor shortname"
-msgstr ""
+msgstr "{title}: Kursleiterkurzname"
 
 #: cdedb/frontend/event.py:3902
 msgid "{title}: course instructor notes"
-msgstr ""
+msgstr "{title}: Kursleiternotizen"
 
 #: cdedb/frontend/event.py:3908
-msgid "{title} course: {field}"
-msgstr "{title} Kurs: {field}"
+msgid "{title}: course {field}"
+msgstr "{title}: Kurs {field}"
 
 #: cdedb/frontend/event.py:3915
-msgid "{title} course instructor: {field}"
-msgstr ""
+msgid "{title}: course instructor {field}"
+msgstr "{title}: Kursleiter {field}"
 
 #: cdedb/frontend/event.py:3923
 msgid "any track: instructs their course"
@@ -2915,51 +2910,51 @@ msgstr "Bel. Schiene: Hält seinen/ihren Kurs"
 
 #: cdedb/frontend/event.py:3926
 msgid "any track: course ID"
-msgstr ""
+msgstr "Bel. Schiene: Kurs-ID"
 
 #: cdedb/frontend/event.py:3929
 msgid "any track: course nr"
-msgstr ""
+msgstr "Bel. Schiene: Kursnummer"
 
 #: cdedb/frontend/event.py:3932
 msgid "any track: course title"
-msgstr ""
+msgstr "Bel. Schiene: Kurstitel"
 
 #: cdedb/frontend/event.py:3935
 msgid "any track: course shortname"
-msgstr ""
+msgstr "Bel. Schiene: Kurskurzname"
 
 #: cdedb/frontend/event.py:3938
 msgid "any track: course notes"
-msgstr ""
+msgstr "Bel. Schiene: Kursnotizen"
 
 #: cdedb/frontend/event.py:3941
 msgid "any track: course instuctor ID"
-msgstr ""
+msgstr "Bel. Schiene: Kursleiter-ID"
 
 #: cdedb/frontend/event.py:3944
 msgid "any track: course instuctor nr"
-msgstr ""
+msgstr "Bel. Schiene: Kursleiternummer"
 
 #: cdedb/frontend/event.py:3947
 msgid "any track: course instuctor title"
-msgstr ""
+msgstr "Bel. Schiene: Kursleitertitel"
 
 #: cdedb/frontend/event.py:3950
 msgid "any track: course instuctor shortname"
-msgstr ""
+msgstr "Bel. Schiene: Kursleiterkurzname"
 
 #: cdedb/frontend/event.py:3953
 msgid "any track: course instuctor notes"
-msgstr ""
+msgstr "Bel. Schiene: Kursleiternotizen"
 
 #: cdedb/frontend/event.py:3959
-msgid "any track course: {field}"
-msgstr "Bel. Schiene Kurs: {field}"
+msgid "any track: course {field}"
+msgstr "Bel. Schiene: Kurs {field}"
 
 #: cdedb/frontend/event.py:3967
-msgid "any track course instructor: {field}"
-msgstr ""
+msgid "any track: course instructor {field}"
+msgstr "Bel. Schiene: Kursleiter {field}"
 
 #: cdedb/frontend/event.py:3974
 msgid "{title}: registration status"
@@ -2971,19 +2966,19 @@ msgstr "{title}: Isomattenschläfer"
 
 #: cdedb/frontend/event.py:3980
 msgid "{title}: lodgement ID"
-msgstr ""
+msgstr "{title}: Unterkunfts-ID"
 
 #: cdedb/frontend/event.py:3983
 msgid "{title}: lodgement moniker"
-msgstr ""
+msgstr "{title}: Unterkunftskurzname"
 
 #: cdedb/frontend/event.py:3986
 msgid "{title}: lodgement notes"
-msgstr ""
+msgstr "{title}: Unterkunftsnotizen"
 
 #: cdedb/frontend/event.py:3992
-msgid "{title} lodgement: {field}"
-msgstr "{title} Unterkunft: {field}"
+msgid "{title}: lodgement {field}"
+msgstr "{title}: Unterkunft {field}"
 
 #: cdedb/frontend/event.py:4000
 msgid "any part: registration status"
@@ -2995,19 +2990,19 @@ msgstr "Bel. Teil: Isomattenschläfer"
 
 #: cdedb/frontend/event.py:4006
 msgid "any part: lodgement ID"
-msgstr ""
+msgstr "Bel. Teil: Unterkunfts-ID"
 
 #: cdedb/frontend/event.py:4009
 msgid "any part: lodgement moniker"
-msgstr ""
+msgstr "Bel. Teil: Unterkunftskurzname"
 
 #: cdedb/frontend/event.py:4012
 msgid "any part: lodgement notes"
-msgstr ""
+msgstr "Bel. Teil: Unterkunftsnotizen"
 
 #: cdedb/frontend/event.py:4018
-msgid "any part lodgement: {field}"
-msgstr "Bel. Teil Unterkunft: {field}"
+msgid "any part: lodgement {field}"
+msgstr "Bel. Teil: Unterkunft {field}"
 
 #: cdedb/frontend/event.py:4123 cdedb/frontend/event.py:4155
 #: cdedb/frontend/event.py:4173 cdedb/frontend/event.py:4206
@@ -4998,15 +4993,17 @@ msgstr "Archivieren"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:121
 msgid "Assembly still has open ballots."
-msgstr ""
+msgstr "Die Versammlung hat noch laufende Abstimmungen."
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:128
 msgid ""
-"Archives the assembly. Assembly and Ballot configuration cannot be "
+"Archives the assembly. The configuration cannot be "
 "changed after this.\n"
-"                                    The private Keys used to sign the "
-"votes will be deleted from the database."
-msgstr ""
+"                                    The private keys used to sign the "
+"votes will be deleted from the database.\n"
+"									 This should typically be done shortly "
+"after all ballots have been concluded."
+msgstr "Archiviert die Versammlung. Die Konfiguration kann danach nicht mehr geändert werden. Die geheimen Schlüssel zum Signieren der Abstimmungen werden aus der Datenbank gelöscht. Dies sollte für gewöhnlich bald nachdem alle Abstimmungen beendet sind gemacht werden."
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:141
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:639
@@ -5022,8 +5019,11 @@ msgstr "Löschen"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:149
 msgid ""
 "Permanently deletes the assembly including all ballots and attendee "
-"information."
+"information.\n"
+"									 This is only possible while no ballots have begun voting."
 msgstr ""
+"Löscht die Verrsammlung inklusive aller Abstimmungen und Teilnehmer irreversibel."
+"Das ist nur möglich, solange noch keine Abstimmung begonnen hat."
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:157
 msgid "The assembly will be permanently archived."
@@ -5031,7 +5031,7 @@ msgstr "Die Versammlung wird irreversibel archiviert."
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:159
 msgid "The assembly will be permanently deleted."
-msgstr ""
+msgstr "Die Versammlung wird irreversibel gelöscht."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:31
 msgid "Voting Period"
@@ -8627,9 +8627,6 @@ msgstr ""
 "Anmeldungen mit dem eingestellten Wert überschrieben. Felder, die schon "
 "jetzt bei allen Anmeldungen übereinstimmen, sind vorausgewählt."
 
-#: cdedb/frontend/templates/web/event/change_registrations.tmpl:96
-msgid "Orga Notes"
-msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:183
 #, python-format
@@ -9960,8 +9957,10 @@ msgstr "Die Veranstaltung wird irreversibel archiviert."
 msgid ""
 "Deletes the event, including all course and participant information.\n"
 "                                This should usually not be done before "
-"the event has been archived."
+"the event has been archived and fully concluded."
 msgstr ""
+"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer irreversibel."
+"Das sollte nicht geschehen, bevor die Veranstaltung nicht archiviert wurde und vollständig abgeschlossen ist."
 
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:7
 #, python-format

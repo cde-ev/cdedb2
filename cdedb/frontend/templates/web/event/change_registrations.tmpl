@@ -93,7 +93,7 @@
         {% else %}
             {{ util.form_input_static(label=gettext("Gender"), value="unterschiedlich") }}
         {% endif %}
-        {% call form_input_optional("reg.orga_notes", label=gettext("Orga Notes"), anid="input_reg_orga_notes") %}
+        {% call form_input_optional("reg.orga_notes", label=gettext("Orga-Notes"), anid="input_reg_orga_notes") %}
             {{ util.input_textarea("reg.orga_notes", rows=5, anid="input_reg_orga_notes") }}
         {% endcall %}
 

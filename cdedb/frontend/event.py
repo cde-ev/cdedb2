@@ -3872,7 +3872,7 @@ class EventFrontend(AbstractUserFrontend):
                     gettext("{title}: instructs their course").format(
                         title=track['title']),
                 "course{0}.id".format(track_id):
-                    gettext("{title}: Course ID").format(
+                    gettext("{title}: course ID").format(
                         title=track['title']),
                 "course{0}.nr".format(track_id):
                     gettext("{title}: course nr").format(
@@ -3908,14 +3908,14 @@ class EventFrontend(AbstractUserFrontend):
             key = "course{0}.xfield_{1}"
             titles.update({
                 key.format(track_id, field['field_name']):
-                    gettext("{title} course: {field}").format(
+                    gettext("{title}: course {field}").format(
                         field=field['field_name'], title=track['title'])
                 for field in course_fields.values()
             })
             key = "course_instructor{0}.xfield_{1}"
             titles.update({
                 key.format(track_id, field['field_name']):
-                    gettext("{title} course instructor: {field}").format(
+                    gettext("{title}: course instructor {field}").format(
                         field=field['field_name'], title=track['title'])
                 for field in course_fields.values()
             })
@@ -3959,7 +3959,7 @@ class EventFrontend(AbstractUserFrontend):
             titles.update({
                 ",".join(key.format(track_id, field['field_name'])
                          for track_id in tracks):
-                    gettext("any track course: {field}").format(
+                    gettext("any track: course {field}").format(
                         field=field['field_name'])
                 for field in course_fields.values()
             })
@@ -3967,7 +3967,7 @@ class EventFrontend(AbstractUserFrontend):
             titles.update({
                 ",".join(key.format(track_id, field['field_name'])
                          for track_id in tracks):
-                    gettext("any track course instructor: {field}").format(
+                    gettext("any track: course instructor {field}").format(
                         field=field['field_name'])
                 for field in course_fields.values()
             })
@@ -3992,7 +3992,7 @@ class EventFrontend(AbstractUserFrontend):
             key = "lodgement{0}.xfield_{1}"
             titles.update({
                 key.format(part_id, field['field_name']):
-                    gettext("{title} lodgement: {field}").format(
+                    gettext("{title}: lodgement {field}").format(
                         field=field['field_name'], title=part['title'])
                 for field in lodge_fields.values()
             })
@@ -4018,7 +4018,7 @@ class EventFrontend(AbstractUserFrontend):
             titles.update({
                 ",".join(key.format(part_id, field['field_name'])
                          for part_id in event['parts']):
-                    gettext("any part lodgement: {field}").format(
+                    gettext("any part: lodgement {field}").format(
                         field=field['field_name'])
                 for field in lodge_fields.values()
             })

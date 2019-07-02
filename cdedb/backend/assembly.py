@@ -1189,7 +1189,7 @@ class AssemblyBackend(AbstractBackend):
                     rs, const.AssemblyLogCodes.assembly_concluded, assembly_id)
             else:
                 raise ValueError(
-                    n_("Conclusion of assembly blocked by %(block)s)"),
+                    n_("Conclusion of assembly blocked by %(block)s."),
                     {"block": blockers.keys()})
         return ret
 
