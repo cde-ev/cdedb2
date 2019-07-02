@@ -412,10 +412,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
-        future, current, extended, done = self.group_ballots(ballots)
-        # Currently we don't distinguish between current and extended ballots
-        current.update(extended)
-
+        # Check for extensions before grouping ballots.
         ref = now()
         update = False
         for ballot_id, ballot in ballots.items():
@@ -424,6 +421,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                 update = True
         if update:
             return self.redirect(rs, "assembly/list_ballots")
+
+        future, current, extended, done = self.group_ballots(ballots)
+        # Currently we don't distinguish between current and extended ballots
+        current.update(extended)
 
         votes = {}
         if self.assemblyproxy.does_attend(rs, assembly_id=assembly_id):
