@@ -128,7 +128,7 @@
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "payment": "2014-02-02",
             "id": 2,
-            "parental_agreement": null,
+            "parental_agreement": false,
             "mixed_lodging": true,
             "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
             "real_persona_id": null
@@ -144,7 +144,7 @@
             "orga_notes": null,
             "payment": null,
             "id": 1,
-            "parental_agreement": null,
+            "parental_agreement": true,
             "mixed_lodging": true,
             "notes": null,
             "real_persona_id": null
@@ -160,7 +160,7 @@
             "orga_notes": null,
             "payment": "2014-03-03",
             "id": 3,
-            "parental_agreement": null,
+            "parental_agreement": true,
             "mixed_lodging": true,
             "notes": null,
             "real_persona_id": null
@@ -178,7 +178,7 @@
             "orga_notes": null,
             "payment": "2014-04-04",
             "id": 4,
-            "parental_agreement": null,
+            "parental_agreement": false,
             "mixed_lodging": false,
             "notes": null,
             "real_persona_id": null
