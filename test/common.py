@@ -360,13 +360,16 @@ class FrontendTest(unittest.TestCase):
         self.app.reset()
         self.response = None
 
-    def basic_validate(self):
-        if b"cgitb" in self.response.body:
-            # This is a manual implementation of assertNotIn() to make the
-            # test output less verbose on failure.
-            raise AssertionError(glue(
-                "Found 'cgitb' in response body.",
-                "A Python Exception seems to have occured."))
+    def basic_validate(self, verbose=False):
+        if not verbose:
+            if b"cgitb" in self.response.body:
+                # This is a manual implementation of assertNotIn() to make the
+                # test output less verbose on failure.
+                raise AssertionError(glue(
+                    "Found 'cgitb' in response body.",
+                    "A Python Exception seems to have occured."))
+        else:
+            self.assertNotIn(b"cgitb", self.response.body)
         if self.response.content_type == "text/html":
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
@@ -384,9 +387,9 @@ class FrontendTest(unittest.TestCase):
                     response.request.query_string)
                 f.write(output)
 
-    def get(self, *args, **kwargs):
+    def get(self, *args, verbose=False, **kwargs):
         self.response = self.app.get(*args, **kwargs)
-        self.basic_validate()
+        self.basic_validate(verbose=verbose)
 
     def follow(self, **kwargs):
         oldresponse = self.response
@@ -394,42 +397,43 @@ class FrontendTest(unittest.TestCase):
         if self.response != oldresponse:
             self.log_generation_time(oldresponse)
 
-    def post(self, *args, **kwargs):
+    def post(self, *args, verbose=False, **kwargs):
         self.response = self.app.post(*args, **kwargs)
         self.follow()
-        self.basic_validate()
+        self.basic_validate(verbose=verbose)
 
-    def submit(self, form, button="submitform", check_notification=True):
+    def submit(self, form, button="submitform", check_notification=True,
+               verbose=False):
         method = form.method
         self.response = form.submit(button)
         self.follow()
-        self.basic_validate()
+        self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
             self.assertIn("alert alert-success", self.response.text)
 
-    def traverse(self, *links):
+    def traverse(self, *links, verbose=False):
         for link in links:
             if 'index' not in link:
                 link['index'] = 0
             self.response = self.response.click(**link)
             self.follow()
-            self.basic_validate()
+            self.basic_validate(verbose=verbose)
 
-    def login(self, user):
-        self.get("/")
+    def login(self, user, verbose=False):
+        self.get("/", verbose=verbose)
         f = self.response.forms['loginform']
         f['username'] = user['username']
         f['password'] = user['password']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, verbose=verbose)
 
-    def logout(self):
+    def logout(self, verbose=False):
         f = self.response.forms['logoutform']
-        self.submit(f, check_notification=False)
+        self.submit(f, check_notification=False, verbose=verbose)
 
-    def admin_view_profile(self, user, check=True):
+    def admin_view_profile(self, user, check=True, verbose=False):
         u = USER_DICT[user]
-        self.traverse({'href': '^/$'})
+        self.traverse({'href': '^/$'}, verbose=verbose)
         f = self.response.forms['adminshowuserform']
         f['phrase'] = u["DB-ID"]
         self.submit(f)
@@ -437,17 +441,18 @@ class FrontendTest(unittest.TestCase):
             self.assertTitle("{} {}".format(u['given_names'],
                                             u['family_name']))
 
-    def realm_admin_view_profile(self, user, realm):
+    def realm_admin_view_profile(self, user, realm, verbose=False):
         u = USER_DICT[user]
         self.traverse({'href': '/{}/$'.format(realm)},
-                      {'href': '/{}/search/user'.format(realm)})
+                      {'href': '/{}/search/user'.format(realm)},
+                      verbose=verbose)
         id_field = 'personas.id' if realm == 'event' else 'id'
         f = self.response.forms['queryform']
         f['qsel_' + id_field].checked = True
         f['qop_' + id_field] = QueryOperators.equal.value
         f['qval_' + id_field] = u["id"]
-        self.submit(f)
-        self.traverse({'description': 'Profil'})
+        self.submit(f, verbose=verbose)
+        self.traverse({'description': 'Profil'}, verbose=verbose)
 
     def fetch_mail(self):
         elements = self.response.lxml.xpath(
@@ -468,7 +473,8 @@ class FrontendTest(unittest.TestCase):
                 ret.append(msg)
         return ret
 
-    def fetch_link(self, msg, num=1):
+    @staticmethod
+    def fetch_link(msg, num=1):
         ret = None
         for line in msg.get_body().get_content().splitlines():
             if line.startswith('[{}] '.format(num)):
