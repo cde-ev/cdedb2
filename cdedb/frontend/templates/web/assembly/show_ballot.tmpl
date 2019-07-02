@@ -16,6 +16,21 @@
                             active=True) }}
 {% endblock %}
 {% block content %}
+
+
+    {% if prev_ballot %}
+        <div class="p" >
+            {{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": prev_ballot["id"]}),
+                         prev_ballot["title"], icon="circle-arrow-left") }}
+        </div>
+    {% endif %}
+    {% if next_ballot %}
+        <div class="p">
+            {{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": next_ballot["id"]}),
+                         next_ballot["title"], icon="circle-arrow-right") }}
+        </div>
+    {% endif %}
+
     {# Admin modification options (delete and edit) #}
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
         <div class="p">

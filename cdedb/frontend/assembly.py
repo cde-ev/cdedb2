@@ -373,19 +373,49 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
 
+    @staticmethod
+    def group_ballots(ballots):
+        """Helper to group ballots by status.
+
+        Return order: future, current, extended, done.
+
+        :type ballots: {int: str}
+        :rtype: tuple({int: str})
+        :returns: Four dicts mapping ballot ids to ballots grouped by status.
+        """
+
+        ref = now()
+
+        future = {k: v for k, v in ballots.items()
+                  if v['vote_begin'] > ref}
+        current = {k: v for k, v in ballots.items()
+                   if v['vote_begin'] <= ref < v['vote_end']}
+        extended = {k: v for k, v in ballots.items()
+                    if (v['extended']
+                        and v['vote_end'] <= ref < v['vote_extension_end'])}
+        done = {k: v for k, v in ballots.items()
+                if (v['vote_end'] <= ref
+                    and (v['extended'] is False
+                         or v['vote_extension_end'] <= ref))}
+
+        assert (len(ballots) == len(future) + len(current) +
+                len(extended) + len(done))
+
+        return future, current, extended, done
+
     @access("assembly")
     def list_ballots(self, rs, assembly_id):
         """View available ballots for an assembly."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise PrivilegeError(n_("Not privileged."))
+
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-        attachments = {}
-        for ballot_id in ballot_ids:
-            attachment_ids = self.assemblyproxy.list_attachments(
-                rs, ballot_id=ballot_id)
-            attachments[ballot_id] = self.assemblyproxy.get_attachments(
-                rs, attachment_ids)
+
+        future, current, extended, done = self.group_ballots(ballots)
+        # Currently we don't distinguish between current and extended ballots
+        current.update(extended)
+
         ref = now()
         update = False
         for ballot_id, ballot in ballots.items():
@@ -394,33 +424,16 @@ class AssemblyFrontend(AbstractUserFrontend):
                 update = True
         if update:
             return self.redirect(rs, "assembly/list_ballots")
-        future = {k: v for k, v in ballots.items()
-                  if v['vote_begin'] > ref}
-        current = {
-            k: v
-            for k, v in ballots.items()
-            if v['vote_begin'] <= ref < v['vote_end']}
-        extended = {
-            k: v
-            for k, v in ballots.items()
-            if (v['extended']
-                and v['vote_end'] <= ref < v['vote_extension_end'])}
-        done = {k: v for k, v in ballots.items()
-                if (v['vote_end'] <= ref
-                    and (v['extended'] is False
-                         or v['vote_extension_end'] <= ref))}
-        assert (len(ballots)
-                == len(future) + len(current) + len(extended) + len(done))
+
         votes = {}
         if self.assemblyproxy.does_attend(rs, assembly_id=assembly_id):
             for ballot_id in ballot_ids:
                 votes[ballot_id] = self.assemblyproxy.get_vote(
                     rs, ballot_id, secret=None)
-        # Currently we don't distinguis between current and extended ballots
-        current.update(extended)
+
         return self.render(rs, "list_ballots", {
             'ballots': ballots, 'future': future, 'current': current,
-            'done': done, 'votes': votes, 'attachments': attachments})
+            'done': done, 'votes': votes})
 
     @access("assembly_admin")
     def create_ballot_form(self, rs, assembly_id):
@@ -622,10 +635,37 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot['use_bar']:
             candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
                 "bar (options below this are declined)")
+
+        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+        future, current, extended, done = self.group_ballots(ballots)
+        current.update(extended)
+
+        if ballot_id in future:
+            ballot_list = sorted(
+                future.keys(), key=lambda key: future[key]["title"])
+        elif ballot_id in current:
+            ballot_list = sorted(
+                current.keys(), key=lambda key: current[key]["title"])
+        elif ballot_id in done:
+            ballot_list = sorted(
+                done.keys(), key=lambda key: done[key]["title"])
+        elif ballot_id in extended:
+            ballot_list = sorted(
+                future.keys(), key=lambda item: extended[key]["title"])
+        else:
+            raise ValueError(n_("Impossible"))
+
+        i = ballot_list.index(ballot_id)
+        l = len(ballot_list)
+        prev_ballot = ballots[ballot_list[i-1]] if i > 0 else None
+        next_ballot = ballots[ballot_list[i+1]] if i + 1 < l else None
+
         return self.render(rs, "show_ballot", {
             'attachments': attachments, 'split_vote': split_vote,
             'voted': own_vote, 'result': result, 'candidates': candidates,
-            'attends': attends, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER})
+            'attends': attends, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot})
 
     @access("assembly_admin")
     def change_ballot_form(self, rs, assembly_id, ballot_id):
