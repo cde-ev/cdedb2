@@ -183,8 +183,9 @@ event.
 
 Now the VM is ready to be used for offline deployment. Access it via
 browser. For security reasons the VM does not contain your real login
-password. Everyone can log in with their normal username (i.e. their
-email address) and the fixed password ``secret``.
+password. Everyone can log in with their normal username (i.e. their email
+address) and the fixed password ``secret`` (actually any password will do,
+but I find it easier to tell everybody to use a specific one).
 
 After the event you export the data from the offline instance the same way
 you exported the online instance, receiving a JSON-file with the data of the
