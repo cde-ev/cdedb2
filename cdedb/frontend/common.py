@@ -502,6 +502,10 @@ BLEACH_CLEANER = threading.local()
 
 
 def get_bleach_cleaner():
+    """Constructs bleach cleaner appropiate to untrusted user content.
+
+    If you adjust this, please adjust the markdown specification in
+    the docs as well."""
     cleaner = getattr(BLEACH_CLEANER, 'cleaner', None)
     if cleaner:
         return cleaner
@@ -568,6 +572,10 @@ def md_id_wrapper(val, sep):
 
 
 def get_markdown_parser():
+    """Constructs a markdown parser for general use.
+
+    If you adjust this, please adjust the markdown specification in
+    the docs as well."""
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:

@@ -1,5 +1,8 @@
-Crashkurs Markdown
+Markdown
 ==================
+
+Crashkurs
+^^^^^^^^^^^^^^
 
 +-------------------------------------------------------+-------------------------------------------------+
 | Eingabe                                               | Ausgabe                                         |
@@ -67,5 +70,40 @@ und etwas Text.
 
 ----
 
-Eine längere Einführung gibt es im `Markdwon Guide
+Eine längere Einführung gibt es im `Markdown Guide
 <https://www.markdownguide.org/basic-syntax/>`_.
+
+Spezifikation
+^^^^^^^^^^^^^^^^^
+
+Die CdE-Datenbank verwendet das ``python3-markdown``-Modul in Version 3.0.1, um Markdown zu HTML zu parsen. Das so
+entstandene HTML wird anschließend bis auf eine Liste erlaubter Tags und Attribute escapet. Es ist also auch möglich,
+direkt HTML zu verwenden. Folgende `Extensions<https://www.markdownguide.org/basic-syntax/>`_ werden verwendet:
+
+- ``extra``
+- ``sane_lists``
+- ``smarty`` (mit deutschen Anführungszeichen)
+- ``toc``
+
+Folgende HTNL-Tags sind erlaubt: ``a``, ``abbr``, ``acronym``, ``b``, ``blockquote``, ``br``, ``code``, ``colgroup``.
+``col``, ``div``, ``dl``, ``dt``, ``dd``, ``em``, ``i``, ``li``, ``h1``, ``h2``, ``h3``, ``h4``, ``h5``, ``h6``, ``hr``.
+``ol``, ``p``, ``pre``, ``span``, ``strong``, ``sup``, ``sub``, ``ul``, ``table``, ``tbody``, ``td``, ``tr``, ``th``.
+``thead``, ``tt``, ``u``
+
+Folgende Attribute dürfen verwendet werden::
+
+    '*': ['class'],
+    'a': ['href', 'title'],
+    'abbr': ['title'],
+    'acronym': ['title'],
+    'col': ['width'],
+    'thead': ['valign'],
+    'tbody': ['valign'],
+    'table': ['border'],
+    'tr': ['colspan', 'rowspan'],
+    'th': ['colspan', 'rowspan'],
+    'td': ['colspan', 'rowspan'],
+    'div': ['id'],
+    'h4': ['id'],
+    'h5': ['id'],
+    'h6': ['id']
