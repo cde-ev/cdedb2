@@ -497,7 +497,7 @@ Datum
 Datum mit Uhrzeit
 '''''''''''''''''
 
-- Ein Datum mit Uhrzeit Feld akzeptiert Werte im Format YYYY-MM-DDThh:ii:ss (dabei das "T" einfach als solches eingeben) sowie etwaige Browserabhängie Varianen (siehe dazu unter :ref:`Datum <handbuch_ablaufplan_datenfelder_allgemein_datum>`), die Beschreibung darf Buchstaben, Zahlen und Sonderzeichen enthalten.
+- Ein Datum mit Uhrzeit Feld akzeptiert Werte im Format YYYY-MM-DD hh:ii:ss sowie etwaige Browserabhängie Varianen (siehe dazu unter :ref:`Datum <handbuch_ablaufplan_datenfelder_allgemein_datum>`), die Beschreibung darf Buchstaben, Zahlen und Sonderzeichen enthalten.
 - Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in welches ein Datum mit Uhrzeit in obigem Format eingegeben werden kann.
  
  

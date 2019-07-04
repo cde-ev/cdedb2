@@ -525,7 +525,7 @@
                           placeholder="YYYY-MM-DD") }}
         {%- elif fields['kind'] == datatypes.datetime %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="datetime-local",
-                          placeholder="YYYY-MM-DDThh:ii:ss") }}
+                          placeholder="YYYY-MM-DD hh:ii:ss") }}
         {%- else %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
         {%- endif %}

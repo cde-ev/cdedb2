@@ -60,7 +60,7 @@
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
         {{ util.form_input_text(name="reg.checkin", label="Checked-In", type="datetime-local",
-                                placeholder="YYYY-MM-DDThh:ii", readonly='reg.checkin' in skip) }}
+                                placeholder="YYYY-MM-DD hh:ii", readonly='reg.checkin' in skip) }}
 
         {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
             {% if ambience['event']['parts']|length > 1 %}
