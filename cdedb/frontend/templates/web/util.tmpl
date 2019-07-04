@@ -127,7 +127,8 @@
 {% macro username_mailto(persona, prefix="") %}
     {{ href("mailto: {} {} <{}>".format(persona.get("{}given_names".format(prefix), ""),
                                         persona.get("{}family_name".format(prefix), ""),
-                                        persona.get("{}username".format(prefix), "")), username) }}
+                                        persona.get("{}username".format(prefix), "")),
+            persona.get("{}username".format(prefix), "")) }}
 {% endmacro %}
 
 {% macro output_given_displayname(given_names, display_name) %}
