@@ -124,18 +124,10 @@
     {%- endif -%}
 {% endmacro %}
 
-{% macro username_mailto(persona, prefix=None) %}
-    {% if prefix == None %}
-        {% set given_names = persona["given_names"] %}
-        {% set family_name = persona["family_name"] %}
-        {% set username = persona["username"] %}
-    {% else %}
-        {% set given_names = persona["{}given_names".format(prefix)] %}
-        {% set family_name = persona["{}family_name".format(prefix)] %}
-        {% set username = persona["{}username".format(prefix)] %}
-    {% endif %}
-
-    {{ href("mailto: {} {} <{}>".format(given_names, family_name, username), username) }}
+{% macro username_mailto(persona, prefix="") %}
+    {{ href("mailto: {} {} <{}>".format(persona.get("{}given_names".format(prefix), ""),
+                                        persona.get("{}family_name".format(prefix), ""),
+                                        persona.get("{}username".format(prefix), "")), username) }}
 {% endmacro %}
 
 {% macro output_given_displayname(given_names, display_name) %}
