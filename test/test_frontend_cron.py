@@ -188,7 +188,7 @@ class TestCron(CronTest):
         self.cron.execute(['pending_changelog_remind'])
 
     @prepsql(changelog_template(
-        ctime=now() - datetime.timedelta(hours=10)))
+        ctime=now() - datetime.timedelta(hours=14)))
     def test_changelog_remind_new(self):
         self.execute('pending_changelog_remind')
         self.assertEqual(["changelog_requests_pending"],
@@ -200,7 +200,7 @@ class TestCron(CronTest):
         self.assertEqual([], [mail.template for mail in self.mails])
 
     @prepsql(
-        changelog_template(ctime=now() - datetime.timedelta(hours=10))
+        changelog_template(ctime=now() - datetime.timedelta(hours=14))
         + cron_template(
             moniker="pending_changelog_remind",
             store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
@@ -210,7 +210,7 @@ class TestCron(CronTest):
         self.assertEqual([], [mail.template for mail in self.mails])
 
     @prepsql(
-        changelog_template(ctime=now() - datetime.timedelta(hours=10))
+        changelog_template(ctime=now() - datetime.timedelta(hours=14))
         + cron_template(
             moniker="pending_changelog_remind",
             store={"tstamp": 1, "ids": ['2/2']}))
