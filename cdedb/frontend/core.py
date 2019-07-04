@@ -1685,7 +1685,7 @@ class CoreFrontend(AbstractFrontend):
     def pending_changelog_remind(self, rs, store):
         """Cron job for pending changlog entries to decide.
 
-        Send a reminder after eight hours and then daily.
+        Send a reminder after twelve hours and then daily.
         """
         current = now()
         data = self.coreproxy.changelog_get_changes(
@@ -1695,7 +1695,7 @@ class CoreFrontend(AbstractFrontend):
         new = ids - set(old)
         remind = False
         if any(data[int(id.split('/')[0])]['ctime']
-               + datetime.timedelta(hours=8) < current
+               + datetime.timedelta(hours=12) < current
                for id in new):
             remind = True
         if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
