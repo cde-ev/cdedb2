@@ -227,7 +227,7 @@
             <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
             <dd>
                 {% if data['username'] %}
-                    {{ data['username'] }}
+                    {{ util.username_mailto(data) }}
                 {% else %}
                     —
                 {% endif %}

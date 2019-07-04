@@ -634,6 +634,10 @@
                                     {% if field in ("personas.id", "persona.id")
                                             or (query.scope == "qview_persona" and field == "id") %}
                                         <span class="nowrap">{{ row[field]|cdedbid }}</span>
+                                    {% elif field == "persona.username" %}
+                                        {{ util.username_mailto(row, "persona.") }}
+                                    {% elif field == "username" %}
+                                        {{ util.username_mailto(row) }}
                                     {% elif query.spec[csvfield] == "date" %}
                                         {{ row.get(field, None)|date(lang=lang) }}
                                     {% elif query.spec[csvfield] == "datetime" %}
