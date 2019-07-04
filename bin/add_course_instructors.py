@@ -107,7 +107,6 @@ DRY_RUN = False
 
 # Mapping event shorthands to their pevent_ids.
 pevent_map = {
-    'ta2014-1': 1,
     'ma2009-1': 233,
     'ma2010-1': 266,
     'ma2012-1': 334,
@@ -182,7 +181,7 @@ course_pattern = re.compile(r"kurs(\w\w)-([12])")
 # Read the data.
 data = collections.defaultdict(ddict)
 
-with open("/cdedb2/bin/kursleiter_test.txt", "r", encoding="utf-8") as infile:
+with open("/cdedb2/bin/kursleiter.txt", "r", encoding="utf-8") as infile:
     for line in infile:
         pevent, pcourse, *names = line.strip().split(" ")
         pcourse_nr, part = course_pattern.fullmatch(pcourse).groups()
@@ -192,11 +191,7 @@ with open("/cdedb2/bin/kursleiter_test.txt", "r", encoding="utf-8") as infile:
 # pprint(data)
 
 # Go through the data.
-count = {
-    "success": 0,
-    "fail": 0,
-    "ignored": 0,
-}
+count = collections.defaultdict(int)
 rs = rs(DEFAULT_ID)
 
 for pevent_id in data:
@@ -222,34 +217,45 @@ for pevent_id in data:
 
         # For every data entry, try to find a persona that matches the name.
         for names in data[pevent_id][pcourse_nr]:
+            persona_id = None
             for fn in persona_map:
                 if name_compare(fn, names):
-                    persona_id = persona_map[fn]
-                    print("Found {} as instructor for Course {} of Event "
-                          "{}.".format(" ".join(names), pcourse_id, pevent_id),
-                          end=" ")
-
-                    # Remove the participant and add them as instructor,
-                    # if they were not already an instructor.
-                    if not persona_ids[persona_id]:
-                        if not DRY_RUN:
-                            past_event.remove_participant(
-                                rs, pevent_id, pcourse_id, persona_id)
-                            past_event.add_participant(
-                                rs, pevent_id, pcourse_id, persona_id,
-                                is_instructor=True, is_orga=False)
-                        print("Added as instructor.")
-                        count["success"] += 1
+                    if persona_id is None:
+                        persona_id = persona_map[fn]
                     else:
-                        print("Already instructor.")
-                        count["ignored"] += 1
-                    break
-            else:
+                        persona_id = -1
+
+            if persona_id is None:
                 count["fail"] += 1
-                print("{} not found in https://db.cde-ev.de/db/cde/past/event/"
-                      "{}/course/{}/show.".format(" ".join(names),
-                                                  pevent_id,
-                                                  pcourse_id))
+                s = ("{} not found in https://db.cde-ev.de/db/cde/past/"
+                     "event/{}/course/{}/show.")
+                print(s.format(" ".join(names), pevent_id, pcourse_id))
+            elif persona_id == -1:
+                count["duplicate"] += 1
+                s = "Found duplicate name: {} in Course {} of Event {}."
+                print(s.format(" ".join(names), pcourse_id, pevent_id))
+            else:
+                s = "Found {} as instructor for Course {} of Event {}."
+                print(s.format(" ".join(names), pcourse_id, pevent_id),
+                      end=" ")
+                # Remove the participant and add them as instructor,
+                # if they were not already an instructor.
+                if not persona_ids[persona_id]:
+                    if not DRY_RUN:
+                        past_event.remove_participant(
+                            rs, pevent_id, pcourse_id, persona_id)
+                        past_event.add_participant(
+                            rs, pevent_id, pcourse_id, persona_id,
+                            is_instructor=True, is_orga=False)
+                    print("Added as instructor.")
+                    count["success"] += 1
+                else:
+                    print("Already instructor.")
+                    count["ignored"] += 1
+
 print("----DRY RUN----" if DRY_RUN else "Changes applied:")
-print("{} instructors successfully matched. {} not matched. {} ignored.".format(
-    count["success"], count["fail"], count["ignored"]))
+print("{} instructors successfully matched. {} not matched. {} ignored. "
+      "{} duplicates.".format(count["success"],
+                              count["fail"],
+                              count["ignored"],
+                              count["duplicate"]))
