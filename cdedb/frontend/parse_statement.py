@@ -14,14 +14,16 @@ STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
                         "accHolder", "accHolder2")
 MEMBERSHIP_FEE_FIELDS = ("amount_export", "db_id", "family_name", "given_names",
                          "date", "member_confidence", "db_id_value",
-                         "reference", "account_holder", "problems")
+                         "reference", "account_holder", "type_confidence",
+                         "problems")
 EVENT_FEE_FIELDS = ("amount_export", "db_id", "family_name", "given_names",
                     "date", "member_confidence", "event_shortname",
                     "event_confidence", "reference", "account_holder",
-                    "problems")
+                    "type_confidence", "problems")
 OTHER_TRANSACTION_FIELDS = ("account", "amount_export", "db_id", "family_name",
                             "given_names", "date", "member_confidence",
-                            "posting", "type", "type_confidence", "reference",
+                            "event", "event_confidence", "posting",
+                            "type", "type_confidence", "category", "reference",
                             "account_holder", "iban", "bic", "problems")
 ACCOUNT_FIELDS = ("date", "amount", "db_id", "name_or_holder",
                   "name_or_ref", "category", "account", "reference",
@@ -32,25 +34,39 @@ STATEMENT_RELEVANT_REFERENCE_DELIMITERS = ["SVWZ", "EREF"]
 STATEMENT_CSV_RESTKEY = "reference"
 STATEMENT_GIVEN_NAMES_UNKNOWN = "VORNAME"
 STATEMENT_FAMILY_NAME_UNKNOWN = "NACHNAME"
-STATEMENT_DATEFORMAT = "%d.%m.%y"
+STATEMENT_INPUT_DATEFORMAT = "%d.%m.%y"
+STATEMENT_OUTPUT_DATEFORMAT = "%d.%m.%Y"
 STATEMENT_DB_ID_EXTERN = "DB-EXTERN"
 STATEMENT_DB_ID_UNKNOWN = "DB-UNKNOWN"
+# This matches the Posting parameter used for special internal transactions.
 STATEMENT_POSTING_OTHER = re.compile(
     r"BUCHUNGSPOSTENGEBUEHREN|KONTOFUEHRUNGSGEBUEHREN", flags=re.I)
+# This matches the Posting for most outgoing transactions, likely refunds.
 STATEMENT_POSTING_REFUND = re.compile(
-    r"(Sammel-?)?(ü|ue|u| )berweisung", flags=re.I)
+    r"(Sammel-?)?(ü|ue|u|\s+)berweisung", flags=re.I)
+# This matches a reference that is likely a refund.
 STATEMENT_REFERENCE_REFUND = re.compile(
-    r"(R(ü|ue|u|\s)ck)?erstattung", flags=re.I)
+    r"(R(ü|ue|u|\s+)ck)?erstattung", flags=re.I)
+# This matches a reference that is likely a membership fee (but without DB-ID).
 STATEMENT_REFERENCE_MEMBERSHIP = re.compile(
     r"Mitglied(schaft)?(sbeitrag)?|(Halb)?Jahresbeitrag", flags=re.I)
+# This matches a statement that is a donation.
 STATEMENT_REFERENCE_DONATION = re.compile(
     r"Spende", flags=re.I)
+# This matches the old reference used by external participants. We keep this
+# in case some people keep using the old format, although we cannot extract a
+# DB-ID to do the persona lookup.
 STATEMENT_REFERENCE_EXTERNAL = re.compile(
     r"\d{4}-\d{2}-\d{2}[-,.\s]*Extern", flags=re.I)
-STATEMENT_DB_ID_PATTERN = re.compile(
-    r"(DB-[0-9]+-[0-9X])", flags=re.I)
-STATEMENT_DB_ID_SIMILAR = re.compile(
-    r"([-.\s]*[0-9]+[-.\s0-9]*[-.\s][0-9X])", flags=re.I)
+# This matches a correct DB-ID. Since this has to be the exact format we do not
+# limit the length.
+STATEMENT_DB_ID_EXACT = re.compile(
+    r"DB-([0-9]+-[0-9X])", flags=re.I)
+# This matches something very close to a correct DB-ID. Either the D or the B
+# might be missing and there may be some additional whitespaces/delimiters.
+STATEMENT_DB_ID_CLOSE = re.compile(
+    r"(?:D\w|\wB)[-.\s]*([0-9][-.\s0-9]{0,9}[0-9X])", flags=re.I)
+# Helper Patterns to remove the format markers from the DB-ID.
 STATEMENT_DB_ID_REMOVE = (
     re.compile(r"DB", flags=re.I),
     re.compile(r"[-.\s]", flags=re.I),
@@ -288,12 +304,10 @@ class Member:
         self.db_id = db_id
         self.confidence = confidence
 
-    def __str__(self):
-        return "({} ({}), {} ({}), {}, {})".format(
+    def __repr__(self):
+        return "({} {}, {}, {})".format(
             self.given_names,
-            diacritic_patterns(escape(self.given_names), True),
             self.family_name,
-            diacritic_patterns(escape(self.family_name), True),
             self.db_id, self.confidence)
 
     def __format__(self, format_spec):
@@ -308,7 +322,7 @@ class Event:
         self.shortname = shortname
         self.confidence = confidence
 
-    def __str__(self):
+    def __repr__(self):
         return "({}, {}, {})".format(self.title,
                                      self.shortname,
                                      self.confidence)
@@ -341,7 +355,7 @@ class Transaction:
 
         try:
             self.statement_date = datetime.datetime.strptime(
-                raw["statementDate"], STATEMENT_DATEFORMAT).date()
+                raw["statementDate"], STATEMENT_INPUT_DATEFORMAT).date()
         except ValueError:
             problems.append(
                 ("statementDate",
@@ -398,21 +412,52 @@ class Transaction:
 
         self.posting = str(raw["posting"]).split(" ", 1)[0]
 
-        # Guess the transaction type
         self.type = TransactionType.Unknown
         self.type_confidence = None
 
-        # Get all matching members and the best match
         self.member_matches = []
         self.best_member_match = None
         self.best_member_confidence = None
 
-        # Get all matching events and the best match
         self.event_matches = []
         self.best_event_match = None
         self.best_event_confidence = None
 
         self.problems = problems
+
+    def _assign_default_type(self, confidence):
+        if self.account == Accounts.Account0:
+            # Account for MembershipFees.
+            self.type = TransactionType.MembershipFee
+        elif self.account == Accounts.Account1:
+            # Account for EventFees.
+            self.type = TransactionType.EventFee
+        elif self.account == Accounts.Account2:
+            # This Account should not be used anymore.
+            confidence = confidence.decrease(3)
+            self.type = TransactionType.Other
+        else:
+            # Unknown Account
+            confidence = confidence.destroy()
+            self.type = TransactionType.Unknown
+        self.type_confidence = confidence
+
+    def _check_event_fee(self, confidence, event_names):
+        # Check if an event is mentioned in reference.
+        for event_name, value in event_names.items():
+            pattern, shortname = value
+            if re.search(escape(event_name), self.reference,
+                         flags=re.IGNORECASE):
+                self.type = TransactionType.EventFee
+                confidence = confidence.decrease()
+                self.type_confidence = confidence
+                break
+            elif re.search(pattern, self.reference,
+                           flags=re.IGNORECASE):
+                self.type = TransactionType.EventFee
+                confidence = confidence.decrease(2)
+                self.type_confidence = confidence
+                break
 
     def guess_type(self, event_names):
         """
@@ -428,147 +473,66 @@ class Transaction:
 
         confidence = ConfidenceLevel.Full
 
-        if self.account == Accounts.Account0:
-            if re.search(STATEMENT_DB_ID_PATTERN, self.reference):
-                # Correct ID found, so we assume this is a
-                # Membership Fee Transaction
-                self.type = TransactionType.MembershipFee
-                self.type_confidence = confidence
-
-            elif re.search(STATEMENT_DB_ID_SIMILAR, self.reference):
-                # Semi-Correct ID found, so we decrease confidence
-                # but still assume this to be a Membership Fee
-                self.type = TransactionType.MembershipFee
-                confidence = confidence.decrease()
-                self.type_confidence = confidence
-
-            elif re.search(STATEMENT_POSTING_OTHER, self.posting):
-                # Posting reserved for administrative fees found
-                self.type = TransactionType.Other
-                self.type_confidence = confidence
-
-            elif re.search(STATEMENT_POSTING_REFUND, self.posting):
-                # Posting used for refunds found
-                if re.search(STATEMENT_REFERENCE_REFUND, self.reference):
-                    # Reference mentions a refund
-                    self.type = TransactionType.Refund
-                    self.type_confidence = confidence
-
-                else:
-                    # Reference doesn't mention a refund so this
-                    # probably is a different kind of payment
-                    self.type = TransactionType.Other
-                    confidence = confidence.decrease()
-                    self.type_confidence = confidence
-
-            elif re.search(STATEMENT_REFERENCE_MEMBERSHIP, self.reference):
-                # No DB-ID found, but membership mentioned in reference
-                self.type = TransactionType.MembershipFee
-                confidence = confidence.decrease()
-                self.type_confidence = confidence
-
-            else:
-                # No other Options left so we assume this to be
-                # something else, but with lower confidence
-                self.type = TransactionType.Other
-                confidence = confidence.decrease(2)
-                self.type_confidence = confidence
-
-            # Check whether this could actually be an Event Fee
-            # Iterate through known Event names and their variations
-            for event_name, value in event_names.items():
-                pattern, shortname = value
-                if re.search(escape(event_name), self.reference,
-                             flags=re.IGNORECASE):
-                    self.type = TransactionType.EventFee
-                    confidence = confidence.decrease()
-                    self.type_confidence = confidence
-                    break
-                elif re.search(pattern, self.reference,
-                               flags=re.IGNORECASE):
-                    self.type = TransactionType.EventFee
-                    confidence = confidence.decrease(2)
-                    self.type_confidence = confidence
-                    break
-
-            if re.search(STATEMENT_REFERENCE_DONATION, self.reference):
-                self.type = TransactionType.Other
-                self.type_confidence = ConfidenceLevel.Full
-
-        elif self.account == Accounts.Account1:
-            if re.search(STATEMENT_DB_ID_PATTERN, self.reference):
-                # Correct DB-ID found, so we assume this to be an
-                # Event Fee
-                self.type = TransactionType.EventFee
-                self.type_confidence = confidence
-
-            elif re.search(STATEMENT_DB_ID_SIMILAR, self.reference):
-                # Semi-Correct DB-ID found, so we decrease confidence
-                # but still assume this is an Event Fee
-                self.type = TransactionType.EventFee
-                confidence = confidence.decrease()
-                self.type_confidence = confidence
-
-            elif re.search(STATEMENT_POSTING_OTHER, self.posting):
-                # Reserved Posting for administrative fees
-                self.type = TransactionType.Other
-                self.type_confidence = confidence
-
-            elif re.search(STATEMENT_POSTING_REFUND, self.posting):
-                # Posting used for refunds found
-                if re.search(STATEMENT_REFERENCE_REFUND, self.reference):
-                    # Refund mentioned in reference
-                    self.type = TransactionType.Refund
-                    self.type_confidence = confidence
-                else:
-                    # Reference doesn't mention refund, so this
-                    # probably is a different kind of payment
-                    self.type = TransactionType.Other
-                    confidence = confidence.decrease()
-                    self.type_confidence = confidence
-
-            else:
-                # Iterate through known Event names and their variations
-                for event_name, value in event_names.items():
-                    pattern, shortname = value
-                    if re.search(escape(event_name), self.reference,
-                                 flags=re.IGNORECASE):
-                        self.type = TransactionType.EventFee
-                        confidence = confidence.decrease()
-                        self.type_confidence = confidence
-                        break
-                    elif re.search(pattern, self.reference,
-                                   flags=re.IGNORECASE):
-                        self.type = TransactionType.EventFee
-                        confidence = confidence.decrease(2)
-                        self.type_confidence = confidence
-                        break
-
-                # No other Options left, so we assume this to be
-                # something else, but with lower confidence.
-                self.type = TransactionType.Other
-                confidence = confidence.decrease(2)
-                self.type_confidence = confidence
-
-            if re.search(STATEMENT_REFERENCE_DONATION, self.reference):
-                self.type = TransactionType.Other
-                self.type_confidence = ConfidenceLevel.Full
-
-        elif self.account == Accounts.Account2:
-            # This account should not be in use
-            self.type = TransactionType.Other
-            confidence = confidence.decrease(3)
-            self.type_confidence = confidence
-
-        else:
-            # This Transaction uses an unknown account
+        if self.account == Accounts.Unknown:
             self.type = TransactionType.Unknown
             confidence = confidence.destroy()
             self.type_confidence = confidence
+            return
+
+        elif re.search(STATEMENT_REFERENCE_DONATION, self.reference):
+            self.type = TransactionType.Other
+            self.type_confidence = ConfidenceLevel.Full
+            return
+
+        elif re.search(STATEMENT_POSTING_OTHER, self.posting):
+            # Posting reserved for administrative fees found.
+            self.type = TransactionType.Other
+            self.type_confidence = ConfidenceLevel.Full
+            return
+
+        elif re.search(STATEMENT_POSTING_REFUND, self.posting):
+            # Posting used for refunds and other payments found.
+            if re.search(STATEMENT_REFERENCE_REFUND, self.reference):
+                # Reference mentions a refund.
+                self.type = TransactionType.Refund
+                self.type_confidence = confidence
+                return
+            else:
+                # This seems to be some other payment.
+                self.type = TransactionType.Other
+                confidence = confidence.decrease()
+                self.type_confidence = confidence
+                return
+
+        if re.search(STATEMENT_DB_ID_EXACT, self.reference):
+            # Correct DB-ID found.
+            self._assign_default_type(confidence)
+
+        elif re.search(STATEMENT_DB_ID_CLOSE, self.reference):
+            # Semi-Correct ID found, so we decrease confidence.
+            confidence = confidence.decrease()
+            self._assign_default_type(confidence)
+
+        elif re.search(STATEMENT_REFERENCE_MEMBERSHIP, self.reference):
+            # No DB-ID found, but membership is mentioned in reference
+            self.type = TransactionType.MembershipFee
+            confidence = confidence.decrease()
+            self.type_confidence = confidence
+        else:
+            self._check_event_fee(confidence, event_names)
+
+            # No DB-ID found.
+            self.type = TransactionType.Other
+            confidence = confidence.decrease(2)
+            self.type_confidence = confidence
+
+        # Since we determine MembershipFee by presence of ID, also check events.
+        if self.type == TransactionType.MembershipFee:
+            self._check_event_fee(confidence, event_names)
 
     def match_member(self, rs, get_persona):
         """
-        Assing all matching members to self.member_matches.
+        Assign all matching members to self.member_matches.
         
         Assign the best match to self.best_member_match and it's Confidence to
         self.best_member_confidence.
@@ -580,32 +544,38 @@ class Transaction:
         """
 
         members = []
-        confidence = ConfidenceLevel.Full
-        if self.type not in {TransactionType.MembershipFee,
-                             TransactionType.EventFee}:
-            return
 
-        result = re.findall(STATEMENT_DB_ID_PATTERN, self.reference)
-        result2 = re.findall(STATEMENT_DB_ID_SIMILAR, self.reference)
-        if not result and result2:
-            confidence = confidence.decrease()
-            result = result2
+        if self.type == TransactionType.Refund:
+            return
+        if self.type == TransactionType.Other:
+            if self.type_confidence == ConfidenceLevel.Full:
+                return
+
+        exact_matches = re.findall(STATEMENT_DB_ID_EXACT, self.reference)
+
+        close_matches = re.findall(STATEMENT_DB_ID_CLOSE, self.reference)
+
+        result = ([(res, ConfidenceLevel.Full) for res in exact_matches]
+                  + [(res, ConfidenceLevel.High) for res in close_matches
+                     if res not in exact_matches])
 
         if result:
             if len(result) > 1:
-                # Multiple DB-IDs found, where only one is expected.
-                p = ("reference",
-                     ValueError("Multiple (%(count)s) DB-IDs found "
-                                "in line %(t_id)s!",
-                                {"count": len(result),
-                                 "t_id": self.t_id}))
-                self.problems.append(p)
-                confidence = confidence.decrease(2)
+                db_id1, confidence = result[0]
+                if any(db_id1 != db_id for db_id, _ in result):
+                    # Multiple different DB-IDs found.
+                    p = ("reference",
+                         ValueError("Multiple (%(count)s) DB-IDs found "
+                                    "in line %(t_id)s!",
+                                    {"count": len(result),
+                                     "t_id": self.t_id}))
+                    self.problems.append(p)
+                else:
+                    # Ignore multiples of the same ID.
+                    result = [(db_id1, confidence)]
 
-            for db_id in result:
-                # Clone ConfidenceLevel for every result
-                temp_confidence = ConfidenceLevel(
-                    confidence.value)
+            for db_id, confidence in result:
+                confidence = confidence.decrease(2 if len(result) > 1 else 0)
 
                 # Reconstruct DB-ID
                 value = db_id[:-1]
@@ -636,7 +606,7 @@ class Transaction:
                         members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
                                               STATEMENT_FAMILY_NAME_UNKNOWN,
                                               persona_id,
-                                              temp_confidence.decrease(2)))
+                                              confidence.decrease(2)))
                         continue
                     else:
                         given_names = persona.get('given_names', "")
@@ -655,14 +625,14 @@ class Transaction:
                                          {"gnp": given_names,
                                           "ref": self.reference}))
                                 self.problems.append(p)
-                                temp_confidence = temp_confidence.decrease()
+                                confidence = confidence.decrease()
                         except re.error as e:
                             p = ("given_names",
                                  TypeError(
                                      "(%(gnp)s) is not a valid regEx (%(e)s)",
                                      {"gnp": gn_pattern, "e": e}))
                             self.problems.append(p)
-                            temp_confidence = temp_confidence.decrease()
+                            confidence = confidence.decrease()
                         try:
                             if not re.search(fn_pattern, self.reference,
                                              flags=re.IGNORECASE):
@@ -672,19 +642,19 @@ class Transaction:
                                          {"fnp": family_name,
                                           "ref": self.reference}))
                                 self.problems.append(p)
-                                temp_confidence = temp_confidence.decrease()
+                                confidence = confidence.decrease()
                         except re.error as e:
                             p = ("family_name",
                                  TypeError(
                                      "(%(fnp)s) is not a valid regEx (%(e)s)",
                                      {"fnp": fn_pattern, "e": e}))
                             self.problems.append(p)
-                            temp_confidence = temp_confidence.decrease()
+                            confidence = confidence.decrease()
 
                         members.append(Member(given_names,
                                               family_name,
                                               persona_id,
-                                              temp_confidence))
+                                              confidence))
 
                 else:
                     p = ("persona_id",
@@ -692,14 +662,14 @@ class Transaction:
                                     {"db_id": db_id}))
                     self.problems.append(p)
 
-        elif self.type in {TransactionType.EventFee}:
+        else:
             result = re.search(STATEMENT_REFERENCE_EXTERNAL, self.reference)
             if result:
                 # Reference matches External Event Fee
                 members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
                                       STATEMENT_FAMILY_NAME_UNKNOWN,
                                       STATEMENT_DB_ID_EXTERN,
-                                      confidence.decrease()))
+                                      ConfidenceLevel.Medium))
             else:
                 members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
                                       STATEMENT_FAMILY_NAME_UNKNOWN,
@@ -707,14 +677,6 @@ class Transaction:
                                       ConfidenceLevel.Low))
                 self.problems.append(("reference",
                                       ValueError("No DB-ID found.")))
-        else:
-            m = Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
-                       STATEMENT_FAMILY_NAME_UNKNOWN,
-                       STATEMENT_DB_ID_UNKNOWN,
-                       ConfidenceLevel.Low)
-            members.append(m)
-            self.problems.append(("reference",
-                                  ValueError("No DB-ID found.")))
 
         if members:
             # Save all matched members
@@ -745,44 +707,39 @@ class Transaction:
         :type event_names: {str: (str, str)}
         """
 
-        if self.type in {TransactionType.EventFee}:
-            events = []
-            confidence = ConfidenceLevel.Full
+        events = []
+        confidence = ConfidenceLevel.Full
 
-            for event_name, value in event_names.items():
-                pattern, shortname = value
+        for event_name, value in event_names.items():
+            pattern, shortname = value
 
-                result = re.search(escape(event_name), self.reference,
-                                   flags=re.IGNORECASE)
-                if result:
-                    # Exact match to Event Name
-                    events.append(Event(event_name,
-                                        shortname,
-                                        confidence))
-                    continue
-                else:
-                    result = re.search(pattern, self.reference,
-                                       flags=re.IGNORECASE)
-                    if result:
-                        # Similar to Event Name
-                        events.append(Event(event_name,
-                                            shortname,
-                                            confidence.decrease()))
+            if re.search(escape(event_name), self.reference,
+                         flags=re.IGNORECASE):
+                # Exact match to Event Name
+                events.append(Event(event_name,
+                                    shortname,
+                                    confidence))
+                continue
+            elif re.search(pattern, self.reference, flags=re.IGNORECASE):
+                # Similar to Event Name
+                events.append(Event(event_name,
+                                    shortname,
+                                    confidence.decrease()))
 
-            if events:
-                self.event_matches = events
+        if events:
+            self.event_matches = events
 
-                best_match = None
-                best_confidence = ConfidenceLevel.Null
+            best_match = None
+            best_confidence = ConfidenceLevel.Null
 
-                for event in events:
-                    if event.confidence > best_confidence:
-                        best_confidence = event.confidence
-                        best_match = event
+            for event in events:
+                if event.confidence > best_confidence:
+                    best_confidence = event.confidence
+                    best_match = event
 
-                if best_confidence > ConfidenceLevel.Null:
-                    self.best_event_match = best_match
-                    self.best_event_confidence = best_confidence
+            if best_confidence > ConfidenceLevel.Null:
+                self.best_event_match = best_match
+                self.best_event_confidence = best_confidence
 
     def to_dict(self):
         """
@@ -794,26 +751,28 @@ class Transaction:
             "account": self.account,
             "amount_export": self.amount_export,
             "amount": self.amount,
-            "date": self.statement_date.strftime(STATEMENT_DATEFORMAT),
-            "db_id": self.best_member_match.db_id
-            if self.best_member_match else STATEMENT_DB_ID_UNKNOWN,
-            "db_id_value": self.best_member_match.db_id.split("-")[1] if
-            self.best_member_match else "",
-            "name_or_holder": self.best_member_match.family_name
-            if self.best_member_match and self.best_member_confidence > 1
-            else self.account_holder,
-            "name_or_ref": self.best_member_match.given_names
-            if self.best_member_match and self.best_member_confidence > 1
-            else self.reference,
-            "given_names": self.best_member_match.given_names
-            if self.best_member_match else "",
-            "family_name": self.best_member_match.family_name
-            if self.best_member_match else "",
+            "date": self.statement_date.strftime(STATEMENT_OUTPUT_DATEFORMAT),
+            "db_id": self.best_member_match.db_id if (
+                self.best_member_match) else STATEMENT_DB_ID_UNKNOWN,
+            "db_id_value": self.best_member_match.db_id.split("-")[1] if (
+                self.best_member_match) else "",
+            "name_or_holder": self.best_member_match.family_name if (
+                self.best_member_match
+                and self.best_member_confidence > ConfidenceLevel.Low) else (
+                self.account_holder),
+            "name_or_ref": self.best_member_match.given_names if (
+                self.best_member_match and
+                self.best_member_confidence > ConfidenceLevel.Low) else (
+                self.reference),
+            "given_names": self.best_member_match.given_names if (
+                self.best_member_match) else "",
+            "family_name": self.best_member_match.family_name if (
+                self.best_member_match) else "",
             "member_confidence": self.best_member_confidence,
-            "event": self.best_event_match.title
-            if self.best_event_match else "",
-            "event_shortname": self.best_event_match.shortname
-            if self.best_event_match else "",
+            "event": self.best_event_match.title if (
+                self.best_event_match) else "",
+            "event_shortname": self.best_event_match.shortname if (
+                self.best_event_match) else "",
             "event_confidence": str(self.best_event_confidence),
             "reference": self.reference,
             "posting": self.posting,
@@ -821,9 +780,9 @@ class Transaction:
             "iban": self.iban,
             "bic": self.bic,
             "type": self.type,
-            "category": self.best_event_match.shortname.replace("-", " ")
-            if self.type == TransactionType.EventFee and self.best_event_match
-            else self.type,
+            "category": self.best_event_match.shortname if (
+                self.type in {TransactionType.EventFee, TransactionType.Refund}
+                and self.best_event_match) else self.type,
             "type_confidence": self.type_confidence,
             "problems": ", ".join(["{}: {}".format(
                      key, error.args[0] % error.args[1]
@@ -869,25 +828,29 @@ class Transaction:
 
     def __str__(self):
         return "\n\t".join(
-            ["Transaction {}:".format(self.t_id),
-             "Account:\t\t {}".format(self.account),
-             "Statement-Date:\t {}".format(self.statement_date),
-             "Amount:\t\t\t {}".format(self.amount),
-             "Account Holder:\t {}".format(self.account_holder),
-             "IBAN:\t\t\t {}".format(self.iban),
-             "BIC:\t\t\t {}".format(self.bic),
-             "Reference:\t\t {}".format(self.reference),
-             "Posting:\t\t {}".format(self.posting),
-             "Type:\t\t\t {}".format(self.type),
-             "Type-Conf.:\t\t {}".format(self.type_confidence),
-             "Member:\t\t\t {}".format(str(self.best_member_match)),
-             "Member-Conf.:\t {}".format(self.best_member_confidence),
-             "Event:\t\t\t {}".format(str(self.best_event_match)),
-             "Events:\t\t\t {}".format(self.event_matches),
-             "Event-Conf.:\t {}".format(self.best_event_confidence),
-             "Problems:\t\t {}".format(
-                 ["{}: {}".format(
-                     key, error.args[0] % error.args[1]
-                     if len(error.args) == 2 else error)
+            [
+                "Transaction {}:".format(self.t_id),
+                "Reference:\t\t {}".format(self.reference),
+                "Account:\t\t {}".format(self.account),
+                "Statement-Date:\t {}".format(self.statement_date.strftime(
+                    STATEMENT_OUTPUT_DATEFORMAT)),
+                "Amount:\t\t\t {}".format(self.amount),
+                "Account Holder:\t {}".format(self.account_holder),
+                "IBAN:\t\t\t {}".format(self.iban),
+                "BIC:\t\t\t {}".format(self.bic),
+                "Posting:\t\t {}".format(self.posting),
+                "Type:\t\t\t {}".format(self.type),
+                "Type-Conf.:\t\t {}".format(self.type_confidence),
+                "Member:\t\t\t {}".format(str(self.best_member_match)),
+                "Members:\t\t\t {}".format(str(self.member_matches)),
+                "Member-Conf.:\t {}".format(self.best_member_confidence),
+                "Event:\t\t\t {}".format(str(self.best_event_match)),
+                "Events:\t\t\t {}".format(self.event_matches),
+                "Event-Conf.:\t {}".format(self.best_event_confidence),
+                "Problems:\t\t {}".format(
+                    ["{}: {}".format(
+                        key, error.args[0] % error.args[1]
+                        if len(error.args) == 2 else error)
                      for key, error in self.problems]),
-             ])
+            ]
+        )

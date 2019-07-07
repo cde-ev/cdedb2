@@ -43,7 +43,7 @@ from cdedb.frontend.parse_statement import (
     STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
     STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_DB_ID_EXTERN,
     STATEMENT_DB_ID_UNKNOWN, MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS,
-    OTHER_TRANSACTION_FIELDS, ACCOUNT_FIELDS, STATEMENT_DATEFORMAT)
+    OTHER_TRANSACTION_FIELDS, ACCOUNT_FIELDS, STATEMENT_OUTPUT_DATEFORMAT)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -983,7 +983,7 @@ class CdEFrontend(AbstractUserFrontend):
                     if note:
                         try:
                             date = datetime.datetime.strptime(
-                                note, STATEMENT_DATEFORMAT)
+                                note, STATEMENT_OUTPUT_DATEFORMAT)
                         except ValueError:
                             pass
                         else:
@@ -991,7 +991,7 @@ class CdEFrontend(AbstractUserFrontend):
                             note = note_template.format(
                                 amount=money_filter(datum['amount']),
                                 new_balance=money_filter(new_balance),
-                                date=date.strftime(STATEMENT_DATEFORMAT))
+                                date=date.strftime(STATEMENT_OUTPUT_DATEFORMAT))
                     count += self.coreproxy.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
