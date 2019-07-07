@@ -9168,7 +9168,7 @@ msgstr "%(field)s setzen"
 #: cdedb/frontend/templates/web/event/field_set.tmpl:24
 #: cdedb/frontend/templates/web/event/field_set_select.tmpl:21
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:30
-#: cdedb/frontend/templates/web/event/registration_query.tmpl:81
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:96
 msgid "Set Field"
 msgstr "Datenfeld setzen"
 
@@ -9649,6 +9649,14 @@ msgstr "Anmeldezeitpunkt"
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:67
 msgid "Last Modification Time"
 msgstr "Zeitpunkt der letzten Änderung"
+
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:85
+msgid "bcc email to all"
+msgstr "BCC-E-Mail an alle"
+
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:87
+msgid "Send Mail to all registrations listed below as BCC."
+msgstr "E-Mail an alle unten aufgeführten Anmeldungen als BCC senden."
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:5
 #, python-format

@@ -70,21 +70,24 @@
                             selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
     {% if values['is_search'] %}
+        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <!-- Additional buttons for the registration_query -->
 
         {% if "persona.username" in query.fields_of_interest %}
-            {% set usernames = [] %}
-            {% for entry in result if "persona.username" in entry and entry["persona.username"] %}
-                {% do usernames.append("%s %s <%s>"|format(
-                        entry.get("persona.given_names", ""),
-                        entry.get("persona.family_name", ""),
-                        entry["persona.username"])) %}
-            {% endfor %}
-            {{ util.href("mailto:?bcc=%s"|s|format(",".join(usernames)), gettext("Send Mail to all registrations listed below.")) }}
+            <div class="p">
+                {% set usernames = [] %}
+                {% for entry in result if "persona.username" in entry and entry["persona.username"] %}
+                    {% do usernames.append("%s %s <%s>"|format(
+                            entry.get("persona.given_names", ""),
+                            entry.get("persona.family_name", ""),
+                            entry["persona.username"])) %}
+                {% endfor %}
+                {{ util.href("mailto:?bcc=%s"|s|format(",".join(usernames)), gettext("bcc email to all"),
+                             icon="envelope", aclass="btn btn-sm btn-default",
+                             title=gettext("Send Mail to all registrations listed below as BCC.")) }}
+            </div>
         {% endif %}
 
-        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
-
-        <!-- Additional buttons for the registration_query -->
         <div class="p pull-right">
             <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
                 {{ util.make_icon('screenshot') }} {% trans -%}Course Assignment{%- endtrans %}
