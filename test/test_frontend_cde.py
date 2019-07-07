@@ -1171,12 +1171,13 @@ class TestCdEFrontend(FrontendTest):
             f['transfers'] = datafile.read()
         self.submit(f, check_notification=False)
 
-        ## first round
+        # first round
         self.assertPresence("Validieren")
         self.assertNonPresence("Abschicken")
         f = self.response.forms['transfersform']
         self.assertFalse(f['checksum'].value)
-        content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
+        content = self.response.lxml.xpath(
+            "//div[@id='{}']".format("content"))[0].text_content()
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 7):
@@ -1205,17 +1206,19 @@ class TestCdEFrontend(FrontendTest):
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)
 
-        ## second round
+        # second round
         self.assertPresence("Bestätigen")
         self.assertPresence("Saldo: 151,09 €")
         self.assertNonPresence("Validieren")
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
         self.submit(f)
-        self.assertPresence("4 Überweisungen gebucht. 1 neue Mitglieder.", div="notifications")
+        self.assertPresence("4 Überweisungen gebucht. 1 neue Mitglieder.",
+                            div="notifications")
         self.admin_view_profile("daniel")
         self.traverse({"description": "Änderungs-Historie"})
-        self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € (Überwiesen am 17.03.19)")
+        self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € "
+                            "(Überwiesen am 17.03.2019)")
 
     @as_users("anton")
     def test_money_transfers_file(self, user):
