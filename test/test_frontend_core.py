@@ -951,6 +951,24 @@ class TestCoreFrontend(FrontendTest):
         f['country'] = "Arkadien"
         self.submit(f)
 
+    def test_genesis_birthday(self):
+        self.get('/')
+        self.traverse({'href': '/core/genesis/request'})
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "event"
+        f['gender'] = "1"
+        f['birthday'] = "5.6.2222"
+        f['address'] = "An der Eiche"
+        f['postal_code'] = "12345"
+        f['location'] = "Marcuria"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Ein Geburtsdatum muss in der Vergangenheit liegen.")
+
     def test_genesis_missing_data(self):
         self.get('/')
         self.traverse({'href': '/core/genesis/request'})

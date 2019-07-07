@@ -778,7 +778,7 @@ _PERSONA_CDE_CREATION = lambda: {
     'title': _str_or_None,
     'name_supplement': _str_or_None,
     'gender': _enum_genders,
-    'birthday': _date,
+    'birthday': _birthday,
     'telephone': _phone_or_None,
     'mobile': _phone_or_None,
     'address_supplement': _str_or_None,
@@ -807,7 +807,7 @@ _PERSONA_EVENT_CREATION = lambda: {
     'title': _str_or_None,
     'name_supplement': _str_or_None,
     'gender': _enum_genders,
-    'birthday': _date,
+    'birthday': _birthday,
     'telephone': _phone_or_None,
     'mobile': _phone_or_None,
     'address_supplement': _str_or_None,
@@ -839,7 +839,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
     'title': _str_or_None,
     'name_supplement': _str_or_None,
     'gender': _enum_genders,
-    'birthday': _date,
+    'birthday': _birthday,
     'telephone': _phone_or_None,
     'mobile': _phone_or_None,
     'address_supplement': _str_or_None,
@@ -993,6 +993,22 @@ def _date(val, argname=None, *, _convert=True):
         # necessary, since isinstance(datetime.datetime.now(),
         # datetime.date) == True
         val = val.date()
+    return val, []
+
+@_addvalidator
+def _birthday(val, argname=None, *, _convert=True):
+    """
+        :type val: object
+        :type argname: str or None
+        :type _convert: bool
+        :rtype: (datetime.date or None, [(str or None, exception)])
+    """
+    val, errs = _date(val, argname=argname,  _convert=_convert)
+    if errs:
+        return val, errs
+    if now().date() < val:
+        return None, [(argname, ValueError(
+            n_("A birthday must be in the past.")))]
     return val, []
 
 
@@ -1195,7 +1211,7 @@ _GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
 }
 _GENESIS_CASE_LENIENT_FIELDS = lambda: {
     'gender': _enum_genders_or_None,
-    'birthday': _date_or_None,
+    'birthday': _birthday_or_None,
     'telephone': _phone_or_None,
     'mobile': _phone_or_None,
     'address_supplement': _str_or_None,
@@ -1206,7 +1222,7 @@ _GENESIS_CASE_LENIENT_FIELDS = lambda: {
 }
 _GENESIS_CASE_STRICT_FIELDS = lambda: {
     'gender': _enum_genders,
-    'birthday': _date,
+    'birthday': _birthday,
     'telephone': _phone_or_None,
     'mobile': _phone_or_None,
     'address_supplement': _str_or_None,

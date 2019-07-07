@@ -10220,6 +10220,9 @@ msgstr ""
 msgid "Mailinglists Log"
 msgstr ""
 
+msgid "A birthday must be in the past."
+msgstr "Ein Geburtsdatum muss in der Vergangenheit liegen."
+
 #~ msgid "Conclusion of assembly blocked by %(block)s)"
 #~ msgstr ""
 
