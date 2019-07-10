@@ -5086,7 +5086,7 @@ msgstr "Diese Abstimmung hat noch nicht begonnen."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:64
 msgid "Admins can still make changes to description, files and candidates."
-msgstr "Admins können noch Veränderungen an der Beschreibung"
+msgstr "Admins können noch Veränderungen an der Beschreibung, den angehängten Dateien und den Kandidaten vornehmen."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:66
 msgid ""

@@ -53,10 +53,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         :rtype: bool
         """
         timestamp = now()
-        return (ballot['extended'] is None
-                or timestamp < ballot['vote_end']
-                or (ballot['extended']
-                    and timestamp < ballot['vote_extension_end']))
+        return (timestamp > ballot['vote_begin']
+                and (timestamp < ballot['vote_end']
+                     or (ballot['extended']
+                         and timestamp < ballot['vote_extension_end'])))
 
     def may_assemble(self, rs, *, assembly_id=None, ballot_id=None):
         """Helper to check authorization.
