@@ -128,11 +128,9 @@
                                 {{ util.href(cdedblink("cde/index"), gettext("Members"), icon="education") }}
                                 </li>
                         {% endif %}
-                        {% if "event" in user.roles %}
-                            <li {% if mainnav_active == 'event' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("event/index"), gettext("Events"), icon="blackboard") }}
-                            </li>
-                        {% endif %}
+                        <li {% if mainnav_active == 'event' %}class="active" aria-current="page"{% endif %}>
+                            {{ util.href(cdedblink("event/index"), gettext("Events"), icon="blackboard") }}
+                        </li>
                         {% if "ml" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'ml' %}class="active" aria-current="page"{% endif %}>
                                 {{ util.href(cdedblink("ml/index"), gettext("Mailinglists"), icon="envelope") }}
