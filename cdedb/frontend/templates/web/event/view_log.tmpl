@@ -4,7 +4,9 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
     {% trans -%}Events Log{%- endtrans %}
-    [{{ values['start']|int }}–{{ (values['start']|int + log|length) }}]
+    {% if log %}
+        [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
+    {% endif %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
