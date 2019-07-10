@@ -1003,7 +1003,7 @@ class CoreBackend(AbstractBackend):
             constraint = "is_assembly_admin = TRUE"
 
         if constraint is None:
-            raise ValueError(n_("Must provide realm."))
+            raise ValueError(n_("No realm provided."))
 
         query = query.format(constraint=constraint)
         result = self.query_all(rs, query, tuple())
