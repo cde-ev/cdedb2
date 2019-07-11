@@ -3700,6 +3700,7 @@ class EventFrontend(AbstractUserFrontend):
         for part_id in event['parts']:
             spec["part{0}.status".format(part_id)] = "int"
             spec["part{0}.is_reserve".format(part_id)] = "bool"
+            spec["part{0}.lodgement_id".format(part_id)] = "int"
             spec["lodgement{0}.id".format(part_id)] = "id"
             spec["lodgement{0}.moniker".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
@@ -3712,6 +3713,8 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.is_course_instructor".format(track_id)] \
                     = "bool"
+                spec["track{0}.course_id".format(track_id)] = "int"
+                spec["track{0}.course_instructor".format(track_id)] = "int"
                 for temp in ("course", "course_instructor",):
                     spec["{1}{0}.id".format(track_id, temp)] = "id"
                     spec["{1}{0}.nr".format(track_id, temp)] = "str"
@@ -3730,6 +3733,8 @@ class EventFrontend(AbstractUserFrontend):
                           for part_id in event['parts'])] = "int"
             spec[",".join("part{0}.is_reserve".format(part_id)
                           for part_id in event['parts'])] = "bool"
+            spec[",".join("part{0}.lodgement_id".format(part_id)
+                          for part_id in event['parts'])] = "int"
             spec[",".join("lodgement{0}.id".format(part_id)
                           for part_id in event['parts'])] = "id"
             spec[",".join("lodgement{0}.moniker".format(part_id)
@@ -3748,6 +3753,10 @@ class EventFrontend(AbstractUserFrontend):
         if len(tracks) > 1:
             spec[",".join("track{0}.is_course_instructor".format(track_id)
                           for track_id in tracks)] = "bool"
+            spec[",".join("track{0}.course_id".format(track_id)
+                          for track_id in tracks)] = "bool"
+            spec[",".join("track{0}.course_instructor".format(track_id)
+                          for track_id in tracks)] = "int"
             for temp in ("course", "course_instructor",):
                 spec[",".join("{1}{0}.id".format(track_id, temp)
                               for track_id in tracks)] = "id"
@@ -3798,12 +3807,18 @@ class EventFrontend(AbstractUserFrontend):
             gettext = rs.gettext
             enum_gettext = rs.gettext
 
+        course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
+        course_choices = OrderedDict(
+            sorted((c["id"], course_identifier(c)) for c in courses.values()))
+        lodge_identifier = lambda l: l["moniker"]
+        lodgement_choices = OrderedDict(
+            sorted((l["id"], lodge_identifier(l)) for l in lodgements.values()))
         # First we construct the choices
         choices = {
             # Genders enum
             'persona.gender': OrderedDict(
                 enum_entries_filter(
-                    const.Genders, enum_gettext, raw=fixed_gettext))
+                    const.Genders, enum_gettext, raw=fixed_gettext)),
         }
 
         # Precompute some choices
@@ -3827,6 +3842,8 @@ class EventFrontend(AbstractUserFrontend):
             choices.update({
                 # RegistrationPartStati enum
                 "part{0}.status".format(part_id): reg_part_stati_choices,
+                # Lodgement choices for the JS selector
+                "part{0}.lodgement_id".format(part_id): lodgement_choices,
             })
             if not fixed_gettext:
                 # Lodgement fields value -> description
@@ -3837,6 +3854,11 @@ class EventFrontend(AbstractUserFrontend):
                     for field in lodge_fields.values() if field['entries']
                 })
         for track_id in tracks:
+            choices.update({
+                # Course choices for the JS selector
+                "track{0}.course_id".format(track_id): course_choices,
+                "track{0}.course_instructor".format(track_id): course_choices,
+            })
             if not fixed_gettext:
                 # Course fields value -> description
                 for temp in ("course", "course_instructor"):
@@ -3874,6 +3896,10 @@ class EventFrontend(AbstractUserFrontend):
             titles.update({
                 "track{0}.is_course_instructor".format(track_id):
                     prefix + gettext("instructs their course"),
+                "track{0}.course_id".format(track_id):
+                    prefix + gettext("course"),
+                "track{0}.course_instructor".format(track_id):
+                    prefix + gettext("instructed course"),
                 "course{0}.id".format(track_id):
                     prefix + gettext("course ID"),
                 "course{0}.nr".format(track_id):
@@ -3914,6 +3940,12 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("track{0}.is_course_instructor".format(track_id)
                          for track_id in tracks):
                     gettext("any track: instructs their course"),
+                ",".join("track{0}.course_id".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: course"),
+                ",".join("track{0}.course_instructor".format(track_id)
+                         for track_id in tracks):
+                    gettext("any track: instructed course"),
                 ",".join("course{0}.id".format(track_id)
                          for track_id in tracks):
                     gettext("any track: course ID"),
@@ -3971,6 +4003,8 @@ class EventFrontend(AbstractUserFrontend):
                     prefix + gettext("registration status"),
                 "part{0}.is_reserve".format(part_id):
                     prefix + gettext("camping mat user"),
+                "part{0}.lodgement_id".format(part_id):
+                    prefix + gettext("lodgement"),
                 "lodgement{0}.id".format(part_id):
                     prefix + gettext("lodgement ID"),
                 "lodgement{0}.moniker".format(part_id):
@@ -3993,6 +4027,9 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("part{0}.is_reserve".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: camping mat user"),
+                ",".join("part{0}.lodgement_id".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement"),
                 ",".join("lodgement{0}.id".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement ID"),
