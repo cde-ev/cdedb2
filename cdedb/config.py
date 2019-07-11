@@ -70,16 +70,16 @@ def generate_event_registration_default_queries(event, spec):
                     ("reg.id", True))
 
     all_part_stati_column = ",".join(
-        "part{0}.status{0}".format(part_id) for part_id in event['parts'])
+        "part{0}.status".format(part_id) for part_id in event['parts'])
 
     dokuteam_course_fields_of_interest = [
         "persona.given_names", "persona.family_name", "persona.username"]
     for part_id in event['parts']:
         dokuteam_course_fields_of_interest.append(
-            "part{}.status{}".format(part_id, part_id))
+            "part{}.status".format(part_id))
     for track_id in event['tracks']:
         dokuteam_course_fields_of_interest.append(
-            "track{}.course_id{}".format(track_id, track_id))
+            "course{}.id".format(track_id))
 
     dokuteam_address_fields_of_interest = [
         "persona.given_names", "persona.family_name", "persona.address",

@@ -1119,12 +1119,12 @@ class EventFrontend(AbstractUserFrontend):
         )
         # Some reusable query filter definitions
         involved_filter = (
-            'part{part}.status{part}',
+            'part{part}.status',
             QueryOperators.oneof,
             [x.value for x in stati if x.is_involved()],
         )
         participant_filter = (
-            'part{part}.status{part}',
+            'part{part}.status',
             QueryOperators.equal,
             stati.participant.value,
         )
@@ -1133,10 +1133,10 @@ class EventFrontend(AbstractUserFrontend):
         # get_query()
         query_filters = {
             'pending': (
-                ('part{part}.status{part}', QueryOperators.equal,
+                ('part{part}.status', QueryOperators.equal,
                  stati.applied.value),),
             ' payed': (
-                ('part{part}.status{part}', QueryOperators.equal,
+                ('part{part}.status', QueryOperators.equal,
                  stati.applied.value),
                 ("reg.payment", QueryOperators.nonempty, None),),
             'participant': (participant_filter,),
@@ -1162,10 +1162,10 @@ class EventFrontend(AbstractUserFrontend):
                 ('persona.id', QueryOperators.oneof,
                  rs.ambience['event']['orgas']),),
             'waitlist': (
-                ('part{part}.status{part}', QueryOperators.equal,
+                ('part{part}.status', QueryOperators.equal,
                  stati.waitlist.value),),
             'guest': (
-                ('part{part}.status{part}', QueryOperators.equal,
+                ('part{part}.status', QueryOperators.equal,
                  stati.guest.value),),
             'total involved': (involved_filter,),
             ' not payed': (
@@ -1177,30 +1177,30 @@ class EventFrontend(AbstractUserFrontend):
                  deduct_years(rs.ambience['event']['begin'], 18)),
                 ("reg.parental_agreement", QueryOperators.equal, False),),
             'no lodgement': (
-                ('part{part}.status{part}', QueryOperators.oneof,
+                ('part{part}.status', QueryOperators.oneof,
                  [x.value for x in stati if x.is_present()]),
-                ('part{part}.lodgement_id{part}', QueryOperators.empty, None)),
+                ('lodgement{part}.id', QueryOperators.empty, None)),
             'cancelled': (
-                ('part{part}.status{part}', QueryOperators.equal,
+                ('part{part}.status', QueryOperators.equal,
                  stati.cancelled.value),),
             'rejected': (
-                ('part{part}.status{part}', QueryOperators.equal,
+                ('part{part}.status', QueryOperators.equal,
                  stati.rejected.value),),
             'total': (
-                ('part{part}.status{part}', QueryOperators.unequal,
+                ('part{part}.status', QueryOperators.unequal,
                  stati.not_applied.value),),
 
             'all instructors': (
                 participant_filter,
-                ('track{track}.course_instructor{track}',
+                ('course_instructor{track}.id',
                  QueryOperators.nonempty, None),),
             'instructors': (
                 participant_filter,
-                ('track{track}.is_course_instructor{track}',
+                ('track{track}.is_course_instructor',
                  QueryOperators.equal, True),),
             'no course': (
                 participant_filter,
-                ('track{track}.course_id{track}', QueryOperators.empty, None),
+                ('course{track}.id', QueryOperators.empty, None),
                 ('persona.id', QueryOperators.otherthan,
                  rs.ambience['event']['orgas']),)
         }
@@ -1210,10 +1210,10 @@ class EventFrontend(AbstractUserFrontend):
             ' u16': ('persona.birthday',),
             ' u14': ('persona.birthday',),
             ' checked in': ('reg.checkin',),
-            'total involved': ('part{part}.status{part}',),
-            'instructors': ('track{track}.course_instructor{track}',),
-            'all instructors': ('track{track}.course_instructor{track}',
-                                'track{track}.course_id{track}',),
+            'total involved': ('part{part}.status',),
+            'instructors': ('course_instructor{track}.id',),
+            'all instructors': ('course{track}.id',
+                                'course_instructor{track}.id',),
         }
 
         def get_query(category, part_id, track_id=None):
@@ -1418,7 +1418,7 @@ class EventFrontend(AbstractUserFrontend):
             self.make_registration_query_spec(rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"] + [
-                "track{0}.course_id{0}".format(track_id)
+                "course{0}.id".format(track_id)
                 for track_id in tracks],
             (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
             (("persona.family_name", True), ("persona.given_names", True),)
@@ -3849,7 +3849,7 @@ class EventFrontend(AbstractUserFrontend):
         if len(event['parts']) > 1:
             choices.update({
                 # RegistrationPartStati enum
-                ",".join("part{0}.status{0}".format(part_id)
+                ",".join("part{0}.status".format(part_id)
                          for part_id in event['parts']): reg_part_stati_choices,
             })
         if not fixed_gettext:
