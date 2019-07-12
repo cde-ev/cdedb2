@@ -114,6 +114,14 @@
         {% endfor %}
 
         <h3 class="heading-underline">{% trans -%}Additional Information{%- endtrans %}</h3>
+        {% if ambience['event']['use_questionnaire'] %}
+            <p>
+                {% trans -%}
+                    After registration, you can find the questionnaire in the navigation. There you can
+                    give more detailed information the orgateam wants to know.
+                {%- endtrans %}
+            </p>
+        {% endif %}
         {% if not age.may_mix() %}
             {{ util.input_hidden(name="mixed_lodging", value=False) }}
             {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
