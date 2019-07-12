@@ -9669,13 +9669,13 @@ msgstr "Deine Anmeldung"
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:24
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:73
-msgid "here"
-msgstr "hier"
+msgid "questionnaire"
+msgstr "Fragebogen"
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:24
 #, python-format
-msgid "The questionnaire can be filled in %(link)s."
-msgstr "Der Fragebogen kann %(link)s ausgefüllt werden."
+msgid "Please fill in the %(link)s now."
+msgstr "Bitte fülle jetzt den %(link)s aus."
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:30
 msgid "Bank Transfer"

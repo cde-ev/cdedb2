@@ -19,10 +19,10 @@
 {% endblock %}
 {% block content %}
     {% if ambience['event']['use_questionnaire'] %}
-        <div class="alert alert-info">
+        <div class="alert alert-warning">
              {{ util.make_icon('info-sign') }}
-             {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("here")) -%}
-            	The questionnaire can be filled in {{ link }}.
+             {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("questionnaire")) -%}
+            	Please fill in the {{ link }} now.
             {%- endtrans %}
         </div>
     {% endif %}
