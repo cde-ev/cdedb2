@@ -106,6 +106,106 @@ class GenesisStati(enum.IntEnum):
 
 
 @enum.unique
+class MailinglistDomains(enum.IntEnum):
+    """Define the supported domains for mailinglists."""
+    #: General list
+    list = 1
+    #: event-associated list
+    event = 10
+
+    def __str__(self):
+        str_map = {
+            list: "lists.cde-ev.de",
+            event: "aka.cde-ev.de",
+        }
+        if self not in str_map:
+            raise NotImplementedError(n_("This domain is not supported."))
+        return str_map[self]
+
+
+@enum.unique
+class MailinglistTypes(enum.IntEnum):
+    """Define the behaviour of different types of mailinglist."""
+    #: Special type for obligatory list for all CdE-Members.
+    cde_all = 1
+    #: Special type for Opt-Out list for all CdE-Members.
+    cde_info = 2
+    #: General type for Opt-In list for CdE-Members. Example: Aktivenforum.
+    cde_opt_in = 10
+    #: General type for moderated Opt-In list for CdE-Members. Example: exPuls.
+    cde_moderated_opt_in = 11
+    #: General type for lists that don't typically add new subscribers.
+    cde_invitation_only = 12
+    #: Genaral type for event-associated lists.
+    event_opt_out = 20
+    #: General type for event-user lists. Example: Nachhaltigkeit.
+    event_opt_in = 21
+    #: General type for assembly-associated lists.
+    assembly_opt_out = 30
+    #: General type for assembly-user lists. Example: Wahlbekanntmachung.
+    assembly_opt_in = 31
+    #: General type for general mailinglists. Example: Lokalgruppen.
+    general_opt_in = 40
+
+    def relevant_admins(self):
+        """Return a set of all user roles, that may handle a given mailinglist.
+
+        :rtype: set[str]
+        """
+        # Map of who may administrate a mailinglist type other than ml_admin.
+        admin_map = {
+            cde_all: {"cde_admin"},
+            cde_info: {"cde_admin"},
+            cde_opt_in: {"cde_admin"},
+            cde_moderated_opt_in: {"cde_admin"},
+            cde_invitation_only: {"cde_admin"},
+            event_opt_out: {"event_admin"},
+            event_opt_in: {"event_admin"},
+            assembly_opt_out: {"assembly_admin"},
+            assembly_opt_in: {"assembly_admin"},
+            general_opt_in: set(),
+        }
+        ret = admin_map.get(self, set())
+        ret.add("ml_admin")
+        return ret
+
+    def visible_to(self):
+        """Return a set of user roles that may see a given mailinglist.
+
+        :rtype: set[str]
+        """
+        pass
+
+    def audience(self):
+        """Return a set of user roles that are the intended audience.
+
+        :rtype: set[str]
+        """
+        pass
+
+    def subscription_policy(self):
+        """Return the subscription policy for this mailinglist.
+
+        :rtype: SubscriptionPolicy
+        """
+        pass
+
+    def is_implicit(self):
+        """Whether or not a given mailinglist may have implicit subscriber.
+
+        :rtype: bool
+        """
+        pass
+
+    def domain(self):
+        """Return the domain of a given mailinglist type.
+
+        :rtype: str
+        """
+        pass
+
+
+@enum.unique
 class SubscriptionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: everybody is subscribed (think CdE-all)
