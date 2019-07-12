@@ -26,8 +26,9 @@ import cdedb.validation as validate
 from cdedb.database.connection import Atomizer
 from cdedb.common import (
     n_, merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
-    int_to_words, determine_age_class, LineResolutions, PERSONA_DEFAULTS,
-    ProxyShim, diacritic_patterns, open_utf8, shutil_copy, asciificator)
+    int_to_words, deduct_years, determine_age_class, LineResolutions,
+    PERSONA_DEFAULTS, ProxyShim, diacritic_patterns, open_utf8, shutil_copy,
+    asciificator)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -372,6 +373,14 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate.check_persona(persona, "persona",
                                                    creation=True)
+        try:
+            if (persona['birthday'] >
+                    deduct_years(now().date(), 10)):
+                problems.extend([('birthday', ValueError(
+                    n_("Persona is younger than 10 years.")))])
+        except TypeError:
+            # Errors like this are already handled by check_persona
+            pass
         pevent_id, w, p = self.pasteventproxy.find_past_event(
             rs, datum['raw']['event'])
         warnings.extend(w)
