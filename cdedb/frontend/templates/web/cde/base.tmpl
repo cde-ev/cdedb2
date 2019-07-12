@@ -47,14 +47,13 @@
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
                     {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="list-alt",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
+                    </div>
+                    <div class="list-group tear-down">
                 {% endif %}
-            </div>
-        {% endif %}
-
-        {% if "member" in user.roles %}
-            <div class="list-group tear-down">
-                {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
-                        aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
+                {% if "member" in user.roles %}
+                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
+                            aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
+                {% endif %}
             </div>
         {% endif %}
 
