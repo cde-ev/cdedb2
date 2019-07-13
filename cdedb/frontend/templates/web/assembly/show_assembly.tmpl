@@ -74,10 +74,12 @@
                             </li>
                         {% endfor %}
                     </ul>
-                    <div class="p">
-                        {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Attach File"),
-                                     aclass="btn btn-success btn-sm", icon="plus") }}
-                    </div>
+                    {% if is_admin %}
+                        <div class="p">
+                            {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Attach File"),
+                                         aclass="btn btn-success btn-sm", icon="plus") }}
+                        </div>
+                    {% endif %}
                 </div>
             {% endif %}
             
