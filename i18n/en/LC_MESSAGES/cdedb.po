@@ -783,6 +783,12 @@ msgstr "equals"
 msgid "QueryOperators.unequal"
 msgstr "does not equal"
 
+msgid "QueryOperators.equalornull"
+msgstr "is empty or equals"
+
+msgid "QueryOperators.unequalornull"
+msgstr "is empty or does not equal"
+
 #: cdedb/i18n_additional.py:187
 msgid "QueryOperators.oneof"
 msgstr "is one of"

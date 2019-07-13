@@ -24,6 +24,8 @@ class QueryOperators(enum.IntEnum):
     unequal = 4
     oneof = 5
     otherthan = 6
+    equalornull = 7
+    unequalornull = 8
     similar = 10
     dissimilar = 11
     regex = 12
@@ -44,31 +46,36 @@ _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
 VALID_QUERY_OPERATORS = {
-    "str": (_ops.similar, _ops.equal, _ops.unequal, _ops.containsall,
-            _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
-            _ops.regex, _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty,
-            _ops.greater, _ops.greaterequal, _ops.less, _ops.lessequal,
-            _ops.between, _ops.outside),
-    "id": (_ops.equal, _ops.unequal, _ops.oneof, _ops.otherthan, _ops.empty,
-           _ops.nonempty),
-    "int": (_ops.equal, _ops.unequal, _ops.oneof, _ops.otherthan, _ops.less,
-            _ops.lessequal, _ops.between, _ops.outside, _ops.greaterequal,
-            _ops.greater, _ops.empty, _ops.nonempty),
+    "str": (_ops.similar, _ops.equal, _ops.unequal, _ops.equalornull,
+            _ops.unequalornull, _ops.containsall, _ops.containsnone,
+            _ops.containssome, _ops.oneof, _ops.otherthan, _ops.regex,
+            _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty, _ops.greater,
+            _ops.greaterequal, _ops.less, _ops.lessequal, _ops.between,
+            _ops.outside),
+    "id": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
+           _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
+    "int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,
+            _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
+            _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty,
+            _ops.nonempty),
     "float": (_ops.less, _ops.between, _ops.outside, _ops.greater, _ops.empty,
               _ops.nonempty),
-    "date": (_ops.equal, _ops.unequal, _ops.oneof, _ops.otherthan, _ops.less,
-             _ops.lessequal, _ops.between, _ops.outside, _ops.greaterequal,
-             _ops.greater, _ops.empty, _ops.nonempty),
-    "datetime": (_ops.equal, _ops.unequal, _ops.oneof, _ops.otherthan,
-                 _ops.less, _ops.lessequal, _ops.between, _ops.outside,
-                 _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
-    "bool": (_ops.equal, _ops.empty, _ops.nonempty),
+    "date": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
+             _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal, _ops.between,
+             _ops.outside, _ops.greaterequal, _ops.greater, _ops.empty,
+             _ops.nonempty),
+    "datetime": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
+                 _ops.oneof, _ops.otherthan, _ops.less, _ops.lessequal,
+                 _ops.between, _ops.outside, _ops.greaterequal, _ops.greater,
+                 _ops.empty, _ops.nonempty),
+    "bool": (_ops.equal, _ops.equalornull, _ops.empty, _ops.nonempty),
 }
 
 #: Some operators are useful if there is only a finite set of possible values.
 #: The rest (which is missing here) is not useful in that case.
 SELECTION_VALUE_OPERATORS = (_ops.empty, _ops.nonempty, _ops.equal,
-                             _ops.unequal, _ops.oneof, _ops.otherthan)
+                             _ops.unequal, _ops.equalornull,
+                             _ops.unequalornull, _ops.oneof, _ops.otherthan)
 
 #: Some operators expect several operands (that is a space delimited list of
 #: operands) and thus need to be treated differently.
