@@ -16,21 +16,6 @@
                             active=True) }}
 {% endblock %}
 {% block content %}
-
-
-    {% if prev_ballot %}
-        <div class="p" >
-            {{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": prev_ballot["id"]}),
-                         prev_ballot["title"], icon="circle-arrow-left") }}
-        </div>
-    {% endif %}
-    {% if next_ballot %}
-        <div class="p">
-            {{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": next_ballot["id"]}),
-                         next_ballot["title"], icon="circle-arrow-right") }}
-        </div>
-    {% endif %}
-
     {# Admin modification options (delete and edit) #}
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
         <div class="p">
@@ -642,6 +627,19 @@
             {% endif %}
         {% endcall %}
     {% endif %}
+
+    <nav >
+        <ul class="pager">
+            {% if prev_ballot %}
+                <li class="previous">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": prev_ballot["id"]}),
+                         '<span aria-hidden="true">&larr;</span> '|s + gettext("Previous Ballot"), title=prev_ballot["title"]) }}</li>
+            {% endif %}
+            {%  if next_ballot %}
+                <li class="next">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": next_ballot["id"]}),
+                         gettext("Next Ballot") + ' <span aria-hidden="true">&rarr;</span>'|s, title=next_ballot["title"]) }}</li>
+            {% endif %}
+        </ul>
+    </nav>
 
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
