@@ -117,8 +117,14 @@
         {% if ambience['event']['use_questionnaire'] %}
             <p>
                 {% trans -%}
-                    After registration, you can find the questionnaire in the navigation. There you can
+                    After registration, you can find the 'Questionnaire' in the navigation. There you can
                     give more detailed information the orgateam wants to know.
+                {%- endtrans %}
+            </p>
+        {% else %}
+            <p>
+                {% trans -%}
+                    The orgas of this event may ask you for further data after the registration, using the ‘Questionaire’.
                 {%- endtrans %}
             </p>
         {% endif %}

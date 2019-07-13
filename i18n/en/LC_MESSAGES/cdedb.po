@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-07-12 22:36+0200\n"
+"POT-Creation-Date: 2019-07-13 11:47+0200\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -1680,7 +1680,7 @@ msgid "Missing tally for failed transaction."
 msgstr ""
 
 #: cdedb/backend/cde.py:386 cdedb/backend/common.py:567
-#: cdedb/database/constants.py:212 cdedb/database/constants.py:230
+#: cdedb/database/constants.py:312 cdedb/database/constants.py:330
 #: cdedb/frontend/cde.py:485 cdedb/frontend/cde.py:620
 #: cdedb/frontend/common.py:1233
 msgid "Impossible."
@@ -2085,6 +2085,10 @@ msgstr ""
 
 #: cdedb/database/connection.py:219
 msgid "No contamination!"
+msgstr ""
+
+#: cdedb/database/constants.py:122
+msgid "This domain is not supported."
 msgstr ""
 
 #: cdedb/frontend/application.py:81 cdedb/frontend/cron.py:50
@@ -3442,7 +3446,7 @@ msgstr ""
 msgid "Interests"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/base.tmpl:56
+#: cdedb/frontend/templates/web/cde/base.tmpl:54
 #: cdedb/frontend/templates/web/cde/view_misc.tmpl:5
 #: cdedb/frontend/templates/web/cde/view_misc.tmpl:9
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:78
@@ -5156,9 +5160,10 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:211
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:419
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:563
-msgid "<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>"
+msgid ""
+"<a "
+"href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze"
+" method</a>"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:218
@@ -5288,6 +5293,11 @@ msgid ""
 "preference. The preferences of all participants will be\n"
 "                                    evaluated using the %(link)s, to "
 "determine the winner."
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:419
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:563
+msgid "<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:426
@@ -7265,7 +7275,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/index.tmpl:176
 #: cdedb/frontend/templates/web/event/base.tmpl:23
 #: cdedb/frontend/templates/web/event/register.tmpl:14
-#: cdedb/frontend/templates/web/event/register.tmpl:148
+#: cdedb/frontend/templates/web/event/register.tmpl:154
 msgid "Register"
 msgstr ""
 
@@ -7826,8 +7836,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:41
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:87
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:166
-#: cdedb/frontend/templates/web/event/register.tmpl:127
-#: cdedb/frontend/templates/web/event/register.tmpl:137
+#: cdedb/frontend/templates/web/event/register.tmpl:133
+#: cdedb/frontend/templates/web/event/register.tmpl:143
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:46
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:115
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:175
@@ -7893,30 +7903,30 @@ msgid "Edit Registration"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:30
-#: cdedb/frontend/templates/web/event/register.tmpl:127
+#: cdedb/frontend/templates/web/event/register.tmpl:133
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:118
 msgid "Mixed Lodging not possible."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:34
-#: cdedb/frontend/templates/web/event/register.tmpl:130
+#: cdedb/frontend/templates/web/event/register.tmpl:136
 msgid "The selection must be compatible with the parental consent form."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:39
-#: cdedb/frontend/templates/web/event/register.tmpl:135
+#: cdedb/frontend/templates/web/event/register.tmpl:141
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:121
 msgid "I agree to mixed lodging."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:40
-#: cdedb/frontend/templates/web/event/register.tmpl:136
+#: cdedb/frontend/templates/web/event/register.tmpl:142
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:123
 msgid "I want to be lodged seperated by gender."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:43
-#: cdedb/frontend/templates/web/event/register.tmpl:143
+#: cdedb/frontend/templates/web/event/register.tmpl:149
 msgid ""
 "I agree that my data, including my name, address and my email, may be "
 "sent to other participants of this event beforehand."
@@ -9276,13 +9286,19 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/register.tmpl:119
 msgid ""
-"After registration, you can find the questionnaire in the navigation. "
+"After registration, you can find the 'Questionnaire' in the navigation. "
 "There you can\n"
 "                    give more detailed information the orgateam wants to "
 "know."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/register.tmpl:139
+#: cdedb/frontend/templates/web/event/register.tmpl:126
+msgid ""
+"The orgas of this event may ask you for further data after the "
+"registration, using the ‘Questionaire’."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/register.tmpl:145
 msgid ""
 "In the context of this event, photos and recordings will be made to be "
 "used for the event-documentation and a CdE-internal, password protected "
@@ -9290,7 +9306,7 @@ msgid ""
 "this by request."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/register.tmpl:146
+#: cdedb/frontend/templates/web/event/register.tmpl:152
 msgid "Notes for Orgas and Instructors"
 msgstr ""
 
@@ -10397,5 +10413,13 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "The questionnaire can be filled in %(link)s."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "After registration, you can find the "
+#~ "questionnaire in the navigation. There "
+#~ "you can\n"
+#~ "                    give more detailed "
+#~ "information the orgateam wants to know."
 #~ msgstr ""
 
