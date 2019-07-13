@@ -198,6 +198,9 @@ if (!String.prototype.format) {
          */
         function moveCandidate($candidate, $destination) {
             var $source = $candidate.parent();
+            // Prevent moving within same stage to avoid confusion
+            if ($source[0] === $destination[0])
+                return;
             $destination.append($candidate);
             $destination.append(' ');
             // If source stage is empty and not neutral stage ...
