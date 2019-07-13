@@ -396,6 +396,8 @@
     "navs.less",
     "navbar.less",
     "breadcrumbs.less",
+    "pagination.less",
+    "pager.less",
     "labels.less",
     "thumbnails.less",
     "alerts.less",
@@ -409,6 +411,5 @@
     "tab.js",
     "collapse.js",
     "transition.js"
-  ],
-  "customizerUrl": "<none>"
+  ]
 }
