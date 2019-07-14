@@ -310,20 +310,31 @@ INSERT INTO ml.mailinglists (id, title, address, description, sub_policy, mod_po
     (9, 'Teilnehmer-Liste', 'participants@example.cde', NULL, 5, 2, 1, 3, '[aka]', NULL, True, NULL, 1, ARRAY[2, 4], NULL),
     (10, 'Warte-Liste', 'wait@example.cde', NULL, 5, 3, 1, 3, '[wait]', NULL, True, NULL, 1, ARRAY[3], NULL);
 
-INSERT INTO ml.subscription_states (mailinglist_id, persona_id, address, is_subscribed) VALUES
-    (1, 3, NULL, False),
-    (2, 6, NULL, False),
-    (3, 1, NULL, True),
-    (3, 2, NULL, False),
-    (3, 10, 'janis-spam@example.cde', True),
-    (4, 1, NULL, True),
-    (4, 2, NULL, True),
-    (4, 6, 'ferdinand-unterhaltung@example.cde', True),
-    (4, 10, NULL, True),
-    (6, 1, NULL, True),
-    (6, 2, NULL, True),
-    (7, 2, NULL, True),
-    (7, 3, NULL, True);
+INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_state) VALUES
+    (1, 3, 2),
+    (2, 6, 2),
+    (3, 1, 1),
+    (3, 2, 2),
+    (3, 10, 1),
+    (4, 1, 1),
+    (4, 2, 1),
+    (4, 6, 1),
+    (4, 10, 1),
+    (5, 3, 10),
+    (5, 10, 30),
+    (6, 1, 1),
+    (6, 2, 1),
+    (7, 1, 2),
+    (7, 2, 30),
+    (7, 3, 1),
+    (7, 6, 20),
+    (9, 5, 2),
+    (9, 7, 1),
+    (9, 11, 1);
+
+INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
+    (3, 10, 'janis-spam@example.cde'),
+    (4, 6, 'ferdinand-unterhaltung@example.cde');
 
 INSERT INTO ml.whitelist (mailinglist_id, address) VALUES
     (2, 'honeypot@example.cde'),
