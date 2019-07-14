@@ -287,6 +287,140 @@ class TestMlBackend(BackendTest):
                          self.ml.lookup_subscription_states(
                              self.key, (1, 2, 9), (1, 4, 9)))
 
+    @as_users("anton")
+    def test_subscription_addresses(self, user):
+        mailinglist_id = 3
+
+        # Check sample data.
+        expectation = {
+            1: USER_DICT["anton"]["username"],
+            10: 'janis-spam@example.cde',
+        }
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        # Add and change addresses.
+        id_pair = (mailinglist_id, 1)
+        address = "anton-spam@example.cde"
+        expectation.update({id_pair[1]: address})
+        self.ml.add_subscription_address(self.key, id_pair, address)
+        id_pair = (mailinglist_id, 10)
+        address = "janis-cde@example.cde"
+        expectation.update({id_pair[1]: address})
+        self.ml.change_subscription_address(self.key, id_pair, address)
+
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        # Remove an address.
+        id_pair = (mailinglist_id, 10)
+        del expectation[id_pair[1]]
+        self.ml.remove_subscription_address(self.key, id_pair)
+
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+    @as_users("anton")
+    def test_write_subscription_states(self, user):
+        mailinglist_id = 7
+
+        expectation = {
+            1: const.SubscriptionStates.unsubscribed,
+            2: const.SubscriptionStates.implicit,
+            3: const.SubscriptionStates.subscribed,
+            6: const.SubscriptionStates.subscription_requested,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        # Combine adding and changing subscriptions.
+        persona_ids = [1, 5, 9]
+        id_pairs = [(mailinglist_id, p_id) for p_id in persona_ids]
+        state = const.SubscriptionStates.subscribed
+        self.ml.set_subscriptions(self.key, id_pairs, state)
+
+        # Add subscriptions then change them.
+        persona_ids = [4]
+        id_pairs = [(mailinglist_id, p_id) for p_id in persona_ids]
+        state = const.SubscriptionStates.subscribed
+        self.ml.add_subscriptions(self.key, id_pairs, state)
+        state = const.SubscriptionStates.mod_subscribed
+        self.ml.change_subscriptions(self.key, id_pairs, state)
+
+        expectation = {
+            1: const.SubscriptionStates.subscribed,
+            2: const.SubscriptionStates.implicit,
+            3: const.SubscriptionStates.subscribed,
+            4: const.SubscriptionStates.mod_subscribed,
+            5: const.SubscriptionStates.subscribed,
+            6: const.SubscriptionStates.subscription_requested,
+            9: const.SubscriptionStates.subscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        self.assertLess(
+            0, self.ml.write_subscription_states(self.key, mailinglist_id))
+
+        expectation = {
+            1: const.SubscriptionStates.subscribed,
+            3: const.SubscriptionStates.subscribed,
+            4: const.SubscriptionStates.mod_subscribed,
+            6: const.SubscriptionStates.subscription_requested,
+            9: const.SubscriptionStates.subscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        # Now test adding implicit subscribers.
+        # First for events.
+        mailinglist_id = 9
+
+        # Initially empty
+        expectation = {
+            5: const.SubscriptionStates.unsubscribed,
+            7: const.SubscriptionStates.subscribed,
+            11: const.SubscriptionStates.subscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        self.assertLess(
+            0, self.ml.write_subscription_states(self.key, mailinglist_id))
+
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            5: const.SubscriptionStates.unsubscribed,
+            7: const.SubscriptionStates.subscribed,
+            9: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+
+        # Now for assemblies.
+        mailinglist_id = 5
+
+        expectation = {
+            3: const.SubscriptionStates.mod_subscribed,
+            10: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        self.assertLess(
+            0, self.ml.write_subscription_states(self.key, mailinglist_id))
+
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
+            3: const.SubscriptionStates.mod_subscribed,
+            9: const.SubscriptionStates.implicit,
+            11: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
     @as_users("inga")
     def test_request_cancellation(self, user):
         self.assertEqual({(9, 4): 1},
@@ -390,25 +524,6 @@ class TestMlBackend(BackendTest):
             self.ml.retrieve_log(self.key, mailinglist_id=11, start=1, stop=5))
         self.assertEqual(expectation[3:5],
                          self.ml.retrieve_log(self.key, codes=(10,)))
-
-    @as_users("anton")
-    def test_check_states(self, user):
-        self.ml.change_subscription_state(self.key, 1, 5, True)
-        self.ml.change_subscription_state(self.key, 7, 8, True)
-        self.ml.change_subscription_state(self.key, 8, 10, True)
-        lists = self.ml.list_mailinglists(self.key)
-        expectation = {1: ({'is_override': False, 'mailinglist_id': 1, 'persona_id': 5},),
-                       2: (),
-                       3: (),
-                       4: (),
-                       5: (),
-                       7: ({'is_override': False, 'mailinglist_id': 7, 'persona_id': 8},),
-                       8: ({'is_override': False, 'mailinglist_id': 8, 'persona_id': 10},),
-                       9: (),
-                       10: ()}
-
-        self.assertEqual(expectation,
-                         self.ml.check_states(self.key, lists.keys()))
 
     def test_gateway(self):
         self.login(USER_DICT['inga'])
