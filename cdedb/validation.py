@@ -417,6 +417,56 @@ def _iterable(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
+def _sequence(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :param _convert: is ignored since no useful default conversion is available
+    :rtype: ([object] or None, [(str or None, exception)])
+    """
+    if not isinstance(val, collections.abc.Sequence):
+        return None, [(argname, TypeError(n_("Must be a sequence.")))]
+    return val, []
+
+
+@_addvalidator
+def _pair(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: ((object, object) or None, [(str or None, exception)])
+    """
+    val, errs = _sequence(val, argname, _convert=_convert)
+    if errs:
+        return None, errs
+    if len(val) != 2:
+        return None, [(argname, ValueError(n_("Must be exactly length two.")))]
+    return tuple(val), []
+
+
+@_addvalidator
+def _id_pair(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: ((int, int) or None, [(str or None, exception)])
+    """
+    val, errs = _pair(val, argname, _convert=_convert)
+    if errs:
+        return None, errs
+    v, w = val
+    v, errs = _id(v, argname, _convert=_convert)
+    w, e = _id(w, argname, _convert=_convert)
+    errs.extend(e)
+    if errs:
+        return None, errs
+    return (v, w), []
+
+
+@_addvalidator
 def _bool(val, argname=None, *, _convert=True):
     """
     :type val: object
