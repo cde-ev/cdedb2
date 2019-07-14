@@ -196,7 +196,7 @@
                             style="display: inline;">
                         {{ util.anti_csrf_token('event/delete_course') }}
                         {{ util.input_submit(value=gettext("Delete"), readonly=is_locked or blockers,
-                                             aclass="btn btn-danger", icon="folder-close", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
+                                             aclass="btn btn-danger", icon="trash", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                     </form>
                 </div>
