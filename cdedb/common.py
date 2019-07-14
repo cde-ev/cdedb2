@@ -183,8 +183,11 @@ def do_singularization(fun):
             param = args[0]
             args = ((param,),) + args[1:]
         data = fun(rs, *args, **kwargs)
-        # raises KeyError if the requested thing does not exist
-        return data[param]
+        if hint['returns_dict']:
+            # raises KeyError if the requested thing does not exist
+            return data[param]
+        else:
+            return data
 
     new_fun.__name__ = hint['singular_function_name']
     return new_fun
