@@ -206,6 +206,35 @@ class MailinglistTypes(enum.IntEnum):
 
 
 @enum.unique
+class SubscriptionStates(enum.IntEnum):
+    """Define the possible relations between user and mailinglist."""
+    #: The user is explicitly subscribed.
+    subscribed = 1
+    #: The user is explicitly unsubscribed (usually from an Opt-Out list).
+    unsubscribed = 2
+    #: The user was explicitly added by a moderator.
+    mod_subscribed = 10
+    #: The user was explicitly removed/blocked by a moderator.
+    mod_unsubscribed = 11
+    #: The user has requested a subscription to the mailinglist.
+    subscription_requested = 20
+    #: The user is subscribed by virtue of being part of some group.
+    implicit = 30
+
+    @property
+    def is_subscribed(self):
+        return self in {SubscriptionStates.subscribed,
+                        SubscriptionStates.mod_subscribed,
+                        SubscriptionStates.implicit}
+
+    @classmethod
+    def subscribing_states(cls):
+        ret = {member for member in cls if member.is_subscribed}
+        return ret
+
+
+
+@enum.unique
 class SubscriptionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: everybody is subscribed (think CdE-all)
