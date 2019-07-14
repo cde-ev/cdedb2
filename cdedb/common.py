@@ -965,15 +965,6 @@ class CourseChoiceToolActions(enum.IntEnum):
     assign_auto = -5  #: somewhat intelligent algorithm
 
 
-@enum.unique
-class SubscriptionStates(enum.IntEnum):
-    """Relation to a mailing list.
-    """
-    unsubscribed = 1  #:
-    subscribed = 2  #:
-    requested = 10  #: A subscription request is waiting for moderation.
-
-
 def mixed_existence_sorter(iterable):
     """Iterate over a set of indices in the relevant way.
 
