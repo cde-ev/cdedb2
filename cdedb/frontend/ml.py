@@ -8,7 +8,7 @@ import collections
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, csv_output,
+    REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
     check_validation as check, mailinglist_guard, query_result_to_json)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
