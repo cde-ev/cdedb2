@@ -33,8 +33,7 @@
                     return $(this).find('[name="testrun"]').prop('checked');
                 });
             $('#ejectform').cdedbProtectAction(
-                "{{ gettext("All inactive Members will be removed.
-                This cannot be undone and it can only be done once per Semester.") }}");
+                "{{ gettext("All inactive Members will be removed. This cannot be undone and it can only be done once per Semester.") }}");
             $('#balanceform').cdedbProtectAction(
                 "{{ gettext("The Balance of all Members will be updated. This cannot be undone.") }}");
             $('#proceedform').cdedbProtectAction(
