@@ -250,6 +250,40 @@ class SubscriptionStates(enum.IntEnum):
         return log_code_map.get(self)
 
 
+@enum.unique
+class SubscriptionRequestResolutions(enum.IntEnum):
+    """Define possible results of subscription requests."""
+    approved = 1
+    denied = 2
+    blocked = 10
+    cancelled = 20
+
+    def get_log_code(self):
+        log_code_map = {
+            SubscriptionRequestResolutions.approved:
+                MlLogCodes.request_approved,
+            SubscriptionRequestResolutions.denied:
+                MlLogCodes.request_denied,
+            SubscriptionRequestResolutions.blocked:
+                MlLogCodes.request_blocked,
+            SubscriptionRequestResolutions.cancelled:
+                MlLogCodes.request_cancelled,
+        }
+        return log_code_map.get(self)
+
+    def get_new_state(self):
+        state_map = {
+            SubscriptionRequestResolutions.approved:
+                SubscriptionStates.subscribed,
+            SubscriptionRequestResolutions.denied:
+                None,
+            SubscriptionRequestResolutions.blocked:
+                SubscriptionStates.mod_unsubscribed,
+            SubscriptionRequestResolutions.cancelled:
+                None,
+        }
+        return state_map.get(self)
+
 
 @enum.unique
 class SubscriptionPolicy(enum.IntEnum):
