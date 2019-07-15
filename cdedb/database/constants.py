@@ -145,6 +145,23 @@ class SubscriptionStates(enum.IntEnum):
         ret = {member for member in cls if member.is_subscribed}
         return ret
 
+    def get_log_code(self):
+        log_code_map = {
+            SubscriptionStates.subscribed:
+                MlLogCodes.subscribed,
+            SubscriptionStates.unsubscribed:
+                MlLogCodes.unsubscribed,
+            SubscriptionStates.mod_subscribed:
+                MlLogCodes.marked_override,
+            SubscriptionStates.mod_unsubscribed:
+                MlLogCodes.marked_blocked,
+            SubscriptionStates.subscription_requested:
+                MlLogCodes.subscription_requested,
+            SubscriptionStates.implicit:
+                None,
+        }
+        return log_code_map.get(self)
+
 
 @enum.unique
 class SubscriptionPolicy(enum.IntEnum):
@@ -418,12 +435,14 @@ class MlLogCodes(enum.IntEnum):
     moderator_removed = 11  #:
     whitelist_added = 12  #:
     whitelist_removed = 13  #:
-    subscription_requested = 20  #:
-    subscribed = 21  #:
-    subscription_changed = 22  #:
-    unsubscribed = 23  #:
-    marked_override = 24  #:
+    subscription_requested = 20  #: SubscriptionStates.subscription_requested
+    subscribed = 21  #: SubscriptionStates.subscribed
+    subscription_changed = 22  #: This is now used for address changes.
+    unsubscribed = 23  #: SubscriptionStates.unsubscribed
+    marked_override = 24  #: SubscriptionStates.mod_subscribed
+    marked_blocked = 25  #: SubscriptionStates.mod_unsubscribed
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:
+    request_blocked = 33  #:
     email_trouble = 40  #:

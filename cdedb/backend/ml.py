@@ -513,6 +513,7 @@ class MlBackend(AbstractBackend):
         """
         id_pairs = affirm_set("id_pair", id_pairs)
         subscription_state = affirm("enum_subscriptionstates", state)
+        code = subscription_state.get_log_code()
 
         new_ids = {}
         for mailinglist_id, persona_id in id_pairs:
@@ -523,6 +524,8 @@ class MlBackend(AbstractBackend):
             }
             new_ids[(mailinglist_id, persona_id)] = self.sql_insert(
                 rs, "ml.subscription_states", data)
+            if code:
+                self.ml_log(rs, code, mailinglist_id, persona_id)
 
         return new_ids
 
@@ -538,6 +541,7 @@ class MlBackend(AbstractBackend):
         """
         id_pairs = affirm_set("id_pair", id_pairs)
         subscription_state = affirm("enum_subscriptionstates", state)
+        code = subscription_state.get_log_code()
 
         # TODO validate that the affected rows exists.
 
@@ -545,11 +549,14 @@ class MlBackend(AbstractBackend):
         phrase = "mailinglist_id = %s AND persona_id = %s"
         query = query + " WHERE " + " OR ".join([phrase] * len(id_pairs))
         params = [subscription_state]
-        for pair in id_pairs:
-            params.extend(pair)
+        for mailinglist_id, persona_id in id_pairs:
+            params.extend((mailinglist_id, persona_id))
+            if code:
+                self.ml_log(rs, code, mailinglist_id, persona_id)
 
         return self.query_exec(rs, query, params)
 
+    # This should probably only be accessed by write_subscription_states().
     @access("ml")
     @singularize("remove_subscription", "id_pairs", "id_pair",
                  returns_dict=False)
@@ -565,12 +572,15 @@ class MlBackend(AbstractBackend):
         """
         id_pairs = affirm_set("id_pair", id_pairs)
 
+        code = const.MlLogCodes.unsubscribed
+
         query = "DELETE FROM ml.subscription_states"
         phrase = "mailinglist_id = %s AND persona_id = %s"
         query = query + " WHERE " + " OR ".join([phrase] * len(id_pairs))
         params = []
-        for pair in id_pairs:
-            params.extend(pair)
+        for mailinglist_id, persona_id in id_pairs:
+            params.extend((mailinglist_id, persona_id))
+            self.ml_log(rs, code, mailinglist_id, persona_id)
 
         ret = self.query_exec(rs, query, params)
 
@@ -579,6 +589,17 @@ class MlBackend(AbstractBackend):
     @access("ml")
     @singularize("set_subscription", "id_pairs", "id_pair", returns_dict=False)
     def set_subscriptions(self, rs, id_pairs, state):
+        """Helper to decide whether we need to add a row or change a row.
+
+        All logging is done inside the called functions.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type id_pairs: [(int, int)]
+        :param id_pairs: Entries in the table are referenced by two ids, so we
+            need a list of pairs.
+        :rtype: int
+        :returns: Number of affected rows.
+        """
 
         id_pairs = affirm_set("id_pair", id_pairs)
         subscription_state = affirm("enum_subscriptionstates", state)
@@ -745,9 +766,9 @@ class MlBackend(AbstractBackend):
 
     @access("ml_admin")
     def write_subscription_states(self, rs, mailinglist_id):
-        """This takes takes care of writing implicit subscriptions to the db.
+        """This takes care of writing implicit subscriptions to the db.
 
-        Also this check the integrity of explicit subscriptions.
+        This also checks the integrity of existing subscriptions.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
@@ -757,12 +778,13 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm("id", mailinglist_id)
         mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
+        # States of current subscriptions we may touch.
         old_subscriber_states = {const.SubscriptionStates.implicit,
                                  const.SubscriptionStates.subscribed}
+        # States of current subscriptions we may not touch.
         protected_states = {const.SubscriptionStates.mod_subscribed,
                             const.SubscriptionStates.mod_unsubscribed,
                             const.SubscriptionStates.unsubscribed}
-
 
         ret = 1
         with Atomizer(rs):
@@ -770,28 +792,43 @@ class MlBackend(AbstractBackend):
                 rs, mailinglist_id, states=old_subscriber_states)
             new_implicits = self._get_implicit_subscribers(rs, mailinglist)
 
+            # Check whether current subscribers may stay subscribed.
+            # This is the case if they are implicit subscribers of the list or
+            # if the `may_be_subscribed` function says so.
             delete = []
             for persona_id in set(old_subscribers) - new_implicits:
                 persona = self.core.get_persona(rs, persona_id)
                 if not self.may_be_subscribed(
                         extract_roles(persona), mailinglist,
                         old_subscribers[persona_id]):
-                    delete.append((mailinglist_id, persona_id))
-            if delete:
-                num = self.remove_subscriptions(rs, delete)
+                    delete.append(persona_id)
+
+            # Remove those who may not stay subscribed.
+            id_pairs = [(mailinglist_id, persona_id) for persona_id in delete]
+            if id_pairs:
+                with Silencer(rs):
+                    num = self.remove_subscriptions(rs, id_pairs)
                 ret *= num
                 self.logger.debug(
                     "Removed {} subscribers from mailinglist {}.".format(
                         num, mailinglist_id))
 
+            # Check whether any implicit subscribers need to be written.
+            # This is the case im they are not already old subscribers and
+            # they don't have a protected subscription.
             protected = self.get_subscription_states(
                 rs, mailinglist_id, protected_states)
             write = set(new_implicits) - set(old_subscribers) - set(protected)
-            for persona_id in write:
-                state = const.SubscriptionStates.implicit
-                self.add_subscription(rs, (mailinglist_id, persona_id), state)
-            if write:
-                ret *= len(write)
+
+            # Set implicit subscriptions.
+            id_pairs = [(mailinglist_id, persona_id) for persona_id in write]
+            state = const.SubscriptionStates.implicit
+            if id_pairs:
+                with Silencer(rs):
+                    # Use set_subscriptions in case anyone already has a
+                    # subscription.
+                    self.set_subscriptions(rs, id_pairs, state)
+                ret *= len(id_pairs)
                 self.logger.debug(
                     "Added {} subscribers to mailinglist {}.".format(
                         len(write), mailinglist_id))
