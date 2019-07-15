@@ -323,6 +323,7 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (7, 2, 30),
     (7, 3, 1),
     (7, 6, 20),
+    (9, 1, 20),
     (9, 5, 2),
     (9, 7, 1),
     (9, 11, 1);

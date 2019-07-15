@@ -376,8 +376,9 @@ class TestMlBackend(BackendTest):
         # First for events.
         mailinglist_id = 9
 
-        # Initially empty
+        # Initially sample-data.
         expectation = {
+            1: const.SubscriptionStates.subscription_requested,
             5: const.SubscriptionStates.unsubscribed,
             7: const.SubscriptionStates.subscribed,
             11: const.SubscriptionStates.subscribed,
