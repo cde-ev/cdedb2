@@ -448,26 +448,6 @@ def _pair(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _id_pair(val, argname=None, *, _convert=True):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :rtype: ((int, int) or None, [(str or None, exception)])
-    """
-    val, errs = _pair(val, argname, _convert=_convert)
-    if errs:
-        return None, errs
-    v, w = val
-    v, errs = _id(v, argname, _convert=_convert)
-    w, e = _id(w, argname, _convert=_convert)
-    errs.extend(e)
-    if errs:
-        return None, errs
-    return (v, w), []
-
-
-@_addvalidator
 def _bool(val, argname=None, *, _convert=True):
     """
     :type val: object
@@ -3055,6 +3035,67 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                     newarray.append(v)
             val[key] = newarray
     return val, errs
+
+
+_SUBSCRIPTION_ID_FIELDS = lambda: {
+    'mailinglist_id': _id,
+    'persona_id': _id,
+}
+
+_SUBSCRIPTION_STATE_FIELDS = lambda: {
+    'subscription_state': _enum_subscriptionstates,
+}
+
+_SUBSCRIPTION_ADDRESS_FIELDS = lambda: {
+    'address': _email,
+}
+
+_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS = lambda: {
+    'resolution': _enum_subscriptionrequestresolutions,
+}
+
+
+@_addvalidator
+def _subscription_identifier(val, argname=None, *, _convert=True):
+    argname = argname or "subscription identifier"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = _SUBSCRIPTION_ID_FIELDS()
+    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+
+
+@_addvalidator
+def _subscription_state(val, argname=None, *, _convert=True):
+    argname = argname or "subscription state"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = _SUBSCRIPTION_ID_FIELDS()
+    mandatory_fields.update(_SUBSCRIPTION_STATE_FIELDS())
+    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+
+
+@_addvalidator
+def _subscription_address(val, argname=None, *, _convert=True):
+    argname = argname or "subscription address"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = _SUBSCRIPTION_ID_FIELDS()
+    mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS())
+    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+
+
+@_addvalidator
+def _subscription_request_resolution(val, argname=None, *, _convert=True):
+    argname = argname or "subscription request resolution"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = _SUBSCRIPTION_ID_FIELDS()
+    mandatory_fields.update(_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS())
+    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
 
 _ASSEMBLY_COMMON_FIELDS = lambda: {

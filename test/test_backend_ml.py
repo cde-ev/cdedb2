@@ -301,22 +301,31 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
         # Add and change addresses.
-        id_pair = (mailinglist_id, 1)
-        address = "anton-spam@example.cde"
-        expectation.update({id_pair[1]: address})
-        self.ml.add_subscription_address(self.key, id_pair, address)
-        id_pair = (mailinglist_id, 10)
-        address = "janis-cde@example.cde"
-        expectation.update({id_pair[1]: address})
-        self.ml.change_subscription_address(self.key, id_pair, address)
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': 1,
+            'address': "anton-spam@example.cde",
+        }
+        expectation.update({datum['persona_id']: datum['address']})
+        self.ml.set_subscription_address(self.key, datum)
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': 10,
+            'address': "janis-cde@example.cde",
+        }
+        expectation.update({datum['persona_id']: datum['address']})
+        self.ml.set_subscription_address(self.key, datum)
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
         # Remove an address.
-        id_pair = (mailinglist_id, 10)
-        del expectation[id_pair[1]]
-        self.ml.remove_subscription_address(self.key, id_pair)
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': 10,
+        }
+        del expectation[datum['persona_id']]
+        self.ml.remove_subscription_address(self.key, datum)
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -334,19 +343,25 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
-        # Combine adding and changing subscriptions.
-        persona_ids = [1, 5, 9]
-        id_pairs = [(mailinglist_id, p_id) for p_id in persona_ids]
-        state = const.SubscriptionStates.subscribed
-        self.ml.set_subscriptions(self.key, id_pairs, state)
-
-        # Add subscriptions then change them.
-        persona_ids = [4]
-        id_pairs = [(mailinglist_id, p_id) for p_id in persona_ids]
-        state = const.SubscriptionStates.subscribed
-        self.ml.add_subscriptions(self.key, id_pairs, state)
-        state = const.SubscriptionStates.mod_subscribed
-        self.ml.change_subscriptions(self.key, id_pairs, state)
+        # Add and change some subscriptions.
+        data = [
+            {
+                'mailinglist_id': mailinglist_id,
+                'persona_id': persona_id,
+                'subscription_state': const.SubscriptionStates.subscribed,
+            }
+            for persona_id in [1, 4, 5, 9]
+        ]
+        self.ml.set_subscriptions(self.key, data)
+        data = [
+            {
+                'mailinglist_id': mailinglist_id,
+                'persona_id': persona_id,
+                'subscription_state': const.SubscriptionStates.mod_subscribed,
+            }
+            for persona_id in [4]
+        ]
+        self.ml.set_subscriptions(self.key, data)
 
         expectation = {
             1: const.SubscriptionStates.subscribed,
@@ -398,7 +413,6 @@ class TestMlBackend(BackendTest):
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
-
 
         # Now for assemblies.
         mailinglist_id = 5
