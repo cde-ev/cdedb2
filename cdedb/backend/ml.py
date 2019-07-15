@@ -95,7 +95,16 @@ class MlBackend(AbstractBackend):
                 or mailinglist["id"] in rs.user.moderator)
 
     @access("ml")
-    def is_relevant_admin(self, rs, mailinglist):
+    def is_relevant_admin(self, rs, *, mailinglist=None, mailinglist_id=None):
+        """Check if the user is a relevant admin for a mailinglist.
+
+        Exactly one of the inputs should be provided.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist: {str: object}
+        :type mailinglist_id: int
+        :rtype: bool
+        """
         # TODO: for now this is just ml_admin, with the new MailinglistTypes,
         # this could be other admins as well.
         return self.is_admin(rs)
@@ -502,61 +511,6 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    @singularize("add_subscription", "id_pairs", "id_pair")
-    def add_subscriptions(self, rs, id_pairs, state):
-        """Add a new row to the ml.subscription_states table.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type id_pairs: (int, int)
-        :type state: const.SubscriptionStates
-        """
-        id_pairs = affirm_set("id_pair", id_pairs)
-        subscription_state = affirm("enum_subscriptionstates", state)
-        code = subscription_state.get_log_code()
-
-        new_ids = {}
-        for mailinglist_id, persona_id in id_pairs:
-            data = {
-                "persona_id": persona_id,
-                "mailinglist_id": mailinglist_id,
-                "subscription_state": subscription_state,
-            }
-            new_ids[(mailinglist_id, persona_id)] = self.sql_insert(
-                rs, "ml.subscription_states", data)
-            if code:
-                self.ml_log(rs, code, mailinglist_id, persona_id)
-
-        return new_ids
-
-    @access("ml")
-    @singularize("change_subscription", "id_pairs", "id_pair",
-                 returns_dict=False)
-    def change_subscriptions(self, rs, id_pairs, state):
-        """Change multiple rows in ml.subscription_states to the same state.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type id_pairs: (int, int)
-        :type state: const.SubscriptionStates
-        """
-        id_pairs = affirm_set("id_pair", id_pairs)
-        subscription_state = affirm("enum_subscriptionstates", state)
-        code = subscription_state.get_log_code()
-
-        # TODO validate that the affected rows exists.
-
-        query = "UPDATE ml.subscription_states SET subscription_state = %s"
-        phrase = "mailinglist_id = %s AND persona_id = %s"
-        query = query + " WHERE " + " OR ".join([phrase] * len(id_pairs))
-        params = [subscription_state]
-        for mailinglist_id, persona_id in id_pairs:
-            params.extend((mailinglist_id, persona_id))
-            if code:
-                self.ml_log(rs, code, mailinglist_id, persona_id)
-
-        return self.query_exec(rs, query, params)
-
-    # This should probably only be accessed by write_subscription_states().
-    @access("ml")
     @singularize("remove_subscription", "id_pairs", "id_pair",
                  returns_dict=False)
     def remove_subscriptions(self, rs, id_pairs):
@@ -570,6 +524,13 @@ class MlBackend(AbstractBackend):
         :returns: Number of affected rows.
         """
         id_pairs = affirm_set("id_pair", id_pairs)
+
+        if not (self.is_admin(rs)
+                or all(p_id == rs.user.persona_id
+                       or self.is_moderator(rs, ml_id)
+                       or self.is_relevant_admin(rs, mailinglist_id=ml_id)
+                       for ml_id, p_id in id_pairs)):
+            raise PrivilegeError("Not privileged.")
 
         code = const.MlLogCodes.unsubscribed
 
@@ -588,14 +549,13 @@ class MlBackend(AbstractBackend):
     @access("ml")
     @singularize("set_subscription", "id_pairs", "id_pair", returns_dict=False)
     def set_subscriptions(self, rs, id_pairs, state):
-        """Helper to decide whether we need to add a row or change a row.
-
-        All logging is done inside the called functions.
+        """Change or add a ml.subscription_states row.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type id_pairs: [(int, int)]
         :param id_pairs: Entries in the table are referenced by two ids, so we
             need a list of pairs.
+        :type state: const.SubscriptionStates
         :rtype: int
         :returns: Number of affected rows.
         """
@@ -603,17 +563,77 @@ class MlBackend(AbstractBackend):
         id_pairs = affirm_set("id_pair", id_pairs)
         subscription_state = affirm("enum_subscriptionstates", state)
 
+        if not (self.is_admin(rs)
+                or all(p_id == rs.user.persona_id
+                       or self.is_moderator(rs, ml_id)
+                       or self.is_relevant_admin(rs, mailinglist_id=ml_id)
+                       for ml_id, p_id in id_pairs)):
+            raise PrivilegeError("Not privileged.")
+
         num = 0
+        code = subscription_state.get_log_code()
         for mailinglist_id, persona_id in id_pairs:
-            if self.get_subscription(
-                    rs, persona_id, mailinglist_id=mailinglist_id):
-                num += self.change_subscription(
-                    rs, (mailinglist_id, persona_id), state)
+            existing = self.get_subscription(
+                rs, persona_id, mailinglist_id=mailinglist_id)
+
+            if existing:
+                query = ("UPDATE ml.subscription_states "
+                         "SET subscription_state = %s "
+                         "WHERE mailinglist_id = %s "
+                         "AND persona_id = %s")
+                params = (subscription_state, mailinglist_id, persona_id)
             else:
-                self.add_subscription(rs, (mailinglist_id, persona_id), state)
-                num += 1
+                query = ("INSERT INTO ml.subscription_states "
+                         "(mailinglist_id, persona_id, subscription_state) "
+                         "VALUES %s, %s, %s")
+                params = (mailinglist_id, persona_id, subscription_state)
+
+            num += self.query_exec(rs, query, params)
+            if code:
+                self.ml_log(rs, code, mailinglist_id, persona_id)
 
         return num
+
+    @access("ml")
+    def decide_subscription_request(self, rs, id_pair, resolution):
+        """Handle a subscription request.
+
+        This is separate because logging is different.
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type id_pair: (int, int)
+        :param id_pair: Pair of (mailinglist_id, persona_id) that acts as a key
+            for ml.subscription_states table.
+        :type resolution: const.SubscriptionRequestResolutions
+        :rtype: int
+        :return: Default return code.
+        """
+        id_pair = affirm("id_pair", id_pair)
+        resolution = affirm("enum_subscriptionrequestresolutions", resolution)
+
+        mailinglist_id, persona_id = id_pair
+
+        if not (persona_id == rs.user.persona_id
+                or self.is_moderator(rs, mailinglist_id)
+                or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)):
+            raise PrivilegeError(n_("Not privileged."))
+
+        current_state = self.get_subscription(
+            rs, persona_id, mailinglist_id=mailinglist_id)
+        if current_state != const.SubscriptionStates.subscription_requested:
+            raise RuntimeError(n_("Not a pending subscription request."))
+
+        state = resolution.get_new_state()
+        with Silencer(rS):
+            if state:
+                ret = self.change_subscription(rs, id_pair, state)
+            else:
+                ret = self.remove_subscription(rs, id_pair)
+
+        code = resolution.get_log_code()
+        if code:
+            self.ml_log(rs, code, mailinglist_id, persona_id)
+
+        return ret
 
     @access("ml")
     def get_subscription_states(self, rs, mailinglist_id, states=None):
@@ -835,58 +855,68 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    def add_subscription_address(self, rs, id_pair, adress):
+    def set_subscription_address(self, rs, id_pair, address):
+        """Change or add a subscription address.
 
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type id_pair: (int, int)
+        :param id_pair: Pair of (mailinglist_id, persona_id) that acts as a key
+            for ml.subscription_states table.
+        :type address: str
+        :rtype: int
+        :return: Default return code.
+        """
         mailinglist_id, persona_id = affirm("id_pair", id_pair)
         address = affirm("email", adress)
 
-        data = {
-            "mailinglist_id": mailinglist_id,
-            "persona_id": persona_id,
-            "address": adress,
-        }
+        if persona_id != rs.user.persona_id:
+            raise PrivilegeError(n_("Not privileged."))
 
-        return self.sql_insert(rs, "ml.subscription_addresses", data)
+        if self.get_subscription_address(
+                rs, mailinglist_id, persona_id, explicits_only=True):
+            query = ("UPDATE ml.subscription_addresses SET address = %s "
+                     "WHERE mailinglist_id = %s AND persona_id = %s")
+            params = (address, mailinglist_id, persona_id)
 
-    @access("ml")
-    def change_subscription_address(self, rs, id_pair, address):
+            ret = self.query_exec(rs, query, params)
+        else:
+            data = {
+                "mailinglist_id": mailinglist_id,
+                "persona_id": persona_id,
+                "address": adress,
+            }
 
-        mailinglist_id, persona_id = affirm("id_pair", id_pair)
-        address = affirm("email", address)
+            ret = self.sql_insert(rs, "ml.subscription_addresses", data)
 
-        query = ("UPDATE ml.subscription_addresses SET address = %s "
-                 "WHERE mailinglist_id = %s AND persona_id = %s")
-        params = (address, mailinglist_id, persona_id)
+        self.ml_log(rs, const.MlLogCodes.subscription_changed, mailinglist_id,
+                    persona_id, additional_info=address)
 
-        return self.query_exec(rs, query, params)
+        return ret
 
     @access("ml")
     def remove_subscription_address(self, rs, id_pair):
+        """Change or add a subscription address.
 
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type id_pair: (int, int)
+        :param id_pair: Pair of (mailinglist_id, persona_id) that acts as a key
+            for ml.subscription_states table.
+        :rtype: int
+        :return: Default return code.
+        """
         mailinglist_id, persona_id = affirm("id_pair", id_pair)
+
+        if persona_id != rs.user.persona_id:
+            raise PrivilegeError(n_("Not privileged."))
 
         query = ("DELETE FROM ml.subscription_states "
                  "WHERE mailinglist_id = %s AND persona_id = %s")
         params = (mailinglist_id, persona_id)
 
-        return self.query_exec(rs, query, params)
+        ret = self.query_exec(rs, query, params)
 
-    @access("ml")
-    def set_subscription_address(self, rs, id_part, address):
-
-        mailinglist_id, persona_id = affirm("id_pair", id_pair)
-        address = affirm("email", adress)
-
-        num = 0
-        if self.get_subscription_address(
-                rs, mailinglist_id, persona_id, explicits_only=True):
-            num += self.change_subscription_address(
-                rs, (mailinglist_id, persona_id), address)
-        else:
-            self.add_subscription_address(rs, (mailinglist_id, persona_id), )
-            num += 1
-
-        return num
+        self.ml_log(rs, cosnt.MlLogCodes.subscription_changed, mailinglist_id,
+                    persona_id)
 
     @access("ml")
     @singularize("get_subscription_address", "persona_ids", "persona_id")
@@ -894,18 +924,28 @@ class MlBackend(AbstractBackend):
                                    explicits_only=False):
         """Retrieve email addresses of the given personas for the mailinglist.
 
+        With `explicits_only = False`, this returns a dict mapping all
+        subscribers (or a subset given via `persona_ids`) to email addresses.
+        If they have expicitly specified a subscription address that one is
+        returned, otherwise the username is returned.
+        If a subscriber has neither a username nor a explicit subscription
+        address then that subscriber is omitted from the result.
+
+        With `explicits_only = True` every subscriber is mapped to their
+        explicit subscription address or None, if none is given. Subscribers
+        with no username are not omitted in this case.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_ids: [int] or None
-        :param persona_ids: List of persona ids from which to get the addresses.
-            Get all subscribers if None.
+        :param persona_ids: Limit the result to a subset of subscribers. Get all
+            subscribers if this is None.
         :type explicits_only: bool
-        :param explicits_only: If this is True, only explicit addresses are
-            returned, None for others.
+        :param explicits_only: If this is False, also fetch usernames for
+            subscribers without explicit subscription addresses.
         :rtype: {int: str or None}
-        :returns: Returns persona ids mapped to the email address at which the
-            subscriber wants to recieve mails from this mailinglist.
-            Non-Subscribers or users without any address are omitted.
+        :returns: Returns persona ids mapped to email addresses or None if
+        `explicits_only` is True.
         """
         mailinglist_id = affirm("id", mailinglist_id)
 
