@@ -19,7 +19,8 @@ ALL_ENUMS = (
     const.CdeLogCodes, const.FinanceLogCodes, const.EventLogCodes,
     const.PastEventLogCodes, const.AssemblyLogCodes, const.MlLogCodes,
     const.FieldAssociations, const.FieldDatatypes,
-    QueryOperators, AgeClasses, LineResolutions)
+    const.SubscriptionRequestResolutions, QueryOperators, AgeClasses,
+    LineResolutions)
 
 #: The list of infinite enums
 ALL_INFINITE_ENUMS = (CourseFilterPositions, CourseChoiceToolActions)
