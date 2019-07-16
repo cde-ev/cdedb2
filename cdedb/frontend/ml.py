@@ -221,58 +221,54 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml")
     def show_mailinglist(self, rs, mailinglist_id):
         """Details of a list."""
-        state = unwrap(self.mlproxy.lookup_subscription_states(
-            rs, [rs.user.persona_id], [mailinglist_id]))
-        is_subscribed = state == SubscriptionStates.subscribed
-        is_pending = state == SubscriptionStates.requested
-        sub_address = None
-        if is_subscribed:
-            sub_address = unwrap(self.mlproxy.subscriptions(
-                rs, rs.user.persona_id, (mailinglist_id,)))
-        audience_check = const.AudiencePolicy(
-            rs.ambience['mailinglist']['audience_policy']).check(rs.user.roles)
-        if not (audience_check or is_subscribed or self.is_admin(rs)
-                or mailinglist_id in rs.user.moderator):
+        state = unwrap(self.mlproxy.get_subscriptions(
+            rs, rs.user.persona_id, mailinglist_ids=(mailinglist_id,)))
+
+        is_pending = state == SS.subscription_requested
+
+        if not self.mlproxy.may_view(rs, rs.ambience["mailinglist"], state):
             return werkzeug.exceptions.Forbidden()
-        gateway = {}
-        if rs.ambience['mailinglist']['gateway']:
-            gateway = self.mlproxy.get_mailinglist(
-                rs, rs.ambience['mailinglist']['gateway'])
+
+        sub_address = None
+        if state.is_subscribed:
+            sub_address = unwrap(self.mlproxy.get_subscription_addresse(
+                rs, mailinglist_id, rs.user.persona_id, explicits_only=True))
+
         event = {}
         if rs.ambience['mailinglist']['event_id']:
             event = self.eventproxy.get_event(
                 rs, rs.ambience['mailinglist']['event_id'])
             event['is_visible'] = (
-                    "event_admin" in rs.user.roles or
-                    rs.user.persona_id in event['orgas'] or
-                    (event['is_open'] and event['is_visible']) or
-                    bool(self.eventproxy.list_registrations(
-                        rs, event['id'], rs.user.persona_id)))
+                    "event_admin" in rs.user.roles
+                    or rs.user.persona_id in event['orgas']
+                    or (event['is_open'] and event['is_visible'])
+                    or bool(
+                self.eventproxy.list_registrations(rs, event['id'],
+                                                   rs.user.persona_id)))
+
         assembly = {}
         if rs.ambience['mailinglist']['assembly_id']:
             assembly = self.assemblyproxy.get_assembly(
                 rs, rs.ambience['mailinglist']['assembly_id'])
             assembly['is_visible'] = (
-                    "assembly_admin" in rs.user.roles or
-                    assembly['is_active'] or
-                    bool(self.assemblyproxy.does_attend(
-                        rs, assembly_id=assembly['id'])))
+                    "assembly_admin" in rs.user.roles
+                    or assembly['is_active']
+                    or bool(self.assemblyproxy.does_attend(
+                rs, assembly_id=assembly['id'])))
+
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
-        may_toggle = not policy.privileged_transition(not is_subscribed)
-        if not is_subscribed and gateway and self.mlproxy.is_subscribed(
-                rs, rs.user.persona_id, rs.ambience['mailinglist']['gateway']):
-            may_toggle = True
+        may_toggle = not policy.privileged_transition(not state.is_subscribed)
+
         personas = self.coreproxy.get_personas(
             rs, rs.ambience['mailinglist']['moderators'])
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
                 personas, key=lambda anid: name_key(personas[anid])))
         return self.render(rs, "show_mailinglist", {
-            'sub_address': sub_address, 'is_subscribed': is_subscribed,
-            'gateway': gateway, 'event': event, 'assembly': assembly,
-            'may_toggle': may_toggle, 'moderators': moderators,
-            'pending': is_pending})
+            'sub_address': sub_address, 'state': state, 'event': event,
+            'assembly': assembly, 'may_toggle': may_toggle,
+            'moderators': moderators, 'pending': is_pending})
 
     @access("ml")
     @mailinglist_guard()
