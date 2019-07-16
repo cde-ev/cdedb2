@@ -164,15 +164,28 @@ class TestMlBackend(BackendTest):
                                        "whitelist", "moderators", "log")))
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
 
+    @as_users("anton")
+    def test_sample_data(self, user):
+        ml_ids = self.ml.list_mailinglists(self.key)
+
+        from pprint import pprint
+        for ml_id in ml_ids:
+            expectation = self.ml.get_subscription_states(self.key, ml_id)
+            self.ml.write_subscription_states(self.key, ml_id)
+            result = self.ml.get_subscription_states(self.key, ml_id)
+
+            self.assertEqual(expectation, result)
+
     @as_users("anton", "berta")
     def test_subscriptions(self, user):
         # Which lists is Berta subscribed to.
-        # TODO fix implicit subscriptions?
         expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
             3: const.SubscriptionStates.unsubscribed,
             4: const.SubscriptionStates.subscribed,
+            5: const.SubscriptionStates.implicit,
             6: const.SubscriptionStates.subscribed,
-            7: const.SubscriptionStates.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=2))
@@ -180,11 +193,10 @@ class TestMlBackend(BackendTest):
     @as_users("anton", "janis")
     def test_subscriptions_two(self, user):
         # Which lists is Janis subscribed to.
-        # TODO fix implicit subscriptions=
         expectation = {
+            2: const.SubscriptionStates.implicit,
             3: const.SubscriptionStates.subscribed,
             4: const.SubscriptionStates.subscribed,
-            5: const.SubscriptionStates.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=10))
@@ -192,7 +204,9 @@ class TestMlBackend(BackendTest):
     @as_users("anton", "emilia")
     def test_subscriptions_three(self, user):
         expectation = {
+            2: const.SubscriptionStates.implicit,
             9: const.SubscriptionStates.unsubscribed,
+            10: const.SubscriptionStates.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=5))
@@ -200,6 +214,9 @@ class TestMlBackend(BackendTest):
     @as_users("anton", "garcia")
     def test_subscriptions_four(self, user):
         expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
+            8: const.SubscriptionStates.implicit,
             9: const.SubscriptionStates.subscribed,
         }
         self.assertEqual(expectation,
@@ -207,11 +224,11 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_write_subscription_states(self, user):
+        # TODO change implicit subscribers within this test somehow.
         mailinglist_id = 7
 
         expectation = {
             1: const.SubscriptionStates.unsubscribed,
-            2: const.SubscriptionStates.implicit,
             3: const.SubscriptionStates.subscribed,
             6: const.SubscriptionStates.subscription_requested,
         }
@@ -240,7 +257,6 @@ class TestMlBackend(BackendTest):
 
         expectation = {
             1: const.SubscriptionStates.subscribed,
-            2: const.SubscriptionStates.implicit,
             3: const.SubscriptionStates.subscribed,
             4: const.SubscriptionStates.mod_subscribed,
             5: const.SubscriptionStates.subscribed,
@@ -269,10 +285,10 @@ class TestMlBackend(BackendTest):
 
         # Initially sample-data.
         expectation = {
-            1: const.SubscriptionStates.subscription_requested,
+            1: const.SubscriptionStates.implicit,
             5: const.SubscriptionStates.unsubscribed,
             7: const.SubscriptionStates.subscribed,
-            11: const.SubscriptionStates.subscribed,
+            9: const.SubscriptionStates.implicit,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -293,8 +309,11 @@ class TestMlBackend(BackendTest):
         mailinglist_id = 5
 
         expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
             3: const.SubscriptionStates.mod_subscribed,
-            10: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.implicit,
+            11: const.SubscriptionStates.implicit,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -330,6 +349,7 @@ class TestMlBackend(BackendTest):
                 9: 'inga@example.cde',
                 10: 'janis@example.cde',
                 11: 'kalif@example.cde',
+                12: None,
                 13: 'martin@example.cde',
             }
             self.assertEqual(expectation,
@@ -346,30 +366,18 @@ class TestMlBackend(BackendTest):
             self.assertEqual(expectation,
                              self.ml.get_subscription_addresses(self.key, 7))
 
-    def test_subscription_addresses_two(self):
-        # Fix implicit subscriptions.
-        self.login(USER_DICT["anton"])
-        for ml_id in [5]:
-            self.ml.write_subscription_states(self.key, ml_id)
+    @as_users("anton", "berta")
+    def test_subscription_addresses_two(self, user):
+        expectation = {1: 'anton@example.cde',
+                       2: 'berta@example.cde',
+                       3: 'charly@example.cde',
+                       9: 'inga@example.cde',
+                       11: 'kalif@example.cde'}
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(self.key, 5))
 
-        for user_name in ["anton", "berta"]:
-            self.login(USER_DICT[user_name])
-            expectation = {1: 'anton@example.cde',
-                           2: 'berta@example.cde',
-                           3: 'charly@example.cde',
-                           9: 'inga@example.cde',
-                           11: 'kalif@example.cde'}
-            self.assertEqual(expectation,
-                             self.ml.get_subscription_addresses(self.key, 5))
-
-    def test_subscription_addresses_three(self):
-        # Fix implicit subscriptions.
-        self.login(USER_DICT["anton"])
-        for ml_id in [8, 9, 10]:
-            self.ml.write_subscription_states(self.key, ml_id)
-
-        for user_name in ["anton", "garcia"]:
-            self.login(USER_DICT[user_name])
+    @as_users("anton", "garcia")
+    def test_subscription_addresses_three(self, user):
             expectation = {7: 'garcia@example.cde'}
             self.assertEqual(expectation,
                              self.ml.get_subscription_addresses(self.key, 8))
@@ -430,13 +438,8 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
-    def test_moderation(self):
-        # Fix implicit subscriptions.
-        self.login(USER_DICT['anton'])
-        for ml_id in self.ml.list_mailinglists(self.key):
-            self.ml.write_subscription_states(self.key, ml_id)
-
-        self.login(USER_DICT['inga'])
+    @as_users("inga")
+    def test_moderation(self, user):
         expectation = {
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.implicit,
@@ -550,9 +553,10 @@ class TestMlBackend(BackendTest):
 
     @as_users("inga")
     def test_request_cancellation(self, user):
-        expectation = {}
+        expectation = None
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_subscription(
+                             self.key, persona_id=9, mailinglist_id=4))
         datum = {
             'mailinglist_id': 4,
             'persona_id': 9,
@@ -560,20 +564,20 @@ class TestMlBackend(BackendTest):
                 const.SubscriptionStates.subscription_requested,
         }
         self.ml.set_subscription(self.key, datum)
-        expectation = {
-            4: const.SubscriptionStates.subscription_requested,
-        }
+        expectation = const.SubscriptionStates.subscription_requested
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_subscription(
+                             self.key, persona_id=9, mailinglist_id=4))
         datum = {
             'mailinglist_id': 4,
             'persona_id': 9,
             'resolution': const.SubscriptionRequestResolutions.cancelled,
         }
         self.ml.decide_subscription_request(self.key, datum)
-        expectation = {}
+        expectation = None
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_subscription(
+                             self.key, persona_id=9, mailinglist_id=4))
 
     @as_users("anton")
     def test_log(self, user):
@@ -682,10 +686,8 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation[3:5],
                          self.ml.retrieve_log(self.key, codes=(10,)))
 
-    def test_export(self):
-        self.login(USER_DICT["anton"])
-        for ml_id in self.ml.list_mailinglists(self.key):
-            self.ml.write_subscription_states(self.key, ml_id)
+    @as_users("anton")
+    def test_export(self, user):
         expectation = ({'address': 'announce@example.cde',
                         'is_active': True},
                        {'address': 'werbung@example.cde',
@@ -732,10 +734,8 @@ class TestMlBackend(BackendTest):
             self.ml.export_one("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
                                "werbung@example.cde"))
 
-    def test_oldstyle_scripting(self):
-        self.login(USER_DICT["anton"])
-        for ml_id in self.ml.list_mailinglists(self.key):
-            self.ml.write_subscription_states(self.key, ml_id)
+    @as_users("anton")
+    def test_oldstyle_scripting(self, user):
         expectation = ({'address': 'announce@example.cde',
                         'inactive': False,
                         'maxsize': None,
