@@ -7,6 +7,7 @@ import cdedb.database.constants as const
 import datetime
 import decimal
 
+
 class TestMlBackend(BackendTest):
     used_backends = ("core", "ml")
 
@@ -105,8 +106,8 @@ class TestMlBackend(BackendTest):
             'maxsize': 3096,
             'moderators': {1, 10},
             'whitelist': {'aliens@example.cde',
-                           'captiankirk@example.cde',
-                           'picard@example.cde'},
+                          'captiankirk@example.cde',
+                          'picard@example.cde'},
             'sub_policy': 4,
             'is_active': False,
             'address': 'passivenforum@example.cde',
@@ -147,8 +148,11 @@ class TestMlBackend(BackendTest):
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
-            'whitelist': {'fidel@example.cde',
-                          'che@example.cde',}}
+            'whitelist': {
+                'fidel@example.cde',
+                'che@example.cde',
+            },
+        }
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.assertLess(0, new_id)
         self.assertNotIn(new_id, oldlists)
@@ -156,178 +160,52 @@ class TestMlBackend(BackendTest):
         new_data['id'] = new_id
         self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
-            self.key, new_id, cascade=("gateway", "subscriptions", "requests",
+            self.key, new_id, cascade=("gateway", "subscriptions", "addresses",
                                        "whitelist", "moderators", "log")))
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
 
     @as_users("anton", "berta")
     def test_subscriptions(self, user):
-        expectation = {1: None, 2: None, 4: None, 5: None, 7: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 2))
+        # Which lists is Berta subscribed to.
+        # TODO fix implicit subscriptions?
+        expectation = {
+            3: const.SubscriptionStates.unsubscribed,
+            4: const.SubscriptionStates.subscribed,
+            6: const.SubscriptionStates.subscribed,
+            7: const.SubscriptionStates.implicit,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=2))
 
     @as_users("anton", "janis")
     def test_subscriptions_two(self, user):
-        expectation = {1: None, 2: None, 3: 'janis-spam@example.cde', 4: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 10))
+        # Which lists is Janis subscribed to.
+        # TODO fix implicit subscriptions=
+        expectation = {
+            3: const.SubscriptionStates.subscribed,
+            4: const.SubscriptionStates.subscribed,
+            5: const.SubscriptionStates.implicit,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=10))
 
     @as_users("anton", "emilia")
     def test_subscriptions_three(self, user):
-        expectation = {1: None, 2: None, 9: None, 10: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 5))
+        # Which lists is Emila subscribed to.
+        # TODO fix implicit subscriptions=
+        expectation = {
+            9: const.SubscriptionStates.unsubscribed,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=5))
 
     @as_users("anton", "garcia")
     def test_subscriptions_four(self, user):
-        expectation = {1: None, 2: None, 8: None, 9: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 7))
-
-    @as_users("anton", "janis")
-    def test_subscribers(self, user):
-        expectation = {1: 'anton@example.cde',
-                       2: 'berta@example.cde',
-                       3: 'charly@example.cde',
-                       4: 'daniel@example.cde',
-                       5: 'emilia@example.cde',
-                       7: 'garcia@example.cde',
-                       9: 'inga@example.cde',
-                       10: 'janis@example.cde',
-                       11: 'kalif@example.cde',
-                       12: None}
-        self.assertEqual(expectation, self.ml.subscribers(self.key, 2))
-        expectation = {1: 'anton@example.cde', 10: 'janis-spam@example.cde'}
-        self.assertEqual(expectation, self.ml.subscribers(self.key, 3))
-        expectation = {2: 'berta@example.cde', 3: 'charly@example.cde'}
-        self.assertEqual(expectation, self.ml.subscribers(self.key, 7))
-
-    @as_users("anton", "berta")
-    def test_subscribers_two(self, user):
-        expectation = {1: 'anton@example.cde',
-                       2: 'berta@example.cde',
-                       9: 'inga@example.cde',
-                       11: 'kalif@example.cde'}
-        self.assertEqual(expectation, self.ml.subscribers(self.key, 5))
-
-    @as_users("anton", "garcia")
-    def test_subscribers_three(self, user):
-        expectation = {7: 'garcia@example.cde'}
-        self.assertEqual(expectation, self.ml.subscribers(self.key, 8))
-        expectation = {1: 'anton@example.cde',
-                       5: 'emilia@example.cde',
-                       7: 'garcia@example.cde',
-                       9: 'inga@example.cde'}
-        self.assertEqual(expectation, self.ml.subscribers(self.key, 9))
-        expectation = {5: 'emilia@example.cde'}
-        self.assertEqual(expectation, self.ml.subscribers(self.key, 10))
-
-    @as_users("anton")
-    def test_change_state(self, user):
-        expectation = {1: None, 2: None, 3: None, 4: None, 5: None, 9: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 1))
-        self.ml.change_subscription_state(self.key, 1, 1, False, None)
-        self.ml.change_subscription_state(self.key, 3, 1, False, None)
-        self.ml.change_subscription_state(self.key, 4, 1, True, 'devnull@example.cde')
-        self.ml.change_subscription_state(self.key, 7, 1, True, 'devnull@example.cde')
-        expectation = {2: None,
-                       4: 'devnull@example.cde',
-                       5: None,
-                       7: 'devnull@example.cde',
-                       9: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 1))
-
-    def test_moderation(self):
-        self.login(USER_DICT['inga'])
-        expectation = {1: None, 2: None, 5: None, 9: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 9))
-        self.ml.change_subscription_state(self.key, 2, 9, False)
-        self.ml.change_subscription_state(
-            self.key, 3, 9, True, 'devnull@example.cde')
-        self.ml.change_subscription_state(self.key, 9, 9, False)
-        expectation = {1: None, 3: 'devnull@example.cde', 5: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 9))
-        self.assertGreater(0, self.ml.change_subscription_state(
-            self.key, 4, 9, True, None))
-        self.login(USER_DICT['berta'])
-        self.assertLess(0, self.ml.decide_request(self.key, 4, 9, True))
-        self.login(USER_DICT['inga'])
-        self.assertEqual(1, self.ml.change_subscription_state(
-            self.key, 4, 9, True, 'devnull@example.cde'))
-        expectation = {1: None,
-                       3: 'devnull@example.cde',
-                       4: 'devnull@example.cde',
-                       5: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 9))
-
-        self.assertEqual(1, self.ml.change_subscription_state(
-            self.key, 4, 9, False))
-        expectation = {1: None, 3: 'devnull@example.cde', 5: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 9))
-        self.assertGreater(0, self.ml.change_subscription_state(
-            self.key, 4, 9, True))
-        self.login(USER_DICT['berta'])
-        self.assertEqual(1, self.ml.decide_request(
-            self.key, 4, 9, False))
-        self.login(USER_DICT['inga'])
-        expectation = {1: None, 3: 'devnull@example.cde', 5: None}
-        self.assertEqual(expectation, self.ml.subscriptions(self.key, 9))
-
-    def test_lookup_subscription_states(self):
-        self.login(USER_DICT['inga'])
-        self.ml.change_subscription_state(self.key, 4, 9, True)
-        self.login(USER_DICT['anton'])
         expectation = {
-            (1, 1): 2,
-            (1, 4): 2,
-            (1, 9): 2,
-            (2, 1): 2,
-            (2, 4): 2,
-            (2, 9): 1,
-            (9, 1): 2,
-            (9, 4): 10,
-            (9, 9): 2,}
+            9: const.SubscriptionStates.subscribed,
+        }
         self.assertEqual(expectation,
-                         self.ml.lookup_subscription_states(
-                             self.key, (1, 2, 9), (1, 4, 9)))
-
-    @as_users("anton")
-    def test_subscription_addresses(self, user):
-        mailinglist_id = 3
-
-        # Check sample data.
-        expectation = {
-            1: USER_DICT["anton"]["username"],
-            10: 'janis-spam@example.cde',
-        }
-        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
-        self.assertEqual(result, expectation)
-
-        # Add and change addresses.
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': 1,
-            'address': "anton-spam@example.cde",
-        }
-        expectation.update({datum['persona_id']: datum['address']})
-        self.ml.set_subscription_address(self.key, datum)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': 10,
-            'address': "janis-cde@example.cde",
-        }
-        expectation.update({datum['persona_id']: datum['address']})
-        self.ml.set_subscription_address(self.key, datum)
-
-        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
-        self.assertEqual(result, expectation)
-
-        # Remove an address.
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': 10,
-        }
-        del expectation[datum['persona_id']]
-        self.ml.remove_subscription_address(self.key, datum)
-
-        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
-        self.assertEqual(result, expectation)
+                         self.ml.get_subscriptions(self.key, persona_id=7))
 
     @as_users("anton")
     def test_write_subscription_states(self, user):
@@ -436,27 +314,289 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
+    def test_subscription_addresses(self):
+        # Fix implicit subscriptions.
+        self.login(USER_DICT["anton"])
+        for ml_id in [2, 3, 7]:
+            self.ml.write_subscription_states(self.key, ml_id)
+
+        for user_name in ["anton", "janis"]:
+            self.login(USER_DICT[user_name])
+            expectation = {
+                1: 'anton@example.cde',
+                2: 'berta@example.cde',
+                3: 'charly@example.cde',
+                4: 'daniel@example.cde',
+                5: 'emilia@example.cde',
+                7: 'garcia@example.cde',
+                9: 'inga@example.cde',
+                10: 'janis@example.cde',
+                11: 'kalif@example.cde',
+            }
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 2))
+            expectation = {
+                1: 'anton@example.cde',
+                10: 'janis-spam@example.cde',
+            }
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 3))
+            expectation = {
+                3: 'charly@example.cde',
+            }
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 7))
+
+    def test_subscription_addresses_two(self):
+        # Fix implicit subscriptions.
+        self.login(USER_DICT["anton"])
+        for ml_id in [5]:
+            self.ml.write_subscription_states(self.key, ml_id)
+
+        for user_name in ["anton", "berta"]:
+            self.login(USER_DICT[user_name])
+            expectation = {1: 'anton@example.cde',
+                           2: 'berta@example.cde',
+                           3: 'charly@example.cde',
+                           9: 'inga@example.cde',
+                           11: 'kalif@example.cde'}
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 5))
+
+    def test_subscription_addresses_three(self):
+        # Fix implicit subscriptions.
+        self.login(USER_DICT["anton"])
+        for ml_id in [8, 9, 10]:
+            self.ml.write_subscription_states(self.key, ml_id)
+
+        for user_name in ["anton", "garcia"]:
+            self.login(USER_DICT[user_name])
+            expectation = {7: 'garcia@example.cde'}
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 8))
+            expectation = {1: 'anton@example.cde',
+                           7: 'garcia@example.cde',
+                           9: 'inga@example.cde'}
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 9))
+            expectation = {5: 'emilia@example.cde'}
+            self.assertEqual(expectation,
+                             self.ml.get_subscription_addresses(self.key, 10))
+
+    @as_users("anton")
+    def test_set_subscription_address(self, user):
+        # This is a bit tricky, since users may only change their own
+        # subscrption address.
+        mailinglist_id = 3
+
+        # Check sample data.
+        expectation = {
+            1: USER_DICT["anton"]["username"],
+            10: 'janis-spam@example.cde',
+        }
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        # Add an addresses.
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': user['id'],
+            'address': "anton-spam@example.cde",
+        }
+        expectation.update({datum['persona_id']: datum['address']})
+        self.ml.set_subscription_address(self.key, datum)
+
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': 1,
+            'address': "anton-cde@example.cde",
+        }
+        expectation.update({datum['persona_id']: datum['address']})
+        self.ml.set_subscription_address(self.key, datum)
+
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        # Remove an address.
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': 1,
+        }
+        del expectation[datum['persona_id']]
+        self.ml.remove_subscription_address(self.key, datum)
+
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+    def test_moderation(self):
+        # Fix implicit subscriptions.
+        self.login(USER_DICT['anton'])
+        for ml_id in self.ml.list_mailinglists(self.key):
+            self.ml.write_subscription_states(self.key, ml_id)
+
+        self.login(USER_DICT['inga'])
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
+            5: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.implicit,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
+        data = [
+            {
+                'mailinglist_id': 2,
+                'persona_id': 9,
+                'subscription_state': const.SubscriptionStates.unsubscribed,
+            },
+            {
+                'mailinglist_id': 9,
+                'persona_id': 9,
+                'subscription_state': const.SubscriptionStates.unsubscribed,
+            },
+            {
+                'mailinglist_id': 4,
+                'persona_id': 9,
+                'subscription_state':
+                    const.SubscriptionStates.subscription_requested,
+            },
+        ]
+        self.ml.set_subscriptions(self.key, data)
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.unsubscribed,
+            4: const.SubscriptionStates.subscription_requested,
+            5: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.unsubscribed,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
+
+        self.login(USER_DICT['berta'])
+        datum = {
+            'mailinglist_id': 4,
+            'persona_id': 9,
+            'resolution': const.SubscriptionRequestResolutions.approved,
+        }
+        self.assertLess(0,
+                        self.ml.decide_subscription_request(
+                            self.key, datum))
+
+        self.login(USER_DICT['inga'])
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.unsubscribed,
+            4: const.SubscriptionStates.subscribed,
+            5: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.unsubscribed,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
+
+        datum = {
+            'mailinglist_id': 4,
+            'persona_id': 9,
+            'subscription_state': const.SubscriptionStates.unsubscribed,
+        }
+        self.ml.set_subscription(self.key, datum)
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.unsubscribed,
+            4: const.SubscriptionStates.unsubscribed,
+            5: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.unsubscribed,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
+
+        datum = {
+            'mailinglist_id': 4,
+            'persona_id': 9,
+            'subscription_state':
+                const.SubscriptionStates.subscription_requested,
+        }
+        self.ml.set_subscription(self.key, datum)
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.unsubscribed,
+            4: const.SubscriptionStates.subscription_requested,
+            5: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.unsubscribed,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
+
+        self.login(USER_DICT['berta'])
+        datum = {
+            'mailinglist_id': 4,
+            'persona_id': 9,
+            'resolution': const.SubscriptionRequestResolutions.denied,
+        }
+        self.assertLess(0,
+                        self.ml.decide_subscription_request(
+                            self.key, datum))
+
+        self.login(USER_DICT['inga'])
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.unsubscribed,
+            5: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.unsubscribed,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
+
     @as_users("inga")
     def test_request_cancellation(self, user):
-        self.assertEqual({(9, 4): 1},
-                         self.ml.lookup_subscription_states(
-                             self.key, (9,), (4,)))
-        self.ml.change_subscription_state(self.key, 4, 9, True)
-        self.assertEqual({(9, 4): 10},
-                         self.ml.lookup_subscription_states(
-                             self.key, (9,), (4,)))
-        self.ml.change_subscription_state(self.key, 4, 9, False)
-        self.assertEqual({(9, 4): 1},
-                         self.ml.lookup_subscription_states(
-                             self.key, (9,), (4,)))
+        expectation = {}
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
+        datum = {
+            'mailinglist_id': 4,
+            'persona_id': 9,
+            'subscription_state':
+                const.SubscriptionStates.subscription_requested,
+        }
+        self.ml.set_subscription(self.key, datum)
+        expectation = {
+            4: const.SubscriptionStates.subscription_requested,
+        }
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
+        datum = {
+            'mailinglist_id': 4,
+            'persona_id': 9,
+            'resolution': const.SubscriptionRequestResolutions.cancelled,
+        }
+        self.ml.decide_subscription_request(self.key, datum)
+        expectation = {}
+        self.assertEqual(expectation,
+                         self.ml.get_subscriptions(self.key, persona_id=9))
 
     @as_users("anton")
     def test_log(self, user):
-        ## first generate some data
-        self.ml.change_subscription_state(self.key, 1, 1, False, None)
-        self.ml.change_subscription_state(self.key, 3, 1, False, None)
-        self.ml.change_subscription_state(self.key, 4, 1, True, 'devnull@example.cde')
-        self.ml.change_subscription_state(self.key, 7, 1, True, 'devnull@example.cde')
+        # first generate some data
+        datum = {
+            'mailinglist_id': 1,
+            'persona_id': 1,
+            'subscription_state': const.SubscriptionStates.unsubscribed,
+        }
+        self.ml.set_subscription(self.key, datum)
+        datum = {
+            'mailinglist_id': 4,
+            'persona_id': 1,
+            'address': 'devnull@example.cde',
+        }
+        self.ml.set_subscription_address(self.key, datum)
+        datum = {
+            'mailinglist_id': 7,
+            'persona_id': 1,
+            'subscription_state': const.SubscriptionStates.subscribed,
+        }
+        self.ml.set_subscription(self.key, datum)
         new_data = {
             'address': 'revolution@example.cde',
             'description': 'Vereinigt Euch',
@@ -474,58 +614,61 @@ class TestMlBackend(BackendTest):
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
-            'whitelist': {'che@example.cde',}}
+            'whitelist': {
+                'che@example.cde',
+            }
+        }
         self.ml.create_mailinglist(self.key, new_data)
         self.ml.delete_mailinglist(
-            self.key, 3, cascade=("gateway", "subscriptions", "requests",
+            self.key, 3, cascade=("gateway", "subscriptions", "addresses",
                                   "whitelist", "moderators", "log"))
 
-        ## now check it
+        # now check it
         expectation = (
             {'additional_info': 'Witz des Tages (witz@example.cde)',
-             'code': 3,
+             'code': const.MlLogCodes.list_deleted,
              'ctime': nearly_now(),
              'mailinglist_id': None,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
-             'code': 1,
+             'code': const.MlLogCodes.list_created,
              'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'che@example.cde',
-             'code': 12,
+             'code': const.MlLogCodes.whitelist_added,
              'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
-             'code': 10,
+             'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': 2,
              'submitted_by': 1},
             {'additional_info': None,
-             'code': 10,
+             'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': 1,
              'submitted_by': 1},
             {'additional_info': None,
-             'code': 21,
+             'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
              'mailinglist_id': 7,
              'persona_id': 1,
              'submitted_by': 1},
             {'additional_info': 'devnull@example.cde',
-             'code': 22,
+             'code': const.MlLogCodes.subscription_changed,
              'ctime': nearly_now(),
              'mailinglist_id': 4,
              'persona_id': 1,
              'submitted_by': 1},
             {'additional_info': None,
-             'code': 23,
+             'code': const.MlLogCodes.unsubscribed,
              'ctime': nearly_now(),
              'mailinglist_id': 1,
              'persona_id': 1,
@@ -540,28 +683,30 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation[3:5],
                          self.ml.retrieve_log(self.key, codes=(10,)))
 
-    def test_gateway(self):
-        self.login(USER_DICT['inga'])
-        with self.assertRaises(PrivilegeError):
-            self.ml.change_subscription_state(self.key, 7, 9, True)
-        self.login(USER_DICT['anton'])
-        self.assertLess(
-            0, self.ml.change_subscription_state(self.key, 6, 9, True))
-        self.login(USER_DICT['inga'])
-        self.assertLess(
-            0, self.ml.change_subscription_state(self.key, 7, 9, True))
-
     def test_export(self):
-        expectation =  ({'address': 'announce@example.cde', 'is_active': True},
-                        {'address': 'werbung@example.cde', 'is_active': True},
-                        {'address': 'witz@example.cde', 'is_active': True},
-                        {'address': 'klatsch@example.cde', 'is_active': True},
-                        {'address': 'kongress@example.cde', 'is_active': True},
-                        {'address': 'aktivenforum2000@example.cde', 'is_active': False},
-                        {'address': 'aktivenforum@example.cde', 'is_active': True},
-                        {'address': 'aka@example.cde', 'is_active': True},
-                        {'address': 'participants@example.cde', 'is_active': True},
-                        {'address': 'wait@example.cde', 'is_active': True})
+        self.login(USER_DICT["anton"])
+        for ml_id in self.ml.list_mailinglists(self.key):
+            self.ml.write_subscription_states(self.key, ml_id)
+        expectation = ({'address': 'announce@example.cde',
+                        'is_active': True},
+                       {'address': 'werbung@example.cde',
+                        'is_active': True},
+                       {'address': 'witz@example.cde',
+                        'is_active': True},
+                       {'address': 'klatsch@example.cde',
+                        'is_active': True},
+                       {'address': 'kongress@example.cde',
+                        'is_active': True},
+                       {'address': 'aktivenforum2000@example.cde',
+                        'is_active': False},
+                       {'address': 'aktivenforum@example.cde',
+                        'is_active': True},
+                       {'address': 'aka@example.cde',
+                        'is_active': True},
+                       {'address': 'participants@example.cde',
+                        'is_active': True},
+                       {'address': 'wait@example.cde',
+                        'is_active': True})
         self.assertEqual(
             expectation,
             self.ml.export_overview("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))
@@ -588,6 +733,9 @@ class TestMlBackend(BackendTest):
                                "werbung@example.cde"))
 
     def test_oldstyle_scripting(self):
+        self.login(USER_DICT["anton"])
+        for ml_id in self.ml.list_mailinglists(self.key):
+            self.ml.write_subscription_states(self.key, ml_id)
         expectation = ({'address': 'announce@example.cde',
                         'inactive': False,
                         'maxsize': None,
@@ -630,7 +778,8 @@ class TestMlBackend(BackendTest):
                         'mime': False})
         self.assertEqual(
             expectation,
-            self.ml.oldstyle_mailinglist_config_export("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))
+            self.ml.oldstyle_mailinglist_config_export(
+                "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))
         expectation = {'address': 'werbung@example.cde',
                        'list-owner': 'https://db.cde-ev.de/',
                        'list-subscribe': 'https://db.cde-ev.de/',
@@ -650,8 +799,9 @@ class TestMlBackend(BackendTest):
                        'whitelist': ['honeypot@example.cde']}
         self.assertEqual(
             expectation,
-            self.ml.oldstyle_mailinglist_export("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
-                                                "werbung@example.cde"))
+            self.ml.oldstyle_mailinglist_export(
+                "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
+                "werbung@example.cde"))
         expectation = {'address': 'werbung@example.cde',
                        'list-owner': 'https://db.cde-ev.de/',
                        'list-subscribe': 'https://db.cde-ev.de/',
