@@ -626,7 +626,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
         code = self.mlproxy.change_subscription_state(
-            rs, mailinglist_id, rs.user.persona_id, subscribe)
+            rs, (mailinglist_id, rs.user.persona_id), subscribe)
         self.notify_return_code(
             rs, code, pending=n_("Subscription request awaits moderation."))
         return self.redirect(rs, "ml/show_mailinglist")
@@ -655,7 +655,7 @@ class MlFrontend(AbstractUserFrontend):
         subscriptions = self.mlproxy.subscriptions(rs, rs.user.persona_id)
         if not email or email in subscriptions.values():
             code = self.mlproxy.change_subscription_state(
-                rs, mailinglist_id, rs.user.persona_id, subscribe=True,
+                rs, (mailinglist_id, rs.user.persona_id), subscribe=True,
                 address=email)
             self.notify_return_code(rs, code)
         else:
@@ -690,52 +690,20 @@ class MlFrontend(AbstractUserFrontend):
             return self.redirect(rs, "ml/show_mailinglist")
 
         code = self.mlproxy.change_subscription_state(
-            rs, mailinglist_id, rs.user.persona_id, subscribe=True,
+            rs, (mailinglist_id, rs.user.persona_id), subscribe=True,
             address=email)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
-    @access("ml")
-    @mailinglist_guard()
-    def check_states(self, rs, mailinglist_id):
-        """Test all explicit subscriptions for consistency with audience."""
-        problems = self.mlproxy.check_states_single(rs, mailinglist_id)
-        overrides = tuple(e['persona_id'] for e in problems if e['is_override'])
-        problems = tuple(e['persona_id'] for e in problems
-                         if not e['is_override'])
-        personas = self.coreproxy.get_personas(rs, problems + overrides)
-        return self.render(rs, "check_states", {
-            'problems': problems, 'overrides': overrides, 'personas': personas})
+    @periodic("write_subscription_states")
+    def write_subscription_states(self, rs, store):
+        """Write the current state of implicit subscribers to the database."""
+        mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-    @access("ml_admin")
-    def global_check_states(self, rs):
-        """Test all explicit subscriptions for consistency with audience."""
-        mailinglists = self.mlproxy.list_mailinglists(rs)
-        problems = self.mlproxy.check_states(rs, tuple(mailinglists.keys()))
-        overrides = {
-            ml_id: tuple(e['persona_id'] for e in probs if e['is_override'])
-            for ml_id, probs in problems.items()}
-        problems = {
-            ml_id: tuple(e['persona_id'] for e in probs if not e['is_override'])
-            for ml_id, probs in problems.items()}
-        persona_ids = {x for l in itertools.chain(overrides.values(),
-                                                  problems.values())
-                       for x in l}
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        return self.render(rs, "global_check_states", {
-            'problems': problems, 'overrides': overrides, 'personas': personas,
-            'mailinglists': mailinglists})
+        for ml_id in mailinglist_ids:
+            self.mlproxy.write_subscription_states(rs, ml_id)
 
-    @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "id"))
-    @mailinglist_guard()
-    def mark_override(self, rs, mailinglist_id, subscriber_id):
-        """Allow a subscription even though not in audience."""
-        if rs.errors:
-            return self.check_states(rs, mailinglist_id)
-        code = self.mlproxy.mark_override(rs, mailinglist_id, subscriber_id)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "ml/check_states")
+        return store
 
     @access("ml_script")
     def export_overview(self, rs):
