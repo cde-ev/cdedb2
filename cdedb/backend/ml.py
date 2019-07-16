@@ -819,7 +819,7 @@ class MlBackend(AbstractBackend):
         """
         # Validation is done inside.
         return unwrap(self.get_subscriptions(
-            rs, persona_id, mailinglist_ids=(mailinglist_id,)))
+            rs, persona_id, states=states, mailinglist_ids=(mailinglist_id,)))
 
     @access("ml", "ml_script")
     def get_subscription_addresses(self, rs, mailinglist_id, persona_ids=None,
