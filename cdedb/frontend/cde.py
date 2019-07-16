@@ -1421,7 +1421,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
             return self.lastschrift_index(rs)
         return self.send_file(rs, data=sepapain_file, inline=False,
-                              filename="sepa.cdd")
+                              filename="i25p_semester{}.xml".format(period))
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("lastschrift_id", "id_or_None"))
