@@ -747,8 +747,7 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    @singularize("get_subscription", "mailinglist_ids", "mailinglist_id")
-    def get_subscriptions(self, rs, persona_id, states=None, *,
+    def get_subscriptions(self, rs, persona_id, states=None,
                           mailinglist_ids=None):
         """Returns a list of mailinglists the persona is related to.
 
@@ -756,7 +755,7 @@ class MlBackend(AbstractBackend):
         :type persona_id: int
         :type states: [const.SubscriptionStates] or None
         :param states: If given only relations with these states are returned.
-        :type mailinglist_ids: [ids] or None
+        :type mailinglist_ids: [int] or None
         :param mailinglist_ids: If given only relations to these mailinglists
             are returned.
         :rtype: {int: const.SubscriptionStates}
@@ -802,10 +801,29 @@ class MlBackend(AbstractBackend):
 
         return ret
 
+    @access("ml")
+    def get_subscription(self, rs, persona_id, states=None,
+                         mailinglist_id=None):
+        """Return the relation between a persona and a mailinglist.
+
+        Returns None if there exists no such persona, mailinglist or relation.
+
+        Manual implementation of singularization of `get_subscriptions`,
+        to make sure the parameters work.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :type states: [const.SubscriptionStates] or None
+        :type mailinglist_id: int or None
+        :rtype: const.SubscriptionStates or None
+        """
+        # Validation is done inside.
+        return unwrap(self.get_subscriptions(
+            rs, persona_id, mailinglist_ids=(mailinglist_id,)))
+
     @access("ml", "ml_script")
-    @singularize("get_subscription_address", "persona_ids", "persona_id")
-    def get_subscription_addresses(self, rs, mailinglist_id, *,
-                                   persona_ids=None, explicits_only=False):
+    def get_subscription_addresses(self, rs, mailinglist_id, persona_ids=None,
+                                   explicits_only=False):
         """Retrieve email addresses of the given personas for the mailinglist.
 
         With `explicits_only = False`, this returns a dict mapping all
@@ -813,11 +831,10 @@ class MlBackend(AbstractBackend):
         If they have expicitly specified a subscription address that one is
         returned, otherwise the username is returned.
         If a subscriber has neither a username nor a explicit subscription
-        address then that subscriber is omitted from the result.
+        address then that for subscriber None is returned.
 
         With `explicits_only = True` every subscriber is mapped to their
-        explicit subscription address or None, if none is given. Subscribers
-        with no username are not omitted in this case.
+        explicit subscription address or None, if none is given.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
@@ -861,12 +878,31 @@ class MlBackend(AbstractBackend):
         if not explicits_only:
             data = self.core.get_personas(rs, defaults)
             data = {
-                e["id"]: e["username"] for e in data.values() if e["username"]}
+                e["id"]: e["username"] for e in data.values()}
             ret.update(data)
         else:
             ret.update({p_id: None for p_id in defaults})
 
         return ret
+
+    @access("ml", "ml_script")
+    def get_subscription_address(self, rs, mailinglist_id, persona_id,
+                                 explicits_only=False):
+        """Return the subscription address for one persona and one mailinglist.
+
+        Manual implementation of singularization of
+        `get_subscription_addresses`, to make sure the parameters work.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :type explicits_only: bool
+        :rtype: str or None
+        """
+        # Validation is done inside.
+        return unwrap(self.get_subscription_addresses(
+            rs, mailinglist_id, persona_ids=(persona_id,),
+            explicits_only=explicits_only))
 
     @access("ml")
     def is_subscribed(self, rs, mailinglist_id, persona_id):
