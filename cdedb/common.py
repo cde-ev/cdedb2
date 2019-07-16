@@ -1527,7 +1527,7 @@ LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
 MAILINGLIST_FIELDS = (
     "id", "title", "address", "description", "sub_policy", "mod_policy",
     "notes", "attachment_policy", "audience_policy", "subject_prefix",
-    "maxsize", "is_active", "gateway", "event_id", "registration_stati",
+    "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
 
 #: Fields of a mailing list subscription

@@ -957,10 +957,8 @@ CREATE TABLE ml.mailinglists (
         is_active               boolean NOT NULL,
         notes                   varchar,
         -- Define a list X as gateway for this list, that is everybody
-        -- subscribed to X may subscribe to this list (only usefull with a
+        -- subscribed to X may subscribe to this list (only useful with a
         -- restrictive subscription policy).
-        --
-        -- Main use case is the Aktivenforums list.
         gateway                 integer REFERENCES ml.mailinglists(id),
         -- event awareness
         -- event_id is not NULL if associated to an event

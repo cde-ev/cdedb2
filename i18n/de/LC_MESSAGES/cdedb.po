@@ -1402,10 +1402,10 @@ msgid "Only partial exports are supported."
 msgstr "Nur partielle Exporte sind unterstützt."
 
 #: cdedb/validation.py:2851
-msgid "Only one allowed of gateway, event_id and assembly_id."
+msgid "Only one allowed of event_id and assembly_id."
 msgstr ""
 "Nur eine der folgenden Optionen kann gleichzeitig aktiv sein: "
-"Zugangsvererbung, verknüpfte Veranstaltung, verknüpfte Versammlung."
+"verknüpfte Veranstaltung, verknüpfte Versammlung."
 
 #: cdedb/validation.py:2859
 msgid "Linked assembly requires assembly audience."

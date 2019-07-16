@@ -2837,7 +2837,6 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'subject_prefix': _str_or_None,
     'maxsize': _int_or_None,
     'is_active': _bool,
-    'gateway': _id_or_None,
     'event_id': _id_or_None,
     'registration_stati': _iterable,
     'assembly_id': _id_or_None,
@@ -2875,12 +2874,10 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    specials = sum(1 for x in (val.get('gateway'), val.get('event_id'),
+    specials = sum(1 for x in (val.get('event_id'),
                                val.get('assembly_id')) if x)
     if specials > 1:
-        error = ValueError(n_("Only one allowed of gateway, event_id and "
-                              "assembly_id."))
-        errs.append(('gateway', error))
+        error = ValueError(n_("Only one allowed of event_id and assembly_id."))
         errs.append(('event_id', error))
         errs.append(('assembly_id', error))
     apol = ENUMS_DICT['AudiencePolicy']

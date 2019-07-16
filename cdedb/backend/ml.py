@@ -388,9 +388,6 @@ class MlBackend(AbstractBackend):
         """Determine what blocks a mailinglist from being deleted.
 
         Possible blockers:
-            gateway: A mailinglist specifying this mailinglist as a gateway.
-                    This reference will be removed, but that other mailinglist
-                    will not be deleted.
             subscriptions: An _explicit_ subscription to the mailinglist.
             addresses: A non-default subscribtion address for the mailinglist.
             whitelist: An entry on the whitelist of the mailinglist.
@@ -405,12 +402,6 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm("id", mailinglist_id)
         blockers = {}
-
-        gateway = self.sql_select(
-            rs, "ml.mailinglists", ("id",), (mailinglist_id,),
-            entity_key="gateway")
-        if gateway:
-            blockers["gateway"] = [e["id"] for e in gateway]
 
         subscriptions = self.sql_select(
             rs, "ml.subscription_states", ("id",), (mailinglist_id,),
@@ -472,13 +463,6 @@ class MlBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             if cascade:
-                if "gateway" in cascade:
-                    for anid in blockers["gateway"]:
-                        deletor = {
-                            'gateway': None,
-                            'id': anid,
-                        }
-                        ret *= self.sql_update(rs, "ml.mailinglists", deletor)
                 if "subscriptions" in cascade:
                     ret *= self.sql_delete(rs, "ml.subscription_states",
                                            blockers["subscriptions"])
