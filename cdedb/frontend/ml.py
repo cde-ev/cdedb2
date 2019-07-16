@@ -144,7 +144,8 @@ class MlFrontend(AbstractUserFrontend):
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         for mailinglist_id in mailinglists:
-            subs = self.mlproxy.subscribers(rs, mailinglist_id)
+            subs = self.mlproxy.get_subscription_states(
+                rs, mailinglist_id, states=SS.subscribing_states())
             mailinglist_infos[mailinglist_id]['num_subscribers'] = len(subs)
         return self.render(rs, "list_mailinglists", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
@@ -221,8 +222,8 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml")
     def show_mailinglist(self, rs, mailinglist_id):
         """Details of a list."""
-        state = unwrap(self.mlproxy.get_subscriptions(
-            rs, rs.user.persona_id, mailinglist_ids=(mailinglist_id,)))
+        state = self.mlproxy.get_subscription(
+            rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
 
         is_pending = state == SS.subscription_requested
 
@@ -231,8 +232,8 @@ class MlFrontend(AbstractUserFrontend):
 
         sub_address = None
         if state and state.is_subscribed:
-            sub_address = unwrap(self.mlproxy.get_subscription_addresse(
-                rs, mailinglist_id, rs.user.persona_id, explicits_only=True))
+            sub_address = self.mlproxy.get_subscription_address(
+                rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
 
         event = {}
         if rs.ambience['mailinglist']['event_id']:
@@ -500,9 +501,14 @@ class MlFrontend(AbstractUserFrontend):
         state = self.mlproxy.get_subscription(
             rs, subscriber_id, mailinglist_id=mailinglist_id)
 
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': subscriber_id,
+            'subscription_state': SS.subscribed,
+        }
+        # TODO move this logic to the backend.
         if state is None:
-            code = self.mlproxy.add_subscription(
-                rs, (mailinglist_id, subscriber_id), SS.subscribed)
+            code = self.mlproxy.set_subscription(rs, datum)
             self.notify_return_code(rs, code)
         elif state.is_subscribed:
             rs.notify("info", n_("User already subscribed."))
@@ -528,6 +534,12 @@ class MlFrontend(AbstractUserFrontend):
         state = self.mlproxy.get_subscription(
             rs, subscriber_id, mailinglist_id=mailinglist_id)
 
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': subscriber_id,
+            'subscription_state': SS.unsubscribed,
+        }
+        # TODO move this logic to the backend.
         if state is None or state == SS.unsubscribed or state == SS.mod_unsubscribed:
             rs.notify("info", n_("User already unsubscribed."))
         elif state == SS.mod_subscribed:
@@ -537,8 +549,7 @@ class MlFrontend(AbstractUserFrontend):
         elif state == SS.subscription_requested:
             rs.notify("error", n_("User has pending subscription request."))
         else:
-            code = self.mlproxy.change_subscription(
-                rs, (mailinglist_id, subscriber_id), SS.unsubscribed)
+            code = self.mlproxy.set_subscription(rs, datum)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -552,11 +563,16 @@ class MlFrontend(AbstractUserFrontend):
         state = self.mlproxy.get_subscription(
             rs, subscriber_id, mailinglist_id=mailinglist_id)
 
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': subscriber_id,
+            'subscription_state': SS.mod_subscribed,
+        }
+        # TODO move this logic to the backend.
         if state and state == SS.subscription_requested:
             rs.notify("error", n_("User has pending subscription request."))
         else:
-            code = self.mlproxy.set_subscription(
-                rs, (mailinglist_id, subscriber_id), SS.mod_subscribed)
+            code = self.mlproxy.set_subscription(rs, datum)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -570,12 +586,17 @@ class MlFrontend(AbstractUserFrontend):
         state = self.mlproxy.get_subscription(
             rs, subscriber_id, mailinglist_id=mailinglist_id)
 
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': subscriber_id,
+            'subscription_state': SS.subscribed,
+        }
+        # TODO move this logic to the backend.
         if state != SS.mod_subscribed:
             rs.notify("error", n_("User is not force-subscribed."))
             return self.redirect(rs, "ml/show_subscription_details")
         else:
-            code = self.mlproxy.set_subscription(
-                rs, (mailinglist_id, subscriber_id), SS.subscribed)
+            code = self.mlproxy.set_subscription(rs, datum)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -589,11 +610,16 @@ class MlFrontend(AbstractUserFrontend):
         state = self.mlproxy.get_subscription(
             rs, subscriber_id, mailinglist_id=mailinglist_id)
 
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': subscriber_id,
+            'subscription_state': SS.mod_unsubscribed,
+        }
+        # TODO move this logic to the backend.
         if state and state == SS.subscription_requested:
             rs.notify("error", n_("User has pending subscription request."))
         else:
-            code = self.mlproxy.set_subscription(
-                rs, (mailinglist_id, subscriber_id), SS.mod_unsubscribed)
+            code = self.mlproxy.set_subscription(rs, datum)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -607,12 +633,17 @@ class MlFrontend(AbstractUserFrontend):
         state = self.mlproxy.get_subscription(
             rs, subscriber_id, mailinglist_id=mailinglist_id)
 
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': subscriber_id,
+            'subscription_state': SS.unsubscribedd,
+        }
+        # TODO move this logic to the backend.
         if state != SS.mod_unsubscribed:
             rs.notify("error", n_("User is not force-subscribed."))
             return self.redirect(rs, "ml/show_subscription_details")
         else:
-            code = self.mlproxy.set_subscription(
-                rs, (mailinglist_id, subscriber_id), SS.unsubscribed)
+            code = self.mlproxy.set_subscription(rs, datum)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -621,10 +652,16 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdata(("subscribe", "bool"))
     def subscribe_or_unsubscribe(self, rs, mailinglist_id, subscribe):
         """Change own subscription state."""
+        # TODO adapt to new SubscriptionState
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        code = self.mlproxy.change_subscription_state(
-            rs, (mailinglist_id, rs.user.persona_id), subscribe)
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': rs.user.persona_id,
+            'subscription_state':
+                SS.subscribed if subscribe else SS.unsubscribed,
+        }
+        code = self.mlproxy.set_subscription(rs, datum)
         self.notify_return_code(
             rs, code, pending=n_("Subscription request awaits moderation."))
         return self.redirect(rs, "ml/show_mailinglist")
@@ -638,11 +675,12 @@ class MlFrontend(AbstractUserFrontend):
         """
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
-                                                   mailinglist_id)
+        is_subscribed = self.mlproxy.is_subscribed(
+            rs, rs.user.persona_id, mailinglist_id)
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return self.redirect(rs, "ml/show_mailinglist")
+        # TODO maybe remove this?
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(False)
@@ -650,11 +688,18 @@ class MlFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
-        subscriptions = self.mlproxy.subscriptions(rs, rs.user.persona_id)
-        if not email or email in subscriptions.values():
-            code = self.mlproxy.change_subscription_state(
-                rs, (mailinglist_id, rs.user.persona_id), subscribe=True,
-                address=email)
+        subscriptions = self.mlproxy.get_persona_addresses(rs)
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': rs.user.persona_id,
+        }
+
+        if not email:
+            code = self.mlproxy.remove_subscription_address(rs, datum)
+            self.notify_return_code(rs, code)
+        elif email in subscriptions.values():
+            datum['address'] = email
+            code = self.mlproxy.set_subscription_address(rs, datum)
             self.notify_return_code(rs, code)
         else:
             self.do_mail(
@@ -680,6 +725,7 @@ class MlFrontend(AbstractUserFrontend):
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return self.redirect(rs, "ml/show_mailinglist")
+        # TODO maybe remove this?
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(False)
@@ -687,9 +733,12 @@ class MlFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
-        code = self.mlproxy.change_subscription_state(
-            rs, (mailinglist_id, rs.user.persona_id), subscribe=True,
-            address=email)
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': rs.user.persona_id,
+            'address': email,
+        }
+        code = self.mlproxy.set_subscription_address(rs, datum)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
