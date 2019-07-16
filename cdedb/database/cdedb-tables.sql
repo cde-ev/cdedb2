@@ -1030,8 +1030,7 @@ CREATE TABLE ml.subscription_states (
         subscription_state      integer NOT NULL
 );
 CREATE UNIQUE INDEX idx_subscription_constraint ON ml.subscription_states(mailinglist_id, persona_id);
-GRANT SELECT, INSERT, UPDATE ON ml.subscription_states TO cdb_persona;
-GRANT DELETE ON ml.subscription_states TO cdb_admin;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_states TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.subscription_states_id_seq TO cdb_persona;
 
 CREATE TABLE ml.subscription_addresses (
