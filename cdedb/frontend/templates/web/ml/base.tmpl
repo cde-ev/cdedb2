@@ -9,6 +9,8 @@
             {% if data['id'] in user.moderator or is_admin %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Manage"),
                         aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
+                {{ util.href(cdedblink("ml/show_subscription_details", {'mailinglist_id': data['id']}), gettext("Subscription Details"),
+                        aclass="list-group-item", icon="wrench", active=(sidenav_active == 'ml_details')) }}
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}

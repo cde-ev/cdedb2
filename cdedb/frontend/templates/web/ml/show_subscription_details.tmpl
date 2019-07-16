@@ -1,0 +1,159 @@
+{% set sidenav_active='ml_details' %}
+{% extends "web/ml/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint='strong' %}
+{% block title %}
+    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Show subscription details
+    {%- endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/management"), gettext("Subscription Details"), active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans -%}Show Subscription Details{%- endtrans %}
+        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    {% call util.bootstrap_panel() %}
+        {% trans -%}
+            Note that only DB-Accounts can be moderators and subscribers.
+            Any email address can be added to the whitelist though.
+        {%- endtrans %}
+    {% endcall %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <h2>{% trans -%}Forced Subscribers{%- endtrans %} [{{ mod_subscribed|length }}]</h2>
+            <form action="{{ cdedblink('ml/add_mod_subscriber') }}" method="POST"
+                  id="addmodsubscriberform" class="p">
+                {{ util.anti_csrf_token('ml/add_mod_subscriber') }}
+                <div class="input-group has-success">
+                    <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                    {{ util.input_text(name="subscriber_id", anid="input-add-forced", placeholder="DB-XXXX-X",
+                                       arialabel=gettext("ID of the new forced subscriber")) }}
+                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                        $('#input-add-forced').cdedbSearchPerson(
+                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
+                                (ambience['mailinglist']['id']|string|e) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
+                            false, false, "{{ gettext("ID, name, email") }}"
+                        );
+                    </script>
+                    <div class="input-group-btn">
+                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                    </div>
+                </div>
+                {{ util.output_errors('subscriber_id', wrapper=True) }}
+            </form>
+
+            <ul>
+                {% for mod_subscribed, persona in mod_subscribed.items() %} {# This is already sorted. #}
+                    <li>
+                        {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
+
+                        <form action="{{ cdedblink('ml/remove_mod_subscriber') }}"
+                              method="POST"
+                              id="removemodsubscribeform{{ mod_subscribed }}"
+                              style="display: inline;">
+                            {{ util.anti_csrf_token('ml/remove_mod_subscriber') }}
+                            {{ util.input_hidden(name="subscriber_id", value=mod_subscribed) }}
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+                                    title=gettext("Remove %(given_names)s %(family_name)s as forced subscriber")|format(
+                                        given_names=persona['given_names'],
+                                        family_name=persona['family_name'])) }}
+                        </form>
+
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+
+
+        <div class="col-md-6">
+            <h2>{% trans -%}Blocked Subscribers{%- endtrans %} [{{ mod_unsubscribed|length }}]</h2>
+            <form action="{{ cdedblink('ml/add_mod_unsubscriber') }}" method="POST"
+                  id="addmodunsubscriberform" class="p">
+                {{ util.anti_csrf_token('ml/add_mod_unsubscriber') }}
+                <div class="input-group has-success">
+                    <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                    {{ util.input_text(name="subscriber_id", anid="input-add-blocked", placeholder="DB-XXXX-X",
+                                       arialabel=gettext("ID of the new blocked subscriber")) }}
+                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                        $('#input-add-blocked').cdedbSearchPerson(
+                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
+                                (ambience['mailinglist']['id']|string|e) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
+                            false, false, "{{ gettext("ID, name, email") }}"
+                        );
+                    </script>
+                    <div class="input-group-btn">
+                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                    </div>
+                </div>
+                {{ util.output_errors('subscriber_id', wrapper=True) }}
+            </form>
+
+            <ul>
+                {% for mod_unsubscribed, persona in mod_unsubscribed.items() %} {# This is already sorted. #}
+                    <li>
+                        {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
+
+                        <form action="{{ cdedblink('ml/remove_mod_unsubscriber') }}"
+                              method="POST"
+                              id="removemodunsubscribeform{{ mod_unsubscribed }}"
+                              style="display: inline;">
+                            {{ util.anti_csrf_token('ml/remove_mod_unsubscriber') }}
+                            {{ util.input_hidden(name="subscriber_id", value=mod_unsubscribed) }}
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+                                    title=gettext("Remove %(given_names)s %(family_name)s as blocked subscriber")|format(
+                                        given_names=persona['given_names'],
+                                        family_name=persona['family_name'])) }}
+                        </form>
+
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+
+    
+    <h2>{% trans -%}Whitelist{%- endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
+    <form action="{{ cdedblink('ml/add_whitelist') }}" method="POST"
+          id="addwhitelistform" class="p">
+        {{ util.anti_csrf_token('ml/add_whitelist') }}
+        <div class="input-group has-success">
+            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+            {{ util.input_text(name="email", type="email", placeholder="mail@example.com",
+                               arialabel=gettext("Email Address to whitelist")) }}
+            <div class="input-group-btn">
+                {{ util.input_submit(value=gettext("Add Entry"), aclass="btn btn-success") }}
+            </div>
+        </div>
+        {{ util.output_errors('email', wrapper=True) }}
+    </form>
+    <ul>
+        {% for email in ambience['mailinglist']['whitelist']|sort %}
+            <li>
+                {{ email }}
+                <form action="{{ cdedblink('ml/remove_whitelist') }}"
+                      method="POST"
+                      id="removewhitelistform{{ loop.index }}"
+                      style="display: inline;">
+                    {{ util.anti_csrf_token('ml/remove_whitelist') }}
+                    {{ util.input_hidden(name="email", value=email) }}
+                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="minus",
+                            title=gettext("Remove %s from Whitelist")|format(email)) }}
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}

@@ -22,20 +22,22 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {{ util.href(cdedblink('ml/check_states'), gettext("Consistency-Check"), aclass="btn btn-info btn-sm",
-            icon="check") }}
-    </div>
+    {% call util.bootstrap_panel() %}
+        {% trans -%}
+            Note that every change can take up to 15min until effective.
+        {%- endtrans %}
+    {% endcall %}
     {% call util.bootstrap_panel() %}
         {% trans -%}
             Note that only DB-Accounts can be moderators and subscribers.
             Any email address can be added to the whitelist though.
+            The whitelist is accessible under Subscription Details.
         {%- endtrans %}
     {% endcall %}
 
     <div class="row">
         <div class="col-md-6">
-            <h2>{% trans -%}Moderators{%- endtrans %} ({{ ambience['mailinglist']['moderators']|length }})</h2>
+            <h2>{% trans -%}Moderators{%- endtrans %} [{{ ambience['mailinglist']['moderators']|length }}]</h2>
             <form action="{{ cdedblink('ml/add_moderator') }}" method="POST"
                   id="addmoderatorform" class="p">
                 {{ util.anti_csrf_token('ml/add_moderator') }}
@@ -90,22 +92,31 @@
                             <span class="nowrap">
                                 <form action="{{ cdedblink('ml/decide_request') }}"
                                       method="POST"
-                                      id="nackrequestform{{ request }}"
+                                      id="acceptrequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('ml/decide_request') }}
-                                    {{ util.input_hidden(name="ack", value=False) }}
+                                    {{ util.input_hidden(name="ack", value="accept") }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="remove", value=gettext("Reject"), 
-                                        aclass="btn btn-xs btn-danger") }}
+                                    {{ util.input_submit(value=gettext("Accept"), aclass="btn btn-xs btn-success") }}
                                 </form>
                                 <form action="{{ cdedblink('ml/decide_request') }}"
                                       method="POST"
-                                      id="ackrequestform{{ request }}"
+                                      id="rejectrequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('ml/decide_request') }}
-                                    {{ util.input_hidden(name="ack", value=True) }}
+                                    {{ util.input_hidden(name="ack", value="reject") }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(value=gettext("Accept"), aclass="btn btn-xs btn-success") }}
+                                    {{ util.input_submit(icon="trash", value=gettext("Reject"),
+                                        aclass="btn btn-xs btn-warning") }}
+                                </form>
+                                <form action="{{ cdedblink('ml/decide_request') }}"
+                                      method="POST"
+                                      id="blockrequestform{{ request }}"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('ml/decide_request') }}
+                                    {{ util.input_hidden(name="ack", value="block") }}
+                                    {{ util.input_hidden(name="persona_id", value=request) }}
+                                    {{ util.input_submit(icon="remove", value=gettext("Block"), aclass="btn btn-xs btn-danger") }}
                                 </form>
                             </span>
                         </li>
@@ -118,38 +129,8 @@
             {% endif %}
         </div>
     </div>
-
-    <h2>{% trans -%}Whitelist{%- endtrans %} ({{ ambience['mailinglist']['whitelist']|length }})</h2>
-    <form action="{{ cdedblink('ml/add_whitelist') }}" method="POST"
-          id="addwhitelistform" class="p">
-        {{ util.anti_csrf_token('ml/add_whitelist') }}
-        <div class="input-group has-success">
-            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-            {{ util.input_text(name="email", type="email", placeholder="mail@example.com",
-                               arialabel=gettext("Email Address to whitelist")) }}
-            <div class="input-group-btn">
-                {{ util.input_submit(value=gettext("Add Entry"), aclass="btn btn-success") }}
-            </div>
-        </div>
-        {{ util.output_errors('email', wrapper=True) }}
-    </form>
-    <ul>
-        {% for email in ambience['mailinglist']['whitelist']|sort %}
-            <li>
-                {{ email }}
-                <form action="{{ cdedblink('ml/remove_whitelist') }}"
-                      method="POST"
-                      id="removewhitelistform{{ loop.index }}"
-                      style="display: inline;">
-                    {{ util.anti_csrf_token('ml/remove_whitelist') }}
-                    {{ util.input_hidden(name="email", value=email) }}
-                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="minus",
-                            title=gettext("Remove %s from Whitelist")|format(email)) }}
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
-    <h2>{% trans -%}Subscribers{%- endtrans %} ({{ subscribers|length }})</h2>
+    
+    <h2>{% trans -%}Subscribers{%- endtrans %} [{{ subscribers|length }}]</h2>
     <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
           id="addsubscriberform" class="p">
         {{ util.anti_csrf_token('ml/add_subscriber') }}
