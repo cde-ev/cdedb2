@@ -49,51 +49,56 @@ class MlBackend(AbstractBackend):
         return ml_id in rs.user.moderator or "ml_script" in rs.user.roles
 
     @access("ml")
-    def may_be_subscribed(self, roles, mailinglist, current_state=None):
-        """Determine whether a persona may be subscribed to a mailinglist.
+    def may_be_subscribed(self, rs, roles, ml):
+        """Determine whether a pmaersona may be subscribed to a mailinglist.
 
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type roles: {str}
         :type mailinglist: {str: object}
         :type current_state: const.SubscriptionStates
         :rtype: bool
         """
-        # mailinglist.type.may_subscribe(persona)
-        ret = const.AudiencePolicy(mailinglist["audience_policy"]).check(roles)
-        if current_state is not None:
-            if current_state == const.SubscriptionStates.implicit:
-                ret = ret and (mailinglist["assembly_id"]
-                               or mailinglist["event_id"])
-        return ret
+        return const.AudiencePolicy(ml["audience_policy"]).check(roles)
 
     @access("ml")
-    def may_subscribe(self, roles, mailinglist, current_state=None):
+    def may_subscribe(self, rs, roles, ml):
         """Determine whether a persona may subscribe to a mailinglist.
 
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type roles: {str}
-        :type mailinglist: {str: object}
+        :type ml: {str: object}
         :type current_state: const.SubscriptionStates
-        :rtype: bool
+        :rtype: const.SubscriptionPolicy
+        :return: SubscriptionPolicy
         """
         # mailinglist.type.may_subscribe(persona)
-        ret = self.may_be_subscribed(roles, mailinglist, current_state)
-        sub_policy = const.SubscriptionPolicy(mailinglist["sub_policy"])
-
-        return ret
+        ret = self.may_be_subscribed(rs, roles, ml)
+        if ret:
+            # First, check if assembly link allows resubscribing.
+            if ml['assembly_id'] and bool(self.assembly.does_attend(
+                    rs, assembly_id=ml['assembly_id'])):
+                return const.SubscriptionPolicy.opt_in
+            # TODO Second, check if event link allows resubscribing.
+            elif ml['event_id'] and False:
+                return const.SubscriptionPolicy.opt_in
+            return const.SubscriptionPolicy(ml["sub_policy"])
+        else:
+            return const.SubscriptionPolicy.invitation_only
 
     @access("ml")
-    def may_view(self, rs, mailinglist, state=None):
+    def may_view(self, rs, ml, state=None):
         """Helper to determine whether a persona may view a mailinglist.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist: {str: object}
+        :type ml: {str: object}
         :type state: const.SubsctriptionStates or None
         :type: bool
         """
         audience_check = const.AudiencePolicy(
-            mailinglist["audience_policy"]).check(rs.user.roles)
+            ml["audience_policy"]).check(rs.user.roles)
         is_subscribed = False if state is None else state.is_subscribed
         return (audience_check or is_subscribed or self.is_admin(rs)
-                or mailinglist["id"] in rs.user.moderator)
+                or ml["id"] in rs.user.moderator)
 
     @access("ml")
     def is_relevant_admin(self, rs, *, mailinglist=None, mailinglist_id=None):
@@ -1001,7 +1006,7 @@ class MlBackend(AbstractBackend):
                 rs, set(old_subscribers) - new_implicits)
             for persona in personas.values():
                 if not self.may_be_subscribed(
-                        extract_roles(persona), mailinglist,
+                        rs, extract_roles(persona), mailinglist,
                         old_subscribers[persona_id]):
                     datum = {
                         'mailinglist_id': mailinglist_id,
