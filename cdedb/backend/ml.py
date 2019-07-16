@@ -392,8 +392,8 @@ class MlBackend(AbstractBackend):
         * gateway: A mailinglist specifying this mailinglist as a gateway.
                    This reference will be removed, but that other mailinglist
                    will not be deleted.
-        * subscriptions: An _explicit_ subscription to the mailinglist.
-        * requests: A pending request to subscribe to the mailinglist.
+        * subscriptions: A subscription to the mailinglist.
+        * addresses: A non-default subscribtion address for the mailinglist.
         * whitelist: An entry on the whitelist of the mailinglist.
         * moderator: A moderator of the mailinglist.
         * log: A log entry for the mailinglist.
@@ -419,11 +419,11 @@ class MlBackend(AbstractBackend):
         if subscriptions:
             blockers["subscriptions"] = [e["id"] for e in subscriptions]
 
-        requests = self.sql_select(
-            rs, "ml.subscription_requests", ("id",), (mailinglist_id,),
+        addresses = self.sql_select(
+            rs, "ml.subscription_addresses", ("id",), (mailinglist_id,),
             entity_key="mailinglist_id")
-        if requests:
-            blockers["requests"] = [e["id"] for e in requests]
+        if addresses:
+            blockers["addresses"] = [e["id"] for e in addresses]
 
         whitelist = self.sql_select(
             rs, "ml.whitelist", ("id",), (mailinglist_id,),
@@ -483,9 +483,9 @@ class MlBackend(AbstractBackend):
                 if "subscriptions" in cascade:
                     ret *= self.sql_delete(rs, "ml.subscription_states",
                                            blockers["subscriptions"])
-                if "requests" in cascade:
-                    ret *= self.sql_delete(rs, "ml.subscription_requests",
-                                           blockers["requests"])
+                if "addresses" in cascade:
+                    ret *= self.sql_delete(rs, "ml.subscription_addresses",
+                                           blockers["addresses"])
                 if "whitelist" in cascade:
                     ret *= self.sql_delete(rs, "ml.whitelist",
                                            blockers["whitelist"])
