@@ -704,7 +704,7 @@ class MlBackend(AbstractBackend):
         self.ml_log(rs, const.MlLogCodes.subscription_changed,
                     datum['mailinglist_id'], datum['persona_id'])
 
-    @access("ml")
+    @access("ml", "ml_script")
     def get_subscription_states(self, rs, mailinglist_id, states=None):
         """Get all users related to a given mailinglist and their sub state.
 
@@ -720,8 +720,8 @@ class MlBackend(AbstractBackend):
         states = states or set()
         states = affirm_array("enum_subscriptionstates", states)
 
-        if (not self.is_moderator(rs, mailinglist_id)
-            and not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)):
+        if not (self.is_moderator(rs, mailinglist_id)
+                or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)):
             raise PrivilegeError(n_("Not privileged."))
 
         query = ("SELECT persona_id, subscription_state FROM "
@@ -850,20 +850,25 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm("id", mailinglist_id)
 
-        subscribers = self.get_subscription_states(
-            rs, mailinglist_id, const.SubscriptionStates.subscribing_states())
         if persona_ids is None:
+            if not (self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
+                    or self.is_moderator(rs, mailinglist_id)):
+                raise PrivilegeError(n_("Not privileged."))
+            subscribers = self.get_subscription_states(
+                rs, mailinglist_id,
+                states=const.SubscriptionStates.subscribing_states())
             persona_ids = set(subscribers)
         else:
             persona_ids = affirm_set("id", persona_ids)
-            # Restrict to subscribers
-            persona_ids = {p_id for p_id in persona_ids if p_id in subscribers}
 
-        if not ("ml_script" is rs.user.roles
-                or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
-                or self.is_moderator(rs, mailinglist_id)
-                or all(rs.user.persona_id == p_id for p_id in persona_ids)):
-            raise PrivilegeError(n_("Not privileged."))
+        if not all(rs.user.persona_id == p_id for p_id in persona_ids):
+            if not (self.is_relevant_admin(rs, mailinglist_id=mailinglist_id)
+                    or self.is_moderator(rs, mailinglist_id)):
+                raise PrivilegeError(n_("Not privileged."))
+            subscribers = self.get_subscription_states(
+                rs, mailinglist_id,
+                states=const.SubscriptionStates.subscribing_states())
+            persona_ids = {p_id for p_id in persona_ids if p_id in subscribers}
 
         query = ("SELECT persona_id, address FROM ml.subscription_addresses "
                  "WHERE mailinglist_id = %s AND persona_id = ANY(%s)")
@@ -1008,8 +1013,9 @@ class MlBackend(AbstractBackend):
             # This is the case if they are implicit subscribers of the list or
             # if the `may_be_subscribed` function says so.
             delete = []
-            for persona_id in set(old_subscribers) - new_implicits:
-                persona = self.core.get_persona(rs, persona_id)
+            personas = self.core.get_personas(
+                rs, set(old_subscribers) - new_implicits)
+            for persona in personas.values():
                 if not self.may_be_subscribed(
                         extract_roles(persona), mailinglist,
                         old_subscribers[persona_id]):
