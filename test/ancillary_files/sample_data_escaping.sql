@@ -308,7 +308,7 @@ INSERT INTO ml.mailinglists (id, title, address, description, sub_policy, mod_po
     (4, 'Klatsch und Tratsch<script>abcdef</script>', 'klatsch@example.cde', NULL, 4, 1, 1, 1, '[klatsch]<script>abcdef</script>', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
     (5, 'Sozialistischer Kampfbrief<script>abcdef</script>', 'kongress@example.cde', NULL, 5, 2, 2, 2, '[kampf]<script>abcdef</script>', 1024, True, NULL, NULL, ARRAY[]::integer[], 1),
     (6, 'Aktivenforum 2000<script>abcdef</script>', 'aktivenforum2000@example.cde', NULL, 5, 2, 2, 5, '[aktivenforum]<script>abcdef</script>', 1024, False, NULL, NULL, ARRAY[]::integer[], NULL),
-    (7, 'Aktivenforum 2001<script>abcdef</script>', 'aktivenforum@example.cde', NULL, 5, 2, 2, 5, '[aktivenforum]<script>abcdef</script>', 1024, True, 6, NULL, ARRAY[]::integer[], NULL),
+    (7, 'Aktivenforum 2001<script>abcdef</script>', 'aktivenforum@example.cde', NULL, 5, 2, 2, 5, '[aktivenforum]<script>abcdef</script>', 1024, True, NULL, NULL, ARRAY[]::integer[], NULL),
     (8, 'Orga-Liste<script>abcdef</script>', 'aka@example.cde', NULL, 5, 1, 1, 3, '[orga]<script>abcdef</script>', NULL, True, NULL, 1, ARRAY[]::integer[], NULL),
     (9, 'Teilnehmer-Liste<script>abcdef</script>', 'participants@example.cde', NULL, 5, 2, 1, 3, '[aka]<script>abcdef</script>', NULL, True, NULL, 1, ARRAY[2, 4], NULL),
     (10, 'Warte-Liste<script>abcdef</script>', 'wait@example.cde', NULL, 5, 3, 1, 3, '[wait]<script>abcdef</script>', NULL, True, NULL, 1, ARRAY[3], NULL);

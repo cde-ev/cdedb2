@@ -62,11 +62,6 @@
                             assemblies[ml['assembly_id']]['title'], icon='bullhorn') -%}
                         or {{ link }} (Opt-Out)
                     {%- endtrans %}
-                {% elif ml['gateway'] %}
-                    {% trans link=util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': ml['gateway']}),
-                            mailinglist_infos[ml['gateway']]['title'], icon='envelope') -%}
-                        or {{ link }} (Opt-In)
-                    {%- endtrans %}
                 {% endif %}
             {% endif %}
         </div>

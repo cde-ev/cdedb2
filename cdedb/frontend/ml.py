@@ -172,7 +172,7 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
         "attachment_policy", "audience_policy", "subject_prefix", "maxsize",
-        "is_active", "notes", "gateway", "event_id", "registration_stati",
+        "is_active", "notes", "event_id", "registration_stati",
         "assembly_id")
     def create_mailinglist(self, rs, data):
         """Make a new list."""
@@ -301,7 +301,7 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
         "notes", "attachment_policy", "subject_prefix", "maxsize",
-        "is_active", "gateway", "event_id", "assembly_id")
+        "is_active", "event_id", "assembly_id")
     def change_mailinglist(self, rs, mailinglist_id, audience_policy,
                            registration_stati, data):
         """Modify simple attributes of mailinglists."""
@@ -325,9 +325,8 @@ class MlFrontend(AbstractUserFrontend):
             return self.management(rs, mailinglist_id)
 
         code = self.mlproxy.delete_mailinglist(
-            rs, mailinglist_id, cascade={"gateway", "subscriptions", "log",
-                                         "addresses", "whitelist",
-                                         "moderators"})
+            rs, mailinglist_id, cascade={"subscriptions", "log", "addresses",
+                                         "whitelist", "moderators"})
 
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/list_mailinglists")

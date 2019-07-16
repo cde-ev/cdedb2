@@ -35,19 +35,6 @@
         </div>
     {% endif %}
 
-    {% if ambience['mailinglist']['gateway'] %}
-        <p>
-            {% if gateway['is_active'] or is_admin %}
-                {% set link = util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id':gateway['id']}), gateway['title'],
-                        icon='envelope') %}
-            {% else %}
-                {% set link = "%s %s"|s|format(util.make_icon('envelope'), gateway['title']) %}
-            {% endif %}
-            {% trans link=link -%}
-                Available for subscribers of {{ link }}
-            {%- endtrans %}
-        </p>
-    {% endif %}
     <dl class="dl-horizontal">
         <dt>{% trans -%}Mailinglist Address{%- endtrans %}</dt>
         <dd>{{ util.href('mailto:' + ambience['mailinglist']['address'], ambience['mailinglist']['address']) }}</dd>

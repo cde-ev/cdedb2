@@ -44,9 +44,6 @@
         {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
                 entries=sorted_assemblies,
                 info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
-        {{ util.form_input_select(name="gateway", label=gettext("Gateway"), nulloption="",
-                entries=sorted_mailinglists,
-                info=gettext("Subscribers of this list can always subscribe. (Opt-In)")) }}
 
         <h4 class="heading-underline">{% trans -%}Mails{%- endtrans %}</h4>
         {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix")) }}
