@@ -13,10 +13,10 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, name_key, merge_dicts, unwrap, ProxyShim, SubscriptionStates,
-    json_serialize)
+    n_, name_key, merge_dicts, unwrap, ProxyShim, json_serialize)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+from cdedb.database.constants import SubscriptionStates as SS
 from cdedb.backend.event import EventBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -58,15 +58,16 @@ class MlFrontend(AbstractUserFrontend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    @access("persona")
+    @access("ml")
     def index(self, rs):
         """Render start page."""
         policies = const.AudiencePolicy.applicable(rs.user.roles)
         mailinglists = self.mlproxy.list_mailinglists(
             rs, audience_policies=policies)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
-        subscriptions = self.mlproxy.subscriptions(
-            rs, rs.user.persona_id, lists=mailinglists.keys())
+        subscriptions = self.mlproxy.get_subscriptions(
+            rs, rs.user.persona_id, states=SS.subscribing_states(),
+            mailinglist_ids=mailinglists.keys())
         return self.render(rs, "index", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
