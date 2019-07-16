@@ -474,25 +474,19 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("persona_id", "id"), ("ack", "bool"))
+    @REQUESTdata(("persona_id", "id"),
+                 ("resolution", "enum_subscriptionrequestresolutions"))
     @mailinglist_guard()
-    def decide_request(self, rs, mailinglist_id, persona_id, ack):
+    def decide_request(self, rs, mailinglist_id, persona_id, resolution):
         """Evaluate whether to admit subscribers."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        if ack == "accept":
-            ack = SS.subscribed
-            code = self.mlproxy.change_subscription(
-                rs, (mailinglist_id, persona_id), ack)
-        elif ack == "reject":
-            code = self.mlproxy.remove_subscription(
-                rs, mailinglist_id, persona_id)
-        elif ack == "block":
-            ack = SS.mod_unsubscribed
-            code = self.mlproxy.change_subscription(
-                rs, (mailinglist_id, persona_id), ack)
-        else:
-            rs.notify("error", n_("Invalid Operation"))
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': persona_id,
+            'resolution': resolution,
+        }
+        code = self.mlproxy.decide_subscription_request(rs, datum)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
