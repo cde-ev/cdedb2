@@ -138,8 +138,8 @@ class MlFrontend(AbstractUserFrontend):
         """Show all mailinglists."""
         mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
-        subscriptions = self.mlproxy.subscriptions(
-            rs, rs.user.persona_id, lists=mailinglists.keys())
+        subscriptions = self.mlproxy.get_subscriptions(
+            rs, rs.user.persona_id, states=SS.subscribing_states())
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         for mailinglist_id in mailinglists:
@@ -229,7 +229,7 @@ class MlFrontend(AbstractUserFrontend):
             return werkzeug.exceptions.Forbidden()
 
         sub_address = None
-        if state.is_subscribed:
+        if state and state.is_subscribed:
             sub_address = unwrap(self.mlproxy.get_subscription_addresse(
                 rs, mailinglist_id, rs.user.persona_id, explicits_only=True))
 
@@ -237,23 +237,25 @@ class MlFrontend(AbstractUserFrontend):
         if rs.ambience['mailinglist']['event_id']:
             event = self.eventproxy.get_event(
                 rs, rs.ambience['mailinglist']['event_id'])
+            is_registered = bool(self.eventproxy.list_registrations(
+                rs, event['id'], rs.user.persona_id))
             event['is_visible'] = (
                     "event_admin" in rs.user.roles
                     or rs.user.persona_id in event['orgas']
                     or (event['is_open'] and event['is_visible'])
-                    or bool(
-                self.eventproxy.list_registrations(rs, event['id'],
-                                                   rs.user.persona_id)))
+                    or is_registered)
 
         assembly = {}
         if rs.ambience['mailinglist']['assembly_id']:
             assembly = self.assemblyproxy.get_assembly(
                 rs, rs.ambience['mailinglist']['assembly_id'])
+            is_attending = bool(self.assemblyproxy.does_attend(
+                rs, assembly_id=assembly['id']))
+            # TODO: This seems wrong for assembly visibility.
             assembly['is_visible'] = (
                     "assembly_admin" in rs.user.roles
                     or assembly['is_active']
-                    or bool(self.assemblyproxy.does_attend(
-                rs, assembly_id=assembly['id'])))
+                    or is_attending)
 
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
@@ -280,8 +282,9 @@ class MlFrontend(AbstractUserFrontend):
         sorted_events = sorted([(k, v) for k, v in events.items()],
                                key=lambda x: x[1])
         assemblies = self.assemblyproxy.list_assemblies(rs)
-        sorted_assemblies = sorted([(k, v["title"]) for k, v in assemblies.items()],
-                                   key=lambda x: x[1])
+        sorted_assemblies = sorted(
+            [(k, v["title"]) for k, v in assemblies.items()],
+            key=lambda x: x[1])
         merge_dicts(rs.values, rs.ambience['mailinglist'])
         if not self.is_admin(rs):
             rs.notify("info",
@@ -322,7 +325,8 @@ class MlFrontend(AbstractUserFrontend):
 
         code = self.mlproxy.delete_mailinglist(
             rs, mailinglist_id, cascade={"gateway", "subscriptions", "log",
-                                         "requests", "whitelist", "moderators"})
+                                         "addresses", "whitelist",
+                                         "moderators"})
 
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/list_mailinglists")
@@ -376,7 +380,7 @@ class MlFrontend(AbstractUserFrontend):
                 key=lambda anid: name_key(personas[anid])))
         requests = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-            requests, key=lambda anid: name_key(personas[anid])))
+             requests, key=lambda anid: name_key(personas[anid])))
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators})
