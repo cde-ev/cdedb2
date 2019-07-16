@@ -95,7 +95,7 @@
                                       id="acceptrequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('ml/decide_request') }}
-                                    {{ util.input_hidden(name="ack", value="accept") }}
+                                    {{ util.input_hidden(name="resolution", value=enums['SubscriptionRequestResolutions'].approved.value) }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
                                     {{ util.input_submit(value=gettext("Accept"), aclass="btn btn-xs btn-success") }}
                                 </form>
@@ -104,7 +104,7 @@
                                       id="rejectrequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('ml/decide_request') }}
-                                    {{ util.input_hidden(name="ack", value="reject") }}
+                                    {{ util.input_hidden(name="ack", value=enums['SubscriptionRequestResolutions'].denied.value) }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
                                     {{ util.input_submit(icon="trash", value=gettext("Reject"),
                                         aclass="btn btn-xs btn-warning") }}
@@ -114,7 +114,7 @@
                                       id="blockrequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('ml/decide_request') }}
-                                    {{ util.input_hidden(name="ack", value="block") }}
+                                    {{ util.input_hidden(name="ack", value=enums['SubscriptionRequestResolutions'].blocked.value) }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
                                     {{ util.input_submit(icon="remove", value=gettext("Block"), aclass="btn btn-xs btn-danger") }}
                                 </form>
