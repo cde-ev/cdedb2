@@ -1748,7 +1748,7 @@ class CdEFrontend(AbstractUserFrontend):
                 lastschrift = None
                 if lastschrift_list:
                     lastschrift = self.cdeproxy.get_lastschrift(
-                        rrs, unwrap(lastschrift_list))
+                        rrs, unwrap(lastschrift_list, keys=True))
                     lastschrift['reference'] = lastschrift_reference(
                         persona['id'], lastschrift['id'])
                 address = make_postal_address(persona)
@@ -1955,7 +1955,7 @@ class CdEFrontend(AbstractUserFrontend):
                 lastschrift = None
                 if lastschrift_list:
                     lastschrift = self.cdeproxy.get_lastschrift(
-                        rrs, unwrap(lastschrift_list))
+                        rrs, unwrap(lastschrift_list, keys=True))
                     lastschrift['reference'] = lastschrift_reference(
                         persona['id'], lastschrift['id'])
                 self.do_mail(
