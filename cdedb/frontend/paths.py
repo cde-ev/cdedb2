@@ -603,8 +603,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="oldstyle_modlist_export"),
             rule("/script/bounce/compat", methods=_POST,
                  endpoint="oldstyle_bounce"),
-            rule("/check", methods=_GET,
-                 endpoint="global_check_states"),
             sub('/mailinglist/<int:mailinglist_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_mailinglist"),
@@ -649,10 +647,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/subaddress/change", methods=_POST,
                      endpoint="change_address"),
                 rule("/subaddress/confirm", methods=_GET,
-                     endpoint="do_address_change"),
-                rule("/check", methods=_GET,
-                     endpoint="check_states"),
-                rule("/override", methods=_POST,
-                     endpoint="mark_override"),)),
+                     endpoint="do_address_change"),)),
         )),)),
 ), converters={'filename': FilenameConverter})
