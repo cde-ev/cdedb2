@@ -214,6 +214,10 @@ class EventFrontend(AbstractUserFrontend):
             params['orgas'] = OrderedDict(
                 (e['id'], e) for e in sorted(self.coreproxy.get_personas(
                     rs, rs.ambience['event']['orgas']).values(), key=name_key))
+        if "ml" in rs.user.roles:
+            ml_data = self._get_mailinglist_setter(rs.ambience['event'])
+            params['participant_list'] = self.mlproxy.verify_existence(
+                rs, ml_data['address'])
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (self.conf.STORAGE_DIR / 'minor_form'
@@ -432,6 +436,30 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event(rs, new)
         self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/show_event")
+
+    @access("event_admin", modi={"POST"})
+    @REQUESTdata(("orgalist", "bool"))
+    def create_event_mailinglist(self, rs, event_id, orgalist=False):
+        """Create a default mailinglist for the event. Requires ml_admin."""
+        if "ml_admin" not in rs.user.roles:
+            raise werkzeug.exceptions.Forbidden(n_("Must be ml_admin."))
+
+        ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
+        if not self.mlproxy.verify_existence(rs, ml_data['address']):
+            code = self.mlproxy.create_mailinglist(rs, ml_data)
+            msg = (n_("Orga mailinglist created.") if orgalist
+                   else n_("Participant mailinglist created."))
+            self.notify_return_code(rs, code, success=msg)
+            if code and orgalist:
+                data ={
+                    'id': event_id,
+                    'orga_address': ml_data['address'],
+                }
+                self.eventproxy.set_event(rs, data)
+        else:
+            rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                      {'address': ml_data['address']})
         return self.redirect(rs, "event/show_event")
 
     @access("event")
@@ -749,6 +777,49 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/field_summary_form")
 
+    @staticmethod
+    def _get_mailinglist_setter(event, orgalist=False):
+        orga_ml_data = {
+            'title': "{} Orgateam".format(event['title']),
+            'address': "{}@aka.cde-ev.de".format(event['shortname']),
+            'description': None,
+            'sub_policy': const.SubscriptionPolicy.invitation_only,
+            'mod_policy': const.ModerationPolicy.unmoderated,
+            'attachment_policy': const.AttachmentPolicy.allow,
+            'audience_policy': const.AudiencePolicy.require_event,
+            'subject_prefix': event['shortname'],
+            'maxsize': 1024,
+            'is_active': True,
+            'gateway': None,
+            'event_id': event['id'],
+            'registration_stati': [],
+            'assembly_id': None,
+            'notes': None,
+            'moderators': event['orgas'],
+        }
+        participant_ml_data = {
+            'title': "{} Teilnehmer".format(event['title']),
+            'address': "{}-all@aka.cde-ev.de".format(event["shortname"]),
+            'description': None,
+            'sub_policy': const.SubscriptionPolicy.invitation_only,
+            'mod_policy': const.ModerationPolicy.non_subscribers,
+            'attachment_policy': const.AttachmentPolicy.pdf_only,
+            'audience_policy': const.AudiencePolicy.require_event,
+            'subject_prefix': event['shortname'],
+            'maxsize': 1024,
+            'is_active': True,
+            'gateway': None,
+            'event_id': event['id'],
+            'registration_stati': [const.RegistrationPartStati.participant],
+            'assembly_id': None,
+            'notes': None,
+            'moderators': event['orgas'],
+        }
+        if orgalist:
+            return orga_ml_data
+        else:
+            return participant_ml_data
+
     @access("event_admin")
     def create_event_form(self, rs):
         """Render form."""
@@ -773,9 +844,10 @@ class EventFrontend(AbstractUserFrontend):
             data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
                              for anid in orga_ids.split(",")}
         if create_orga_list and "ml_admin" in rs.user.roles:
-            orga_ml_address = "{}@aka.cde-ev.de".format(data['shortname'])
-            # This will set the orga_address even if the list already existed
-            data['orga_address'] = orga_ml_address
+            orga_ml_data = self._get_mailinglist_setter(
+                rs.ambience['event'], orgalist=True)
+            # This will set the orga_address even if the list already exists.
+            data['orga_address'] = orga_ml_data['address']
         else:
             data['orga_address'] = None
         # multi part events will have to edit this later on
@@ -793,61 +865,25 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
-        # TODO create mailing lists
+        data['id'] = new_id
         if create_orga_list and "ml_admin" in rs.user.roles:
-            orga_ml_data = {
-                'title': "{} Orgateam".format(data['title']),
-                'address': data['orga_address'],
-                'description': None,
-                'sub_policy': const.SubscriptionPolicy.invitation_only,
-                'mod_policy': const.ModerationPolicy.unmoderated,
-                'attachment_policy': const.AttachmentPolicy.allow,
-                'audience_policy': const.AudiencePolicy.require_event,
-                'subject_prefix': data['shortname'],
-                'maxsize': 1024,
-                'is_active': True,
-                'gateway': None,
-                'event_id': new_id,
-                'registration_stati': [],
-                'assembly_id': None,
-                'notes': None,
-                'moderators': data['orgas'],
-            }
-            if not self.mlproxy.verify_existence(rs, data['orga_address']):
-                code = self.mlproxy.create_mailinglist(rs, orga_ml_data)
+            ml_data = self._get_mailinglist_setter(data, orgalist=True)
+            if not self.mlproxy.verify_existence(rs, ml_data['address']):
+                code = self.mlproxy.create_mailinglist(rs, ml_data)
                 self.notify_return_code(
                     rs, code, success=n_("Orga mailinglist created."))
             else:
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': data['orga_address']})
+                          {'address': ml_data['address']})
         if create_participant_list and "ml_admin" in rs.user.roles:
-            participant_ml_address = "{}-all@cde-ev.de".format(
-                data['shortname'])
-            participant_ml_data = {
-                'title': "{} Teilnehmer".format(data['title']),
-                'address': participant_ml_address,
-                'description': None,
-                'sub_policy': const.SubscriptionPolicy.invitation_only,
-                'mod_policy': const.ModerationPolicy.non_subscribers,
-                'attachment_policy': const.AttachmentPolicy.pdf_only,
-                'audience_policy': const.AudiencePolicy.require_event,
-                'subject_prefix': data['shortname'],
-                'maxsize': 1024,
-                'is_active': True,
-                'gateway': None,
-                'event_id': new_id,
-                'registration_stati': [const.RegistrationPartStati.participant],
-                'assembly_id': None,
-                'notes': None,
-                'moderators': data['orgas'],
-            }
-            if not self.mlproxy.verify_existence(rs, participant_ml_address):
-                code = self.mlproxy.create_mailinglist(rs, participant_ml_data)
+            ml_data = self._get_mailinglist_setter(data)
+            if not self.mlproxy.verify_existence(rs, ml_data['address']):
+                code = self.mlproxy.create_mailinglist(rs, ml_data)
                 self.notify_return_code(
                     rs, code, success=n_("Participant mailinglist created."))
             else:
                 rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                          {'address': participant_ml_address})
+                          {'address': ml_data['address']})
         self.notify_return_code(rs, new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 

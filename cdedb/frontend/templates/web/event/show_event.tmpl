@@ -266,62 +266,111 @@
     {% endif %}
 
 
-    {% if is_admin and "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
+    {% if "event_admin" in user.roles or "ml_admin" in user.roles
+            and ("cde_admin" in user.roles and not ambience['event']['is_archived']
+                 or "ml_admin" in user.roles and (not ambience['event']['orga_address']
+                                                  or not participant_list)) %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
-            <div class="row">
-                <div class="col-sm-4">
-                    <div class="p">
-                        <form action="{{ cdedblink('event/archive_event') }}" method="POST" id="archiveeventform"
-                                style="display: inline;">
-                            {{ util.anti_csrf_token('event/archive_event') }}
-                            {{ util.input_submit(value=gettext("Archive"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
-                                                 aclass="btn btn-danger", icon="folder-close",
-                                                 title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
-                            {{ util.input_checkbox(name="ack_archive", label=gettext("Are you sure?")) }}
-                        </form>
+            {% if "ml_admin" in user.roles %}
+                {% if not ambience['event']['orga_address'] %}
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="p">
+                                <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
+                                        style="display: inline;">
+                                    {{ util.anti_csrf_token('event/create_event_mailinglist') }}
+                                    {{ util.input_hidden("orgalist", value=True) }}
+                                    {{ util.input_submit(value=gettext("Create Orga-Mailinglist"),
+                                                         aclass="btn btn-success", icon="plus") }}
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <p class="text-muted">
+                                {% trans -%}
+                                    Create an orga mailinglist for this event with a default configuration.
+                                {%- endtrans %}
+                            </p>
+                        </div>
                     </div>
-                </div>
-                <div class="col-sm-8">
-                    <p class="text-muted">
-                        {% trans -%}
-                        	Archives the event. This creates a new “Past Event” in the CdE-Realm and transfers
-                            course and participant information there.
-                        {%- endtrans %}
-                    </p>
-                </div>
-            </div>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
-                $('#archiveeventform').cdedbProtectAction("{{ gettext("The event will be permanently archived.") }}");
-                $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
-            </script>
-            {% if is_admin %}
+                {% endif %}
+                {% if not participant_list %}
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="p">
+                                <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
+                                        style="display: inline;">
+                                    {{ util.anti_csrf_token('event/create_event_mailinglist') }}
+                                    {{ util.input_hidden("orgalist", value=False) }}
+                                    {{ util.input_submit(value=gettext("Create Participant-Mailinglist"),
+                                                         aclass="btn btn-success", icon="plus") }}
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <p class="text-muted">
+                                {% trans -%}
+                                    Create a participant mailinglist for this event with a default configuration.
+                                {%- endtrans %}
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+            {% if is_admin and "cde_admin" in user.roles %}
                 <div class="row">
                     <div class="col-sm-4">
                         <div class="p">
-                            <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"
-                                  style="display: inline;">
-                                {{ util.anti_csrf_token('event/delete_event') }}
-                                {{ util.input_submit(value=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
-                                                     aclass="btn btn-danger", icon="trash",
+                            <form action="{{ cdedblink('event/archive_event') }}" method="POST" id="archiveeventform"
+                                    style="display: inline;">
+                                {{ util.anti_csrf_token('event/archive_event') }}
+                                {{ util.input_submit(value=gettext("Archive"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
+                                                     aclass="btn btn-danger", icon="folder-close",
                                                      title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
-                                {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                                {{ util.input_checkbox(name="ack_archive", label=gettext("Are you sure?")) }}
                             </form>
                         </div>
                     </div>
                     <div class="col-sm-8">
-                        <div class="p text-muted">
+                        <p class="text-muted">
                             {% trans -%}
-                                Deletes the event, including all course and participant information.
-                                This should usually not be done before the event has been archived and fully concluded.
+                                Archives the event. This creates a new “Past Event” in the CdE-Realm and transfers
+                                course and participant information there.
                             {%- endtrans %}
-                        </div>
+                        </p>
                     </div>
                 </div>
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
-                    $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
-                    $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                    $('#archiveeventform').cdedbProtectAction("{{ gettext("The event will be permanently archived.") }}");
+                    $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
                 </script>
             {% endif %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"
+                              style="display: inline;">
+                            {{ util.anti_csrf_token('event/delete_event') }}
+                            {{ util.input_submit(value=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
+                                                 aclass="btn btn-danger", icon="trash",
+                                                 title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                        </form>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <div class="p text-muted">
+                        {% trans -%}
+                            Deletes the event, including all course and participant information.
+                            This should usually not be done before the event has been archived and fully concluded.
+                        {%- endtrans %}
+                    </div>
+                </div>
+            </div>
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
+                $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+            </script>
         {% endcall %}
     {% endif %}
 {% endblock %}
