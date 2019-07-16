@@ -58,8 +58,8 @@
         <p class="text-warning"><strong>{% trans -%}This mailinglist is inactive.{%- endtrans %}</strong></p>
     {% else %}
         {% call util.bootstrap_panel(title=gettext("Your Subscription"),
-                                     aclass=("panel-success" if is_subscribed else "panel-default")) %}
-                {% if is_subscribed %}
+                                     aclass=("panel-success" if state and state.is_subscribed else "panel-default")) %}
+                {% if state and state.is_subscribed %}
                     <p class="text-success"><strong>
                         {% trans -%}You are subscribed to this mailinglist.{%- endtrans %}
                     </strong></p>
@@ -73,26 +73,25 @@
                             {% endif %}
                         </dd>
                     </dl>
-                    {% if may_toggle %}
+                    {% if may_subscribe != enums['SubscriptionPolicy'].mandatory %}
                         <div class="p">
                             {% if sub_address %}
                                 <form action="{{ cdedblink('ml/change_address') }}" method="POST"
-                                  id="resetaddressform" style="display: inline;">
+                                      id="resetaddressform" style="display: inline;">
                                     {{ util.anti_csrf_token('ml/change_address') }}
                                     {{ util.input_hidden(name="email", value="") }}
                                     {{ util.input_submit(value=gettext("Reset email address"), icon="share-alt",
-                                            aclass="btn btn-warning btn-sm") }}
+                                        aclass="btn btn-warning btn-sm") }}
                                 </form>
                             {% endif %}
-                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
-                                    id="unsubscribeform" style="display: inline;">
-                                {{ util.anti_csrf_token('ml/subscribe_or_unsubscribe') }}
-                                {{ util.input_hidden(name="subscribe", value=False) }}
+                            <form action="{{ cdedblink('ml/unsubscribe') }}" method="POST"
+                                  id="unsubscribeform" style="display: inline;">
+                                {{ util.anti_csrf_token('ml/unsubscribe') }}
                                 {{ util.input_submit(value=gettext("Unsubscribe"), aclass="btn btn-danger btn-sm",
-                                        icon="remove") }}
+                                                     icon="remove") }}
                             </form>
                         </div>
-
+                        
                         <h4 class="mosp">{% trans -%}Change email address{%- endtrans %}</h4>
                         <p class="text-muted">
                             {{ util.make_icon('info-sign') }}
@@ -128,33 +127,37 @@
                         </p>
                     {% endif %}
                 {% else %}
-                    {% if may_toggle %}
-                        {% if pending %}
-                            <p><strong>
-                                {% trans -%}
-                                    Your subscription request is currently pending review by a moderator.
-                                {%- endtrans %}
-                            </strong></p>
-                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
-                                    id="subscribeform">
-                                {{ util.anti_csrf_token('ml/subscribe_or_unsubscribe') }}
-                                {{ util.input_hidden(name="subscribe", value=False) }}
-                                {{ util.input_submit(value=gettext("Cancel"), aclass="btn btn-sm btn-danger",
-                                        icon="remove") }}
-                            </form>
-                        {% else %}
-                            <p><strong>
-                                {% trans -%}You are not currently subscribed to this mailinglist.{%- endtrans %}
-                            </strong></p>
-                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe') }}" method="POST"
-                              id="subscribeform">
-                                {{ util.anti_csrf_token('ml/subscribe_or_unsubscribe') }}
+                    {% if state == enums['SubscriptionStates'].subscription_requested %}
+                        <p><strong>
+                            {% trans -%}
+                                Your subscription request is currently pending review by a moderator.
+                            {%- endtrans %}
+                        </strong></p>
+                        <form action="{{ cdedblink('ml/cancel_subscription') }}" method="POST"
+                                id="subscribeform">
+                            {{ util.anti_csrf_token('ml/cancel_subscription') }}
+                            {{ util.input_submit(value=gettext("Cancel"), aclass="btn btn-sm btn-danger",
+                                    icon="remove") }}
+                        </form>
+                    {% elif state != enums['SubscriptionStates'].mod_unsubscribed %}
+                        <p><strong>
+                            {% trans -%}You are not currently subscribed to this mailinglist.{%- endtrans %}
+                        </strong></p>
+                        {% if may_subscribe == enums['SubscriptionPolicy'].moderated_opt_in %}
+                            <form action="{{ cdedblink('ml/request_subscription') }}" method="POST" id="subscribeform">
+                                {{ util.anti_csrf_token('ml/request_subscription') }}
                                 <div>
-                                    {{ util.input_hidden(name="subscribe", value=True) }}
+                                    {{ util.input_submit(value=gettext("Request subscription"), aclass="btn btn-sm btn-success") }}
+                                </div>
+                            </form>
+                        {% elif may_subscribe in (enums['SubscriptionPolicy'].opt_in, enums['SubscriptionPolicy'].opt_out) %}
+                            <form action="{{ cdedblink('ml/subscribe') }}" method="POST" id="subscribeform">
+                                {{ util.anti_csrf_token('ml/subscribe') }}
+                                <div>
                                     {{ util.input_submit(value=gettext("Subscribe"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
-                        {% endif%}
+                        {% endif %}
                     {% else %}
                         <p>
                             {% trans -%}
