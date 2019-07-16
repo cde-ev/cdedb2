@@ -905,6 +905,22 @@ class MlBackend(AbstractBackend):
             explicits_only=explicits_only))
 
     @access("ml")
+    def get_persona_addresses(self, rs):
+        """Get all confirmed email addresses for a user.
+
+        This includes all subscription addresses as well as the username.
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {str}
+        """
+        query = ("SELECT DISTINCT address FROM ml.subscription_addresses "
+                 "WHERE persona_id = %s")
+        params = (rs.user.persona_id,)
+        data = self.query_all(rs, query, params)
+        ret = {e["address"] for e in data}
+        ret.add(rs.user.username)
+        return ret
+
+    @access("ml")
     def is_subscribed(self, rs, mailinglist_id, persona_id):
         """Sugar coating around :py:meth:`get_subscriptions`.
 
