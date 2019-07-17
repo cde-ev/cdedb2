@@ -762,11 +762,9 @@ class MlFrontend(AbstractUserFrontend):
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return self.redirect(rs, "ml/show_mailinglist")
-        # TODO maybe remove this?
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
-        may_toggle = not policy.privileged_transition(False)
-        if email and not may_toggle:
+        if email and policy == SP.mandatory:
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
@@ -807,11 +805,9 @@ class MlFrontend(AbstractUserFrontend):
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return self.redirect(rs, "ml/show_mailinglist")
-        # TODO maybe remove this?
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
-        may_toggle = not policy.privileged_transition(False)
-        if not may_toggle:
+        if policy == SP.mandatory:
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 

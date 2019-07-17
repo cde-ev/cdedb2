@@ -223,17 +223,6 @@ class SubscriptionPolicy(enum.IntEnum):
                         SubscriptionPolicy.moderated_opt_in,
                         SubscriptionPolicy.invitation_only)
 
-    def privileged_transition(self, new_state):
-        """Most of the time subscribing or unsubscribing is simply allowed,
-        but in some cases you must be privileged to do it.
-
-        :rtype: bool
-        """
-        if new_state:
-            return self == SubscriptionPolicy.invitation_only
-        else:
-            return self == SubscriptionPolicy.mandatory
-
 
 @enum.unique
 class ModerationPolicy(enum.IntEnum):
