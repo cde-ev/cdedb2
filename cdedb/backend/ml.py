@@ -49,31 +49,28 @@ class MlBackend(AbstractBackend):
         return ml_id in rs.user.moderator or "ml_script" in rs.user.roles
 
     @access("ml")
-    def may_be_subscribed(self, rs, roles, ml):
-        """Determine whether a pmaersona may be subscribed to a mailinglist.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type roles: {str}
-        :type mailinglist: {str: object}
-        :type current_state: const.SubscriptionStates
-        :rtype: bool
-        """
-        return const.AudiencePolicy(ml["audience_policy"]).check(roles)
-
-    @access("ml")
-    def may_subscribe(self, rs, roles, ml):
+    def may_subscribe(self, rs, roles, *, mailinglist=None,
+                      mailinglist_id=None):
         """Determine whether a persona may subscribe to a mailinglist.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type roles: {str}
-        :type ml: {str: object}
+        :type mailinglist: {str: object}
+        :type mailinglist_id: int
         :type current_state: const.SubscriptionStates
         :rtype: const.SubscriptionPolicy
         :return: SubscriptionPolicy
         """
-        # mailinglist.type.may_subscribe(persona)
-        ret = self.may_be_subscribed(rs, roles, ml)
-        if ret:
+        if mailinglist is None and mailinglist_id is None:
+            raise ValueError("No input specified")
+        elif mailinglist is not None and mailinglist_id is not None:
+            raise ValueError("Too many inputs specified")
+        elif mailinglist_id:
+            mailinglist = self.get_mailinglist(rs, mailinglist_id)
+
+        ml = affirm("mailinglist", mailinglist)
+
+        if const.AudiencePolicy(ml["audience_policy"]).check(roles):
             # First, check if assembly link allows resubscribing.
             if ml['assembly_id'] and bool(self.assembly.does_attend(
                     rs, assembly_id=ml['assembly_id'])):
@@ -1005,9 +1002,10 @@ class MlBackend(AbstractBackend):
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
             for persona in personas.values():
-                if not self.may_be_subscribed(
-                        rs, extract_roles(persona), mailinglist,
-                        old_subscribers[persona_id]):
+                if (not self.may_subscribe(
+                        rs, extract_roles(persona), mailinglist=mailinglist)
+                        in {SubscriptionPolicy.opt_in,
+                            SubscriptionPolicy.moderated_opt_in}):
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona_id

@@ -253,7 +253,8 @@ class MlFrontend(AbstractUserFrontend):
                     or "member" in rs.user.roles
                     or is_attending)
 
-        may_subscribe = self.mlproxy.may_subscribe(rs, rs.user.roles, ml)
+        may_subscribe = self.mlproxy.may_subscribe(rs, rs.user.roles,
+                                                   mailinglist=ml)
         personas = self.coreproxy.get_personas(rs, ml['moderators'])
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
@@ -644,7 +645,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
         policy = self.mlproxy.may_subscribe(rs, rs.user.roles,
-                                            rs.ambience['mailinglist'])
+            mailinglist=rs.ambience['mailinglist'])
         if policy not in (SP.opt_out,
                           SP.moderated_opt_in,
                           SP.opt_in):
@@ -673,7 +674,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
         policy = self.mlproxy.may_subscribe(rs, rs.user.roles,
-                                            rs.ambience['mailinglist'])
+            mailinglist=rs.ambience['mailinglist'])
         if policy != SP.moderated_opt_in:
             rs.notify("error", n_("Can not change subscription"))
         else:
@@ -704,7 +705,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
         policy = self.mlproxy.may_subscribe(rs, rs.user.roles,
-                                            rs.ambience['mailinglist'])
+            mailinglist=rs.ambience['mailinglist'])
         if policy == SP.mandatory:
             rs.notify("error", n_("Can not change subscription."))
         else:
