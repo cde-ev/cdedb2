@@ -3,7 +3,6 @@
 """Services for the ml realm."""
 
 import copy
-import itertools
 import collections
 import werkzeug
 
@@ -12,16 +11,13 @@ from cdedb.frontend.common import (
     check_validation as check, mailinglist_guard, query_result_to_json)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
-from cdedb.common import (
-    n_, name_key, merge_dicts, unwrap, ProxyShim, json_serialize)
-from cdedb.database.connection import Atomizer
+from cdedb.common import  n_, name_key, merge_dicts, ProxyShim
 import cdedb.database.constants as const
 from cdedb.database.constants import (
     SubscriptionStates as SS, SubscriptionPolicy as SP)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
-from cdedb.database import DATABASE_ROLES
 from cdedb.config import SecretsConfig
 
 
@@ -644,28 +640,8 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to subscribed or pending."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        policy = self.mlproxy.may_subscribe(rs, rs.user.roles,
-            mailinglist=rs.ambience['mailinglist'])
-        if policy not in (SP.opt_out,
-                          SP.moderated_opt_in,
-                          SP.opt_in):
-            rs.notify("error", n_("Can not change subscription."))
-        else:
-            datum = {
-                'mailinglist_id': mailinglist_id,
-                'persona_id': rs.user.persona_id,
-                'subscription_state': SS.subscribed,
-            }
-            with Atomizer(rs):
-                state = self.mlproxy.get_subscription(rs, rs.user.persona_id,
-                                                  mailinglist_id=mailinglist_id)
-                if state and state == SS.mod_unsubscribed:
-                    rs.notify("error", n_("Can not change subscription."))
-                elif state and state.is_subscribed:
-                    rs.notify("info", n_("You are already subscribed."))
-                else:
-                    code = self.mlproxy.set_subscription(rs, datum)
-                    self.notify_return_code(rs, code)
+        code = self.mlproxy.subscribe(rs, mailinglist_id)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -673,30 +649,9 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to subscribed or pending."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        policy = self.mlproxy.may_subscribe(rs, rs.user.roles,
-            mailinglist=rs.ambience['mailinglist'])
-        if policy != SP.moderated_opt_in:
-            rs.notify("error", n_("Can not change subscription"))
-        else:
-            datum = {
-                'mailinglist_id': mailinglist_id,
-                'persona_id': rs.user.persona_id,
-                'subscription_state': SS.pending,
-            }
-            with Atomizer(rs):
-                state = self.mlproxy.get_subscription(rs, rs.user.persona_id,
-                                                  mailinglist_id=mailinglist_id)
-                if state and state == SS.mod_unsubscribed:
-                    rs.notify("error", n_("Can not change subscription."))
-                elif state and state.is_subscribed:
-                    rs.notify("info", n_("You are already subscribed."))
-                elif state and state == SS.pending:
-                    rs.notify("info", n_("You already requested subscription"))
-                else:
-                    code = self.mlproxy.set_subscription(rs, datum)
-                    if code:
-                        rs.notify("success",
-                                  "Subscription request awaits moderation.")
+        code = self.mlproxy.request_subscription(rs, mailinglist_id)
+        self.notify_return_code(rs, code,
+            success="Subscription request awaits moderation.")
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -704,24 +659,8 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to unsubscribed."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        policy = self.mlproxy.may_subscribe(rs, rs.user.roles,
-            mailinglist=rs.ambience['mailinglist'])
-        if policy == SP.mandatory:
-            rs.notify("error", n_("Can not change subscription."))
-        else:
-            datum = {
-                'mailinglist_id': mailinglist_id,
-                'persona_id': rs.user.persona_id,
-                'subscription_state': SS.unsubscribed,
-            }
-            with Atomizer(rs):
-                state = self.mlproxy.get_subscription(rs, rs.user.persona_id,
-                                                  mailinglist_id=mailinglist_id)
-                if not state or not state.is_subscribed:
-                    rs.notify("info", n_("You are already unsubscribed."))
-                else:
-                    code = self.mlproxy.set_subscription(rs, datum)
-                    self.notify_return_code(rs, code)
+        code = self.mlproxy.unsubscribe(rs, mailinglist_id)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -729,23 +668,8 @@ class MlFrontend(AbstractUserFrontend):
         """Cancel subscription request."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': rs.user.persona_id,
-        }
-        with Atomizer(rs):
-            state = self.mlproxy.get_subscription(rs, rs.user.persona_id,
-                                                  mailinglist_id=mailinglist_id)
-            if state != SS.pending:
-                rs.notify("error", n_("No subscription requested."))
-            else:
-                datum = {
-                    'mailinglist_id': mailinglist_id,
-                    'persona_id': rs.user.persona_id,
-                    'resolution': const.SubscriptionRequestResolutions.cancelled
-                }
-                code = self.mlproxy.decide_subscription_request(rs, datum)
-                self.notify_return_code(rs, code)
+        code = self.mlproxy.cancel_subscription(rs, mailinglist_id)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})

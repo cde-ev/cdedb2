@@ -625,6 +625,96 @@ class MlBackend(AbstractBackend):
 
         return num
 
+
+    @access("ml")
+    def subscribe(self, rs, mailinglist_id):
+        """Change own subscription state to subscribed."""
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': rs.user.persona_id,
+            'subscription_state': const.SubscriptionStates.subscribed,
+        }
+        with Atomizer(rs):
+            policy = self.may_subscribe(rs, rs.user.roles,
+                                        mailinglist_id=mailinglist_id)
+            if policy not in (const.SubscriptionPolicy.opt_out,
+                              const.SubscriptionPolicy.moderated_opt_in,
+                              const.SubscriptionPolicy.opt_in):
+                raise RuntimeError("Can not change subscription.")
+            else:
+                state = self.get_subscription(rs, rs.user.persona_id,
+                                              mailinglist_id=mailinglist_id)
+                if state and state == const.SubscriptionStates.mod_unsubscribed:
+                    raise RuntimeError(
+                        "Can not change subscription because you are blocked.")
+                elif state and state.is_subscribed:
+                    raise RuntimeError("You are already subscribed.")
+                else:
+                    return self.set_subscription(rs, datum)
+
+    @access("ml")
+    def request_subscription(self, rs, mailinglist_id):
+        """Change own subscription state to pending."""
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': rs.user.persona_id,
+            'subscription_state': const.SubscriptionStates.pending,
+        }
+        with Atomizer(rs):
+            policy = self.may_subscribe(rs, rs.user.roles,
+                                        mailinglist_id=mailinglist_id)
+            if policy != const.SubscriptionPolicy.moderated_opt_in:
+                raise RuntimeError("Can not change subscription")
+            else:
+                state = self.get_subscription(rs, rs.user.persona_id,
+                                              mailinglist_id=mailinglist_id)
+                if state and state == const.SubscriptionStates.mod_unsubscribed:
+                    raise RuntimeError(
+                        "Can not change subscription because you are blocked.")
+                elif state and state.is_subscribed:
+                    raise RuntimeError("You are already subscribed.")
+                elif state and state == const.SubscriptionStates.pending:
+                    raise RuntimeError("You already requested subscription")
+                else:
+                    return self.set_subscription(rs, datum)
+
+    @access("ml")
+    def unsubscribe(self, rs, mailinglist_id):
+        """Change own subscription state to unsubscribed."""
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': rs.user.persona_id,
+            'subscription_state': const.SubscriptionStates.unsubscribed,
+        }
+        with Atomizer(rs):
+            policy = self.may_subscribe(rs, rs.user.roles,
+                                        mailinglist_id=mailinglist_id)
+            if policy == const.SubscriptionPolicy.mandatory:
+                raise RuntimeError("Can not change subscription.")
+            else:
+                state = self.get_subscription(rs, rs.user.persona_id,
+                                              mailinglist_id=mailinglist_id)
+                if not state or not state.is_subscribed:
+                    raise RuntimeError("You are already unsubscribed.")
+                else:
+                    return self.set_subscription(rs, datum)
+
+    @access("ml")
+    def cancel_subscription(self, rs, mailinglist_id):
+        """Cancel subscription request."""
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': rs.user.persona_id,
+            'resolution': const.SubscriptionRequestResolutions.cancelled,
+        }
+        with Atomizer(rs):
+            state = self.get_subscription(rs, rs.user.persona_id,
+                                          mailinglist_id=mailinglist_id)
+            if state != const.SubscriptionStates.pending:
+                raise RuntimeError("No subscription requested.")
+            else:
+                return self.decide_subscription_request(rs, datum)
+
     @access("ml")
     def set_subscription_address(self, rs, datum):
         """Change or add a subscription address.
