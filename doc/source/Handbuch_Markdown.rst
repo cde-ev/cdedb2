@@ -76,16 +76,19 @@ Eine längere Einführung gibt es im `Markdown Guide
 Spezifikation
 ^^^^^^^^^^^^^^^^^
 
+Dieser Abschnitt enthält Informationen zu den technischen Details der Syntax, die für das Schreiben einfacher
+Markdown-Texte nicht benötigt werden.
+
 Die CdE-Datenbank verwendet das ``python3-markdown``-Modul in Version 3.0.1, um Markdown zu HTML zu parsen. Das so
 entstandene HTML wird anschließend bis auf eine Liste erlaubter Tags und Attribute escapet. Es ist also auch möglich,
-direkt HTML zu verwenden. Folgende `Extensions<https://www.markdownguide.org/basic-syntax/>`_ werden verwendet:
+direkt HTML zu verwenden. Folgende `Extensions <https://www.markdownguide.org/basic-syntax/>`_ werden verwendet:
 
 - ``extra``
 - ``sane_lists``
 - ``smarty`` (mit deutschen Anführungszeichen)
 - ``toc``
 
-Folgende HTNL-Tags sind erlaubt: ``a``, ``abbr``, ``acronym``, ``b``, ``blockquote``, ``br``, ``code``, ``colgroup``.
+Folgende HTML-Tags sind erlaubt: ``a``, ``abbr``, ``acronym``, ``b``, ``blockquote``, ``br``, ``code``, ``colgroup``.
 ``col``, ``div``, ``dl``, ``dt``, ``dd``, ``em``, ``i``, ``li``, ``h1``, ``h2``, ``h3``, ``h4``, ``h5``, ``h6``, ``hr``.
 ``ol``, ``p``, ``pre``, ``span``, ``strong``, ``sup``, ``sub``, ``ul``, ``table``, ``tbody``, ``td``, ``tr``, ``th``.
 ``thead``, ``tt``, ``u``
