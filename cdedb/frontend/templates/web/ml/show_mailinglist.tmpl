@@ -127,7 +127,7 @@
                         </p>
                     {% endif %}
                 {% else %}
-                    {% if state == enums['SubscriptionStates'].subscription_requested %}
+                    {% if state == enums['SubscriptionStates'].pending %}
                         <p><strong>
                             {% trans -%}
                                 Your subscription request is currently pending review by a moderator.

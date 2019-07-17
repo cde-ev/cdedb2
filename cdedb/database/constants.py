@@ -217,7 +217,7 @@ class SubscriptionStates(enum.IntEnum):
     #: The user was explicitly removed/blocked by a moderator.
     mod_unsubscribed = 11
     #: The user has requested a subscription to the mailinglist.
-    subscription_requested = 20
+    pending = 20
     #: The user is subscribed by virtue of being part of some group.
     implicit = 30
 
@@ -242,7 +242,7 @@ class SubscriptionStates(enum.IntEnum):
                 MlLogCodes.marked_override,
             SubscriptionStates.mod_unsubscribed:
                 MlLogCodes.marked_blocked,
-            SubscriptionStates.subscription_requested:
+            SubscriptionStates.pending:
                 MlLogCodes.subscription_requested,
             SubscriptionStates.implicit:
                 None,

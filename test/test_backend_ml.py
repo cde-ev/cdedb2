@@ -231,7 +231,7 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: const.SubscriptionStates.unsubscribed,
             3: const.SubscriptionStates.subscribed,
-            6: const.SubscriptionStates.subscription_requested,
+            6: const.SubscriptionStates.pending,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -261,7 +261,7 @@ class TestMlBackend(BackendTest):
             3: const.SubscriptionStates.subscribed,
             4: const.SubscriptionStates.mod_subscribed,
             5: const.SubscriptionStates.subscribed,
-            6: const.SubscriptionStates.subscription_requested,
+            6: const.SubscriptionStates.pending,
             9: const.SubscriptionStates.subscribed,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
@@ -274,7 +274,7 @@ class TestMlBackend(BackendTest):
             1: const.SubscriptionStates.subscribed,
             3: const.SubscriptionStates.subscribed,
             4: const.SubscriptionStates.mod_subscribed,
-            6: const.SubscriptionStates.subscription_requested,
+            6: const.SubscriptionStates.pending,
             9: const.SubscriptionStates.subscribed,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
@@ -457,14 +457,14 @@ class TestMlBackend(BackendTest):
                 'mailinglist_id': 4,
                 'persona_id': 9,
                 'subscription_state':
-                    const.SubscriptionStates.subscription_requested,
+                    const.SubscriptionStates.pending,
             },
         ]
         self.ml.set_subscriptions(self.key, data)
         expectation = {
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
-            4: const.SubscriptionStates.subscription_requested,
+            4: const.SubscriptionStates.pending,
             5: const.SubscriptionStates.implicit,
             9: const.SubscriptionStates.unsubscribed,
         }
@@ -512,13 +512,13 @@ class TestMlBackend(BackendTest):
             'mailinglist_id': 4,
             'persona_id': 9,
             'subscription_state':
-                const.SubscriptionStates.subscription_requested,
+                const.SubscriptionStates.pending,
         }
         self.ml.set_subscription(self.key, datum)
         expectation = {
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
-            4: const.SubscriptionStates.subscription_requested,
+            4: const.SubscriptionStates.pending,
             5: const.SubscriptionStates.implicit,
             9: const.SubscriptionStates.unsubscribed,
         }
@@ -555,10 +555,10 @@ class TestMlBackend(BackendTest):
             'mailinglist_id': 4,
             'persona_id': 9,
             'subscription_state':
-                const.SubscriptionStates.subscription_requested,
+                const.SubscriptionStates.pending,
         }
         self.ml.set_subscription(self.key, datum)
-        expectation = const.SubscriptionStates.subscription_requested
+        expectation = const.SubscriptionStates.pending
         self.assertEqual(expectation,
                          self.ml.get_subscription(
                              self.key, persona_id=9, mailinglist_id=4))
