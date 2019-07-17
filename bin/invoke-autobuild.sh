@@ -23,6 +23,7 @@ if [[ $RETVAL -eq -42 ]]; then
     exit 0
 fi;
 
+echo "Autobuild exited with return code $RETVAL" >> $LOGFILE
 cat $LOGFILE | mail -s "cdedb2: auto-build failure" $MAILTO
 
 rm -f $LOGFILE
