@@ -121,7 +121,7 @@ class CoreFrontend(AbstractFrontend):
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
-                sub_request = const.SubscriptionStates.subscription_requested
+                sub_request = const.SubscriptionStates.pending
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))

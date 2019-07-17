@@ -608,7 +608,7 @@ class MlBackend(AbstractBackend):
         for datum in data:
             current_state = self.get_subscription(
                 rs, datum['persona_id'], mailinglist_id=datum['mailinglist_id'])
-            if current_state != const.SubscriptionStates.subscription_requested:
+            if current_state != const.SubscriptionStates.pending:
                 raise RuntimeError(n_("Not a pending subscription request."))
 
         num = 0

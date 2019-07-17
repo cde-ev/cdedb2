@@ -359,7 +359,7 @@ class MlFrontend(AbstractUserFrontend):
         subscribers = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=SS.subscribing_states())
         requests = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=(SS.subscription_requested,))
+            rs, mailinglist_id, states=(SS.pending,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -508,7 +508,7 @@ class MlFrontend(AbstractUserFrontend):
         elif state == SS.unsubscribed:
             rs.notify("error", n_("User has unsubscribed. You can override "
                                   "this under Subscription Details."))
-        elif state == SS.subscription_requested:
+        elif state == SS.pending:
             rs.notify("error", n_("User has pending subscription request."))
         else:
             raise RuntimeError(n_("Impossible"))
@@ -536,7 +536,7 @@ class MlFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User cannot be removed, because of "
                                   "moderator override. You can change this "
                                   "under Subscription Details."))
-        elif state == SS.subscription_requested:
+        elif state == SS.pending:
             rs.notify("error", n_("User has pending subscription request."))
         else:
             code = self.mlproxy.set_subscription(rs, datum)
@@ -559,7 +559,7 @@ class MlFrontend(AbstractUserFrontend):
             'subscription_state': SS.mod_subscribed,
         }
         # TODO move this logic to the backend.
-        if state and state == SS.subscription_requested:
+        if state and state == SS.pending:
             rs.notify("error", n_("User has pending subscription request."))
         else:
             code = self.mlproxy.set_subscription(rs, datum)
@@ -606,7 +606,7 @@ class MlFrontend(AbstractUserFrontend):
             'subscription_state': SS.mod_unsubscribed,
         }
         # TODO move this logic to the backend.
-        if state and state == SS.subscription_requested:
+        if state and state == SS.pending:
             rs.notify("error", n_("User has pending subscription request."))
         else:
             code = self.mlproxy.set_subscription(rs, datum)
@@ -680,7 +680,7 @@ class MlFrontend(AbstractUserFrontend):
             datum = {
                 'mailinglist_id': mailinglist_id,
                 'persona_id': rs.user.persona_id,
-                'subscription_state': SS.subscription_requested,
+                'subscription_state': SS.pending,
             }
             with Atomizer(rs):
                 state = self.mlproxy.get_subscription(rs, rs.user.persona_id,
@@ -689,7 +689,7 @@ class MlFrontend(AbstractUserFrontend):
                     rs.notify("error", n_("Can not change subscription."))
                 elif state and state.is_subscribed:
                     rs.notify("info", n_("You are already subscribed."))
-                elif state and state == SS.subscription_requested:
+                elif state and state == SS.pending:
                     rs.notify("info", n_("You already requested subscription"))
                 else:
                     code = self.mlproxy.set_subscription(rs, datum)
@@ -735,7 +735,7 @@ class MlFrontend(AbstractUserFrontend):
         with Atomizer(rs):
             state = self.mlproxy.get_subscription(rs, rs.user.persona_id,
                                                   mailinglist_id=mailinglist_id)
-            if state != SS.subscription_requested:
+            if state != SS.pending:
                 rs.notify("error", n_("No subscription requested."))
             else:
                 datum = {
