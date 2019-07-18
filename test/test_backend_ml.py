@@ -49,7 +49,6 @@ class TestMlBackend(BackendTest):
                 'attachment_policy': 2,
                 'audience_policy': 1,
                 'event_id': None,
-                'gateway': None,
                 'id': 3,
                 'is_active': True,
                 'maxsize': 2048,
@@ -67,7 +66,6 @@ class TestMlBackend(BackendTest):
                 'attachment_policy': 2,
                 'audience_policy': 2,
                 'event_id': None,
-                'gateway': None,
                 'id': 5,
                 'is_active': True,
                 'maxsize': 1024,
@@ -85,14 +83,13 @@ class TestMlBackend(BackendTest):
                 'attachment_policy': 2,
                 'audience_policy': 5,
                 'event_id': None,
-                'gateway': 6,
                 'id': 7,
                 'is_active': True,
                 'maxsize': 1024,
                 'mod_policy': 2,
                 'moderators': {2, 10},
                 'registration_stati': [],
-                'sub_policy': 5,
+                'sub_policy': 3,
                 'subject_prefix': '[aktivenforum]',
                 'title': 'Aktivenforum 2001',
                 'notes': None,
@@ -138,7 +135,6 @@ class TestMlBackend(BackendTest):
             'attachment_policy': 3,
             'audience_policy': 5,
             'event_id': None,
-            'gateway': None,
             'is_active': True,
             'maxsize': None,
             'mod_policy': 1,
@@ -160,7 +156,7 @@ class TestMlBackend(BackendTest):
         new_data['id'] = new_id
         self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
-            self.key, new_id, cascade=("gateway", "subscriptions", "addresses",
+            self.key, new_id, cascade=("subscriptions", "addresses",
                                        "whitelist", "moderators", "log")))
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
 
@@ -607,7 +603,6 @@ class TestMlBackend(BackendTest):
             'attachment_policy': 3,
             'audience_policy': 5,
             'event_id': None,
-            'gateway': None,
             'is_active': True,
             'maxsize': None,
             'mod_policy': 1,
@@ -623,7 +618,7 @@ class TestMlBackend(BackendTest):
         }
         self.ml.create_mailinglist(self.key, new_data)
         self.ml.delete_mailinglist(
-            self.key, 3, cascade=("gateway", "subscriptions", "addresses",
+            self.key, 3, cascade=("subscriptions", "addresses",
                                   "whitelist", "moderators", "log"))
 
         # now check it

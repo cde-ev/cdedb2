@@ -76,17 +76,18 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def may_subscribe(self, rs, persona_id, *, mailinglist=None,
                       mailinglist_id=None):
-        """Determine whether a persona may subscribe to a mailinglist.
+        """What may the user do with a mailinglist.
 
-        If the mailinglist is available to the user, they should pass it,
+        If the mailinglist is available to the caller, they should pass it,
         otherwise it will be retrieved from the database.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
         :type mailinglist: {str: object}
         :type mailinglist_id: int
-        :rtype: const.SubscriptionPolicy
-        :return: The applicable subscription policy for the user.
+        :rtype: const.SubscriptionPolicy or None
+        :return: The applicable subscription policy for the user or None if the
+            user is not in the audience.
         """
         if mailinglist is None and mailinglist_id is None:
             raise ValueError("No input specified")
@@ -96,8 +97,12 @@ class MlBackend(AbstractBackend):
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
         persona_id = affirm("id", persona_id)
-        persona = self.core.get_persona(rs, persona_id)
         ml = affirm("mailinglist", mailinglist)
+
+        if not (rs.user.persona_id == persona_id
+                or self.may_manage(rs, ml['id'])):
+            raise PrivilegeError(n_("Not privileged."))
+        persona = self.core.get_persona(rs, persona_id)
 
         audience_policy = const.AudiencePolicy(ml["audience_policy"])
         if audience_policy.check(extract_roles(persona)):
@@ -112,7 +117,7 @@ class MlBackend(AbstractBackend):
                 return const.SubscriptionPolicy.opt_in
             return const.SubscriptionPolicy(ml["sub_policy"])
         else:
-            return const.SubscriptionPolicy.invitation_only
+            return None
 
     @access("ml")
     def may_view(self, rs, ml, state=None):
@@ -643,7 +648,7 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.subscribed,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, rs.user.roles,
+            policy = self.may_subscribe(rs, rs.user.persona_id,
                                         mailinglist_id=mailinglist_id)
             if policy not in (const.SubscriptionPolicy.opt_out,
                               const.SubscriptionPolicy.moderated_opt_in,
@@ -669,7 +674,7 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.pending,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, rs.user.roles,
+            policy = self.may_subscribe(rs, rs.user.persona_id,
                                         mailinglist_id=mailinglist_id)
             if policy != const.SubscriptionPolicy.moderated_opt_in:
                 raise RuntimeError("Can not change subscription")
@@ -695,7 +700,7 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, rs.user.roles,
+            policy = self.may_subscribe(rs, rs.user.persona_id,
                                         mailinglist_id=mailinglist_id)
             if policy == const.SubscriptionPolicy.mandatory:
                 raise RuntimeError("Can not change subscription.")
@@ -1072,7 +1077,7 @@ class MlBackend(AbstractBackend):
         :return: default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
-        mailinglist = self.get_mailinglist(rs, mailinglist_id)
+        ml = self.get_mailinglist(rs, mailinglist_id)
 
         # States of current subscriptions we may touch.
         old_subscriber_states = {const.SubscriptionStates.implicit,
@@ -1086,23 +1091,32 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             old_subscribers = self.get_subscription_states(
                 rs, mailinglist_id, states=old_subscriber_states)
-            new_implicits = self._get_implicit_subscribers(rs, mailinglist)
+            # This will be everyone in the audience for opt-out/mandatory.
+            new_implicits = self._get_implicit_subscribers(rs, ml)
 
             # Check whether current subscribers may stay subscribed.
             # This is the case if they are implicit subscribers of the list or
-            # if the `may_be_subscribed` function says so.
+            # if `may_subscribe` says so.
             delete = []
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
             for persona in personas.values():
-                if (not self.may_subscribe(
-                        rs, extract_roles(persona), mailinglist=mailinglist)
-                        in {SubscriptionPolicy.opt_in,
-                            SubscriptionPolicy.moderated_opt_in}):
+                may_subscribe = self.may_subscribe(
+                    rs, persona['id'], mailinglist=ml)
+                if not may_subscribe or not may_subscribe.is_additive():
                     datum = {
                         'mailinglist_id': mailinglist_id,
-                        'persona_id': persona_id
+                        'persona_id': persona['id'],
                     }
+                    # This should maybe log (with a specific log code)
+                    # when a person with an explicit subscription is kicked
+                    # because a list is Opt-out, as this is can happen
+                    # accidentaly and is not easy revertable:
+                    # * if an opt-in list is changed to an opt-out list and the
+                    #   persona is no implicit subscriber
+                    # * if someone is kicked from a mailinglist he explicitly
+                    #   was subscribed to (not that important, can only happen
+                    #   by misusing add_subscription)
                     delete.append(datum)
 
             # Remove those who may not stay subscribed.

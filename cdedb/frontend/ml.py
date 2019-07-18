@@ -250,7 +250,7 @@ class MlFrontend(AbstractUserFrontend):
                     or "member" in rs.user.roles
                     or is_attending)
 
-        may_subscribe = self.mlproxy.may_subscribe(rs, rs.user.roles,
+        may_subscribe = self.mlproxy.may_subscribe(rs, rs.user.persona_id,
                                                    mailinglist=ml)
         personas = self.coreproxy.get_personas(rs, ml['moderators'])
         moderators = collections.OrderedDict(
