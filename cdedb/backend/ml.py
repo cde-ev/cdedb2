@@ -1090,11 +1090,11 @@ class MlBackend(AbstractBackend):
             for persona in personas.values():
                 if (not self.may_subscribe(
                         rs, extract_roles(persona), mailinglist=mailinglist)
-                        in {SubscriptionPolicy.opt_in,
-                            SubscriptionPolicy.moderated_opt_in}):
+                        in {const.SubscriptionPolicy.opt_in,
+                            const.SubscriptionPolicy.moderated_opt_in}):
                     datum = {
                         'mailinglist_id': mailinglist_id,
-                        'persona_id': persona_id
+                        'persona_id': persona['id'],
                     }
                     delete.append(datum)
 
