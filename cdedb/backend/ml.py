@@ -74,17 +74,19 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def may_subscribe(self, rs, roles, *, mailinglist=None,
+    def may_subscribe(self, rs, persona_id, *, mailinglist=None,
                       mailinglist_id=None):
         """Determine whether a persona may subscribe to a mailinglist.
 
+        If the mailinglist is available to the user, they should pass it,
+        otherwise it will be retrieved from the database.
+
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type roles: {str}
+        :type persona_id: int
         :type mailinglist: {str: object}
         :type mailinglist_id: int
-        :type current_state: const.SubscriptionStates
         :rtype: const.SubscriptionPolicy
-        :return: SubscriptionPolicy
+        :return: The applicable subscription policy for the user.
         """
         if mailinglist is None and mailinglist_id is None:
             raise ValueError("No input specified")
@@ -93,15 +95,20 @@ class MlBackend(AbstractBackend):
         elif mailinglist_id:
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
+        persona_id = affirm("id", persona_id)
+        persona = self.core.get_persona(rs, persona_id)
         ml = affirm("mailinglist", mailinglist)
 
-        if const.AudiencePolicy(ml["audience_policy"]).check(roles):
+        audience_policy = const.AudiencePolicy(ml["audience_policy"])
+        if audience_policy.check(extract_roles(persona)):
             # First, check if assembly link allows resubscribing.
-            if ml['assembly_id'] and bool(self.assembly.does_attend(
-                    rs, assembly_id=ml['assembly_id'])):
+            if ml['assembly_id'] and self.assembly.check_attends(
+                    rs, persona_id, ml['assembly_id']):
                 return const.SubscriptionPolicy.opt_in
-            # TODO Second, check if event link allows resubscribing.
-            elif ml['event_id'] and False:
+            # Second, check if event link allows resubscribing.
+            elif ml['event_id'] and self.event.check_registration_status(
+                    rs, persona_id, ml['event_id'],
+                    ml['registration_part_stati']):
                 return const.SubscriptionPolicy.opt_in
             return const.SubscriptionPolicy(ml["sub_policy"])
         else:

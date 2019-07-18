@@ -1625,6 +1625,41 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event")
+    def check_registration_status(self, rs, persona_id, event_id, stati):
+        """Check if any status for a given event matches one of the given stati.
+
+        If stati is empty check is_orga instead.
+        This is mostly used to determine mailinglist eligibility.
+
+        A user may do this for themselves, an orga for their event and an
+        admin for every user.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :type event_id: int
+        :type stati: [const.RegistrationPartStati
+        :rtype: bool
+        """
+        event_id = affirm("id", event_id)
+        stati = affirm_set("enum_registrationpartstati", stati)
+        if not (persona_id != rs.user.persona_id
+                or self.is_orga(rs, event_id=event_id)
+                or self.is_admin(rs)
+                or "ml_admin" in rs.user.roles):
+            raise PrivilegeError(n_("Not privileged."))
+
+        if not stati:
+            return self.is_orga(rs, event_id=event_id)
+
+        registration_ids = self.list_registrations(
+            rs, event_id, rs.user.persona_id)
+        if not registration_id:
+            return False
+        reg_id = unwrap(registration_ids, keys=True)
+        reg = self.get_registration(rs, reg_id)
+        return any(part['status'] in stati for part in reg['parts'].values())
+
+    @access("event")
     def get_registration_map(self, rs, event_ids):
         """Retrieve a map of personas to their registrations.
 
