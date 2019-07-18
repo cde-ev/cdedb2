@@ -256,6 +256,28 @@ class AssemblyBackend(AbstractBackend):
                                      ballot_id=ballot_id)
 
     @access("assembly")
+    def check_attends(self, rs, persona_id, assembly_id):
+        """Check whether a user attends an assembly.
+
+        This is mostly used for checking mailinglist eligibility.
+
+        A user may check this for themselves, an admin may do so for anyone.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :type assembly_id: int
+        :rtype: bool
+        """
+        persona_id = affirm("id", persona_id)
+        assembly_id = affirm("id", assembly_id)
+
+        if not (rs.user.id == persona_id
+                or self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+        return self.check_attendance(
+            rs, assembly_id=assembly_id, persona_id=persona_id)
+
+    @access("assembly")
     def list_attendees(self, rs, assembly_id):
         """Everybody who has subscribed for a specific assembly.
 
