@@ -93,6 +93,13 @@
             {% endcall %}
         {% endif %}
         
+        {% if ambience['event']['registration_text'] %}
+            {% call util.bootstrap_panel(title=gettext("Registration page free text"), icon="log-in",
+                                         aclass="panel-default panel-condensed") %}
+                {{ ambience['event']['registration_text']|md }}
+            {% endcall %}
+        {% endif %}
+
         {% if ambience['event']['mail_text'] %}
             {% call util.bootstrap_panel(title=gettext("Registration mail free text"), icon="envelope",
                                          aclass="panel-default panel-condensed") %}

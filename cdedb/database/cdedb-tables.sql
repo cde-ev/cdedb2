@@ -547,6 +547,7 @@ CREATE TABLE event.events (
         registration_hard_limit timestamp WITH TIME ZONE,
         iban                    varchar,
         orga_address            varchar,
+        registration_text       varchar,
         mail_text               varchar,
         use_questionnaire       boolean NOT NULL DEFAULT False,
         notes                   varchar,

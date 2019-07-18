@@ -50,6 +50,7 @@
         {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="",
                                 info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address")) }}
+        {{ util.form_input_textarea(name="registration_text", label=gettext("Registration page free text"), rows="5") }}
         {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
         {{ util.form_input_checkbox(name="use_questionnaire", label=gettext("Show Questionnaire"),
                                 info=gettext("If this is checked, all registrated users can fill out the Questionnaire. "

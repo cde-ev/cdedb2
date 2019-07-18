@@ -47,6 +47,7 @@ class TestEventBackend(BackendTest):
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'registration_text': None,
             'mail_text': None,
             'use_questionnaire': False,
             'notes': None,
@@ -1545,6 +1546,7 @@ class TestEventBackend(BackendTest):
                                  'is_course_list_visible': True,
                                  'is_visible': True,
                                  'lodge_field': 3,
+                                 'registration_text': None,
                                  'mail_text': 'Wir verwenden ein neues '
                                  'Kristallkugel-basiertes '
                                  'Kurszuteilungssystem; bis wir das '
@@ -2459,6 +2461,7 @@ class TestEventBackend(BackendTest):
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'registration_text': None,
             'mail_text': None,
             'use_questionnaire': False,
             'notes': None,

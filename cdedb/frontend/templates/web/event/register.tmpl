@@ -77,6 +77,11 @@
                 or (ambience['event']['parts']|length == 1 and course_choices[(course_choices|list)[0]]|length > 0) %}
             <h3 class="heading-underline">{% trans -%}Registration{%- endtrans %}</h3>
         {% endif %}
+
+        {% if ambience['event']['registration_text'] %}
+            {{ ambience['event']['registration_text']|md }}
+        {% endif %}
+
         {% if ambience['event']['parts']|length > 1 %}
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event-Parts"),
                                           entries=ambience['event']['parts']|xdictsort('part_begin')

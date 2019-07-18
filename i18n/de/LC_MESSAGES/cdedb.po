@@ -10037,6 +10037,9 @@ msgstr "Erstellt eine Standard-Orga-Mailingliste zu dieser Veranstaltung-"
 msgid "Create Participant-Mailinglist"
 msgstr "Teilnehmer-Mailingliste erstellen"
 
+msgid "Registration page free text"
+msgstr "Freitext Anmeldeseite"
+
 #: cdedb/frontend/templates/web/event/show_event.tmpl:312
 msgid ""
 "Create a participant mailinglist for this event with a default "
