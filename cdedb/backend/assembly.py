@@ -1212,16 +1212,18 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("No input specified."))
         if assembly_id is not None and ballot_id is not None:
             raise ValueError(n_("Too many inputs specified."))
+        assembly_id = affirm("id_or_None", assembly_id)
+        ballot_id = affirm("id_or_None", ballot_id)
         if not self.may_assemble(rs, assembly_id=assembly_id,
                                  ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
         if assembly_id is not None:
             column = "assembly_id"
-            key = affirm("id", assembly_id)
+            key = assembly_id
         else:
             column = "ballot_id"
-            key = affirm("id", ballot_id)
+            key = ballot_id
 
         data = self.sql_select(rs, "assembly.attachments", ("id", "title"),
                                (key,), entity_key=column)
