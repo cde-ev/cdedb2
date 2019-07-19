@@ -690,6 +690,10 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
         with Atomizer(rs):
+            policy = self.may_subscribe(rs, rs.user.persona_id,
+                                        mailinglist_id=mailinglist_id)
+            if policy == const.SubscriptionPolicy.mandatory:
+                return 0, n_("Can not change subscription.")
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if (state and state.is_subscribed
@@ -701,8 +705,6 @@ class MlBackend(AbstractBackend):
                 return 0, n_("User cannot be removed, because of moderator "
                              "override. You can use Subscription Details to "
                              "change this.")
-            elif state == const.SubscriptionStates.pending:
-                return 0, n_("User has pending subscription request.")
             else:
                 raise RuntimeError(n_("Impossible"))
 
@@ -754,7 +756,7 @@ class MlBackend(AbstractBackend):
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if not state or state != const.SubscriptionStates.mod_subscribed:
-                return 0, n_("User is not force-subscribed.")
+                raise RuntimeError("User is not force-subscribed.")
             else:
                 return self._set_subscription(rs, datum), ""
 
@@ -777,6 +779,10 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.mod_unsubscribed,
         }
         with Atomizer(rs):
+            policy = self.may_subscribe(rs, rs.user.persona_id,
+                                        mailinglist_id=mailinglist_id)
+            if policy == const.SubscriptionPolicy.mandatory:
+                return 0, n_("Can not change subscription.")
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if state and state == const.SubscriptionStates.pending:
@@ -806,7 +812,7 @@ class MlBackend(AbstractBackend):
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if not state or state != const.SubscriptionStates.mod_unsubscribed:
-                raise RuntimeError("User is not force-subscribed.")
+                raise RuntimeError("User is not force-unsubscribed.")
             else:
                 return self._set_subscription(rs, datum), ""
 
@@ -828,7 +834,6 @@ class MlBackend(AbstractBackend):
             policy = self.may_subscribe(rs, rs.user.persona_id,
                                         mailinglist_id=mailinglist_id)
             if policy not in (const.SubscriptionPolicy.opt_out,
-                              const.SubscriptionPolicy.moderated_opt_in,
                               const.SubscriptionPolicy.opt_in):
                 raise RuntimeError("Can not change subscription.")
             else:

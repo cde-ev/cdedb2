@@ -219,6 +219,424 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=7))
 
+    @as_users("anton", "berta", "ferdinand")
+    def test_opt_in(self, user):
+        # this does test only ml_admins and moderators thoroughly, as we need
+        # a user managing a list and a user interacting with it normally at
+        # the same time.
+        mailinglist_id = 7
+
+        # Be aware that Ferdinands subscription is pending even though
+        # this list is opt in. He should just be able to subscribe now.
+        # Subscribe
+        expectation = 1
+        code = self.ml.subscribe(self.key, mailinglist_id)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+        # Try to subscribe again
+        with self.assertRaises(RuntimeError):
+            self.ml.subscribe(self.key, mailinglist_id)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+        # Try to add subscriber
+        expectation = -1
+        code = self.ml.add_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+        # Unsubscribe
+        expectation = 1
+        code = self.ml.unsubscribe(self.key, mailinglist_id)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+        # Try to unsubscribe again
+        with self.assertRaises(RuntimeError):
+            self.ml.unsubscribe(self.key, mailinglist_id)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+        # Try to remove subscriber
+        expectation = -1
+        code = self.ml.remove_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+
+        # Block subscriptions
+        expectation = 1
+        code = self.ml.add_mod_unsubscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_unsubscribed)
+
+        # Try to subscribe
+        with self.assertRaises(RuntimeError):
+            self.ml.subscribe(self.key, mailinglist_id)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_unsubscribed)
+        # Try to add subscription
+        expectation = 0
+        code = self.ml.add_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_unsubscribed)
+        # Force subscription
+        expectation = 1
+        code = self.ml.add_mod_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_subscribed)
+        # Try to remove subscriber
+        expectation = 0
+        code = self.ml.remove_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_subscribed)
+        # Unsubscribe
+        expectation = 1
+        code = self.ml.unsubscribe(self.key, mailinglist_id)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+        # Try to remove unpresent forced subscription
+        with self.assertRaises(RuntimeError):
+            self.ml.remove_mod_subscriber(self.key, mailinglist_id, user['id'])
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+
+        # Try to request subscription
+        with self.assertRaises(RuntimeError):
+            self.ml.request_subscription(self.key, mailinglist_id)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+
+        # Add subscription
+        expectation = 1
+        code = self.ml.add_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+        # Try to add subscriber again
+        expectation = -1
+        code = self.ml.add_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+        # Remove subscription
+        expectation = 1
+        code = self.ml.remove_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+        # Try to remove subscriber again
+        expectation = -1
+        code = self.ml.remove_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+
+        # Try to remove unpresent block
+        with self.assertRaises(RuntimeError):
+            self.ml.remove_mod_unsubscriber(self.key, mailinglist_id, user['id'])
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+        # Subscribe
+        expectation = 1
+        code = self.ml.subscribe(self.key, mailinglist_id)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+        # Block user
+        expectation = 1
+        code = self.ml.add_mod_unsubscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_unsubscribed)
+        # Remove block
+        expectation = 1
+        code = self.ml.remove_mod_unsubscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+        # Force subscribe user
+        expectation = 1
+        code = self.ml.add_mod_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_subscribed)
+        # Try to remove unpresent block
+        with self.assertRaises(RuntimeError):
+            self.ml.remove_mod_unsubscriber(self.key, mailinglist_id,
+                                            user['id'])
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_subscribed)
+        # Remove forced subscription
+        expectation = 1
+        code = self.ml.remove_mod_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+
+    @as_users("anton", "berta", "ferdinand")
+    def test_moderated_opt_in(self, user):
+        # this does test only ml_admins and moderators thoroughly, as we need
+        # a user managing a list and a user interacting with it normally at
+        # the same time.
+        mailinglist_id = 4
+
+        # This test will need the user to request subscriptions many times.
+        def _request_subscription():
+            nonlocal expectation, code, state
+            expectation = 1
+            code = self.ml.request_subscription(self.key, mailinglist_id)
+            self.assertEqual(code, expectation)
+            state = self.ml.get_subscription(self.key, user['id'],
+                mailinglist_id=mailinglist_id)
+            self.assertEqual(state, const.SubscriptionStates.pending)
+
+        # Anton and Berta are already subscribed, unsubscribe them first
+        if user['id'] != 6:
+            expectation = 1
+            code = self.ml.unsubscribe(self.key, mailinglist_id)
+            self.assertEqual(code, expectation)
+            state = self.ml.get_subscription(self.key, user['id'],
+                                             mailinglist_id=mailinglist_id)
+            self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+        else:
+            state = self.ml.get_subscription(self.key, user['id'],
+                                             mailinglist_id=mailinglist_id)
+            self.assertIsNone(state)
+
+        # Try to subscribe
+        with self.assertRaises(RuntimeError):
+            self.ml.subscribe(self.key, mailinglist_id)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        if user['id'] != 6:
+            self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+        else:
+            self.assertIsNone(state)
+
+        _request_subscription()
+        # Cancel subscription request
+        expectation = 1
+        code = self.ml.cancel_subscription(self.key, mailinglist_id)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertIsNone(state)
+        # Try to decide request anyway
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': user['id'],
+            'resolution': const.SubscriptionRequestResolutions.denied,
+        }
+        with self.assertRaises(RuntimeError):
+            self.ml.decide_subscription_request(self.key, datum)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertIsNone(state)
+
+        _request_subscription()
+        # Deny subscription request
+        expectation = 1
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': user['id'],
+            'resolution': const.SubscriptionRequestResolutions.denied,
+        }
+        code = self.ml.decide_subscription_request(self.key, datum)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertIsNone(state)
+        # Try again
+        _request_subscription()
+        # Approve subscription request
+        expectation = 1
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': user['id'],
+            'resolution': const.SubscriptionRequestResolutions.approved,
+        }
+        code = self.ml.decide_subscription_request(self.key, datum)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEquals(state, const.SubscriptionStates.subscribed)
+        # Unsubscribe
+        expectation = 1
+        code = self.ml.unsubscribe(self.key, mailinglist_id)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+
+        _request_subscription()
+        # Block user
+        expectation = 1
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': user['id'],
+            'resolution': const.SubscriptionRequestResolutions.blocked,
+        }
+        code = self.ml.decide_subscription_request(self.key, datum)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEquals(state, const.SubscriptionStates.mod_unsubscribed)
+        # Try again
+        with self.assertRaises(RuntimeError):
+            self.ml.request_subscription(self.key, mailinglist_id)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEquals(state, const.SubscriptionStates.mod_unsubscribed)
+        # Remove block
+        expectation = 1
+        code = self.ml.remove_mod_unsubscriber(self.key, mailinglist_id,
+                                               user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.unsubscribed)
+
+        _request_subscription()
+        # Try to add user manually
+        expectation = 0
+        code = self.ml.add_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.pending)
+        # Try to force subscription
+        expectation = 0
+        code = self.ml.add_mod_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.pending)
+        # Try to block user (not using the request form)
+        expectation = 0
+        code = self.ml.add_mod_unsubscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.pending)
+        # Deny subscription request
+        expectation = 1
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': user['id'],
+            'resolution': const.SubscriptionRequestResolutions.denied,
+        }
+        code = self.ml.decide_subscription_request(self.key, datum)
+        self.assertEqual(code, expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertIsNone(state)
+        # Add subscription
+        expectation = 1
+        code = self.ml.add_subscriber(self.key, mailinglist_id, user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+
+    @as_users("anton", "ferdinand", "janis")
+    def test_opt_out(self, user):
+        pass
+
+    @as_users("anton", "berta", "ferdinand")
+    def test_mandatory(self, user):
+        # TODO Test if users outside of audience can be force-subscribed
+        # this does test only ml_admins and moderators thoroughly, as we need
+        # a user managing a list and a user interacting with it normally at
+        # the same time.
+        mailinglist_id = 1
+
+        def _try_unsubscribe(expected_state):
+            nonlocal expectation, code, state
+            # Try to unsubscribe
+            with self.assertRaises(RuntimeError):
+                self.ml.subscribe(self.key, mailinglist_id)
+            state = self.ml.get_subscription(self.key, user['id'],
+                                             mailinglist_id=mailinglist_id)
+            self.assertEqual(state, expected_state)
+            # Try to remove subscription
+            expectation = 0
+            code = self.ml.remove_subscriber(self.key, mailinglist_id,
+                                             user['id'])
+            self.assertEqual(code[0], expectation)
+            state = self.ml.get_subscription(self.key, user['id'],
+                                             mailinglist_id=mailinglist_id)
+            self.assertEqual(state, expected_state)
+            # Try to block user
+            expectation = 0
+            code = self.ml.add_mod_unsubscriber(self.key, mailinglist_id,
+                                                user['id'])
+            self.assertEqual(code[0], expectation)
+            state = self.ml.get_subscription(self.key, user['id'],
+                                             mailinglist_id=mailinglist_id)
+            self.assertEqual(state, expected_state)
+
+        _try_unsubscribe(const.SubscriptionStates.implicit)
+        # Force subscription
+        expectation = 1
+        code = self.ml.add_mod_subscriber(self.key, mailinglist_id,
+                                            user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.mod_subscribed)
+        _try_unsubscribe(const.SubscriptionStates.mod_subscribed)
+        # Remove forced subscription
+        expectation = 1
+        code = self.ml.remove_mod_subscriber(self.key, mailinglist_id,
+                                          user['id'])
+        self.assertEqual(code[0], expectation)
+        state = self.ml.get_subscription(self.key, user['id'],
+                                         mailinglist_id=mailinglist_id)
+        self.assertEqual(state, const.SubscriptionStates.subscribed)
+        _try_unsubscribe(const.SubscriptionStates.subscribed)
+
+    def test_ml_event(self, user):
+        pass
+
+    def test_ml_assembly(self, user):
+        pass
+
+    @as_users("janis")
+    def test_no_privileges(self, user):
+        # TODO Write less thorough tests testing non-moderators work as well,
+        # especially for cases where policies differ for non cde users
+        pass
+
     @as_users("anton")
     def test_write_subscription_states(self, user):
         # TODO change implicit subscribers within this test somehow.
