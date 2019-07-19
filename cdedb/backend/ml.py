@@ -1290,22 +1290,20 @@ class MlBackend(AbstractBackend):
             new_implicits = self._get_implicit_subscribers(rs, ml)
 
             # Check whether current subscribers may stay subscribed.
-            # This is the case if they are implicit subscribers of the list, if
-            # they `may_subscribe` on their own, or if they are subscribed to a
-            # list in an audience they are a part of explicitly which does not
-            # allow implicit subscribers.
+            # This is the case if they are implicit subscribers of the list or
+            # if `may_subscribe` says so.
             delete = []
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
             for persona in personas.values():
                 may_subscribe = self.may_subscribe(
                     rs, persona['id'], mailinglist=ml)
-                if may_subscribe and may_subscribe.is_additive():
+                if not may_subscribe or not may_subscribe.is_additive():
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona['id'],
                     }
-                    # This should probably log (with a specific log code)
+                    # This should maybe log (with a specific log code)
                     # when a person with an explicit subscription is kicked
                     # because a list is Opt-out, as this is can happen
                     # accidentaly and is not easy revertable:
