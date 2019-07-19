@@ -519,10 +519,16 @@ class MlBackend(AbstractBackend):
 
         return ret
 
+    # TODO this should be internal_access, but that breaks singularization
+    # when called by the frontend via another method.
     @access("ml")
-    @singularize("set_subscription", "data", "datum", returns_dict=False)
-    def set_subscriptions(self, rs, data):
+    @singularize("_set_subscription", "data", "datum", returns_dict=False)
+    def _set_subscriptions(self, rs, data):
         """Change or add ml.subscription_states rows.
+
+        This does not check whether the subscription change makes sense
+        regarding the mailinglists polcies, so this should only be used
+        internally.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: [{str: int}]
@@ -629,7 +635,7 @@ class MlBackend(AbstractBackend):
             with Silencer(rs):
                 if state:
                     datum['subscription_state'] = state
-                    num += self.set_subscription(rs, datum)
+                    num += self._set_subscription(rs, datum)
                 else:
                     num += self.remove_subscription(rs, datum)
             if code:
@@ -638,10 +644,187 @@ class MlBackend(AbstractBackend):
 
         return num
 
+    @access("ml")
+    def add_subscriber(self, rs, mailinglist_id, persona_id):
+        """Administratively subscribe a persona.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :rtype int, string
+        :return: Default return code and error massage, if applicable.
+        """
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError("Not privileged.")
+        # mailinglist_id and persona_id are validated by get_subscription
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': persona_id,
+            'subscription_state': const.SubscriptionStates.subscribed,
+        }
+        with Atomizer(rs):
+            state = self.get_subscription(
+                rs, persona_id, mailinglist_id=mailinglist_id)
+            if state is None or state == const.SubscriptionStates.unsubscribed:
+                return self._set_subscription(rs, datum), ""
+            elif state.is_subscribed:
+                return -1, n_("User already subscribed.")
+            elif state == const.SubscriptionStates.mod_unsubscribed:
+                return 0, n_("User has been blocked. You can use Subscription "
+                             "Details to change this.")
+            elif state == const.SubscriptionStates.pending:
+                return 0, n_("User has pending subscription request.")
+            else:
+                raise RuntimeError(n_("Impossible"))
+
+    @access("ml")
+    def remove_subscriber(self, rs, mailinglist_id, persona_id):
+        """Administratively unsubscribe a persona.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :rtype int, string
+        :return: Default return code and error massage, if applicable.
+        """
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError("Not privileged.")
+        # mailinglist_id and persona_id are validated by get_subscription
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': persona_id,
+            'subscription_state': const.SubscriptionStates.unsubscribed,
+        }
+        with Atomizer(rs):
+            state = self.get_subscription(
+                rs, persona_id, mailinglist_id=mailinglist_id)
+            if (state and state.is_subscribed
+                    and state != const.SubscriptionStates.mod_subscribed):
+                return self._set_subscription(rs, datum), ""
+            elif state is None or not state.is_subscribed:
+                return -1, n_("User already unsubscribed.")
+            elif state == const.SubscriptionStates.mod_subscribed:
+                return 0, n_("User cannot be removed, because of moderator "
+                             "override. You can use Subscription Details to "
+                             "change this.")
+            elif state == const.SubscriptionStates.pending:
+                return 0, n_("User has pending subscription request.")
+            else:
+                raise RuntimeError(n_("Impossible"))
+
+    @access("ml")
+    def add_mod_subscriber(self, rs, mailinglist_id, persona_id):
+        """Administratively subscribe a persona with moderator override.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :rtype int, string
+        :return: Default return code and error massage, if applicable.
+        """
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError("Not privileged.")
+        # mailinglist_id and persona_id are validated by get_subscription
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': persona_id,
+            'subscription_state': const.SubscriptionStates.mod_subscribed,
+        }
+        with Atomizer(rs):
+            state = self.get_subscription(
+                rs, persona_id, mailinglist_id=mailinglist_id)
+            if state and state == const.SubscriptionStates.pending:
+                return 0, n_("User has pending subscription request.")
+            else:
+                return self._set_subscription(rs, datum), ""
+
+    @access("ml")
+    def remove_mod_subscriber(self, rs, mailinglist_id, persona_id):
+        """Administratively remove a subscription with moderator override.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :rtype int, string
+        :return: Default return code and error massage, if applicable.
+        """
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError("Not privileged.")
+        # mailinglist_id and persona_id are validated by get_subscription
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': persona_id,
+            'subscription_state': const.SubscriptionStates.subscribed,
+        }
+        with Atomizer(rs):
+            state = self.get_subscription(
+                rs, persona_id, mailinglist_id=mailinglist_id)
+            if not state or state != const.SubscriptionStates.mod_subscribed:
+                return 0, n_("User is not force-subscribed.")
+            else:
+                return self._set_subscription(rs, datum), ""
+
+    @access("ml")
+    def add_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
+        """Administratively block a persona.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :rtype int, string
+        :return: Default return code and error massage, if applicable.
+        """
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError("Not privileged.")
+        # mailinglist_id and persona_id are validated by get_subscription
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': persona_id,
+            'subscription_state': const.SubscriptionStates.mod_unsubscribed,
+        }
+        with Atomizer(rs):
+            state = self.get_subscription(
+                rs, persona_id, mailinglist_id=mailinglist_id)
+            if state and state == const.SubscriptionStates.pending:
+                return 0, n_("User has pending subscription request.")
+            else:
+                return self._set_subscription(rs, datum), ""
+
+    @access("ml")
+    def remove_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
+        """Administratively remove block of a persona.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :rtype int, string
+        :return: Default return code and error massage, if applicable.
+        """
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError("Not privileged.")
+        # mailinglist_id and persona_id are validated by get_subscription
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': persona_id,
+            'subscription_state': const.SubscriptionStates.unsubscribed,
+        }
+        with Atomizer(rs):
+            state = self.get_subscription(
+                rs, persona_id, mailinglist_id=mailinglist_id)
+            if not state or state != const.SubscriptionStates.mod_unsubscribed:
+                raise RuntimeError("User is not force-subscribed.")
+            else:
+                return self._set_subscription(rs, datum), ""
 
     @access("ml")
     def subscribe(self, rs, mailinglist_id):
-        """Change own subscription state to subscribed."""
+        """Change own subscription state to subscribed.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :rtype int
+        """
+        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': rs.user.persona_id,
@@ -663,11 +846,17 @@ class MlBackend(AbstractBackend):
                 elif state and state.is_subscribed:
                     raise RuntimeError("You are already subscribed.")
                 else:
-                    return self.set_subscription(rs, datum)
+                    return self._set_subscription(rs, datum)
 
     @access("ml")
     def request_subscription(self, rs, mailinglist_id):
-        """Change own subscription state to pending."""
+        """Change own subscription state to pending.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :rtype int
+        """
+        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': rs.user.persona_id,
@@ -689,11 +878,17 @@ class MlBackend(AbstractBackend):
                 elif state and state == const.SubscriptionStates.pending:
                     raise RuntimeError("You already requested subscription")
                 else:
-                    return self.set_subscription(rs, datum)
+                    return self._set_subscription(rs, datum)
 
     @access("ml")
     def unsubscribe(self, rs, mailinglist_id):
-        """Change own subscription state to unsubscribed."""
+        """Change own subscription state to unsubscribed.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :rtype int
+        """
+        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': rs.user.persona_id,
@@ -710,11 +905,17 @@ class MlBackend(AbstractBackend):
                 if not state or not state.is_subscribed:
                     raise RuntimeError("You are already unsubscribed.")
                 else:
-                    return self.set_subscription(rs, datum)
+                    return self._set_subscription(rs, datum)
 
     @access("ml")
     def cancel_subscription(self, rs, mailinglist_id):
-        """Cancel subscription request."""
+        """Cancel subscription request.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :rtype int
+        """
+        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': rs.user.persona_id,
@@ -1145,7 +1346,7 @@ class MlBackend(AbstractBackend):
             ]
             if data:
                 with Silencer(rs):
-                    self.set_subscriptions(rs, data)
+                    self._set_subscriptions(rs, data)
                 ret *= len(data)
                 msg = "Added {} subscribers to mailinglist {}."
                 self.logger.debug(msg.format(len(write), mailinglist_id))

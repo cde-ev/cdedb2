@@ -240,7 +240,7 @@ class TestMlBackend(BackendTest):
             }
             for persona_id in [1, 4, 5, 9]
         ]
-        self.ml.set_subscriptions(self.key, data)
+        self.ml._set_subscriptions(self.key, data)
         data = [
             {
                 'mailinglist_id': mailinglist_id,
@@ -249,7 +249,7 @@ class TestMlBackend(BackendTest):
             }
             for persona_id in [4]
         ]
-        self.ml.set_subscriptions(self.key, data)
+        self.ml._set_subscriptions(self.key, data)
 
         expectation = {
             1: const.SubscriptionStates.subscribed,
@@ -462,7 +462,7 @@ class TestMlBackend(BackendTest):
                     const.SubscriptionStates.pending,
             },
         ]
-        self.ml.set_subscriptions(self.key, data)
+        self.ml._set_subscriptions(self.key, data)
         expectation = {
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
@@ -499,7 +499,7 @@ class TestMlBackend(BackendTest):
             'persona_id': 9,
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
-        self.ml.set_subscription(self.key, datum)
+        self.ml._set_subscription(self.key, datum)
         expectation = {
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
@@ -516,7 +516,7 @@ class TestMlBackend(BackendTest):
             'subscription_state':
                 const.SubscriptionStates.pending,
         }
-        self.ml.set_subscription(self.key, datum)
+        self.ml._set_subscription(self.key, datum)
         expectation = {
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
@@ -559,7 +559,7 @@ class TestMlBackend(BackendTest):
             'subscription_state':
                 const.SubscriptionStates.pending,
         }
-        self.ml.set_subscription(self.key, datum)
+        self.ml._set_subscription(self.key, datum)
         expectation = const.SubscriptionStates.pending
         self.assertEqual(expectation,
                          self.ml.get_subscription(
@@ -583,7 +583,7 @@ class TestMlBackend(BackendTest):
             'persona_id': 1,
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
-        self.ml.set_subscription(self.key, datum)
+        self.ml._set_subscription(self.key, datum)
         datum = {
             'mailinglist_id': 4,
             'persona_id': 1,
@@ -595,7 +595,7 @@ class TestMlBackend(BackendTest):
             'persona_id': 1,
             'subscription_state': const.SubscriptionStates.subscribed,
         }
-        self.ml.set_subscription(self.key, datum)
+        self.ml._set_subscription(self.key, datum)
         new_data = {
             'address': 'revolution@example.cde',
             'description': 'Vereinigt Euch',
