@@ -1512,9 +1512,10 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         stati = affirm_set("enum_registrationpartstati", stati)
-        if (persona_id != rs.user.persona_id
-                and not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
+        if not (persona_id != rs.user.persona_id
+                or self.is_orga(rs, event_id=event_id)
+                or self.is_admin(rs)
+                or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
 
         if not stati:
