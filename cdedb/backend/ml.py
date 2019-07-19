@@ -520,8 +520,8 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    @singularize("set_subscription", "data", "datum", returns_dict=False)
-    def set_subscriptions(self, rs, data):
+    @singularize("_set_subscription", "data", "datum", returns_dict=False)
+    def _set_subscriptions(self, rs, data):
         """Change or add ml.subscription_states rows.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -629,7 +629,7 @@ class MlBackend(AbstractBackend):
             with Silencer(rs):
                 if state:
                     datum['subscription_state'] = state
-                    num += self.set_subscription(rs, datum)
+                    num += self._set_subscription(rs, datum)
                 else:
                     num += self.remove_subscription(rs, datum)
             if code:
@@ -660,7 +660,7 @@ class MlBackend(AbstractBackend):
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if state is None or state == const.SubscriptionStates.unsubscribed:
-                return self.set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum), ""
             elif state.is_subscribed:
                 return -1, n_("User already subscribed.")
             elif state == const.SubscriptionStates.mod_unsubscribed:
@@ -694,7 +694,7 @@ class MlBackend(AbstractBackend):
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if (state and state.is_subscribed
                     and state != const.SubscriptionStates.mod_subscribed):
-                return self.set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum), ""
             elif state is None or not state.is_subscribed:
                 return -1, n_("User already unsubscribed.")
             elif state == const.SubscriptionStates.mod_subscribed:
@@ -730,7 +730,7 @@ class MlBackend(AbstractBackend):
             if state and state == const.SubscriptionStates.pending:
                 return 0, n_("User has pending subscription request.")
             else:
-                return self.set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum), ""
 
     @access("ml")
     def remove_mod_subscriber(self, rs, mailinglist_id, persona_id):
@@ -756,7 +756,7 @@ class MlBackend(AbstractBackend):
             if not state or state != const.SubscriptionStates.mod_subscribed:
                 return 0, n_("User is not force-subscribed.")
             else:
-                return self.set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum), ""
 
     @access("ml")
     def add_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
@@ -782,7 +782,7 @@ class MlBackend(AbstractBackend):
             if state and state == const.SubscriptionStates.pending:
                 return 0, n_("User has pending subscription request.")
             else:
-                return self.set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum), ""
 
     @access("ml")
     def remove_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
@@ -808,7 +808,7 @@ class MlBackend(AbstractBackend):
             if not state or state != const.SubscriptionStates.mod_unsubscribed:
                 raise RuntimeError("User is not force-subscribed.")
             else:
-                return self.set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum), ""
 
     @access("ml")
     def subscribe(self, rs, mailinglist_id):
@@ -840,7 +840,7 @@ class MlBackend(AbstractBackend):
                 elif state and state.is_subscribed:
                     raise RuntimeError("You are already subscribed.")
                 else:
-                    return self.set_subscription(rs, datum)
+                    return self._set_subscription(rs, datum)
 
     @access("ml")
     def request_subscription(self, rs, mailinglist_id):
@@ -872,7 +872,7 @@ class MlBackend(AbstractBackend):
                 elif state and state == const.SubscriptionStates.pending:
                     raise RuntimeError("You already requested subscription")
                 else:
-                    return self.set_subscription(rs, datum)
+                    return self._set_subscription(rs, datum)
 
     @access("ml")
     def unsubscribe(self, rs, mailinglist_id):
@@ -899,7 +899,7 @@ class MlBackend(AbstractBackend):
                 if not state or not state.is_subscribed:
                     raise RuntimeError("You are already unsubscribed.")
                 else:
-                    return self.set_subscription(rs, datum)
+                    return self._set_subscription(rs, datum)
 
     @access("ml")
     def cancel_subscription(self, rs, mailinglist_id):
@@ -1342,7 +1342,7 @@ class MlBackend(AbstractBackend):
             ]
             if data:
                 with Silencer(rs):
-                    self.set_subscriptions(rs, data)
+                    self._set_subscriptions(rs, data)
                 ret *= len(data)
                 msg = "Added {} subscribers to mailinglist {}."
                 self.logger.debug(msg.format(len(write), mailinglist_id))
