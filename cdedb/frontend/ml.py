@@ -485,30 +485,9 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively subscribe somebody."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        state = self.mlproxy.get_subscription(
-            rs, subscriber_id, mailinglist_id=mailinglist_id)
-
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': subscriber_id,
-            'subscription_state': SS.subscribed,
-        }
-        # TODO move this logic to the backend.
-        if state is None:
-            code = self.mlproxy.set_subscription(rs, datum)
-            self.notify_return_code(rs, code)
-        elif state.is_subscribed:
-            rs.notify("info", n_("User already subscribed."))
-        elif state == SS.mod_unsubscribed:
-            rs.notify("error", n_("User has been blocked. You can change this "
-                                  "under Subscription Details."))
-        elif state == SS.unsubscribed:
-            rs.notify("error", n_("User has unsubscribed. You can override "
-                                  "this under Subscription Details."))
-        elif state == SS.pending:
-            rs.notify("error", n_("User has pending subscription request."))
-        else:
-            raise RuntimeError(n_("Impossible"))
+        code, msg = self.mlproxy.add_subscriber(
+            rs, mailinglist_id, subscriber_id)
+        self.notify_return_code(rs, code, error=msg, pending=msg)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -518,26 +497,9 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively unsubscribe somebody."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        state = self.mlproxy.get_subscription(
-            rs, subscriber_id, mailinglist_id=mailinglist_id)
-
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': subscriber_id,
-            'subscription_state': SS.unsubscribed,
-        }
-        # TODO move this logic to the backend.
-        if state is None or state == SS.unsubscribed or state == SS.mod_unsubscribed:
-            rs.notify("info", n_("User already unsubscribed."))
-        elif state == SS.mod_subscribed:
-            rs.notify("error", n_("User cannot be removed, because of "
-                                  "moderator override. You can change this "
-                                  "under Subscription Details."))
-        elif state == SS.pending:
-            rs.notify("error", n_("User has pending subscription request."))
-        else:
-            code = self.mlproxy.set_subscription(rs, datum)
-            self.notify_return_code(rs, code)
+        code, msg = self.mlproxy.remove_subscriber(
+            rs, mailinglist_id, subscriber_id)
+        self.notify_return_code(rs, code, error=msg, pending=msg)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -547,44 +509,21 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively subscribe somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        state = self.mlproxy.get_subscription(
-            rs, subscriber_id, mailinglist_id=mailinglist_id)
-
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': subscriber_id,
-            'subscription_state': SS.mod_subscribed,
-        }
-        # TODO move this logic to the backend.
-        if state and state == SS.pending:
-            rs.notify("error", n_("User has pending subscription request."))
-        else:
-            code = self.mlproxy.set_subscription(rs, datum)
-            self.notify_return_code(rs, code)
+        code, error = self.mlproxy.add_mod_subscriber(
+            rs, mailinglist_id, subscriber_id)
+        self.notify_return_code(rs, code, error=error)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "cdedbid"))
+    @REQUESTdata(("subscriber_id", "id"))
     @mailinglist_guard()
     def remove_mod_subscriber(self, rs, mailinglist_id, subscriber_id):
         """Administratively remove subscribe somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        state = self.mlproxy.get_subscription(
-            rs, subscriber_id, mailinglist_id=mailinglist_id)
-
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': subscriber_id,
-            'subscription_state': SS.subscribed,
-        }
-        # TODO move this logic to the backend.
-        if state != SS.mod_subscribed:
-            rs.notify("error", n_("User is not force-subscribed."))
-            return self.redirect(rs, "ml/show_subscription_details")
-        else:
-            code = self.mlproxy.set_subscription(rs, datum)
-            self.notify_return_code(rs, code)
+        code, error = self.mlproxy.remove_mod_subscriber(
+            rs, mailinglist_id, subscriber_id)
+        self.notify_return_code(rs, code, error=error)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
@@ -594,44 +533,21 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively block somebody."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        state = self.mlproxy.get_subscription(
-            rs, subscriber_id, mailinglist_id=mailinglist_id)
-
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': subscriber_id,
-            'subscription_state': SS.mod_unsubscribed,
-        }
-        # TODO move this logic to the backend.
-        if state and state == SS.pending:
-            rs.notify("error", n_("User has pending subscription request."))
-        else:
-            code = self.mlproxy.set_subscription(rs, datum)
-            self.notify_return_code(rs, code)
+        code, error = self.mlproxy.add_mod_unsubscriber(
+            rs, mailinglist_id, subscriber_id)
+        self.notify_return_code(rs, code, error=error)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "cdedbid"))
+    @REQUESTdata(("subscriber_id", "id"))
     @mailinglist_guard()
     def remove_mod_unsubscriber(self, rs, mailinglist_id, subscriber_id):
         """Administratively remove block."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        state = self.mlproxy.get_subscription(
-            rs, subscriber_id, mailinglist_id=mailinglist_id)
-
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': subscriber_id,
-            'subscription_state': SS.unsubscribedd,
-        }
-        # TODO move this logic to the backend.
-        if state != SS.mod_unsubscribed:
-            rs.notify("error", n_("User is not force-subscribed."))
-            return self.redirect(rs, "ml/show_subscription_details")
-        else:
-            code = self.mlproxy.set_subscription(rs, datum)
-            self.notify_return_code(rs, code)
+        code, error = self.mlproxy.remove_mod_unsubscriber(
+            rs, mailinglist_id, subscriber_id)
+        self.notify_return_code(rs, code, error=error)
         return self.redirect(rs, "ml/show_subscription_details")
 
 
