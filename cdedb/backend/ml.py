@@ -76,17 +76,18 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def may_subscribe(self, rs, persona_id, *, mailinglist=None,
                       mailinglist_id=None):
-        """Determine whether a persona may subscribe to a mailinglist.
+        """What may the user do with a mailinglist.
 
-        If the mailinglist is available to the user, they should pass it,
+        If the mailinglist is available to the caller, they should pass it,
         otherwise it will be retrieved from the database.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
         :type mailinglist: {str: object}
         :type mailinglist_id: int
-        :rtype: const.SubscriptionPolicy
-        :return: The applicable subscription policy for the user.
+        :rtype: const.SubscriptionPolicy or None
+        :return: The applicable subscription policy for the user or None if the
+            user is not in the audience.
         """
         if mailinglist is None and mailinglist_id is None:
             raise ValueError("No input specified")
@@ -96,8 +97,12 @@ class MlBackend(AbstractBackend):
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
         persona_id = affirm("id", persona_id)
-        persona = self.core.get_persona(rs, persona_id)
         ml = affirm("mailinglist", mailinglist)
+
+        if not (rs.user.persona_id == persona_id
+                or self.may_manage(rs, ml['id'])):
+            raise PrivilegeError(n_("Not privileged."))
+        persona = self.core.get_persona(rs, persona_id)
 
         audience_policy = const.AudiencePolicy(ml["audience_policy"])
         if audience_policy.check(extract_roles(persona)):
@@ -112,7 +117,7 @@ class MlBackend(AbstractBackend):
                 return const.SubscriptionPolicy.opt_in
             return const.SubscriptionPolicy(ml["sub_policy"])
         else:
-            return const.SubscriptionPolicy.invitation_only
+            return None
 
     @access("ml")
     def may_view(self, rs, ml, state=None):
@@ -1086,6 +1091,7 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             old_subscribers = self.get_subscription_states(
                 rs, mailinglist_id, states=old_subscriber_states)
+            # This will be everyone in the audience for opt-out/mandatory.
             new_implicits = self._get_implicit_subscribers(rs, ml)
 
             # Check whether current subscribers may stay subscribed.
@@ -1097,16 +1103,9 @@ class MlBackend(AbstractBackend):
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
             for persona in personas.values():
-                roles = extract_roles(persona)
-                in_audience = (const.AudiencePolicy(ml["audience_policy"])
-                               .check(roles))
-                if not ((self.may_subscribe(rs, persona['id'], mailinglist=ml)
-                            in {const.SubscriptionPolicy.opt_in,
-                                const.SubscriptionPolicy.moderated_opt_in})
-                        or (old_subscribers[persona['id']]
-                            == const.SubscriptionStates.subscribed
-                            and not (ml["assembly_id"] or ml["event_id"])
-                            and in_audience)):
+                may_subscribe = self.may_subscribe(
+                    rs, persona['id'], mailinglist=ml)
+                if may_subscribe and may_subscribe.is_additive():
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona['id'],
