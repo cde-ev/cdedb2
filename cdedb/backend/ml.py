@@ -1137,7 +1137,7 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm("id", mailinglist_id)
 
         if persona_ids is None:
-            if not self.may_manage(rs, datum['mailinglist_id']):
+            if not self.may_manage(rs, mailinglist_id):
                 raise PrivilegeError(n_("Not privileged."))
             subscribers = self.get_subscription_states(
                 rs, mailinglist_id,
@@ -1147,7 +1147,7 @@ class MlBackend(AbstractBackend):
             persona_ids = affirm_set("id", persona_ids)
 
         if not all(rs.user.persona_id == p_id for p_id in persona_ids):
-            if not self.may_manage(rs, datum['mailinglist_id']):
+            if not self.may_manage(rs, mailinglist_id):
                 raise PrivilegeError(n_("Not privileged."))
             subscribers = self.get_subscription_states(
                 rs, mailinglist_id,
