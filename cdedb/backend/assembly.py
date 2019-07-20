@@ -271,7 +271,7 @@ class AssemblyBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         assembly_id = affirm("id", assembly_id)
 
-        if not (rs.user.id == persona_id
+        if not (rs.user.persona_id == persona_id
                 or self.is_admin(rs)
                 or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))

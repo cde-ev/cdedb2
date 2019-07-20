@@ -76,7 +76,8 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def may_subscribe(self, rs, persona_id, *, mailinglist=None,
                       mailinglist_id=None):
-        """What may the user do with a mailinglist.
+        """What may the user do with a mailinglist. Be aware, that this does
+        not take unsubscribe overrides into account.
 
         If the mailinglist is available to the caller, they should pass it,
         otherwise it will be retrieved from the database.
@@ -112,8 +113,7 @@ class MlBackend(AbstractBackend):
                 return const.SubscriptionPolicy.opt_in
             # Second, check if event link allows resubscribing.
             elif ml['event_id'] and self.event.check_registration_status(
-                    rs, persona_id, ml['event_id'],
-                    ml['registration_part_stati']):
+                    rs, persona_id, ml['event_id'], ml['registration_stati']):
                 return const.SubscriptionPolicy.opt_in
             return const.SubscriptionPolicy(ml["sub_policy"])
         else:
@@ -1227,7 +1227,7 @@ class MlBackend(AbstractBackend):
         # validation is done inside
         sub_states = const.SubscriptionStates.subscribing_states()
         data = self.get_subscription(
-            rs, persona_id, states=sub_states, list=mailinglist_id)
+            rs, persona_id, states=sub_states, mailinglist_id=mailinglist_id)
         return bool(data)
 
     def _get_implicit_subscribers(self, rs, mailinglist):
