@@ -2473,7 +2473,7 @@ class EventBackend(AbstractBackend):
                         translations[entity][e['id']] = new_id
         return ret
 
-    @access("event_admin")
+    @access("event")
     def unlock_import_event(self, rs, data):
         """Unlock an event after offline usage and import changes.
 
