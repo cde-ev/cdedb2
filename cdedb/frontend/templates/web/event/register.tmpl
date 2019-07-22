@@ -119,20 +119,6 @@
         {% endfor %}
 
         <h3 class="heading-underline">{% trans -%}Additional Information{%- endtrans %}</h3>
-        {% if ambience['event']['use_questionnaire'] %}
-            <p>
-                {% trans -%}
-                    After registration, you can find the 'Questionnaire' in the navigation. There you can
-                    give more detailed information the orgateam wants to know.
-                {%- endtrans %}
-            </p>
-        {% else %}
-            <p>
-                {% trans -%}
-                    The orgas of this event may ask you for further data after the registration, using the ‘Questionaire’.
-                {%- endtrans %}
-            </p>
-        {% endif %}
         {% if not age.may_mix() %}
             {{ util.input_hidden(name="mixed_lodging", value=False) }}
             {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
@@ -147,15 +133,37 @@
                 (False, gettext("I want to be lodged seperated by gender."))),
                 label=gettext("Mixed Lodging"), info=mix_info) }}
         {% endif %}
-        {{ util.form_input_static(value=gettext("In the context of this event, photos and recordings will be made to "
-                                                "be used for the event-documentation and a CdE-internal, password protected "
-                                                "media collection. Individual photos and recordings can be excluded from this "
-                                                "by request.")) }}
+        {% call util.form_input_general(displayerrors=False) %}
+            <p class="nosp">
+                {% trans -%}
+                    In the context of this event, photos and recordings will be made to be used for the
+                    event-documentation and a CdE-internal, password protected media collection. Individual photos and
+                    recordings can be excluded from this by request.
+                {%- endtrans %}
+            </p>
+        {% endcall %}
         {{ util.form_input_checkbox(name="list_consent", defaultvalue='True', label=gettext(
                 "I agree that my data, including my name, address and my email, may be sent "
                 "to other participants of this event beforehand.")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes for Orgas and Instructors"), rows="5") }}
-
+        {% call util.form_input_general(displayerrors=False) %}
+            {% if ambience['event']['use_questionnaire'] %}
+                <p class="text-info nosp">
+                    {{ util.make_icon('info-sign') }}
+                    {% trans -%}
+                        After registration, you will find the ‘Questionnaire’ with further questions of the orga team in
+                        the navigation. There you can give more detailed information.
+                    {%- endtrans %}
+                </p>
+            {% else %}
+                <p class="text-info nosp">
+                    {{ util.make_icon('info-sign') }}
+                    {% trans -%}
+                        The orga team of this event may ask you for further data later, using the ‘Questionaire’.
+                    {%- endtrans %}
+                </p>
+            {% endif %}
+        {% endcall %}
         {{ util.form_input_submit(value=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
