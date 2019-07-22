@@ -65,6 +65,12 @@ body{
 .input-group-addon label {
     margin-bottom: 0;
 }
+.alert-info a {
+    text-decoration: underline;
+}
+.alert-info a:hover, .alert-info a:focus {
+    text-decoration: none;
+}
 .table-slim {
     width: auto;
 }
