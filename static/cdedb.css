@@ -4,7 +4,7 @@
 body{
     margin: 0;
     background-color: #7c868e;
-    background: url(bg-pattern.png);
+    background-image: url(bg-pattern.png);
 }
 
 #footer {
@@ -402,6 +402,14 @@ h1.title {
 /* ************* *
  * Extra styling *
  * ************* */
+/* Mode for OFFLINE_DEPLOYMENT and CDEDB_DEV */
+body.offline {
+    background-color: #284d6b;
+}
+body.development {
+    background-color: #614444;
+}
+
 .heading-underline {
     padding-bottom: 2px;
     border-bottom: solid 1px #ddd;

@@ -40,11 +40,16 @@
         <link rel="stylesheet" type="text/css" href="{{ staticurl("cdedb.css") }}" media="all" />
         <link rel="stylesheet" type="text/css" href="{{ staticurl("print.css") }}" media="print" />
     </head>
-    <body>
+    <body class="{% if CDEDB_DEV %}development{% elif CDEDB_OFFLINE_DEPLOYMENT %}offline{% endif %}">
         <div class="container page" id="maincontainer">
             <div class="clearfix" role="banner">
-                {% if I18N_LANGUAGES %}
-                    <div class="pull-right">
+                <div class="pull-right text-right">
+                    {% if CDEDB_DEV %}
+                        <div class="text-danger text-uppercase">Development Mode</div>
+                    {% elif CDEDB_OFFLINE_DEPLOYMENT %}
+                        <div class="text-info text-uppercase">Offline Deployment</div>
+                    {% endif %}
+                    {% if I18N_LANGUAGES %}
                         <form action="{{ cdedblink('core/change_locale') }}" id="changelocaleform" method="post"
                               style="display: inline;">
                             {% if original_request and original_request.url %}
@@ -62,8 +67,8 @@
                                 {% endfor %}
                             {% endwith %}
                         </form>
-                    </div>
-                {% endif %}
+                    {% endif %}
+                </div>
                 <div class="logo pull-left">
                     <a href={{ cdedblink("core/index") }} ><img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" }}/></a>
                 </div>
