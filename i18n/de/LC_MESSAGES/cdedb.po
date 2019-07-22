@@ -9649,6 +9649,10 @@ msgstr ""
 "Der offizielle Anmeldeschluss ist bereits vorbei. Deine Anmeldung wird "
 "nach Möglichkeit berücksichtigt."
 
+#: cdedb/frontend/templates/web/event/register.tmpl:43
+msgid "Note of the Orga Team"
+msgstr "Hinweis des Orgateams"
+
 #: cdedb/frontend/templates/web/event/register.tmpl:71
 msgid "form to edit your profile"
 msgstr "Fomular zum Bearbeiten des Profils"
