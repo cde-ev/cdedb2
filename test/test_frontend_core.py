@@ -512,13 +512,14 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
-        self.assertPresence("Ergebnis [6]")
+        self.assertPresence("Ergebnis [7]")
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Beispiel")
         self.assertPresence("Findus")
         self.assertPresence("Generalis")
         self.assertPresence("Meister")
         self.assertPresence("Olaf")
+        self.assertPresence("Nashorn")
 
     def test_privilege_change(self):
         # Grant new admin privileges.
@@ -782,7 +783,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Ergebnis [6]")
+        self.assertPresence("Ergebnis [7]")
         self.assertPresence("Jalapeño")
 
     @as_users("anton")

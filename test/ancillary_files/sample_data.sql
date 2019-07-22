@@ -29,6 +29,7 @@ INSERT INTO core.personas (id, username, is_active, notes, display_name, given_n
     (11, 'kalif@example.cde', True, 'represents our foreign friends', 'Kalif', 'Kalif ibn al-Ḥasan', 'Karabatschi', False, False, False, False, False, False, False, False, False, True, True, False, False, False, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'kalif@example.cde Kalif Kalif ibn al-Ḥasan Karabatschi'),
     (12, NULL, True, NULL, 'Lisa', 'Lisa', 'Lost', False, False, False, False, False, False, False, True, True, True, True, True, True, False, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Lisa Lost Lisa'),
     (13, 'martin@example.cde', True, NULL, 'Martin', 'Martin', 'Meister', True, False, False, False, False, False, False, True, True, True, True, True, False, False, NULL, NULL, 2, '2019-07-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 25, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'martin@example.cde Martin Meister 2019-07-10'),
+    (14, 'norbert@example.cde', True, NULL, 'Norbert', 'Norbert', 'Nashorn', False, False, False, False, False, True, False, False, False, True, False, False, False, False, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', E'norbert@example.cde Norbert Norbert Nashorn'),
     (15, 'olaf@example.cde', False, 'Aktuell deaktiviert weil er seine Admin-Rechte missbraucht, um Benutzer in ihrem Profil zu Rickrollen.', 'Olaf', 'Olaf', 'Olafson', False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'olaf@example.cde Olaf Olafson 1979-07-06');
 INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change_note, change_status, persona_id, username, is_active, notes, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, display_name, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, balance, decided_search, trial_member, bub_search, foto) VALUES
     (1, NULL, now(), 1, 'Init.', 2, 1, 'anton@example.cde', True, NULL, True, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Anton', 'Administrator', 'Anton Armin A.', NULL, NULL, 2, date '1991-03-30', '+49 (234) 98765', NULL, NULL, 'Auf der Düne 42', '03205', 'Musterstadt', NULL, NULL, NULL, 'Unter dem Hügel 23', '22335', 'Hintertupfingen', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 17.5, True, False, True, NULL),
@@ -44,8 +45,10 @@ INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change
     (1, NULL, now(), 1, 'Init.', 2, 11, 'kalif@example.cde', True, 'represents our foreign friends', False, False, False, False, False, False, False, False, False, True, True, False, False, False, 'Kalif', 'Karabatschi', 'Kalif ibn al-Ḥasan', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 12, NULL, True, NULL, False, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Lisa', 'Lost', 'Lisa', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 13, 'martin@example.cde', True, NULL, True, False, False, False, False, False, False, True, True, True, True, True, False, False, 'Martin', 'Meister', 'Martin', NULL, NULL, 2, '2019-07-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 25, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 14, 'norbert@example.cde', True, NULL, False, False, False, False, False, True, False, False, False, True, False, False, False, False, 'Norbert', 'Nashorn', 'Norbert', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 15, 'olaf@example.cde', True, NULL, False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Olaf', 'Olaf', 'Olafson', 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL),
     (6, NULL, now(), 2, 'Deaktiviert, weil er seine Admin-Privilegien missbraucht.', 2, 15, 'olaf@example.cde', False, 'Aktuell deaktiviert weil er seine Admin-Rechte missbraucht, um Benutzer in ihrem Profil zu Rickrollen.', False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Olaf', 'Olaf', 'Olafson', 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL);
+
 INSERT INTO core.meta_info (info) VALUES
     ('{"Finanzvorstand_Vorname": "Bertålotta",
        "Finanzvorstand_Name": "Bertålotta Beispiel",
@@ -308,16 +311,18 @@ INSERT INTO ml.mailinglists (id, title, address, description, sub_policy, mod_po
     (7, 'Aktivenforum 2001', 'aktivenforum@example.cde', NULL, 3, 2, 2, 5, '[aktivenforum]', 1024, True, NULL, ARRAY[]::integer[], NULL),
     (8, 'Orga-Liste', 'aka@example.cde', NULL, 5, 1, 1, 3, '[orga]', NULL, True, 1, ARRAY[]::integer[], NULL),
     (9, 'Teilnehmer-Liste', 'participants@example.cde', NULL, 5, 2, 1, 3, '[aka]', NULL, True, 1, ARRAY[2, 4], NULL),
-    (10, 'Warte-Liste', 'wait@example.cde', NULL, 5, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL);
+    (10, 'Warte-Liste', 'wait@example.cde', NULL, 5, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL),
+    (11, 'Kampfbrief-Kommentare', 'opt@example.cde', NULL, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], 1);
 
 INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_state) VALUES
     (1, 1, 30),
     (1, 2, 30),
-    (1, 3, 2),
+    (1, 3, 1),
     (1, 6, 30),
     (1, 7, 30),
     (1, 9, 30),
     (1, 12, 30),
+    (1, 13, 30),
     (2, 1, 30),
     (2, 2, 30),
     (2, 3, 30),
@@ -329,6 +334,8 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (2, 10, 30),
     (2, 11, 30),
     (2, 12, 30),
+    (2, 13, 30),
+    (2, 14, 1),
     (3, 1, 1),
     (3, 2, 2),
     (3, 10, 1),
@@ -338,8 +345,9 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (5, 1, 30),
     (5, 2, 30),
     (5, 3, 10),
-    (5, 9, 30),
+    (5, 9, 11),
     (5, 11, 30),
+    (5, 14, 10),
     (6, 1, 1),
     (6, 2, 1),
     (7, 1, 2),
@@ -350,7 +358,13 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (9, 5, 2),
     (9, 7, 1),
     (9, 9, 30),
-    (10, 5, 30);
+    (10, 5, 30),
+    (11, 1, 30),
+    (11, 2, 30),
+    (11, 3, 1),
+    (11, 4, 2),
+    (11, 9, 11),
+    (11, 11, 30);
 
 INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
     (3, 10, 'janis-spam@example.cde'),
@@ -396,7 +410,7 @@ SELECT setval('event.field_definitions_id_seq', 6);
 SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
 SELECT setval('event.log_id_seq', 4);
-SELECT setval('ml.mailinglists_id_seq', 10);
+SELECT setval('ml.mailinglists_id_seq', 11);
 SELECT setval('assembly.assemblies_id_seq', 1);
 SELECT setval('assembly.ballots_id_seq', 5);
 SELECT setval('assembly.candidates_id_seq', 27);

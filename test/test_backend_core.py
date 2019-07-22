@@ -758,7 +758,7 @@ class TestCoreBackend(BackendTest):
     def test_log(self, user):
         ## first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
-        new_id = self.core.create_persona(self.key, data)
+        new_persona_id = self.core.create_persona(self.key, data)
         data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
@@ -796,7 +796,7 @@ class TestCoreBackend(BackendTest):
             {'additional_info': None,
              'code': 1,
              'ctime': nearly_now(),
-             'persona_id': new_id,
+             'persona_id': new_persona_id,
              'submitted_by': 1})
         self.assertEqual(expectation, self.core.retrieve_log(self.key))
 
@@ -815,6 +815,13 @@ class TestCoreBackend(BackendTest):
              'ctime': nearly_now(),
              'generation': 1,
              'persona_id': 15,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 14,
              'reviewed_by': None,
              'submitted_by': 1},
             {'change_note': 'Init.',
