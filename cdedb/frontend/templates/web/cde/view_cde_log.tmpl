@@ -2,6 +2,9 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/generic.tmpl" as generic with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+{% endblock %}
 {% block title %}
     {% trans -%}
         CdE Log

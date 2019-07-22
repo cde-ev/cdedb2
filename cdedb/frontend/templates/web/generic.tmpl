@@ -669,15 +669,14 @@
                         anid="input-submitted_by") }}
             {{ util.form_input_text(name="persona_id", label=gettext("Affected"), small=True,
                         anid="input-persona_id") }}
-            {{ util.cdedb_script('cdedb_searchpersona.js') }}
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#input-submitted_by').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&aux='|s) + aux|string + ('&phrase=%s'|s) }}', [],
-                                             false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
+                    false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
                 $('#input-persona_id').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&aux='|s) + aux|string + ('&phrase=%s'|s) }}', [],
-                                             false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
+                    false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
             {% if filter_name == "assembly_id" %}
