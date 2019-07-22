@@ -90,7 +90,7 @@ take care of automatic state transitions. In contrast to user induced changes,
 the changes done by the cron job are not logged.
 
 In the CdEDBv2, we distinct between subscribing and other states, where users
-listed in subscribing states recieve list emails. For subscribers, there is no
+listed in subscribing states receive list emails. For subscribers, there is no
 visible distinction between the different subscribing states. Subscribing states
 are:
 
@@ -106,7 +106,8 @@ Explicit Subscribed
 Subscribe Override
     Subscribe Overrides are a special kind of explicit subscriptions, which are
     kept even if the user should not be able to access a list anymore. However,
-    they do not prevent a user from unsubscribing themselves.
+    except for mandatory lists, they do not prevent a user from unsubscribing
+    themselves.
     The list of Subscribe Overrides can be accessed by moderators via the
     management interface.
 
@@ -115,7 +116,7 @@ Implicit Subscribed
     linked to an event or assembly, are listed as implicit subscribers. If they
     lose the automatic implicator that subscribes them to the list, they are
     removed even if they would still be able to access it.
-    Implicit subscribers are stored in the database explicitly to ensure the
+    Implicit subscribers are stored in the database explicitly. This ensures the
     subscriber list displayed is always identical to the list of users emails
     are actually sent to.
 
@@ -127,10 +128,10 @@ None
     This state is the only one not explicitly saved in the database.
 
 Explicit Unsubscribed
-    Users, which have specified they do not want to recieve emails from a
+    Users, which have specified they do not want to receive emails from a
     specifc mailinglist anymore. This decision is permanent, until manually
     reverted by them or a moderator. Even if they lose access to a list and
-    regain it later on, they will not be recieving emails from it.
+    regain it later on, they will not be receiving emails from it.
     However, if they are explicitly subscribed again, they do not receive
     special treatment.
 
@@ -145,7 +146,7 @@ Unsubscribe Override
 
 Waiting for moderation
     This is a special case only existing for mailinglists with moderated opt-in
-    subscription policy for a group of users. These users are display on a
+    subscription policy for a group of users. These users are displayed on a
     specific list to moderators, so they can decide if they want to approve or
     deny their request. It is also possible to block further request by this
     user.
