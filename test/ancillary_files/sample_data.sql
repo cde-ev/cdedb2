@@ -27,7 +27,9 @@ INSERT INTO core.personas (id, username, is_active, notes, display_name, given_n
     (9, 'inga@example.cde', True, NULL,  'Inga', 'Inga', 'Iota', False, False, False, False, False, False, True, True, True, True, True, True, False, NULL, NULL, 1, date '2222-01-01', NULL, '0163/456897', NULL, 'Zwergstraße 1', '10999', 'Liliput', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, E'# Inga\n\nKleines Inhaltsverzeichnis\n\n[TOC]\n\n## Auslandsjahr\n\nIch war ein Jahr in Südafrika. Dort habe ich viele Dinge besucht.\n\n  - den Nationalpark\n  - verschiedene Städte\n\n  - Johannisburg\n  - Cape Town\n\n## Literatur\n\nIch lese gerne\n\n  - Vampirroman,\n  - Wächter-Romane (nicht den >>Wachturm<<, das ist eine ganz schräge Zeitschrift von ziemlich dubiosen Typen),\n  - Ikea-Anleitungen.\n\n## Musik\n\nEs gibt ganz viel schreckliche *Popmusik* und so viel bessere **klassische Musik**, beispielsweise ``Bach`` und ``Beethoven`` sind vorne dabei [^1].\n\n## Programmieren\n\nMein Lieblingsprogramm:\n\n    int main ( int argc, char *argv[] ) {\n        printf(\"Hello World\\n\");\n        return 0;\n    }\n\nAber alles, was etwas mit einem Buch aus Abschnitt `Literatur` zu tun hat ist auch gut.\n\n## Referenzen\n\nDer CdE ist voll cool und hat eine Homepage <http://www.cde-ev.de>. Dort kann man auch jederzeit gerne eine Akademie organisieren [^2].\n\n<script>evil();</script>\n\n[^1]: Über die Qualitäten von ``Mozart`` kann man streiten.\n[^2]: Orga sein hat viele tolle Vorteile:\n\n    - entscheide über die Schokoladensorten\n    - suche Dir Dein Lieblingshaus aus\n    - werde von allen Teilnehmern angehimmelt\n    - lasse Dich bestechenn', 5, True, True, True, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'inga@example.cde Inga Iota 2222-01-01 Zwergstraße 1 1111 Liliput'),
     (10, 'janis@example.cde', True, 'sharp tongue', 'Janis', 'Janis', 'Jalapeño', False, False, False, False, False, False, False, False, True, False, False, False, False, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', E'janis@example.cde Janis Janis Jalapeño'),
     (11, 'kalif@example.cde', True, 'represents our foreign friends', 'Kalif', 'Kalif ibn al-Ḥasan', 'Karabatschi', False, False, False, False, False, False, False, False, True, True, False, False, False, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'kalif@example.cde Kalif Kalif ibn al-Ḥasan Karabatschi'),
-    (12, NULL, True, NULL, 'Lisa', 'Lost', 'Lisa', False, False, False, False, False, False, True, True, True, True, True, True, False, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Lisa Lost Lisa');
+    (12, NULL, True, NULL, 'Lisa', 'Lost', 'Lisa', False, False, False, False, False, False, True, True, True, True, True, True, False, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Lisa Lost Lisa'),
+    -- 13, Martin is reserved for the new super admin
+    (14, 'norbert@example.cde', True, NULL, 'norbert', 'norbert', 'Nashorn', False, False, False, False, True, False, False, False, True, False, False, False, False, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', E'norbert@example.cde norbert norbert Nashorn');
 INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change_note, change_status, persona_id, username, is_active, notes, is_admin, is_core_admin, is_cde_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, display_name, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, balance, decided_search, trial_member, bub_search, foto) VALUES
     (1, NULL, now(), 1, 'Init.', 2, 1, 'anton@example.cde', True, NULL, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Anton', 'Administrator', 'Anton Armin A.', NULL, NULL, 2, date '1991-03-30', '+49 (234) 98765', NULL, NULL, 'Auf der Düne 42', '03205', 'Musterstadt', NULL, NULL, NULL, 'Unter dem Hügel 23', '22335', 'Hintertupfingen', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 17.5, True, False, True, NULL),
     (2, NULL, now(), 1, 'Init.', 2, 2, 'berta@example.cde', True, NULL, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Bertå',  'Beispiel', 'Bertålotta', 'Dr.', 'MdB', 1, date '1981-02-11', '+49 (5432) 987654321', '0163/123456789', 'bei Spielmanns', 'Im Garten 77', '34576', 'Utopia', NULL, 'Gemeinser', NULL, 'Strange Road 9 3/4', '8XA 45-$', 'Foreign City', 'Far Away', 'https://www.bundestag.cde', E'Alles\nUnd noch mehr', 'Jedermann', 'Überall', 'Immer', E'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen', 12.5, True, False, True, 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9'),
@@ -40,7 +42,8 @@ INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change
     (1, NULL, now(), 1, 'Init.', 2, 9, 'inga@example.cde', True, NULL, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Inga',  'Iota', 'Inga', NULL, NULL, 1, date '2222-01-01', NULL, NULL, NULL, 'Zwergstraße 1', '10999', 'Liliput', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, E'# Inga\n\nKleines Inhaltsverzeichnis\n\n[TOC]\n\n## Auslandsjahr\n\nIch war ein Jahr in Südafrika. Dort habe ich viele Dinge besucht.\n\n  - den Nationalpark\n  - verschiedene Städte\n\n  - Johannisburg\n  - Cape Town\n\n## Literatur\n\nIch lese gerne\n\n  - Vampirroman,\n  - Wächter-Romane (nicht den >>Wachturm<<, das ist eine ganz schräge Zeitschrift von ziemlich dubiosen Typen),\n  - Ikea-Anleitungen.\n\n## Musik\n\nEs gibt ganz viel schreckliche *Popmusik* und so viel bessere **klassische Musik**, beispielsweise ``Bach`` und ``Beethoven`` sind vorne dabei [^1].\n\n## Programmieren\n\nMein Lieblingsprogramm:\n\n    int main ( int argc, char *argv[] ) {\n        printf(\"Hello World\\n\");\n        return 0;\n    }\n\nAber alles, was etwas mit einem Buch aus Abschnitt `Literatur` zu tun hat ist auch gut.\n\n## Referenzen\n\nDer CdE ist voll cool und hat eine Homepage <http://www.cde-ev.de>. Dort kann man auch jederzeit gerne eine Akademie organisieren [^2].\n\n<script>evil();</script>\n\n[^1]: Über die Qualitäten von ``Mozart`` kann man streiten.\n[^2]: Orga sein hat viele tolle Vorteile:\n\n    - entscheide über die Schokoladensorten\n    - suche Dir Dein Lieblingshaus aus\n    - werde von allen Teilnehmern angehimmelt\n    - lasse Dich bestechenn', 5, True, True, True, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 10, 'janis@example.cde', True, 'sharp tongue', False, False, False, False, False, False, False, False, True, False, False, False, False, 'Janis', 'Jalapeño', 'Janis', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 11, 'kalif@example.cde', True, 'represents our foreign friends', False, False, False, False, False, False, False, False, True, True, False, False, False, 'Kalif', 'Karabatschi', 'Kalif ibn al-Ḥasan', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-    (1, NULL, now(), 1, 'Init.', 2, 12, NULL, True, NULL, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Lisa', 'Lost', 'Lisa', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL);
+    (1, NULL, now(), 1, 'Init.', 2, 12, NULL, True, NULL, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Lisa', 'Lost', 'Lisa', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 14, 'norbert@example.cde', True, NULL, False, False, False, False, True, False, False, False, True, False, False, False, False, 'norbert', 'Nashorn', 'norbert', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO core.meta_info (info) VALUES
     ('{"Finanzvorstand_Vorname": "Bertålotta",
        "Finanzvorstand_Name": "Bertålotta Beispiel",
@@ -303,12 +306,13 @@ INSERT INTO ml.mailinglists (id, title, address, description, sub_policy, mod_po
     (7, 'Aktivenforum 2001', 'aktivenforum@example.cde', NULL, 3, 2, 2, 5, '[aktivenforum]', 1024, True, NULL, ARRAY[]::integer[], NULL),
     (8, 'Orga-Liste', 'aka@example.cde', NULL, 5, 1, 1, 3, '[orga]', NULL, True, 1, ARRAY[]::integer[], NULL),
     (9, 'Teilnehmer-Liste', 'participants@example.cde', NULL, 5, 2, 1, 3, '[aka]', NULL, True, 1, ARRAY[2, 4], NULL),
-    (10, 'Warte-Liste', 'wait@example.cde', NULL, 5, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL);
+    (10, 'Warte-Liste', 'wait@example.cde', NULL, 5, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL),
+    (11, 'Kampfbrief-Kommentare', 'opt@example.cde', NULL, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], 1);
 
 INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_state) VALUES
     (1, 1, 30),
     (1, 2, 30),
-    (1, 3, 2),
+    (1, 3, 1),
     (1, 6, 30),
     (1, 7, 30),
     (1, 9, 30),
@@ -324,6 +328,7 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (2, 10, 30),
     (2, 11, 30),
     (2, 12, 30),
+    (2, 14, 1),
     (3, 1, 1),
     (3, 2, 2),
     (3, 10, 1),
@@ -333,8 +338,9 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (5, 1, 30),
     (5, 2, 30),
     (5, 3, 10),
-    (5, 9, 30),
+    (5, 9, 11),
     (5, 11, 30),
+    (5, 14, 10),
     (6, 1, 1),
     (6, 2, 1),
     (7, 1, 2),
@@ -345,7 +351,11 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (9, 5, 2),
     (9, 7, 1),
     (9, 9, 30),
-    (10, 5, 30);
+    (10, 5, 30),
+    (11, 1, 30),
+    (11, 2, 30),
+    (11, 3, 2),
+    (11, 9, 11);
 
 INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
     (3, 10, 'janis-spam@example.cde'),

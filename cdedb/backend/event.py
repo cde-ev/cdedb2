@@ -1512,7 +1512,7 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         stati = affirm_set("enum_registrationpartstati", stati)
-        if not (persona_id != rs.user.persona_id
+        if not (persona_id == rs.user.persona_id
                 or self.is_orga(rs, event_id=event_id)
                 or self.is_admin(rs)
                 or "ml_admin" in rs.user.roles):
@@ -1523,7 +1523,7 @@ class EventBackend(AbstractBackend):
 
         registration_ids = self.list_registrations(
             rs, event_id, rs.user.persona_id)
-        if not registration_id:
+        if not registration_ids:
             return False
         reg_id = unwrap(registration_ids, keys=True)
         reg = self.get_registration(rs, reg_id)

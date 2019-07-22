@@ -610,7 +610,9 @@ class MlBackend(AbstractBackend):
         """
         data = affirm_array("subscription_request_resolution", data)
 
-        if not all(datum['persona_id'] == rs.user.persona_id
+        if not all((datum['persona_id'] == rs.user.persona_id
+                    and datum['resolution'] ==
+                        const.SubscriptionRequestResolutions.cancelled)
                    or self.may_manage(rs, datum['mailinglist_id'])
                    for datum in data):
             raise PrivilegeError("Not privileged.")
@@ -657,6 +659,12 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.subscribed,
         }
         with Atomizer(rs):
+            policy = self.may_subscribe(rs, persona_id,
+                                        mailinglist_id=mailinglist_id)
+            # This is the deletion conditional from write_subscription_states,
+            # so people which would be deleted anyway cannot be subscribed.
+            if not policy or not policy.is_additive():
+                return 0, n_("User has no means to access this list.")
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if state is None or state == const.SubscriptionStates.unsubscribed:
@@ -690,8 +698,9 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, rs.user.persona_id,
-                                        mailinglist_id=mailinglist_id)
+            # This is not using may_subscribe, as even people with moderator
+            # override may not unsubscribe
+            policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.SubscriptionPolicy.mandatory:
                 return 0, n_("Can not change subscription.")
             state = self.get_subscription(
@@ -779,8 +788,9 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.mod_unsubscribed,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, rs.user.persona_id,
-                                        mailinglist_id=mailinglist_id)
+            # This is not using may_subscribe, as even people with moderator
+            # override may not unsubscribe
+            policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.SubscriptionPolicy.mandatory:
                 return 0, n_("Can not change subscription.")
             state = self.get_subscription(
@@ -894,8 +904,9 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, rs.user.persona_id,
-                                        mailinglist_id=mailinglist_id)
+            # This is not using may_subscribe, as even people with moderator
+            # override may not unsubscribe
+            policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.SubscriptionPolicy.mandatory:
                 raise RuntimeError("Can not change subscription.")
             else:
