@@ -32,7 +32,8 @@ class TestMlBackend(BackendTest):
                        7: 'Aktivenforum 2001',
                        8: 'Orga-Liste',
                        9: 'Teilnehmer-Liste',
-                       10: 'Warte-Liste'}
+                       10: 'Warte-Liste',
+                       11: 'Kampfbrief-Kommentare'}
         self.assertEqual(expectation, self.ml.list_mailinglists(self.key))
         expectation[6] = 'Aktivenforum 2000'
         self.assertEqual(expectation,
@@ -182,6 +183,7 @@ class TestMlBackend(BackendTest):
             4: const.SubscriptionStates.subscribed,
             5: const.SubscriptionStates.implicit,
             6: const.SubscriptionStates.subscribed,
+            11: const.SubscriptionStates.implicit
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=2))
