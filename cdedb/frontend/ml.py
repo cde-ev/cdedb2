@@ -395,6 +395,38 @@ class MlFrontend(AbstractUserFrontend):
             'mod_subscribed': mod_subscribed,
             'mod_unsubscribed': mod_unsubscribed})
 
+    @access("ml")
+    @mailinglist_guard()
+    def download_csv_subscription_states(self, rs, mailinglist_id):
+        """Create CSV file with all subscribers and their subscription state"""
+        subscribers = self.mlproxy.get_subscription_states(rs, mailinglist_id)
+        address = self.mlproxy.get_subscription_addresses(
+            rs, mailinglist_id, explicits_only=True)
+        columns = ['id', 'subscription state', 'address']
+        output = []
+
+        for subscriber in subscribers.keys():
+            pair = {}
+            pair['id'] = subscriber
+            pair['subscription state'] = subscribers[subscriber]
+            if subscriber in address.keys() and address[subscriber] is not None:
+                pair['address'] = address[subscriber]
+            else:
+                pair['address'] = ""
+            output.append(pair)
+
+        csv_data = csv_output(sorted(output, key=lambda c: c['id']),
+                              columns)
+        file = self.send_csv_file(
+            rs, data=csv_data, inline=False,
+            filename="{}_subscription_states.csv".format(
+                rs.ambience['mailinglist']['title']))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "ml/management")
+
     @access("ml", modi={"POST"})
     @REQUESTdata(("moderator_id", "cdedbid"))
     @mailinglist_guard()
