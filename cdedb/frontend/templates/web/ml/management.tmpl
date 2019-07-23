@@ -27,6 +27,13 @@
             Note that every change can take up to 15min until effective.
         {%- endtrans %}
     {% endcall %}
+    {% call util.bootstrap_panel() %}
+        {% trans -%}
+            Note that only DB-Accounts can be moderators and subscribers.
+            Any email address can be added to the whitelist though.
+            The whitelist is accessible under Subscription Details.
+        {%- endtrans %}
+    {% endcall %}
 
     <div class="row">
         <div class="col-md-6">
