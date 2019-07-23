@@ -649,7 +649,7 @@ class MlFrontend(AbstractUserFrontend):
         if not email:
             code = self.mlproxy.remove_subscription_address(rs, datum)
             self.notify_return_code(rs, code)
-        elif email in subscriptions.values():
+        elif email in subscriptions:
             datum['address'] = email
             code = self.mlproxy.set_subscription_address(rs, datum)
             self.notify_return_code(rs, code)
