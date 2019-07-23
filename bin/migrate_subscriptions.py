@@ -111,10 +111,11 @@ with Atomizer(rs(DEFAULT_ID)):
     query = ("UPDATE ml.subscription_states SET subscription_state = %s"
              "WHERE is_subscribed = %s AND is_override = %s")
 
-    ml.query_exec(rs(DEFAULT_ID), query, (1, True, False))
-    ml.query_exec(rs(DEFAULT_ID), query, (2, False, False))
-    ml.query_exec(rs(DEFAULT_ID), query, (10, True, True))
-    ml.query_exec(rs(DEFAULT_ID), query, (11, False, True))
+    # This covers every possible case, because both these bools cannot be NULL.
+    ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.subscribed, True, False))
+    ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.unsubscribed, False, False))
+    ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.mod_subscribed, True, True))
+    ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.unsubscribed, False, True))
 
     query = ("ALTER TABLE ml.subscription_states "
              "ALTER COLUMN subscription_state SET NOT NULL")
@@ -139,6 +140,7 @@ with Atomizer(rs(DEFAULT_ID)):
     data = ml.query_all(rs(DEFAULT_ID), query, tuple())
 
     for datum in data:
+        # Setting address is not allowed for anyone other than the person.
         ml.set_subscription_address(rs(datum["persona_id"]), datum)
 
     query = "ALTER TABLE ml.subscription_states DROP COLUMN {}"
@@ -164,8 +166,11 @@ with Atomizer(rs(DEFAULT_ID)):
 
     ml_ids = ml.list_mailinglists(rs(DEFAULT_ID), active_only=False)
     for ml_id in ml_ids:
+        # this needs ml_proxy to have access to singularized variants.
         mlproxy.write_subscription_states(rs(DEFAULT_ID), ml_id)
-        pprint(ml_id)
-        pprint(mlproxy.get_subscription_states(rs(DEFAULT_ID), ml_id))
-        pprint(list(filter(None, mlproxy.get_subscription_addresses(
-            rs(DEFAULT_ID), ml_id, explicits_only=True).values())))
+
+        # Some debug output.
+        # pprint(ml_id)
+        # pprint(mlproxy.get_subscription_states(rs(DEFAULT_ID), ml_id))
+        # pprint(list(filter(None, mlproxy.get_subscription_addresses(
+        #     rs(DEFAULT_ID), ml_id, explicits_only=True).values())))
