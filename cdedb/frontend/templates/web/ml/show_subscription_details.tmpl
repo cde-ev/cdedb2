@@ -22,12 +22,12 @@
     </h1>
 {% endblock %}
 {% block content %}
-    {% call util.bootstrap_panel() %}
+    <div>
         {% trans -%}
-            Note that only DB-Accounts can be moderators and subscribers.
-            Any email address can be added to the whitelist though.
+            A download file of the subscription states of every user.
         {%- endtrans %}
-    {% endcall %}
+        {{ util.href(cdedblink('ml/download_csv_subscription_states'), gettext("CSV-File"), icon='download') }}
+    </div>
 
     <div class="row">
         <div class="col-md-6">
