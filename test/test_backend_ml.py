@@ -638,6 +638,8 @@ class TestMlBackend(BackendTest):
                              state=None)
         # List 11 is only joinable by assembly users
         if user['id'] == 11:
+            self._change_own_sub(user, 11, self.ml.unsubscribe, code=1,
+                                 state=const.SubscriptionStates.unsubscribed)
             self._change_own_sub(user, 11, self.ml.subscribe, code=1,
                                  state=const.SubscriptionStates.subscribed)
         else:
