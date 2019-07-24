@@ -22,7 +22,7 @@ class TestMlBackend(BackendTest):
         new_data = self.core.get_ml_user(self.key, user['id'])
         self.assertEqual(data, new_data)
 
-    @as_users("janis")
+    @as_users("anton")
     def test_entity_mailinglist(self, user):
         expectation = {1: 'Verkündungen',
                        2: 'Werbung',
@@ -165,7 +165,6 @@ class TestMlBackend(BackendTest):
     def test_sample_data(self, user):
         ml_ids = self.ml.list_mailinglists(self.key, active_only=False)
 
-        from pprint import pprint
         for ml_id in ml_ids:
             expectation = self.ml.get_subscription_states(self.key, ml_id)
             self.ml.write_subscription_states(self.key, ml_id)
@@ -648,7 +647,7 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_write_subscription_states(self, user):
-        # TODO change implicit subscribers within this test somehow.
+        # CdE-Member list.
         mailinglist_id = 7
 
         expectation = {
@@ -703,7 +702,7 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
-        # Now test adding implicit subscribers.
+        # Now test lists with implicit subscribers.
         # First for events.
         mailinglist_id = 9
 
@@ -756,6 +755,112 @@ class TestMlBackend(BackendTest):
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
+
+    @as_users("anton")
+    def test_change_sub_policy(self, user):
+        mdata = {
+            'address': 'revolution@example.cde',
+            'description': 'Vereinigt Euch',
+            'assembly_id': None,
+            'attachment_policy': const.AttachmentPolicy.forbid,
+            'audience_policy': const.AudiencePolicy.require_member,
+            'event_id': None,
+            'is_active': True,
+            'maxsize': None,
+            'mod_policy': const.ModerationPolicy.unmoderated,
+            'moderators': set(),
+            'registration_stati': [],
+            'sub_policy': const.SubscriptionPolicy.invitation_only,
+            'subject_prefix': '[viva la revolution]',
+            'title': 'Proletarier aller Länder',
+            'notes': "secrecy is important",
+            'whitelist': {
+                'fidel@example.cde',
+                'che@example.cde',
+            },
+        }
+        new_id = self.ml.create_mailinglist(self.key, mdata)
+
+        # List should have no subscribers.
+        self.assertEqual({}, self.ml.get_subscription_states(self.key, new_id))
+
+        # Making the list Opt-Out should yield implicits subscribers.
+        mdata = {
+            'id': new_id,
+            'sub_policy': const.SubscriptionPolicy.opt_out,
+        }
+        self.ml.set_mailinglist(self.key, mdata)
+
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
+            3: const.SubscriptionStates.implicit,
+            6: const.SubscriptionStates.implicit,
+            7: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.implicit,
+            12: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, new_id)
+        self.assertEqual(expectation, result)
+
+        # Opt-Out allows unsubscribing.
+        sub_data = [
+            {
+                'mailinglist_id': new_id,
+                'persona_id': 2,
+                'subscription_state': const.SubscriptionStates.unsubscribed,
+            },
+            # Not in the audience, should get removed in the next step.
+            {
+                'mailinglist_id': new_id,
+                'persona_id': 4,
+                'subscription_state': const.SubscriptionStates.mod_unsubscribed,
+            },
+            {
+                'mailinglist_id': new_id,
+                'persona_id': 7,
+                'subscription_state': const.SubscriptionStates.mod_unsubscribed,
+            },
+            {
+                'mailinglist_id': new_id,
+                'persona_id': 12,
+                'subscription_state': const.SubscriptionStates.pending,
+            },
+        ]
+        self.ml._set_subscriptions(self.key, sub_data)
+
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.unsubscribed,
+            3: const.SubscriptionStates.implicit,
+            4: const.SubscriptionStates.mod_unsubscribed,
+            6: const.SubscriptionStates.implicit,
+            7: const.SubscriptionStates.mod_unsubscribed,
+            9: const.SubscriptionStates.implicit,
+            12: const.SubscriptionStates.pending,
+        }
+        result = self.ml.get_subscription_states(self.key, new_id)
+        self.assertEqual(expectation, result)
+
+        # Making the list mandatory should get rid of all unsubscriptions, even
+        # outside of the audience.
+        mdata = {
+            'id': new_id,
+            'sub_policy': const.SubscriptionPolicy.mandatory,
+        }
+        self.ml.set_mailinglist(self.key, mdata)
+
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
+            3: const.SubscriptionStates.implicit,
+            6: const.SubscriptionStates.implicit,
+            7: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.implicit,
+            12: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, new_id)
+        self.assertEqual(expectation, result)
 
     @as_users("anton", "janis")
     def test_subscription_addresses(self, user):

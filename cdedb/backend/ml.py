@@ -315,31 +315,32 @@ class MlBackend(AbstractBackend):
         the complete set of moderator IDs or whitelisted addresses, which
         will superseed the current list.
 
+        If the subscription policy is set to 'mandatory' all unsubscriptions,
+        even those not in the audience are dropped.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
         """
         data = affirm("mailinglist", data)
-        if not self.is_moderator(rs, data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
         ret = 1
         with Atomizer(rs):
+            current = unwrap(self.get_mailinglists(rs, (data['id'],)))
+
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
-            policy = const.SubscriptionPolicy
-            if ('sub_policy' in mdata and not self.is_admin(rs)
-                    and not policy(mdata['sub_policy'].is_additive())):
-                current = unwrap(self.get_mailinglists(rs, (data['id'],)))
-                if current['sub_policy'] != mdata['sub_policy']:
-                    raise PrivilegeError(
-                        n_("Only admin may set opt out policies."))
             if len(mdata) > 1:
+                if not self.is_relevant_admin(rs, mailinglist=current):
+                    raise PrivilegeError(n_("Not privileged."))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
+                # Check if privileges allow new state of the mailinglist
+                if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
+                    raise PrivilegeError("Not privileged to make this change.")
             if 'moderators' in data:
-                existing = {e['persona_id'] for e in self.sql_select(
-                    rs, "ml.moderators", ("persona_id",), (data['id'],),
-                    entity_key="mailinglist_id")}
+                if not self.may_manage(rs, mailinglist_id=current['id']):
+                    raise PrivilegeError(n_("Not privileged."))
+                existing = current['moderators']
                 new = set(data['moderators']) - existing
                 deleted = existing - set(data['moderators'])
                 if new:
@@ -360,9 +361,9 @@ class MlBackend(AbstractBackend):
                         self.ml_log(rs, const.MlLogCodes.moderator_removed,
                                     data['id'], persona_id=anid)
             if 'whitelist' in data:
-                existing = {e['address'] for e in self.sql_select(
-                    rs, "ml.whitelist", ("address",), (data['id'],),
-                    entity_key="mailinglist_id")}
+                if not self.may_manage(rs, mailinglist_id=current['id']):
+                    raise PrivilegeError(n_("Not privileged."))
+                existing = current['whitelist']
                 new = set(data['whitelist']) - existing
                 deleted = existing - set(data['whitelist'])
                 if new:
@@ -382,9 +383,23 @@ class MlBackend(AbstractBackend):
                     for address in deleted:
                         self.ml_log(rs, const.MlLogCodes.whitelist_removed,
                                     data['id'], additional_info=address)
+            policy = const.SubscriptionPolicy
+            if 'sub_policy' in data:
+                if current['sub_policy'] != data['sub_policy']:
+                    if policy(data['sub_policy']) == policy.mandatory:
+                        # Delete all unsubscriptions for mandatory list.
+                        query = ("DELETE FROM ml.subscription_states "
+                                 "WHERE mailinglist_id = %s "
+                                 "AND subscription_state = ANY(%s)")
+                        params = (data['id'], set(const.SubscriptionStates) -
+                                  const.SubscriptionStates.subscribing_states())
+                        ret *= self.query_exec(rs, query, params)
+
+            # Update subscription states.
+            ret *= self.write_subscription_states(rs, data['id'])
         return ret
 
-    @access("ml_admin")
+    @access("ml")
     def create_mailinglist(self, rs, data):
         """Make a new mailinglist.
 
@@ -394,6 +409,9 @@ class MlBackend(AbstractBackend):
         :returns: the id of the new mailinglist
         """
         data = affirm("mailinglist", data, creation=True)
+        if not self.is_relevant_admin(rs, mailinglist=data):
+            raise PrivilegeError("Not privileged to create mailinglist of this "
+                                 "type.")
         with Atomizer(rs):
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
@@ -405,6 +423,7 @@ class MlBackend(AbstractBackend):
                     }
                     self.set_mailinglist(rs, adata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
+            self.write_subscription_states(rs, new_id)
         return new_id
 
     @access("ml_admin")
