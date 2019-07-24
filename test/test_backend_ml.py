@@ -163,7 +163,7 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_sample_data(self, user):
-        ml_ids = self.ml.list_mailinglists(self.key)
+        ml_ids = self.ml.list_mailinglists(self.key, active_only=False)
 
         for ml_id in ml_ids:
             expectation = self.ml.get_subscription_states(self.key, ml_id)
@@ -548,13 +548,13 @@ class TestMlBackend(BackendTest):
         self.ml.write_subscription_states(self.key, mailinglist_id)
         self._check_state(user, mailinglist_id, None)
 
-    def test_ml_event(self, user):
+    def test_ml_event(self):
         pass
 
-    def test_ml_assembly(self, user):
+    def test_ml_assembly(self):
         pass
 
-    def test_opt_in_opt_out(self, user):
+    def test_opt_in_opt_out(self):
         pass
 
     @as_users("anton", "norbert")
@@ -644,7 +644,7 @@ class TestMlBackend(BackendTest):
             self._change_own_sub(user, 11, self.ml.subscribe, code=None,
                                  state=None)
 
-    @as_users("anton", "norbert")
+    @as_users("anton")
     def test_write_subscription_states(self, user):
         # CdE-Member list.
         mailinglist_id = 7
@@ -734,8 +734,9 @@ class TestMlBackend(BackendTest):
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.implicit,
             3: const.SubscriptionStates.mod_subscribed,
-            9: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.mod_unsubscribed,
             11: const.SubscriptionStates.implicit,
+            14: const.SubscriptionStates.mod_subscribed,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -747,8 +748,9 @@ class TestMlBackend(BackendTest):
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.implicit,
             3: const.SubscriptionStates.mod_subscribed,
-            9: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.mod_unsubscribed,
             11: const.SubscriptionStates.implicit,
+            14: const.SubscriptionStates.mod_subscribed,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -944,6 +946,7 @@ class TestMlBackend(BackendTest):
             10: 'janis@example.cde',
             11: 'kalif@example.cde',
             12: None,
+            14: 'norbert@example.cde',
         }
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 2))
@@ -964,8 +967,8 @@ class TestMlBackend(BackendTest):
         expectation = {1: 'anton@example.cde',
                        2: 'berta@example.cde',
                        3: 'charly@example.cde',
-                       9: 'inga@example.cde',
-                       11: 'kalif@example.cde'}
+                       11: 'kalif@example.cde',
+                       14: 'norbert@example.cde'}
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 5))
 
@@ -1036,8 +1039,9 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.implicit,
-            5: const.SubscriptionStates.implicit,
+            5: const.SubscriptionStates.mod_unsubscribed,
             9: const.SubscriptionStates.implicit,
+            11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=9))
@@ -1064,8 +1068,9 @@ class TestMlBackend(BackendTest):
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
             4: const.SubscriptionStates.pending,
-            5: const.SubscriptionStates.implicit,
+            5: const.SubscriptionStates.mod_unsubscribed,
             9: const.SubscriptionStates.unsubscribed,
+            11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=9))
@@ -1085,8 +1090,9 @@ class TestMlBackend(BackendTest):
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
             4: const.SubscriptionStates.subscribed,
-            5: const.SubscriptionStates.implicit,
+            5: const.SubscriptionStates.mod_unsubscribed,
             9: const.SubscriptionStates.unsubscribed,
+            11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=9))
@@ -1101,8 +1107,9 @@ class TestMlBackend(BackendTest):
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
             4: const.SubscriptionStates.unsubscribed,
-            5: const.SubscriptionStates.implicit,
+            5: const.SubscriptionStates.mod_unsubscribed,
             9: const.SubscriptionStates.unsubscribed,
+            11: const.SubscriptionStates.mod_unsubscribed
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=9))
@@ -1118,8 +1125,9 @@ class TestMlBackend(BackendTest):
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
             4: const.SubscriptionStates.pending,
-            5: const.SubscriptionStates.implicit,
+            5: const.SubscriptionStates.mod_unsubscribed,
             9: const.SubscriptionStates.unsubscribed,
+            11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=9))
@@ -1138,8 +1146,9 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: const.SubscriptionStates.implicit,
             2: const.SubscriptionStates.unsubscribed,
-            5: const.SubscriptionStates.implicit,
+            5: const.SubscriptionStates.mod_unsubscribed,
             9: const.SubscriptionStates.unsubscribed,
+            11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscriptions(self.key, persona_id=9))
@@ -1213,7 +1222,7 @@ class TestMlBackend(BackendTest):
                 'che@example.cde',
             }
         }
-        self.ml.create_mailinglist(self.key, new_data)
+        new_id = self.ml.create_mailinglist(self.key, new_data)
         self.ml.delete_mailinglist(
             self.key, 3, cascade=("subscriptions", "addresses",
                                   "whitelist", "moderators", "log"))
@@ -1229,25 +1238,25 @@ class TestMlBackend(BackendTest):
             {'additional_info': None,
              'code': const.MlLogCodes.list_created,
              'ctime': nearly_now(),
-             'mailinglist_id': 11,
+             'mailinglist_id': new_id,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'che@example.cde',
              'code': const.MlLogCodes.whitelist_added,
              'ctime': nearly_now(),
-             'mailinglist_id': 11,
+             'mailinglist_id': new_id,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
-             'mailinglist_id': 11,
+             'mailinglist_id': new_id,
              'persona_id': 2,
              'submitted_by': 1},
             {'additional_info': None,
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
-             'mailinglist_id': 11,
+             'mailinglist_id': new_id,
              'persona_id': 1,
              'submitted_by': 1},
             {'additional_info': None,
@@ -1274,9 +1283,11 @@ class TestMlBackend(BackendTest):
             self.ml.retrieve_log(self.key, start=2, stop=5))
         self.assertEqual(
             expectation[2:5],
-            self.ml.retrieve_log(self.key, mailinglist_id=11, start=1, stop=5))
-        self.assertEqual(expectation[3:5],
-                         self.ml.retrieve_log(self.key, codes=(10,)))
+            self.ml.retrieve_log(self.key, mailinglist_id=new_id, start=1, stop=5))
+        self.assertEqual(
+            expectation[3:5],
+            self.ml.retrieve_log(
+                self.key, codes=(const.MlLogCodes.moderator_added,)))
 
     @as_users("anton")
     def test_export(self, user):
@@ -1299,6 +1310,8 @@ class TestMlBackend(BackendTest):
                        {'address': 'participants@example.cde',
                         'is_active': True},
                        {'address': 'wait@example.cde',
+                        'is_active': True},
+                       {'address': 'opt@example.cde',
                         'is_active': True})
         self.assertEqual(
             expectation,
@@ -1318,7 +1331,8 @@ class TestMlBackend(BackendTest):
                             'garcia@example.cde',
                             'inga@example.cde',
                             'janis@example.cde',
-                            'kalif@example.cde'),
+                            'kalif@example.cde',
+                            'norbert@example.cde'),
             'whitelist': {'honeypot@example.cde'}}
         self.assertEqual(
             expectation,
@@ -1366,6 +1380,10 @@ class TestMlBackend(BackendTest):
                        {'address': 'wait@example.cde',
                         'inactive': False,
                         'maxsize': None,
+                        'mime': False},
+                       {'address': 'opt@example.cde',
+                        'inactive': False,
+                        'maxsize': None,
                         'mime': False})
         self.assertEqual(
             expectation,
@@ -1386,7 +1404,8 @@ class TestMlBackend(BackendTest):
                                        'garcia@example.cde',
                                        'inga@example.cde',
                                        'janis@example.cde',
-                                       'kalif@example.cde'),
+                                       'kalif@example.cde',
+                                       'norbert@example.cde'),
                        'whitelist': ['honeypot@example.cde']}
         self.assertEqual(
             expectation,
