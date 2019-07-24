@@ -534,10 +534,16 @@ class MlBackend(AbstractBackend):
 
         return ret
 
+    # TODO this should be internal_access, but that breaks singularization
+    # when called by the frontend via another method.
     @access("ml")
     @singularize("_set_subscription", "data", "datum", returns_dict=False)
     def _set_subscriptions(self, rs, data):
         """Change or add ml.subscription_states rows.
+
+        This does not check whether the subscription change makes sense
+        regarding the mailinglists polcies, so this should only be used
+        internally.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: [{str: int}]
