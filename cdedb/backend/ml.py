@@ -1327,15 +1327,18 @@ class MlBackend(AbstractBackend):
             new_implicits = self._get_implicit_subscribers(rs, ml)
 
             # Check whether current subscribers may stay subscribed.
-            # This is the case if they are implicit subscribers of the list or
-            # if `may_subscribe` says so.
+            # This is the case if they are still implicit subscribers of
+            # the list or if `may_subscribe` says so.
             delete = []
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
             for persona in personas.values():
                 may_subscribe = self.may_subscribe(
                     rs, persona['id'], mailinglist=ml)
-                if not may_subscribe or not may_subscribe.is_additive():
+                state = old_subscribers[persona['id']]
+                if (state == const.SubscriptionStates.implicit
+                    or not may_subscribe
+                    or not may_subscribe.is_additive()):
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona['id'],
