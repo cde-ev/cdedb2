@@ -862,6 +862,78 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
 
+    @as_users("anton")
+    def test_change_mailinglist_association(self, user):
+        mdata = {
+            'address': 'orga@example.cde',
+            'description': None,
+            'assembly_id': None,
+            'attachment_policy': const.AttachmentPolicy.forbid,
+            'audience_policy': const.AudiencePolicy.require_event,
+            'event_id': 2,
+            'is_active': True,
+            'maxsize': None,
+            'mod_policy': const.ModerationPolicy.unmoderated,
+            'moderators': set(),
+            'registration_stati': [],
+            'sub_policy': const.SubscriptionPolicy.invitation_only,
+            'subject_prefix': 'orga',
+            'title': 'Orgateam',
+            'notes': None,
+        }
+        new_id = self.ml.create_mailinglist(self.key, mdata)
+
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, new_id)
+        self.assertEqual(expectation, result)
+
+        mdata = {
+            'id': new_id,
+            'event_id': 1,
+            'audience_policy': const.AudiencePolicy.require_event,
+        }
+        self.ml.set_mailinglist(self.key, mdata)
+
+        expectation = {
+            7: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, new_id)
+        self.assertEqual(expectation, result)
+
+        mdata = {
+            'id': new_id,
+            'registration_stati': [const.RegistrationPartStati.guest,
+                                   const.RegistrationPartStati.cancelled],
+        }
+        self.ml.set_mailinglist(self.key, mdata)
+
+        expectation = {
+            5: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, new_id)
+        self.assertEqual(expectation, result)
+
+        mdata = {
+            'id': new_id,
+            'audience_policy': const.AudiencePolicy.require_assembly,
+            'event_id': None,
+            'assembly_id': 1,
+        }
+        self.ml.set_mailinglist(self.key, mdata)
+
+        expectation = {
+            1: const.SubscriptionStates.implicit,
+            2: const.SubscriptionStates.implicit,
+            9: const.SubscriptionStates.implicit,
+            11: const.SubscriptionStates.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, new_id)
+        self.assertEqual(expectation, result)
+
     @as_users("anton", "janis")
     def test_subscription_addresses(self, user):
         expectation = {
