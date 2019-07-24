@@ -390,7 +390,7 @@ INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES
 -- fix serials (we gave explicit ids since want to have total control over
 -- them so we reference the correct things in the test suite)
 --
-SELECT setval('core.personas_id_seq', 12);
+SELECT setval('core.personas_id_seq', 14);
 SELECT setval('cde.lastschrift_id_seq', 2);
 SELECT setval('past_event.events_id_seq', 1);
 SELECT setval('past_event.courses_id_seq', 2);
@@ -403,7 +403,7 @@ SELECT setval('event.field_definitions_id_seq', 6);
 SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
 SELECT setval('event.log_id_seq', 4);
-SELECT setval('ml.mailinglists_id_seq', 10);
+SELECT setval('ml.mailinglists_id_seq', 11);
 SELECT setval('assembly.assemblies_id_seq', 1);
 SELECT setval('assembly.ballots_id_seq', 5);
 SELECT setval('assembly.candidates_id_seq', 27);
