@@ -7,23 +7,17 @@ MIT DER DATENBANK KONSISTENTE SPRACHE
    
 Dieser Leitfaden soll euch durch die Verwaltung einer Veranstaltung mittels der
 neuen CdE-Datenbank führen -- vom Anlegen der Veranstaltung, über die Anmeldephase
-bis zur Veranstalltung vor Ort. Die Beschreibung soll so ausführlich erfolgen,
+bis zur Veranstaltung vor Ort. Die Beschreibung soll so ausführlich erfolgen,
 dass neue Orgas, die zum ersten Mal Kontakt mit der neuen Datenbank haben, sich gut
 zurechtfinden und erfahrene Orgas diese als Nachschlagewerk nutzen können.
-
 
 Zum Aufbau dieses Leitfaden:
 
 Ich habe versucht, diesem Leitfaden eine grobe zeitliche Struktur zugrundezulegen.
 Das spiegelt sich vor allem in den Hauptabschnitten (Vor Anmeldebeginn, zwischen
-Anmeldebeginn und Anmeldeschluss, …) wider, aber auch innerhalb der einzelnen
-Abschnitte sind die einzelnen Aufgaben und Mögichkeiten in einer einigermaßen
-chronologischen Reihenfolge angeordnet.
-
-Die einzelnen Abschnitte (Veranstaltungsteile, Kurse, …) sind nach den
-entsprechenden Menüpunkten in der Datenbank benannt.
-
-
+Anmeldebeginn und Anmeldeschluss, …) wieder. Die Unterabschnitte richten sich nach
+der Reihenfolge der entsprechenden Menüpunkten (nach denen sie auch benannt sind)
+in der Datenbank.
 
 
 
@@ -59,7 +53,8 @@ Kurse
 ^^^^^
 
 Wenn deine Veranstaltung eine Kursschiene hat, kannst du unter "Kurse" ebendiese
-in die Datenbank eintragen.
+in die Datenbank eintragen. Diese muss zuvor unter :ref:`Veranstaltungsteile <handbuch_ablaufplan_vor_veranstaltungsteile_kursschienen>`
+erstellt werden.
 
 .. hint:: Du kannst potentiellen Teilnehmern bereits vor Anmeldebeginn die Kursliste zur Verfügung stellen, indem du unter "Konfiguration" die Checkbox "Sichtbarkeit der Kursliste" aktivierst und den Link zur Verfügung stellst. Wenn du außerdem die Checkbox "Sichtbarkeit der Veranstaltung" aktivierst, kann die Veranstaltung in der Datenbank gefunden werden.
 
@@ -345,6 +340,10 @@ Vor Beginn der Anmeldung sollten noch ein paar letzte Punkte geprüft werden:
 - Minderjährige können sich **nur dann** für eure Veranstaltung anmelden, wenn ein Minderjährigenformular in der DB hochgeladen ist!
 - Ist für **jeden** Veranstaltungsteil der richtige Teilnehmerbeitrag eingetragen? Teilnehmerbeiträge kannst du unter :ref:`Veranstaltungsteile <handbuch_ablaufplan_vor_veranstaltungsteile_veranstaltungsteile>` konfigurieren.
 - Die Veranstaltung muss **sichtbar** sein. Dafür muss die Box des gleichnamigen Feldes unter :ref:`Konfiguration <handbuch_ablaufplan_vor_konfiguration>` aktiviert sein.
+- sind die Veranstaltungsteile richtig konfiguriert? (siehe :ref:`Veranstaltungsteile <handbuch_ablaufplan_vor_veranstaltungsteile>`)
+- sind die Kursschienen richtig konfiguriert? (siehe :ref:`Veranstaltungsteile Kursschienen <handbuch_ablaufplan_vor_veranstaltungsteile_kursschienen>`)
+
+.. attention:: Die Veranstaltungsteile und Kursschienen Konfigurationen können nicht mehr geändert werden, sobald Anmeldungen vorhanden sind.
 
 Die Anmeldung eröffnet automatisch zu dem Zeitpunkt, der dafür festgelegt wurde,
 siehe :ref:`Anmeldebeginn und -ende <handbuch_ablaufplan_vor_konfigurationen_beginn>`.
