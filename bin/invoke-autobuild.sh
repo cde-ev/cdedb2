@@ -4,7 +4,7 @@ LOCKFILE=/home/cdedb/cdedb2-autobuild.lock
 LOGFILE=$(mktemp)
 MAILTO=cdedb@lists.cde-ev.de
 
-flock -n -E -42 $LOCKFILE $BINDIR/cdedb-autobuild-stage3.sh &> $LOGFILE
+flock -n -E 123 $LOCKFILE $BINDIR/cdedb-autobuild-stage3.sh &> $LOGFILE
 RETVAL=$?
 
 if [[ $RETVAL -eq 0 ]]; then
@@ -17,7 +17,7 @@ if [[ $RETVAL -eq 1 ]]; then
     rm -f $LOGFILE
     exit 0
 fi;
-if [[ $RETVAL -eq -42 ]]; then
+if [[ $RETVAL -eq 123 ]]; then
     mail -s "cdedb2-auto-build: abort" $MAILTO
     rm -f $LOGFILE
     exit 0
