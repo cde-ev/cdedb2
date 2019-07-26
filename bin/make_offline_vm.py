@@ -77,9 +77,9 @@ def populate_table(cur, table, data):
     query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
         table, max(int(id) for id in data) + 1)
     # we need elevated privileges for sequences
-    subprocess.check_call(
+    subprocess.run(
         ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
-         query], stderr=subprocess.DEVNULL)
+         query], stderr=subprocess.DEVNULL, check=True)
 
 
 def make_institution(cur, institution_id):
@@ -125,9 +125,9 @@ def work(args):
         print("Aborting.")
         sys.exit()
     clean_script = args.repopath / "test/ancillary_files/clean_data.sql"
-    subprocess.check_call(
+    subprocess.run(
         ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-f",
-         str(clean_script)], stderr=subprocess.DEVNULL)
+         str(clean_script)], stderr=subprocess.DEVNULL, check=True)
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
@@ -142,12 +142,12 @@ def work(args):
 
     print("Prepare database.")
     # Fix uneditable table
-    subprocess.check_call(
+    subprocess.run(
         ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
          """GRANT SELECT, INSERT, UPDATE ON core.meta_info TO cdb_anonymous;
             GRANT SELECT, UPDATE ON core.meta_info_id_seq TO cdb_anonymous;
             INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb);"""],
-        stderr=subprocess.DEVNULL)
+        stderr=subprocess.DEVNULL, check=True)
 
     print("Connect to database")
     connection_string = "dbname={} user={} password={} port={}".format(
@@ -202,12 +202,15 @@ def work(args):
 
     print("Enabling offline mode")
     config_path = args.repopath / "cdedb/localconfig.py"
-    subprocess.check_call(
+    subprocess.run(
         ["sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
-         str(config_path)])
+         str(config_path)], check=True)
     with open(str(config_path), 'a', encoding='UTF-8') as conf:
         conf.write("\nCDEDB_OFFLINE_DEPLOYMENT = True\n")
 
+    print("Restarting application to make offline mode effective")
+    subprocess.run(["make", "reload"], check=True, cwd=args.repopath)
+    
     print("Finished")
 
 
