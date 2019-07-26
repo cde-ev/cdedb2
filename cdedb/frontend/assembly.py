@@ -377,13 +377,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     def group_ballots(ballots):
         """Helper to group ballots by status.
 
-        Return order: future, current, extended, done.
-
         :type ballots: {int: str}
         :rtype: tuple({int: str})
-        :returns: Four dicts mapping ballot ids to ballots grouped by status.
+        :returns: Four dicts mapping ballot ids to ballots grouped by status 
+          in the order done, extended, current, future.
         """
-
         ref = now()
 
         future = {k: v for k, v in ballots.items()
@@ -401,7 +399,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert (len(ballots) == len(future) + len(current) +
                 len(extended) + len(done))
 
-        return future, current, extended, done
+        return done, extended, current, future
 
     @access("assembly")
     def list_ballots(self, rs, assembly_id):
@@ -422,7 +420,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if update:
             return self.redirect(rs, "assembly/list_ballots")
 
-        future, current, extended, done = self.group_ballots(ballots)
+        done, extended, current, future = self.group_ballots(ballots)
         # Currently we don't distinguish between current and extended ballots
         current.update(extended)
 
@@ -639,23 +637,12 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
-        future, current, extended, done = self.group_ballots(ballots)
-        current.update(extended)
+        done, extended, current, future = self.group_ballots(ballots)
 
-        if ballot_id in future:
-            ballot_list = sorted(
-                future.keys(), key=lambda key: future[key]["title"])
-        elif ballot_id in current:
-            ballot_list = sorted(
-                current.keys(), key=lambda key: current[key]["title"])
-        elif ballot_id in done:
-            ballot_list = sorted(
-                done.keys(), key=lambda key: done[key]["title"])
-        elif ballot_id in extended:
-            ballot_list = sorted(
-                future.keys(), key=lambda item: extended[key]["title"])
-        else:
-            raise ValueError(n_("Impossible"))
+        # Currently we don't distinguish between current and extended ballots
+        current.update(extended)
+        ballot_list = sum((sorted(bdict, key=lambda key: bdict[key]["title"])
+                           for bdict in (done, current, future)), [])
 
         i = ballot_list.index(ballot_id)
         l = len(ballot_list)
