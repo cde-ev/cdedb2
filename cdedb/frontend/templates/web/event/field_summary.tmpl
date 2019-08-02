@@ -145,6 +145,8 @@
                 /* Select association according to active tab and hide select box */
                 $(this).find('.association-input').val(container.attr('data-association-id'));
                 $(this).find('.association-input-container').hide();
+                /* Refocus first field. Focus set by cdedbDynamicRow get's lost by moving to container. */
+                $(this).find('.drow-input').first().focus();
              }});
         $('#fieldsummaryform').cdedbProtectChanges();
     </script>
