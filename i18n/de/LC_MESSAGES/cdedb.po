@@ -8379,14 +8379,14 @@ msgstr "Kursleiter"
 #: cdedb/frontend/templates/web/event/change_course.tmpl:39
 #: cdedb/frontend/templates/web/event/create_course.tmpl:36
 #: cdedb/frontend/templates/web/event/show_course.tmpl:44
-msgid "Minimum Size"
-msgstr "Mindestgröße"
+msgid "Minimum Size (incl. instr.)"
+msgstr "Mindestgröße (inkl. KL)"
 
 #: cdedb/frontend/templates/web/event/change_course.tmpl:40
 #: cdedb/frontend/templates/web/event/create_course.tmpl:37
 #: cdedb/frontend/templates/web/event/show_course.tmpl:43
-msgid "Maximum Size"
-msgstr "Maximalgröße"
+msgid "Maximum Size (incl. instr.)"
+msgstr "Maximalgröße (inkl. KL)"
 
 #: cdedb/frontend/templates/web/event/change_course.tmpl:45
 #: cdedb/frontend/templates/web/event/create_course.tmpl:42
@@ -8956,13 +8956,16 @@ msgstr ""
 "Anmeldungen (Anmeldestatus “Teilnehmer”, “Gast”, “Warteliste” und "
 "“Offen”)."
 
+msgid "All numbers include course instructors."
+msgstr "Alle Zahlen beinhalten die Kursleiter."
+
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:55
 msgid "Only show participants"
 msgstr "Nur Teilnehmer anzeigen"
 
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:68
-msgid "Attendees & Course Choices"
-msgstr "Kursteilnehmer und Kurswahlen"
+msgid "Course Size & Choices"
+msgstr "Kursgröße und -wahlen"
 
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:74
 msgid "Limit"

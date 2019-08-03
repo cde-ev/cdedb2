@@ -57,6 +57,10 @@
             </p>
         </div>
     {% endif %}
+    <p>
+        {{ util.make_icon('info-sign') }}
+        {% trans %}All numbers include course instructors.{% endtrans %}
+    </p>
 
     <table class="table table-condensed">
         <thead>
@@ -65,7 +69,7 @@
                 {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                     <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
                         {%- if ambience['event']['tracks']|length == 1 -%}
-                            {% trans -%}Attendees & Course Choices{%- endtrans %}
+                            {% trans -%}Course Size & Choices{%- endtrans %}
                         {%- else -%}
                             {{ track['title'] }}
                         {%- endif -%}
