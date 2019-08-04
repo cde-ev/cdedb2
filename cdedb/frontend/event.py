@@ -3950,7 +3950,7 @@ class EventFrontend(AbstractUserFrontend):
                 "course_instructor{0}.id".format(track_id):
                     prefix + gettext("instructed course ID"),
                 "course_instructor{0}.nr".format(track_id):
-                    prefix + gettext("unstructed course nr"),
+                    prefix + gettext("instructed course nr"),
                 "course_instructor{0}.title".format(track_id):
                     prefix + gettext("instructed course title"),
                 "course_instructor{0}.shortname".format(track_id):
@@ -4000,7 +4000,7 @@ class EventFrontend(AbstractUserFrontend):
                     gettext("any track: course notes"),
                 ",".join("course_instructor{0}.id".
                          format(track_id) for track_id in tracks):
-                    gettext("any track: instrcuted course ID"),
+                    gettext("any track: instructed course ID"),
                 ",".join("course_instructor{0}.nr".
                          format(track_id) for track_id in tracks):
                     gettext("any track: instructed course nr"),
