@@ -36,12 +36,18 @@
                 <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
-                <td>{% trans -%}Course Puzzle{%- endtrans %}</td>
+                <td>
+                    {% trans -%}Course Puzzle{%- endtrans %}
+                    <small>({% trans -%}cut out and sort into a course assignment{%- endtrans %})</small>
+                </td>
                 <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
                 <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
-                <td>{% trans -%}Lodgement Puzzle{%- endtrans %}</td>
+                <td>
+                    {% trans -%}Lodgement Puzzle{%- endtrans %}
+                    <small>({% trans -%}cut out and sort into a lodgement assignment{%- endtrans %})</small>
+                </td>
                 <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
                 <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
