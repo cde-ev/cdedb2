@@ -20,7 +20,9 @@
                 \raggedright
                 \Huge\textbf{<<< course['shortname']|te >>>}\\
                 \normalsize <<< course['title']|te >>>\\
-                \emph{<<< ambience['event']['tracks'][track_id]['shortname']|te >>>}\\
+                <<% if ambience['event']['tracks']|length > 1 -%>>
+                    \emph{<<< ambience['event']['tracks'][track_id]['shortname']|te >>>}\\
+                <<%- endif %>>
                 <<< (attendees[key]|length - instructors[key]|length)|te >>> Teilnehmer
                 , <<< instructors[key]|length|te >>> Kursleiter
             \end{minipage}
