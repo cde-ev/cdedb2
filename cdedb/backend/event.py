@@ -978,26 +978,27 @@ class EventBackend(AbstractBackend):
         """Determine what keeps an event from being deleted.
 
         Possible blockers:
-            field_definitions: A custom datafield associated with the event.
-            courses: A course associated with the event. This can have it's own
-                    blockers.
-            course_tracks: A course track of the event.
-            orgas: An orga of the event.
-            lodgements: A lodgement associated with the event. This can have
-                    it's own blockers.
-            registrations: A registration associated with the event. This can
-                    have it's own blockers.
-            questionnaire: A questionnaire row configured for the event.
-            log: A log entry for the event.
-            mailinglists: A mailinglist associated with the event. This
-                    reference will be removed but the mailinglist will not be
-                    deleted.
+
+        * field_definitions: A custom datafield associated with the event.
+        * courses: A course associated with the event. This can have it's own
+                   blockers.
+        * course_tracks: A course track of the event.
+        * orgas: An orga of the event.
+        * lodgements: A lodgement associated with the event. This can have
+                      it's own blockers.
+        * registrations: A registration associated with the event. This can
+                         have it's own blockers.
+        * questionnaire: A questionnaire row configured for the event.
+        * log: A log entry for the event.
+        * mailinglists: A mailinglist associated with the event. This
+                        reference will be removed but the mailinglist will
+                        not be deleted.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         event_id = affirm("id", event_id)
         blockers = {}
@@ -1355,18 +1356,19 @@ class EventBackend(AbstractBackend):
         """Determine what keeps a course from beeing deleted.
 
         Possible blockers:
-            attendees: A registration track that assigns a registration to
-                    the course as an attendee.
-            instructors: A registration track that references the course meaning
-                    the participant is (potentially) the course's instructor.
-            course_choices: A course choice of the course.
-            course_segments: The course segments of the course.
+
+        * attendees: A registration track that assigns a registration to
+                     the course as an attendee.
+        * instructors: A registration track that references the course meaning
+                       the participant is (potentially) the course's instructor.
+        * course_choices: A course choice of the course.
+        * course_segments: The course segments of the course.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type course_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         course_id = affirm("id", course_id)
         blockers = {}
@@ -1930,15 +1932,16 @@ class EventBackend(AbstractBackend):
         """Determine what keeps a registration from being deleted.
 
         Possible blockers:
-            registration_parts: The registration's registration parts.
-            registration_tracks: The registration's registration tracks.
-            course_choices: The registrations course choices.
+
+        * registration_parts: The registration's registration parts.
+        * registration_tracks: The registration's registration tracks.
+        * course_choices: The registrations course choices.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type registration_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         registration_id = affirm("id", registration_id)
         blockers = {}
@@ -2177,14 +2180,15 @@ class EventBackend(AbstractBackend):
         """Determine what keeps a lodgement from beeing deleted.
 
         Possible blockers:
-            inhabitants: A registration part that assigns a registration to the
-                    lodgement as an inhabitant.
+
+        * inhabitants: A registration part that assigns a registration to the
+                       lodgement as an inhabitant.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type lodgement_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         lodgement_id = affirm("id", lodgement_id)
         blockers = {}

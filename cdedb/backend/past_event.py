@@ -302,15 +302,17 @@ class PastEventBackend(AbstractBackend):
         """Determine what keeps a past event from being deleted.
 
         Possible blockers:
-            participants: A participant of the past event or one of its courses.
-            courses: A course associated with the past event.
-            log: A log entry for the past event.
+
+        * participants: A participant of the past event or one of its
+                        courses.
+        * courses: A course associated with the past event.
+        * log: A log entry for the past event.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type pevent_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         pevent_id = affirm("id", pevent_id)
         blockers = {}
@@ -455,13 +457,14 @@ class PastEventBackend(AbstractBackend):
         """Determine what keeps a past course from being deleted.
 
         Possible blockers:
-            participants: Participants of the past course.
+
+        * participants: Participants of the past course.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type pcourse_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         pcourse_id = affirm("id", pcourse_id)
         blockers = {}

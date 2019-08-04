@@ -317,20 +317,21 @@ class MlBackend(AbstractBackend):
         """Determine what blocks a mailinglist from being deleted.
 
         Possible blockers:
-            gateway: A mailinglist specifying this mailinglist as a gateway.
-                    This reference will be removed, but that other mailinglist
-                    will not be deleted.
-            subscriptions: An _explicit_ subscription to the mailinglist.
-            requests: A pending request to subscribe to the mailinglist.
-            whitelist: An entry on the whitelist of the mailinglist.
-            moderator: A moderator of the mailinglist.
-        log: A log entry for the mailinglist.
+
+        * gateway: A mailinglist specifying this mailinglist as a gateway.
+                   This reference will be removed, but that other mailinglist
+                   will not be deleted.
+        * subscriptions: An _explicit_ subscription to the mailinglist.
+        * requests: A pending request to subscribe to the mailinglist.
+        * whitelist: An entry on the whitelist of the mailinglist.
+        * moderator: A moderator of the mailinglist.
+        * log: A log entry for the mailinglist.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         mailinglist_id = affirm("id", mailinglist_id)
         blockers = {}

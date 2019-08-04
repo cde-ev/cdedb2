@@ -1876,16 +1876,17 @@ class CoreBackend(AbstractBackend):
         """Determine what keeps a genesis case from being deleted.
 
         Possible blockers:
-            unconfirmed: A genesis case with status unconfirmed may only be
-                    deleted after the timeout period has passed.
-            case_status: A genesis case may not be deleted if it has one of the
-                    following stati: to_review, approved.
+
+        * unconfirmed: A genesis case with status unconfirmed may only be
+                       deleted after the timeout period has passed.
+        * case_status: A genesis case may not be deleted if it has one of the
+                       following stati: to_review, approved.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type case_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
 
         case_id = affirm("id", case_id)

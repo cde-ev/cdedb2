@@ -351,22 +351,23 @@ class AssemblyBackend(AbstractBackend):
     def delete_assembly_blockers(self, rs, assembly_id):
         """Determine whether an assembly is deletable.
 
-
         Possible blockers:
-            ballots: These can have their own blockers like vote_begin.
-            vote_begin: Ballots where voting has begun. Prevents deletion.
-            attendees: Rows of the assembly.attendees table.
-            attachments: All attachments associated with the assembly and it's
-                    ballots
-            log: All log entries associated with this assembly.
-            mailinglists: Mailinglists referencing this assembly. The
-                    references will be removed, but the lists won't be deleted.
+
+        * ballots: These can have their own blockers like vote_begin.
+        * vote_begin: Ballots where voting has begun. Prevents deletion.
+        * attendees: Rows of the assembly.attendees table.
+        * attachments: All attachments associated with the assembly and it's
+                       ballots
+        * log: All log entries associated with this assembly.
+        * mailinglists: Mailinglists referencing this assembly. The
+                        references will be removed, but the lists won't be
+                        deleted.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         assembly_id = affirm("id", assembly_id)
         blockers = {}
@@ -381,31 +382,31 @@ class AssemblyBackend(AbstractBackend):
                     if "vote_begin" not in blockers:
                         blockers["vote_begin"] = []
                     blockers["vote_begin"].append(ballot_id)
-            
+
         attendees = self.sql_select(
             rs, "assembly.attendees", ("id",), (assembly_id,),
             entity_key="assembly_id")
         if attendees:
             blockers["attendees"] = [e["id"] for e in attendees]
-            
+
         attachments = self.sql_select(
             rs, "assembly.attachments", ("id",), (assembly_id,),
             entity_key="assembly_id")
         if attachments:
             blockers["attachments"] = [e["id"] for e in attachments]
-            
+
         log = self.sql_select(
             rs, "assembly.log", ("id",), (assembly_id,),
             entity_key="assembly_id")
         if log:
             blockers["log"] = [e["id"] for e in log]
-            
+
         mailinglists = self.sql_select(
             rs, "ml.mailinglists", ("id",), (assembly_id,),
             entity_key="assembly_id")
         if mailinglists:
             blockers["mailinglists"] = [e["id"] for e in mailinglists]
-            
+
         return blockers
 
     @access("assembly_admin")
@@ -653,19 +654,20 @@ class AssemblyBackend(AbstractBackend):
         """Determine whether a ballot is deletable.
 
         Possible blockers:
-            vote_begin: Whether voting on the ballot has begun.
-                    Prevents deletion.
-            candidates: Rows in the assembly.candidates table.
-            attachments: All attachments associated with this ballot.
-            voters: Rows in the assembly.voters table. These do not actually
-                    mean that anyone has voted for that ballot, as they are
-                    created upon assembly signup and/or ballot creation.
+
+        * vote_begin: Whether voting on the ballot has begun.
+                      Prevents deletion.
+        * candidates: Rows in the assembly.candidates table.
+        * attachments: All attachments associated with this ballot.
+        * voters: Rows in the assembly.voters table. These do not actually
+                  mean that anyone has voted for that ballot, as they are
+                  created upon assembly signup and/or ballot creation.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
         :rtype: {str: [int]}
-        :return: List of blockers, separated by type. The Values of the dict are
-            the ids of the blockers.
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
         """
         ballot_id = affirm("id", ballot_id)
         blockers = {}
@@ -1097,10 +1099,11 @@ class AssemblyBackend(AbstractBackend):
         """Determine whether an assembly may be concluded.
 
         Possible blockers:
-            is_active: Only active assemblies may be concluded.
-            signup_end: An Assembly may only be concluded when signup is over.
-            ballot: An Assembly may only be concluded when all ballots are
-                    tallied.
+
+        * is_active: Only active assemblies may be concluded.
+        * signup_end: An Assembly may only be concluded when signup is over.
+        * ballot: An Assembly may only be concluded when all ballots are
+                  tallied.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
@@ -1126,7 +1129,7 @@ class AssemblyBackend(AbstractBackend):
                 blockers["ballot"].append(ballot["id"])
 
         return blockers
-        
+
     @access("assembly_admin")
     def conclude_assembly(self, rs, assembly_id, cascade=None):
         """Do housekeeping after an assembly has ended.
