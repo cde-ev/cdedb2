@@ -455,7 +455,7 @@ class EventFrontend(AbstractUserFrontend):
                    else n_("Participant mailinglist created."))
             self.notify_return_code(rs, code, success=msg)
             if code and orgalist:
-                data ={
+                data = {
                     'id': event_id,
                     'orga_address': ml_data['address'],
                 }
@@ -2278,6 +2278,22 @@ class EventFrontend(AbstractUserFrontend):
         json = json_serialize(data)
         file = self.send_file(
             rs, data=json, inline=False, filename="{}_export_event.json".format(
+                rs.ambience['event']['shortname']))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
+
+    @access("event")
+    @event_guard()
+    def download_partial_export(self, rs, event_id):
+        """Retrieve data for third-party applications."""
+        data = self.eventproxy.partial_export_event(rs, event_id)
+        json = json_serialize(data)
+        file = self.send_file(
+            rs, data=json, inline=False,
+            filename="{}_partial_export_event.json".format(
                 rs.ambience['event']['shortname']))
         if file:
             return file

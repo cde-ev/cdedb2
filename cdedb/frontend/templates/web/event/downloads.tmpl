@@ -115,9 +115,16 @@
             <tr>
                 <td>
                     {% trans -%}Full Event Export{%- endtrans %}<br />
-                    <small>({% trans -%}for Initilization of the Offline-VM and external Tools{%- endtrans %})</small>
+                    <small>({% trans -%}for initilization of the offline-VM{%- endtrans %})</small>
                 </td>
                 <td>{{ util.href(cdedblink('event/download_export'), gettext("JSON-File"), icon='download') }}</td>
+            </tr>
+            <tr>
+                <td>
+                    {% trans -%}Partial Event Export{%- endtrans %}<br />
+                    <small>({% trans -%}for consumption by external tools{%- endtrans %})</small>
+                </td>
+                <td>{{ util.href(cdedblink('event/download_partial_export'), gettext("JSON-File"), icon='download') }}</td>
             </tr>
             <tr>
                 <td>
