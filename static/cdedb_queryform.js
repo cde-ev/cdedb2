@@ -248,6 +248,8 @@
 
             case 3: //equal
             case 4: //unequal
+            case 7: //equalornull
+            case 8: //unequalornull
             case 10: //similar
             case 11: //dissimilar
             case 12: //regex

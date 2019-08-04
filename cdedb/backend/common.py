@@ -482,10 +482,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             if lowercase:
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
-                sql_param_str = "lower({})"
+                sql_param_str = "lower({0})"
                 caser = lambda x: x.lower()
             else:
-                sql_param_str = "{}"
+                sql_param_str = "{0}"
                 caser = lambda x: x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
@@ -517,17 +517,25 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
                 else:
                     phrase = "( {0} IS NOT NULL )"
-            elif operator in (_ops.equal, _ops.unequal):
-                if operator == _ops.equal:
-                    phrase = "{} = %s".format(sql_param_str)
+            elif operator in (_ops.equal, _ops.unequal, _ops.equalornull,
+                              _ops.unequalornull):
+                if operator in (_ops.equal, _ops.equalornull):
+                    phrase = "( {0} = %s".format(sql_param_str)
                 else:
-                    phrase = "{} != %s".format(sql_param_str)
+                    phrase = "( {0} != %s".format(sql_param_str)
                 params.extend((caser(value),) * len(columns))
+                if operator in (_ops.equalornull, _ops.unequalornull):
+                    if query.spec[field] == "str":
+                        phrase += " OR {0} IS NULL OR {0} = '' )"
+                    else:
+                        phrase += " OR {0} IS NULL )"
+                else:
+                    phrase += " )"
             elif operator in (_ops.oneof, _ops.otherthan):
                 if operator == _ops.oneof:
-                    phrase = "{} = ANY(%s)".format(sql_param_str)
+                    phrase = "{0} = ANY(%s)".format(sql_param_str)
                 else:
-                    phrase = "NOT({} = ANY(%s))".format(sql_param_str)
+                    phrase = "NOT({0} = ANY(%s))".format(sql_param_str)
                 params.extend((tuple(caser(x) for x in value),) * len(columns))
             elif operator in (_ops.similar, _ops.dissimilar):
                 if operator == _ops.similar:
