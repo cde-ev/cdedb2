@@ -2485,6 +2485,8 @@ class EventBackend(AbstractBackend):
         :returns: standard return code
         """
         data = affirm("serialized_event", data)
+        if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
         if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
             raise RuntimeError(n_("It makes no sense to do this."))
         if not self.is_offline_locked(rs, event_id=data['id']):
