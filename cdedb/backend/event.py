@@ -2747,7 +2747,7 @@ class EventBackend(AbstractBackend):
             rdelta = {}
             rprevious = {}
 
-            dup_lookup = {
+            dup = {
                 old_reg['persona_id']: old_reg['id']
                 for old_reg in old_registrations.values()
             }
@@ -2755,10 +2755,10 @@ class EventBackend(AbstractBackend):
             data_regs = data.get('registrations', {})
             for registration_id, new_registration in data_regs.items():
                 if (registration_id < 0
-                        and dup_lookup.get(new_registration['persona_id'])):
+                        and dup.get(new_registration.get('persona_id'))):
                     # the process got out of sync and the registration was
                     # already created, so we fix this
-                    registration_id = dup_lookup(new_registration)
+                    registration_id = dup[new_registration.get('persona_id')]
                     del new_registration['persona_id']
 
                 current = all_current_data['registrations'].get(

@@ -1766,14 +1766,14 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/import'})
-        self.assertTitle("Daten-Import zur Veranstaltung Große Testakademie 2222")
+        self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         with open("/tmp/cdedb-store/testfiles/partial_event_import.json", 'rb') as datafile:
             data = datafile.read()
         f = self.response.forms["importform"]
         f['json_file'] = webtest.Upload("partial_event_import.json", data,
                                         "application/octet-stream")
         self.submit(f, check_notification=False)
-        self.assertTitle("Partial Import Validation (Große Testakademie 2222)")
+        self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
         f = self.response.forms["importexecuteform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
@@ -1783,7 +1783,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/import'})
-        self.assertTitle("Daten-Import zur Veranstaltung Große Testakademie 2222")
+        self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         with open("/tmp/cdedb-store/testfiles/partial_event_import.json", 'rb') as datafile:
             data = datafile.read()
         f = self.response.forms["importform"]
@@ -1791,15 +1791,15 @@ etc;anything else""", f['entries_2'].value)
                                         "application/octet-stream")
         self.submit(f, check_notification=False)
         saved = self.response
-        self.assertTitle("Partial Import Validation (Große Testakademie 2222)")
+        self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
         f = self.response.forms["importexecuteform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
         self.response = saved
         f = self.response.forms["importexecuteform"]
         self.submit(f, check_notification=False)
-        self.assertTitle("Partial Import Validation (Große Testakademie 2222)")
-        self.assertPresence("Double deletion")
+        self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
+        self.assertPresence("Doppelte Löschung")
 
     @as_users("anton")
     def test_delete_event(self, user):
@@ -2035,12 +2035,12 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/import'})
-        self.assertTitle("Daten-Import zur Veranstaltung Große Testakademie 2222")
+        self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         f = self.response.forms["importform"]
         f['json_file'] = webtest.Upload("partial_event_import.json", binary,
                                         "application/octet-stream")
         self.submit(f, check_notification=False)
-        self.assertTitle("Partial Import Validation (Große Testakademie 2222)")
+        self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
         f = self.response.forms["importexecuteform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
