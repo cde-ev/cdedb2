@@ -526,6 +526,13 @@ class EventBackend(AbstractBackend):
         The tracks are inside the parts entry. This allows to create tracks
         during event creation.
 
+        Furthermore we have the following derived keys:
+
+        * tracks,
+        * begin,
+        * end,
+        * is_open.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
@@ -2243,7 +2250,7 @@ class EventBackend(AbstractBackend):
                             rs, "event.registration_parts", deletor)
 
                 blockers = self.delete_lodgement_blockers(rs, lodgement_id)
-                
+
             if not blockers:
                 ret *= self.sql_delete_one(rs, "event.lodgements", lodgement_id)
                 self.event_log(rs, const.EventLogCodes.lodgement_deleted,
@@ -2693,17 +2700,59 @@ class EventBackend(AbstractBackend):
             oregistration_ids = self.list_registrations(rs, data['id'])
             old_registrations = self.get_registrations(rs, oregistration_ids)
 
+            # check referential integrity
+            all_track_ids = {key for course in data.get('courses', {}).values()
+                             if course
+                             for key in course.get('segments', {})}
+            all_track_ids |= {
+                key for registration in data.get('registrations', {}).values()
+                if registration
+                for key in registration.get('tracks', {})}
+            if not all_track_ids <= set(event['tracks']):
+                raise ValueError("Referential integrity of tracks violated.")
+
+            all_part_ids = {
+                key for registration in data.get('registrations', {}).values()
+                if registration
+                for key in registration.get('parts', {})}
+            if not all_part_ids <= set(event['parts']):
+                raise ValueError("Referential integrity of parts violated.")
+
+            all_lodgement_ids = {
+                part.get('lodgement_id')
+                for registration in data.get('registrations', {}).values()
+                if registration
+                for part in registration.get('parts', {}).values()}
+            all_lodgement_ids -= {None}
+            if not all_lodgement_ids <= set(all_current_data['lodgements']):
+                raise ValueError(
+                    "Referential integrity of lodgements violated.")
+
+            all_course_ids = set()
+            for attribute in ('course_id', 'course_choices',
+                              'course_instructor'):
+                all_course_ids |= {
+                    track.get(attribute)
+                    for registration in data.get('registrations', {}).values()
+                    if registration
+                    for track in registration.get('tracks', {}).values()}
+            all_course_ids -= {None}
+            if not all_course_ids <= set(all_current_data['courses']):
+                raise ValueError(
+                    "Referential integrity of courses violated.")
+
+            # go to work
             total_delta = {}
             total_previous = {}
             rdelta = {}
             rprevious = {}
-            data_regs = data.get('registrations', {})
 
             dup_lookup = {
                 old_reg['persona_id']: old_reg['id']
                 for old_reg in old_registrations.values()
             }
 
+            data_regs = data.get('registrations', {})
             for registration_id, new_registration in data_regs.items():
                 if (registration_id < 0
                         and dup_lookup.get(new_registration['persona_id'])):
