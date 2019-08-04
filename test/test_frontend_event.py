@@ -266,7 +266,9 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/event/2/show'})
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/2/show'})
-        self.assertPresence("Let's have a party!")
+        // Becuase of markdown smarty, the apostroph is replaced
+        // with its typographically correct form here.
+        self.assertPresence("Let‘s have a party!")
         self.assertNotIn('/event/event/2/course/list', self.response.text)
         self.get('/event/event/2/course/list')
         self.follow()

@@ -750,7 +750,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn('<h4 id="CDEDB_MD_inga">', self.response.text)
         self.assertIn('<div class="toc">', self.response.text)
         self.assertIn('<li><a href="#CDEDB_MD_musik">Musik</a></li>', self.response.text)
-        self.assertIn('<a href="http://www.cde-ev.de">', self.response.text)
+        self.assertIn('<a class="btn btn-xs btn-warning" href="http://www.cde-ev.de">',
+                      self.response.text)
 
 
     @as_users("anton")
