@@ -172,6 +172,11 @@ class TestMlBackend(BackendTest):
 
             self.assertEqual(expectation, result)
 
+    @as_users("norbert")
+    def test_overrides(self, user):
+        overrides = self.ml.list_overrides(self.key)
+        self.assertEqual(overrides, {5: 'Sozialistischer Kampfbrief'})
+
     @as_users("anton", "berta")
     def test_subscriptions(self, user):
         # Which lists is Berta subscribed to.

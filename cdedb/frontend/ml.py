@@ -59,11 +59,14 @@ class MlFrontend(AbstractUserFrontend):
         policies = const.AudiencePolicy.applicable(rs.user.roles)
         mailinglists = self.mlproxy.list_mailinglists(
             rs, audience_policies=policies)
+        overrides = self.mlproxy.list_overrides(rs)
+        mailinglists.update(overrides)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         subscriptions = self.mlproxy.get_subscriptions(
             rs, rs.user.persona_id, states=SS.subscribing_states())
         return self.render(rs, "index", {
-            'mailinglists': mailinglists, 'subscriptions': subscriptions,
+            'mailinglists': mailinglists, 'overrides': overrides,
+            'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
 
     @access("ml_admin")

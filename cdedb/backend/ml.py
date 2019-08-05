@@ -271,6 +271,30 @@ class MlBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("ml")
+    def list_overrides(self, rs, active_only=True):
+        """List all mailinglists where user has subscribe override
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type active_only: bool
+        :param active_only: Toggle wether inactive lists should be included.
+        :rtype: {int: str}
+        :returns: Mapping of mailinglist ids to titles.
+        """
+        active_only = affirm("bool", active_only)
+        overrides = self.get_subscriptions(rs, rs.user.persona_id,
+            states={const.SubscriptionStates.mod_subscribed})
+        params = []
+        query = ("SELECT id, title, audience_policy FROM ml.mailinglists "
+                 "WHERE id = ANY(%s)")
+        params.append(overrides.keys())
+        if active_only:
+            query = glue(query, "AND is_active = True")
+        data = self.query_all(rs, query, params)
+        result = filter(
+            lambda ml: not const.AudiencePolicy(ml["audience_policy"])
+                                                .check(rs.user.roles), data)
+        return {e['id']: e['title'] for e in result}
+
+    @access("ml")
     @singularize("get_mailinglist")
     def get_mailinglists(self, rs, ids):
         """Retrieve data for some mailinglists.
