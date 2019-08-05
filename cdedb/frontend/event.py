@@ -792,11 +792,11 @@ class EventFrontend(AbstractUserFrontend):
             'maxsize': 1024,
             'is_active': True,
             'gateway': None,
-            'event_id': event['id'],
+            'event_id': event.get('id'),
             'registration_stati': [],
             'assembly_id': None,
             'notes': None,
-            'moderators': event['orgas'],
+            'moderators': event.get('orgas'),
         }
         participant_ml_data = {
             'title': "{} Teilnehmer".format(event['title']),
@@ -810,11 +810,11 @@ class EventFrontend(AbstractUserFrontend):
             'maxsize': 1024,
             'is_active': True,
             'gateway': None,
-            'event_id': event['id'],
+            'event_id': event.get('id'),
             'registration_stati': [const.RegistrationPartStati.participant],
             'assembly_id': None,
             'notes': None,
-            'moderators': event['orgas'],
+            'moderators': event.get('orgas'),
         }
         if orgalist:
             return orga_ml_data
