@@ -340,12 +340,15 @@ class CoreFrontend(AbstractFrontend):
                     "ml_admin" in rs.user.roles
                     or ml_id in self.mlproxy.moderator_info(
                         rs, rs.user.persona_id))
-            is_subscriber = self.mlproxy.is_subscribed(rs, persona_id, ml_id)
-            if is_moderator and is_subscriber:
-                access_levels.add("ml")
-                # the moderator access level currently does nothing, but we
-                # add it anyway to be less confusing
-                access_levels.add("moderator")
+            if is_moderator:
+                is_subscriber = self.mlproxy.is_subscribed(
+                    rs, persona_id, ml_id)
+                is_pending = persona_id in self.mlproxy.list_requests(rs, ml_id)
+                if is_subscriber or is_pending:
+                    access_levels.add("ml")
+                    # the moderator access level currently does nothing, but we
+                    # add it anyway to be less confusing
+                    access_levels.add("moderator")
 
         # Retrieve data
         #
