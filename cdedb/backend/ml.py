@@ -1008,7 +1008,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def remove_subscription_address(self, rs, datum):
-        """Change or add a subscription address.
+        """Remove a subscription address.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type datum: {str: int}
@@ -1020,7 +1020,7 @@ class MlBackend(AbstractBackend):
         if datum['persona_id'] != rs.user.persona_id:
             raise PrivilegeError(n_("Not privileged."))
 
-        query = ("DELETE FROM ml.subscription_states "
+        query = ("DELETE FROM ml.subscription_addresses "
                  "WHERE mailinglist_id = %s AND persona_id = %s")
         params = (datum['mailinglist_id'], datum['persona_id'])
 
@@ -1028,6 +1028,8 @@ class MlBackend(AbstractBackend):
 
         self.ml_log(rs, const.MlLogCodes.subscription_changed,
                     datum['mailinglist_id'], datum['persona_id'])
+
+        return ret
 
     @access("ml", "ml_script")
     def get_subscription_states(self, rs, mailinglist_id, states=None):
