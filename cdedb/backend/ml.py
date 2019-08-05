@@ -1248,7 +1248,7 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    def is_subscribed(self, rs, mailinglist_id, persona_id):
+    def is_subscribed(self, rs, persona_id, mailinglist_id):
         """Sugar coating around :py:meth:`get_subscriptions`.
 
         :type rs: :py:class:`cdedb.common.RequestState`
