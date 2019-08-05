@@ -504,11 +504,12 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
-        self.assertPresence("Ergebnis [4]")
+        self.assertPresence("Ergebnis [5]")
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Beispiel")
         self.assertPresence("Findus")
         self.assertPresence("Generalis")
+        self.assertPresence("Nashorn")
 
     @as_users("anton")
     def test_privilege_change(self,  user):
