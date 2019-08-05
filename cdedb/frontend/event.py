@@ -779,46 +779,50 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/field_summary_form")
 
     @staticmethod
-    def _get_mailinglist_setter(event, orgalist=False):
-        orga_ml_data = {
-            'title': "{} Orgateam".format(event['title']),
-            'address': "{}@aka.cde-ev.de".format(event['shortname']),
-            'description': None,
-            'sub_policy': const.SubscriptionPolicy.invitation_only,
-            'mod_policy': const.ModerationPolicy.unmoderated,
-            'attachment_policy': const.AttachmentPolicy.allow,
-            'audience_policy': const.AudiencePolicy.require_event,
-            'subject_prefix': event['shortname'],
-            'maxsize': 1024,
-            'is_active': True,
-            'gateway': None,
-            'event_id': event.get('id'),
-            'registration_stati': [],
-            'assembly_id': None,
-            'notes': None,
-            'moderators': event.get('orgas'),
-        }
-        participant_ml_data = {
-            'title': "{} Teilnehmer".format(event['title']),
-            'address': "{}-all@aka.cde-ev.de".format(event["shortname"]),
-            'description': None,
-            'sub_policy': const.SubscriptionPolicy.invitation_only,
-            'mod_policy': const.ModerationPolicy.non_subscribers,
-            'attachment_policy': const.AttachmentPolicy.pdf_only,
-            'audience_policy': const.AudiencePolicy.require_event,
-            'subject_prefix': event['shortname'],
-            'maxsize': 1024,
-            'is_active': True,
-            'gateway': None,
-            'event_id': event.get('id'),
-            'registration_stati': [const.RegistrationPartStati.participant],
-            'assembly_id': None,
-            'notes': None,
-            'moderators': event.get('orgas'),
-        }
+    def _get_mailinglist_setter(event, orgalist=False, address_only=False):
+        address = "{}{}@aka.cde-ev.de".format(
+            event['shortname'], "" if orgalist else "-all")
+        if address_only:
+            return address
         if orgalist:
+            orga_ml_data = {
+                'title': "{} Orgateam".format(event['title']),
+                'address': address,
+                'description': None,
+                'sub_policy': const.SubscriptionPolicy.invitation_only,
+                'mod_policy': const.ModerationPolicy.unmoderated,
+                'attachment_policy': const.AttachmentPolicy.allow,
+                'audience_policy': const.AudiencePolicy.require_event,
+                'subject_prefix': event['shortname'],
+                'maxsize': 1024,
+                'is_active': True,
+                'gateway': None,
+                'event_id': event['id'],
+                'registration_stati': [],
+                'assembly_id': None,
+                'notes': None,
+                'moderators': event['orgas'],
+            }
             return orga_ml_data
         else:
+            participant_ml_data = {
+                'title': "{} Teilnehmer".format(event['title']),
+                'address': address,
+                'description': None,
+                'sub_policy': const.SubscriptionPolicy.invitation_only,
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'attachment_policy': const.AttachmentPolicy.pdf_only,
+                'audience_policy': const.AudiencePolicy.require_event,
+                'subject_prefix': event['shortname'],
+                'maxsize': 1024,
+                'is_active': True,
+                'gateway': None,
+                'event_id': event['id'],
+                'registration_stati': [const.RegistrationPartStati.participant],
+                'assembly_id': None,
+                'notes': None,
+                'moderators': event['orgas'],
+            }
             return participant_ml_data
 
     @access("event_admin")
@@ -856,10 +860,8 @@ class EventFrontend(AbstractUserFrontend):
             }
         }
         if create_orga_list and "ml_admin" in rs.user.roles:
-            orga_ml_data = self._get_mailinglist_setter(
-                data, orgalist=True)
-            # This will set the orga_address even if the list already exists.
-            data['orga_address'] = orga_ml_data['address']
+            data['orga_address'] = self._get_mailinglist_setter(
+                data, orgalist=True, address_only=True)
         else:
             data['orga_address'] = None
 
