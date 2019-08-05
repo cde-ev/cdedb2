@@ -183,7 +183,7 @@ class TestCoreBackend(BackendTest):
                 'gender': None,
                 'generation': 1,
                 'given_names': 'Zelda',
-                'id': 13,
+                'id': new_id,
                 'interests': None,
                 'is_active': True,
                 'is_admin': False,
@@ -637,7 +637,7 @@ class TestCoreBackend(BackendTest):
     def test_log(self, user):
         ## first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
-        self.core.create_persona(self.key, data)
+        new_persona_id = self.core.create_persona(self.key, data)
         data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
@@ -675,7 +675,7 @@ class TestCoreBackend(BackendTest):
             {'additional_info': None,
              'code': 1,
              'ctime': nearly_now(),
-             'persona_id': 13,
+             'persona_id': new_persona_id,
              'submitted_by': 1})
         self.assertEqual(expectation, self.core.retrieve_log(self.key))
 

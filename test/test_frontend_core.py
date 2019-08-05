@@ -718,7 +718,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['logshowform']
         f['reviewed_by'] = 'DB-1-9'
         self.submit(f)
-        self.assertTitle('Nutzerdaten-Log [0–1]')
+        self.assertTitle('Nutzerdaten-Log [0–0]')
         self.assertPresence("Bertålotta Ganondorf")
         self.logout()
         user = USER_DICT["berta"]
@@ -930,7 +930,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['logshowform']
         f['codes'] = [20]
         self.submit(f)
-        self.assertTitle("Account-Log [0–1]")
+        self.assertTitle("Account-Log [0–0]")
 
     def test_genesis_postal_code(self):
         self.get('/')
@@ -978,4 +978,4 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'description': 'Index', 'href': '^/d?b?/?$'},
                       {'href': '/core/log'})
-        self.assertTitle("Account-Log [0–1]")
+        self.assertTitle("Account-Log [0–0]")

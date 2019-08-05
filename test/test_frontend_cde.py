@@ -1684,13 +1684,13 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/past/log'})
-        self.assertTitle("Verg.-Veranstaltungen-Log [0–8]")
+        self.assertTitle("Verg.-Veranstaltungen-Log [0–7]")
         f = self.response.forms['logshowform']
         f['codes'] = [1, 10, 21]
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Verg.-Veranstaltungen-Log [1–4]\n")
+        self.assertTitle("Verg.-Veranstaltungen-Log [1–3]\n")
 
     def test_cde_log(self):
         ## First: generate data
@@ -1700,7 +1700,7 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/log'})
-        self.assertTitle("CdE-Log [0–0]")
+        self.assertTitle("CdE-Log")
 
     def test_finance_log(self):
         ## First: generate data
@@ -1710,7 +1710,7 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/finances'})
-        self.assertTitle("Finanz-Log [0–2]")
+        self.assertTitle("Finanz-Log [0–1]")
 
     @as_users("anton")
     def test_changelog_meta(self, user):
@@ -1720,5 +1720,5 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)
-        self.assertTitle("Nutzerdaten-Log [0–1]")
+        self.assertTitle("Nutzerdaten-Log [0–0]")
         self.assertPresence("Bertålotta Beispiel")
