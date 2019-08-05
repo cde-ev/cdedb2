@@ -1041,6 +1041,46 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
+    @as_users("janis")
+    def test_remove_subscription_address(self, user):
+        mailinglist_id = 3
+
+        # Check sample data.
+        expectation = {
+            1: USER_DICT["anton"]["username"],
+            10: 'janis-spam@example.cde',
+        }
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        expectation = {
+            1: const.SubscriptionStates.subscribed,
+            2: const.SubscriptionStates.unsubscribed,
+            10: const.SubscriptionStates.subscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        # Now let janis delete his changed address
+
+        expectation = {
+            1: USER_DICT["anton"]["username"],
+            10: USER_DICT["janis"]["username"],
+        }
+        datum = {'persona_id': 10, 'mailinglist_id': mailinglist_id}
+        self.assertLess(0, self.ml.remove_subscription_address(self.key, datum))
+
+        result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
+        expectation = {
+            1: const.SubscriptionStates.subscribed,
+            2: const.SubscriptionStates.unsubscribed,
+            10: const.SubscriptionStates.subscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
     @as_users("inga")
     def test_moderation(self, user):
         expectation = {
