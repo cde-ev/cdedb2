@@ -844,13 +844,6 @@ class EventFrontend(AbstractUserFrontend):
         if orga_ids:
             data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
                              for anid in orga_ids.split(",")}
-        if create_orga_list and "ml_admin" in rs.user.roles:
-            orga_ml_data = self._get_mailinglist_setter(
-                rs.ambience['event'], orgalist=True)
-            # This will set the orga_address even if the list already exists.
-            data['orga_address'] = orga_ml_data['address']
-        else:
-            data['orga_address'] = None
         # multi part events will have to edit this later on
         data['parts'] = {
             -1: {
@@ -862,6 +855,14 @@ class EventFrontend(AbstractUserFrontend):
                 'fee': decimal.Decimal(0),
             }
         }
+        if create_orga_list and "ml_admin" in rs.user.roles:
+            orga_ml_data = self._get_mailinglist_setter(
+                data, orgalist=True)
+            # This will set the orga_address even if the list already exists.
+            data['orga_address'] = orga_ml_data['address']
+        else:
+            data['orga_address'] = None
+
         data = check(rs, "event", data, creation=True)
         if rs.errors:
             return self.create_event_form(rs)
