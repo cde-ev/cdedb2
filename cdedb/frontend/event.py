@@ -601,9 +601,6 @@ class EventFrontend(AbstractUserFrontend):
                     rs,
                     (("track_create_{}_-{}".format(part_id, marker), "bool"),)))
                 if will_create:
-                    if has_registrations:
-                        raise ValueError(
-                            n_("Registrations exist, no creation."))
                     params = tuple(track_params(part_id, -marker))
                     newtrack = track_excavator(request_extractor(rs, params),
                                                part_id, -marker)

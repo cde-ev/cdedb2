@@ -138,18 +138,14 @@
                     {% for i in range(1, values.get('track_create_last_index', {}).get(part_id, 0) + 1) %}
                         {{ print_track(part_id, -i, aclass='drow-new1', newrow=True) }}
                     {% endfor %}
-                    {% if not has_registrations %}
                         {{ print_track(part_id, values.get('track_create_last_index', {}).get(part_id, 0) - 1,
                                        aclass='drow-prototype1', newrow=True) }}
-                    {% endif %}
                 </tbody>
             </table>
-            {% if not has_registrations %}
-                <div class="pull-right p">
-                    <button type="button" class="btn btn-success btn-xs add-track-button softhide">
-                        {{ util.make_icon('plus') }} {% trans -%}Add Coursetrack{%- endtrans %}</button>
-                </div>
-            {% endif %}
+            <div class="pull-right p">
+                <button type="button" class="btn btn-success btn-xs add-track-button softhide">
+                    {{ util.make_icon('plus') }} {% trans -%}Add Coursetrack{%- endtrans %}</button>
+            </div>
         </div>
     </div>
 {% endmacro %}

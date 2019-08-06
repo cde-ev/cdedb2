@@ -606,8 +606,9 @@ class EventBackend(AbstractBackend):
         :type part_id: int
         :type data: {int: {str: object} or None}
         :type cautious: bool
-        :param cautious: If True only modification of existing tracks is
-          allowed. That is creation and deletion of tracks is disallowed.
+        :param cautious: If True only modification of existing tracks and
+            creation of new tracks is allowed. That is deletion of tracks is
+            disallowed.
         :rtype: int
         :returns: default return code
         """
@@ -627,18 +628,32 @@ class EventBackend(AbstractBackend):
                    if x > 0 and data[x] is not None}
         deleted = {x for x in data
                    if x > 0 and data[x] is None}
-        if cautious and (new or deleted):
-            raise ValueError(n_("Registrations exist, modifications only."))
+        if cautious and deleted:
+            raise ValueError(
+                n_("Registrations exist, No track deletions allowed."))
         # new
         for x in reversed(sorted(new)):
             new_track = {
                 "part_id": part_id,
                 **data[x]
             }
-            ret *= self.sql_insert(rs, "event.course_tracks", new_track)
+            new_track_id = self.sql_insert(rs, "event.course_tracks", new_track)
+            ret *= new_track_id
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
                 additional_info=data[x]['title'])
+            reg_ids = {e['id'] for e in self.sql_select(
+                rs, "event.registrations", ("id",), (event_id,),
+                entity_key="event_id")}
+            for reg_id in reg_ids:
+                reg_track = {
+                    'registration_id': reg_id,
+                    'track_id': new_track_id,
+                    'course_id': None,
+                    'course_instructor': None,
+                }
+                ret *= self.sql_insert(
+                    rs, "event.registration_tracks", reg_track)
         # updated
         for x in updated:
             if current[x] != data[x]:
