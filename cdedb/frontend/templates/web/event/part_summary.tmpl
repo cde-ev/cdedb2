@@ -59,7 +59,6 @@
                                            attributes='data-basename="track_create_"'|s, aclass='drow-indicator1') }}
                 {% else %}
                     {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label=gettext("Remove"),
-                                           readonly=(has_registrations or track_id in referenced_tracks),
                                            aclass='drow-indicator1') }}
                 {% endif %}
             </div>
@@ -156,8 +155,7 @@
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                {{ print_part(part_id, part_id not in referenced_parts and not has_registrations,
-                              tracks=part['tracks'], aclass='drow-row') }}
+                {{ print_part(part_id, not has_registrations, tracks=part['tracks'], aclass='drow-row') }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
             {% for i in range(1, values.get('create_last_index', 0) + 1) %}

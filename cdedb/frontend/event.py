@@ -478,19 +478,10 @@ class EventFrontend(AbstractUserFrontend):
                     current["track_{}_{}_{}".format(k, part_id, track_id)] = \
                         track[k]
         merge_dicts(rs.values, current)
-        referenced_parts = set()
-        referenced_tracks = set()
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        for course in courses.values():
-            referenced_tracks.update(course['segments'])
-        # referenced tracks block part deletion
-        for track_id in referenced_tracks:
-            referenced_parts.add(tracks[track_id]['part_id'])
         return self.render(rs, "part_summary", {
-            'referenced_parts': referenced_parts,
-            'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations})
 
     @staticmethod
@@ -579,8 +570,6 @@ class EventFrontend(AbstractUserFrontend):
             if track_delete_flags['track_delete_{}_{}'.format(part_id,
                                                               track_id)]
         }
-        if has_registrations and track_deletes:
-            raise ValueError(n_("Registrations exist, no deletion."))
         params = tuple(itertools.chain.from_iterable(
             track_params(part_id, track_id)
             for part_id, part in parts.items()
