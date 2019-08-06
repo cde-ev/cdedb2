@@ -6,23 +6,7 @@ the secrets module, which is not available in Python 3.5.
 
 import string
 
-try:
-    # TODO buster contains a python with the secrets module
-    from secrets import choice, token_hex
-except ImportError:
-    import random
-
-    generator = random.SystemRandom()
-
-
-    def choice(seq):
-        return seq[generator.randrange(len(seq))]
-
-
-    def token_hex(num=32):
-        chars = '0123456789abcdef'
-        return ''.join(choice(chars) for _ in range(num))
-
+from secrets import choice, token_hex
 
 def secure_token_hex(*args, **kwargs):
     """Wrapper around secrets.token_hex."""
