@@ -10335,6 +10335,9 @@ msgstr ""
 msgid "Mailinglists Log"
 msgstr ""
 
+msgid "i. e."
+msgstr ""
+
 #~ msgid "QueryOperators.equalornull"
 #~ msgstr "is empty or equals"
 

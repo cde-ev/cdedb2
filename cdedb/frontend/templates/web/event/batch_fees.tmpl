@@ -35,7 +35,7 @@
         <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
                 format(_("Amount"), _("CdEDB-ID"), _("Family Name"), _("Given Names"), _("Date"))|s }}</pre>
         <p class="help-block">
-            z.B. <code>01.04.2018;123.00;DB-9-4;Iota;Inga</code>
+            {% trans -%}i. e.{%- endtrans %} <code>123.00;DB-9-4;Iota;Inga;01.04.2018</code>
         </p>
 
     {% if data %}

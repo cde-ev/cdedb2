@@ -10775,6 +10775,9 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
 
+msgid "i. e."
+msgstr "z. B."
+
 #~ msgid ""
 #~ "Archives the assembly. The configuration "
 #~ "cannot be changed after this.\n"
