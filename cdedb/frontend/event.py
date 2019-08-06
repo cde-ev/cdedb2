@@ -3360,6 +3360,29 @@ class EventFrontend(AbstractUserFrontend):
             rs.ambience['event'], lodgements, registrations, personas,
             inhabitants)
         problems_condensed = {}
+
+        inhabitant_sum = {}
+        for part_id in rs.ambience['event']['parts']:
+            lodgement_sum = 0
+            for lodgement_id in lodgement_ids:
+                lodgement_sum += inhabitant_nums[(lodgement_id, part_id)] - \
+                                 reserve_inhabitant_nums[(lodgement_id, part_id)]
+            inhabitant_sum[part_id] = lodgement_sum
+
+        reserve_inhabitant_sum = {}
+        for part_id in rs.ambience['event']['parts']:
+            reserve_lodgement_sum = 0
+            for lodgement_id in lodgement_ids:
+                reserve_lodgement_sum += reserve_inhabitant_nums[(lodgement_id, part_id)]
+            reserve_inhabitant_sum[part_id] = reserve_lodgement_sum
+
+        capacity_sum = 0
+        reserve_sum = 0
+        for id, lodgement in xdictsort_filter(lodgements, 'moniker'):
+            capacity_sum += lodgement['capacity']
+            reserve_sum += lodgement['reserve']
+
+
         for lodgement_id, part_id in itertools.product(
                 lodgement_ids, rs.ambience['event']['parts'].keys()):
             problems_here = [p for p in problems
@@ -3372,7 +3395,11 @@ class EventFrontend(AbstractUserFrontend):
             'lodgements': lodgements,
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitant_nums,
+            'inhabitants_sum': inhabitant_sum,
             'reserve_inhabitants': reserve_inhabitant_nums,
+            'reserve_inhabitants_sum': reserve_inhabitant_sum,
+            'capacity_sum': capacity_sum,
+            'reserve_sum': reserve_sum,
             'problems': problems_condensed,
         })
 

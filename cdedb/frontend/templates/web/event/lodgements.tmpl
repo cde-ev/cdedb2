@@ -80,6 +80,22 @@
                 </tr>
             {% endfor %}
         </tbody>
+        <tfoot>
+            <tr>
+                <td>{{ "Σ" }}</td>
+                {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                    <td class="text-right {% if loop.first %} b-left{% endif %}">
+                        {{ (inhabitants_sum[part_id] - reserve_inhabitants_sum[part_id]) }}
+                    </td>
+                    <td class="text-right">
+                        + {{ reserve_inhabitants_sum[part_id] }}
+                    </td>
+                {% endfor %}
+                    <td class="b-left text-right">{{ capacity_sum }}</td>
+                    <td class=" text-right">+ {{ reserve_sum }}</td>
+                     <td class="b-left"> </td>
+            </tr>
+        </tfoot>
     </table>
 
     <hr />
