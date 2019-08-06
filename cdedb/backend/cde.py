@@ -655,7 +655,7 @@ class CdEBackend(AbstractBackend):
                          persona_id=None, additional_info=ret)
             return ret
 
-    @access("searchable")
+    @access("searchable", "cde_admin")
     def submit_general_query(self, rs, query):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
