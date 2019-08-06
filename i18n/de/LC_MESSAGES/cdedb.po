@@ -15333,6 +15333,21 @@ msgstr ""
 "Die Orgas dieser Veranstaltung brauchen in Zukunft eventuell weitere Daten "
 "von dir. Dazu werden sie den 'Fragebogen' benutzen."
 
+msgid "Other Mailinglists"
+msgstr "Andere Mailinglisten"
+
+msgid "Subscription Details"
+msgstr "Abonnementdetails"
+
+msgid "%(title)s – Subscription Details"
+msgstr "%(title)s – Abonnementdetails"
+
+msgid "Blocked Users"
+msgstr "Geblockte Nutzer"
+
+msgid "Forced Subscribers"
+msgstr "Fixierte Abonnenten"
+
 #~ msgid ""
 #~ "If the event comprises multiple parts or multiple course tracks,\n"
 #~ "                        they have to be added later, using the “Event-"

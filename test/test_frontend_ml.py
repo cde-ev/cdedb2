@@ -130,7 +130,7 @@ class TestMlFrontend(FrontendTest):
         self.assertIn("removesubscriberform9", self.response.forms)
 
         self.traverse({'href': '/ml/mailinglist/4/details'})
-        self.assertTitle("Klatsch und Tratsch – Show subscription details")
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
         self.assertNonPresence("zelda@example.cde")
         f = self.response.forms['addwhitelistform']
         f['email'] = "zelda@example.cde"
@@ -139,7 +139,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch – Show subscription details")
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
         self.assertNonPresence("zelda@example.cde")
 
     @as_users("anton", "berta")
@@ -147,12 +147,12 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/5'},
                       {'href': '/ml/mailinglist/5/details'})
-        self.assertTitle("Sozialistischer Kampfbrief – Show subscription details")
+        self.assertTitle("Sozialistischer Kampfbrief – Abonnementdetails")
         self.assertNonPresence("Janis Jalapeño")
         f = self.response.forms['addmodsubscriberform']
         f['subscriber_id'] = "DB-10-8"
         self.submit(f)
-        self.assertTitle("Sozialistischer Kampfbrief – Show subscription details")
+        self.assertTitle("Sozialistischer Kampfbrief – Abonnementdetails")
         self.assertPresence("Janis Jalapeño")
 
     @as_users("anton")

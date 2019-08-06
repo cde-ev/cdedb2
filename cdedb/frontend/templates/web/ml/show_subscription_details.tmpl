@@ -7,7 +7,7 @@
 {% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Show subscription details
+    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Subscription Details
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
@@ -17,7 +17,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Show Subscription Details{%- endtrans %}
+        {% trans -%}Subscription Details{%- endtrans %}
         <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -78,7 +78,7 @@
 
 
         <div class="col-md-6">
-            <h2>{% trans -%}Blocked Subscribers{%- endtrans %} [{{ mod_unsubscribed|length }}]</h2>
+            <h2>{% trans -%}Blocked Users{%- endtrans %} [{{ mod_unsubscribed|length }}]</h2>
             <form action="{{ cdedblink('ml/add_mod_unsubscriber') }}" method="POST"
                   id="addmodunsubscriberform" class="p">
                 {{ util.anti_csrf_token('ml/add_mod_unsubscriber') }}
