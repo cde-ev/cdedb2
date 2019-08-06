@@ -325,6 +325,53 @@ class TestEventBackend(BackendTest):
              "orgas", "lodgements", "registrations", "questionnaire", "log",
              "mailinglists")))
 
+    @as_users("anton")
+    def test_aposteriori_track_creation(self, user):
+        event_id = 1
+        part_id = 1
+        # The expected new id.
+        new_track_id = 4
+
+        self.assertTrue(self.event.list_registrations(self.key, event_id))
+
+        regs = self.event.get_registrations(self.key, self.event.list_registrations(self.key, event_id))
+        event = self.event.get_event(self.key, event_id)
+
+        new_track = {
+            'title': "Neue Kursschiene",
+            'shortname': "Neu",
+            'num_choices': 3,
+            'sortkey': 1,
+        }
+        update_event = {
+            'id': event_id,
+            'parts': {
+                part_id: {
+                    'tracks': {
+                        -1: new_track,
+                    }
+                }
+            }
+        }
+        self.event.set_event(self.key, update_event)
+        new_track['id'] = new_track_id
+        new_track['part_id'] = part_id
+
+        for reg in regs.values():
+            reg['tracks'][new_track_id] = {
+                'choices': [],
+                'course_id': None,
+                'course_instructor': None,
+                'registration_id': reg['id'],
+                'track_id': new_track_id,
+            }
+
+        event['tracks'][new_track_id] = new_track
+        event['parts'][part_id]['tracks'][new_track_id] = new_track
+
+        self.assertEqual(regs, self.event.get_registrations(self.key, self.event.list_registrations(self.key, event_id)))
+        self.assertEqual(event, self.event.get_event(self.key, event_id))
+
     @as_users("anton", "garcia")
     def test_json_fields_with_dates(self, user):
         event_id = 1
