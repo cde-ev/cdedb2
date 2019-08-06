@@ -66,8 +66,7 @@ class MlFrontend(AbstractUserFrontend):
             rs, audience_policies=policies)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         subscriptions = self.mlproxy.get_subscriptions(
-            rs, rs.user.persona_id, states=SS.subscribing_states(),
-            mailinglist_ids=mailinglists.keys())
+            rs, rs.user.persona_id, states=SS.subscribing_states())
         return self.render(rs, "index", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
