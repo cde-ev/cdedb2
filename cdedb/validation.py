@@ -1031,18 +1031,7 @@ def parse_datetime(val, default_date=None):
             except ValueError:
                 pass
     if ret is None:
-        # Fix braindead datetime. The datetime.isoformat() method outputs
-        # timezone offsets as +HH:MM but the strptime() code %z only
-        # understand +HHMM. Thus the equivalent of
-        # datetime.strptime(datetime.isoformat()) is guaranteed to cause an
-        # exception. *sigh*
-        #
-        # TODO With buster we can finally use datetime.fromisoformat
-        if (len(val) > 5 and val[-6] in '+-' and val[-3] == ':'
-                and val[-5:-3].isdecimal() and val[-2:].isdecimal()):
-            new_val = val[:-3] + val[-2:]
-            return parse_datetime(new_val, default_date=default_date)
-        raise ValueError(n_("Invalid datetime string ({}).".format(val)))
+        return datetime.fromisoformat(val)
     if ret.tzinfo is None:
         ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
     return ret.astimezone(pytz.utc)
