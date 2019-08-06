@@ -117,16 +117,6 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertNonPresence("Inga Iota")
-        self.assertNonPresence("zelda@example.cde")
-        f = self.response.forms['addwhitelistform']
-        f['email'] = "zelda@example.cde"
-        self.submit(f)
-        self.assertTitle("Klatsch und Tratsch – Verwalten")
-        self.assertPresence("zelda@example.cde")
-        f = self.response.forms['removewhitelistform1']
-        self.submit(f)
-        self.assertTitle("Klatsch und Tratsch – Verwalten")
-        self.assertNonPresence("zelda@example.cde")
         self.assertPresence("Janis Jalapeño")
         f = self.response.forms['removesubscriberform10']
         self.submit(f)
@@ -139,17 +129,30 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Verwalten")
         self.assertIn("removesubscriberform9", self.response.forms)
 
+        self.traverse({'href': '/ml/mailinglist/4/details'})
+        self.assertTitle("Klatsch und Tratsch – Show subscription details")
+        self.assertNonPresence("zelda@example.cde")
+        f = self.response.forms['addwhitelistform']
+        f['email'] = "zelda@example.cde"
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch – Show subscription details")
+        self.assertPresence("zelda@example.cde")
+        f = self.response.forms['removewhitelistform1']
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch – Show subscription details")
+        self.assertNonPresence("zelda@example.cde")
+
     @as_users("anton", "berta")
     def test_mailinglist_management_outside_audience(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/5'},
-                      {'href': '/ml/mailinglist/5/management'})
-        self.assertTitle("Sozialistischer Kampfbrief – Verwalten")
+                      {'href': '/ml/mailinglist/5/details'})
+        self.assertTitle("Sozialistischer Kampfbrief – Show subscription details")
         self.assertNonPresence("Janis Jalapeño")
-        f = self.response.forms['addsubscriberform']
+        f = self.response.forms['addmodsubscriberform']
         f['subscriber_id'] = "DB-10-8"
         self.submit(f)
-        self.assertTitle("Sozialistischer Kampfbrief – Verwalten")
+        self.assertTitle("Sozialistischer Kampfbrief – Show subscription details")
         self.assertPresence("Janis Jalapeño")
 
     @as_users("anton")
@@ -237,10 +240,10 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'},)
         self.assertTitle("Klatsch und Tratsch – Verwalten")
-        f = self.response.forms['ackrequestform9']
+        f = self.response.forms['acceptrequestform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwalten")
-        self.assertNotIn('ackrequestform9', self.response.forms)
+        self.assertNotIn('acceptrequestform9', self.response.forms)
         self.logout()
         self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'},
@@ -301,7 +304,8 @@ class TestMlFrontend(FrontendTest):
                         {'address': 'aktivenforum@example.cde', 'is_active': True},
                         {'address': 'aka@example.cde', 'is_active': True},
                         {'address': 'participants@example.cde', 'is_active': True},
-                        {'address': 'wait@example.cde', 'is_active': True}]
+                        {'address': 'wait@example.cde', 'is_active': True},
+                        {'address': 'opt@example.cde', 'is_active': True}]
         self.get("/ml/script/all", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
         expectation = {
@@ -319,7 +323,8 @@ class TestMlFrontend(FrontendTest):
                             'garcia@example.cde',
                             'inga@example.cde',
                             'janis@example.cde',
-                            'kalif@example.cde'],
+                            'kalif@example.cde',
+                            'norbert@example.cde'],
             'whitelist': ['honeypot@example.cde']}
         self.get("/ml/script/one?address=werbung@example.cde", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -365,6 +370,10 @@ class TestMlFrontend(FrontendTest):
                        {'address': 'wait@example.cde',
                         'inactive': False,
                         'maxsize': None,
+                        'mime': False},
+                       {'address': 'opt@example.cde',
+                        'inactive': False,
+                        'maxsize': None,
                         'mime': False}]
         self.get("/ml/script/all/compat", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -383,7 +392,8 @@ class TestMlFrontend(FrontendTest):
                                        'garcia@example.cde',
                                        'inga@example.cde',
                                        'janis@example.cde',
-                                       'kalif@example.cde'],
+                                       'kalif@example.cde',
+                                       'norbert@example.cde'],
                        'whitelist': ['honeypot@example.cde',]}
         self.get("/ml/script/one/compat?address=werbung@example.cde",
                  headers=HEADERS)
