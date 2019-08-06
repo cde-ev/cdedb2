@@ -66,6 +66,7 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def may_manage(self, rs, mailinglist_id):
         """Check whether a user is allowed to manage a given mailinglist.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :rtype: bool
@@ -273,6 +274,7 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def list_overrides(self, rs, active_only=True):
         """List all mailinglists where user has subscribe override
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type active_only: bool
         :param active_only: Toggle wether inactive lists should be included.
@@ -696,7 +698,7 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype int, string
+        :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
         if not self.may_manage(rs, mailinglist_id):
@@ -735,7 +737,7 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype int, string
+        :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
         if not self.may_manage(rs, mailinglist_id):
@@ -773,7 +775,7 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype int, string
+        :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
         if not self.may_manage(rs, mailinglist_id):
@@ -799,7 +801,7 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype int, string
+        :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
         if not self.may_manage(rs, mailinglist_id):
@@ -825,7 +827,7 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype int, string
+        :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
         if not self.may_manage(rs, mailinglist_id):
@@ -856,7 +858,7 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype int, string
+        :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
         if not self.may_manage(rs, mailinglist_id):
@@ -881,7 +883,7 @@ class MlBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
-        :rtype int
+        :rtype: int
         """
         # mailinglist_id and persona_id are validated by get_subscription
         datum = {
@@ -912,7 +914,7 @@ class MlBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
-        :rtype int
+        :rtype: int
         """
         # mailinglist_id and persona_id are validated by get_subscription
         datum = {
@@ -944,7 +946,7 @@ class MlBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
-        :rtype int
+        :rtype: int
         """
         # mailinglist_id and persona_id are validated by get_subscription
         datum = {
@@ -972,7 +974,7 @@ class MlBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
-        :rtype int
+        :rtype: int
         """
         # mailinglist_id and persona_id are validated by get_subscription
         datum = {
@@ -994,6 +996,7 @@ class MlBackend(AbstractBackend):
 
         Datum must contain both a mailinglist id and a persona_id, as well as an
         email address.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type datum: {str: int}
         :rtype: int
@@ -1062,7 +1065,7 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type states: [int] or None
-        :rtype {int: const.SubscriptionStates}
+        :rtype: {int: const.SubscriptionStates}
         :return: Dict mapping persona_ids to their subscription state for the
             given mailinglist. If states were given, limit this to personas with
             those states.
@@ -1260,6 +1263,7 @@ class MlBackend(AbstractBackend):
         """Get all confirmed email addresses for a user.
 
         This includes all subscription addresses as well as the username.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: {str}
         """
