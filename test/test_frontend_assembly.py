@@ -509,7 +509,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/log'})
-        self.assertTitle("\nVersammlungs-Log [0–15]\n")
+        self.assertTitle("\nVersammlungs-Log [0–14]\n")
         f = self.response.forms['logshowform']
         f['codes'] = [0, 1, 2, 10, 11, 12, 14]
         f['assembly_id'] = 1
