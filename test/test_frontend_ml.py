@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
+import csv
 import json
 import unittest
-
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
@@ -135,7 +135,83 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addwhitelistform']
         f['email'] = "zelda@example.cde"
         self.submit(f)
-        self.assertTitle("Klatsch und Tratsch – Show subscription details")
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertPresence("zelda@example.cde")
+        f = self.response.forms['removewhitelistform1']
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertNonPresence("zelda@example.cde")
+
+    @as_users("anton", "berta", "ferdinand")
+    def test_show_subscription_details(self, user):
+        class dialect(csv.Dialect):
+            delimiter = ';'
+            quotechar = '"'
+            doublequote = False
+            escapechar = '\\'
+            lineterminator = '\n'
+            quoting = csv.QUOTE_MINIMAL
+
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/4'},
+                      {'href': '/ml/mailinglist/4/details'})
+
+        # add some persona
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertNonPresence("Inga Iota")
+        f = self.response.forms['addmodsubscriberform']
+        f['modsubscriber_id'] = "DB-9-4"
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertPresence("Inga Iota")
+
+        self.assertNonPresence("Emilia E. Eventis")
+        f = self.response.forms['addmodunsubscriberform']
+        f['modunsubscriber_id'] = "DB-5-1"
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertPresence("Emilia E. Eventis")
+
+        self.assertNonPresence("zelda@example.cde")
+        f = self.response.forms['addwhitelistform']
+        f['email'] = "zelda@example.cde"
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertPresence("zelda@example.cde")
+
+        # now check the download file
+
+        save = self.response
+
+        self.traverse({"href": "ml/mailinglist/4/download"})
+
+        result = list(csv.DictReader(self.response.text.split("\n"),
+                                     delimiter=";", dialect=dialect))
+        all_rows = []
+
+        for row in result:
+            line = row['\ufeffid'] + ";" + row['subscription state']
+            all_rows.append(line)
+
+        self.assertIn('9;SubscriptionStates.mod_subscribed', all_rows)
+        self.assertIn('5;SubscriptionStates.mod_unsubscribed', all_rows)
+
+        # remove the former added persona
+        self.response = save
+
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertPresence("Inga Iota")
+        f = self.response.forms['removemodsubscribeform9']
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertNonPresence("Inga Iota")
+
+        self.assertPresence("Emilia E. Eventis")
+        f = self.response.forms['removemodunsubscribeform5']
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch – Abonnementdetails")
+        self.assertNonPresence("Emilia E. Eventis")
+
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']
         self.submit(f)
