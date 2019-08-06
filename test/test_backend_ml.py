@@ -660,8 +660,60 @@ class TestMlBackend(BackendTest):
         self._change_own_sub(
             user, ml_id, self.ml.request_subscription, code=None, state=None)
 
-    def test_opt_in_opt_out(self):
-        pass
+    @as_users("anton")
+    def test_opt_in_opt_out(self, user):
+        ml_id = 11
+        SS = const.SubscriptionStates
+
+        expectation = {
+            1: SS.implicit,
+            2: SS.implicit,
+            3: SS.subscribed,
+            4: SS.unsubscribed,
+            9: SS.mod_unsubscribed,
+            11: SS.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
+
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=None, state=SS.implicit)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=1, state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=None, state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.request_subscription, code=None,
+            state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=1, state=SS.subscribed)
+
+        mdata = {
+            'id': ml_id,
+            'assembly_id': None,
+        }
+        self.ml.set_mailinglist(self.key, mdata)
+
+        expectation = {
+            1: SS.subscribed,
+            3: SS.subscribed,
+            4: SS.unsubscribed,
+            9: SS.mod_unsubscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
+
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=None, state=SS.subscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=1, state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=None, state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.request_subscription, code=None,
+            state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=1, state=SS.subscribed)
 
     @as_users("anton", "norbert")
     def test_bullshit_requests(self, user):
