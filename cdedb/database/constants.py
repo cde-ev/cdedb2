@@ -209,6 +209,8 @@ class SubscriptionPolicy(enum.IntEnum):
     moderated_opt_in = 4
     #: nobody may subscribe by themselves
     invitation_only = 5
+    #: only implicit subscribers allowed
+    implicits_only = 6
 
     def is_additive(self):
         """Differentiate between additive and subtractive mailing lists.

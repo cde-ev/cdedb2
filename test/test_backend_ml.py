@@ -552,11 +552,113 @@ class TestMlBackend(BackendTest):
         self.ml.write_subscription_states(self.key, mailinglist_id)
         self._check_state(user, mailinglist_id, None)
 
-    def test_ml_event(self):
-        pass
+    @as_users("anton")
+    def test_ml_event(self, user):
+        ml_id = 9
+        SS = const.SubscriptionStates
 
-    def test_ml_assembly(self):
-        pass
+        expectation = {
+            1: SS.implicit,
+            5: SS.unsubscribed,
+            7: SS.subscribed,
+            9: SS.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
+
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=None, state=SS.implicit)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=1, state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=None, state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.request_subscription, code=None,
+            state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=1, state=SS.subscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=None, state=SS.subscribed)
+
+        self.ml.write_subscription_states(self.key, ml_id)
+
+        expectation = {
+            1: SS.subscribed,
+            5: SS.unsubscribed,
+            7: SS.subscribed,
+            9: SS.implicit,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
+
+        mdata = {
+            'id': ml_id,
+            'event_id': 2,
+            'audience_policy': const.AudiencePolicy.require_event,
+        }
+        self.ml.set_mailinglist(self.key, mdata)
+
+        expectation = {
+            5: SS.unsubscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
+
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=None, state=None)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=None, state=None)
+        self._change_own_sub(
+            user, ml_id, self.ml.request_subscription, code=None, state=None)
+
+    @as_users("anton")
+    def test_ml_assembly(self, user):
+        ml_id = 5
+        SS = const.SubscriptionStates
+
+        expectation = {
+            1: SS.implicit,
+            2: SS.implicit,
+            3: SS.mod_subscribed,
+            9: SS.mod_unsubscribed,
+            11: SS.implicit,
+            14: SS.mod_subscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
+
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=None, state=SS.implicit)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=1, state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=None, state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.request_subscription, code=None,
+            state=SS.unsubscribed)
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=1, state=SS.subscribed)
+
+        mdata = {
+            'id': ml_id,
+            'assembly_id': None,
+        }
+        self.ml.set_mailinglist(self.key, mdata)
+
+        expectation = {
+            3: SS.mod_subscribed,
+            9: SS.mod_unsubscribed,
+            14: SS.mod_subscribed,
+        }
+        result = self.ml.get_subscription_states(self.key, ml_id)
+        self.assertEqual(result, expectation)
+
+        self._change_own_sub(
+            user, ml_id, self.ml.subscribe, code=None, state=None)
+        self._change_own_sub(
+            user, ml_id, self.ml.unsubscribe, code=None, state=None)
+        self._change_own_sub(
+            user, ml_id, self.ml.request_subscription, code=None, state=None)
 
     def test_opt_in_opt_out(self):
         pass

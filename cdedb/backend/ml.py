@@ -1289,43 +1289,44 @@ class MlBackend(AbstractBackend):
     def _get_implicit_subscribers(self, rs, mailinglist):
         # TODO adapt to MailinglistTypes.
         sub_policy = const.SubscriptionPolicy(mailinglist['sub_policy'])
-        if sub_policy.is_additive():
-            if not mailinglist["event_id"] and not mailinglist["assembly_id"]:
-                return set()
-            elif mailinglist["event_id"] and mailinglist["assembly_id"]:
-                raise ValueError(
-                    n_("Mailinglist is linked to more than one entitiy."))
-            elif mailinglist["event_id"]:
-                event_id = affirm("id", mailinglist["event_id"])
-                event = self.event.get_event(rs, event_id)
 
-                registration_stati = mailinglist["registration_stati"]
-
-                if registration_stati:
-                    part_stati = ",".join("part{}.status".format(part_id)
-                                          for part_id in event['parts'])
-                    query = Query(
-                        scope="qview_registration", spec={part_stati: "int"},
-                        fields_of_interest=("reg.persona_id",),
-                        constraints=((part_stati, QueryOperators.oneof,
-                                      registration_stati),),
-                        order=tuple()
-                    )
-                    data = self.event.submit_general_query(rs, query, event_id)
-                    ret = {e["reg.persona_id"] for e in data}
-                else:
-                    ret = set(event["orgas"])
-
-                return ret
-            elif mailinglist["assembly_id"]:
-                assembly_id = affirm("id", mailinglist["assembly_id"])
-                return set(self.assembly.list_attendees(rs, assembly_id))
-        else:
+        ret = set()
+        if sub_policy in {const.SubscriptionPolicy.mandatory,
+                          const.SubscriptionPolicy.opt_out}:
             query = "SELECT id FROM core.personas WHERE {} AND is_active= True"
             audience = const.AudiencePolicy(
                 mailinglist['audience_policy'])
             data = self.query_all(rs, query.format(audience.sql_test()), [])
-            return {e['id'] for e in data}
+            ret |= {e['id'] for e in data}
+
+        if mailinglist["event_id"] and mailinglist["assembly_id"]:
+            raise ValueError(
+                n_("Mailinglist is linked to more than one entitiy."))
+        elif mailinglist["event_id"]:
+            event_id = mailinglist['event_id']
+            event = self.event.get_event(rs, event_id)
+
+            registration_stati = mailinglist["registration_stati"]
+
+            if registration_stati:
+                part_stati = ",".join("part{}.status".format(part_id)
+                                      for part_id in event['parts'])
+                query = Query(
+                    scope="qview_registration", spec={part_stati: "int"},
+                    fields_of_interest=("reg.persona_id",),
+                    constraints=((part_stati, QueryOperators.oneof,
+                                  registration_stati),),
+                    order=tuple()
+                )
+                data = self.event.submit_general_query(rs, query, event_id)
+                ret |= {e["reg.persona_id"] for e in data}
+            else:
+                ret |= set(event["orgas"])
+        elif mailinglist["assembly_id"]:
+            assembly_id = affirm("id", mailinglist["assembly_id"])
+            ret |= self.assembly.list_attendees(rs, assembly_id)
+
+        return ret
 
     @access("ml_admin")
     def write_subscription_states(self, rs, mailinglist_id):
