@@ -23,7 +23,7 @@ Further we depend on a number of python packages:
 
 * passlib
 * psycopg2 (at least 2.5.4, for jsonb support)
-* werkzeug (at least 0.10, bug in py3-handling of MultiDict input)
+* werkzeug (at least 0.14, for same-site flag for setcookie)
 * dateutil (only needed for dev script, namely analyze_timing.py)
 * babel
 * docutils

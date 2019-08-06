@@ -220,10 +220,8 @@ class CoreFrontend(AbstractFrontend):
                 self.redirect(rs, "core/index")
         else:
             self.redirect(rs, "core/index")
-        # TODO add samesite="Lax", as soon as we switched to Debian
-        #  Buster/Werkzeug 0.14 to mitigate CSRF attacks
         rs.response.set_cookie("sessionkey", sessionkey, httponly=True,
-                               secure=True)
+                               secure=True, samesite="Lax")
         return rs.response
 
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
