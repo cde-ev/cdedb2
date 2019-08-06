@@ -351,14 +351,19 @@ class MlBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_mailinglists(rs, (data['id'],)))
-            if not self.is_relevant_admin(rs, mailinglist=current):
-                raise PrivilegeError(n_("Not privileged."))
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
+                if not self.is_relevant_admin(rs, mailinglist=current):
+                    raise PrivilegeError(n_("Not privileged."))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
+                # Check if privileges allow new state of the mailinglist
+                if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
+                    raise PrivilegeError("Not privileged to make this change.")
             if 'moderators' in data:
+                if not self.may_manage(rs, mailinglist_id=current['id']):
+                    raise PrivilegeError(n_("Not privileged."))
                 existing = current['moderators']
                 new = set(data['moderators']) - existing
                 deleted = existing - set(data['moderators'])
@@ -380,6 +385,8 @@ class MlBackend(AbstractBackend):
                         self.ml_log(rs, const.MlLogCodes.moderator_removed,
                                     data['id'], persona_id=anid)
             if 'whitelist' in data:
+                if not self.may_manage(rs, mailinglist_id=current['id']):
+                    raise PrivilegeError(n_("Not privileged."))
                 existing = current['whitelist']
                 new = set(data['whitelist']) - existing
                 deleted = existing - set(data['whitelist'])
@@ -412,9 +419,6 @@ class MlBackend(AbstractBackend):
                                   const.SubscriptionStates.subscribing_states())
                         ret *= self.query_exec(rs, query, params)
 
-            # Check if privileges allow new state of the mailinglist
-            if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
-                raise PrivilegeError("Not privileged to make this change.")
             # Update subscription states.
             ret *= self.write_subscription_states(rs, data['id'])
         return ret
