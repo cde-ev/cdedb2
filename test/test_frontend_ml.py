@@ -93,6 +93,14 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
+    @as_users("norbert")
+    def test_show_other_mailinglist(self, user):
+        self.traverse({'href': '/ml/$'},)
+        self.assertTitle("Mailinglisten")
+        self.assertPresence("Allgemeine Mailinglisten")
+        self.assertPresence("Andere Mailinglisten")
+        self.assertPresence("Sozialistischer Kampfbrief")
+
     @as_users("anton")
     def test_list_all_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},
