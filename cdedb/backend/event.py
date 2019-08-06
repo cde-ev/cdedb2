@@ -642,9 +642,7 @@ class EventBackend(AbstractBackend):
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
                 additional_info=data[x]['title'])
-            reg_ids = {e['id'] for e in self.sql_select(
-                rs, "event.registrations", ("id",), (event_id,),
-                entity_key="event_id")}
+            reg_ids = self.list_registrations(rs, event_id)
             for reg_id in reg_ids:
                 reg_track = {
                     'registration_id': reg_id,
