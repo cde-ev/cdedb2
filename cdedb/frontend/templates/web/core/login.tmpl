@@ -41,7 +41,7 @@
             {{ util.form_input_submit(value=gettext("Login"), small=True) }}
         </p>
     </form>
-    {% if CDEDB_OFFLINE_DEPLOYMENT %}
+    {% if not CDEDB_OFFLINE_DEPLOYMENT %}
         <p>
             {{ util.href(cdedblink('core/reset_password_form'), gettext("Reset Password")) }} |
             {{ util.href(cdedblink('core/genesis_request_form'), gettext("Request Account")) }}
