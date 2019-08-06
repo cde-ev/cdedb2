@@ -1021,7 +1021,7 @@ class TestMlBackend(BackendTest):
 
         datum = {
             'mailinglist_id': mailinglist_id,
-            'persona_id': 1,
+            'persona_id': user['id'],
             'address': "anton-cde@example.cde",
         }
         expectation.update({datum['persona_id']: datum['address']})
@@ -1033,9 +1033,9 @@ class TestMlBackend(BackendTest):
         # Remove an address.
         datum = {
             'mailinglist_id': mailinglist_id,
-            'persona_id': 1,
+            'persona_id': user['id'],
         }
-        del expectation[datum['persona_id']]
+        expectation.update({user['id']: user['username']})
         self.ml.remove_subscription_address(self.key, datum)
 
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
