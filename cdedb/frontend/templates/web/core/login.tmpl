@@ -41,10 +41,12 @@
             {{ util.form_input_submit(value=gettext("Login"), small=True) }}
         </p>
     </form>
-    <p>
-        {{ util.href(cdedblink('core/reset_password_form'), gettext("Reset Password")) }} |
-        {{ util.href(cdedblink('core/genesis_request_form'), gettext("Request Account")) }}
-    </p>
+    {% if CDEDB_OFFLINE_DEPLOYMENT %}
+        <p>
+            {{ util.href(cdedblink('core/reset_password_form'), gettext("Reset Password")) }} |
+            {{ util.href(cdedblink('core/genesis_request_form'), gettext("Request Account")) }}
+        </p>
+    {% endif %}
     {% if meta_info.get('banner_before_login') %}
         {% call util.bootstrap_panel() %}
             {{ meta_info.get('banner_before_login')|md }}

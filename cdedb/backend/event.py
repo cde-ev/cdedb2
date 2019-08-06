@@ -197,7 +197,7 @@ class EventBackend(AbstractBackend):
     def assert_offline_lock(self, rs, *, event_id=None, course_id=None):
         """Helper to check locking state of an event or course.
 
-        This raises an exception in case of the wrong locking state Exactly
+        This raises an exception in case of the wrong locking state. Exactly
         one of the inputs has to be provided.
 
         :type rs: :py:class:`cdedb.common.RequestState`
