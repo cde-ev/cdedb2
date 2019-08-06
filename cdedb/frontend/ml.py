@@ -539,50 +539,50 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "cdedbid"))
+    @REQUESTdata(("modsubscriber_id", "cdedbid"))
     @mailinglist_guard()
-    def add_mod_subscriber(self, rs, mailinglist_id, subscriber_id):
+    def add_mod_subscriber(self, rs, mailinglist_id, modsubscriber_id):
         """Administratively subscribe somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         code, error = self.mlproxy.add_mod_subscriber(
-            rs, mailinglist_id, subscriber_id)
+            rs, mailinglist_id, modsubscriber_id)
         self.notify_return_code(rs, code, error=error)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "id"))
+    @REQUESTdata(("modsubscriber_id", "id"))
     @mailinglist_guard()
-    def remove_mod_subscriber(self, rs, mailinglist_id, subscriber_id):
+    def remove_mod_subscriber(self, rs, mailinglist_id, modsubscriber_id):
         """Administratively remove subscribe somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         code, error = self.mlproxy.remove_mod_subscriber(
-            rs, mailinglist_id, subscriber_id)
+            rs, mailinglist_id, modsubscriber_id)
         self.notify_return_code(rs, code, error=error)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "cdedbid"))
+    @REQUESTdata(("modunsubscriber_id", "cdedbid"))
     @mailinglist_guard()
-    def add_mod_unsubscriber(self, rs, mailinglist_id, subscriber_id):
+    def add_mod_unsubscriber(self, rs, mailinglist_id, modunsubscriber_id):
         """Administratively block somebody."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         code, error = self.mlproxy.add_mod_unsubscriber(
-            rs, mailinglist_id, subscriber_id)
+            rs, mailinglist_id, modunsubscriber_id)
         self.notify_return_code(rs, code, error=error)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "id"))
+    @REQUESTdata(("modunsubscriber_id", "id"))
     @mailinglist_guard()
-    def remove_mod_unsubscriber(self, rs, mailinglist_id, subscriber_id):
+    def remove_mod_unsubscriber(self, rs, mailinglist_id, modunsubscriber_id):
         """Administratively remove block."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         code, error = self.mlproxy.remove_mod_unsubscriber(
-            rs, mailinglist_id, subscriber_id)
+            rs, mailinglist_id, modunsubscriber_id)
         self.notify_return_code(rs, code, error=error)
         return self.redirect(rs, "ml/show_subscription_details")
 

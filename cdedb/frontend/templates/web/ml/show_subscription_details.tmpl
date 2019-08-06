@@ -37,7 +37,7 @@
                 {{ util.anti_csrf_token('ml/add_mod_subscriber') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="subscriber_id", anid="input-add-forced", placeholder="DB-XXXX-X",
+                    {{ util.input_text(name="modsubscriber_id", anid="input-add-forced", placeholder="DB-XXXX-X",
                                        arialabel=gettext("ID of the new forced subscriber")) }}
                     <script type="text/javascript" nonce="{{ csp_nonce }}">
                         $('#input-add-forced').cdedbSearchPerson(
@@ -50,7 +50,7 @@
                         {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
-                {{ util.output_errors('subscriber_id', wrapper=True) }}
+                {{ util.output_errors('modsubscriber_id', wrapper=True) }}
             </form>
 
             <ul>
@@ -63,7 +63,7 @@
                               id="removemodsubscribeform{{ mod_subscribed }}"
                               style="display: inline;">
                             {{ util.anti_csrf_token('ml/remove_mod_subscriber') }}
-                            {{ util.input_hidden(name="subscriber_id", value=mod_subscribed) }}
+                            {{ util.input_hidden(name="modsubscriber_id", value=mod_subscribed) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
                                     title=gettext("Remove %(given_names)s %(family_name)s as forced subscriber")|format(
                                         given_names=persona['given_names'],
@@ -84,7 +84,7 @@
                 {{ util.anti_csrf_token('ml/add_mod_unsubscriber') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="subscriber_id", anid="input-add-blocked", placeholder="DB-XXXX-X",
+                    {{ util.input_text(name="modunsubscriber_id", anid="input-add-blocked", placeholder="DB-XXXX-X",
                                        arialabel=gettext("ID of the new blocked subscriber")) }}
                     <script type="text/javascript" nonce="{{ csp_nonce }}">
                         $('#input-add-blocked').cdedbSearchPerson(
@@ -97,7 +97,7 @@
                         {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
-                {{ util.output_errors('subscriber_id', wrapper=True) }}
+                {{ util.output_errors('modunsubscriber_id', wrapper=True) }}
             </form>
 
             <ul>
@@ -110,7 +110,7 @@
                               id="removemodunsubscribeform{{ mod_unsubscribed }}"
                               style="display: inline;">
                             {{ util.anti_csrf_token('ml/remove_mod_unsubscriber') }}
-                            {{ util.input_hidden(name="subscriber_id", value=mod_unsubscribed) }}
+                            {{ util.input_hidden(name="modunsubscriber_id", value=mod_unsubscribed) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
                                     title=gettext("Remove %(given_names)s %(family_name)s as blocked subscriber")|format(
                                         given_names=persona['given_names'],
