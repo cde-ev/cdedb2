@@ -933,7 +933,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return t.render(**data)
 
     @staticmethod
-    def send_csv_file(rs, mimetype=None, filename=None, inline=True, *,
+    def send_csv_file(rs, mimetype='text/csv', filename=None, inline=True, *,
                       path=None, afile=None, data=None):
         """Wrapper around :py:meth:`send_file` for CSV files.
 
