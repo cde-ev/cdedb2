@@ -6,8 +6,8 @@ MAILTO=cdedb@lists.cde-ev.de
 
 echo "Autobuild started at $(date)"
 flock -n -E 123 $LOCKFILE $BINDIR/cdedb-autobuild-stage3.sh &> $LOGFILE
-echo "Autobuild finished at $(date)"
 RETVAL=$?
+echo "Autobuild finished at $(date)"
 
 if [[ $RETVAL -eq 0 ]]; then
     # autobuild is up to date
