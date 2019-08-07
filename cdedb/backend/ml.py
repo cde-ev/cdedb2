@@ -567,7 +567,7 @@ class MlBackend(AbstractBackend):
     # TODO this should be internal_access, but that breaks singularization
     # when called by the frontend via another method.
     @access("ml")
-    @singularize("_set_subscription", "data", "datum", returns_dict=False)
+    @singularize("_set_subscription", "data", "datum", passthrough=True)
     def _set_subscriptions(self, rs, data):
         """Change or add ml.subscription_states rows.
 
@@ -615,7 +615,7 @@ class MlBackend(AbstractBackend):
         return num
 
     @access("ml")
-    @singularize("remove_subscription", "data", "datum", returns_dict=False)
+    @singularize("remove_subscription", "data", "datum", passthrough=True)
     def remove_subscriptions(self, rs, data):
         """Remove rows from the ml.subscription_states table.
 
@@ -648,7 +648,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     @singularize("decide_subscription_request", "data", "datum",
-                 returns_dict=False)
+                 passthrough=True)
     def decide_subscription_requests(self, rs, data):
         """Handle subscription requests.
 
