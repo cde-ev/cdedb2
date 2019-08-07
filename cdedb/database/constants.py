@@ -136,14 +136,13 @@ class SubscriptionStates(enum.IntEnum):
 
     @property
     def is_subscribed(self):
-        return self in {SubscriptionStates.subscribed,
-                        SubscriptionStates.mod_subscribed,
-                        SubscriptionStates.implicit}
+        return self in self.subscribing_states()
 
     @classmethod
     def subscribing_states(cls):
-        ret = {member for member in cls if member.is_subscribed}
-        return ret
+        return {SubscriptionStates.subscribed,
+                SubscriptionStates.mod_subscribed,
+                SubscriptionStates.implicit}
 
     def get_log_code(self):
         log_code_map = {
