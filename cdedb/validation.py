@@ -432,22 +432,6 @@ def _sequence(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _pair(val, argname=None, *, _convert=True):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :rtype: ((object, object) or None, [(str or None, exception)])
-    """
-    val, errs = _sequence(val, argname, _convert=_convert)
-    if errs:
-        return None, errs
-    if len(val) != 2:
-        return None, [(argname, ValueError(n_("Must be exactly length two.")))]
-    return tuple(val), []
-
-
-@_addvalidator
 def _bool(val, argname=None, *, _convert=True):
     """
     :type val: object
@@ -3034,7 +3018,7 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     return val, errs
 
 
-_SUBSCRIPTION_ID_FIELDS = lambda: {
+_SUBSCRIPTION_ID_FIELDS = {
     'mailinglist_id': _id,
     'persona_id': _id,
 }
@@ -3043,7 +3027,7 @@ _SUBSCRIPTION_STATE_FIELDS = lambda: {
     'subscription_state': _enum_subscriptionstates,
 }
 
-_SUBSCRIPTION_ADDRESS_FIELDS = lambda: {
+_SUBSCRIPTION_ADDRESS_FIELDS = {
     'address': _email,
 }
 
@@ -3058,7 +3042,7 @@ def _subscription_identifier(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SUBSCRIPTION_ID_FIELDS()
+    mandatory_fields = _SUBSCRIPTION_ID_FIELDS
     return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
 
@@ -3068,7 +3052,7 @@ def _subscription_state(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SUBSCRIPTION_ID_FIELDS()
+    mandatory_fields = _SUBSCRIPTION_ID_FIELDS
     mandatory_fields.update(_SUBSCRIPTION_STATE_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
@@ -3079,8 +3063,8 @@ def _subscription_address(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SUBSCRIPTION_ID_FIELDS()
-    mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS())
+    mandatory_fields = _SUBSCRIPTION_ID_FIELDS
+    mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
 
@@ -3090,7 +3074,7 @@ def _subscription_request_resolution(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SUBSCRIPTION_ID_FIELDS()
+    mandatory_fields = _SUBSCRIPTION_ID_FIELDS
     mandatory_fields.update(_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
