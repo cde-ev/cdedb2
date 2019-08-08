@@ -101,6 +101,7 @@ class TestEventBackend(BackendTest):
         data['offline_lock'] = False
         data['is_archived'] = False
         data['is_course_list_visible'] = False
+        data['is_course_state_visible'] = False
         data['is_visible'] = False
         data['lodge_field'] = None
         data['reserve_field'] = None
@@ -1544,6 +1545,7 @@ class TestEventBackend(BackendTest):
                                  'institution': 1,
                                  'is_archived': False,
                                  'is_course_list_visible': True,
+                                 'is_course_state_visible': False,
                                  'is_visible': True,
                                  'lodge_field': 3,
                                  'registration_text': None,

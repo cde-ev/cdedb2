@@ -895,7 +895,7 @@ etc;anything else""", f['entries_2'].value)
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
         f['course_choice3_0'] = 2
         f['course_choice3_1'] = 4
-        self.assertNotIn('5', tuple(
+        self.assertNotIn('3', tuple(
             o for o, _, _ in f['course_choice3_1'].options))
         f['course_instructor3'] = 2
         self.submit(f)
