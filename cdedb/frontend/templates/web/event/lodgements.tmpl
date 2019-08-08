@@ -82,7 +82,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <td>{{ "Σ" }}</td>
+                <td>&Sigma;</td>
                 {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                     <td class="text-right {% if loop.first %} b-left{% endif %}">
                         {{ (inhabitants_sum[part_id] - reserve_inhabitants_sum[part_id]) }}
