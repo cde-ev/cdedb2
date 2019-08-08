@@ -86,7 +86,7 @@ def schulze_evaluate(votes, candidates):
         for index, sublist in enumerate(alist):
             if element in sublist:
                 return index
-        raise ValueError(n_("Not in list."))
+        raise ValueError("Not in list.")
 
     # First we count the number of votes prefering x to y
     counts = {(x, y): 0 for x in candidates for y in candidates}
@@ -143,6 +143,15 @@ def schulze_evaluate(votes, candidates):
             break
         winners = _schulze_winners(d, remaining)
         result.append(winners)
+
+    announce = "Detail:"
+    msg = ("{} Optionen {} gewinnen gegen {}"
+           " mit {} pro und {} contra Stimmen")
+    for lead, follow in zip(result, result[1:]):
+        print(msg.format(announce, lead, follow, counts[(lead[0], follow[0])],
+                         counts[(follow[0], lead[0])]))
+        announce = "       "
+
     # Return the aggregate preference list in the same format as the input
     # votes are.
     return ">".join("=".join(level) for level in result)
@@ -169,7 +178,7 @@ if __name__ == "__main__":
         first = False
         print("Versammlung: {}".format(data['assembly']))
         print("Abstimmung: {}".format(data['ballot']))
-        candidates = ", ".join(
+        candidates = "\n          ".join(
             "{} ({})".format(value, key)
             for key, value in sorted(data['candidates'].items()))
         print("Optionen: {}".format(candidates))
@@ -179,7 +188,7 @@ if __name__ == "__main__":
         if data['use_bar']:
             monikers.append("_bar_")
         result = schulze_evaluate(votes, monikers)
-        print("Ergebnis: {}".format(schulze_evaluate(votes, monikers)))
+        print("Ergebnis: {}".format(result))
         if result != data['result']:
             print("Übereinstimmung: NEIN ({})".format(data['result']))
         else:
