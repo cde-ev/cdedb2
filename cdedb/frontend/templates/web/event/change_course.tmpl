@@ -54,13 +54,20 @@
             {{ util.form_input_checkbox("active_segments", label=gettext("Takes place"),
                                         value=(ambience['event']['tracks']|list)[0],
                                         info=gettext("Cancelled courses are no longer choosable by participants and "
-                                                     "are marked in the courselist and the course assignment.")) }}
+                                                     "are marked in the courselist and the course assignment.")
+                                            if ambience['event']['is_course_state_visible']
+                                            else gettext("Cancelled courses are only marked for orgas. To change this, "
+                                                         "check Configuration → Visibility of cancelled courses.")) }}
         {% else %}
             {{ util.form_input_checkboxes(name="active_segments", label=gettext("Takes place in"),
                                           entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
                                           aclass='checkbox_active_segment',
                                           info=gettext("Cancelled courses are no longer choosable by participants and "
-                                                       "are marked in the courselist and the course assignment.")) }}
+                                                       "are marked in the courselist and the course assignment.")
+                                              if ambience['event']['is_course_state_visible']
+                                              else gettext("Cancelled courses are only marked for orgas. To change "
+                                                           "this, check Configuration → Visibility of cancelled "
+                                                           "courses.")) }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(

@@ -1785,6 +1785,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'offline_lock': _bool,
     'is_visible': _bool,
     'is_course_list_visible': _bool,
+    'is_course_state_visible': _bool,
     'is_archived': _bool,
     'orgas': _iterable,
     'parts': _mapping,

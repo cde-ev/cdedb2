@@ -27,6 +27,21 @@
                 {% trans -%}The Courselist is currently only visible to Orgas and Admins.{%- endtrans %}
             </span>
         </div>
+    {% elif not ambience['event']['is_course_state_visible'] and ambience['event']['id'] in user.orga %}
+        <div class="alert alert-info" role="alert">
+            {{ util.make_icon('info-sign') }}
+            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            {% if ambience['event']['tracks']|length > 1 %}
+                {% trans -%}
+                    Cancelled courses are only marked for orgas. Other users can currently only see in which course
+                    tracks the course was originally offered.
+                {%- endtrans %}
+            {% else %}
+                {% trans -%}
+                    Cancelled courses are only marked for orgas. Other users cannot see courses' state currently.
+                {%- endtrans %}
+            {% endif %}
+        </div>
     {% endif %}
     {% if courses %}
         {% for anid, entry in courses|xdictsort('nr', pad=True) if entry['segments'] %}
@@ -54,19 +69,24 @@
                         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
                                 if track_id in entry['segments'] -%}
                             {% if not loop.first %}
-                                {% if loop.last %}
+                                {%- if loop.last %}
                                     {% trans -%}and{%- endtrans %}
-                                {% else %}
+                                {% else -%}
                                     ,
                                 {% endif %}
-                            {% endif %}
-                            {% if track_id not in entry['active_segments'] %}
-                                <i><s>{{ track['title'] }}</s></i>
+                            {%- endif %}
+                            {%- if track_id not in entry['active_segments'] and
+                                    (ambience['event']['is_course_state_visible']
+                                        or ambience['event']['id'] in user.orga) %}
+                                <i><s>{{ track['title'] }}</s></i>{# -#}
+                                <span class="sr-only"> ({% trans -%}cancelled{%- endtrans %})</span>
                             {%- else %}
                                 <i>{{ track['title'] }}</i>
                             {%- endif %}
                         {%- endfor %}</span>.
-                    {% elif not entry['active_segments'] %}
+                    {% elif track_id not in entry['active_segments'] and
+                            (ambience['event']['is_course_state_visible']
+                                or ambience['event']['id'] in user.orga) %}
                         – <span class="text-info">{% trans -%}cancelled{%- endtrans %}</span>
                     {% endif %}
                 </p>

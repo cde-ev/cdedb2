@@ -259,7 +259,7 @@ class EventFrontend(AbstractUserFrontend):
         "registration_hard_limit", "iban", "orga_address", "registration_text",
         "mail_text", "use_questionnaire", "notes", "lodge_field",
         "reserve_field", "is_visible", "is_course_list_visible",
-        "course_room_field")
+        "is_course_state_visible", "course_room_field")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -2323,22 +2323,23 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def register_form(self, rs, event_id):
         """Render form."""
-        tracks = rs.ambience['event']['tracks']
+        event = rs.ambience['event']
+        tracks = event['tracks']
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if rs.user.persona_id in registrations.values():
             rs.notify("info", n_("Already registered."))
             return self.redirect(rs, "event/registration_status")
-        if not rs.ambience['event']['is_open']:
+        if not event['is_open']:
             rs.notify("warning", n_("Registration not open."))
             return self.redirect(rs, "event/show_event")
-        if self.is_locked(rs.ambience['event']):
+        if self.is_locked(event):
             rs.notify("warning", n_("Event locked."))
             return self.redirect(rs, "event/show_event")
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
             persona['birthday'],
-            rs.ambience['event']['begin'])
+            event['begin'])
         minor_form_present = (
                 self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
@@ -2351,11 +2352,13 @@ class EventFrontend(AbstractUserFrontend):
             track_id: [course_id
                        for course_id, course
                        in xdictsort_filter(courses, 'nr', pad=True)
-                       if track_id in course['active_segments']]
+                       if track_id in course['active_segments']
+                           or (not event['is_course_state_visible']
+                               and track_id in course['segments'])]
             for track_id in tracks}
         # by default select all parts
         if 'parts' not in rs.values:
-            rs.values.setlist('parts', rs.ambience['event']['parts'])
+            rs.values.setlist('parts', event['parts'])
         return self.render(rs, "register", {
             'persona': persona, 'age': age, 'courses': courses,
             'course_choices': course_choices})
@@ -2514,15 +2517,16 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def amend_registration_form(self, rs, event_id):
         """Render form."""
-        tracks = rs.ambience['event']['tracks']
+        event = rs.ambience['event']
+        tracks = event['tracks']
         registration_id = unwrap(self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id), keys=True)
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
         registration = self.eventproxy.get_registration(rs, registration_id)
-        if (rs.ambience['event']['registration_soft_limit'] and
-                now() > rs.ambience['event']['registration_soft_limit']):
+        if (event['registration_soft_limit'] and
+                now() > event['registration_soft_limit']):
             rs.notify("warning",
                       n_("Registration closed, no changes possible."))
             return self.redirect(rs, "event/registration_status")
@@ -2538,7 +2542,9 @@ class EventFrontend(AbstractUserFrontend):
             track_id: [course_id
                        for course_id, course
                        in xdictsort_filter(courses, 'nr', pad=True)
-                       if track_id in course['active_segments']]
+                       if track_id in course['active_segments']
+                           or (not event['is_course_state_visible']
+                               and track_id in course['segments'])]
             for track_id in tracks}
         non_trivials = {}
         for track_id, track in registration['tracks'].items():

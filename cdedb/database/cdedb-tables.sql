@@ -554,6 +554,8 @@ CREATE TABLE event.events (
         offline_lock            boolean NOT NULL DEFAULT False,
         is_visible              boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible  boolean NOT NULL DEFAULT False, -- this is purely cosmetical
+        -- show cancelled courses in course list and restrict registration to active courses
+        is_course_state_visible boolean NOT NULL DEFAULT False,
         is_archived             boolean NOT NULL DEFAULT False,
         -- JSON field for lodgement preference functionality
         lodge_field             integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
