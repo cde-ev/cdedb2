@@ -31,6 +31,12 @@
     {% endif %}
 {% endmacro %}
 {% block content %}
+    <p class="text-warning">
+        <strong>{% trans -%}
+            Carefully check the diff below, this tool has the potential to do irreversible damage
+            to your event. (You read the manual, right?)
+        {%- endtrans %}</strong>
+    </p>
     {% if states['changed_registrations'] or states['new_registrations'] or states['deleted_registrations'] %}
         <h2>{% trans %}Registrations{% endtrans %}</h2>
         {% if states['changed_registrations'] %}

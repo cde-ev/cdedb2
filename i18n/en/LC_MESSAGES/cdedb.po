@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-08-09 22:00+0200\n"
+"POT-Creation-Date: 2019-08-09 22:10+0200\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -5908,7 +5908,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/create_course.tmpl:14
 #: cdedb/frontend/templates/web/event/index.tmpl:48
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:14
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:92
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:98
 #: cdedb/frontend/templates/web/event/show_course.tmpl:16
 msgid "Courses"
 msgstr ""
@@ -7265,7 +7265,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/field_set.tmpl:23
 #: cdedb/frontend/templates/web/event/field_set_select.tmpl:20
 #: cdedb/frontend/templates/web/event/index.tmpl:41
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:35
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:41
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:14
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:21
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:14
@@ -8005,7 +8005,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:12
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:16
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:14
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:154
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:160
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:14
 msgid "Lodgements"
 msgstr ""
@@ -9245,70 +9245,77 @@ msgstr ""
 msgid "Partial Import Validation (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:37
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:35
+msgid ""
+"Carefully check the diff below, this tool has the potential to do "
+"irreversible damage\n"
+"            to your event. (You read the manual, right?)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:43
 msgid "Changed registrations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:58
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:64
 msgid "New registrations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:72
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:78
 msgid "Deleted registrations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:80
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:86
 #, python-format
 msgid "Double deletion of registration %(reg_id)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:94
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:100
 msgid "Changed courses"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:113
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:119
 msgid "New courses"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:121
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:127
 msgid "(Warning: Similar course found; risk of double creation.)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:135
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:141
 msgid "Deleted courses"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:142
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:148
 #, python-format
 msgid "Double deletion of course %(course_id)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:156
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:162
 msgid "Changed lodgements"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:174
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:180
 msgid "New lodgements"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:182
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:188
 msgid "(Warning: Similar lodgement found; risk of double creation.)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:196
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:202
 msgid "Deleted lodgements"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:204
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:210
 #, python-format
 msgid "Double deletion of lodgement %(lodgement_id)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:219
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:225
 msgid "The input produced an empty diff. No changes are to be imported."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:226
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:232
 msgid "Apply changes"
 msgstr ""
 
