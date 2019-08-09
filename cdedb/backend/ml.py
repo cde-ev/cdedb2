@@ -1052,29 +1052,20 @@ class MlBackend(AbstractBackend):
         if datum['persona_id'] != rs.user.persona_id:
             raise PrivilegeError(n_("Not privileged."))
 
-        existing = self.get_subscription_address(
-            rs, datum['mailinglist_id'], persona_id=datum['persona_id'],
-            explicits_only=True)
-
-        if existing:
-            query = ("UPDATE ml.subscription_addresses SET address = %s "
-                     "WHERE mailinglist_id = %s AND persona_id = %s")
-            params = (datum['address'], datum['mailinglist_id'],
-                      datum['persona_id'])
-
-            ret = self.query_exec(rs, query, params)
-        else:
+        with Atomizer(rs):
             query = ("INSERT INTO ml.subscription_addresses "
-                     "(address, mailinglist_id, persona_id)"
-                     "VALUES (%s, %s, %s)")
-            params = (datum['address'], datum['mailinglist_id'],
-                      datum['persona_id'])
-            # TODO: return the id here? It is not needed for anything.
+                     "(mailinglist_id, persona_id, address) "
+                     "VALUES (%s, %s, %s) "
+                     "ON CONFLICT (mailinglist_id, persona_id) DO UPDATE "
+                     "SET address=EXCLUDED.address")
+            params = (datum['mailinglist_id'], datum['persona_id'],
+                      datum['address'])
             ret = self.query_exec(rs, query, params)
-
-        self.ml_log(
-            rs, const.MlLogCodes.subscription_changed, datum['mailinglist_id'],
-            datum['persona_id'], additional_info=datum['address'])
+            if ret:
+                self.ml_log(
+                    rs, const.MlLogCodes.subscription_changed,
+                    datum['mailinglist_id'], datum['persona_id'],
+                    additional_info=datum['address'])
 
         return ret
 
