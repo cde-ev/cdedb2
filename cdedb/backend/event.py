@@ -130,7 +130,7 @@ _REGISTRATION_VIEW_TEMPLATE = glue(
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data
-_CDEDB_EXPORT_EVENT_VERSION = 1
+_CDEDB_EXPORT_EVENT_VERSION = 2
 
 
 class EventBackend(AbstractBackend):

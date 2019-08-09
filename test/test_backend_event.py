@@ -1133,7 +1133,7 @@ class TestEventBackend(BackendTest):
     @as_users("anton", "garcia")
     def test_export_event(self, user):
         expectation =  {
-            'CDEDB_EXPORT_EVENT_VERSION': 1,
+            'CDEDB_EXPORT_EVENT_VERSION': 2,
             'core.personas': {1: {'address': 'Auf der Düne 42',
                                   'address_supplement': None,
                                   'birthday': datetime.date(1991, 3, 30),
@@ -2139,7 +2139,7 @@ class TestEventBackend(BackendTest):
     @as_users("anton")
     def test_partial_export_event(self, user):
         expectation = {
-            'CDEDB_EXPORT_EVENT_VERSION': 1,
+            'CDEDB_EXPORT_EVENT_VERSION': 2,
             'courses': {1: {'description': 'Wir werden die Bäume drücken.',
                             'fields': {'room': 'Wald'},
                             'instructors': 'ToFi & Co',
