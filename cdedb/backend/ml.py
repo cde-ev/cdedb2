@@ -292,19 +292,22 @@ class MlBackend(AbstractBackend):
         :returns: Mapping of mailinglist ids to titles.
         """
         active_only = affirm("bool", active_only)
-        overrides = self.get_subscriptions(rs, rs.user.persona_id,
-            states={const.SubscriptionStates.mod_subscribed})
-        params = []
-        query = ("SELECT id, title, audience_policy FROM ml.mailinglists "
-                 "WHERE id = ANY(%s)")
-        params.append(overrides.keys())
-        if active_only:
-            query = glue(query, "AND is_active = True")
-        data = self.query_all(rs, query, params)
-        result = filter(
-            lambda ml: not const.AudiencePolicy(ml["audience_policy"])
-                                                .check(rs.user.roles), data)
-        return {e['id']: e['title'] for e in result}
+
+        with Atomizer(rs):
+            override_states = {const.SubscriptionStates.mod_subscribed}
+            overrides = self.get_subscriptions(
+                rs, rs.user.persona_id, states=override_states)
+            params = []
+            query = ("SELECT id, title, audience_policy FROM ml.mailinglists "
+                     "WHERE id = ANY(%s)")
+            params.append(overrides.keys())
+            if active_only:
+                query = glue(query, "AND is_active = True")
+            data = self.query_all(rs, query, params)
+            a_p = const.AudiencePolicy
+            result = {ml['id']: ml['title'] for ml in data
+                      if not a_p(ml["audience_policy"]).check(rs.user.roles)}
+        return result
 
     @access("ml")
     @singularize("get_mailinglist")
