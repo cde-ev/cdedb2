@@ -3042,7 +3042,7 @@ def _subscription_identifier(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SUBSCRIPTION_ID_FIELDS
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
 
@@ -3052,7 +3052,7 @@ def _subscription_state(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SUBSCRIPTION_ID_FIELDS
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_STATE_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
@@ -3063,7 +3063,7 @@ def _subscription_address(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SUBSCRIPTION_ID_FIELDS
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
@@ -3074,7 +3074,7 @@ def _subscription_request_resolution(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SUBSCRIPTION_ID_FIELDS
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
