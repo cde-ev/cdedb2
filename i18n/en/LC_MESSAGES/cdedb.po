@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-08-04 14:46+0200\n"
+"POT-Creation-Date: 2019-08-09 22:00+0200\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -1118,7 +1118,7 @@ msgid "Must be a string."
 msgstr ""
 
 #: cdedb/frontend/event.py:339 cdedb/validation.py:387 cdedb/validation.py:525
-#: cdedb/validation.py:3283
+#: cdedb/validation.py:3322
 msgid "Mustn’t be empty."
 msgstr ""
 
@@ -1371,134 +1371,147 @@ msgstr ""
 msgid "Entry not in definition list."
 msgstr ""
 
-#: cdedb/validation.py:2465
+#: cdedb/validation.py:2454
+msgid "Invalid UTF-8 sequence."
+msgstr ""
+
+#: cdedb/validation.py:2459
+msgid "Must not be empty."
+msgstr ""
+
+#: cdedb/validation.py:2463
+#, python-format
+msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
+msgstr ""
+
+#: cdedb/validation.py:2502
 msgid "Only full exports are supported"
 msgstr ""
 
-#: cdedb/validation.py:2554
+#: cdedb/validation.py:2591
 msgid "Only a single event is supported."
 msgstr ""
 
-#: cdedb/validation.py:2557
+#: cdedb/validation.py:2594
 msgid "Wrong event specified."
 msgstr ""
 
-#: cdedb/validation.py:2562
+#: cdedb/validation.py:2599
 msgid "Mismatched event."
 msgstr ""
 
-#: cdedb/validation.py:2598
+#: cdedb/validation.py:2637
 msgid "Only partial exports are supported."
 msgstr ""
 
-#: cdedb/validation.py:2852
+#: cdedb/validation.py:2891
 msgid "Only one allowed of gateway, event_id and assembly_id."
 msgstr ""
 
-#: cdedb/validation.py:2860
+#: cdedb/validation.py:2899
 msgid "Linked assembly requires assembly audience."
 msgstr ""
 
-#: cdedb/validation.py:2865
+#: cdedb/validation.py:2904
 msgid "Linked event requires event audience."
 msgstr ""
 
-#: cdedb/validation.py:2967
+#: cdedb/validation.py:3006
 msgid "Mustn’t be in the past."
 msgstr ""
 
-#: cdedb/validation.py:2972
+#: cdedb/validation.py:3011
 msgid "Mustn’t be before start of voting period."
 msgstr ""
 
-#: cdedb/validation.py:2978
+#: cdedb/validation.py:3017
 msgid "Mustn’t be before end of voting period."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:781 cdedb/validation.py:3032
+#: cdedb/frontend/assembly.py:781 cdedb/validation.py:3071
 msgid "Mustn’t be the bar moniker."
 msgstr ""
 
-#: cdedb/validation.py:3065
+#: cdedb/validation.py:3104
 msgid "Only one host allowed."
 msgstr ""
 
-#: cdedb/validation.py:3067
+#: cdedb/validation.py:3106
 msgid "No host given."
 msgstr ""
 
-#: cdedb/validation.py:3096
+#: cdedb/validation.py:3135
 msgid "Superfluous candidates."
 msgstr ""
 
-#: cdedb/validation.py:3098
+#: cdedb/validation.py:3137
 msgid "Missing candidates."
 msgstr ""
 
-#: cdedb/validation.py:3106
+#: cdedb/validation.py:3145
 msgid "Too many levels."
 msgstr ""
 
-#: cdedb/validation.py:3108
+#: cdedb/validation.py:3147
 msgid "Too many votes."
 msgstr ""
 
-#: cdedb/validation.py:3112
+#: cdedb/validation.py:3151
 msgid "Misplaced bar."
 msgstr ""
 
-#: cdedb/validation.py:3133
+#: cdedb/validation.py:3172
 msgid "Invalid input for regex."
 msgstr ""
 
-#: cdedb/validation.py:3165
+#: cdedb/validation.py:3204
 msgid "Query must be specified."
 msgstr ""
 
-#: cdedb/validation.py:3188
+#: cdedb/validation.py:3227
 msgid "Invalid operator for this field."
 msgstr ""
 
-#: cdedb/validation.py:3217
+#: cdedb/validation.py:3256
 msgid "Two endpoints required."
 msgstr ""
 
-#: cdedb/validation.py:3233
+#: cdedb/validation.py:3272
 msgid "Selection may not be empty."
 msgstr ""
 
-#: cdedb/validation.py:3267
+#: cdedb/validation.py:3306
 msgid "Not a Query."
 msgstr ""
 
-#: cdedb/validation.py:3271
+#: cdedb/validation.py:3310
 msgid "Must start with “qview_”."
 msgstr ""
 
-#: cdedb/validation.py:3289
+#: cdedb/validation.py:3328
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr ""
 
-#: cdedb/frontend/event.py:2874 cdedb/validation.py:3295
+#: cdedb/frontend/event.py:2874 cdedb/validation.py:3334
 msgid "Invalid field."
 msgstr ""
 
-#: cdedb/validation.py:3302
+#: cdedb/validation.py:3341
 msgid "Invalid operator."
 msgstr ""
 
-#: cdedb/validation.py:3325
+#: cdedb/validation.py:3364
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr ""
 
-#: cdedb/validation.py:3351 cdedb/validation.py:3408
+#: cdedb/validation.py:3390 cdedb/validation.py:3447
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr ""
 
-#: cdedb/validation.py:3379 cdedb/validation.py:3445
+#: cdedb/validation.py:3418 cdedb/validation.py:3484
 #, python-format
 msgid "Must be a %(type)s."
 msgstr ""
@@ -9292,7 +9305,7 @@ msgid "Double deletion of lodgement %(lodgement_id)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:219
-msgid "The input produced an empty diff."
+msgid "The input produced an empty diff. No changes are to be imported."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:226
@@ -10655,5 +10668,8 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "JSON-File"
+#~ msgstr ""
+
+#~ msgid "The input produced an empty diff."
 #~ msgstr ""
 

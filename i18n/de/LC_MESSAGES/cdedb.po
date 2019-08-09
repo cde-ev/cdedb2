@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-08-04 14:46+0200\n"
-"PO-Revision-Date: 2019-08-04 14:55+0200\n"
+"POT-Creation-Date: 2019-08-09 22:00+0200\n"
+"PO-Revision-Date: 2019-08-09 22:01+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1122,7 +1122,7 @@ msgid "Must be a string."
 msgstr "Muss eine Zeichenkette sein."
 
 #: cdedb/frontend/event.py:339 cdedb/validation.py:387 cdedb/validation.py:525
-#: cdedb/validation.py:3283
+#: cdedb/validation.py:3322
 msgid "Mustn’t be empty."
 msgstr "Darf nicht leer sein."
 
@@ -1381,136 +1381,149 @@ msgstr "Muss alle aktiven Segmente enthalten."
 msgid "Entry not in definition list."
 msgstr "Eintrag nicht in Referenzliste."
 
-#: cdedb/validation.py:2465
+#: cdedb/validation.py:2454
+msgid "Invalid UTF-8 sequence."
+msgstr "Ungültige UTF-8-Sequenz."
+
+#: cdedb/validation.py:2459
+msgid "Must not be empty."
+msgstr "Darf nicht leer sein."
+
+#: cdedb/validation.py:2463
+#, python-format
+msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
+msgstr "Ungültige JSON-Syntax (Zeile %(line)s, Spalte %(col)s)."
+
+#: cdedb/validation.py:2502
 msgid "Only full exports are supported"
 msgstr "Nur vollständige Exporte sind unterstützt."
 
-#: cdedb/validation.py:2554
+#: cdedb/validation.py:2591
 msgid "Only a single event is supported."
 msgstr "Nur eine einzelne Veranstaltung unterstützt."
 
-#: cdedb/validation.py:2557
+#: cdedb/validation.py:2594
 msgid "Wrong event specified."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/validation.py:2562
+#: cdedb/validation.py:2599
 msgid "Mismatched event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/validation.py:2598
+#: cdedb/validation.py:2637
 msgid "Only partial exports are supported."
 msgstr "Nur partielle Exporte sind unterstützt."
 
-#: cdedb/validation.py:2852
+#: cdedb/validation.py:2891
 msgid "Only one allowed of gateway, event_id and assembly_id."
 msgstr ""
 "Nur eine der folgenden Optionen kann gleichzeitig aktiv sein: "
 "Zugangsvererbung, verknüpfte Veranstaltung, verknüpfte Versammlung."
 
-#: cdedb/validation.py:2860
+#: cdedb/validation.py:2899
 msgid "Linked assembly requires assembly audience."
 msgstr "Versammlungsverknüpfung benötigt Versammlungsnutzer."
 
-#: cdedb/validation.py:2865
+#: cdedb/validation.py:2904
 msgid "Linked event requires event audience."
 msgstr "Veranstaltungsverknüpfung benötigt Veranstaltungsnutzer."
 
-#: cdedb/validation.py:2967
+#: cdedb/validation.py:3006
 msgid "Mustn’t be in the past."
 msgstr "Darf nicht in der Vergangenheit liegen."
 
-#: cdedb/validation.py:2972
+#: cdedb/validation.py:3011
 msgid "Mustn’t be before start of voting period."
 msgstr "Darf nicht vor Abstimmungsbeginn liegen."
 
-#: cdedb/validation.py:2978
+#: cdedb/validation.py:3017
 msgid "Mustn’t be before end of voting period."
 msgstr "Darf nicht vor Abstimmungsende liegen."
 
-#: cdedb/frontend/assembly.py:781 cdedb/validation.py:3032
+#: cdedb/frontend/assembly.py:781 cdedb/validation.py:3071
 msgid "Mustn’t be the bar moniker."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
-#: cdedb/validation.py:3065
+#: cdedb/validation.py:3104
 msgid "Only one host allowed."
 msgstr "Nur eine Verknüpfung erlaubt."
 
-#: cdedb/validation.py:3067
+#: cdedb/validation.py:3106
 msgid "No host given."
 msgstr "Keine Zugehörigkeit angegeben."
 
-#: cdedb/validation.py:3096
+#: cdedb/validation.py:3135
 msgid "Superfluous candidates."
 msgstr "Unerwartete Kandidaten gefunden."
 
-#: cdedb/validation.py:3098
+#: cdedb/validation.py:3137
 msgid "Missing candidates."
 msgstr "Nicht alle Kandidaten vorhanden."
 
-#: cdedb/validation.py:3106
+#: cdedb/validation.py:3145
 msgid "Too many levels."
 msgstr "Zu viele Abstufungen."
 
-#: cdedb/validation.py:3108
+#: cdedb/validation.py:3147
 msgid "Too many votes."
 msgstr "Zu viele Optionen ausgewählt."
 
-#: cdedb/validation.py:3112
+#: cdedb/validation.py:3151
 msgid "Misplaced bar."
 msgstr "Ablehnungsoption an ungültiger Stelle."
 
-#: cdedb/validation.py:3133
+#: cdedb/validation.py:3172
 msgid "Invalid input for regex."
 msgstr "Ungültige Eingabe für einen regulären Ausdruck."
 
-#: cdedb/validation.py:3165
+#: cdedb/validation.py:3204
 msgid "Query must be specified."
 msgstr "Art der Query muss spezifiziert werden."
 
-#: cdedb/validation.py:3188
+#: cdedb/validation.py:3227
 msgid "Invalid operator for this field."
 msgstr "Unzulässiger Operator für dieses Feld."
 
-#: cdedb/validation.py:3217
+#: cdedb/validation.py:3256
 msgid "Two endpoints required."
 msgstr "Zwei Werte für Intervall benötigt."
 
-#: cdedb/validation.py:3233
+#: cdedb/validation.py:3272
 msgid "Selection may not be empty."
 msgstr "Es muss etwas ausgewählt werden."
 
-#: cdedb/validation.py:3267
+#: cdedb/validation.py:3306
 msgid "Not a Query."
 msgstr "Muss eine Query sein."
 
-#: cdedb/validation.py:3271
+#: cdedb/validation.py:3310
 msgid "Must start with “qview_”."
 msgstr "Muss mit „qview_“ beginnen."
 
-#: cdedb/validation.py:3289
+#: cdedb/validation.py:3328
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
-#: cdedb/frontend/event.py:2874 cdedb/validation.py:3295
+#: cdedb/frontend/event.py:2874 cdedb/validation.py:3334
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
-#: cdedb/validation.py:3302
+#: cdedb/validation.py:3341
 msgid "Invalid operator."
 msgstr "Unzulässiger Operator."
 
-#: cdedb/validation.py:3325
+#: cdedb/validation.py:3364
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr "Ungültige Ordnungsrelation bei Index %(index)s."
 
-#: cdedb/validation.py:3351 cdedb/validation.py:3408
+#: cdedb/validation.py:3390 cdedb/validation.py:3447
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 
-#: cdedb/validation.py:3379 cdedb/validation.py:3445
+#: cdedb/validation.py:3418 cdedb/validation.py:3484
 #, python-format
 msgid "Must be a %(type)s."
 msgstr "Muss vom Typ %(type)s sein."
@@ -9598,7 +9611,8 @@ msgid ""
 "            please read the documentation first."
 msgstr ""
 "Aktualisierung oder Ergänzung der Veranstaltung-Daten mit vorgefertigten\n"
-"Daten (z.B. bekannte Liste von Unterkünften) oder externen Programmen. Für\n"
+"Daten (z.B. bekannte Liste von Unterkünften) oder externen Programmen. "
+"Für\n"
 "letzteres lies bitte zuerst die Dokumentation."
 
 #: cdedb/frontend/templates/web/event/partial_import.tmpl:29
@@ -9606,7 +9620,8 @@ msgid ""
 "After the upload a summary of the changes will be displayed and\n"
 "            the import must be approved."
 msgstr ""
-"Nach dem Upload wird eine Übersicht der Änderungen gezeigt und der Import\n"
+"Nach dem Upload wird eine Übersicht der Änderungen gezeigt und der Import"
+"\n"
 "muss bestätigt werden."
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:5
@@ -9641,7 +9656,9 @@ msgstr "Neue Kurse"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:121
 msgid "(Warning: Similar course found; risk of double creation.)"
-msgstr "(Warnung: Ähnlicher Kurs gefunden; möglicherweise wird dieser doppelt erstellt.)"
+msgstr ""
+"(Warnung: Ähnlicher Kurs gefunden; möglicherweise wird dieser doppelt "
+"erstellt.)"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:135
 msgid "Deleted courses"
@@ -9662,7 +9679,9 @@ msgstr "Neue Unterkünfte"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:182
 msgid "(Warning: Similar lodgement found; risk of double creation.)"
-msgstr "(Warnung: Ähnliche Unterkunft gefunden; möglicherweise wird diese doppelt erstellt.)"
+msgstr ""
+"(Warnung: Ähnliche Unterkunft gefunden; möglicherweise wird diese doppelt"
+" erstellt.)"
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:196
 msgid "Deleted lodgements"
@@ -9674,8 +9693,8 @@ msgid "Double deletion of lodgement %(lodgement_id)s."
 msgstr "Doppelte Löschung der Unterkunft %(lodgement_id)s."
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:219
-msgid "The input produced an empty diff."
-msgstr "Die Eingabe erzeugte eine leere Differenz."
+msgid "The input produced an empty diff. No changes are to be imported."
+msgstr "Die Eingabe erzeugte eine leere Differenz. Es sind keine Änderungen zu importieren."
 
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:226
 msgid "Apply changes"
@@ -11024,4 +11043,7 @@ msgstr "Mailinglisten-Log"
 
 #~ msgid "JSON-File"
 #~ msgstr "JSON-Datei"
+
+#~ msgid "The input produced an empty diff."
+#~ msgstr "Die Eingabe erzeugte eine leere Differenz."
 

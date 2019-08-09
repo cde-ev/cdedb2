@@ -216,7 +216,7 @@
     {% if not states['changed_registrations'] and not states['new_registrations'] and not states['deleted_registrations']
             and not states['changed_courses'] and not states['new_courses'] and not states['deleted_courses']
             and not states['changed_lodgements'] and not states['new_lodgements'] and not states['deleted_lodgements'] %}
-        {% trans %}The input produced an empty diff.{% endtrans %}
+        {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
     {% endif %}
 
     <form action="{{ cdedblink('event/partial_import') }}" method="POST" id="importexecuteform" class="form-horizontal">
