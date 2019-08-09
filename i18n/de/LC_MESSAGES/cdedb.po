@@ -8419,7 +8419,7 @@ msgstr "Findet statt"
 #: cdedb/frontend/templates/web/event/change_course.tmpl:65
 msgid ""
 "Cancelled courses are no longer choosable by participants and are marked "
-"in the courselist and the course assignment."
+"in the courselist and the course assignment view."
 msgstr ""
 "Ausfallende Kurse sind nicht mehr von den Teilnehmern wählbar und werden "
 "in der Kursliste und bei der Kurseinteilung markiert."
@@ -8427,11 +8427,13 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_course.tmpl:59
 #: cdedb/frontend/templates/web/event/change_course.tmpl:68
 msgid ""
-"Cancelled courses are only marked for orgas. To change this, check "
-"Configuration → Visibility of cancelled courses."
+"This is an orga-internal marker to help with course assignment. To make "
+"cancelled courses public, check Configuration → Visibility of cancelled "
+"courses."
 msgstr ""
-"Nur Orgas können sehen, welche Kurse ausfallen. Um das zu ändern, "
-"aktiviere Konfiguration → Sichtbarkeit ausfallender Kurse"
+"Dies ist ein Orga-interner Marker, der bei der Kurseinteilung genutzt werden "
+"kann. Um die ausfallenden Kurse öffentlich zu machen, aktiviere Konfiguration "
+"→ Sichtbarkeit ausfallender Kurse."
 
 #: cdedb/frontend/templates/web/event/change_course.tmpl:62
 msgid "Takes place in"
