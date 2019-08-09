@@ -44,7 +44,7 @@
                     {% if ambience['event']['id'] in user.orga or is_admin %}
                         <span class="label label-primary">{{ entry['shortname'] }}</span>
                     {% endif %}
-                    {% if "event" in user.roles %}
+                    {% if "event" in user.roles and entry['instructors'] %}
                         {% trans instructors=entry['instructors'] -%}
                             by {{ instructors }}
                         {%- endtrans %}
