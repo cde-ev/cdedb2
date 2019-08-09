@@ -73,7 +73,7 @@ class TestMlBackend(BackendTest):
                 'mod_policy': 2,
                 'moderators': {2},
                 'registration_stati': [],
-                'sub_policy': 5,
+                'sub_policy': 6,
                 'subject_prefix': '[kampf]',
                 'title': 'Sozialistischer Kampfbrief',
                 'notes': None,
