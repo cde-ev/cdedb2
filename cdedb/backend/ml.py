@@ -357,6 +357,10 @@ class MlBackend(AbstractBackend):
         If the subscription policy is set to 'mandatory' all unsubscriptions,
         even those not in the audience are dropped.
 
+        This requires different levels of access depending on what change is
+        made. Setting whitelist or moderators is allowed for moderators, setting
+        the mailinglist itself is not.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
@@ -369,14 +373,16 @@ class MlBackend(AbstractBackend):
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
+                # Only allow modification of the mailinglist for admins.
                 if not self.is_relevant_admin(rs, mailinglist=current):
                     raise PrivilegeError(n_("Not privileged."))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
-                # Check if privileges allow new state of the mailinglist
+                # Check if privileges allow new state of the mailinglist.
                 if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
                     raise PrivilegeError("Not privileged to make this change.")
             if 'moderators' in data:
+                # Allow setting moderators for moderators.
                 if not self.may_manage(rs, mailinglist_id=current['id']):
                     raise PrivilegeError(n_("Not privileged."))
                 existing = current['moderators']
@@ -400,6 +406,7 @@ class MlBackend(AbstractBackend):
                         self.ml_log(rs, const.MlLogCodes.moderator_removed,
                                     data['id'], persona_id=anid)
             if 'whitelist' in data:
+                # Allow setting whitelist for moderators.
                 if not self.may_manage(rs, mailinglist_id=current['id']):
                     raise PrivilegeError(n_("Not privileged."))
                 existing = current['whitelist']
