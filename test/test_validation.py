@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import unittest
-from test.common import BackendTest
 import cdedb.validation as validate
 import cdedb.database.constants as const
 import decimal
 import copy
 import datetime
 import pytz
+
 
 class TestValidation(unittest.TestCase):
     def do_validator_test(self, name, spec, extraparams=None):
@@ -68,7 +68,7 @@ class TestValidation(unittest.TestCase):
         with self.assertRaises(TypeError):
             validate.assert_int(None)
         with self.assertRaises(ValueError):
-             validate.assert_int("garbage")
+            validate.assert_int("garbage")
         self.assertEqual(12, validate.assert_int("12"))
         self.assertEqual(12, validate.assert_int_or_None(12))
         self.assertEqual(None, validate.assert_int_or_None(None))
@@ -198,7 +198,7 @@ class TestValidation(unittest.TestCase):
             "is_ml_realm": False,
             "notes": None,
             }
-        stripped_example = { "id": 42 }
+        stripped_example = {"id": 42}
         key_example = copy.deepcopy(base_example)
         key_example["wrong_key"] = None
         password_example = copy.deepcopy(base_example)
@@ -221,9 +221,9 @@ class TestValidation(unittest.TestCase):
             ("2014-04-2", datetime.date(2014, 4, 2), None, False),
             ("01.02.2014", datetime.date(2014, 2, 1), None, False),
             ("2014-04-02T20:48:25.808240+00:00", datetime.date(2014, 4, 2), None, False),
-            ## the following fails with inconsistent exception type
-            ## TypeError on Gentoo
-            ## ValueError on Debian
+            # the following fails with inconsistent exception type
+            # TypeError on Gentoo
+            # ValueError on Debian
             # ("more garbage", None, TypeError, False),
             ))
 
@@ -250,7 +250,7 @@ class TestValidation(unittest.TestCase):
             ("2014-04-02T20:48:25.808240+03:00",
              datetime.datetime(2014, 4, 2, 17, 48, 25, 808240,
                                tzinfo=pytz.utc), None, False),
-            ## see above
+            # see above
             # ("more garbage", None, TypeError, False),
             ))
         self.do_validator_test("_datetime", (
@@ -274,10 +274,9 @@ class TestValidation(unittest.TestCase):
             ("2014-04-20T20:48:25.808240+03:00",
              datetime.datetime(2014, 4, 20, 17, 48, 25, 808240,
                                tzinfo=pytz.utc), None, False),
-            ## see above
+            # see above
             # ("more garbage", None, TypeError, False),
             ), extraparams={'default_date': datetime.date(2000, 5, 23)})
-
 
     def test_phone(self):
         self.do_validator_test("_phone", (
@@ -339,7 +338,7 @@ class TestValidation(unittest.TestCase):
             "trial_member": False,
             "bub_search": True,
             }
-        stripped_example = { "id": 42 }
+        stripped_example = {"id": 42}
         key_example = copy.deepcopy(base_example)
         key_example["wrong_key"] = None
         value_example = copy.deepcopy(base_example)
@@ -377,7 +376,7 @@ class TestValidation(unittest.TestCase):
             "country": "Deutschland",
             "notes": "A note",
             }
-        stripped_example = { "id": 42 }
+        stripped_example = {"id": 42}
         key_example = copy.deepcopy(base_example)
         key_example["wrong_key"] = None
         value_example = copy.deepcopy(base_example)
@@ -463,3 +462,24 @@ class TestValidation(unittest.TestCase):
             ("DE0651210800124512619", None, ValueError, False),  # Wrong length
             ("DE00512108001245126199", None, ValueError, False),  # Wrong Checksum
         ))
+
+    def test_json(self):
+        for input, output, error in (
+                ("42", 42, None),
+                (b"42", 42, None),
+                ('"42"', "42", None),
+                (b'"42"', "42", None),
+                ('{"foo": 1, "bar": "correct"}', {"foo": 1, "bar": "correct"}, None),
+                (b'{"foo": 1, "bar": "correct"}', {"foo": 1, "bar": "correct"}, None),
+                ("{'foo': 1, 'bar': 'correct'}", None, ValueError),
+                (b"{'foo': 1, 'bar': 'correct'}", None, ValueError),
+                ('{"open": 1', None, ValueError),
+                (b'{"open": 1', None, ValueError),
+                (b"\xff", None, ValueError)):
+            with self.subTest(input=input):
+                result, errs = validate.check_json(input, _convert=True)
+                self.assertEqual(output, result)
+                if error is None:
+                    self.assertFalse(errs)
+                else:
+                    self.assertTrue(all(isinstance(e, error) for _, e in errs))
