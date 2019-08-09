@@ -61,7 +61,10 @@ class MlBackend(AbstractBackend):
         :type ml_id: int
         :rtype: bool
         """
-        return ml_id in rs.user.moderator or "ml_script" in rs.user.roles
+        ml_id = affirm("id_or_None", ml_id)
+
+        return ml_id is not None and (ml_id in rs.user.moderator
+                                      or "ml_script" in rs.user.roles)
 
     @access("ml")
     def may_manage(self, rs, mailinglist_id):
@@ -71,6 +74,8 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int
         :rtype: bool
         """
+        mailinglist_id = affirm("id_or_None", mailinglist_id)
+
         return (self.is_moderator(rs, mailinglist_id)
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
@@ -91,11 +96,13 @@ class MlBackend(AbstractBackend):
         :return: The applicable subscription policy for the user or None if the
             user is not in the audience.
         """
+        # TODO put these checks in an atomizer?
         if mailinglist is None and mailinglist_id is None:
             raise ValueError("No input specified")
         elif mailinglist is not None and mailinglist_id is not None:
             raise ValueError("Too many inputs specified")
         elif mailinglist_id:
+            mailinglist_id = affirm("id", mailinglist_id)
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
         persona_id = affirm("id", persona_id)
@@ -127,8 +134,11 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ml: {str: object}
         :type state: const.SubsctriptionStates or None
+        :param state: The state of the relation between the user and the
+            mailinglist.
         :type: bool
         """
+        # TODO fetch the state here instead of passing it.
         audience_check = const.AudiencePolicy(
             ml["audience_policy"]).check(rs.user.roles)
         is_subscribed = False if state is None else state.is_subscribed
