@@ -22,7 +22,7 @@ import cdedb.validation as validate
 
 
 def singularize(singular_function_name, array_param_name="ids",
-                singular_param_name="anid", passtrough=False):
+                singular_param_name="anid", passthrough=False):
     """This decorator marks a function for singularization.
 
     The function has to accept an array as parameter and return a dict
@@ -53,7 +53,7 @@ def singularize(singular_function_name, array_param_name="ids",
             'singular_function_name': singular_function_name,
             'array_param_name': array_param_name,
             'singular_param_name': singular_param_name,
-            'passthrough': passtrough,
+            'passthrough': passthrough,
         }
         return fun
 
