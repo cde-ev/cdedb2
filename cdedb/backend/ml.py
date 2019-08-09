@@ -11,7 +11,7 @@ if it has moderator privileges for all lists.
 from cdedb.backend.common import (
     access, affirm_validation as affirm, Silencer, AbstractBackend,
     affirm_set_validation as affirm_set, singularize,
-    affirm_array_validation as affirm_array)
+    affirm_array_validation as affirm_array, internal_access)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.common import (
@@ -564,10 +564,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    # TODO this should be internal_access, but that breaks singularization
-    # when called by the frontend via another method.
-    @access("ml")
-    @singularize("_set_subscription", "data", "datum", passthrough=True)
+    @internal_access("ml")
     def _set_subscriptions(self, rs, data):
         """Change or add ml.subscription_states rows.
 
@@ -592,31 +589,42 @@ class MlBackend(AbstractBackend):
             state = datum['subscription_state']
 
             code = state.get_log_code()
-            existing = self.get_subscription(
-                rs, datum['persona_id'], mailinglist_id=datum['mailinglist_id'])
+            with Atomizer(rs):
+                existing = self.get_subscription(
+                    rs, datum['persona_id'],
+                    mailinglist_id=datum['mailinglist_id'])
 
-            if existing:
-                query = ("UPDATE ml.subscription_states "
-                         "SET subscription_state = %s "
-                         "WHERE mailinglist_id = %s "
-                         "AND persona_id = %s")
-                params = (state, datum['mailinglist_id'], datum['persona_id'])
-            else:
                 query = ("INSERT INTO ml.subscription_states "
-                         "(mailinglist_id, persona_id, subscription_state) "
-                         "VALUES (%s, %s, %s)")
-                params = (datum['mailinglist_id'], datum['persona_id'], state)
+                         "(subscription_state, mailinglist_id, persona_id) "
+                         "VALUES (%s, %s, %s) "
+                         "ON CONFLICT (mailinglist_id, persona_id) DO UPDATE "
+                         "SET subscription_state = EXCLUDED.subscription_state")
+                params = (state, datum['mailinglist_id'], datum['persona_id'])
 
-            num += self.query_exec(rs, query, params)
-            if code:
-                self.ml_log(
-                    rs, code, datum['mailinglist_id'], datum['persona_id'])
+                ret = self.query_exec(rs, query, params)
+                if ret and code:
+                    self.ml_log(
+                        rs, code, datum['mailinglist_id'], datum['persona_id'])
+                num += ret
 
         return num
 
-    @access("ml")
-    @singularize("remove_subscription", "data", "datum", passthrough=True)
-    def remove_subscriptions(self, rs, data):
+    @internal_access("ml")
+    def _set_subscription(self, rs, datum):
+        """Maunual singularization of `_set_subscriptions.
+
+        This is required to make the `@internal_access` decorator work.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type datum: {str: int}
+        :rtype: int
+        :returns: Number of affected rows.
+        """
+
+        return self._set_subscriptions(rs, [datum])
+
+    @internal_access("ml")
+    def _remove_subscriptions(self, rs, data):
         """Remove rows from the ml.subscription_states table.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -633,18 +641,33 @@ class MlBackend(AbstractBackend):
 
         code = const.MlLogCodes.unsubscribed
 
-        query = "DELETE FROM ml.subscription_states"
-        phrase = "mailinglist_id = %s AND persona_id = %s"
-        query = query + " WHERE " + " OR ".join([phrase] * len(data))
-        params = []
-        for datum in data:
-            params.extend((datum['mailinglist_id'], datum['persona_id']))
-            self.ml_log(rs, code, datum['mailinglist_id'], datum['persona_id'])
+        with Atomizer(rs):
+            query = "DELETE FROM ml.subscription_states"
+            phrase = "mailinglist_id = %s AND persona_id = %s"
+            query = query + " WHERE " + " OR ".join([phrase] * len(data))
+            params = []
+            for datum in data:
+                params.extend((datum['mailinglist_id'], datum['persona_id']))
+                self.ml_log(
+                    rs, code, datum['mailinglist_id'], datum['persona_id'])
 
-        # TODO: if this should fail, do the log entries remain?
-        ret = self.query_exec(rs, query, params)
+            ret = self.query_exec(rs, query, params)
 
         return ret
+
+    @internal_access("ml")
+    def _remove_subscription(self, rs, datum):
+        """Maunual singularization of `_remove_subscriptions.
+
+        This is required to make the `@internal_access` decorator work.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type datum: {str: int}
+        :rtype: int
+        :returns: Number of affected rows.
+        """
+
+        return self._remove_subscriptions(rs, [datum])
 
     @access("ml")
     @singularize("decide_subscription_request", "data", "datum",
@@ -652,7 +675,9 @@ class MlBackend(AbstractBackend):
     def decide_subscription_requests(self, rs, data):
         """Handle subscription requests.
 
-        This is separate because logging is different.
+        This is separate from `_set_subscriptions` because logging is different.
+
+
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: [{str: int}]
@@ -684,7 +709,7 @@ class MlBackend(AbstractBackend):
                     datum['subscription_state'] = state
                     num += self._set_subscription(rs, datum)
                 else:
-                    num += self.remove_subscription(rs, datum)
+                    num += self._remove_subscription(rs, datum)
             if code:
                 self.ml_log(
                     rs, code, datum['mailinglist_id'], datum['persona_id'])
@@ -1392,7 +1417,7 @@ class MlBackend(AbstractBackend):
             # Remove those who may not stay subscribed.
             if delete:
                 with Silencer(rs):
-                    num = self.remove_subscriptions(rs, delete)
+                    num = self._remove_subscriptions(rs, delete)
                 ret *= num
                 msg = "Removed {} subscribers from mailinglist {}."
                 self.logger.info(msg.format(num, mailinglist_id))
