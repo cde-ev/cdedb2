@@ -41,7 +41,9 @@ i18n-compile:
 	pybabel compile -d ./i18n/ -l en -D cdedb
 
 sample-data:
+	make storage
 	make sql
+	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 
 sample-data-test:
 	make storage-test
@@ -92,7 +94,6 @@ endif
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
-	make storage
 	sudo systemctl start pgbouncer
 
 sql-test:
