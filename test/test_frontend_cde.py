@@ -9,6 +9,7 @@ import time
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
+from cdedb.common import now
 from cdedb.query import QueryOperators
 from cdedb.frontend.parse_statement import (
     get_event_name_pattern, MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS,
@@ -652,7 +653,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
         with open("/tmp/cdedb-store/testfiles/batch_admission.csv") as datafile:
-            f['accounts'] = datafile.read()
+            tmp = datafile.read()
+            placeholder_birthday = "03.10.9999"
+            wandering_birthday = "03.10.{}".format(now().year - 5)
+            unproblematic_birthday = "03.10.{}".format(now().year - 15)
+            tmp = tmp.replace(placeholder_birthday, wandering_birthday)
+            f['accounts'] = tmp
         self.submit(f, check_notification=False)
 
         ## first round
@@ -686,13 +692,14 @@ class TestCdEFrontend(FrontendTest):
             (r"Zeilen 13 und 14 sind identisch.",),
             (r"Zeilen 13 und 14 sind identisch.",),
             (r"pevent_id\W*Nur unscharfer Treffer.",
-             r"pcourse_id\W*Nur unscharfer Treffer.",),
+             r"pcourse_id\W*Nur unscharfer Treffer.",
+             r"birthday\W*Person ist jünger als 10 Jahre.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
         for i in range(15):
-            if i in (1, 7, 14):
+            if i in (1, 7):
                 expectation = '1'
             else:
                 expectation = ''
@@ -713,6 +720,7 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("00000", "07751")
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
+        inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
         f['resolution12'] = 2
         f['resolution13'] = 2
         f['accounts'] = inputdata
