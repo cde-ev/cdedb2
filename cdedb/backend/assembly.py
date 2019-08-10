@@ -35,7 +35,7 @@ from cdedb.backend.common import (
     Silencer, singularize, AbstractBackend)
 from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
-    ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, name_key, open_utf8,
+    ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, name_key,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms)
 from cdedb.security import secure_random_ascii
@@ -1090,7 +1090,7 @@ class AssemblyBackend(AbstractBackend):
                 'VOTES': vote_list,
             })
             path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
-            with open_utf8(path, 'w') as f:
+            with open(path, 'w') as f:
                 f.write(result_file)
         return True
 

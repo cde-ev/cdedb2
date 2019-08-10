@@ -47,7 +47,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, open_utf8, ANTI_CSRF_TOKEN_NAME, encode_parameter,
+    json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
     decode_parameter)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -1160,7 +1160,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             # TODO use a with context?
             if maintype == "text":
-                afile = open_utf8(attachment['path'])
+                afile = open(attachment['path'])
             else:
                 afile = open(str(attachment['path']), 'rb')
         # Only support common types

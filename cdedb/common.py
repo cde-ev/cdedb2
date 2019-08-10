@@ -572,20 +572,6 @@ class PsycoJson(psycopg2.extras.Json):
         return json_serialize(obj)
 
 
-def open_utf8(*args, **kwargs):
-    """Wrapper around open() with encoding set to utf8.
-
-    This is just a convenience function for not having to specify the
-    encoding manually. All our textual data is utf8, so this can be used
-    everywhere (except for binary data).
-
-    :rtype: file handle
-    """
-    # TODO this should also be obsolete with Buster (however I'm unsure
-    # where this comes from)
-    return open(*args, **kwargs, encoding='UTF-8')
-
-
 def shutil_copy(*args, **kwargs):
     """Wrapper around shutil.copy() converting pathlib.Path to str.
 

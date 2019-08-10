@@ -32,7 +32,7 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    CourseFilterPositions, diacritic_patterns, open_utf8, shutil_copy)
+    CourseFilterPositions, diacritic_patterns, shutil_copy)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -1867,7 +1867,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_nametags.tex".format(
                 rs.ambience['event']['shortname'])
-            with open_utf8(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
@@ -2033,7 +2033,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_course_lists.tex".format(
                 rs.ambience['event']['shortname'])
-            with open_utf8(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
@@ -2080,7 +2080,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_lodgement_lists.tex".format(
                 rs.ambience['event']['shortname'])
-            with open_utf8(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w') as f:
                 f.write(tex)
             path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
             if path.exists():
