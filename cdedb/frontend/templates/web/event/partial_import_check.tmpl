@@ -381,8 +381,32 @@
                         <ul class="slim">
                             {% for reg_id, registration in delta['registrations']|dictsort %}
                                 {% if reg_id < 0 %}
-                                    <li>{{ personas[registration['persona_id']]['given_names'] }}
-                                        {{ personas[registration['persona_id']]['family_name'] }}</li>
+                                    <li>
+                                        {{ personas[registration['persona_id']]['given_names'] }}
+                                        {{ personas[registration['persona_id']]['family_name'] }}
+                                        <ul>
+                                            {% for part_id, part in registration['parts']|dictsort %}
+                                                <li>
+                                                    {{ ambience['event']['parts'][part_id]['title'] }}
+                                                    <ul>
+                                                        {% for attribute in ('status', 'lodgement_id') %}
+                                                            <li>{{ attribute }}: {{ part[attribute] }}</li>
+                                                        {% endfor%}
+                                                    </ul>
+                                                </li>
+                                            {% endfor%}
+                                            {% for track_id, track in registration['tracks']|dictsort %}
+                                                <li>
+                                                    {{ ambience['event']['tracks'][track_id]['title'] }}
+                                                    <ul>
+                                                        {% for attribute in ('course_id', 'course_instructor') %}
+                                                            <li>{{ attribute }}: {{ track[attribute] }}</li>
+                                                        {% endfor%}
+                                                    </ul>
+                                                </li>
+                                            {% endfor%}
+                                        </ul>
+                                    </li>
                                 {% endif %}
                             {% endfor %}
                         </ul>
@@ -445,6 +469,11 @@
                                                 {%- endtrans %}
                                             </emph>
                                         {% endif %}
+                                        <ul>
+                                            {% for attribute in ('instructors', 'segments', 'shortname') %}
+                                                <li>{{ attribute }}: {{ course[attribute] }}</li>
+                                            {% endfor%}
+                                        </ul>
                                     </li>
                                 {% endif %}
                             {% endfor %}
@@ -506,6 +535,11 @@
                                                 {%- endtrans %}
                                             </emph>
                                         {% endif %}
+                                        <ul>
+                                            {% for attribute in ('capacity', 'reserve') %}
+                                                <li>{{ attribute }}: {{ lodgement[attribute] }}</li>
+                                            {% endfor%}
+                                        </ul>
                                     </li>
                                 {% endif %}
                             {% endfor %}
