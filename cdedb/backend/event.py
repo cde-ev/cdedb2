@@ -2315,16 +2315,20 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            raise RuntimeError(
-                n_("It makes no sense to offline lock an event."))
         self.assert_offline_lock(rs, event_id=event_id)
+        # An event in the main instance is considered as locked if offline_lock
+        # is true, in the offline instance it is the other way around
         update = {
             'id': event_id,
-            'offline_lock': True,
+            'offline_lock': not self.conf.CDEDB_OFFLINE_DEPLOYMENT,
         }
         ret = self.sql_update(rs, "event.events", update)
-        self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        # Differentiate between locks of the main instance and local locks
+        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            code = const.EventLogCodes.event_unlocked
+        else:
+            code = const.EventLogCodes.event_main_unlocked
+        self.event_log(rs, code, event_id)
         return ret
 
     @access("event")
@@ -2491,9 +2495,8 @@ class EventBackend(AbstractBackend):
         data = affirm("serialized_event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            raise RuntimeError(n_("It makes no sense to do this."))
-        if not self.is_offline_locked(rs, event_id=data['id']):
+        if (self.is_offline_locked(rs, event_id=data['id']) ==
+                self.conf.CDEDB_OFFLINE_DEPLOYMENT):
             raise RuntimeError(n_("Not locked."))
         if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
             raise ValueError(n_("Version mismatch – aborting."))
@@ -2538,10 +2541,15 @@ class EventBackend(AbstractBackend):
             # Third unlock the event
             update = {
                 'id': data['id'],
-                'offline_lock': False,
+                'offline_lock': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
             }
             ret *= self.sql_update(rs, "event.events", update)
-            self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
+            # Differentiate between locks of the main instance and local locks
+            if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+                code = const.EventLogCodes.event_unlocked
+            else:
+                code = const.EventLogCodes.event_main_unlocked
+            self.event_log(rs, code, data['id'])
             return ret
 
     @access("event")

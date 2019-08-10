@@ -76,7 +76,7 @@ class EventFrontend(AbstractUserFrontend):
         return super().is_admin(rs)
 
     def is_locked(self, event):
-        """Shorthand to deremine locking state of an event.
+        """Shorthand to determine locking state of an event.
 
         :type event: {str: object}
         :rtype: bool
