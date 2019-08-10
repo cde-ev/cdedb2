@@ -1330,6 +1330,8 @@ class MlBackend(AbstractBackend):
         return bool(data)
 
     def _get_implicit_subscribers(self, rs, mailinglist):
+        """Un-inlined code from `write_subscription_states`."""
+
         # TODO adapt to MailinglistTypes.
         sub_policy = const.SubscriptionPolicy(mailinglist['sub_policy'])
 
