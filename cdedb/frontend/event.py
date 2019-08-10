@@ -4,6 +4,7 @@
 
 import cgitb
 from collections import OrderedDict, Counter
+import collections.abc
 import copy
 import csv
 import decimal
@@ -2416,40 +2417,83 @@ class EventFrontend(AbstractUserFrontend):
                         suspicious_lodgements.append(lodgement_id)
                         break
 
-        # Fifth prepare and render diff
+        # Fifth prepare
         rs.values['token'] = new_token
         rs.values['partial_import_data'] = json_serialize(data)
-        states = {
-            'changed_registrations': any(
-                id > 0 and val
-                for id, val in delta.get('registrations', {}).items()),
-            'new_registrations': any(
-                id < 0 for id in delta.get('registrations', {})),
-            'deleted_registrations': any(
-                val is None
-                for val in delta.get('registrations', {}).values()),
-            'changed_courses': any(
-                id > 0 and val
-                for id, val in delta.get('courses', {}).items()),
-            'new_courses': any(
-                id < 0 for id in delta.get('courses', {})),
-            'deleted_courses': any(
-                val is None
-                for val in delta.get('courses', {}).values()),
-            'changed_lodgements': any(
-                id > 0 and val
-                for id, val in delta.get('lodgements', {}).items()),
-            'new_lodgements': any(
-                id < 0 for id in delta.get('lodgements', {})),
-            'deleted_lodgements': any(
-                val is None
-                for val in delta.get('lodgements', {}).values()),
-        }
         for course in courses.values():
             course['segments'] = {
                 id: id in course['active_segments']
                 for id in course['segments']
             }
+
+        # Sixth prepare summary
+        summary = {
+            'changed_registration_ids': tuple(sorted(
+                id for id, val in delta.get('registrations', {}).items()
+                if id > 0 and val)),
+            'new_registration_ids': tuple(sorted(
+                id for id in delta.get('registrations', {})
+                if id < 0)),
+            'deleted_registration_ids': tuple(sorted(
+                id for id, val in delta.get('registrations', {}).items()
+                if val is None)),
+            'real_deleted_registration_ids': tuple(sorted(
+                id for id, val in delta.get('registrations', {}).items()
+                if val is None and registrations.get(id))),
+            'changed_course_ids': tuple(sorted(
+                id for id, val in delta.get('courses', {}).items()
+                if id > 0 and val)),
+            'new_course_ids': tuple(sorted(
+                id for id in delta.get('courses', {}) if id < 0)),
+            'deleted_course_ids': tuple(sorted(
+                id for id, val in delta.get('courses', {}).items()
+                if val is None)),
+            'real_deleted_course_ids': tuple(sorted(
+                id for id, val in delta.get('courses', {}).items()
+                if val is None and courses.get(id))),
+            'changed_lodgement_ids': tuple(sorted(
+                id for id, val in delta.get('lodgements', {}).items()
+                if id > 0 and val)),
+            'new_lodgement_ids': tuple(sorted(
+                id for id in delta.get('lodgements', {}) if id < 0)),
+            'deleted_lodgement_ids': tuple(sorted(
+                id for id, val in delta.get('lodgements', {}).items()
+                if val is None)),
+            'real_deleted_lodgement_ids': tuple(sorted(
+                id for id, val in delta.get('lodgements', {}).items()
+                if val is None and lodgements.get(id))),
+        }
+
+        def extract_recursive_keys(data):
+            ret = []
+            for key, val in data.items():
+                if isinstance(val, collections.abc.Mapping):
+                    tmp = extract_recursive_keys(val)
+                    ret.extend("{}->{}".format(key, t) for t in tmp)
+                else:
+                    ret.append(key)
+            return set(ret)
+
+        changed_registration_fields = set()
+        for reg_id in summary['changed_registration_ids']:
+            changed_registration_fields |= extract_recursive_keys(
+                delta['registrations'][reg_id])
+        summary['changed_registration_fields'] = tuple(sorted(
+            changed_registration_fields))
+        changed_course_fields = set()
+        for course_id in summary['changed_course_ids']:
+            changed_course_fields |= extract_recursive_keys(
+                delta['courses'][course_id])
+        summary['changed_course_fields'] = tuple(sorted(
+            changed_course_fields))
+        changed_lodgement_fields = set()
+        for lodgement_id in summary['changed_lodgement_ids']:
+            changed_lodgement_fields |= extract_recursive_keys(
+                delta['lodgements'][lodgement_id])
+        summary['changed_lodgement_fields'] = tuple(sorted(
+            changed_lodgement_fields))
+
+        # Seventh render diff
         template_data = {
             'delta': delta,
             'registrations': registrations,
@@ -2458,7 +2502,7 @@ class EventFrontend(AbstractUserFrontend):
             'courses': courses,
             'suspicious_courses': suspicious_courses,
             'personas': personas,
-            'states': states,
+            'summary': summary,
         }
         return self.render(rs, "partial_import_check", template_data)
 
