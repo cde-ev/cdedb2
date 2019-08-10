@@ -137,11 +137,16 @@ def work(args):
     for persona in data['core.personas'].values():
         if persona['id'] in orgas:
             bits = (
-                "is_active", "is_core_admin", "is_cde_admin",
-                "is_event_admin", "is_ml_admin", "is_cde_realm",
-                "is_event_realm", "is_ml_realm")
+                "is_active", "is_core_admin", "is_cde_admin", "is_event_admin",
+                "is_cde_realm", "is_event_realm", "is_ml_realm")
             for bit in bits:
                 persona[bit] = True
+
+    print("Remove inappropriate admin flags from all users")
+    for persona in data['core.personas'].values():
+        bits = ("is_admin", "is_assembly_admin", "is_ml_admin")
+        for bit in bits:
+            persona[bit] = False
 
     print("Prepare database.")
     # Fix uneditable table

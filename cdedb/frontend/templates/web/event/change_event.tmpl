@@ -86,7 +86,7 @@
                                   nulloption="", info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. Fieldtype: Text")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event')) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('#changeeventform').cdedbProtectChanges();

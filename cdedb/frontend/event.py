@@ -243,7 +243,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
-    @event_guard(check_offline=True)
+    @event_guard()
     def change_event_form(self, rs, event_id):
         """Render form."""
         institutions = self.pasteventproxy.list_institutions(rs)

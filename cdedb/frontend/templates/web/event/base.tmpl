@@ -49,16 +49,13 @@
         </div>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/change_event", {"event_id": data['id']}), gettext("Configuration"),
-                         readonly=is_locked, icon='cog', aclass="list-group-item",
-                         active=(sidenav_active == 'event_config')) }}
+                         icon='cog', aclass="list-group-item", active=(sidenav_active == 'event_config')) }}
             {{ util.href(cdedblink("event/part_summary", {"event_id": data['id']}), gettext("Event-Parts"),
-                         readonly=is_locked, icon='time', aclass="list-group-item",
-                         active=(sidenav_active == 'event_parts')) }}
+                         icon='time', aclass="list-group-item", active=(sidenav_active == 'event_parts')) }}
             {{ util.href(cdedblink("event/field_summary", {"event_id": data['id']}), gettext("Configure Custom Fields"),
-                         readonly=is_locked, icon='tag', aclass="list-group-item",
-                         active=(sidenav_active == 'event_field_summary') ) }}
+                         icon='tag', aclass="list-group-item", active=(sidenav_active == 'event_field_summary') ) }}
             {{ util.href(cdedblink("event/questionnaire_summary", {"event_id": data['id']}),
-                         gettext("Configure Questionnaire"), readonly=is_locked, aclass="list-group-item",
+                         gettext("Configure Questionnaire"), aclass="list-group-item",
                          active=(sidenav_active == 'event_quest_summary'), icon='unchecked') }}
             {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), gettext("Log"), aclass="list-group-item",
                          icon="list-alt", active=(sidenav_active == 'event_event_log')) }}
@@ -66,8 +63,7 @@
 
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/checkin_form", {"event_id": data['id']}), gettext("Checkin"),
-                    readonly=is_locked, aclass="list-group-item", icon="check",
-                    active=(sidenav_active == 'event_checkin')) }}
+                    aclass="list-group-item", icon="check", active=(sidenav_active == 'event_checkin')) }}
         </div>
     {% endif %}
 {% endmacro %}
