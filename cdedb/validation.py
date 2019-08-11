@@ -1047,7 +1047,7 @@ def parse_datetime(val, default_date=None):
             except ValueError:
                 pass
     if ret is None:
-        return datetime.fromisoformat(val)
+        ret = datetime.datetime.fromisoformat(val)
     if ret.tzinfo is None:
         ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
     return ret.astimezone(pytz.utc)
