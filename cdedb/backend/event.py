@@ -2323,12 +2323,10 @@ class EventBackend(AbstractBackend):
             'offline_lock': not self.conf.CDEDB_OFFLINE_DEPLOYMENT,
         }
         ret = self.sql_update(rs, "event.events", update)
-        # Differentiate between locks of the main instance and local locks
-        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            code = const.EventLogCodes.event_unlocked
-        else:
-            code = const.EventLogCodes.event_main_unlocked
-        self.event_log(rs, code, event_id)
+        # As unlocks of offline events happen via cli, it is not useful to log
+        # the locks.
+        if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
     @access("event")
@@ -2495,8 +2493,10 @@ class EventBackend(AbstractBackend):
         data = affirm("serialized_event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        if (self.is_offline_locked(rs, event_id=data['id']) ==
-                self.conf.CDEDB_OFFLINE_DEPLOYMENT):
+        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            raise RuntimeError(n_("Imports into an Offline-DB must happen via"
+                                  "shell scripts."))
+        if not self.is_offline_locked(rs, event_id=data['id']):
             raise RuntimeError(n_("Not locked."))
         if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
             raise ValueError(n_("Version mismatch – aborting."))
@@ -2541,15 +2541,10 @@ class EventBackend(AbstractBackend):
             # Third unlock the event
             update = {
                 'id': data['id'],
-                'offline_lock': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
+                'offline_lock': False,
             }
             ret *= self.sql_update(rs, "event.events", update)
-            # Differentiate between locks of the main instance and local locks
-            if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                code = const.EventLogCodes.event_unlocked
-            else:
-                code = const.EventLogCodes.event_main_unlocked
-            self.event_log(rs, code, data['id'])
+            self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
             return ret
 
     @access("event")

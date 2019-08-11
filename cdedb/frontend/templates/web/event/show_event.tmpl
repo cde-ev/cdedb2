@@ -194,28 +194,34 @@
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download', aclass='panel-danger') %}
                     {% if ambience['event']['offline_lock'] != CDEDB_OFFLINE_DEPLOYMENT %}
-                        <p>
-                            {% if CDEDB_OFFLINE_DEPLOYMENT %}
+                        {% if CDEDB_OFFLINE_DEPLOYMENT %}
+                            <p>
                                 {% trans -%}The event is in Offline-Mode, but locked to be used in another instance.{%- endtrans %}
-                            {% else %}
+                                {% trans -%}
+                                    To unlock it, run the offline initialization script inside the VM with
+                                    the event data you would like to use.
+                                {%- endtrans %}
+                            </p>
+                        {% else %}
+                            <p>
                                 {% trans -%}The event is locked for offline use.{%- endtrans %}
-                            {% endif %}
-                            {% trans -%}To unlock it, upload the export of the Offline-DB here.{%- endtrans %}
-                        </p>
-                        <form action="{{ cdedblink('event/unlock_event') }}" method="POST"
-                              enctype="multipart/form-data" id="unlockform"
-                              {% if 'json' in errors %}class="has-error"{% endif %}>
-                            {{ util.anti_csrf_token('event/unlock_event') }}
-                            <div class="input-group">
-                                {{ util.input_file(name="json", accept="text/json",
-                                                   arialabel=gettext("Export of the Offline-DB")) }}
-                                <div class="input-group-btn">
-                                    {{ util.input_submit(value=gettext("Unlock"), icon='cloud-upload',
-                                                         aclass='btn btn-success') }}
+                                {% trans -%}To unlock it, upload the export of the Offline-DB here.{%- endtrans %}
+                            </p>
+                            <form action="{{ cdedblink('event/unlock_event') }}" method="POST"
+                                  enctype="multipart/form-data" id="unlockform"
+                                  {% if 'json' in errors %}class="has-error"{% endif %}>
+                                {{ util.anti_csrf_token('event/unlock_event') }}
+                                <div class="input-group">
+                                    {{ util.input_file(name="json", accept="text/json",
+                                                       arialabel=gettext("Export of the Offline-DB")) }}
+                                    <div class="input-group-btn">
+                                        {{ util.input_submit(value=gettext("Unlock"), icon='cloud-upload',
+                                                             aclass='btn btn-success') }}
+                                    </div>
                                 </div>
-                            </div>
-                            {{ util.output_errors('json') }}
-                        </form>
+                                {{ util.output_errors('json') }}
+                            </form>
+                        {% endif %}
                     {% else %}
                         <p>
                             {% if CDEDB_OFFLINE_DEPLOYMENT %}
@@ -235,7 +241,8 @@
                             {% if CDEDB_OFFLINE_DEPLOYMENT %}
                                 {% trans -%}
                                     This way the event can be imported from here into another Offline-DB
-                                    without causing conflicts.
+                                    without causing conflicts. Be aware that unlocking can not be done
+                                    here, but must be done by running the offline initialization script.
                                 {%- endtrans %}
                             {% else %}
                                 {% trans -%}
