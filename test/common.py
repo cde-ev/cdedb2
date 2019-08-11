@@ -19,7 +19,7 @@ from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.frontend.application import Application
 from cdedb.frontend.cron import CronFrontend
 from cdedb.common import (
-    ProxyShim, RequestState, roles_to_db_role, PrivilegeError, open_utf8, glue)
+    ProxyShim, RequestState, roles_to_db_role, PrivilegeError, glue)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.cde import CdEBackend
@@ -333,7 +333,7 @@ def execsql(sql):
     chmod = ("chmod", "0644")
     psql = ("sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb_test", "-f")
     null = subprocess.DEVNULL
-    with open_utf8(path, "w") as f:
+    with open(path, "w") as f:
         f.write(sql)
     subprocess.check_call(chmod + (str(path),), stdout=null)
     subprocess.check_call(psql + (str(path),), stdout=null)
@@ -380,7 +380,7 @@ class FrontendTest(unittest.TestCase):
         if response is None:
             response = self.response
         if _BASICCONF.TIMING_LOG:
-            with open_utf8(_BASICCONF.TIMING_LOG, 'a') as f:
+            with open(_BASICCONF.TIMING_LOG, 'a') as f:
                 output = "{} {} {} {}\n".format(
                     response.request.path, response.request.method,
                     response.headers.get('X-Generation-Time'),
@@ -466,7 +466,7 @@ class FrontendTest(unittest.TestCase):
                  for x in elements if x.startswith("E-Mail als ")]
         ret = []
         for path in mails:
-            with open_utf8(path) as f:
+            with open(path) as f:
                 raw = f.read()
                 parser = email.parser.Parser(policy=email.policy.default)
                 msg = parser.parsestr(raw)
