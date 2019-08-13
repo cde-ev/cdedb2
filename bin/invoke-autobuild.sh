@@ -4,10 +4,10 @@ LOCKFILE=/home/cdedb/cdedb2-autobuild.lock
 LOGFILE=$(mktemp)
 MAILTO=cdedb@lists.cde-ev.de
 
-echo "Autobuild started at $(date)"
-flock -n -E 123 $LOCKFILE $BINDIR/cdedb-autobuild-stage3.sh &> $LOGFILE
+echo "Autobuild started at $(date)" > $LOGFILE
+flock -n -E 123 $LOCKFILE $BINDIR/cdedb-autobuild-stage3.sh &>> $LOGFILE
 RETVAL=$?
-echo "Autobuild finished at $(date)"
+echo "Autobuild finished at $(date)" >> $LOGFILE
 
 if [[ $RETVAL -eq 0 ]]; then
     # autobuild is up to date
