@@ -295,7 +295,7 @@ class MlBackend(AbstractBackend):
 
         with Atomizer(rs):
             override_states = {const.SubscriptionStates.mod_subscribed}
-            overrides = self.get_subscriptions(
+            overrides = self.get_user_subscriptions(
                 rs, rs.user.persona_id, states=override_states)
             params = []
             query = ("SELECT id, title, audience_policy FROM ml.mailinglists "
@@ -1136,8 +1136,8 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    def get_subscriptions(self, rs, persona_id, states=None,
-                          mailinglist_ids=None):
+    def get_user_subscriptions(self, rs, persona_id, states=None,
+                               mailinglist_ids=None):
         """Returns a list of mailinglists the persona is related to.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -1195,7 +1195,7 @@ class MlBackend(AbstractBackend):
 
         Returns None if there exists no such persona, mailinglist or relation.
 
-        Manual implementation of singularization of `get_subscriptions`,
+        Manual implementation of singularization of `get_user_subscriptions`,
         to make sure the parameters work.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -1205,7 +1205,7 @@ class MlBackend(AbstractBackend):
         :rtype: const.SubscriptionStates or None
         """
         # Validation is done inside.
-        return unwrap(self.get_subscriptions(
+        return unwrap(self.get_user_subscriptions(
             rs, persona_id, states=states, mailinglist_ids=(mailinglist_id,)))
 
     @access("ml", "ml_script")
@@ -1316,7 +1316,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def is_subscribed(self, rs, persona_id, mailinglist_id):
-        """Sugar coating around :py:meth:`get_subscriptions`.
+        """Sugar coating around :py:meth:`get_user_subscriptions`.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int

@@ -190,7 +190,7 @@ class TestMlBackend(BackendTest):
             11: const.SubscriptionStates.implicit
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=2))
+                         self.ml.get_user_subscriptions(self.key, persona_id=2))
 
     @as_users("anton", "janis")
     def test_subscriptions_two(self, user):
@@ -201,7 +201,7 @@ class TestMlBackend(BackendTest):
             4: const.SubscriptionStates.subscribed,
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=10))
+                         self.ml.get_user_subscriptions(self.key, persona_id=10))
 
     @as_users("anton", "emilia")
     def test_subscriptions_three(self, user):
@@ -211,7 +211,7 @@ class TestMlBackend(BackendTest):
             10: const.SubscriptionStates.implicit,
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=5))
+                         self.ml.get_user_subscriptions(self.key, persona_id=5))
 
     @as_users("anton", "garcia")
     def test_subscriptions_four(self, user):
@@ -222,7 +222,7 @@ class TestMlBackend(BackendTest):
             9: const.SubscriptionStates.subscribed,
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=7))
+                         self.ml.get_user_subscriptions(self.key, persona_id=7))
 
     # These are some helpers to make the following tests less ugly
     def _check_state(self, user, mailinglist_id, expected_state):
@@ -1245,7 +1245,7 @@ class TestMlBackend(BackendTest):
             11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_user_subscriptions(self.key, persona_id=9))
         data = [
             {
                 'mailinglist_id': 2,
@@ -1274,7 +1274,7 @@ class TestMlBackend(BackendTest):
             11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_user_subscriptions(self.key, persona_id=9))
 
         self.login(USER_DICT['berta'])
         datum = {
@@ -1296,7 +1296,7 @@ class TestMlBackend(BackendTest):
             11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_user_subscriptions(self.key, persona_id=9))
 
         datum = {
             'mailinglist_id': 4,
@@ -1313,7 +1313,7 @@ class TestMlBackend(BackendTest):
             11: const.SubscriptionStates.mod_unsubscribed
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_user_subscriptions(self.key, persona_id=9))
 
         datum = {
             'mailinglist_id': 4,
@@ -1331,7 +1331,7 @@ class TestMlBackend(BackendTest):
             11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_user_subscriptions(self.key, persona_id=9))
 
         self.login(USER_DICT['berta'])
         datum = {
@@ -1352,7 +1352,7 @@ class TestMlBackend(BackendTest):
             11: const.SubscriptionStates.mod_unsubscribed,
         }
         self.assertEqual(expectation,
-                         self.ml.get_subscriptions(self.key, persona_id=9))
+                         self.ml.get_user_subscriptions(self.key, persona_id=9))
 
     @as_users("inga")
     def test_request_cancellation(self, user):

@@ -63,7 +63,7 @@ class MlFrontend(AbstractUserFrontend):
         overrides = self.mlproxy.list_overrides(rs)
         mailinglists.update(overrides)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
-        subscriptions = self.mlproxy.get_subscriptions(
+        subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=SS.subscribing_states())
         return self.render(rs, "index", {
             'mailinglists': mailinglists, 'overrides': overrides,
@@ -137,7 +137,7 @@ class MlFrontend(AbstractUserFrontend):
         """Show all mailinglists."""
         mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
-        subscriptions = self.mlproxy.get_subscriptions(
+        subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=SS.subscribing_states())
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
