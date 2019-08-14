@@ -163,12 +163,11 @@ def ddict():
 
 
 def full_name(persona):
-    return " ".join((
-        persona["given_names"],
-        persona["display_name"],
-        persona["family_name"],
-        persona.get("birth_name", "")
-    ))
+    return " ".join(x for x in (persona["given_names"],
+                                persona["display_name"],
+                                persona["family_name"],
+                                persona.get("birth_name", ""))
+                    if x)
 
 
 def name_compare(target, name_parts):
