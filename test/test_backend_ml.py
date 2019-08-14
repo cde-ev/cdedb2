@@ -929,7 +929,7 @@ class TestMlBackend(BackendTest):
             'mod_policy': const.ModerationPolicy.unmoderated,
             'moderators': set(),
             'registration_stati': [],
-            'sub_policy': const.SubscriptionPolicy.invitation_only,
+            'sub_policy': const.MailinglistInteractionPolicy.invitation_only,
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
@@ -946,7 +946,7 @@ class TestMlBackend(BackendTest):
         # Making the list Opt-Out should yield implicits subscribers.
         mdata = {
             'id': new_id,
-            'sub_policy': const.SubscriptionPolicy.opt_out,
+            'sub_policy': const.MailinglistInteractionPolicy.opt_out,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1005,7 +1005,7 @@ class TestMlBackend(BackendTest):
         # outside of the audience.
         mdata = {
             'id': new_id,
-            'sub_policy': const.SubscriptionPolicy.mandatory,
+            'sub_policy': const.MailinglistInteractionPolicy.mandatory,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1035,7 +1035,7 @@ class TestMlBackend(BackendTest):
             'mod_policy': const.ModerationPolicy.unmoderated,
             'moderators': set(),
             'registration_stati': [],
-            'sub_policy': const.SubscriptionPolicy.invitation_only,
+            'sub_policy': const.MailinglistInteractionPolicy.invitation_only,
             'subject_prefix': 'orga',
             'title': 'Orgateam',
             'notes': None,

@@ -15,7 +15,7 @@ from cdedb.common import (
     n_, name_key, merge_dicts, unwrap, ProxyShim, json_serialize, now)
 import cdedb.database.constants as const
 from cdedb.database.constants import (
-    SubscriptionStates as SS, SubscriptionPolicy as SP)
+    SubscriptionStates as SS, MailinglistInteractionPolicy as MIP)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
@@ -638,9 +638,9 @@ class MlFrontend(AbstractUserFrontend):
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return self.redirect(rs, "ml/show_mailinglist")
-        policy = const.SubscriptionPolicy(
+        policy = const.MailinglistInteractionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
-        if email and policy == SP.mandatory:
+        if email and policy == MIP.mandatory:
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
@@ -681,9 +681,9 @@ class MlFrontend(AbstractUserFrontend):
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return self.redirect(rs, "ml/show_mailinglist")
-        policy = const.SubscriptionPolicy(
+        policy = const.MailinglistInteractionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
-        if policy == SP.mandatory:
+        if policy == MIP.mandatory:
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 

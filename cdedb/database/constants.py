@@ -198,7 +198,7 @@ class SubscriptionRequestResolutions(enum.IntEnum):
 
 
 @enum.unique
-class SubscriptionPolicy(enum.IntEnum):
+class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: everybody is subscribed (think CdE-all)
     mandatory = 1
@@ -220,9 +220,9 @@ class SubscriptionPolicy(enum.IntEnum):
 
         :rtype: bool
         """
-        return self in (SubscriptionPolicy.opt_in,
-                        SubscriptionPolicy.moderated_opt_in,
-                        SubscriptionPolicy.invitation_only)
+        return self in (MailinglistInteractionPolicy.opt_in,
+                        MailinglistInteractionPolicy.moderated_opt_in,
+                        MailinglistInteractionPolicy.invitation_only)
 
 
 @enum.unique

@@ -15348,6 +15348,26 @@ msgstr "Geblockte Nutzer"
 msgid "Forced Subscribers"
 msgstr "Fixierte Abonnenten"
 
+#: cdedb/i18n_additional.py:170
+msgid "MailinglistInteractionPolicy.mandatory"
+msgstr "Alternativlos"
+
+#: cdedb/i18n_additional.py:171
+msgid "MailinglistInteractionPolicy.opt_out"
+msgstr "Opt-Out"
+
+#: cdedb/i18n_additional.py:172
+msgid "MailinglistInteractionPolicy.opt_in"
+msgstr "Opt-In"
+
+#: cdedb/i18n_additional.py:173
+msgid "MailinglistInteractionPolicy.moderated_opt_in"
+msgstr "Moderiertes Opt-In"
+
+#: cdedb/i18n_additional.py:174
+msgid "MailinglistInteractionPolicy.invitation_only"
+msgstr "Nur durch Moderatoren"
+
 #~ msgid ""
 #~ "If the event comprises multiple parts or multiple course tracks,\n"
 #~ "                        they have to be added later, using the “Event-"

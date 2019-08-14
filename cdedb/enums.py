@@ -12,15 +12,31 @@ from cdedb.common import (AgeClasses, LineResolutions, CourseFilterPositions,
 
 #: The list of normal enums
 ALL_ENUMS = (
-    const.Genders, const.MemberChangeStati, const.RegistrationPartStati,
-    const.PrivilegeChangeStati, const.GenesisStati, const.SubscriptionStates,
-    const.SubscriptionPolicy, const.ModerationPolicy, const.AttachmentPolicy,
-    const.AudiencePolicy, const.LastschriftTransactionStati, const.CoreLogCodes,
-    const.CdeLogCodes, const.FinanceLogCodes, const.EventLogCodes,
-    const.PastEventLogCodes, const.AssemblyLogCodes, const.MlLogCodes,
-    const.FieldAssociations, const.FieldDatatypes,
-    const.SubscriptionRequestResolutions, QueryOperators, AgeClasses,
-    LineResolutions)
+    const.Genders,
+    const.MemberChangeStati,
+    const.RegistrationPartStati,
+    const.PrivilegeChangeStati,
+    const.GenesisStati,
+    const.SubscriptionStates,
+    const.MailinglistInteractionPolicy,
+    const.ModerationPolicy,
+    const.AttachmentPolicy,
+    const.AudiencePolicy,
+    const.LastschriftTransactionStati,
+    const.CoreLogCodes,
+    const.CdeLogCodes,
+    const.FinanceLogCodes,
+    const.EventLogCodes,
+    const.PastEventLogCodes,
+    const.AssemblyLogCodes,
+    const.MlLogCodes,
+    const.FieldAssociations,
+    const.FieldDatatypes,
+    const.SubscriptionRequestResolutions,
+    QueryOperators,
+    AgeClasses,
+    LineResolutions,
+)
 
 #: The list of infinite enums
 ALL_INFINITE_ENUMS = (CourseFilterPositions, CourseChoiceToolActions)

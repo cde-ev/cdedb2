@@ -73,7 +73,7 @@
                             {% endif %}
                         </dd>
                     </dl>
-                    {% if interaction_policy != enums['SubscriptionPolicy'].mandatory %}
+                    {% if interaction_policy != enums['MailinglistInteractionPolicy'].mandatory %}
                         <div class="p">
                             {% if sub_address %}
                                 <form action="{{ cdedblink('ml/change_address') }}" method="POST"
@@ -143,14 +143,14 @@
                         <p><strong>
                             {% trans -%}You are not currently subscribed to this mailinglist.{%- endtrans %}
                         </strong></p>
-                        {% if interaction_policy == enums['SubscriptionPolicy'].moderated_opt_in %}
+                        {% if interaction_policy == enums['MailinglistInteractionPolicy'].moderated_opt_in %}
                             <form action="{{ cdedblink('ml/request_subscription') }}" method="POST" id="subscribeform">
                                 {{ util.anti_csrf_token('ml/request_subscription') }}
                                 <div>
                                     {{ util.input_submit(value=gettext("Request subscription"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
-                        {% elif interaction_policy in (enums['SubscriptionPolicy'].opt_in, enums['SubscriptionPolicy'].opt_out) %}
+                        {% elif interaction_policy in (enums['MailinglistInteractionPolicy'].opt_in, enums['MailinglistInteractionPolicy'].opt_out) %}
                             <form action="{{ cdedblink('ml/subscribe') }}" method="POST" id="subscribeform">
                                 {{ util.anti_csrf_token('ml/subscribe') }}
                                 <div>

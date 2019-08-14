@@ -92,7 +92,7 @@ class MlBackend(AbstractBackend):
         :type persona_id: int
         :type mailinglist: {str: object}
         :type mailinglist_id: int
-        :rtype: const.SubscriptionPolicy or None
+        :rtype: const.MailinglistInteractionPolicy or None
         :return: The applicable subscription policy for the user or None if the
             user is not in the audience.
         """
@@ -118,12 +118,12 @@ class MlBackend(AbstractBackend):
             # First, check if assembly link allows resubscribing.
             if ml['assembly_id'] and self.assembly.check_attends(
                     rs, persona_id, ml['assembly_id']):
-                return const.SubscriptionPolicy.opt_in
+                return const.MailinglistInteractionPolicy.opt_in
             # Second, check if event link allows resubscribing.
             elif ml['event_id'] and self.event.check_registration_status(
                     rs, persona_id, ml['event_id'], ml['registration_stati']):
-                return const.SubscriptionPolicy.opt_in
-            return const.SubscriptionPolicy(ml["sub_policy"])
+                return const.MailinglistInteractionPolicy.opt_in
+            return const.MailinglistInteractionPolicy(ml["sub_policy"])
         else:
             return None
 
@@ -429,7 +429,7 @@ class MlBackend(AbstractBackend):
                     for address in deleted:
                         self.ml_log(rs, const.MlLogCodes.whitelist_removed,
                                     data['id'], additional_info=address)
-            policy = const.SubscriptionPolicy
+            policy = const.MailinglistInteractionPolicy
             if 'sub_policy' in data:
                 if current['sub_policy'] != data['sub_policy']:
                     if policy(data['sub_policy']) == policy.mandatory:
@@ -797,7 +797,7 @@ class MlBackend(AbstractBackend):
             # This is not using get_interaction_policy, as even people with moderator
             # override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
-            if policy == const.SubscriptionPolicy.mandatory:
+            if policy == const.MailinglistInteractionPolicy.mandatory:
                 return 0, n_("Can not change subscription.")
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
@@ -887,7 +887,7 @@ class MlBackend(AbstractBackend):
             # This is not using get_interaction_policy, as even people with moderator
             # override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
-            if policy == const.SubscriptionPolicy.mandatory:
+            if policy == const.MailinglistInteractionPolicy.mandatory:
                 return 0, n_("Can not change subscription.")
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
@@ -939,8 +939,8 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             policy = self.get_interaction_policy(rs, rs.user.persona_id,
                                                  mailinglist_id=mailinglist_id)
-            if policy not in (const.SubscriptionPolicy.opt_out,
-                              const.SubscriptionPolicy.opt_in):
+            if policy not in (const.MailinglistInteractionPolicy.opt_out,
+                              const.MailinglistInteractionPolicy.opt_in):
                 raise RuntimeError("Can not change subscription.")
             else:
                 state = self.get_subscription(rs, rs.user.persona_id,
@@ -970,7 +970,7 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             policy = self.get_interaction_policy(rs, rs.user.persona_id,
                                                  mailinglist_id=mailinglist_id)
-            if policy != const.SubscriptionPolicy.moderated_opt_in:
+            if policy != const.MailinglistInteractionPolicy.moderated_opt_in:
                 raise RuntimeError("Can not change subscription")
             else:
                 state = self.get_subscription(rs, rs.user.persona_id,
@@ -1003,7 +1003,7 @@ class MlBackend(AbstractBackend):
             # This is not using get_interaction_policy, as even people with moderator
             # override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
-            if policy == const.SubscriptionPolicy.mandatory:
+            if policy == const.MailinglistInteractionPolicy.mandatory:
                 raise RuntimeError("Can not change subscription.")
             else:
                 state = self.get_subscription(rs, rs.user.persona_id,
@@ -1333,11 +1333,11 @@ class MlBackend(AbstractBackend):
         """Un-inlined code from `write_subscription_states`."""
 
         # TODO adapt to MailinglistTypes.
-        sub_policy = const.SubscriptionPolicy(mailinglist['sub_policy'])
+        sub_policy = const.MailinglistInteractionPolicy(mailinglist['sub_policy'])
 
         ret = set()
-        if sub_policy in {const.SubscriptionPolicy.mandatory,
-                          const.SubscriptionPolicy.opt_out}:
+        if sub_policy in {const.MailinglistInteractionPolicy.mandatory,
+                          const.MailinglistInteractionPolicy.opt_out}:
             query = "SELECT id FROM core.personas WHERE {} AND is_active= True"
             audience = const.AudiencePolicy(
                 mailinglist['audience_policy'])
