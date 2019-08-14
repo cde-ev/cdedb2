@@ -1461,8 +1461,8 @@ class CoreFrontend(AbstractFrontend):
         # We dont actually want not_specified as a valid option for event users.
         if data['realm'] == "event":
             if data['gender'] == const.Genders.not_specified:
-                rs.errors.append(("gender",ValueError(n_("Must spcify gender "
-                                                         "for event realm-"))))
+                rs.errors.append(("gender", ValueError(n_("Must specify gender "
+                                                          "for event realm."))))
         # We have to force a None here since the template should not have a
         # null option for event cases and the validator for ml users
         # requires this
