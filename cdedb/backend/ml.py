@@ -80,8 +80,8 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def may_subscribe(self, rs, persona_id, *, mailinglist=None,
-                      mailinglist_id=None):
+    def get_interaction_policy(self, rs, persona_id, *, mailinglist=None,
+                               mailinglist_id=None):
         """What may the user do with a mailinglist. Be aware, that this does
         not take unsubscribe overrides into account.
 
@@ -755,8 +755,8 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.subscribed,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, persona_id,
-                                        mailinglist_id=mailinglist_id)
+            policy = self.get_interaction_policy(rs, persona_id,
+                                                 mailinglist_id=mailinglist_id)
             # This is the deletion conditional from write_subscription_states,
             # so people which would be deleted anyway cannot be subscribed.
             if not policy or not policy.is_additive():
@@ -794,7 +794,7 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
         with Atomizer(rs):
-            # This is not using may_subscribe, as even people with moderator
+            # This is not using get_interaction_policy, as even people with moderator
             # override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.SubscriptionPolicy.mandatory:
@@ -884,7 +884,7 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.mod_unsubscribed,
         }
         with Atomizer(rs):
-            # This is not using may_subscribe, as even people with moderator
+            # This is not using get_interaction_policy, as even people with moderator
             # override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.SubscriptionPolicy.mandatory:
@@ -937,8 +937,8 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.subscribed,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, rs.user.persona_id,
-                                        mailinglist_id=mailinglist_id)
+            policy = self.get_interaction_policy(rs, rs.user.persona_id,
+                                                 mailinglist_id=mailinglist_id)
             if policy not in (const.SubscriptionPolicy.opt_out,
                               const.SubscriptionPolicy.opt_in):
                 raise RuntimeError("Can not change subscription.")
@@ -968,8 +968,8 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.pending,
         }
         with Atomizer(rs):
-            policy = self.may_subscribe(rs, rs.user.persona_id,
-                                        mailinglist_id=mailinglist_id)
+            policy = self.get_interaction_policy(rs, rs.user.persona_id,
+                                                 mailinglist_id=mailinglist_id)
             if policy != const.SubscriptionPolicy.moderated_opt_in:
                 raise RuntimeError("Can not change subscription")
             else:
@@ -1000,7 +1000,7 @@ class MlBackend(AbstractBackend):
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
         with Atomizer(rs):
-            # This is not using may_subscribe, as even people with moderator
+            # This is not using get_interaction_policy, as even people with moderator
             # override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.SubscriptionPolicy.mandatory:
@@ -1404,12 +1404,12 @@ class MlBackend(AbstractBackend):
 
             # Check whether current subscribers may stay subscribed.
             # This is the case if they are still implicit subscribers of
-            # the list or if `may_subscribe` says so.
+            # the list or if `get_interaction_policy` says so.
             delete = []
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
             for persona in personas.values():
-                may_subscribe = self.may_subscribe(
+                may_subscribe = self.get_interaction_policy(
                     rs, persona['id'], mailinglist=ml)
                 state = old_subscribers[persona['id']]
                 if (state == const.SubscriptionStates.implicit

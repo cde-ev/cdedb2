@@ -253,8 +253,8 @@ class MlFrontend(AbstractUserFrontend):
                     or "member" in rs.user.roles
                     or is_attending)
 
-        may_subscribe = self.mlproxy.may_subscribe(rs, rs.user.persona_id,
-                                                   mailinglist=ml)
+        interaction_policy = self.mlproxy.get_interaction_policy(
+            rs, rs.user.persona_id, mailinglist=ml)
         personas = self.coreproxy.get_personas(rs, ml['moderators'])
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
@@ -262,7 +262,7 @@ class MlFrontend(AbstractUserFrontend):
 
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'state': state,
-            'may_subscribe': may_subscribe, 'event': event,
+            'interaction_policy': interaction_policy, 'event': event,
             'assembly': assembly, 'moderators': moderators})
 
     @access("ml")
