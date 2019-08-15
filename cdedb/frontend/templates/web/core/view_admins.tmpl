@@ -22,7 +22,7 @@
             approve that change.
         {%- endtrans %}
     </div>
-    <ul>
+    <ul id="admin">
         {% for admin in admins["admin"] %}
             <li>{{ util.persona_anchor(personas[admin]) }}</li>
         {% endfor %}
@@ -37,7 +37,7 @@
             approve pending changes of data fields needing review (address, birthday and name).
         {%- endtrans %}
     </div>
-    <ul>
+    <ul id="core">
         {% for admin in admins["core"] %}
             <li>{{ util.persona_anchor(personas[admin]) }}</li>
         {% endfor %}
@@ -51,7 +51,7 @@
                 They may also manage past events that are displayed on profiles.
             {%- endtrans %}
         </div>
-        <ul>
+        <ul id="cde">
             {% for admin in admins["cde"] %}
                 <li>{{ util.persona_anchor(personas[admin]) }}</li>
             {% endfor %}
@@ -67,7 +67,7 @@
                 as the removal of inactive members and the updating of balances.
             {%- endtrans %}
         </div>
-        <ul>
+        <ul id="finance">
             {% for admin in admins["finance"] %}
                 <li>{{ util.persona_anchor(personas[admin]) }}</li>
             {% endfor %}
@@ -85,7 +85,7 @@
                 They may manage and create event related mailinglists.
             {%- endtrans %}
         </div>
-        <ul>
+        <ul id="event">
             {% for admin in admins["event"] %}
                 <li>{{ util.persona_anchor(personas[admin]) }}</li>
             {% endfor %}
@@ -100,7 +100,7 @@
                 They may create, manage and approve requests for Mailinglist-Users, i.e. users that may only access mailinglists.
             {%- endtrans %}
         </div>
-        <ul>
+        <ul id="ml">
             {% for admin in admins["ml"] %}
                 <li>{{ util.persona_anchor(personas[admin]) }}</li>
             {% endfor %}
@@ -116,7 +116,7 @@
                 They may also add these users as participants of assemblies.
             {%- endtrans %}
         </div>
-        <ul>
+        <ul id="assembly">
             {% for admin in admins["assembly"] %}
                 <li>{{ util.persona_anchor(personas[admin]) }}</li>
             {% endfor %}

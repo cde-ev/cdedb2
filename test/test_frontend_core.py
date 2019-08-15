@@ -798,18 +798,22 @@ class TestCoreFrontend(FrontendTest):
         self.test_privilege_change()
         self.traverse({"href": "/core/admins"})
         self.assertTitle("Administratorenübersicht")
-        self.assertPresence(
-            "Super-Admins Anton Armin A. Administrator Martin Meister")
-        self.assertPresence(
-            "CdE-Admins Anton Armin A. Administrator Bertålotta Beispiel")
-        self.assertPresence(
-            "Veranstaltungsadmins Anton Armin A. Administrator "
-            "Ferdinand F. FindusBertålotta Beispiel")
+        self.assertPresence("Anton Armin A. Administrator", "admin")
+        self.assertPresence("Martin Meiste", "admin")
+        self.assertPresence("Anton Armin A. Administrator", "core")
+        self.assertNonPresence("Martin Meister", "core")
+        self.assertNonPresence("Bertålotta Beispiel", "core")
+        self.assertPresence("Anton Armin A. Administrator", "cde")
+        self.assertPresence("Anton Armin A. Administrator", "event")
+        self.assertPresence("Ferdinand F. Findus", "event")
+        self.assertPresence("Bertålotta Beispiel", "event")
+        self.assertPresence("Ferdinand F. Findus", "assembly")
+        self.assertPresence("Bertålotta Beispiel", "assembly")
         self.logout()
         self.login(USER_DICT["janis"])
         self.traverse({"href": "/core/admins"})
         self.assertTitle("Administratorenübersicht")
-        self.assertPresence("Anton Armin A. Administrator")
+        self.assertPresence("Anton Armin A. Administrator", "core")
         self.assertNonPresence("Bertålotta Beispiel")
 
     @as_users("anton")
