@@ -305,7 +305,7 @@ class TestCdEBackend(BackendTest):
                 ("birthday", QueryOperators.less, datetime.datetime.now())],
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({2, 3, 4, 6, 7}, {e['id'] for e in result})
+        self.assertEqual({2, 3, 4, 6, 7, 13}, {e['id'] for e in result})
 
     @as_users("anton")
     def test_user_search_operators(self, user):

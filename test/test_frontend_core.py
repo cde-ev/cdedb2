@@ -113,7 +113,7 @@ class TestCoreFrontend(FrontendTest):
                            'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
         self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 11)
+        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 11, 13)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
@@ -645,7 +645,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Ergebnis [5]")
+        self.assertPresence("Ergebnis [6]")
         self.assertPresence("Jalapeño")
 
     @as_users("anton")

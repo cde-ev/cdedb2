@@ -1442,7 +1442,7 @@ class TestCdEFrontend(FrontendTest):
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/core/changelog/view'})
-        self.assertTitle("Nutzerdaten-Log [0–11]")
+        self.assertTitle("Nutzerdaten-Log [0–12]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)
