@@ -1458,17 +1458,20 @@ class CoreFrontend(AbstractFrontend):
         This initiates the genesis process.
         """
         data = check(rs, "genesis_case", data, creation=True)
-        if not rs.errors and len(data['notes']) > self.conf.MAX_RATIONALE:
+        if data is None:
+            return self.genesis_request_form(rs)
+        if len(data['notes']) > self.conf.MAX_RATIONALE:
             rs.errors.append(("notes", ValueError(n_("Rationale too long."))))
         # We dont actually want not_specified as a valid option for event users.
-        if data['realm'] == "event":
+        if data.get('realm') == "event":
             if data['gender'] == const.Genders.not_specified:
-                rs.errors.append(("gender", ValueError(n_("Must specify gender "
-                                                          "for event realm."))))
+                rs.errors.append(
+                    ("gender", ValueError(n_(
+                        "Must specify gender for event realm."))))
         # We have to force a None here since the template should not have a
         # null option for event cases and the validator for ml users
         # requires this
-        elif data['realm'] == "ml":
+        elif data.get('realm') == "ml":
             data['gender'] = None
         if rs.errors:
             return self.genesis_request_form(rs)
