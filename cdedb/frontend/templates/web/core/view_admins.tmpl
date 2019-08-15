@@ -13,20 +13,114 @@
         {%- endtrans %}
     </p>
 
-    {% set titles = {"admin": gettext("Super-Admins"),
-                      "core": gettext("Core-Admins"),
-                      "cde": gettext("CdE-Admins"),
-                      "event": gettext("Event-Admins"),
-                      "assembly": gettext("Assembly-Admins"),
-                      "ml": gettext("Mailinglist-Admins")} %}
-    {% for realm, adminlist in admins.items() %}
-        {% if realm in user.roles %}
-            <h3>{{ titles[realm] }}</h3>
-            <ul>
-                {% for admin in adminlist %}
-                    <li>{{ util.persona_anchor(personas[admin]) }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endfor %}
+    {# Everyone can see superadmins #}
+    <h3>{% trans -%}Super-Admins{%- endtrans %}</h3>
+    <div class="p">
+        {% trans -%}
+            Super-Admins may modify adminprivileges of other users based on a
+            four-eye principle. One Super-Admin may initiate a change, another has to
+            approve that change.
+        {%- endtrans %}
+    </div>
+    <ul>
+        {% for admin in admins["admin"] %}
+            <li>{{ util.persona_anchor(personas[admin]) }}</li>
+        {% endfor %}
+    </ul>
+
+    {# Everyone can see coreadmins #}
+    <h3>{% trans -%}Core-Admins{%- endtrans %}</h3>
+    <div class="p">
+        {% trans -%}
+            Core-Admins may view and edit any other user account.
+            They may also approve account requests for all realms and they may
+            approve pending changes of data fields needing review (address, birthday and name).
+        {%- endtrans %}
+    </div>
+    <ul>
+        {% for admin in admins["core"] %}
+            <li>{{ util.persona_anchor(personas[admin]) }}</li>
+        {% endfor %}
+    </ul>
+
+    {% if "cde" in user.roles %}
+        <h3>{% trans -%}CdE-Admins{%- endtrans %}</h3>
+        <div class="p">
+            {% trans -%}
+                CdE-Admins may create, view and edit CdE-Users.
+                They may also manage past events that are displayed on profiles.
+            {%- endtrans %}
+        </div>
+        <ul>
+            {% for admin in admins["cde"] %}
+                <li>{{ util.persona_anchor(personas[admin]) }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if "member" in user.roles %}
+        <h3>{% trans -%}Finance-Admins{%- endtrans %}</h3>
+        <div class="p">
+            {% trans -%}
+                Finance-Admins may manage direct debit authorizations and membershipfee transactions.
+                They also handle semestermanagement, i.e. the sending of payment notifications, as well
+                as the removal of inactive members and the updating of balances.
+            {%- endtrans %}
+        </div>
+        <ul>
+            {% for admin in admins["finance"] %}
+                <li>{{ util.persona_anchor(personas[admin]) }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if "event" in user.roles %}
+        <h3>{% trans -%}Event-Admins{%- endtrans %}</h3>
+        <div class="p">
+            {% trans -%}
+                Event-Admins may create DB-organized events and add and remove orgas to these events.
+                They can also access the configuration as well as all registration data of these events.
+                Event-Admins may create and manage Event-Users, i.e. users with access to the event realm but not the CdE realm.
+                This includes the approval of account requests.
+                They may manage and create event related mailinglists.
+            {%- endtrans %}
+        </div>
+        <ul>
+            {% for admin in admins["event"] %}
+                <li>{{ util.persona_anchor(personas[admin]) }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if "ml" in user.roles %}
+        <h3>{% trans -%}Mailinglist-Admins{%- endtrans %}</h3>
+        <div class="p">
+            {% trans -%}
+                Mailinglist-Admins may manage and create all types of mailinglists.
+                They may create, manage and approve requests for Mailinglist-Users, i.e. users that may only access mailinglists.
+            {%- endtrans %}
+        </div>
+        <ul>
+            {% for admin in admins["ml"] %}
+                <li>{{ util.persona_anchor(personas[admin]) }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if "assembly" in user.roles %}
+        <h3>{% trans -%}Assembly-Admins{%- endtrans %}</h3>
+        <div class="p">
+            {% trans -%}
+                Assembly-Admins may create and manage assemblies and ballots.
+                They may create and manage Assembly-Users, i.e. users with access to assemblies, that are not CdE members.
+                They may also add these users as participants of assemblies.
+            {%- endtrans %}
+        </div>
+        <ul>
+            {% for admin in admins["assembly"] %}
+                <li>{{ util.persona_anchor(personas[admin]) }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
 {% endblock %}
