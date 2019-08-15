@@ -680,7 +680,9 @@ class CoreBackend(AbstractBackend):
         if (set(data) & realm_keys
                 and ("core_admin" not in rs.user.roles
                      or "realms" not in allow_specials)):
-            raise PrivilegeError(n_("Realm modification prevented."))
+            if not (all(not data[key] for key in realm_keys)
+                    and "archive" in allow_specials ):
+                raise PrivilegeError(n_("Realm modification prevented."))
         admin_keys = {'is_cde_admin', 'is_finance_admin', 'is_event_admin',
                       'is_ml_admin', 'is_assembly_admin', 'is_core_admin',
                       'is_admin'}
@@ -1244,7 +1246,7 @@ class CoreBackend(AbstractBackend):
             self.set_persona(
                 rs, update, generation=None, may_wait=False,
                 change_note="Archivierung vorbereitet.",
-                allow_specials=("archive", "username", "realms", "finance"))
+                allow_specials=("archive", "username"))
             #
             # 4. Delete all sessions and quotas
             #
