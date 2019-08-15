@@ -1220,11 +1220,6 @@ def extract_roles(session, introspection_only=False):
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
-    # Grant global admin all roles
-    if "admin" in ret:
-        for level in ("core", "cde", "event", "assembly", "ml"):
-            ret.add("{}_admin".format(level))
-        ret = ret | realms | {"member", "searchable"}
     return ret
 
 
@@ -1327,10 +1322,10 @@ def privilege_tier(roles, conjunctive=False):
         relevant -= implied_roles
     if conjunctive:
         ret = ({realm + "_admin" for realm in relevant},
-               {"core_admin"}, {"admin"})
+               {"core_admin"})
     else:
         ret = tuple({realm + "_admin"} for realm in relevant)
-        ret += ({"core_admin"}, {"admin"})
+        ret += ({"core_admin"},)
     return ret
 
 

@@ -602,10 +602,10 @@ class CoreFrontend(AbstractFrontend):
         mailinglist = None
         event = None
         num_preview_personas = (self.conf.NUM_PREVIEW_PERSONAS_CORE_ADMIN
-                                if {"core_admin", "admin"} & rs.user.roles
+                                if {"core_admin"} & rs.user.roles
                                 else self.conf.NUM_PREVIEW_PERSONAS)
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "admin"} & rs.user.roles:
+            if not {"core_admin", "cde_admin"} & rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
         elif kind == "past_event_user":
             if "cde_admin" not in rs.user.roles:
@@ -650,7 +650,7 @@ class CoreFrontend(AbstractFrontend):
 
         # Core admins and super admins are allowed to search by raw ID or
         # CDEDB-ID
-        if {"core_admin", "admin"} & rs.user.roles:
+        if "core_admin" in rs.user.roles:
             anid, errs = validate.check_cdedbid(phrase, "phrase")
             if not errs:
                 tmp = self.coreproxy.get_personas(rs, (anid,))
@@ -902,7 +902,7 @@ class CoreFrontend(AbstractFrontend):
         :rtype: {str}
         """
         ret = set()
-        if rs.user.roles & {"core_admin", "admin"}:
+        if "core_admin" in rs.user.roles:
             ret |= REALM_INHERITANCE.keys()
         for realm in REALM_INHERITANCE:
             if "{}_admin".format(realm) in rs.user.roles:

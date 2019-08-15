@@ -192,7 +192,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type rs: :py:class:`BackendRequestState`
         :rtype: bool
         """
-        return bool({"{}_admin".format(cls.realm), "admin"} & rs.user.roles)
+        return "{}_admin".format(cls.realm) in rs.user.roles
 
     @staticmethod
     def _sanitize_db_output(output):
