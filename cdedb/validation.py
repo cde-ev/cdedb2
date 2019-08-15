@@ -727,7 +727,6 @@ def _email(val, argname=None, *, _convert=True):
 
 _PERSONA_TYPE_FIELDS = {
     'is_cde_realm': _bool,
-    'is_finance_realm': _bool,
     'is_event_realm': _bool,
     'is_ml_realm': _bool,
     'is_assembly_realm': _bool,
@@ -739,7 +738,6 @@ _PERSONA_BASE_CREATION = lambda: {
     'username': _email,
     'notes': _str_or_None,
     'is_cde_realm': _bool,
-    'is_finance_realm': _bool,
     'is_event_realm': _bool,
     'is_ml_realm': _bool,
     'is_assembly_realm': _bool,
@@ -911,6 +909,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
+            'is_finance_admin': False,
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
