@@ -96,6 +96,7 @@ class TestCdEBackend(BackendTest):
                 'is_assembly_admin': True,
                 'is_assembly_realm': True,
                 'is_cde_admin': True,
+                'is_finance_admin': True,
                 'is_cde_realm': True,
                 'is_core_admin': True,
                 'is_event_admin': True,
