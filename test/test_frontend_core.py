@@ -544,6 +544,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual(False, f['is_assembly_admin'].checked)
         f['is_event_admin'].checked = True
         f['is_assembly_admin'].checked = True
+        f['notes'] = "For testing."
         self.submit(f)
         self.logout()
         # Confirm privilege change.
