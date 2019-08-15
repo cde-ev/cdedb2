@@ -727,6 +727,7 @@ def _email(val, argname=None, *, _convert=True):
 
 _PERSONA_TYPE_FIELDS = {
     'is_cde_realm': _bool,
+    'is_finance_realm': _bool,
     'is_event_realm': _bool,
     'is_ml_realm': _bool,
     'is_assembly_realm': _bool,
@@ -738,6 +739,7 @@ _PERSONA_BASE_CREATION = lambda: {
     'username': _email,
     'notes': _str_or_None,
     'is_cde_realm': _bool,
+    'is_finance_realm': _bool,
     'is_event_realm': _bool,
     'is_ml_realm': _bool,
     'is_assembly_realm': _bool,
@@ -823,6 +825,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
     'is_admin': _bool,
     'is_core_admin': _bool,
     'is_cde_admin': _bool,
+    'is_finance_admin': _bool,
     'is_event_admin': _bool,
     'is_ml_admin': _bool,
     'is_assembly_admin': _bool,
@@ -1293,6 +1296,7 @@ _PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {
     'new_is_admin': _bool_or_None,
     'new_is_core_admin': _bool_or_None,
     'new_is_cde_admin': _bool_or_None,
+    'new_is_finance_admin': _bool_or_None,
     'new_is_event_admin': _bool_or_None,
     'new_is_ml_admin': _bool_or_None,
     'new_is_assembly_admin': _bool_or_None,

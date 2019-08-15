@@ -34,6 +34,7 @@ CREATE TABLE core.personas (
         -- allows managing of cde users (members and former members) and
         -- other cde stuff (past events, direct debit)
         is_cde_admin            boolean NOT NULL DEFAULT False,
+        is_finance_admin        boolean NOT NULL DEFAULT False,
         -- allows managing of events and event users
         is_event_admin          boolean NOT NULL DEFAULT False,
         -- allows managing of mailinglists and ml users
@@ -196,6 +197,7 @@ CREATE TABLE core.privilege_changes (
         new_is_admin            boolean DEFAULT NULL,
         new_is_core_admin       boolean DEFAULT NULL,
         new_is_cde_admin        boolean DEFAULT NULL,
+        new_is_finance_admin    boolean DEFAULT NULL,
         new_is_event_admin      boolean DEFAULT NULL,
         new_is_ml_admin         boolean DEFAULT NULL,
         new_is_assembly_admin   boolean DEFAULT NULL,
@@ -294,6 +296,7 @@ CREATE TABLE core.changelog (
         is_admin                boolean,
         is_core_admin           boolean,
         is_cde_admin            boolean,
+        is_finance_admin        boolean,
         is_event_admin          boolean,
         is_ml_admin             boolean,
         is_assembly_admin       boolean,

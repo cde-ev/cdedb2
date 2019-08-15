@@ -1019,12 +1019,12 @@ class CoreFrontend(AbstractFrontend):
     @access("admin", modi={"POST"})
     @REQUESTdata(
         ("is_admin", "bool"), ("is_core_admin", "bool"),
-        ("is_cde_admin", "bool"), ("is_event_admin", "bool"),
-        ("is_ml_admin", "bool"), ("is_assembly_admin", "bool"),
-        ("notes", "str_or_None"))
+        ("is_cde_admin", "bool"), ("is_finance_admin", "bool"),
+        ("is_event_admin", "bool"), ("is_ml_admin", "bool"),
+        ("is_assembly_admin", "bool"), ("notes", "str"))
     def change_privileges(self, rs, persona_id, is_admin, is_core_admin,
-                          is_cde_admin, is_event_admin, is_ml_admin,
-                          is_assembly_admin, notes):
+                          is_cde_admin, is_finance_admin, is_event_admin,
+                          is_ml_admin, is_assembly_admin, notes):
         """Grant or revoke admin bits."""
         if rs.errors:
             return self.change_privileges_form(rs, persona_id)
@@ -1048,6 +1048,8 @@ class CoreFrontend(AbstractFrontend):
             data["new_is_core_admin"] = is_core_admin
         if is_cde_admin != persona["is_cde_admin"]:
             data["new_is_cde_admin"] = is_cde_admin
+        if is_finance_admin != persona["is_finance_admin"]:
+            data["new_is_finance_admin"] = is_finance_admin
         if is_event_admin != persona["is_event_admin"]:
             data["new_is_event_admin"] = is_event_admin
         if is_ml_admin != persona["is_ml_admin"]:
@@ -1060,8 +1062,9 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         new_admin_keys = {"new_is_admin", "new_is_core_admin",
-                          "new_id_cde_admin", "new_is_event_admin",
-                          "new_is_ml_admin", "new_is_assembly_admin"}
+                          "new_id_cde_admin", "new_is_finance_admin",
+                          "new_is_event_admin", "new_is_ml_admin",
+                          "new_is_assembly_admin"}
         if new_admin_keys & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
             self.notify_return_code(

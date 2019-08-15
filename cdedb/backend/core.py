@@ -681,8 +681,9 @@ class CoreBackend(AbstractBackend):
                 and ("core_admin" not in rs.user.roles
                      or "realms" not in allow_specials)):
             raise PrivilegeError(n_("Realm modification prevented."))
-        admin_keys = {'is_cde_admin', 'is_event_admin', 'is_ml_admin',
-                      'is_assembly_admin', 'is_core_admin', 'is_admin'}
+        admin_keys = {'is_cde_admin', 'is_finance_admin', 'is_event_admin',
+                      'is_ml_admin', 'is_assembly_admin', 'is_core_admin',
+                      'is_admin'}
         if (set(data) & admin_keys
                 and ("admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
@@ -909,6 +910,8 @@ class CoreBackend(AbstractBackend):
                     data["is_core_admin"] = case["new_is_core_admin"]
                 if case["new_is_cde_admin"] is not None:
                     data["is_cde_admin"] = case["new_is_cde_admin"]
+                if case["new_is_finance_admin"] is not None:
+                    data["is_finance_admin"] = case["new_is_finance_admin"]
                 if case["new_is_event_admin"] is not None:
                     data["is_event_admin"] = case["new_is_event_admin"]
                 if case["new_is_ml_admin"] is not None:

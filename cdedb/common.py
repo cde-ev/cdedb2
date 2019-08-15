@@ -1427,9 +1427,9 @@ DEFAULT_NUM_COURSE_CHOICES = 3
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
     "is_active", "is_admin", "is_core_admin", "is_cde_admin",
-    "is_event_admin", "is_ml_admin", "is_assembly_admin", "is_cde_realm",
-    "is_event_realm", "is_ml_realm", "is_assembly_realm", "is_member",
-    "is_searchable", "is_archived")
+    "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
+    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
+    "is_member", "is_searchable", "is_archived")
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
@@ -1474,8 +1474,8 @@ GENESIS_CASE_FIELDS = (
 PRIVILEGE_CHANGE_FIELDS = (
     "id", "ctime", "ftime", "persona_id", "submitted_by", "status",
     "new_is_admin", "new_is_core_admin", "new_is_cde_admin",
-    "new_is_event_admin", "new_is_ml_admin", "new_is_assembly_admin",
-    "notes", "reviewer")
+    "new_is_finance_admin", "new_is_event_admin", "new_is_ml_admin",
+    "new_is_assembly_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
 INSTITUTION_FIELDS = ("id", "title", "moniker")
