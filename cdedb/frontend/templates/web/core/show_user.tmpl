@@ -443,7 +443,8 @@ Mitglied.</pre>
 
                                     <div class="form-group">
                                         {{ util.input_submit(value=gettext("Archive Account"), icon="erase",
-                                            aclass="btn btn-danger btn-sm") }}
+                                                aclass="btn btn-danger btn-sm", readonly=data['is_admin'],
+                                                title=gettext("Cannot archive superadmins.") if data['is_admin'] else "") }}
                                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                     </div>
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}

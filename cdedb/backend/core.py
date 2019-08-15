@@ -1129,10 +1129,16 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             persona = unwrap(self.get_total_personas(rs, (persona_id,)))
             #
-            # 1. Check whether we are already archived
+            # 1. Do some sanity checks.
             #
             if persona['is_archived']:
                 return 0
+
+            # Disallow archival of superadmins to ensure there always remain
+            # atleast two.
+            if persona['is_admin']:
+                raise ArchiveError(n_("Cannot archive superadmins."))
+
             #
             # 2. Remove complicated attributes (membership, foto and password)
             #
