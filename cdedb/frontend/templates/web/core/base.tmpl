@@ -37,12 +37,12 @@
                 {{ util.href(cdedblink("core/meta_info_form"), gettext("Metadata"), aclass="list-group-item",
                         icon="tags", active=(sidenav_active=='core_meta')) }}
             {% endif %}
-            {% if "admin" in user.roles %}
-                </div>
-                <div class="list-group tear-down">
-                {{ util.href(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes"), aclass="list-group-item",
-                        icon="wrench", active=(sidenav_active=='core_privilege_changes')) }}
-            {% endif %}
+            </div>
+        {% endif %}
+        {% if "admin" in user.roles %}
+            <div class="list-group tear-down">
+            {{ util.href(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes"), aclass="list-group-item",
+                    icon="wrench", active=(sidenav_active=='core_privilege_changes')) }}
             </div>
         {% endif %}
     {% endif %}
