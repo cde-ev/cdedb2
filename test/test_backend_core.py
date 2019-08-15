@@ -663,6 +663,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(True, persona["is_event_admin"])
         self.assertEqual(True, persona["is_assembly_admin"])
 
+        self.login(admin1)
         core_log_expectation = (
             # Modifying the admin bits.
             {

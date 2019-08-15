@@ -61,7 +61,7 @@ class CoreBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("persona")
-    def is_relative_admin(self, rs, persona_id):
+    def is_relative_admin(self, rs, persona_id, allow_superadmin=False):
         """Check whether the user is privileged with respect to a persona.
 
         A mailinglist admin may not edit cde users, but the other way
@@ -69,9 +69,15 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
+        :type allow_superadmin: bool
+        :param allow_superadmin: In some cases we need to allow superadmins
+            access where they should not normally have it. This is to allow that
+            override.
         :rtype: bool
         """
         if self.is_admin(rs):
+            return True
+        if allow_superadmin and "admin" in rs.user.roles:
             return True
         roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
                               introspection_only=True)
@@ -547,7 +553,8 @@ class CoreBackend(AbstractBackend):
         """
         persona_id = affirm("id", persona_id)
         if (persona_id != rs.user.persona_id
-                and not self.is_relative_admin(rs, persona_id)):
+                and not self.is_relative_admin(
+                rs, persona_id, allow_superadmin=True)):
             raise PrivilegeError(n_("Not privileged."))
         generations = affirm_set("int", generations, allow_None=True)
         fields = list(PERSONA_ALL_FIELDS)
@@ -707,8 +714,10 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Own activation prevented."))
 
         # check for permission to edit
+        allow_superadmin = data.keys() <= admin_keys | {"id"}
         if (rs.user.persona_id != data['id']
-                and not self.is_relative_admin(rs, data['id'])):
+                and not self.is_relative_admin(rs, data['id'],
+                                               allow_superadmin)):
             raise PrivilegeError(n_("Not privileged."))
 
         # Prevent modification of archived members. This check is
@@ -1547,7 +1556,9 @@ class CoreBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         if (ids != {rs.user.persona_id} and not self.is_admin(rs)
-                and any(not self.is_relative_admin(rs, anid) for anid in ids)):
+                and any(not self.is_relative_admin(rs, anid,
+                                                   allow_superadmin=True)
+                        for anid in ids)):
             raise PrivilegeError(n_("Must be privileged."))
         return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
 
