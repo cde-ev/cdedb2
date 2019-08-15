@@ -984,8 +984,8 @@ class CoreFrontend(AbstractFrontend):
 
         admins = {
             # Superadmins
-            "persona": self.coreproxy.list_admins(rs, "admin"),
-            "core": self.coreproxy.list_admins(rs, "admin"),
+            "admin": self.coreproxy.list_admins(rs, "admin"),
+            "core": self.coreproxy.list_admins(rs, "core"),
         }
 
         for realm in ("cde", "event", "ml", "assembly"):
