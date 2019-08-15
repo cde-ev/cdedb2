@@ -827,6 +827,30 @@ class CoreBackend(AbstractBackend):
         if self.get_pending_privilege_change(rs, data['persona_id']):
             raise ValueError(n_("Pending privilege change."))
 
+        persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
+
+        realms = {"cde", "event", "ml", "assembly"}
+        for realm in realms:
+            if not persona['is_{}_realm'.format(realm)]:
+                if data.get('new_is_{}_admin'.format(realm)):
+                    raise PrivilegeError(n_(
+                        "User does not fit the requirements for this "
+                        "admin privilege."))
+
+        if data.get('new_is_finance_admin'):
+            if (data.get('new_is_cde_admin') is False
+                or (not persona['is_cde_admin']
+                    and not data.get('new_is_cde_admin'))):
+                raise PrivilegeError(n_(
+                    "User does not fit the requirements for this "
+                    "admin privilege."))
+
+        if data.get('new_is_core_admin') or data.get('new_is_admin'):
+            if not persona['is_cde_realm']:
+                raise PrivilegeError(n_(
+                    "User does not fit the requirements for this "
+                    "admin privilege."))
+
         self.core_log(
             rs, const.CoreLogCodes.privilege_change_pending, data['persona_id'],
             additional_info="Änderung der Admin-Privilegien angestoßen.")

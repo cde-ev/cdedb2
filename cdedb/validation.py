@@ -1286,7 +1286,7 @@ _PRIVILEGE_CHANGE_COMMON_FIELDS = lambda: {
     'persona_id': _id,
     'submitted_by': _id,
     'status': _enum_privilegechangestati,
-    'notes': _str_or_None,
+    'notes': _str,
 }
 
 _PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {

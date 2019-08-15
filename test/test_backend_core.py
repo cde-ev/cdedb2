@@ -710,6 +710,41 @@ class TestCoreBackend(BackendTest):
             self.key, start=0, stop=1)
         self.assertEqual(changelog_expectation, result)
 
+    @as_users("anton", "martin")
+    def test_invalid_privilege_change(self, user):
+        data = {
+            "persona_id": USER_DICT["janis"]["id"],
+            "new_is_admin": True,
+            "notes": "For testing.",
+        }
+        with self.assertRaises(PrivilegeError):
+            self.core.initialize_privilege_change(self.key, data)
+
+        data = {
+            "persona_id": USER_DICT["emilia"]["id"],
+            "new_is_core_admin": True,
+            "notes": "For testing.",
+        }
+        with self.assertRaises(PrivilegeError):
+            self.core.initialize_privilege_change(self.key, data)
+
+        data = {
+            "persona_id": USER_DICT["berta"]["id"],
+            "new_is_finance_admin": True,
+            "notes": "For testing.",
+        }
+        with self.assertRaises(PrivilegeError):
+            self.core.initialize_privilege_change(self.key, data)
+
+        data = {
+            "persona_id": USER_DICT["ferdinand"]["id"],
+            "new_is_finance_admin": True,
+            "new_is_cde_admin": False,
+            "notes": "For testing.",
+        }
+        with self.assertRaises(PrivilegeError):
+            self.core.initialize_privilege_change(self.key, data)
+
     @as_users("anton")
     def test_log(self, user):
         ## first generate some data
