@@ -1442,8 +1442,10 @@ class CoreFrontend(AbstractFrontend):
     @access("anonymous")
     def genesis_request_form(self, rs):
         """Render form."""
+        allowed_genders = set(const.Genders) - {const.Genders.not_specified}
         return self.render(rs, "genesis_request",
-                           {'max_rationale': self.conf.MAX_RATIONALE})
+                           {'max_rationale': self.conf.MAX_RATIONALE,
+                            'allowed_genders': allowed_genders})
 
     @access("anonymous", modi={"POST"})
     @REQUESTdatadict(
