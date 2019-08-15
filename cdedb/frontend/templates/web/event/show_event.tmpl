@@ -108,13 +108,13 @@
         {% endif %}
 
         <div class="row">
-            <div class="col-md-6">
-                {% call util.bootstrap_panel(title="Orgas", icon='user') %}
-                <ul>
-                    {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                        <li>
-                            {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
-                            {% if is_admin or anid != user.persona_id %}
+            {% if is_admin %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(title="Orgas", icon='user') %}
+                    <ul>
+                        {% for anid, entry in orgas.items() %} {# This is already sorted. #}
+                            <li>
+                                {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
                                 <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
                                         id="removeorgaform{{ anid }}" style="display: inline;">
                                     {{ util.anti_csrf_token('event/remove_orga') }}
@@ -122,32 +122,32 @@
                                     {{ util.input_submit(value="", readonly=is_locked, title=gettext("Remove Orga"),
                                                          icon='minus', aclass='btn btn-xs btn-danger') }}
                                 </form>
-                            {% endif %}
-                        </li>
-                    {% endfor %}
-                </ul>
-                <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
-                    {{ util.anti_csrf_token('event/add_orga') }}
-                    <div class="input-group has-success">
-                        <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
-                        {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
-                                           arialabel=gettext("ID of the new Orga")) }}
-                        <script type="text/javascript" nonce="{{ csp_nonce }}">
-                            $('#input-add-orga').cdedbSearchPerson(
-                                '{{ (cdedblink('core/select_persona')|e) + ('?kind=orga_event_user&phrase=%s&aux='|s) + 
-                                    (ambience['event']['id']|string|e) }}',
-                                {{ ambience['event']['orgas']|list|json|s }}, false, false,
-                                "{{ gettext("ID, name, email") }}"
-                            );
-                        </script>
-                        <div class="input-group-btn">
-                            {{ util.input_submit(value=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
+                        {{ util.anti_csrf_token('event/add_orga') }}
+                        <div class="input-group has-success">
+                            <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
+                            {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
+                                               arialabel=gettext("ID of the new Orga")) }}
+                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                $('#input-add-orga').cdedbSearchPerson(
+                                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=orga_event_user&phrase=%s&aux='|s) +
+                                        (ambience['event']['id']|string|e) }}',
+                                    {{ ambience['event']['orgas']|list|json|s }}, false, false,
+                                    "{{ gettext("ID, name, email") }}"
+                                );
+                            </script>
+                            <div class="input-group-btn">
+                                {{ util.input_submit(value=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
+                            </div>
                         </div>
-                    </div>
-                    {{ util.output_errors('orga_id', wrapper=True) }}
-                </form>
-                {% endcall %}
-            </div>
+                        {{ util.output_errors('orga_id', wrapper=True) }}
+                    </form>
+                    {% endcall %}
+                </div>
+            {% endif %}
             
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}

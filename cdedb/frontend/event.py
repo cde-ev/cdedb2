@@ -399,15 +399,11 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("success", n_("Logo has been updated."))
         return self.redirect(rs, "event/show_course")
 
-    @access("event", modi={"POST"})
+    @access("event_admin", modi={"POST"})
     @REQUESTdata(("orga_id", "cdedbid"))
     @event_guard(check_offline=True)
     def add_orga(self, rs, event_id, orga_id):
         """Make an additional persona become orga."""
-        if not rs.errors and not self.eventproxy.check_orga_addition_limit(
-                rs, event_id):
-            rs.errors.append(("orga_id",
-                              ValueError(n_("Rate-limit reached."))))
         if rs.errors:
             return self.show_event(rs, event_id)
         new = {
@@ -418,7 +414,7 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
-    @access("event", modi={"POST"})
+    @access("event_admin", modi={"POST"})
     @REQUESTdata(("orga_id", "id"))
     @event_guard(check_offline=True)
     def remove_orga(self, rs, event_id, orga_id):
@@ -427,9 +423,6 @@ class EventFrontend(AbstractUserFrontend):
         This can drop your own orga role (but only if you're admin).
         """
         if rs.errors:
-            return self.show_event(rs, event_id)
-        if orga_id == rs.user.persona_id and not self.is_admin(rs):
-            rs.notify("error", n_("Not allowed to remove yourself as orga."))
             return self.show_event(rs, event_id)
         new = {
             'id': event_id,

@@ -146,7 +146,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
         data['title'] = "Alternate Universe Academy"
-        data['orgas'] = {1, 7}
+        data['orgas'] = {2, 7}
         newpart = {
             'tracks': {
                 -1: {'title': "Third lecture",
@@ -185,7 +185,6 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, {
             'id': new_id,
             'title': data['title'],
-            'orgas': data['orgas'],
             'parts': {
                 part_map["First coming"]: None,
                 part_map["Second coming"]: changed_part,

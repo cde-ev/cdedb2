@@ -821,6 +821,8 @@ class EventBackend(AbstractBackend):
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])
             if 'orgas' in data:
+                if not self.is_admin(rs):
+                    raise PrivilegeError(n_("Not privileged."))
                 current = self.sql_select(rs, "event.orgas", ("persona_id",),
                                           (data['id'],), entity_key="event_id")
                 existing = {unwrap(e) for e in current}
