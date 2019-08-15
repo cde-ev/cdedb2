@@ -499,10 +499,12 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/persona/{}/privileges'.format(new_admin1["id"]))
         f = self.response.forms['privilegechangeform']
         f['is_ml_admin'].checked = True
+        f['notes'] = "For Testing."
         self.submit(f)
         self.get('/core/persona/{}/privileges'.format(new_admin2["id"]))
         f = self.response.forms['privilegechangeform']
         f['is_assembly_admin'].checked = True
+        f['notes'] = "For Testing."
         self.submit(f)
         self.logout()
         # Confirm privilege changes.
@@ -515,6 +517,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms["ackprivilegechangeform"]
         self.submit(f)
         # Check results of Any Admin query.
+        self.logout()
+        self.login(admin1)
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
@@ -567,6 +571,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['privilegechangeform']
         f['is_core_admin'].checked = True
         f['is_cde_admin'].checked = True
+        f['notes'] = "For testing."
         self.submit(f)
         self.logout()
         # This requires confirmation.
