@@ -688,10 +688,10 @@ class CoreBackend(AbstractBackend):
                 and ("admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
             # Allow unsetting adminbits during archival.
-            if not (data.get("is_archived")
+            if not ("archive" in allow_specials
                     and all(not data[key] for key in admin_keys)):
                 raise PrivilegeError(
-                    n_("Admin privelege modification prevented."))
+                    n_("Admin privilege modification prevented."))
         if ("is_member" in data
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
                      or "membership" not in allow_specials)):
@@ -706,7 +706,8 @@ class CoreBackend(AbstractBackend):
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
-            raise PrivilegeError(n_("Modification of balance prevented."))
+            if not (data["balance"] is None and "archive" in allow_specials):
+                raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
             raise PrivilegeError(n_("Modification of email address prevented."))
         if "foto" in data and "foto" not in allow_specials:
@@ -1196,6 +1197,7 @@ class CoreBackend(AbstractBackend):
                 'is_admin': False,
                 'is_core_admin': False,
                 'is_cde_admin': False,
+                'is_finance_admin': False,
                 'is_event_admin': False,
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
@@ -1242,7 +1244,7 @@ class CoreBackend(AbstractBackend):
             self.set_persona(
                 rs, update, generation=None, may_wait=False,
                 change_note="Archivierung vorbereitet.",
-                allow_specials=("admins", "username", "realms", "finance"))
+                allow_specials=("archive", "username", "realms", "finance"))
             #
             # 4. Delete all sessions and quotas
             #
