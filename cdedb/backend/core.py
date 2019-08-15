@@ -1621,6 +1621,7 @@ class CoreBackend(AbstractBackend):
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
+            'is_finance_admin': False,
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
