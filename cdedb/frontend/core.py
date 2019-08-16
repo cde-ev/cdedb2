@@ -1443,8 +1443,10 @@ class CoreFrontend(AbstractFrontend):
     @access("anonymous")
     def genesis_request_form(self, rs):
         """Render form."""
+        allowed_genders = set(const.Genders) - {const.Genders.not_specified}
         return self.render(rs, "genesis_request",
-                           {'max_rationale': self.conf.MAX_RATIONALE})
+                           {'max_rationale': self.conf.MAX_RATIONALE,
+                            'allowed_genders': allowed_genders})
 
     @access("anonymous", modi={"POST"})
     @REQUESTdatadict(
@@ -1457,19 +1459,27 @@ class CoreFrontend(AbstractFrontend):
         This initiates the genesis process.
         """
         data = check(rs, "genesis_case", data, creation=True)
-        if not rs.errors and len(data['notes']) > self.conf.MAX_RATIONALE:
+        if data is None:
+            return self.genesis_request_form(rs)
+        if len(data['notes']) > self.conf.MAX_RATIONALE:
             rs.errors.append(("notes", ValueError(n_("Rationale too long."))))
+        # We dont actually want not_specified as a valid option for event users.
+        if data.get('realm') == "event":
+            if data['gender'] == const.Genders.not_specified:
+                rs.errors.append(
+                    ("gender", ValueError(n_(
+                        "Must specify gender for event realm."))))
+        # We have to force a None here since the template should not have a
+        # null option for event cases and the validator for ml users
+        # requires this
+        elif data.get('realm') == "ml":
+            data['gender'] = None
         if rs.errors:
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
             rs.notify("error",
                       n_("Email address already in DB. Reset password."))
             return self.redirect(rs, "core/index")
-        # We have to force a None here since the template should not have a
-        # null option for event cases and the validator for ml users
-        # requires this
-        if data['realm'] == "ml":
-            data['gender'] = None
         case_id = self.coreproxy.genesis_request(rs, data)
         if not case_id:
             rs.notify("error", n_("Failed."))
