@@ -742,7 +742,7 @@ class CdEFrontend(AbstractUserFrontend):
                           {'num': num + 1})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
-    @access("cde_admin")
+    @access("finance_admin")
     def parse_statement_form(self, rs, data=None, problems=None,
                              csvfields=None):
         """Render form.
@@ -763,7 +763,7 @@ class CdEFrontend(AbstractUserFrontend):
                                                    'problems': problems,
                                                    'csvfields': csv_position})
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("statement", "str_or_None"))
     @REQUESTfile("statement_file")
     def parse_statement(self, rs, statement, statement_file):
@@ -949,7 +949,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.parse_statement_form(rs, data=data, problems=problems,
                                          csvfields=csvfields)
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("data", "str"), ("filename", "str"))
     def parse_download(self, rs, data, filename):
         """
@@ -962,7 +962,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.send_file(rs, mimetype="text/csv", data=data,
                               filename=filename)
 
-    @access("cde_admin")
+    @access("finance_admin")
     def money_transfers_form(self, rs, data=None, csvfields=None, saldo=None):
         """Render form.
 
@@ -1118,7 +1118,7 @@ class CdEFrontend(AbstractUserFrontend):
                               'new_balance': new_balance})
         return True, count, memberships_gained
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("sendmail", "bool"), ("transfers", "str_or_None"),
                  ("checksum", "str_or_None"))
     @REQUESTfile("transfers_file")
@@ -1224,7 +1224,7 @@ class CdEFrontend(AbstractUserFrontend):
             stati=(stati.success, stati.issued, stati.skipped))
         return set(lastschrift_ids) - set(transaction_ids.values())
 
-    @access("cde_admin")
+    @access("finance_admin")
     def lastschrift_index(self, rs):
         """General lastschrift overview.
 
@@ -1264,7 +1264,8 @@ class CdEFrontend(AbstractUserFrontend):
 
         Especially all permits and transactions.
         """
-        if persona_id != rs.user.persona_id and not self.is_admin(rs):
+        if not (persona_id == rs.user.persona_id
+                or "finance_admin" in rs.user.roles):
             return werkzeug.exceptions.Forbidden()
         lastschrift_ids = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(persona_id,), active=None)
@@ -1292,7 +1293,7 @@ class CdEFrontend(AbstractUserFrontend):
             'personas': personas, 'transactions': transactions,
         })
 
-    @access("cde_admin")
+    @access("finance_admin")
     def lastschrift_change_form(self, rs, lastschrift_id):
         """Render form."""
         merge_dicts(rs.values, rs.ambience['lastschrift'])
@@ -1300,7 +1301,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, rs.ambience['lastschrift']['persona_id'])
         return self.render(rs, "lastschrift_change", {'persona': persona})
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
     def lastschrift_change(self, rs, lastschrift_id, data):
@@ -1314,12 +1315,12 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
-    @access("cde_admin")
+    @access("finance_admin")
     def lastschrift_create_form(self, rs, persona_id):
         """Render form."""
         return self.render(rs, "lastschrift_create")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes')
     def lastschrift_create(self, rs, persona_id, data):
@@ -1337,7 +1338,7 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, new_id)
         return self.redirect(rs, "cde/lastschrift_show")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     def lastschrift_revoke(self, rs, lastschrift_id):
         """Disable a permit."""
         if rs.errors:
@@ -1449,7 +1450,7 @@ class CdEFrontend(AbstractUserFrontend):
             'transactions': sorted_transactions, 'meta': meta})
         return sepapain_file
 
-    @access("cde_admin")
+    @access("finance_admin")
     @REQUESTdata(("lastschrift_id", "id_or_None"))
     def lastschrift_download_sepapain(self, rs, lastschrift_id):
         """Provide the sepapain file without actually issueing the transactions.
@@ -1517,7 +1518,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.send_file(rs, data=sepapain_file, inline=False,
                               filename="i25p_semester{}.xml".format(period))
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("lastschrift_id", "id_or_None"))
     def lastschrift_generate_transactions(self, rs, lastschrift_id):
         """Issue direct debit transactions.
@@ -1577,7 +1578,7 @@ class CdEFrontend(AbstractUserFrontend):
                   {'num': len(transaction_ids)})
         return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
     def lastschrift_skip(self, rs, lastschrift_id, persona_id):
         """Do not do a direct debit transaction for this year.
@@ -1615,7 +1616,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.cdeproxy.finalize_lastschrift_transaction(
             rs, transaction_id, status, tally=tally)
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("status", "enum_lastschrifttransactionstati"),
                  ("persona_id", "id_or_None"))
     def lastschrift_finalize_transaction(self, rs, lastschrift_id,
@@ -1636,7 +1637,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("transaction_ids", "[id]"), ("success", "bool_or_None"),
                  ("cancelled", "bool_or_None"), ("failure", "bool_or_None"))
     def lastschrift_finalize_transactions(self, rs, transaction_ids, success,
@@ -1663,7 +1664,7 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
     def lastschrift_rollback_transaction(self, rs, lastschrift_id,
                                          transaction_id, persona_id):
@@ -1694,7 +1695,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("cde_admin")
+    @access("finance_admin")
     def lastschrift_receipt(self, rs, lastschrift_id, transaction_id):
         """Generate a donation certificate.
 
@@ -1786,7 +1787,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Show information about 'Initiative 25+'."""
         return self.render(rs, "i25p_index")
 
-    @access("cde_admin")
+    @access("finance_admin")
     def show_semester(self, rs):
         """Show information."""
         period_id = self.cdeproxy.current_period(rs)
@@ -1797,7 +1798,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats})
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("addresscheck", "bool"), ("testrun", "bool"))
     def semester_bill(self, rs, addresscheck, testrun):
         """Send billing mail to all members.
@@ -1873,7 +1874,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     def semester_eject(self, rs):
         """Eject members without enough credit."""
         period_id = self.cdeproxy.current_period(rs)
@@ -1931,7 +1932,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.notify("success", n_("Started ejection."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     def semester_balance_update(self, rs):
         """Deduct membership fees from all member accounts."""
         period_id = self.cdeproxy.current_period(rs)
@@ -1995,7 +1996,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     def semester_advance(self, rs):
         """Proceed to next period."""
         period_id = self.cdeproxy.current_period(rs)
@@ -2009,7 +2010,7 @@ class CdEFrontend(AbstractUserFrontend):
         rs.notify("success", n_("New period started."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     @REQUESTdata(("testrun", "bool"), ("skip", "bool"))
     def expuls_addresscheck(self, rs, testrun, skip):
         """Send address check mail to all members.
@@ -2088,7 +2089,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("cde_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"})
     def expuls_advance(self, rs):
         """Proceed to next expuls."""
         expuls_id = self.cdeproxy.current_expuls(rs)

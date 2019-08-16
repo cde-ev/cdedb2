@@ -23,18 +23,20 @@
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="user",
                         active=(sidenav_active=='cde_manage_users')) }}
-                {{ util.href(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"), aclass="list-group-item",
-                        icon="euro", active=(sidenav_active=='cde_lastschrift')) }}
-                {{ util.href(cdedblink("cde/parse_statement_form"), gettext("Parse Bank Statement"), aclass="list-group-item",
-                        icon="euro", active=(sidenav_active=='cde_parse')) }}
-                {{ util.href(cdedblink("cde/money_transfers_form"), gettext("Enter Bank Transfers"), aclass="list-group-item",
-                        icon="euro", active=(sidenav_active=='cde_transfers')) }}
-                {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
-                        icon="hourglass", active=(sidenav_active=='cde_semester')) }}
-                {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon="list-alt",
-                        active=(sidenav_active=='cde_log')) }}
-                {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon="list-alt",
-                        active=(sidenav_active=='cde_finance_log')) }}
+                {% if "finance_admin" in user.roles %}
+                    {{ util.href(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"), aclass="list-group-item",
+                            icon="euro", active=(sidenav_active=='cde_lastschrift')) }}
+                    {{ util.href(cdedblink("cde/parse_statement_form"), gettext("Parse Bank Statement"), aclass="list-group-item",
+                            icon="euro", active=(sidenav_active=='cde_parse')) }}
+                    {{ util.href(cdedblink("cde/money_transfers_form"), gettext("Enter Bank Transfers"), aclass="list-group-item",
+                            icon="euro", active=(sidenav_active=='cde_transfers')) }}
+                    {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
+                            icon="hourglass", active=(sidenav_active=='cde_semester')) }}
+                    {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon="list-alt",
+                            active=(sidenav_active=='cde_log')) }}
+                    {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon="list-alt",
+                            active=(sidenav_active=='cde_finance_log')) }}
+                {% endif %}
             </div>
         {% endif %}
 

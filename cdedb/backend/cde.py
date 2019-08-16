@@ -131,18 +131,22 @@ class CdEBackend(AbstractBackend):
         :returns: Mapping of lastschrift ids to granting persona.
         """
         persona_ids = affirm_set("id", persona_ids, allow_None=True)
+        if ("finance_admin" not in rs.user.roles
+            and (persona_ids is None
+                 or any(p_id != rs.user.persona_id for p_id in persona_ids))):
+            raise PrivilegeError(n_("Not privileged."))
         active = affirm("bool_or_None", active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
         params = []
-        connector = "WHERE"
+        constraints = []
         if persona_ids:
-            query = glue(query, "{} persona_id = ANY(%s)".format(connector))
+            constraints.append("persona_id = ANY(%s)")
             params.append(persona_ids)
-            connector = "AND"
         if active is not None:
-            operator = "IS" if active else "IS NOT"
-            query = glue(query, "{} revoked_at {} NULL".format(connector,
-                                                               operator))
+            constraints.append("revokey_at {} NULL".format(
+                "IS" if active else "IS NOT"))
+        if constraints:
+            query = query + " WHERE " + " AND ".join(constraints)
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
@@ -158,12 +162,13 @@ class CdEBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
-        if (not self.is_admin(rs)
-                and any(e['persona_id'] != rs.user.persona_id for e in data)):
+        if not ("finance_admin" in rs.user.roles
+                or not any(e['persona_id'] != rs.user.persona_id
+                           for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
-    @access("cde_admin")
+    @access("finance_admin")
     def set_lastschrift(self, rs, data):
         """Modify a direct debit permit.
 
@@ -188,7 +193,7 @@ class CdEBackend(AbstractBackend):
             self.core.finance_log(rs, log_code, persona_id, None, None)
         return ret
 
-    @access("cde_admin")
+    @access("finance_admin")
     def create_lastschrift(self, rs, data):
         """Make a new direct debit permit.
 
@@ -227,23 +232,25 @@ class CdEBackend(AbstractBackend):
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
         lastschrift_ids = affirm_set("id", lastschrift_ids, allow_None=True)
+        # We only need these for access check, which is already done inside.
+        _ = self.get_lastschrifts(rs, lastschrift_ids)
         stati = affirm_set("enum_lastschrifttransactionstati", stati,
                            allow_None=True)
         periods = affirm_set("id", periods, allow_None=True)
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
         params = []
-        connector = "WHERE"
+        constraints = []
         if lastschrift_ids:
-            query = glue(query, "{} lastschrift_id = ANY(%s)".format(connector))
+            constraints.append("lastschrift_id = ANY(%s)")
             params.append(lastschrift_ids)
-            connector = "AND"
         if stati:
-            query = glue(query, "{} status = ANY(%s)".format(connector))
+            constraints.append("status = ANY(%s)")
             params.append(stati)
-            connector = "AND"
         if periods:
-            query = glue(query, "{} period_id = ANY(%s)".format(connector))
+            constraints.append("perios_id = ANY(%s)")
             params.append(periods)
+        if constraints:
+            query = query + " WHERE " + " AND ".join(constraints)
         data = self.query_all(rs, query, params)
         return {e['id']: e['lastschrift_id'] for e in data}
 
@@ -260,9 +267,12 @@ class CdEBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift_transactions",
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
+        # We only need these for acces checking, which is done inside.
+        _ = self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
+
         return {e['id']: e for e in data}
 
-    @access("cde_admin")
+    @access("finance_admin")
     @batchify("issue_lastschrift_transaction_batch")
     def issue_lastschrift_transaction(self, rs, data, check_unique=False):
         """Make a new direct debit transaction.
@@ -307,7 +317,7 @@ class CdEBackend(AbstractBackend):
                 additional_info=data['amount'])
             return ret
 
-    @access("cde_admin")
+    @access("finance_admin")
     def finalize_lastschrift_transaction(self, rs, transaction_id, status,
                                          tally=None):
         """Tally a direct debit transaction.
@@ -388,7 +398,7 @@ class CdEBackend(AbstractBackend):
                                   additional_info=update['tally'])
             return ret
 
-    @access("cde_admin")
+    @access("finance_admin")
     def rollback_lastschrift_transaction(self, rs, transaction_id, tally):
         """Revert a successful direct debit transaction.
 
@@ -459,7 +469,7 @@ class CdEBackend(AbstractBackend):
                 periods=relevant_periods)
             return bool(ids)
 
-    @access("cde_admin")
+    @access("finance_admin")
     def lastschrift_skip(self, rs, lastschrift_id):
         """Defer invoking a direct debit permit.
 
@@ -500,7 +510,7 @@ class CdEBackend(AbstractBackend):
                 lastschrift['persona_id'], None, None)
             return ret
 
-    @access("cde_admin")
+    @access("finance_admin")
     def finance_statistics(self, rs):
         """Compute some financial statistics.
 
@@ -550,7 +560,7 @@ class CdEBackend(AbstractBackend):
         return self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
                                    period_id)
 
-    @access("cde_admin")
+    @access("finance_admin")
     def set_period(self, rs, period):
         """Set data for the current semester
 
@@ -566,7 +576,7 @@ class CdEBackend(AbstractBackend):
                 raise RuntimeError(n_("Only able to modify current period."))
             return self.sql_update(rs, "cde.org_period", period)
 
-    @access("cde_admin")
+    @access("finance_admin")
     def create_period(self, rs):
         """Make a new semester.
 
@@ -593,7 +603,7 @@ class CdEBackend(AbstractBackend):
                          persona_id=None, additional_info=ret)
             return ret
 
-    @access("cde_admin")
+    @access("cde")
     def current_expuls(self, rs):
         """Check for the current expuls number
 
@@ -604,7 +614,7 @@ class CdEBackend(AbstractBackend):
         query = "SELECT MAX(id) FROM cde.expuls_period"
         return unwrap(self.query_one(rs, query, tuple()))
 
-    @access("cde_admin")
+    @access("cde")
     def get_expuls(self, rs, expuls_id):
         """Get data for the an expuls.
 
@@ -616,7 +626,7 @@ class CdEBackend(AbstractBackend):
         return self.sql_select_one(rs, "cde.expuls_period",
                                    EXPULS_PERIOD_FIELDS, expuls_id)
 
-    @access("cde_admin")
+    @access("finance_admin")
     def set_expuls(self, rs, expuls):
         """Set data for the an expuls
 
@@ -632,7 +642,7 @@ class CdEBackend(AbstractBackend):
                 raise RuntimeError(n_("Only able to modify current expuls."))
             return self.sql_update(rs, "cde.expuls_period", expuls)
 
-    @access("cde_admin")
+    @access("finance_admin")
     def create_expuls(self, rs):
         """Make a new expuls.
 
