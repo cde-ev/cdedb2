@@ -14,7 +14,7 @@
         {% elif error.code == 500 %}
             {% trans %}An internal error occured:{% endtrans %}
             {% if error.description %}
-               {{ error.description.split()[0] }}
+               {{ error.description.split(')')[0] }})
             {% endif %}
         {% else %}
             {% trans %}An unknown error occurred.{% endtrans %}
