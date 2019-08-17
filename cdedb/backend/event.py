@@ -2662,7 +2662,6 @@ class EventBackend(AbstractBackend):
         :rtype: dict
         :returns: dict holding all data of the exported event
         """
-        # TODO maybe add more info (best to do this conditionally)
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
@@ -2671,7 +2670,7 @@ class EventBackend(AbstractBackend):
             return {e['id']: e for e in alist}
 
         with Atomizer(rs):
-            event_fields = self._get_event_fields(rs, event_id)
+            event = self.get_event(rs, event_id)
             # basics
             ret = {
                 'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
@@ -2694,7 +2693,7 @@ class EventBackend(AbstractBackend):
                 del course['id']
                 del course['event_id']
                 course['segments'] = lookup[course_id]
-                course['fields'] = cast_fields(course['fields'], event_fields)
+                course['fields'] = cast_fields(course['fields'], event['fields'])
             ret['courses'] = courses
             # lodgements
             lodgements = list_to_dict(self.sql_select(
@@ -2704,12 +2703,13 @@ class EventBackend(AbstractBackend):
                 del lodgement['id']
                 del lodgement['event_id']
                 lodgement['fields'] = cast_fields(lodgement['fields'],
-                                                  event_fields)
+                                                  event['fields'])
             ret['lodgements'] = lodgements
             # registrations
             registrations = list_to_dict(self.sql_select(
                 rs, 'event.registrations', REGISTRATION_FIELDS, (event_id,),
                 entity_key='event_id'))
+            backup_registrations = copy.deepcopy(registrations)
             temp = self.sql_select(
                 rs, 'event.registration_parts',
                 REGISTRATION_PART_FIELDS, registrations.keys(),
@@ -2748,8 +2748,47 @@ class EventBackend(AbstractBackend):
                     del track['track_id']
                 registration['tracks'] = tracks
                 registration['fields'] = cast_fields(registration['fields'],
-                                                     event_fields)
+                                                     event['fields'])
             ret['registrations'] = registrations
+            # now we add additional information that is only auxillary and
+            # does not correspond to changeable entries
+            #
+            # event
+            export_event = copy.deepcopy(event)
+            del export_event['id']
+            del export_event['begin']
+            del export_event['end']
+            del export_event['is_open']
+            del export_event['orgas']
+            for part in export_event['parts'].values():
+                del part['id']
+                del part['event_id']
+                del part['tracks']
+            for track in export_event['tracks'].values():
+                del track['id']
+            new_fields = {
+                field['field_name']: field
+                for field in export_event['fields'].values()
+            }
+            for field in new_fields.values():
+                del field['field_name']
+                del field['event_id']
+            export_event['fields'] = new_fields
+            ret['event'] = export_event
+            # personas
+            persona_ids = tuple(reg['persona_id']
+                                for reg in backup_registrations.values())
+            personas = self.core.get_event_users(rs, persona_ids)
+            for reg_id, registration in ret['registrations'].items():
+                persona = personas[backup_registrations[reg_id]['persona_id']]
+                persona['is_orga'] = persona['id'] in event['orgas']
+                for attr in ('id', 'is_active', 'is_admin', 'is_archived',
+                             'is_assembly_admin', 'is_assembly_realm',
+                             'is_cde_admin', 'is_cde_realm', 'is_core_admin',
+                             'is_event_admin', 'is_event_realm', 'is_ml_admin',
+                             'is_ml_realm', 'is_searchable'):
+                    del persona[attr]
+                registration['persona'] = persona
             return ret
 
     @access("event")

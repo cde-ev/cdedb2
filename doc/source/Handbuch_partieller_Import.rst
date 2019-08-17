@@ -37,8 +37,8 @@ Die Import-Datei
 ----------------
 
 Bei der Import-Datei handelt es sich um eine JSON-Datei, die im gleichen
-Format ist wie der partielle Export. Im Wesentlichen sind dies die folgenden
-Elemente::
+Format ist wie der partielle Export minus einige unveränderliche Felder. Im
+Wesentlichen enthält der Export die folgenden Elemente::
 
   {
       "CDEDB_EXPORT_EVENT_VERSION": <numeric id>,
@@ -47,6 +47,7 @@ Elemente::
       "timestamp": <ISO 8601 encoded timestamp>,
       "courses": {<numeric course id stringified>:
                       <dict with course properties>}
+      "event": {<event attribute>: <associated value>}
       "lodgements": {<numeric lodgement id stringified>:
                          <dict with lodgement properties>}
       "registrations": {<numeric registration id stringified>:
@@ -57,6 +58,11 @@ Dabei gibt ``CDEDB_EXPORT_EVENT_VERSION`` das verwendete Format an um
 Inkonsistenzen zu vermeiden, diese muss der aktuellen Version entsprechen
 und kann dem Export entnommen werden. Ebenso wird für das restliche Schema
 auf den Export verwiesen.
+
+Der Schlüssel ``event``, sowie der Schlüssel ``persona`` der in jeder
+Anmeldung vorhanden ist, dürfen beim Import nicht vorkommen. Sie stellen
+Informationen zur Verfügung, die durch den partiellen Import nicht verändert
+werden können.
 
 Prinzipiell sind alle Elemente außer ``CDEDB_EXPORT_EVENT_VERSION``, ``id``
 ``kind`` und ``timestamp`` optional, können also weggelassen werden. Es ist
@@ -82,10 +88,6 @@ Ein Beispiel mit allen möglichen Operationen findet sich am Ende
 Hinweise
 --------
 
-* Der partielle Export enthält keine Namen zu den Anmeldungen,
-  Veranstaltungsteilen, etc., da diese durch den Import auch nicht verändert
-  werden können. Sollten diese für die externe Anwendung nötig sein, so
-  können sie aus dem Export für die offline-VM supplementiert werden.
 * Ein server-seitig nur schwer abzufangender Fehler ist, wenn eine
   Import-Datei, die die Erstellung von Einträgen enthält mehrfach
   hochgeladen wird. Dies wird versucht zu detektieren, kann aber nicht mit
