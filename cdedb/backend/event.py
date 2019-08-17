@@ -594,7 +594,103 @@ class EventBackend(AbstractBackend):
             [event_id], entity_key="event_id")
         return {d['id']: d for d in data}
 
-    def _set_tracks(self, rs, event_id, part_id, data, cautious=False):
+    def _delete_course_track_blockers(self, rs, track_id):
+        """Determine what keeps a course track from being deleted.
+
+        Possible blockers:
+
+        * course_segments: Courses that are offered in this track.
+        * registration_tracks: Registration information for this track.
+            This includes course_assignment and possible course instructors.
+        * course_choices: Course choices for this track.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type track_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        track_id = affirm("id", track_id)
+        blockers = {}
+
+        course_segments = self.sql_select(
+            rs, "event.course_segments", ("id",), (track_id,),
+            entity_key="track_id")
+        if course_segments:
+            blockers["course_segments"] = [e["id"] for e in course_segments]
+
+        reg_tracks = self.sql_select(
+            rs, "event.registration_tracks", ("id",), (track_id,),
+            entity_key="track_id")
+        if reg_tracks:
+            blockers["registration_tracks"] = [e["id"] for e in reg_tracks]
+
+        course_choices = self.sql_select(
+            rs, "event.course_choices", ("id",), (track_id,),
+            entity_key="track_id")
+        if course_choices:
+            blockers["course_choices"] = [e["id"] for e in course_choices]
+
+        return blockers
+
+    def _delete_course_track(self, rs, track_id, cascade=None):
+        """Remove course track.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type track_id: int
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        :rtype: int
+        :returns: default return code
+        """
+        track_id = affirm("id", track_id)
+        blockers = self._delete_course_track_blockers(rs, track_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "course track",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        with Atomizer(rs):
+            if cascade:
+                if "course_segments" in cascade:
+                    ret *= self.sql_delete(rs, "event.course_segments",
+                                           blockers["course_segments"])
+                if "registration_tracks" in cascade:
+                    ret *= self.sql_delete(rs, "event.registration_tracks",
+                                           blockers["registration_tracks"])
+                if "course_choices" in cascade:
+                    ret *= self.sql_delete(rs, "event.course_choices",
+                                           blockers["course_choices"])
+
+                blockers = self._delete_course_track_blockers(rs, track_id)
+
+            if not blockers:
+                track = unwrap(self.sql_select(rs, "event.course_tracks",
+                                               ("part_id", "title",),
+                                               (track_id,)))
+                part = unwrap(self.sql_select(rs, "event.event_parts",
+                                              ("event_id",),
+                                              (track["part_id"],)))
+                ret *= self.sql_delete_one(
+                    rs, "event.course_tracks", track_id)
+                self.event_log(rs, const.EventLogCodes.track_removed,
+                               event_id=part["event_id"],
+                               additional_info=track["title"])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "course track", "block": blockers.keys()})
+        return ret
+
+    def _set_tracks(self, rs, event_id, part_id, data):
         """Helper for handling of course tracks.
 
         This is basically uninlined code from ``set_event()``.
@@ -605,9 +701,6 @@ class EventBackend(AbstractBackend):
         :type event_id: int
         :type part_id: int
         :type data: {int: {str: object} or None}
-        :type cautious: bool
-        :param cautious: If True only modification of existing tracks is
-          allowed. That is creation and deletion of tracks is disallowed.
         :rtype: int
         :returns: default return code
         """
@@ -627,18 +720,27 @@ class EventBackend(AbstractBackend):
                    if x > 0 and data[x] is not None}
         deleted = {x for x in data
                    if x > 0 and data[x] is None}
-        if cautious and (new or deleted):
-            raise ValueError(n_("Registrations exist, modifications only."))
         # new
         for x in reversed(sorted(new)):
             new_track = {
                 "part_id": part_id,
                 **data[x]
             }
-            ret *= self.sql_insert(rs, "event.course_tracks", new_track)
+            new_track_id = self.sql_insert(rs, "event.course_tracks", new_track)
+            ret *= new_track_id
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
                 additional_info=data[x]['title'])
+            reg_ids = self.list_registrations(rs, event_id)
+            for reg_id in reg_ids:
+                reg_track = {
+                    'registration_id': reg_id,
+                    'track_id': new_track_id,
+                    'course_id': None,
+                    'course_instructor': None,
+                }
+                ret *= self.sql_insert(
+                    rs, "event.registration_tracks", reg_track)
         # updated
         for x in updated:
             if current[x] != data[x]:
@@ -653,12 +755,10 @@ class EventBackend(AbstractBackend):
 
         # deleted
         if deleted:
-            ret *= self.sql_delete(rs, "event.course_tracks",
-                                   deleted)
-            for x in deleted:
-                self.event_log(
-                    rs, const.EventLogCodes.track_removed, event_id,
-                    additional_info=current[x]['title'])
+            cascade = ("course_segments", "registration_tracks",
+                       "course_choices")
+            for track_id in deleted:
+                self._delete_course_track(rs, track_id, cascade=cascade)
         return ret
 
     def _delete_field_values(self, rs, field_data):
@@ -880,8 +980,7 @@ class EventBackend(AbstractBackend):
                     update['id'] = x
                     tracks = update.pop('tracks', {})
                     ret *= self.sql_update(rs, "event.event_parts", update)
-                    ret *= self._set_tracks(rs, data['id'], x, tracks,
-                                            cautious=has_registrations)
+                    ret *= self._set_tracks(rs, data['id'], x, tracks)
                     self.event_log(
                         rs, const.EventLogCodes.part_changed, data['id'],
                         additional_info=titles[x])
