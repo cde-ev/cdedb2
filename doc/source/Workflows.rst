@@ -68,10 +68,14 @@ internally. These states are only incompletely displayed to moderators and
 admins using the management page, however a raw CSV file can be downloaded
 showing the actual internal states.
 
-.. image:: SubscriptionStates.png
-   :width: 60 %
-   :alt: Subscription state schema
-   :align: right
+.. figure:: SubscriptionStates.png
+    :width: 60 %
+    :alt: Subscription state schema
+    :align: center
+    :figclass: align-center
+
+    This graphic was created using `Draw.io <https://draw.io>`_.
+    To edit it, upload the SubscriptionStates.png file there.
 
 We are using a total of seven distinct states, which allow a consistent and
 useful subscription management, even if the mailinglist configuration changes.
