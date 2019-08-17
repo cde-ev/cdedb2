@@ -1220,6 +1220,9 @@ def extract_roles(session, introspection_only=False):
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
+    if "cde_admin" in ret:
+        if session.get("is_finance_admin"):
+            ret.add("finance_admin")
     return ret
 
 
