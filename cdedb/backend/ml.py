@@ -748,9 +748,10 @@ class MlBackend(AbstractBackend):
         :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError("Not privileged.")
-        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': persona_id,
@@ -787,17 +788,18 @@ class MlBackend(AbstractBackend):
         :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError("Not privileged.")
-        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': persona_id,
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
         with Atomizer(rs):
-            # This is not using get_interaction_policy, as even people with moderator
-            # override may not unsubscribe
+            # This is not using get_interaction_policy, as even people with
+            # moderator override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.MailinglistInteractionPolicy.mandatory:
                 return 0, n_("Can not change subscription.")
@@ -825,9 +827,10 @@ class MlBackend(AbstractBackend):
         :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError("Not privileged.")
-        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': persona_id,
@@ -851,9 +854,10 @@ class MlBackend(AbstractBackend):
         :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError("Not privileged.")
-        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': persona_id,
@@ -877,17 +881,18 @@ class MlBackend(AbstractBackend):
         :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError("Not privileged.")
-        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': persona_id,
             'subscription_state': const.SubscriptionStates.mod_unsubscribed,
         }
         with Atomizer(rs):
-            # This is not using get_interaction_policy, as even people with moderator
-            # override may not unsubscribe
+            # This is not using get_interaction_policy, as even people with
+            # moderator override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.MailinglistInteractionPolicy.mandatory:
                 return 0, n_("Can not change subscription.")
@@ -908,9 +913,10 @@ class MlBackend(AbstractBackend):
         :rtype: int, string
         :return: Default return code and error massage, if applicable.
         """
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
         if not self.may_manage(rs, mailinglist_id):
             raise PrivilegeError("Not privileged.")
-        # mailinglist_id and persona_id are validated by get_subscription
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': persona_id,
@@ -932,7 +938,7 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int
         :rtype: int
         """
-        # mailinglist_id and persona_id are validated by get_subscription
+        mailinglist_id = affirm("id", mailinglist_id)
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': rs.user.persona_id,
@@ -963,7 +969,7 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int
         :rtype: int
         """
-        # mailinglist_id and persona_id are validated by get_subscription
+        mailinglist_id = affirm("id", mailinglist_id)
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': rs.user.persona_id,
@@ -995,15 +1001,15 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int
         :rtype: int
         """
-        # mailinglist_id and persona_id are validated by get_subscription
+        mailinglist_id = affirm("id", mailinglist_id)
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': rs.user.persona_id,
             'subscription_state': const.SubscriptionStates.unsubscribed,
         }
         with Atomizer(rs):
-            # This is not using get_interaction_policy, as even people with moderator
-            # override may not unsubscribe
+            # This is not using get_interaction_policy, as even people with
+            # moderator override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.MailinglistInteractionPolicy.mandatory:
                 raise RuntimeError("Can not change subscription.")
@@ -1023,7 +1029,8 @@ class MlBackend(AbstractBackend):
         :type mailinglist_id: int
         :rtype: int
         """
-        # mailinglist_id and persona_id are validated by get_subscription
+        # TODO call decide_subscription_request directly from the frontend.
+        mailinglist_id = affirm("id", mailinglist_id)
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': rs.user.persona_id,
