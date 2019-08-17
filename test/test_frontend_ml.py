@@ -234,7 +234,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Sozialistischer Kampfbrief – Abonnementdetails")
         self.assertNonPresence("Janis Jalapeño")
         f = self.response.forms['addmodsubscriberform']
-        f['subscriber_id'] = "DB-10-8"
+        f['modsubscriber_id'] = "DB-10-8"
         self.submit(f)
         self.assertTitle("Sozialistischer Kampfbrief – Abonnementdetails")
         self.assertPresence("Janis Jalapeño")
