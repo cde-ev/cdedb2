@@ -2943,7 +2943,7 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
     'address': _email,
     'description': _str_or_None,
-    'sub_policy': _enum_interactionpolicy,
+    'sub_policy': _enum_mailinglistinteractionpolicy,
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
     'audience_policy': _enum_audiencepolicy,
