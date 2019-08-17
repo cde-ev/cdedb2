@@ -143,7 +143,7 @@ class CdEBackend(AbstractBackend):
             constraints.append("persona_id = ANY(%s)")
             params.append(persona_ids)
         if active is not None:
-            constraints.append("revokey_at {} NULL".format(
+            constraints.append("revoked_at {} NULL".format(
                 "IS" if active else "IS NOT"))
         if constraints:
             query = query + " WHERE " + " AND ".join(constraints)
@@ -247,7 +247,7 @@ class CdEBackend(AbstractBackend):
             constraints.append("status = ANY(%s)")
             params.append(stati)
         if periods:
-            constraints.append("perios_id = ANY(%s)")
+            constraints.append("period_id = ANY(%s)")
             params.append(periods)
         if constraints:
             query = query + " WHERE " + " AND ".join(constraints)
