@@ -16,7 +16,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,
-    extract_roles, implying_realms, now, ProxyShim)
+    extract_roles, implying_realms, now, ProxyShim, SubscriptionError)
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -720,7 +720,7 @@ class MlBackend(AbstractBackend):
                     rs, datum['persona_id'],
                     mailinglist_id=datum['mailinglist_id'])
                 if current_state != const.SubscriptionStates.pending:
-                    raise RuntimeError(n_(
+                    raise SubscriptionError(n_(
                         "Not a pending subscription request."))
 
                 state = datum['resolution'].get_new_state()
@@ -745,8 +745,8 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype: int, string
-        :return: Default return code and error massage, if applicable.
+        :rtype: int
+        :return: Default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -763,18 +763,21 @@ class MlBackend(AbstractBackend):
             # This is the deletion conditional from write_subscription_states,
             # so people which would be deleted anyway cannot be subscribed.
             if not policy or not policy.is_additive():
-                return 0, n_("User has no means to access this list.")
+                raise SubscriptionError(n_(
+                    "User has no means to access this list."))
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if state is None or state == const.SubscriptionStates.unsubscribed:
-                return self._set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum)
             elif state.is_subscribed:
-                return -1, n_("User already subscribed.")
+                raise SubscriptionError(n_("User already subscribed."))
             elif state == const.SubscriptionStates.mod_unsubscribed:
-                return 0, n_("User has been blocked. You can use Subscription "
-                             "Details to change this.")
+                raise SubscriptionError(n_(
+                    "User has been blocked. You can use Subscription "
+                    "Details to change this."))
             elif state == const.SubscriptionStates.pending:
-                return 0, n_("User has pending subscription request.")
+                raise SubscriptionError(n_(
+                    "User has pending subscription request."))
             else:
                 raise RuntimeError(n_("Impossible"))
 
@@ -785,8 +788,8 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype: int, string
-        :return: Default return code and error massage, if applicable.
+        :rtype: int
+        :return: Default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -802,18 +805,19 @@ class MlBackend(AbstractBackend):
             # moderator override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.MailinglistInteractionPolicy.mandatory:
-                return 0, n_("Can not change subscription.")
+                raise SubscriptionError(n_("Can not change subscription."))
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if (state and state.is_subscribed
                     and state != const.SubscriptionStates.mod_subscribed):
-                return self._set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum)
             elif state is None or not state.is_subscribed:
-                return -1, n_("User already unsubscribed.")
+                raise SubscriptionError(n_("User already unsubscribed."))
             elif state == const.SubscriptionStates.mod_subscribed:
-                return 0, n_("User cannot be removed, because of moderator "
-                             "override. You can use Subscription Details to "
-                             "change this.")
+                raise SubscriptionError(n_(
+                    "User cannot be removed, because of moderator "
+                    "override. You can use Subscription Details to "
+                    "change this."))
             else:
                 raise RuntimeError(n_("Impossible"))
 
@@ -824,8 +828,8 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype: int, string
-        :return: Default return code and error massage, if applicable.
+        :rtype: int
+        :return: Default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -840,9 +844,10 @@ class MlBackend(AbstractBackend):
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if state and state == const.SubscriptionStates.pending:
-                return 0, n_("User has pending subscription request.")
+                raise SubscriptionError(n_(
+                    "User has pending subscription request."))
             else:
-                return self._set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum)
 
     @access("ml")
     def remove_mod_subscriber(self, rs, mailinglist_id, persona_id):
@@ -851,8 +856,8 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype: int, string
-        :return: Default return code and error massage, if applicable.
+        :rtype: int
+        :return: Default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -867,9 +872,9 @@ class MlBackend(AbstractBackend):
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if not state or state != const.SubscriptionStates.mod_subscribed:
-                raise RuntimeError("User is not force-subscribed.")
+                raise SubscriptionError(n_("User is not force-subscribed."))
             else:
-                return self._set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum)
 
     @access("ml")
     def add_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
@@ -878,8 +883,8 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype: int, string
-        :return: Default return code and error massage, if applicable.
+        :rtype: int
+        :return: Default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -895,13 +900,14 @@ class MlBackend(AbstractBackend):
             # moderator override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.MailinglistInteractionPolicy.mandatory:
-                return 0, n_("Can not change subscription.")
+                raise SubscriptionError(n_("Can not change subscription."))
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if state and state == const.SubscriptionStates.pending:
-                return 0, n_("User has pending subscription request.")
+                raise SubscriptionError(n_(
+                    "User has pending subscription request."))
             else:
-                return self._set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum)
 
     @access("ml")
     def remove_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
@@ -910,8 +916,8 @@ class MlBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype: int, string
-        :return: Default return code and error massage, if applicable.
+        :rtype: int
+        :return: Default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -926,9 +932,9 @@ class MlBackend(AbstractBackend):
             state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             if not state or state != const.SubscriptionStates.mod_unsubscribed:
-                raise RuntimeError("User is not force-unsubscribed.")
+                raise SubscriptionError(n_("User is not force-unsubscribed."))
             else:
-                return self._set_subscription(rs, datum), ""
+                return self._set_subscription(rs, datum)
 
     @access("ml")
     def subscribe(self, rs, mailinglist_id):
@@ -949,15 +955,15 @@ class MlBackend(AbstractBackend):
                                                  mailinglist_id=mailinglist_id)
             if policy not in (const.MailinglistInteractionPolicy.opt_out,
                               const.MailinglistInteractionPolicy.opt_in):
-                raise RuntimeError("Can not change subscription.")
+                raise SubscriptionError(n_("Can not change subscription."))
             else:
                 state = self.get_subscription(rs, rs.user.persona_id,
                                               mailinglist_id=mailinglist_id)
                 if state and state == const.SubscriptionStates.mod_unsubscribed:
-                    raise RuntimeError(
-                        "Can not change subscription because you are blocked.")
+                    raise SubscriptionError(n_(
+                        "Can not change subscription because you are blocked."))
                 elif state and state.is_subscribed:
-                    raise RuntimeError("You are already subscribed.")
+                    raise SubscriptionError(n_("You are already subscribed."))
                 else:
                     return self._set_subscription(rs, datum)
 
@@ -979,17 +985,18 @@ class MlBackend(AbstractBackend):
             policy = self.get_interaction_policy(rs, rs.user.persona_id,
                                                  mailinglist_id=mailinglist_id)
             if policy != const.MailinglistInteractionPolicy.moderated_opt_in:
-                raise RuntimeError("Can not change subscription")
+                raise SubscriptionError(n_("Can not change subscription"))
             else:
                 state = self.get_subscription(rs, rs.user.persona_id,
                                               mailinglist_id=mailinglist_id)
                 if state and state == const.SubscriptionStates.mod_unsubscribed:
-                    raise RuntimeError(
-                        "Can not change subscription because you are blocked.")
+                    raise SubscriptionError(n_(
+                        "Can not change subscription because you are blocked."))
                 elif state and state.is_subscribed:
-                    raise RuntimeError("You are already subscribed.")
+                    raise SubscriptionError(n_("You are already subscribed."))
                 elif state and state == const.SubscriptionStates.pending:
-                    raise RuntimeError("You already requested subscription")
+                    raise SubscriptionError(n_(
+                        "You already requested subscription"))
                 else:
                     return self._set_subscription(rs, datum)
 
@@ -1012,12 +1019,13 @@ class MlBackend(AbstractBackend):
             # moderator override may not unsubscribe
             policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
             if policy == const.MailinglistInteractionPolicy.mandatory:
-                raise RuntimeError("Can not change subscription.")
+                raise SubscriptionError(n_("Can not change subscription."))
             else:
                 state = self.get_subscription(rs, rs.user.persona_id,
                                               mailinglist_id=mailinglist_id)
                 if not state or not state.is_subscribed:
-                    raise RuntimeError("You are already unsubscribed.")
+                    raise SubscriptionError(n_(
+                        "You are already unsubscribed."))
                 else:
                     return self._set_subscription(rs, datum)
 
@@ -1040,7 +1048,7 @@ class MlBackend(AbstractBackend):
             state = self.get_subscription(rs, rs.user.persona_id,
                                           mailinglist_id=mailinglist_id)
             if state != const.SubscriptionStates.pending:
-                raise RuntimeError("No subscription requested.")
+                raise SubscriptionError(n_("No subscription requested."))
             else:
                 return self.decide_subscription_request(rs, datum)
 

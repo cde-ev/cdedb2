@@ -425,6 +425,13 @@ class PartialImportError(RuntimeError):
     pass
 
 
+class SubscriptionError(RuntimeError):
+    """
+    Exception for signalling that an action trying to change a subscription
+    failed.
+    """
+    pass
+
 # TODO decide whether we sort by first or last name
 def name_key(entry):
     """Create a sorting key associated to a persona dataset.
