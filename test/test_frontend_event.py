@@ -278,6 +278,45 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Die Kursliste ist noch nicht öffentlich",
                             'notifications')
 
+    def test_course_state_visibility(self):
+        self.login(USER_DICT['berta'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/list'})
+        self.assertNonPresence("fällt aus")
+        self.traverse({'href': '/event/event/1/register'})
+        f = self.response.forms['registerform']
+        # Course ε. Backup-Kurs is cancelled in track 3 (but not visible by now)
+        self.assertIn('5', [value for (value, checked, text)
+                            in f['course_choice3_0'].options])
+
+        self.logout()
+        self.login(USER_DICT['garcia'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/list'})
+        self.assertPresence("fällt aus")
+        self.assertPresence("Achtung! Ausfallende Kurse werden nur für Orgas "
+                            "hier markiert.")
+        self.traverse({'href': '/event/event/1/change'})
+        f = self.response.forms['changeeventform']
+        f['is_course_state_visible'].checked = True
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/course/list'})
+        self.assertNonPresence("Cancelled courses are only marked for orgas")
+
+        self.logout()
+        self.login(USER_DICT['berta'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/list'})
+        self.assertPresence("fällt aus")
+        self.traverse({'href': '/event/event/1/register'})
+        f = self.response.forms['registerform']
+        # Course ε. Backup-Kurs is cancelled in track 3 (but not visible by now)
+        self.assertNotIn('5', [value for (value, checked, text)
+                               in f['course_choice3_0'].options])
+
     @as_users("anton", "garcia")
     def test_part_summary_trivial(self, user):
         self.traverse({'href': '/event/$'},
@@ -859,7 +898,7 @@ etc;anything else""", f['entries_2'].value)
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
         f['course_choice3_0'] = 2
         f['course_choice3_1'] = 4
-        self.assertNotIn('5', tuple(
+        self.assertNotIn('3', tuple(
             o for o, _, _ in f['course_choice3_1'].options))
         f['course_instructor3'] = 2
         self.submit(f)

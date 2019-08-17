@@ -37,6 +37,9 @@
                                 info=gettext("If this is unchecked, no one can see the courselist. "
                                 "If this is checked, but the event is not visible, anyone with the link can access the "
                                 "courselist.")) }}
+        {{ util.form_input_checkbox(name="is_course_state_visible", label=gettext("Visibility of the cancelled courses"),
+                                info=gettext("If checked, cancelled courses are shown publicly in the course list. "
+                                "Additionally participants may not chose cancelled courses anymore.")) }}
         {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local',
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),

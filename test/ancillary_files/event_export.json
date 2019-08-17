@@ -264,7 +264,7 @@
             "association": 2
         }
     },
-    "CDEDB_EXPORT_EVENT_VERSION": 1,
+    "CDEDB_EXPORT_EVENT_VERSION": 2,
     "event.registration_parts": {
         "2": {
             "is_reserve": false,
@@ -1014,6 +1014,7 @@
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
             "is_course_list_visible": true,
+            "is_course_state_visible": false,
             "notes": "Todoliste ... just kidding ;)",
             "title": "Gro\u00dfe Testakademie 2222"
         }
