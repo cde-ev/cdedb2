@@ -1190,11 +1190,10 @@ class MlBackend(AbstractBackend):
 
         data = self.query_all(rs, query, params)
 
+        SS = const.SubscriptionStates
         ret = {ml_id: None for ml_id in mailinglist_ids}
-        ret.update({
-            e["mailinglist_id"]:
-                const.SubscriptionStates(e["subscription_state"]) for e in data
-        })
+        ret.update({e["mailinglist_id"]: SS(e["subscription_state"])
+                    for e in data})
 
         return ret
 
@@ -1340,7 +1339,10 @@ class MlBackend(AbstractBackend):
         return bool(data)
 
     def _get_implicit_subscribers(self, rs, mailinglist):
-        """Un-inlined code from `write_subscription_states`."""
+        """Un-inlined code from `write_subscription_states`.
+
+        This has to be called with an atomized context.
+        """
 
         # TODO adapt to MailinglistTypes.
         sub_policy = const.MailinglistInteractionPolicy(mailinglist['sub_policy'])
