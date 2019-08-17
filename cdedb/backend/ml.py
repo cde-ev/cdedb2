@@ -713,26 +713,28 @@ class MlBackend(AbstractBackend):
                    for datum in data):
             raise PrivilegeError("Not privileged.")
 
-        for datum in data:
-            current_state = self.get_subscription(
-                rs, datum['persona_id'], mailinglist_id=datum['mailinglist_id'])
-            if current_state != const.SubscriptionStates.pending:
-                raise RuntimeError(n_("Not a pending subscription request."))
-
         num = 0
-        for datum in data:
-            state = datum['resolution'].get_new_state()
-            code = datum['resolution'].get_log_code()
-            del datum['resolution']
-            with Silencer(rs):
-                if state:
-                    datum['subscription_state'] = state
-                    num += self._set_subscription(rs, datum)
-                else:
-                    num += self._remove_subscription(rs, datum)
-            if code:
-                self.ml_log(
-                    rs, code, datum['mailinglist_id'], datum['persona_id'])
+        with Atomizer(rs):
+            for datum in data:
+                current_state = self.get_subscription(
+                    rs, datum['persona_id'],
+                    mailinglist_id=datum['mailinglist_id'])
+                if current_state != const.SubscriptionStates.pending:
+                    raise RuntimeError(n_(
+                        "Not a pending subscription request."))
+
+                state = datum['resolution'].get_new_state()
+                code = datum['resolution'].get_log_code()
+                del datum['resolution']
+                with Silencer(rs):
+                    if state:
+                        datum['subscription_state'] = state
+                        num += self._set_subscription(rs, datum)
+                    else:
+                        num += self._remove_subscription(rs, datum)
+                if code:
+                    self.ml_log(
+                        rs, code, datum['mailinglist_id'], datum['persona_id'])
 
         return num
 
@@ -1083,14 +1085,15 @@ class MlBackend(AbstractBackend):
         if datum['persona_id'] != rs.user.persona_id:
             raise PrivilegeError(n_("Not privileged."))
 
-        query = ("DELETE FROM ml.subscription_addresses "
-                 "WHERE mailinglist_id = %s AND persona_id = %s")
-        params = (datum['mailinglist_id'], datum['persona_id'])
+        with Atomizer(rs):
+            query = ("DELETE FROM ml.subscription_addresses "
+                     "WHERE mailinglist_id = %s AND persona_id = %s")
+            params = (datum['mailinglist_id'], datum['persona_id'])
 
-        ret = self.query_exec(rs, query, params)
+            ret = self.query_exec(rs, query, params)
 
-        self.ml_log(rs, const.MlLogCodes.subscription_changed,
-                    datum['mailinglist_id'], datum['persona_id'])
+            self.ml_log(rs, const.MlLogCodes.subscription_changed,
+                        datum['mailinglist_id'], datum['persona_id'])
 
         return ret
 
