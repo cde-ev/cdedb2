@@ -200,7 +200,11 @@ for pevent_id in data:
     pcourse_map = {"{:0>2}".format(e["nr"]): e["id"] for e in pcourses.values()}
 
     for pcourse_nr in data[pevent_id]:
-        pcourse_id = pcourse_map[pcourse_nr]
+        try:
+            pcourse_id = pcourse_map[pcourse_nr]
+        except KeyError:
+            count["fail"] += 1
+            continue
 
         # For every course create a mapping of participant names to persona_id.
         pparticipants = past_event.list_participants(rs, pcourse_id=pcourse_id)
