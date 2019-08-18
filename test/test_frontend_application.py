@@ -34,7 +34,6 @@ class TestApplication(FrontendTest):
                 self.get('/', status=500)
                 self.assertTitle("500: Internal Server Error")
                 self.assertPresence("ValueError")
-                self.assertNonPresence("a really unexpected exception")
 
     def test_basics(self):
         self.get("/")
