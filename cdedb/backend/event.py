@@ -2150,10 +2150,9 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             query = glue(
                 "SELECT COUNT(*) AS num FROM event.log WHERE event_id = %s",
-                "AND ((code = %s AND submitted_by != persona_id) OR code = %s)",
+                "AND code = %s AND submitted_by != persona_id",
                 "AND ctime >= now() - interval '24 hours'")
-            params = (event_id, const.EventLogCodes.registration_created,
-                      const.EventLogCodes.orga_added)
+            params = (event_id, const.EventLogCodes.registration_created)
             num = unwrap(self.query_one(rs, query, params))
         return num < self.conf.ORGA_ADD_LIMIT
 
