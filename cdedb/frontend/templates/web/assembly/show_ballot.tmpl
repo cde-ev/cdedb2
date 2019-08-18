@@ -268,7 +268,7 @@
                                                         format(votes=ambience['ballot']['votes']), small=True) }}
                     {% endif %}
                     {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
-                                                  entries=ambience['ballot']['candidates']|dictsort|dict_entries('moniker', 'description'),
+                                                  entries=ambience['ballot']['candidates']|xdictsort('description', pad=True)|dict_entries('moniker', 'description'),
                                                   radio=(ambience['ballot']['votes'] == 1), small=True) }}
                     {% if ambience['ballot']['use_bar'] %}
                         {{ util.form_input_checkboxes(
@@ -306,7 +306,7 @@
             {% else %}
                 <h3>{% trans -%}Candidates{%- endtrans %}</h3>
                 <ul>
-                    {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
+                    {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('description', pad=True) %}
                         <li>
                             {{ candidate['description'] }}
                             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
@@ -333,7 +333,7 @@
             {# Preferential voting: Presentation of candidates #}
             <h3>{% trans -%}Candidates{%- endtrans %}</h3>
             <ul>
-                {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
+                {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('description', pad=True) %}
                     <li>
                         {{ candidate['description'] }}
                         {% if attends or is_admin %}
@@ -506,7 +506,7 @@
                             $('#tablist-formselect').show();
                             /* Initialize JS Fancy form */
                             $('#prefvote_container').cdedbPrefVote(
-                                {{ ambience['ballot']['candidates']|dictsort|json|s }},
+                                {{ ambience['ballot']['candidates']|xdictsort('description', pad=True)|json|s }},
                                 {{ "'"|s+ASSEMBLY_BAR_MONIKER+"'"|s if ambience['ballot']['use_bar'] else "null" }},
                                 $('#input-preferencelist'),
                                 {{ {'bar_name': gettext('neutral'),
