@@ -1239,7 +1239,7 @@ class CoreFrontend(AbstractFrontend):
                     rs, lastschrift_ids=active_permits,
                     stati=(const.LastschriftTransactionStati.issued,))
                 if transaction_ids:
-                    subject = ("Einzugsermächtigung zu ausstehender"
+                    subject = ("Einzugsermächtigung zu ausstehender "
                                "Lastschrift widerrufen.")
                     self.do_mail(rs, "pending_lastschrift_revoked",
                                  {'To': (self.conf.MANAGEMENT_ADDRESS,),
