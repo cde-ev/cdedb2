@@ -1046,29 +1046,17 @@ class CoreFrontend(AbstractFrontend):
             "notes": notes,
         }
 
-        # TODO make this a loop.
-        if is_admin != persona["is_admin"]:
-            data["is_admin"] = is_admin
-        if is_core_admin != persona["is_core_admin"]:
-            data["is_core_admin"] = is_core_admin
-        if is_cde_admin != persona["is_cde_admin"]:
-            data["is_cde_admin"] = is_cde_admin
-        if is_finance_admin != persona["is_finance_admin"]:
-            data["is_finance_admin"] = is_finance_admin
-        if is_event_admin != persona["is_event_admin"]:
-            data["is_event_admin"] = is_event_admin
-        if is_ml_admin != persona["is_ml_admin"]:
-            data["is_ml_admin"] = is_ml_admin
-        if is_assembly_admin != persona["is_assembly_admin"]:
-            data["is_assembly_admin"] = is_assembly_admin
+        admin_keys = {"is_admin", "is_core_admin", "is_cde_admin",
+                      "is_finance_admin", "is_event_admin", "is_ml_admin",
+                      "is_assembly_admin"}
+
+        for key in admin_keys:
+            if locals()[key] != persona[key]:
+                data[key] = locals()[key]
 
         if "is_admin" in data and data["persona_id"] == rs.user.persona_id:
             rs.notify("error", n_("Cannot modify own superadmin privileges."))
             return self.redirect_show_user(rs, persona_id)
-
-        admin_keys = {"is_admin", "is_core_admin", "is_cde_admin",
-                      "is_finance_admin", "is_event_admin", "is_ml_admin",
-                      "is_assembly_admin"}
 
         if admin_keys & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
