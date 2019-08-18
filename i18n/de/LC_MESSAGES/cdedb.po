@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-08-18 14:03+0200\n"
-"PO-Revision-Date: 2019-08-18 14:08+0200\n"
+"POT-Creation-Date: 2019-08-18 14:41+0200\n"
+"PO-Revision-Date: 2019-08-18 14:41+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1554,9 +1554,9 @@ msgstr "Zu viele Eingaben gemacht."
 #: cdedb/backend/event.py:2070 cdedb/backend/event.py:2099
 #: cdedb/backend/event.py:2122 cdedb/backend/event.py:2169
 #: cdedb/backend/event.py:2222 cdedb/backend/event.py:2292
-#: cdedb/backend/event.py:2317 cdedb/backend/event.py:2346
-#: cdedb/backend/event.py:2495 cdedb/backend/event.py:2565
-#: cdedb/backend/event.py:2675 cdedb/backend/ml.py:115 cdedb/backend/ml.py:230
+#: cdedb/backend/event.py:2317 cdedb/backend/event.py:2343
+#: cdedb/backend/event.py:2492 cdedb/backend/event.py:2562
+#: cdedb/backend/event.py:2672 cdedb/backend/ml.py:115 cdedb/backend/ml.py:230
 #: cdedb/backend/ml.py:460 cdedb/backend/ml.py:549 cdedb/backend/ml.py:617
 #: cdedb/backend/ml.py:693 cdedb/backend/ml.py:764 cdedb/backend/ml.py:786
 #: cdedb/backend/ml.py:825 cdedb/backend/ml.py:858
@@ -2018,15 +2018,15 @@ msgstr "Fehlende Daten für Kursschiene."
 msgid "Only lodgements from exactly one event allowed!"
 msgstr "Unterkünfte referenzieren mehr als eine Veranstaltung."
 
-#: cdedb/backend/event.py:2500
+#: cdedb/backend/event.py:2497
 msgid "Not locked."
 msgstr "Veranstaltungssperre ist nicht aktiv."
 
-#: cdedb/backend/event.py:2502 cdedb/backend/event.py:2678
+#: cdedb/backend/event.py:2499 cdedb/backend/event.py:2675
 msgid "Version mismatch – aborting."
 msgstr "Versionen stimmen nicht überein."
 
-#: cdedb/backend/event.py:2512
+#: cdedb/backend/event.py:2509
 msgid "Non-transferred persona found"
 msgstr "Nicht alle Accounts zurückübertragen."
 
@@ -10009,13 +10009,17 @@ msgstr "Offline-Nutzung"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:199
 msgid "The event is in offline mode, but locked to be used in another instance."
-msgstr "Die Veranstaltung ist im Offline-Modus, allerdings gesperrt um in einer anderen Instanz verwendet werden zu können."
+msgstr ""
+"Die Veranstaltung ist im Offline-Modus, allerdings gesperrt um in einer "
+"anderen Instanz verwendet werden zu können."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:200
 msgid ""
 "To unlock it, run the offline initialization script inside the VM with\n"
 "                                    the event data you would like to use."
-msgstr "Zum Entsperren führe das Initialisierungsskript für den Offline-Modus innerhalb der VM mit dem gewünschten Datensatz aus."
+msgstr ""
+"Zum Entsperren führe das Initialisierungsskript für den Offline-Modus "
+"innerhalb der VM mit dem gewünschten Datensatz aus."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:207
 msgid "The event is locked for offline use."
@@ -10034,7 +10038,7 @@ msgid "Unlock"
 msgstr "Entsperren"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:228
-msgid "The event is in Offline-Mode."
+msgid "The event is in offline mode."
 msgstr "Die Veranstaltung befindet sich im Offline-Modus."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:230
@@ -10057,13 +10061,19 @@ msgid ""
 "                                    unlocking can not be done here, but "
 "must be done by running the\n"
 "                                    offline initialization script."
-msgstr "Dadurch can die Veranstaltung in einer weitere Offline-Instanz genutzt werden ohne, dass es zu Konflikten kommt. Beachte, dass eine Entsperrung per Webinterface nicht möglich ist (stattdessen muss das Initialisierungsskript für die Offline-Instanz benutzt werden)."
+msgstr ""
+"Dadurch can die Veranstaltung in einer weitere Offline-Instanz genutzt "
+"werden ohne, dass es zu Konflikten kommt. Beachte, dass eine Entsperrung "
+"per Webinterface nicht möglich ist (stattdessen muss das "
+"Initialisierungsskript für die Offline-Instanz benutzt werden)."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:249
 msgid ""
 "This way the event can be managed in offline mode without\n"
 "                                    causing conflicts."
-msgstr "Somit kann die Veranstaltung im Offline-Modus benutzt werden ohne Konflikte zu verursachen."
+msgstr ""
+"Somit kann die Veranstaltung im Offline-Modus benutzt werden ohne "
+"Konflikte zu verursachen."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:260
 msgid "Event Logo"
@@ -10980,4 +10990,7 @@ msgstr "Mailinglisten-Log"
 #~ "                                    Offline-Mode "
 #~ "without causing conflicts."
 #~ msgstr ""
+
+#~ msgid "The event is in Offline-Mode."
+#~ msgstr "Die Veranstaltung befindet sich im Offline-Modus."
 

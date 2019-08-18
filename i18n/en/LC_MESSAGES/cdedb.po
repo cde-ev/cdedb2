@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-08-18 14:03+0200\n"
+"POT-Creation-Date: 2019-08-18 14:41+0200\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -1542,9 +1542,9 @@ msgstr ""
 #: cdedb/backend/event.py:2070 cdedb/backend/event.py:2099
 #: cdedb/backend/event.py:2122 cdedb/backend/event.py:2169
 #: cdedb/backend/event.py:2222 cdedb/backend/event.py:2292
-#: cdedb/backend/event.py:2317 cdedb/backend/event.py:2346
-#: cdedb/backend/event.py:2495 cdedb/backend/event.py:2565
-#: cdedb/backend/event.py:2675 cdedb/backend/ml.py:115 cdedb/backend/ml.py:230
+#: cdedb/backend/event.py:2317 cdedb/backend/event.py:2343
+#: cdedb/backend/event.py:2492 cdedb/backend/event.py:2562
+#: cdedb/backend/event.py:2672 cdedb/backend/ml.py:115 cdedb/backend/ml.py:230
 #: cdedb/backend/ml.py:460 cdedb/backend/ml.py:549 cdedb/backend/ml.py:617
 #: cdedb/backend/ml.py:693 cdedb/backend/ml.py:764 cdedb/backend/ml.py:786
 #: cdedb/backend/ml.py:825 cdedb/backend/ml.py:858
@@ -2006,15 +2006,15 @@ msgstr ""
 msgid "Only lodgements from exactly one event allowed!"
 msgstr ""
 
-#: cdedb/backend/event.py:2500
+#: cdedb/backend/event.py:2497
 msgid "Not locked."
 msgstr ""
 
-#: cdedb/backend/event.py:2502 cdedb/backend/event.py:2678
+#: cdedb/backend/event.py:2499 cdedb/backend/event.py:2675
 msgid "Version mismatch – aborting."
 msgstr ""
 
-#: cdedb/backend/event.py:2512
+#: cdedb/backend/event.py:2509
 msgid "Non-transferred persona found"
 msgstr ""
 
@@ -9629,7 +9629,7 @@ msgid "Unlock"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:228
-msgid "The event is in Offline-Mode."
+msgid "The event is in offline mode."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:230
@@ -10444,5 +10444,8 @@ msgstr ""
 #~ "This way the event can be managed in\n"
 #~ "                                    Offline-Mode "
 #~ "without causing conflicts."
+#~ msgstr ""
+
+#~ msgid "The event is in Offline-Mode."
 #~ msgstr ""
 
