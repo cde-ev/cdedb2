@@ -2323,10 +2323,7 @@ class EventBackend(AbstractBackend):
             'offline_lock': not self.conf.CDEDB_OFFLINE_DEPLOYMENT,
         }
         ret = self.sql_update(rs, "event.events", update)
-        # As unlocks of offline events happen via cli, it is not useful to log
-        # the locks.
-        if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
     @access("event")
