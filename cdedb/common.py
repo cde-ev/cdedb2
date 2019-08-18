@@ -1476,9 +1476,9 @@ GENESIS_CASE_FIELDS = (
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
     "id", "ctime", "ftime", "persona_id", "submitted_by", "status",
-    "new_is_admin", "new_is_core_admin", "new_is_cde_admin",
-    "new_is_finance_admin", "new_is_event_admin", "new_is_ml_admin",
-    "new_is_assembly_admin", "notes", "reviewer")
+    "is_admin", "is_core_admin", "is_cde_admin",
+    "is_finance_admin", "is_event_admin", "is_ml_admin",
+    "is_assembly_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
 INSTITUTION_FIELDS = ("id", "title", "moniker")

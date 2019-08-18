@@ -232,13 +232,6 @@ I18N_STRINGS = (
     n_("is_event_admin"),
     n_("is_ml_admin"),
     n_("is_assembly_admin"),
-    n_("new_is_admin"),
-    n_("new_is_core_admin"),
-    n_("new_is_cde_admin"),
-    n_("new_is_finance_admin"),
-    n_("new_is_event_admin"),
-    n_("new_is_ml_admin"),
-    n_("new_is_assembly_admin"),
 
     # zxcvbn feedback
     n_('Use a few words, avoid common phrases.'),

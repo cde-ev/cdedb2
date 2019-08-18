@@ -653,8 +653,8 @@ class TestCoreBackend(BackendTest):
         data = {
             "persona_id": new_admin["id"],
             "notes": "Granting admin privileges for testing.",
-            "new_is_cde_admin": True,
-            "new_is_finance_admin": True,
+            "is_cde_admin": True,
+            "is_finance_admin": True,
         }
 
         case_id = self.core.initialize_privilege_change(self.key, data)
@@ -723,7 +723,7 @@ class TestCoreBackend(BackendTest):
     def test_invalid_privilege_change(self, user):
         data = {
             "persona_id": USER_DICT["janis"]["id"],
-            "new_is_admin": True,
+            "is_admin": True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -731,7 +731,7 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["emilia"]["id"],
-            "new_is_core_admin": True,
+            "is_core_admin": True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -739,7 +739,7 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["berta"]["id"],
-            "new_is_finance_admin": True,
+            "is_finance_admin": True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -747,8 +747,8 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["ferdinand"]["id"],
-            "new_is_finance_admin": True,
-            "new_is_cde_admin": False,
+            "is_finance_admin": True,
+            "is_cde_admin": False,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):

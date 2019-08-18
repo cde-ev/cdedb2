@@ -826,7 +826,7 @@ class CoreBackend(AbstractBackend):
         data['status'] = const.PrivilegeChangeStati.pending
         data = affirm("privilege_change", data)
 
-        if "new_is_admin" in data and data['persona_id'] == rs.user.persona_id:
+        if "is_admin" in data and data['persona_id'] == rs.user.persona_id:
             raise PrivilegeError(n_("Cannot modify own superadmin privileges."))
         if self.get_pending_privilege_change(rs, data['persona_id']):
             raise ValueError(n_("Pending privilege change."))
@@ -836,20 +836,20 @@ class CoreBackend(AbstractBackend):
         realms = {"cde", "event", "ml", "assembly"}
         for realm in realms:
             if not persona['is_{}_realm'.format(realm)]:
-                if data.get('new_is_{}_admin'.format(realm)):
+                if data.get('is_{}_admin'.format(realm)):
                     raise ValueError(n_(
                         "User does not fit the requirements for this "
                         "admin privilege."))
 
-        if data.get('new_is_finance_admin'):
-            if (data.get('new_is_cde_admin') is False
+        if data.get('is_finance_admin'):
+            if (data.get('is_cde_admin') is False
                 or (not persona['is_cde_admin']
-                    and not data.get('new_is_cde_admin'))):
+                    and not data.get('is_cde_admin'))):
                 raise ValueError(n_(
                     "User does not fit the requirements for this "
                     "admin privilege."))
 
-        if data.get('new_is_core_admin') or data.get('new_is_admin'):
+        if data.get('is_core_admin') or data.get('is_admin'):
             if not persona['is_cde_realm']:
                 raise ValueError(n_(
                     "User does not fit the requirements for this "
@@ -889,7 +889,7 @@ class CoreBackend(AbstractBackend):
         }
         with Atomizer(rs):
             if case_status == const.PrivilegeChangeStati.approved:
-                if (case["new_is_admin"] is not None
+                if (case["is_admin"] is not None
                     and case['persona_id'] == rs.user.persona_id):
                     raise PrivilegeError(
                         n_("Cannot modify own superadmin privileges."))
@@ -907,20 +907,12 @@ class CoreBackend(AbstractBackend):
                 data = {
                     "id": case["persona_id"]
                 }
-                if case["new_is_admin"] is not None:
-                    data["is_admin"] = case["new_is_admin"]
-                if case["new_is_core_admin"] is not None:
-                    data["is_core_admin"] = case["new_is_core_admin"]
-                if case["new_is_cde_admin"] is not None:
-                    data["is_cde_admin"] = case["new_is_cde_admin"]
-                if case["new_is_finance_admin"] is not None:
-                    data["is_finance_admin"] = case["new_is_finance_admin"]
-                if case["new_is_event_admin"] is not None:
-                    data["is_event_admin"] = case["new_is_event_admin"]
-                if case["new_is_ml_admin"] is not None:
-                    data["is_ml_admin"] = case["new_is_ml_admin"]
-                if case["new_is_assembly_admin"] is not None:
-                    data["is_assembly_admin"] = case["new_is_assembly_admin"]
+                admin_keys = {"is_admin", "is_core_admin", "is_cde_admin",
+                              "is_finance_admin", "is_event_admin",
+                              "is_ml_admin", "is_assembly_admin"}
+                for key in admin_keys:
+                    if case[key] is not None:
+                        data[key] = case[key]
 
                 data = affirm("persona", data)
                 ret *= self.set_persona(

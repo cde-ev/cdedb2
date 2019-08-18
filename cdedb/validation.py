@@ -1292,13 +1292,13 @@ _PRIVILEGE_CHANGE_COMMON_FIELDS = lambda: {
 }
 
 _PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {
-    'new_is_admin': _bool_or_None,
-    'new_is_core_admin': _bool_or_None,
-    'new_is_cde_admin': _bool_or_None,
-    'new_is_finance_admin': _bool_or_None,
-    'new_is_event_admin': _bool_or_None,
-    'new_is_ml_admin': _bool_or_None,
-    'new_is_assembly_admin': _bool_or_None,
+    'is_admin': _bool_or_None,
+    'is_core_admin': _bool_or_None,
+    'is_cde_admin': _bool_or_None,
+    'is_finance_admin': _bool_or_None,
+    'is_event_admin': _bool_or_None,
+    'is_ml_admin': _bool_or_None,
+    'is_assembly_admin': _bool_or_None,
 }
 
 

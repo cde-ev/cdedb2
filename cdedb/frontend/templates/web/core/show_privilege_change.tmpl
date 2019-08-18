@@ -20,13 +20,13 @@
 
     <h4 class="heading-underline">{% trans -%}Admin Privileges{%- endtrans %}</h4>
     <div class="diff-view" id="diff-view">
-        {% for privilege in ("new_is_admin",
-                             "new_is_core_admin",
-                             "new_is_cde_admin",
-                             "new_is_finance_admin",
-                             "new_is_event_admin",
-                             "new_is_ml_admin",
-                             "new_is_assembly_admin") %}
+        {% for privilege in ("is_admin",
+                             "is_core_admin",
+                             "is_cde_admin",
+                             "is_finance_admin",
+                             "is_event_admin",
+                             "is_ml_admin",
+                             "is_assembly_admin") %}
             {% if case[privilege] is not none %}
                 <div class="row">
                     <label class="col-sm-3">
@@ -43,7 +43,7 @@
         <p class="textbox">{{ case["notes"] }}</p>
     {% endif %}
 
-    {% if case["submitted_by"] != user.persona_id and (case["new_is_admin"] is not none or case["persona_id"] != user.persona_id) %}
+    {% if case["submitted_by"] != user.persona_id and (case["is_admin"] is not none or case["persona_id"] != user.persona_id) %}
         <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="ackprivilegechangeform" style="display: inline;">
             {{ util.anti_csrf_token('core/decide_privilege_change') }}
             {{ util.input_hidden(name="ack", value="True") }}

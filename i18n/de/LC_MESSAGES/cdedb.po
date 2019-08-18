@@ -4036,22 +4036,6 @@ msgstr "Du kannst diesen Kurs nicht als %(i)s. und %(j)s Wahl wählen."
 msgid "You must chose at least %(min_choices)s courses."
 msgstr "Du musst mindestens %(min_choices)s Kurse wählen."
 
-#: cdedb/frontend/event.py:2856 cdedb/frontend/event.py:2835
-#: cdedb/frontend/event.py:2468
-#, fuzzy
-msgid "No minors may register. Please contact the Orgateam"
-msgstr ""
-"#-#-#-#-#  merge-po.eMSz.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Minderjährige können sich nicht anmelden. Kontaktiere ggf. bitt das "
-"Orgateam.\n"
-"#-#-#-#-#  merge-po.eMSz.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"#-#-#-#-#  merge-po.6Zfz.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Minderjährige können sich nicht anmelden. Kontaktiere ggf. bitt das "
-"Orgateam.\n"
-"#-#-#-#-#  merge-po.6Zfz.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Minderjährige können sich nicht anmelden. Bitte setze Dich mit dem Orgateam "
-"in Verbindung."
-
 #: cdedb/frontend/event.py:2877 cdedb/frontend/event.py:2856
 #: cdedb/frontend/event.py:2489 cdedb/frontend/event.py:2449
 #: cdedb/frontend/event.py:2446
@@ -14483,6 +14467,15 @@ msgstr ""
 "Versammlungs-Admins können Versammlungen und Abstimmungen anlegen und "
 "bearbeiten. Sie können reine Versammlungsnutzer anlegen und bearbeiten, "
 "sowie diese zu Versammlungen hinzufügen."
+
+msgid "No minors may register. Please contact the Orgateam"
+msgstr ""
+"#-#-#-#-#  merge-po.6Zfz.local (CdEDBv2 2.0)  #-#-#-#-#\n"
+"Minderjährige können sich nicht anmelden. Kontaktiere ggf. bitt das "
+"Orgateam.\n"
+"#-#-#-#-#  merge-po.6Zfz.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
+"Minderjährige können sich nicht anmelden. Bitte setze Dich mit dem Orgateam "
+"in Verbindung."
 
 #~ msgid ""
 #~ "If the event comprises multiple parts or multiple course tracks,\n"

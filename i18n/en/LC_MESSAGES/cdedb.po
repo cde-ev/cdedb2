@@ -13118,29 +13118,29 @@ msgstr "Successful"
 msgid "PrivilegeChangeStati.rejected"
 msgstr "Rejected"
 
-#: cdedb/i18n_additional.py:219
+#: cdedb/i18n_additional.py:226
 msgid "is_admin"
-msgstr ""
+msgstr "Super-Admin"
 
-#: cdedb/i18n_additional.py:220
+#: cdedb/i18n_additional.py:227
 msgid "is_core_admin"
-msgstr ""
+msgstr "Core-Admin"
 
-#: cdedb/i18n_additional.py:221
+#: cdedb/i18n_additional.py:228
 msgid "is_cde_admin"
-msgstr ""
+msgstr "CdE-Admin"
 
-#: cdedb/i18n_additional.py:222 cdedb/i18n_additional.py:223
+#: cdedb/i18n_additional.py:230
 msgid "is_event_admin"
-msgstr ""
+msgstr "Event-Admin"
 
-#: cdedb/i18n_additional.py:223 cdedb/i18n_additional.py:224
+#: cdedb/i18n_additional.py:231
 msgid "is_ml_admin"
-msgstr ""
+msgstr "Mailinglist-Admin"
 
-#: cdedb/i18n_additional.py:224 cdedb/i18n_additional.py:225
+#: cdedb/i18n_additional.py:232
 msgid "is_assembly_admin"
-msgstr ""
+msgstr "Assembly-Admin"
 
 #: cdedb/i18n_additional.py:225 cdedb/i18n_additional.py:226
 msgid "new_is_admin"
@@ -13464,9 +13464,9 @@ msgstr ""
 msgid "Mailinglist-Admins"
 msgstr ""
 
-#: cdedb/i18n_additional.py:222
+#: cdedb/i18n_additional.py:229
 msgid "is_finance_admin"
-msgstr ""
+msgstr "Finance-Admin"
 
 #: cdedb/i18n_additional.py:229
 msgid "new_is_finance_admin"

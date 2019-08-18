@@ -194,13 +194,13 @@ CREATE TABLE core.privilege_changes (
         -- see cdedb.database.constants.PrivilegeChangeStati
         status                  integer NOT NULL DEFAULT 0,
         -- changes to the admin bits. NULL is for no change.
-        new_is_admin            boolean DEFAULT NULL,
-        new_is_core_admin       boolean DEFAULT NULL,
-        new_is_cde_admin        boolean DEFAULT NULL,
-        new_is_finance_admin    boolean DEFAULT NULL,
-        new_is_event_admin      boolean DEFAULT NULL,
-        new_is_ml_admin         boolean DEFAULT NULL,
-        new_is_assembly_admin   boolean DEFAULT NULL,
+        is_admin                boolean DEFAULT NULL,
+        is_core_admin           boolean DEFAULT NULL,
+        is_cde_admin            boolean DEFAULT NULL,
+        is_finance_admin        boolean DEFAULT NULL,
+        is_event_admin          boolean DEFAULT NULL,
+        is_ml_admin             boolean DEFAULT NULL,
+        is_assembly_admin       boolean DEFAULT NULL,
         -- justification supplied by the submitter
         notes                   varchar,
         -- persona who approved the change

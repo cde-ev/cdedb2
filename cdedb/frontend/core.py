@@ -1042,30 +1042,31 @@ class CoreFrontend(AbstractFrontend):
             "notes": notes,
         }
 
+        # TODO make this a loop.
         if is_admin != persona["is_admin"]:
-            data["new_is_admin"] = is_admin
+            data["is_admin"] = is_admin
         if is_core_admin != persona["is_core_admin"]:
-            data["new_is_core_admin"] = is_core_admin
+            data["is_core_admin"] = is_core_admin
         if is_cde_admin != persona["is_cde_admin"]:
-            data["new_is_cde_admin"] = is_cde_admin
+            data["is_cde_admin"] = is_cde_admin
         if is_finance_admin != persona["is_finance_admin"]:
-            data["new_is_finance_admin"] = is_finance_admin
+            data["is_finance_admin"] = is_finance_admin
         if is_event_admin != persona["is_event_admin"]:
-            data["new_is_event_admin"] = is_event_admin
+            data["is_event_admin"] = is_event_admin
         if is_ml_admin != persona["is_ml_admin"]:
-            data["new_is_ml_admin"] = is_ml_admin
+            data["is_ml_admin"] = is_ml_admin
         if is_assembly_admin != persona["is_assembly_admin"]:
-            data["new_is_assembly_admin"] = is_assembly_admin
+            data["is_assembly_admin"] = is_assembly_admin
 
-        if "new_is_admin" in data and data["persona_id"] == rs.user.persona_id:
+        if "is_admin" in data and data["persona_id"] == rs.user.persona_id:
             rs.notify("error", n_("Cannot modify own superadmin privileges."))
             return self.redirect_show_user(rs, persona_id)
 
-        new_admin_keys = {"new_is_admin", "new_is_core_admin",
-                          "new_id_cde_admin", "new_is_finance_admin",
-                          "new_is_event_admin", "new_is_ml_admin",
-                          "new_is_assembly_admin"}
-        if new_admin_keys & data.keys():
+        admin_keys = {"is_admin", "is_core_admin", "is_cde_admin",
+                      "is_finance_admin", "is_event_admin", "is_ml_admin",
+                      "is_assembly_admin"}
+
+        if admin_keys & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
             self.notify_return_code(
                 rs, code, success=n_("Privilege change waiting for approval by "
@@ -1099,7 +1100,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Privilege change not pending."))
             return self.redirect(rs, "core/list_privilege_changes")
 
-        if (case["new_is_admin"] is not None
+        if (case["is_admin"] is not None
             and case["persona_id"] == rs.user.persona_id):
             rs.notify(
                 "info", n_("This privilege change is affecting your Super-Admin"
@@ -1129,7 +1130,7 @@ class CoreFrontend(AbstractFrontend):
             case_status = const.PrivilegeChangeStati.rejected
         else:
             case_status = const.PrivilegeChangeStati.approved
-            if (case["new_is_admin"] is not None
+            if (case["is_admin"] is not None
                 and case['persona_id'] == rs.user.persona_id):
                 raise PrivilegeError(
                     n_("Cannot modify own superadmin privileges."))
