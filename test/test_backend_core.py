@@ -705,7 +705,7 @@ class TestCoreBackend(BackendTest):
         changelog_expectation = (
             # Committing the changed admin bits.
             {
-                'change_note': 'Admin-Privilegien geändert.',
+                'change_note': data["notes"],
                 'change_status': const.MemberChangeStati.committed.value,
                 'ctime': nearly_now(),
                 'generation': 2,

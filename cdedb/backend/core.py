@@ -917,10 +917,11 @@ class CoreBackend(AbstractBackend):
                         data[key] = case[key]
 
                 data = affirm("persona", data)
+                note = ("Admin-Privilegien geändert."
+                        if not case["notes"] else case["notes"])
                 ret *= self.set_persona(
                     rs, data, may_wait=False,
-                    change_note="Admin-Privilegien geändert.",
-                    allow_specials=("admins",))
+                    change_note=note, allow_specials=("admins",))
 
                 # Mark case as successful
                 data = {
