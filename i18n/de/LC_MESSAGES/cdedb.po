@@ -1124,7 +1124,7 @@ msgid "Must be a string."
 msgstr "Muss eine Zeichenkette sein."
 
 #: cdedb/frontend/event.py:337 cdedb/validation.py:387 cdedb/validation.py:525
-#: cdedb/validation.py:3299 cdedb/validation.py:3284
+#: cdedb/validation.py:3299 cdedb/validation.py:3284 cdedb/validation.py:3283
 msgid "Mustn’t be empty."
 msgstr "Darf nicht leer sein."
 
@@ -1368,165 +1368,166 @@ msgstr "Genau zwei Zeilen nötig."
 msgid "Forbidden character (%(char)s)."
 msgstr "Verbotenes Zeichen (%(char)s)."
 
-#: cdedb/validation.py:1849 cdedb/validation.py:1834
+#: cdedb/validation.py:1849 cdedb/validation.py:1834 cdedb/validation.py:1833
 msgid "Must be before or equal to hard limit."
 msgstr "Muss vor dem tatsächlichen Anmeldeschluss liegen."
 
-#: cdedb/validation.py:1856 cdedb/validation.py:1841
+#: cdedb/validation.py:1856 cdedb/validation.py:1841 cdedb/validation.py:1840
 msgid "Must be before hard and soft limit."
 msgstr "Muss vor dem offiziellen und dem tatsächlichen Anmeldeschluss liegen."
 
-#: cdedb/validation.py:2053 cdedb/validation.py:2038
+#: cdedb/validation.py:2053 cdedb/validation.py:2038 cdedb/validation.py:2037
 #, python-format
 msgid "Invalid entry in line %(line)s."
 msgstr "Ungültiger Eintrag in Zeile %(line)s."
 
-#: cdedb/validation.py:2068 cdedb/validation.py:2053
+#: cdedb/validation.py:2068 cdedb/validation.py:2053 cdedb/validation.py:2052
 msgid "Duplicate value."
 msgstr "Doppelter Eintrag."
 
-#: cdedb/validation.py:2184 cdedb/validation.py:2169
+#: cdedb/validation.py:2184 cdedb/validation.py:2169 cdedb/validation.py:2168
 msgid "Must be a superset of active segments."
 msgstr "Muss alle aktiven Segmente enthalten."
 
-#: cdedb/validation.py:2373 cdedb/validation.py:2358
+#: cdedb/validation.py:2373 cdedb/validation.py:2358 cdedb/validation.py:2357
 msgid "Entry not in definition list."
 msgstr "Eintrag nicht in Referenzliste."
 
-#: cdedb/validation.py:2481 cdedb/validation.py:2466
+#: cdedb/validation.py:2481 cdedb/validation.py:2466 cdedb/validation.py:2465
 msgid "Only full exports are supported"
 msgstr "Nur vollständige Exporte sind unterstützt."
 
-#: cdedb/validation.py:2570 cdedb/validation.py:2555
+#: cdedb/validation.py:2570 cdedb/validation.py:2555 cdedb/validation.py:2554
 msgid "Only a single event is supported."
 msgstr "Nur eine einzelne Veranstaltung unterstützt."
 
-#: cdedb/validation.py:2573 cdedb/validation.py:2558
+#: cdedb/validation.py:2573 cdedb/validation.py:2558 cdedb/validation.py:2557
 msgid "Wrong event specified."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/validation.py:2578 cdedb/validation.py:2563
+#: cdedb/validation.py:2578 cdedb/validation.py:2563 cdedb/validation.py:2562
 msgid "Mismatched event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/validation.py:2614 cdedb/validation.py:2599
+#: cdedb/validation.py:2614 cdedb/validation.py:2599 cdedb/validation.py:2598
 msgid "Only partial exports are supported."
 msgstr "Nur partielle Exporte sind unterstützt."
 
-#: cdedb/validation.py:2868 cdedb/validation.py:2853
+#: cdedb/validation.py:2868 cdedb/validation.py:2853 cdedb/validation.py:2852
 msgid "Only one allowed of gateway, event_id and assembly_id."
 msgstr ""
 "Nur eine der folgenden Optionen kann gleichzeitig aktiv sein: "
 "Zugangsvererbung, verknüpfte Veranstaltung, verknüpfte Versammlung."
 
-#: cdedb/validation.py:2876 cdedb/validation.py:2861
+#: cdedb/validation.py:2876 cdedb/validation.py:2861 cdedb/validation.py:2860
 msgid "Linked assembly requires assembly audience."
 msgstr "Versammlungsverknüpfung benötigt Versammlungsnutzer."
 
-#: cdedb/validation.py:2881 cdedb/validation.py:2866
+#: cdedb/validation.py:2881 cdedb/validation.py:2866 cdedb/validation.py:2865
 msgid "Linked event requires event audience."
 msgstr "Veranstaltungsverknüpfung benötigt Veranstaltungsnutzer."
 
-#: cdedb/validation.py:2983 cdedb/validation.py:2968
+#: cdedb/validation.py:2983 cdedb/validation.py:2968 cdedb/validation.py:2967
 msgid "Mustn’t be in the past."
 msgstr "Darf nicht in der Vergangenheit liegen."
 
-#: cdedb/validation.py:2988 cdedb/validation.py:2973
+#: cdedb/validation.py:2988 cdedb/validation.py:2973 cdedb/validation.py:2972
 msgid "Mustn’t be before start of voting period."
 msgstr "Darf nicht vor Abstimmungsbeginn liegen."
 
-#: cdedb/validation.py:2994 cdedb/validation.py:2979
+#: cdedb/validation.py:2994 cdedb/validation.py:2979 cdedb/validation.py:2978
 msgid "Mustn’t be before end of voting period."
 msgstr "Darf nicht vor Abstimmungsende liegen."
 
 #: cdedb/frontend/assembly.py:781 cdedb/validation.py:3048
-#: cdedb/validation.py:3033
+#: cdedb/validation.py:3033 cdedb/validation.py:3032
 msgid "Mustn’t be the bar moniker."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
-#: cdedb/validation.py:3081 cdedb/validation.py:3066
+#: cdedb/validation.py:3081 cdedb/validation.py:3066 cdedb/validation.py:3065
 msgid "Only one host allowed."
 msgstr "Nur eine Verknüpfung erlaubt."
 
-#: cdedb/validation.py:3083 cdedb/validation.py:3068
+#: cdedb/validation.py:3083 cdedb/validation.py:3068 cdedb/validation.py:3067
 msgid "No host given."
 msgstr "Keine Zugehörigkeit angegeben."
 
-#: cdedb/validation.py:3112 cdedb/validation.py:3097
+#: cdedb/validation.py:3112 cdedb/validation.py:3097 cdedb/validation.py:3096
 msgid "Superfluous candidates."
 msgstr "Unerwartete Kandidaten gefunden."
 
-#: cdedb/validation.py:3114 cdedb/validation.py:3099
+#: cdedb/validation.py:3114 cdedb/validation.py:3099 cdedb/validation.py:3098
 msgid "Missing candidates."
 msgstr "Nicht alle Kandidaten vorhanden."
 
-#: cdedb/validation.py:3122 cdedb/validation.py:3107
+#: cdedb/validation.py:3122 cdedb/validation.py:3107 cdedb/validation.py:3106
 msgid "Too many levels."
 msgstr "Zu viele Abstufungen."
 
-#: cdedb/validation.py:3124 cdedb/validation.py:3109
+#: cdedb/validation.py:3124 cdedb/validation.py:3109 cdedb/validation.py:3108
 msgid "Too many votes."
 msgstr "Zu viele Optionen ausgewählt."
 
-#: cdedb/validation.py:3128 cdedb/validation.py:3113
+#: cdedb/validation.py:3128 cdedb/validation.py:3113 cdedb/validation.py:3112
 msgid "Misplaced bar."
 msgstr "Ablehnungsoption an ungültiger Stelle."
 
-#: cdedb/validation.py:3149 cdedb/validation.py:3134
+#: cdedb/validation.py:3149 cdedb/validation.py:3134 cdedb/validation.py:3133
 msgid "Invalid input for regex."
 msgstr "Ungültige Eingabe für einen regulären Ausdruck."
 
-#: cdedb/validation.py:3181 cdedb/validation.py:3166
+#: cdedb/validation.py:3181 cdedb/validation.py:3166 cdedb/validation.py:3165
 msgid "Query must be specified."
 msgstr "Art der Query muss spezifiziert werden."
 
-#: cdedb/validation.py:3204 cdedb/validation.py:3189
+#: cdedb/validation.py:3204 cdedb/validation.py:3189 cdedb/validation.py:3188
 msgid "Invalid operator for this field."
 msgstr "Unzulässiger Operator für dieses Feld."
 
-#: cdedb/validation.py:3233 cdedb/validation.py:3218
+#: cdedb/validation.py:3233 cdedb/validation.py:3218 cdedb/validation.py:3217
 msgid "Two endpoints required."
 msgstr "Zwei Werte für Intervall benötigt."
 
-#: cdedb/validation.py:3249 cdedb/validation.py:3234
+#: cdedb/validation.py:3249 cdedb/validation.py:3234 cdedb/validation.py:3233
 msgid "Selection may not be empty."
 msgstr "Es muss etwas ausgewählt werden."
 
-#: cdedb/validation.py:3283 cdedb/validation.py:3268
+#: cdedb/validation.py:3283 cdedb/validation.py:3268 cdedb/validation.py:3267
 msgid "Not a Query."
 msgstr "Muss eine Query sein."
 
-#: cdedb/validation.py:3287 cdedb/validation.py:3272
+#: cdedb/validation.py:3287 cdedb/validation.py:3272 cdedb/validation.py:3271
 msgid "Must start with “qview_”."
 msgstr "Muss mit „qview_“ beginnen."
 
-#: cdedb/validation.py:3305 cdedb/validation.py:3290
+#: cdedb/validation.py:3305 cdedb/validation.py:3290 cdedb/validation.py:3289
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
 #: cdedb/frontend/event.py:2732 cdedb/validation.py:3311
 #: cdedb/frontend/event.py:2738 cdedb/validation.py:3296
+#: cdedb/validation.py:3295
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
-#: cdedb/validation.py:3318 cdedb/validation.py:3303
+#: cdedb/validation.py:3318 cdedb/validation.py:3303 cdedb/validation.py:3302
 msgid "Invalid operator."
 msgstr "Unzulässiger Operator."
 
-#: cdedb/validation.py:3341 cdedb/validation.py:3326
+#: cdedb/validation.py:3341 cdedb/validation.py:3326 cdedb/validation.py:3325
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr "Ungültige Ordnungsrelation bei Index %(index)s."
 
 #: cdedb/validation.py:3367 cdedb/validation.py:3424 cdedb/validation.py:3352
-#: cdedb/validation.py:3409
+#: cdedb/validation.py:3409 cdedb/validation.py:3351 cdedb/validation.py:3408
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 
 #: cdedb/validation.py:3395 cdedb/validation.py:3461 cdedb/validation.py:3380
-#: cdedb/validation.py:3446
+#: cdedb/validation.py:3446 cdedb/validation.py:3379 cdedb/validation.py:3445
 #, python-format
 msgid "Must be a %(type)s."
 msgstr "Muss vom Typ %(type)s sein."
@@ -1585,7 +1586,8 @@ msgstr "Zu viele Eingaben gemacht."
 #: cdedb/frontend/core.py:637 cdedb/frontend/core.py:644
 #: cdedb/frontend/core.py:1127 cdedb/frontend/core.py:1140
 #: cdedb/frontend/core.py:1597 cdedb/frontend/core.py:1618
-#: cdedb/frontend/core.py:1638
+#: cdedb/frontend/core.py:1638 cdedb/backend/event.py:2343
+#: cdedb/backend/event.py:2492
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -3121,6 +3123,8 @@ msgstr "Veranstaltung bereits archiviert."
 #: cdedb/frontend/templates/web/event/show_event.tmpl:336
 #: cdedb/frontend/templates/web/event/show_event.tmpl:363
 #: cdedb/frontend/event.py:4405 cdedb/frontend/event.py:4431
+#: cdedb/frontend/templates/web/event/show_event.tmpl:357
+#: cdedb/frontend/templates/web/event/show_event.tmpl:384
 msgid "Event is not concluded yet."
 msgstr "Veranstaltung ist noch nicht abgeschlossen."
 
@@ -3221,6 +3225,8 @@ msgstr "Mitglieder"
 #: cdedb/frontend/templates/web/generic.tmpl:194
 #: cdedb/frontend/templates/web/generic.tmpl:256
 #: cdedb/frontend/templates/web/generic.tmpl:260
+#: cdedb/frontend/templates/web/event/base.tmpl:72
+#: cdedb/frontend/templates/web/event/base.tmpl:85
 msgid "Events"
 msgstr "Veranstaltungen"
 
@@ -4519,6 +4525,7 @@ msgstr "Versammlung"
 #: cdedb/frontend/templates/web/generic.tmpl:689
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:56
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:39
+#: cdedb/frontend/templates/web/event/base.tmpl:81
 msgid "Event"
 msgstr "Veranstaltung"
 
@@ -4658,6 +4665,7 @@ msgstr "Nur PDF-Dokumente sind möglich."
 #: cdedb/frontend/templates/web/event/show_course.tmpl:185
 #: cdedb/frontend/templates/web/event/show_event.tmpl:186
 #: cdedb/frontend/templates/web/event/show_event.tmpl:265
+#: cdedb/frontend/templates/web/event/show_event.tmpl:286
 msgid "Upload"
 msgstr "Hochladen"
 
@@ -4670,6 +4678,8 @@ msgstr "Hochladen"
 #: cdedb/frontend/templates/web/event/base.tmpl:103
 #: cdedb/frontend/templates/web/ml/base.tmpl:7
 #: cdedb/frontend/templates/web/ml/base.tmpl:53
+#: cdedb/frontend/templates/web/event/base.tmpl:88
+#: cdedb/frontend/templates/web/event/base.tmpl:99
 msgid "Overview"
 msgstr "Übersicht"
 
@@ -4716,6 +4726,7 @@ msgstr "Versammlungs-Übersicht"
 #: cdedb/frontend/templates/web/ml/base.tmpl:48
 #: cdedb/frontend/templates/web/ml/create_user.tmpl:12
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:12
+#: cdedb/frontend/templates/web/event/base.tmpl:94
 msgid "Manage Users"
 msgstr "Nutzer verwalten"
 
@@ -4731,6 +4742,8 @@ msgstr "Nutzer verwalten"
 #: cdedb/frontend/templates/web/ml/base.tmpl:50
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:18
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:19
+#: cdedb/frontend/templates/web/event/base.tmpl:60
+#: cdedb/frontend/templates/web/event/base.tmpl:96
 msgid "Log"
 msgstr "Log"
 
@@ -5051,6 +5064,9 @@ msgstr "Allgemeine Dateien"
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:267
 #: cdedb/frontend/templates/web/ml/check_states.tmpl:61
 #: cdedb/frontend/templates/web/ml/management.tmpl:212
+#: cdedb/frontend/templates/web/event/show_event.tmpl:268
+#: cdedb/frontend/templates/web/event/show_event.tmpl:358
+#: cdedb/frontend/templates/web/event/show_event.tmpl:385
 msgid "Are you sure?"
 msgstr "sicher?"
 
@@ -5082,11 +5098,13 @@ msgstr "Zu Abstimmung"
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:134
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:258
 #: cdedb/frontend/templates/web/ml/management.tmpl:203
+#: cdedb/frontend/templates/web/event/show_event.tmpl:301
 msgid "Actions"
 msgstr "Aktionen"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:122
 #: cdedb/frontend/templates/web/event/show_event.tmpl:334
+#: cdedb/frontend/templates/web/event/show_event.tmpl:355
 msgid "Archive"
 msgstr "Archivieren"
 
@@ -5115,6 +5133,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:141
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:265
 #: cdedb/frontend/templates/web/ml/management.tmpl:210
+#: cdedb/frontend/templates/web/event/show_event.tmpl:382
 msgid "Delete"
 msgstr "Löschen"
 
@@ -6960,6 +6979,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:173
 #: cdedb/frontend/templates/web/event/show_event.tmpl:378
+#: cdedb/frontend/templates/web/event/show_event.tmpl:399
 msgid "The event will be permanently deleted."
 msgstr "Die Veranstaltung wird irreversibel gelöscht."
 
@@ -8362,12 +8382,14 @@ msgstr "Downloads"
 #: cdedb/frontend/templates/web/event/base.tmpl:54
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:22
 #: cdedb/frontend/templates/web/event/register.tmpl:89
+#: cdedb/frontend/templates/web/event/base.tmpl:53
 msgid "Event-Parts"
 msgstr "Veranstaltungsteile"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:57
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:14
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:19
+#: cdedb/frontend/templates/web/event/base.tmpl:55
 msgid "Configure Custom Fields"
 msgstr "Datenfelder konfigurieren"
 
@@ -8376,6 +8398,7 @@ msgstr "Datenfelder konfigurieren"
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:18
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:22
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:14
+#: cdedb/frontend/templates/web/event/base.tmpl:58
 msgid "Configure Questionnaire"
 msgstr "Fragebogen konfigurieren"
 
@@ -8384,10 +8407,12 @@ msgstr "Fragebogen konfigurieren"
 #: cdedb/frontend/templates/web/event/checkin.tmpl:20
 #: cdedb/frontend/templates/web/event/checkin.tmpl:77
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:47
+#: cdedb/frontend/templates/web/event/base.tmpl:65
 msgid "Checkin"
 msgstr "Checkin"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:82
+#: cdedb/frontend/templates/web/event/base.tmpl:78
 msgid "Event-Overview"
 msgstr "Veranstaltungsübersicht"
 
@@ -8395,6 +8420,7 @@ msgstr "Veranstaltungsübersicht"
 #: cdedb/frontend/templates/web/event/create_event.tmpl:13
 #: cdedb/frontend/templates/web/event/list_db_events.tmpl:5
 #: cdedb/frontend/templates/web/event/list_db_events.tmpl:11
+#: cdedb/frontend/templates/web/event/base.tmpl:90
 msgid "Manage Events"
 msgstr "Veranstaltungen verwalten"
 
@@ -9998,6 +10024,7 @@ msgstr "Kurslogo"
 
 #: cdedb/frontend/templates/web/event/show_course.tmpl:168
 #: cdedb/frontend/templates/web/event/show_event.tmpl:248
+#: cdedb/frontend/templates/web/event/show_event.tmpl:269
 msgid "Remove Logo"
 msgstr "Logo entfernen"
 
@@ -10007,6 +10034,7 @@ msgstr "Das Kurslogo wird irreversibel gelöscht."
 
 #: cdedb/frontend/templates/web/event/show_course.tmpl:176
 #: cdedb/frontend/templates/web/event/show_event.tmpl:256
+#: cdedb/frontend/templates/web/event/show_event.tmpl:277
 msgid "No logo set."
 msgstr "Kein Logo."
 
@@ -10095,27 +10123,33 @@ msgid "The event is in Offline-Mode."
 msgstr "Die Veranstaltung befindet sich im Offline-Modus."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:201
+#: cdedb/frontend/templates/web/event/show_event.tmpl:207
 msgid "The event is locked for offline use."
 msgstr "Die Veranstaltung ist zur Offline-Nutzung gesperrt."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:202
+#: cdedb/frontend/templates/web/event/show_event.tmpl:208
 msgid "To unlock it, upload the export of the Offline-DB here."
 msgstr ""
 "Zum Entsperren bitte hier den Datenexport der Offline-Datenbank hochladen."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:210
+#: cdedb/frontend/templates/web/event/show_event.tmpl:216
 msgid "Export of the Offline-DB"
 msgstr "Datenexport der Offline-Datenbank"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:212
+#: cdedb/frontend/templates/web/event/show_event.tmpl:218
 msgid "Unlock"
 msgstr "Entsperren"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:220
+#: cdedb/frontend/templates/web/event/show_event.tmpl:230
 msgid "The event is not locked."
 msgstr "Die Veranstaltung ist nicht gesperrt."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:224
+#: cdedb/frontend/templates/web/event/show_event.tmpl:235
 msgid "Lock"
 msgstr "Sperren"
 
@@ -10130,32 +10164,39 @@ msgstr ""
 "der Datenbank verwendet werden."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:239
+#: cdedb/frontend/templates/web/event/show_event.tmpl:260
 msgid "Event Logo"
 msgstr "Veranstaltungslogo"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:252
+#: cdedb/frontend/templates/web/event/show_event.tmpl:273
 msgid "The event logo will be permanently deleted."
 msgstr "Das Veranstaltungslogo wird irreversibel gelöscht."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:290
+#: cdedb/frontend/templates/web/event/show_event.tmpl:311
 msgid "Create Orga-Mailinglist"
 msgstr "Orga-Mailingliste erstellen"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:297
+#: cdedb/frontend/templates/web/event/show_event.tmpl:318
 msgid "Create an orga mailinglist for this event with a default configuration."
 msgstr "Erstellt eine Standard-Orga-Mailingliste zu dieser Veranstaltung-"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:312
+#: cdedb/frontend/templates/web/event/show_event.tmpl:333
 msgid "Create Participant-Mailinglist"
 msgstr "Teilnehmer-Mailingliste erstellen"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:319
+#: cdedb/frontend/templates/web/event/show_event.tmpl:340
 msgid ""
 "Create a participant mailinglist for this event with a default configuration."
 msgstr ""
 "Erstellt eine Standard-Teilnehmer-Mailinglsite zu dieser Veranstaltung."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:343
+#: cdedb/frontend/templates/web/event/show_event.tmpl:364
 msgid ""
 "Archives the event. This creates a new “Past Event” in the CdE-Realm and "
 "transfers\n"
@@ -10166,10 +10207,12 @@ msgstr ""
 "Veranstaltung dorthin übertragen."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:351
+#: cdedb/frontend/templates/web/event/show_event.tmpl:372
 msgid "The event will be permanently archived."
 msgstr "Die Veranstaltung wird irreversibel archiviert."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:370
+#: cdedb/frontend/templates/web/event/show_event.tmpl:391
 msgid ""
 "Deletes the event, including all course and participant information.\n"
 "                            This should usually not be done before the event "
@@ -10903,6 +10946,51 @@ msgid ""
 msgstr ""
 "Ausfallende Kurse werden nur für Orgas hier markiert. Andere Benutzer "
 "könnenden Status eines Kurses zur Zeit nicht sehen."
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:199
+msgid ""
+"The event is in offline mode, but locked to be used in another instance."
+msgstr ""
+"Die Veranstaltung ist im Offline-Modus, allerdings gesperrt um in einer "
+"anderen Instanz verwendet werden zu können."
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:200
+msgid ""
+"To unlock it, run the offline initialization script inside the VM with\n"
+"                                    the event data you would like to use."
+msgstr ""
+"Zum Entsperren führe das Initialisierungsskript für den Offline-Modus "
+"innerhalb der VM mit dem gewünschten Datensatz aus."
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:228
+msgid "The event is in offline mode."
+msgstr "Die Veranstaltung befindet sich im Offline-Modus."
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:240
+msgid "By locking the event, all changes are prevented."
+msgstr "Sperren verhindert jegliche Änderungen an der Veranstaltung."
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:242
+msgid ""
+"This way the event can be imported from here into another\n"
+"                                    offline instance without causing "
+"conflicts. Be aware that\n"
+"                                    unlocking can not be done here, but must "
+"be done by running the\n"
+"                                    offline initialization script."
+msgstr ""
+"Dadurch can die Veranstaltung in einer weitere Offline-Instanz genutzt "
+"werden ohne, dass es zu Konflikten kommt. Beachte, dass eine Entsperrung per "
+"Webinterface nicht möglich ist (stattdessen muss das Initialisierungsskript "
+"für die Offline-Instanz benutzt werden)."
+
+#: cdedb/frontend/templates/web/event/show_event.tmpl:249
+msgid ""
+"This way the event can be managed in offline mode without\n"
+"                                    causing conflicts."
+msgstr ""
+"Somit kann die Veranstaltung im Offline-Modus benutzt werden ohne Konflikte "
+"zu verursachen."
 
 #~ msgid ""
 #~ "Archives the assembly. The configuration cannot be changed after this.\n"

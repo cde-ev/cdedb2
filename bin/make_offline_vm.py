@@ -60,26 +60,29 @@ def populate_table(cur, table, data):
     :type table: str
     :type data: {str: object}
     """
-    for entry in data.values():
-        if table in DEFAULTS:
-            entry = {**DEFAULTS[table], **entry}
-        for k, v in entry.items():
-            if isinstance(v, collections.abc.Mapping):
-                # No special care for serialization needed, since the data
-                # comes from a json load operation
-                entry[k] = psycopg2.extras.Json(v)
-        keys = tuple(key for key in entry)
-        query = "INSERT INTO {table} ({keys}) VALUES ({placeholders})"
-        query = query.format(table=table, keys=", ".join(keys),
-                             placeholders=", ".join(("%s",) * len(keys)))
-        params = tuple(entry[key] for key in keys)
-        cur.execute(query, params)
-    query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
-        table, max(int(id) for id in data) + 1)
-    # we need elevated privileges for sequences
-    subprocess.run(
-        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
-         query], stderr=subprocess.DEVNULL, check=True)
+    if data:
+        for entry in data.values():
+            if table in DEFAULTS:
+                entry = {**DEFAULTS[table], **entry}
+            for k, v in entry.items():
+                if isinstance(v, collections.abc.Mapping):
+                    # No special care for serialization needed, since the data
+                    # comes from a json load operation
+                    entry[k] = psycopg2.extras.Json(v)
+            keys = tuple(key for key in entry)
+            query = "INSERT INTO {table} ({keys}) VALUES ({placeholders})"
+            query = query.format(table=table, keys=", ".join(keys),
+                                 placeholders=", ".join(("%s",) * len(keys)))
+            params = tuple(entry[key] for key in keys)
+            cur.execute(query, params)
+        query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
+            table, max(int(id) for id in data) + 1)
+        # we need elevated privileges for sequences
+        subprocess.run(
+            ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
+             query], stderr=subprocess.DEVNULL, check=True)
+    else:
+        print("No data for table found")
 
 
 def make_institution(cur, institution_id):
@@ -134,11 +137,16 @@ def work(args):
     for persona in data['core.personas'].values():
         if persona['id'] in orgas:
             bits = (
-                "is_active", "is_core_admin", "is_cde_admin",
-                "is_event_admin", "is_ml_admin", "is_cde_realm",
-                "is_event_realm", "is_ml_realm")
+                "is_active", "is_core_admin", "is_cde_admin", "is_event_admin",
+                "is_cde_realm", "is_event_realm", "is_ml_realm")
             for bit in bits:
                 persona[bit] = True
+
+    print("Remove inappropriate admin flags from all users")
+    for persona in data['core.personas'].values():
+        bits = ("is_admin", "is_assembly_admin", "is_ml_admin")
+        for bit in bits:
+            persona[bit] = False
 
     print("Prepare database.")
     # Fix uneditable table

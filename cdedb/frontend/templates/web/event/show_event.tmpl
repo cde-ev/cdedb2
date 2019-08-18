@@ -193,9 +193,15 @@
             
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download', aclass='panel-danger') %}
-                    {% if ambience['event']['offline_lock'] %}
-                        {% if  CDEDB_OFFLINE_DEPLOYMENT %}
-                            {% trans -%}The event is in Offline-Mode.{%- endtrans %}
+                    {% if ambience['event']['offline_lock'] != CDEDB_OFFLINE_DEPLOYMENT %}
+                        {% if CDEDB_OFFLINE_DEPLOYMENT %}
+                            <p>
+                                {% trans -%}The event is in offline mode, but locked to be used in another instance.{%- endtrans %}
+                                {% trans -%}
+                                    To unlock it, run the offline initialization script inside the VM with
+                                    the event data you would like to use.
+                                {%- endtrans %}
+                            </p>
                         {% else %}
                             <p>
                                 {% trans -%}The event is locked for offline use.{%- endtrans %}
@@ -217,7 +223,12 @@
                             </form>
                         {% endif %}
                     {% else %}
-                        <p>{% trans -%}The event is not locked.{%- endtrans %}</p>
+                        <p>
+                            {% if CDEDB_OFFLINE_DEPLOYMENT %}
+                                {% trans -%}The event is in offline mode.{%- endtrans %}
+                            {% endif %}
+                            {% trans -%}The event is not locked.{%- endtrans %}
+                        </p>
                         <div class="p">
                             <form action="{{ cdedblink('event/lock_event') }}" method="POST" id="lockform">
                                 {{ util.anti_csrf_token('event/lock_event') }}
@@ -226,10 +237,20 @@
                         </div>
                         <p class="text-muted">
                             {{ util.make_icon('info-sign') }}
-                            {% trans -%}
-                            	By locking the event, all changes are prevented. This way the event can be managed in
-                                Offline-Mode without causing conflicts.
-                            {%- endtrans %}
+                            {% trans -%}By locking the event, all changes are prevented.{%- endtrans %}
+                            {% if CDEDB_OFFLINE_DEPLOYMENT %}
+                                {% trans -%}
+                                    This way the event can be imported from here into another
+                                    offline instance without causing conflicts. Be aware that
+                                    unlocking can not be done here, but must be done by running the
+                                    offline initialization script.
+                                {%- endtrans %}
+                            {% else %}
+                                {% trans -%}
+                                    This way the event can be managed in offline mode without
+                                    causing conflicts.
+                                {%- endtrans %}
+                            {% endif %}
                         </p>
                     {% endif %}
                 {% endcall %}
