@@ -122,7 +122,7 @@
                                anid="input_reg_checkin") }}
         {% endcall %}
 
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
+        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title'] }}</h4>
             {% endif %}
@@ -191,7 +191,7 @@
 
         {% if ambience['event']['fields']|length > 0 %}
             <h3 class="heading-underline">{% trans -%}Custom Fields{%- endtrans %}</h3>
-            {% for field_id, field in ambience['event']['fields']|dictsort
+            {% for field_id, field in ambience['event']['fields']|xdictsort('field_name')
                    if field['association'] == enums['FieldAssociations'].registration %}
                 {% call form_input_optional("fields.{}".format(field['field_name']),
                                             anid="input_fields_{}".format(field['field_name']),

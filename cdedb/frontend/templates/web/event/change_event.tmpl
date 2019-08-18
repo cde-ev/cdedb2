@@ -24,7 +24,7 @@
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_event') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value')) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
@@ -63,7 +63,7 @@
                                 "You can configure every part of the questionnaire individually in the questionnaire configuration.")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|dictsort
+        {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
                 if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
@@ -72,7 +72,7 @@
                                   "rooming preferences will be saved. Fieldtype: Text")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|dictsort
+        {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
                 if field['kind'] == enums['FieldDatatypes'].bool and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
@@ -81,7 +81,7 @@
                                   "willingness to sleep on a camping mat will be saved. Fieldtype: Yes/No")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|dictsort
+        {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
                 if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].course %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}

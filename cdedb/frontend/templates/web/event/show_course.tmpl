@@ -45,7 +45,7 @@
             </dl>
 
             <dl class="dl-horizontal">
-                {% for field_id, field in ambience['event']['fields']|dictsort %}
+                {% for field_id, field in ambience['event']['fields']|xdictsort('field_name') %}
                     {% if field['association'] == enums['FieldAssociations'].course %}
                         <dt>{{ field['field_name'] }}</dt>
                         <dd>

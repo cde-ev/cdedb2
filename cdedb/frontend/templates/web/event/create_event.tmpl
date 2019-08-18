@@ -20,7 +20,7 @@
     <form action="{{ cdedblink('event/create_event') }}" method="POST" id="createeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/create_event') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort,
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value'),
                 defaultvalue=institutions['cde']) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(

@@ -109,7 +109,7 @@
 
         {% if ambience['event']['fields']|length > 0 %}
             <h3 class="heading-underline">{% trans -%}Custom Fields{%- endtrans %}</h3>
-            {% for field_id, field in ambience['event']['fields']|dictsort %}
+            {% for field_id, field in ambience['event']['fields']|xdictsort('field_name') %}
                 {% if field['association'] == enums['FieldAssociations'].registration %}
                     {{ util.form_event_field_input(field) }}
                 {% endif %}
