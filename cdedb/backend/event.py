@@ -2494,8 +2494,8 @@ class EventBackend(AbstractBackend):
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            raise RuntimeError(n_("Imports into an Offline-DB must happen via"
-                                  "shell scripts."))
+            raise RuntimeError(n_(glue("Imports into an offline instance must",
+                                       "happen via shell scripts.")))
         if not self.is_offline_locked(rs, event_id=data['id']):
             raise RuntimeError(n_("Not locked."))
         if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:

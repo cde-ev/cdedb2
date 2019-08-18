@@ -196,7 +196,7 @@
                     {% if ambience['event']['offline_lock'] != CDEDB_OFFLINE_DEPLOYMENT %}
                         {% if CDEDB_OFFLINE_DEPLOYMENT %}
                             <p>
-                                {% trans -%}The event is in Offline-Mode, but locked to be used in another instance.{%- endtrans %}
+                                {% trans -%}The event is in offline mode, but locked to be used in another instance.{%- endtrans %}
                                 {% trans -%}
                                     To unlock it, run the offline initialization script inside the VM with
                                     the event data you would like to use.
@@ -240,14 +240,15 @@
                             {% trans -%}By locking the event, all changes are prevented.{%- endtrans %}
                             {% if CDEDB_OFFLINE_DEPLOYMENT %}
                                 {% trans -%}
-                                    This way the event can be imported from here into another Offline-DB
-                                    without causing conflicts. Be aware that unlocking can not be done
-                                    here, but must be done by running the offline initialization script.
+                                    This way the event can be imported from here into another
+                                    offline instance without causing conflicts. Be aware that
+                                    unlocking can not be done here, but must be done by running the
+                                    offline initialization script.
                                 {%- endtrans %}
                             {% else %}
                                 {% trans -%}
-                                    This way the event can be managed in
-                                    Offline-Mode without causing conflicts.
+                                    This way the event can be managed in offline mode without
+                                    causing conflicts.
                                 {%- endtrans %}
                             {% endif %}
                         </p>
