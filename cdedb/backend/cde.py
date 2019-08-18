@@ -231,10 +231,11 @@ class CdEBackend(AbstractBackend):
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
         lastschrift_ids = affirm_set("id", lastschrift_ids, allow_None=True)
-        # Only allow None for finance_admin. Dont pass None to get_lastschrifts.
         if "finance_admin" not in rs.user.roles:
+            # Don't allow None for non admins.
             if lastschrift_ids is None:
                 raise PrivilegeError(n_("Not privileged."))
+            # Otherwise pass this to get_lastschrift, which does access check.
             else:
                 _ = self.get_lastschrifts(rs, lastschrift_ids)
         stati = affirm_set("enum_lastschrifttransactionstati", stati,
@@ -270,7 +271,7 @@ class CdEBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift_transactions",
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
-        # We only need these for acces checking, which is done inside.
+        # We only need these for access checking, which is done inside.
         _ = self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
 
         return {e['id']: e for e in data}
