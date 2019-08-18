@@ -93,13 +93,27 @@
                                     {% trans count=event['registrations'] -%}
                                     	{{ count }} Registrations
                                     {%- endtrans %}
-                                    {% if not event['registration_hard_limit'] %}
+                                    {% if not event['registration_hard_limit'] and not event['registration_soft_limit'] %}
                                         {% trans -%}
                                             (Registration open)
                                         {%- endtrans %}
-                                    {% elif event['registration_hard_limit'] >= dashboard['present'] %}
-                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang)-%}
-                                        	(Registration until {{ date }})
+                                    {% elif not event['registration_hard_limit'] and event['registration_soft_limit'] and event['registration_soft_limit'] >= dashboard['present'] %}
+                                        {% trans date=event['registration_soft_limit']|datetime(lang=lang) -%}
+                                            (Registration until {{ date }}, late registration open.)
+                                        {%- endtrans %}
+                                    {% elif event['registration_hard_limit'] and event['registration_soft_limit'] and event['registration_soft_limit'] >= dashboard['present'] %}
+                                        {% if event['registration_hard_limit'] == event['registration_soft_limit'] %}
+                                            {% trans date=event['registration_soft_limit']|datetime(lang=lang) -%}
+                                                (Registration until {{ date }})
+                                            {%- endtrans %}
+                                        {% else %}
+                                            {% trans date=event['registration_soft_limit']|datetime(lang=lang), date2=event['registration_soft_limit']|datetime(lang=lang) -%}
+                                                (Registration until {{ date }}, late registration until {{ date2 }}.)
+                                            {%- endtrans %}
+                                        {% endif %}
+                                    {% elif event['registration_hard_limit'] and event['registration_hard_limit'] >= dashboard['present'] %}
+                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang) -%}
+                                            (Late registration until {{ date }})
                                         {%- endtrans %}
                                     {% endif %}
                                 {% else %}

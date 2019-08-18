@@ -7581,10 +7581,25 @@ msgstr "(Anmeldung geöffnet)"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:101
 #, python-format
+msgid "(Registration until %(date)s, late registration open.)"
+msgstr "(Anmeldung bis %(date)s, Nachmeldung geöffnet.)"
+
+#: cdedb/frontend/templates/web/core/index.tmpl:106
+#, python-format
 msgid "(Registration until %(date)s)"
 msgstr "(Anmeldung bis %(date)s)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:106
+#: cdedb/frontend/templates/web/core/index.tmpl:110
+#, python-format
+msgid "(Registration until %(date)s, late registration until %(date2)s.)"
+msgstr "(Anmeldung bis %(date)s, Nachmeldung bis %(date2)s.)"
+
+#: cdedb/frontend/templates/web/core/index.tmpl:115
+#, python-format
+msgid "(Late registration until %(date)s)"
+msgstr "(Nachmeldung bis %(date)s)"
+
+#: cdedb/frontend/templates/web/core/index.tmpl:120
 #, python-format
 msgid "(Registration starts %(date)s)"
 msgstr "(Anmeldung ab %(date)s)"
