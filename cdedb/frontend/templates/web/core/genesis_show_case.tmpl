@@ -92,23 +92,28 @@
         </dl>
     </div>
     <div class="col-sm-12 button-par">
-        <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
-         id="genesiseventapprovalform" style="display: inline;">
-            {{ util.anti_csrf_token('core/genesis_decide') }}
-            {{ util.input_hidden(name="case_id", value=case_id) }}
-            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-            {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
-        </form>
-        <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
-         id="genesiseventrejectionform" class="rejection-form" style="display: inline;">
-            {{ util.anti_csrf_token('core/genesis_decide') }}
-            {{ util.input_hidden(name="case_id", value=case_id) }}
-            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-            {{ util.input_submit(icon="remove", value=gettext("Reject"),
-                aclass="btn btn-sm btn-danger") }}
-        </form>
-        {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit"),
-            aclass="btn btn-warning btn-sm", icon="pencil") }}
-        {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Back")) }}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon='warning-sign') %}
+            {% if case['case_status'] == enums['GenesisStati'].to_review %}
+                <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
+                 id="genesiseventapprovalform" style="display: inline;">
+                    {{ util.anti_csrf_token('core/genesis_decide') }}
+                    {{ util.input_hidden(name="case_id", value=case_id) }}
+                    {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
+                    {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
+                </form>
+                <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
+                 id="genesiseventrejectionform" class="rejection-form" style="display: inline;">
+                    {{ util.anti_csrf_token('core/genesis_decide') }}
+                    {{ util.input_hidden(name="case_id", value=case_id) }}
+                    {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
+                    {{ util.input_submit(icon="remove", value=gettext("Reject"),
+                        aclass="btn btn-sm btn-danger") }}
+                </form>
+                {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit"),
+                    aclass="btn btn-warning btn-sm", icon="pencil") }}
+            {% endif %}
+            {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Back"),
+                aclass="btn btn-sm", icon="menu-left") }}
+        {% endcall %}
 </div>
 {% endblock %}
