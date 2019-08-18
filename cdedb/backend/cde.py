@@ -139,7 +139,7 @@ class CdEBackend(AbstractBackend):
         query = "SELECT id, persona_id FROM cde.lastschrift"
         params = []
         constraints = []
-        if persona_ids:
+        if persona_ids is not None:
             constraints.append("persona_id = ANY(%s)")
             params.append(persona_ids)
         if active is not None:
