@@ -680,8 +680,8 @@ class CoreBackend(AbstractBackend):
         if (set(data) & realm_keys
                 and ("core_admin" not in rs.user.roles
                      or "realms" not in allow_specials)):
-            if not (all(not data[key] for key in realm_keys)
-                    and "archive" in allow_specials ):
+            if (any(data[key] for key in realm_keys)
+                    or "archive" not in allow_specials):
                 raise PrivilegeError(n_("Realm modification prevented."))
         admin_keys = {'is_cde_admin', 'is_finance_admin', 'is_event_admin',
                       'is_ml_admin', 'is_assembly_admin', 'is_core_admin',
@@ -690,8 +690,8 @@ class CoreBackend(AbstractBackend):
                 and ("admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
             # Allow unsetting adminbits during archival.
-            if not ("archive" in allow_specials
-                    and all(not data[key] for key in admin_keys)):
+            if (any(data[key] for key in admin_keys)
+                    or "archive" not in allow_specials):
                 raise PrivilegeError(
                     n_("Admin privilege modification prevented."))
         if ("is_member" in data

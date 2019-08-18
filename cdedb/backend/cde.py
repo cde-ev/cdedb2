@@ -162,9 +162,8 @@ class CdEBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
-        if not ("finance_admin" in rs.user.roles
-                or not any(e['persona_id'] != rs.user.persona_id
-                           for e in data)):
+        if ("finance_admin" not in rs.user.roles
+            and any(e['persona_id'] != rs.user.persona_id for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
@@ -233,11 +232,11 @@ class CdEBackend(AbstractBackend):
         """
         lastschrift_ids = affirm_set("id", lastschrift_ids, allow_None=True)
         # Only allow None for finance_admin. Dont pass None to get_lastschrifts.
-        if lastschrift_ids is None:
-            if "finance_admin" not in rs.user.roles:
-                raise PrivilegeError(n_("not privileged."))
-        else:
-            _ = self.get_lastschrifts(rs, lastschrift_ids)
+        if "finance_admin" not in rs.user.roles:
+            if lastschrift_ids is None:
+                raise PrivilegeError(n_("Not privileged."))
+            else:
+                _ = self.get_lastschrifts(rs, lastschrift_ids)
         stati = affirm_set("enum_lastschrifttransactionstati", stati,
                            allow_None=True)
         periods = affirm_set("id", periods, allow_None=True)
