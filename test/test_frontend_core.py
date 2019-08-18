@@ -826,19 +826,24 @@ class TestCoreFrontend(FrontendTest):
         f['username'] = 'zorro@example.cde'
         f['realm'] = 'ml'
         self.submit(f)
-        self.assertTitle("Accountanfragen")
+        self.assertTitle("Accountanfrage anzeigen")
         self.assertNonPresence("zelda@example.cde")
         self.assertPresence("zorro@example.cde")
+        self.traverse({'href': '/core/genesis/list'})
+        self.assertTitle("Accountanfragen")
         self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor")
         self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor")
         self.traverse({'href': '/core/genesis/1/modify'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = 'event'
         self.submit(f)
+        self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
         self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor")
         self.assertPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor")
-        f = self.response.forms['genesiseventapprovalform1']
+        self.traverse({'href': '/core/genesis/1/show'})
+        self.assertTitle("Accountanfrage anzeigen")
+        f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = self.fetch_link(mail)

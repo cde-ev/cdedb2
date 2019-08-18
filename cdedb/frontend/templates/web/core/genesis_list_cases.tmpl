@@ -33,29 +33,12 @@
                         </p>
                         {# FIXME maybe display more information?#}
                     </div>
-                    <div class="col-sm-4">
-                        {% with realms = {'event': (gettext("Event"), 'blackboard'),
-                                          'ml': (gettext("Mailinglist"), 'envelope')} %}
-                            {{ util.make_icon(realms[entry['realm']][1]) }} {{ realms[entry['realm']][0] }}
-                        {% endwith %}
+                    <div class="col-sm-6">
                         {% if entry['notes'] %}<p class="textbox">{{ entry['notes'] }}</p>{% endif %}
                     </div>
-                    <div class="col-sm-5    button-par">
-                        <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id}) }}" method="POST"
-                         id="genesiseventapprovalform{{ loop.index }}" style="display: inline;">
-                            {{ util.anti_csrf_token('core/genesis_decide') }}
-                            {{ util.input_hidden(name="case_id", value=case_id) }}
-                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                            {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
-                        </form>
-                        <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id}) }}" method="POST"
-                         id="genesiseventrejectionform{{ loop.index }}" class="rejection-form" style="display: inline;">
-                            {{ util.anti_csrf_token('core/genesis_decide') }}
-                            {{ util.input_hidden(name="case_id", value=case_id) }}
-                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                            {{ util.input_submit(icon="remove", value=gettext("Reject"),
-                                aclass="btn btn-sm btn-danger") }}
-                        </form>
+                    <div class="col-sm-3    button-par">
+                        {{ util.href(cdedblink('core/genesis_show_case', {'case_id': case_id}), gettext("Details"),
+                            aclass="btn btn-primary btn-sm", icon="user") }}
                         {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), gettext("Edit"),
                             aclass="btn btn-warning btn-sm", icon="pencil") }}
                     </div>
@@ -84,10 +67,6 @@
                         </p>
                     </div>
                     <div class="col-sm-4">
-                        {% with realms = {'event': (gettext("Event"), 'blackboard'),
-                                          'ml': (gettext("Mailinglist"), 'envelope')} %}
-                            {{ util.make_icon(realms[entry['realm']][1]) }} {{ realms[entry['realm']][0] }}
-                        {% endwith %}
                         {% if entry['notes'] %}<p class="textbox">{{ entry['notes'] }}</p>{% endif %}
                     </div>
                     <div class="col-sm-5 button-par">

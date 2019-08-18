@@ -139,6 +139,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/list", methods=_GET,
                      endpoint="genesis_list_cases"),)),
             sub('/genesis/<int:case_id>', (
+                rule("/show", methods=_GET,
+                     endpoint="genesis_show_case"),
                 rule("/modify", methods=_GET,
                      endpoint="genesis_modify_form"),
                 rule("/modify", methods=_POST,
