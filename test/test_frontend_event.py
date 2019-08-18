@@ -184,30 +184,29 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("garcia")
     def test_orga_rate_limit(self, user):
-        # TODO check this for adding participants instead.
-        pass
-        # self.traverse({'href': '/event/$'},
-        #               {'href': '/event/event/1/show'})
-        # for i in range(11):
-        #     self.assertTitle("Große Testakademie 2222")
-        #     self.assertNonPresence("Bertålotta")
-        #     f = self.response.forms['addorgaform']
-        #     f['orga_id'] = "DB-2-7"
-        #     if i == 10:
-        #         break
-        #     self.submit(f)
-        #     self.assertTitle("Große Testakademie 2222")
-        #     self.assertPresence("Bertålotta")
-        #     f = self.response.forms['removeorgaform2']
-        #     self.submit(f)
-        #     self.assertTitle("Große Testakademie 2222")
-        #     self.assertNonPresence("Bertålotta")
-        # f = self.response.forms['addorgaform']
-        # f['orga_id'] = "DB-2-7"
-        # self.submit(f, check_notification=False)
-        # self.assertTitle("Große Testakademie 2222")
-        # self.assertNonPresence("Bertålotta")
-        # self.assertIn("alert alert-danger", self.response.text)
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'})
+
+        for _ in range(10):
+            self.traverse({'href': '/event/event/1/registration/add'})
+            f = self.response.forms['addregistrationform']
+            f['persona.persona_id'] = "DB-3-5"
+            self.submit(f)
+            f = self.response.forms['deleteregistrationform']
+            f['ack_delete'].checked = True
+            self.submit(f)
+
+        self.traverse({'href': 'event/event/1/registration/add'})
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = "DB-3-5"
+        self.submit(f, check_notification=False)
+        self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
+        self.assertIn("alert alert-danger", self.response.text)
+        self.assertPresence("Limit erreicht.")
+        self.traverse({'href': 'event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'})
+        self.assertNonPresence("Charly")
 
     def test_event_visibility(self):
         # Add a course track, a course and move the registration start to one
