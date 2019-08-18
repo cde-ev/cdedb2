@@ -1887,13 +1887,17 @@ class CdEFrontend(AbstractUserFrontend):
                             'trial_member': False,
                         }
                         self.coreproxy.change_persona(
-                            rrs, update, change_note=n_("End trial membership.")
+                            rrs, update,
+                            change_note="Probemitgliedschaft beendet."
                         )
                     else:
                         new_b = persona['balance'] - self.conf.MEMBERSHIP_FEE
+                        note = "Mitgliedsbeitrag abgebucht ({}).".format(
+                            money_filter(self.conf.MEMBERSHIP_FEE))
                         self.coreproxy.change_persona_balance(
                             rrs, persona_id, new_b,
-                            const.FinanceLogCodes.deduct_membership_fee)
+                            const.FinanceLogCodes.deduct_membership_fee,
+                            change_note=note)
                 period_update = {
                     'id': period_id,
                     'balance_state': persona_id,
