@@ -1006,19 +1006,15 @@ class CoreBackend(AbstractBackend):
 
         query = "SELECT id from core.personas WHERE {constraint}"
 
-        constraint = None
-        if realm == "admin":
-            constraint = "is_admin = TRUE"
-        elif realm == "core":
-            constraint = "is_core_admin = TRUE"
-        elif realm == "cde":
-            constraint = "is_cde_admin = TRUE"
-        elif realm == "event":
-            constraint = "is_event_admin = TRUE"
-        elif realm == "ml":
-            constraint = "is_ml_admin = TRUE"
-        elif realm == "assembly":
-            constraint = "is_assembly_admin = TRUE"
+        constraints = {
+            "admin": "is_admin = TRUE",
+            "core": "is_core_admin = TRUE",
+            "cde": "is_cde_admin = TRUE",
+            "finance": "is_finance_admin = TRUE",
+            "event": "is_event_admin = TRUE",
+            "ml": "is_ml_admin = TRUE",
+            "assembly": "is_assembly_admin = TRUE"}
+        constraint = constraints.get(realm)
 
         if constraint is None:
             raise ValueError(n_("No realm provided."))
