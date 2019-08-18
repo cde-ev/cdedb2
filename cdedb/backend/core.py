@@ -837,7 +837,7 @@ class CoreBackend(AbstractBackend):
         for realm in realms:
             if not persona['is_{}_realm'.format(realm)]:
                 if data.get('new_is_{}_admin'.format(realm)):
-                    raise PrivilegeError(n_(
+                    raise ValueError(n_(
                         "User does not fit the requirements for this "
                         "admin privilege."))
 
@@ -845,13 +845,13 @@ class CoreBackend(AbstractBackend):
             if (data.get('new_is_cde_admin') is False
                 or (not persona['is_cde_admin']
                     and not data.get('new_is_cde_admin'))):
-                raise PrivilegeError(n_(
+                raise ValueError(n_(
                     "User does not fit the requirements for this "
                     "admin privilege."))
 
         if data.get('new_is_core_admin') or data.get('new_is_admin'):
             if not persona['is_cde_realm']:
-                raise PrivilegeError(n_(
+                raise ValueError(n_(
                     "User does not fit the requirements for this "
                     "admin privilege."))
 

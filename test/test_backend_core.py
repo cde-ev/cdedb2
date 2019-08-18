@@ -726,7 +726,7 @@ class TestCoreBackend(BackendTest):
             "new_is_admin": True,
             "notes": "For testing.",
         }
-        with self.assertRaises(PrivilegeError):
+        with self.assertRaises(ValueError):
             self.core.initialize_privilege_change(self.key, data)
 
         data = {
@@ -734,7 +734,7 @@ class TestCoreBackend(BackendTest):
             "new_is_core_admin": True,
             "notes": "For testing.",
         }
-        with self.assertRaises(PrivilegeError):
+        with self.assertRaises(ValueError):
             self.core.initialize_privilege_change(self.key, data)
 
         data = {
@@ -742,7 +742,7 @@ class TestCoreBackend(BackendTest):
             "new_is_finance_admin": True,
             "notes": "For testing.",
         }
-        with self.assertRaises(PrivilegeError):
+        with self.assertRaises(ValueError):
             self.core.initialize_privilege_change(self.key, data)
 
         data = {
@@ -751,7 +751,7 @@ class TestCoreBackend(BackendTest):
             "new_is_cde_admin": False,
             "notes": "For testing.",
         }
-        with self.assertRaises(PrivilegeError):
+        with self.assertRaises(ValueError):
             self.core.initialize_privilege_change(self.key, data)
 
     @as_users("anton")
