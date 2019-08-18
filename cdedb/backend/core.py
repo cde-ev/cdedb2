@@ -828,7 +828,9 @@ class CoreBackend(AbstractBackend):
 
         if "is_admin" in data and data['persona_id'] == rs.user.persona_id:
             raise PrivilegeError(n_("Cannot modify own superadmin privileges."))
-        if self.get_pending_privilege_change(rs, data['persona_id']):
+        if self.list_privilege_changes(
+                rs, persona_id=data['persona_id'],
+                stati=(const.PrivilegeChangeStati.pending,)):
             raise ValueError(n_("Pending privilege change."))
 
         persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
@@ -940,17 +942,20 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("admin")
-    def list_privilege_changes(self, rs, stati=None):
+    def list_privilege_changes(self, rs, persona_id=None, stati=None):
         """List privilge changes.
 
         Can be restricted to certain stati.
 
         :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :param persona_id: limit to this persona id.
         :type stati: [int] or None
         :rtype: {int: {str: object}}
         :returns: dict mapping case ids to dicts containing information about
             the change
         """
+        persona_id = affirm("id_or_None", persona_id)
         stati = stati or set()
         stati = affirm_set("enum_privilegechangestati", stati)
 
@@ -959,6 +964,9 @@ class CoreBackend(AbstractBackend):
 
         constraints = []
         params = []
+        if persona_id:
+            constraints.append("persona_id = %s")
+            params.append(persona_id)
         if stati:
             constraints.append("status = ANY(%s)")
             params.append(stati)
@@ -985,28 +993,6 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select(
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, ids)
         return {e["id"]: e for e in data}
-
-    @access("admin")
-    def get_pending_privilege_change(self, rs, persona_id):
-        """Get a pending privilege change for a persona if any.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :rtype: int or None
-        :returns: ID of pending privilege change or None if none exists.
-        """
-        persona_id = affirm("id", persona_id)
-
-        query = ("SELECT id FROM core.privilege_changes "
-                 "WHERE persona_id = %s AND status = %s")
-        params = (persona_id, const.PrivilegeChangeStati.pending)
-
-        data = self.query_one(rs, query, params)
-        if data:
-            ret = data["id"]
-        else:
-            ret = None
-        return ret
 
     @access("persona")
     def list_admins(self, rs, realm):

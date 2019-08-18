@@ -1007,9 +1007,11 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
-        case_id = self.coreproxy.get_pending_privilege_change(rs, persona_id)
-        if case_id:
+        stati = (const.PrivilegeChangeStati.pending,)
+        case_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
+        if case_ids:
             rs.notify("error", n_("Resolve pending privilege change first."))
+            case_id = unwrap(case_ids, keys=True)
             return self.redirect(
                 rs, "core/show_privilege_change", {"case_id": case_id})
 
@@ -1029,9 +1031,11 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.change_privileges_form(rs, persona_id)
 
-        case_id = self.coreproxy.get_pending_privilege_change(rs, persona_id)
-        if case_id:
+        stati = (const.PrivilegeChangeStati.pending,)
+        case_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
+        if case_ids:
             rs.notify("error", n_("Resolve pending privilege change first."))
+            case_id = unwrap(case_ids, keys=True)
             return self.redirect(
                 rs, "core/show_privilege_change", {"case_id": case_id})
 
