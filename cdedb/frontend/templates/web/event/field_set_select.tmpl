@@ -37,7 +37,8 @@
     {% if reg_ids %}
         <h4 class="mosp">{% trans -%}Participants/Registrations to be changed{%- endtrans %}</h4>
         <ul>
-            {% for reg_id, registration in registrations|dictsort %}
+            {% for reg_id in ordered %}
+                {% set registration = registrations[reg_id] %}
                 <li>{{ personas[registration['persona_id']]['given_names'] }}
                     {{ personas[registration['persona_id']]['family_name'] }}</li>
             {% endfor %}

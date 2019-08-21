@@ -2515,6 +2515,10 @@ class EventFrontend(AbstractUserFrontend):
         registration_id = unwrap(reg_list, keys=True)
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        ordered = sorted(
+            registration['parts'].keys(),
+            key=lambda anid:
+                rs.ambience['event']['parts'][anid]['part_begin'])
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -2524,7 +2528,7 @@ class EventFrontend(AbstractUserFrontend):
                   if const.RegistrationPartStati(e['status']).is_involved())
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
-            'fee': fee})
+            'fee': fee, 'ordered': ordered})
 
     @access("event")
     def amend_registration_form(self, rs, event_id):
@@ -3130,6 +3134,10 @@ class EventFrontend(AbstractUserFrontend):
 
         personas = self.coreproxy.get_event_users(
             rs, (r['persona_id'] for r in registrations.values()))
+        ordered = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
         for reg_id, reg in registrations.items():
             reg['gender'] = personas[reg['persona_id']]['gender']
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -3187,7 +3195,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_registrations", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'course_choices': course_choices,
-            'lodgements': lodgements})
+            'lodgements': lodgements, 'ordered': ordered})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("reg_ids", "int_csv_list"))
@@ -4259,10 +4267,14 @@ class EventFrontend(AbstractUserFrontend):
             registrations = self.eventproxy.get_registrations(rs, reg_ids)
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in registrations.values()))
+            ordered = sorted(
+                registrations.keys(),
+                key=lambda anid: name_key(
+                    personas[registrations[anid]['persona_id']]))
             return self.render(rs, "field_set_select",
                                {'reg_ids': reg_ids,
                                 'registrations': registrations,
-                                'personas': personas})
+                                'personas': personas, 'ordered': ordered})
         else:
             if field_id not in rs.ambience['event']['fields']:
                 return werkzeug.exceptions.NotFound(

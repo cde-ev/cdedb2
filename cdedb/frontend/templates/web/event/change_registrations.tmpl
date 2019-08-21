@@ -83,7 +83,8 @@
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
         <h3 class="heading-underline">{% trans -%}Registrations{%- endtrans %}</h3>
         {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}
-            {% for reg_id, reg in registrations|dictsort %}
+            {% for reg_id in ordered %}
+                {% set reg = registrations[reg_id] %}
                 {{ util.input_static(value=output_name(personas[reg['persona_id']])) }}
             {% endfor %}
         {% endcall %}
