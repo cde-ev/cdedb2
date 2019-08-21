@@ -39,41 +39,38 @@
 
     <table class="table table-condensed">
         <tbody>
-        {% for lastschrift_id in ordered  if ordered%}
-            {% set lastschrift = lastschrifts[lastschrift_id] %}
-                {% if lastschrift['open']  %}
-                    <tr>
-                        <td>
-                            {% set persona = personas[lastschrift['persona_id']] %}
-                            {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
-                                         "{} {}".format(persona['given_names'], persona['family_name'])) }}
-                        </td>
-                        <td>
-                            <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
-                                    id="downloadsepapainform{{ lastschrift_id }}" class="downloadsepapainform">
-                                {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
-                                {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                                {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='download', aclass='btn btn-xs btn-primary') }}
-                            </form>
-                        </td>
-                        <td>
-                            <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
-                                    id="generatetransactionform{{ lastschrift_id }}" class="generatetransactionform">
-                                {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
-                                {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                                {{ util.input_submit(gettext("Perform Direct Debit"), icon='play', aclass='btn btn-xs btn-primary') }}
-                            </form>
-                        </td>
-                        <td>
-                            <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id}) }}"
-                                    method="POST" id="skiptransactionform{{ lastschrift_id }}" class="skip-form">
-                                {{ util.anti_csrf_token('cde/lastschrift_skip') }}
-                                {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                                {{ util.input_submit(gettext("Skip Direct Debit"), icon='step-forward', aclass='btn btn-xs btn-warning') }}
-                            </form>
-                        </td>
-                    </tr>
-                {% endif %}
+        {% for lastschrift_id, lastschrift in lastschrifts.items() if lastschrift['open']%}
+            <tr>
+                <td>
+                    {% set persona = personas[lastschrift['persona_id']] %}
+                    {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
+                                 "{} {}".format(persona['given_names'], persona['family_name'])) }}
+                </td>
+                <td>
+                    <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
+                            id="downloadsepapainform{{ lastschrift_id }}" class="downloadsepapainform">
+                        {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
+                        {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
+                        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='download', aclass='btn btn-xs btn-primary') }}
+                    </form>
+                </td>
+                <td>
+                    <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
+                            id="generatetransactionform{{ lastschrift_id }}" class="generatetransactionform">
+                        {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
+                        {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
+                        {{ util.input_submit(gettext("Perform Direct Debit"), icon='play', aclass='btn btn-xs btn-primary') }}
+                    </form>
+                </td>
+                <td>
+                    <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id}) }}"
+                            method="POST" id="skiptransactionform{{ lastschrift_id }}" class="skip-form">
+                        {{ util.anti_csrf_token('cde/lastschrift_skip') }}
+                        {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
+                        {{ util.input_submit(gettext("Skip Direct Debit"), icon='step-forward', aclass='btn btn-xs btn-warning') }}
+                    </form>
+                </td>
+            </tr>
         {% else %}
             <tr><td colspan="3">{% trans -%}No Direct Debits to perform this Semester.{%- endtrans %}</td></tr>
         {% endfor %}
@@ -190,14 +187,13 @@
 
     <h2>{% trans -%}All active Authorizations{%- endtrans %}</h2>
     <div class="row">
-        {% for chunk in ordered|slice(3 if lastschrifts|length > 10
+        {% for chunk in lastschrifts.items()|slice(3 if lastschrifts|length > 10
                                                     else 2 if lastschrifts|length > 5
                                                          else 1) %}
             <div class="col-sm-4">
                 <ul class="nosp slim">
-                    {% for lastschrift_id in chunk %}
+                    {% for lastschrift_id, lastschrift in chunk %}
                         <li>
-                            {% set lastschrift = lastschrifts[lastschrift_id] %}
                             {% set persona = personas[lastschrift['persona_id']] %}
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}

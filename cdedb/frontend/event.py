@@ -1850,15 +1850,17 @@ class EventFrontend(AbstractUserFrontend):
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
                 rs.ambience['event']['begin'])
-        ordered = sorted(
+        reg_order = sorted(
             registrations.keys(),
             key=lambda anid: name_key(
                 personas[registrations[anid]['persona_id']]))
+        registrations = OrderedDict(
+            (reg_id, registrations[reg_id]) for reg_id in reg_order)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "nametags", {
             'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'courses': courses, 'ordered': ordered})
+            'personas': personas, 'courses': courses})
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
@@ -1903,10 +1905,6 @@ class EventFrontend(AbstractUserFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
             reg['persona_id'] for reg in registrations.values()))
-        ordered = sorted(
-            registrations.keys(),
-            key=lambda anid: name_key(
-                personas[registrations[anid]['persona_id']]))
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         counts = {
@@ -1922,8 +1920,14 @@ class EventFrontend(AbstractUserFrontend):
             }
             for course_id in course_ids
         }
+        reg_order = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
+        registrations = OrderedDict(
+            (reg_id, registrations[reg_id]) for reg_id in reg_order)
         tex = self.fill_template(rs, "tex", "course_puzzle", {
-            'courses': courses, 'counts': counts, 'ordered': ordered,
+            'courses': courses, 'counts': counts,
             'tracks_sorted': tracks_sorted, 'registrations': registrations,
             'personas': personas})
         file = self.serve_latex_document(
@@ -2015,10 +2019,6 @@ class EventFrontend(AbstractUserFrontend):
         for p_id, p in personas.items():
             p['age'] = determine_age_class(
                 p['birthday'], rs.ambience['event']['begin'])
-        ordered = sorted(
-            registrations.keys(),
-            key=lambda anid: name_key(
-                personas[registrations[anid]['persona_id']]))
         attendees = self.calculate_groups(
             courses, rs.ambience['event'], registrations, key="course_id",
             personas=personas)
@@ -2035,9 +2035,15 @@ class EventFrontend(AbstractUserFrontend):
                     if (registrations[r_id]['tracks'][t_id]['course_instructor']
                         == c_id)
                 ]
+        reg_order = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
+        registrations = OrderedDict(
+            (reg_id, registrations[reg_id]) for reg_id in reg_order)
         tex = self.fill_template(rs, "tex", "course_lists", {
             'courses': courses, 'registrations': registrations,
-            'personas': personas, 'attendees': attendees, 'ordered': ordered,
+            'personas': personas, 'attendees': attendees,
             'instructors': instructors, 'course_room_field': cr_field_name,
             'tracks_sorted': tracks_sorted, })
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -2138,13 +2144,15 @@ class EventFrontend(AbstractUserFrontend):
                    for part_id in parts)}
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
-        ordered = sorted(
+        reg_order = sorted(
             registrations.keys(),
             key=lambda anid: name_key(
                 personas[registrations[anid]['persona_id']]))
+        registrations = OrderedDict(
+            (reg_id, registrations[reg_id]) for reg_id in reg_order)
         tex = self.fill_template(rs, "tex", "participant_list", {
             'courses': courses, 'registrations': registrations,
-            'personas': personas, 'ordered': ordered,
+            'personas': personas,
             'orientation': "landscape" if landscape else "portrait",
             'orgas_only': orgas_only, 'parts': parts,
         })
@@ -2515,10 +2523,6 @@ class EventFrontend(AbstractUserFrontend):
         registration_id = unwrap(reg_list, keys=True)
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
-        ordered = sorted(
-            registration['parts'].keys(),
-            key=lambda anid:
-                rs.ambience['event']['parts'][anid]['part_begin'])
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -2526,9 +2530,15 @@ class EventFrontend(AbstractUserFrontend):
         fee = sum(rs.ambience['event']['parts'][part_id]['fee']
                   for part_id, e in registration['parts'].items()
                   if const.RegistrationPartStati(e['status']).is_involved())
+        part_order = sorted(
+            registration['parts'].keys(),
+            key=lambda anid:
+                rs.ambience['event']['parts'][anid]['part_begin'])
+        registration['parts'] = OrderedDict(
+            (part_id, registration['parts'][part_id]) for part_id in part_order)
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
-            'fee': fee, 'ordered': ordered})
+            'fee': fee})
 
     @access("event")
     def amend_registration_form(self, rs, event_id):
@@ -3134,10 +3144,6 @@ class EventFrontend(AbstractUserFrontend):
 
         personas = self.coreproxy.get_event_users(
             rs, (r['persona_id'] for r in registrations.values()))
-        ordered = sorted(
-            registrations.keys(),
-            key=lambda anid: name_key(
-                personas[registrations[anid]['persona_id']]))
         for reg_id, reg in registrations.items():
             reg['gender'] = personas[reg['persona_id']]['gender']
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -3192,10 +3198,18 @@ class EventFrontend(AbstractUserFrontend):
                     reg_values['fields.{}'.format(key)] = unwrap(present)
 
         merge_dicts(rs.values, reg_values)
+
+        reg_order = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
+
+        registrations = OrderedDict(
+            (reg_id, registrations[reg_id]) for reg_id in reg_order)
         return self.render(rs, "change_registrations", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'course_choices': course_choices,
-            'lodgements': lodgements, 'ordered': ordered})
+            'lodgements': lodgements})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("reg_ids", "int_csv_list"))
@@ -4219,19 +4233,21 @@ class EventFrontend(AbstractUserFrontend):
                 and any(there(v, id) for id in rs.ambience['event']['parts']))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()))
-        ordered = sorted(
-            registrations.keys(),
-            key=lambda anid: name_key(
-                personas[registrations[anid]['persona_id']]))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
                 rs.ambience['event']['begin'])
+        reg_order = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
+        registrations = OrderedDict(
+            (reg_id, registrations[reg_id]) for reg_id in reg_order)
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
-            'ordered': ordered, 'lodgements': lodgements})
+            'lodgements': lodgements})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("registration_id", "id"))
@@ -4267,14 +4283,16 @@ class EventFrontend(AbstractUserFrontend):
             registrations = self.eventproxy.get_registrations(rs, reg_ids)
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in registrations.values()))
-            ordered = sorted(
+            reg_order = sorted(
                 registrations.keys(),
                 key=lambda anid: name_key(
                     personas[registrations[anid]['persona_id']]))
+            registrations = OrderedDict(
+                (reg_id, registrations[reg_id]) for reg_id in reg_order)
             return self.render(rs, "field_set_select",
                                {'reg_ids': reg_ids,
                                 'registrations': registrations,
-                                'personas': personas, 'ordered': ordered})
+                                'personas': personas})
         else:
             if field_id not in rs.ambience['event']['fields']:
                 return werkzeug.exceptions.NotFound(

@@ -28,27 +28,26 @@
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
-    <<% for registration_id in ordered %>>
-        <<% set registration = registrations[registration_id] %>>
-            <<% for track_id in tracks_sorted %>>
-                <<% set track = ambience['event']['tracks'][track_id] %>>
-                    <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
-                        \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
-                                     <<< personas[registration['persona_id']]['family_name']|te >>>}%
-                                    {<<< track['title']|te >>>}%
-                                    {<<% if registration['tracks'][track_id]['course_instructor'] -%>>
-                                        Kursleiter:
-                                        <<< courses[registration['tracks'][track_id]['course_instructor']]['title']|te >>>
-                                        \par
-                                    <<%- endif %>>}%
-                        <<% for label in ("Erstwahl", "Zweitwahl", "Drittwahl") -%>>
-                                    {<<% if registration['tracks'][track_id]['choices']|length > loop.index0 -%>>
-                                        <<< label|te >>>:
-                                        <<< courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te >>>
-                                        \par
-                                     <<% endif %>>}%
-                        <<% endfor %>>
-                    <<% endif %>>
-            <<% endfor %>>
+    <<% for registration_id, registration in registrations.items() %>>
+        <<% for track_id in tracks_sorted %>>
+            <<% set track = ambience['event']['tracks'][track_id] %>>
+                <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
+                    \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
+                                 <<< personas[registration['persona_id']]['family_name']|te >>>}%
+                                {<<< track['title']|te >>>}%
+                                {<<% if registration['tracks'][track_id]['course_instructor'] -%>>
+                                    Kursleiter:
+                                    <<< courses[registration['tracks'][track_id]['course_instructor']]['title']|te >>>
+                                    \par
+                                <<%- endif %>>}%
+                    <<% for label in ("Erstwahl", "Zweitwahl", "Drittwahl") -%>>
+                                {<<% if registration['tracks'][track_id]['choices']|length > loop.index0 -%>>
+                                    <<< label|te >>>:
+                                    <<< courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te >>>
+                                    \par
+                                 <<% endif %>>}%
+                    <<% endfor %>>
+                <<% endif %>>
+        <<% endfor %>>
     <<% endfor %>>
 <<% endblock %>>

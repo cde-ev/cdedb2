@@ -30,17 +30,17 @@
                 \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./course-logo-<<< course_id|te >>>}
             \end{minipage}
             \begin{itemize}
-                <<% for registration_id in ordered if registration_id in attendees[(course_id, track_id)] %>>
-                    <<% with p = personas[registrations[registration_id]['persona_id']] %>>
+                <<% for reg_id, reg in registrations.items() if reg_id in attendees[(course_id, track_id)] %>>
+                    <<% with p = personas[registrations[reg_id]['persona_id']] %>>
                         \item
-                            <<% if registration_id in instructors[(course_id, track_id)] %>>
+                            <<% if reg_id in instructors[(course_id, track_id)] %>>
                                 \emph{
-                                    <<<- personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
-                                    <<< personas[registrations[registration_id]['persona_id']]['family_name']|te ->>>
+                                    <<<- personas[registrations[reg_id]['persona_id']]['given_names']|te >>>
+                                    <<< personas[registrations[reg_id]['persona_id']]['family_name']|te ->>>
                                 }
                             <<% else %>>
-                                <<<- personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
-                                <<< personas[registrations[registration_id]['persona_id']]['family_name']|te ->>>
+                                <<<- personas[registrations[reg_id]['persona_id']]['given_names']|te >>>
+                                <<< personas[registrations[reg_id]['persona_id']]['family_name']|te ->>>
                                 <<% if p['age'].is_minor() %>>
                                     \fbox{<<< p['age'].name|upper|te >>>}
                                 <<% endif %>>

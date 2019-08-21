@@ -78,7 +78,7 @@
 
     <h3 class="heading-underline">Status</h3>
     <dl class="dl-horizontal">
-        {% for part_id in ordered %}
+        {% for part_id, part in registration['parts'].items() %}
             {% set part = registration['parts'][part_id] %}
             <dt>
                 {% if ambience['event']['parts']|length > 1 %}

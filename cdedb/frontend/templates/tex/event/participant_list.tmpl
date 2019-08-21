@@ -56,8 +56,8 @@
 			\hline
 		\endhead
     <<% set participant = enums['RegistrationPartStati'].participant -%>>
-    <<% for registration_id in ordered if orgas_only or registrations[registration_id]['list_consent'] -%>>
-        <<% with registration = registrations[registration_id] %>>
+    <<% for reg_id, reg in registrations.items() if orgas_only or registrations[reg_id]['list_consent'] -%>>
+        <<% with registration = registrations[reg_id] %>>
             % Vorname
             <<< personas[registration['persona_id']]['given_names']|te >>> &
             % Nachname
