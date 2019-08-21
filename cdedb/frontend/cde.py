@@ -1177,8 +1177,7 @@ class CdEFrontend(AbstractUserFrontend):
             (last_id, lastschrifts[last_id]) for last_id in last_order)
         return self.render(rs, "lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
-            'transactions': transactions, 'all_lastschrifts': all_lastschrifts,
-        })
+            'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
 
     @access("member")
     def lastschrift_show(self, rs, persona_id):
