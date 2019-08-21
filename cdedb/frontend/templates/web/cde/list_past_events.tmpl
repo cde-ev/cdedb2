@@ -14,7 +14,7 @@
         </div>
     {% endif %}
     
-    {% for year, year_events in years|dictsort|reverse %}
+    {% for year, year_events in yearsmodsubscriber_id|reverse %}
         <h4 class="heading-underline">{{ year }}</h4>
         <ul>
             {% for pevent_id in year_events %}

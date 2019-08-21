@@ -1166,12 +1166,17 @@ class CdEFrontend(AbstractUserFrontend):
         persona_ids = set(all_lastschrift_ids.values()).union({
             x['submitted_by'] for x in lastschrifts.values()})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        ordered = sorted(
+            lastschrifts.keys(),
+            key=lambda anid: name_key(
+                personas[lastschrifts[anid]['persona_id']]))
         open_permits = self.determine_open_permits(rs, lastschrift_ids)
         for lastschrift in lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
         return self.render(rs, "lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
-            'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
+            'transactions': transactions, 'all_lastschrifts': all_lastschrifts,
+            'ordered': ordered})
 
     @access("member")
     def lastschrift_show(self, rs, persona_id):
