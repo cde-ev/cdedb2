@@ -114,6 +114,12 @@ I18N_STRINGS = (
     n_("Genders.other"),
     n_("Genders.not_specified"),
 
+    n_("GenesisStati.unconfirmed"),
+    n_("GenesisStati.to_review"),
+    n_("GenesisStati.approved"),
+    n_("GenesisStati.successful"),
+    n_("GenesisStati.rejected"),
+
     n_("LineResolutions.create"),
     n_("LineResolutions.skip"),
     n_("LineResolutions.renew_trial"),

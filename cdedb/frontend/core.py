@@ -1597,8 +1597,21 @@ class CoreFrontend(AbstractFrontend):
             'ml_cases': ml_cases, 'event_cases': event_cases})
 
     @access("core_admin", "event_admin", "ml_admin")
+    def genesis_show_case(self, rs, case_id):
+        """View a specific case."""
+        case = self.coreproxy.genesis_get_case(rs, case_id)
+        if (not self.is_admin(rs)
+                and "{}_admin".format(case['realm']) not in rs.user.roles):
+            raise PrivilegeError(n_("Not privileged."))
+        reviewer = None
+        if case['reviewer']:
+            reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
+        return self.render(rs, "genesis_show_case", {
+            'case': case, 'reviewer': reviewer})
+
+    @access("core_admin", "event_admin", "ml_admin")
     def genesis_modify_form(self, rs, case_id):
-        """View a specific case and present the option to edit it."""
+        """Edit a specific case it."""
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
@@ -1629,7 +1642,7 @@ class CoreFrontend(AbstractFrontend):
             return self.genesis_list_cases(rs)
         code = self.coreproxy.genesis_modify_case(rs, data)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "core/genesis_list_cases")
+        return self.redirect(rs, "core/genesis_show_case")
 
     @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"))
