@@ -3,7 +3,7 @@
 
 <<%- for track_id in ambience['event']['tracks']|sort %>>
 \zwischentitel{<<< ambience['event']['tracks'][track_id]['title']|te >>>}
-<<% for course_id, course in courses|xdictsort('nr') %>>
+<<% for course_id, course in courses|xdictsort('nr', pad=True) %>>
 <<%- if track_id in course['active_segments'] %>>
 \kurs[<<< course['nr'] >>>]{<<< course['title']|te >>>}[<<< course['instructors']|te >>>]
 

@@ -1850,11 +1850,15 @@ class EventFrontend(AbstractUserFrontend):
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
                 rs.ambience['event']['begin'])
+        ordered = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "nametags", {
             'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'courses': courses})
+            'personas': personas, 'courses': courses, 'ordered': ordered})
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()
@@ -1893,10 +1897,16 @@ class EventFrontend(AbstractUserFrontend):
         """
         event = rs.ambience['event']
         tracks = event['tracks']
+        tracks_sorted = sorted(tracks.keys(),
+                                key=lambda x: tracks[x]['sortkey'])
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
             reg['persona_id'] for reg in registrations.values()))
+        ordered = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         counts = {
@@ -1913,8 +1923,9 @@ class EventFrontend(AbstractUserFrontend):
             for course_id in course_ids
         }
         tex = self.fill_template(rs, "tex", "course_puzzle", {
-            'courses': courses, 'counts': counts,
-            'registrations': registrations, 'personas': personas})
+            'courses': courses, 'counts': counts, 'ordered': ordered,
+            'tracks_sorted': tracks_sorted, 'registrations': registrations,
+            'personas': personas})
         file = self.serve_latex_document(
             rs, tex,
             "{}_course_puzzle".format(rs.ambience['event']['shortname']), runs)
@@ -1946,7 +1957,8 @@ class EventFrontend(AbstractUserFrontend):
         key = (lambda reg_id:
                personas[registrations[reg_id]['persona_id']]['birthday'])
         registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in sorted(registrations, key=key))
+            (reg_id, registrations[reg_id]) for reg_id in sorted(registrations,
+                                                                 key=key))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
@@ -1991,6 +2003,9 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def download_course_lists(self, rs, event_id, runs):
         """Create lists to post to course rooms."""
+        tracks = rs.ambience['event']['tracks']
+        tracks_sorted = sorted(tracks.keys(),
+                               key=lambda x: tracks[x]['sortkey'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -2000,6 +2015,10 @@ class EventFrontend(AbstractUserFrontend):
         for p_id, p in personas.items():
             p['age'] = determine_age_class(
                 p['birthday'], rs.ambience['event']['begin'])
+        ordered = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
         attendees = self.calculate_groups(
             courses, rs.ambience['event'], registrations, key="course_id",
             personas=personas)
@@ -2018,9 +2037,9 @@ class EventFrontend(AbstractUserFrontend):
                 ]
         tex = self.fill_template(rs, "tex", "course_lists", {
             'courses': courses, 'registrations': registrations,
-            'personas': personas, 'attendees': attendees,
+            'personas': personas, 'attendees': attendees, 'ordered': ordered,
             'instructors': instructors, 'course_room_field': cr_field_name,
-        })
+            'tracks_sorted': tracks_sorted, })
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
             work_dir.mkdir()

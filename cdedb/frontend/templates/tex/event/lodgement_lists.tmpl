@@ -5,7 +5,7 @@
     \pagestyle{empty}
 <<% endblock %>>
 <<% block content %>>
-    <<% for lodgement_id, lodgement in lodgements|dictsort %>>
+    <<% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %>>
         <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
