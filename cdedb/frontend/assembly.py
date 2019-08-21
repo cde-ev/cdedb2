@@ -82,7 +82,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def index(self, rs):
         """Render start page."""
-        assemblies = self.assemblyproxy.list_assemblies(rs)
+        assemblies = self.assemblyproxy.list_assemblies(rs, signup_end=True)
         return self.render(rs, "index", {'assemblies': assemblies})
 
     @access("assembly_admin")

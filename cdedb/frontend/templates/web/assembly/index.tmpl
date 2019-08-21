@@ -13,7 +13,7 @@
     {% endif %}
     <h3>{{ gettext("Active Assemblies") }}</h3>
     <ul>
-        {% for assembly_id, data in assemblies|dictsort %}
+        {% for assembly_id, data in assemblies|xdictsort('signup_end') %}
             {% if data['is_active'] %}
                 <li>
                     {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
@@ -23,7 +23,7 @@
     </ul>
     <h3>{{ gettext("Inactive Assemblies") }}</h3>
     <ul>
-        {% for assembly_id, data in assemblies|dictsort|reverse %}
+        {% for assembly_id, data in assemblies|xdictsort('signup_end', reverse=True) %}
             {% if not data['is_active'] %}
                 <li>
                     {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}

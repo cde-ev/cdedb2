@@ -277,18 +277,23 @@ class AssemblyBackend(AbstractBackend):
         return {e['persona_id'] for e in attendees}
 
     @access("persona")
-    def list_assemblies(self, rs, is_active=None):
+    def list_assemblies(self, rs, is_active=None, signup_end=False):
         """List all assemblies.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type is_active: bool or None
         :param is_active: If not None list only assemblies which have this
           activity status.
+        :type signup_end: bool
+        :param signup_end: If True, returns additionally the date until signup
+          is possible for every assembly
         :rtype: {int: {str: str}}
         :returns: Mapping of event ids to dict with title and activity status.
         """
         is_active = affirm("bool_or_None", is_active)
-        query = "SELECT id, title, is_active FROM assembly.assemblies"
+        signup_end = affirm("bool", signup_end)
+        query = "SELECT id, title,{} is_active FROM assembly.assemblies"\
+                .format("signup_end," if signup_end else "")
         params = tuple()
         if is_active is not None:
             query = glue(query, "WHERE is_active = %s")
