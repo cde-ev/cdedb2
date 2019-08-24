@@ -2427,10 +2427,23 @@ class EventFrontend(AbstractUserFrontend):
             }
 
         # Sixth prepare summary
+        def flatten_recursive_delta(data, old, prefix=""):
+            ret = {}
+            for key, val in data.items():
+                if isinstance(val, collections.abc.Mapping):
+                    tmp = flatten_recursive_delta(val, old.get(key, {}),
+                                                 "{}{}.".format(prefix, key))
+                    ret.update(tmp)
+                else:
+                    ret["{}{}".format(prefix, key)] = (old.get(key, None), val)
+            return ret
+
         summary = {
-            'changed_registration_ids': tuple(sorted(
-                id for id, val in delta.get('registrations', {}).items()
-                if id > 0 and val)),
+            'changed_registrations': {
+                id: flatten_recursive_delta(val, registrations[id])
+                for id, val in delta.get('registrations', {}).items()
+                if id > 0 and val
+            },
             'new_registration_ids': tuple(sorted(
                 id for id in delta.get('registrations', {})
                 if id < 0)),
@@ -2440,9 +2453,11 @@ class EventFrontend(AbstractUserFrontend):
             'real_deleted_registration_ids': tuple(sorted(
                 id for id, val in delta.get('registrations', {}).items()
                 if val is None and registrations.get(id))),
-            'changed_course_ids': tuple(sorted(
-                id for id, val in delta.get('courses', {}).items()
-                if id > 0 and val)),
+            'changed_courses': {
+                id: flatten_recursive_delta(val, courses[id])
+                for id, val in delta.get('courses', {}).items()
+                if id > 0 and val
+            },
             'new_course_ids': tuple(sorted(
                 id for id in delta.get('courses', {}) if id < 0)),
             'deleted_course_ids': tuple(sorted(
@@ -2451,9 +2466,11 @@ class EventFrontend(AbstractUserFrontend):
             'real_deleted_course_ids': tuple(sorted(
                 id for id, val in delta.get('courses', {}).items()
                 if val is None and courses.get(id))),
-            'changed_lodgement_ids': tuple(sorted(
-                id for id, val in delta.get('lodgements', {}).items()
-                if id > 0 and val)),
+            'changed_lodgements': {
+                id: flatten_recursive_delta(val, lodgements[id])
+                for id, val in delta.get('lodgements', {}).items()
+                if id > 0 and val
+            },
             'new_lodgement_ids': tuple(sorted(
                 id for id in delta.get('lodgements', {}) if id < 0)),
             'deleted_lodgement_ids': tuple(sorted(
@@ -2464,34 +2481,25 @@ class EventFrontend(AbstractUserFrontend):
                 if val is None and lodgements.get(id))),
         }
 
-        def extract_recursive_keys(data):
-            ret = []
-            for key, val in data.items():
-                if isinstance(val, collections.abc.Mapping):
-                    tmp = extract_recursive_keys(val)
-                    ret.extend("{}->{}".format(key, t) for t in tmp)
-                else:
-                    ret.append(key)
-            return set(ret)
-
         changed_registration_fields = set()
-        for reg_id in summary['changed_registration_ids']:
-            changed_registration_fields |= extract_recursive_keys(
-                delta['registrations'][reg_id])
+        for reg in summary['changed_registrations'].values():
+            changed_registration_fields |= reg.keys()
         summary['changed_registration_fields'] = tuple(sorted(
             changed_registration_fields))
         changed_course_fields = set()
-        for course_id in summary['changed_course_ids']:
-            changed_course_fields |= extract_recursive_keys(
-                delta['courses'][course_id])
+        for course in summary['changed_courses'].values():
+            changed_course_fields |= course.keys()
         summary['changed_course_fields'] = tuple(sorted(
             changed_course_fields))
         changed_lodgement_fields = set()
-        for lodgement_id in summary['changed_lodgement_ids']:
-            changed_lodgement_fields |= extract_recursive_keys(
-                delta['lodgements'][lodgement_id])
+        for lodgement in summary['changed_lodgements'].values():
+            changed_lodgement_fields |= lodgement.keys()
         summary['changed_lodgement_fields'] = tuple(sorted(
             changed_lodgement_fields))
+
+        reg_titles, reg_choices, course_titles, course_choices = \
+            self._make_partial_import_diff_aux(
+                rs, rs.ambience['event'], courses, lodgements)
 
         # Seventh render diff
         template_data = {
@@ -2503,8 +2511,67 @@ class EventFrontend(AbstractUserFrontend):
             'suspicious_courses': suspicious_courses,
             'personas': personas,
             'summary': summary,
+            'reg_titles': reg_titles,
+            'reg_choices': reg_choices,
+            'course_titles': course_titles,
+            'course_choices': course_choices,
         }
         return self.render(rs, "partial_import_check", template_data)
+
+    @staticmethod
+    def _make_partial_import_diff_aux(rs, event, courses, lodgements):
+        """ Helper method, similar to make_registration_query_aux(), to
+        generate human readable field names and values for the diff presentation
+        of partial_import()"""
+        reg_titles = {}
+        reg_choices = {}
+        course_titles = {}
+        course_choices = {}
+
+        # Prepare choices lists
+        # TODO distinguish old and new course/lodgement titles
+        # Heads up! There's a protected space (u+00A0) in the string below
+        course_entries = {
+            c["id"]: "{}. {}".format(c["nr"], c["shortname"])
+            for c in courses.values()}
+        lodgement_entries = {l["id"]: l["moniker"]
+                             for l in lodgements.values()}
+        reg_part_stati_entries =\
+            dict(enum_entries_filter(const.RegistrationPartStati, rs.gettext))
+        segment_stati_entries = {
+            None: rs.gettext('not offered'),
+            False: rs.gettext('cancelled'),
+            True: rs.gettext('takes place'),
+        }
+
+        # Titles and choices for track-specific fields
+        for track_id, track in event['tracks'].items():
+            if len(event['tracks']) > 1:
+                prefix = "{title}: ".format(title=track['shortname'])
+            else:
+                prefix = ""
+            reg_titles["tracks.{}.course_id".format(track_id)] = prefix + rs.gettext("Course")
+            reg_choices["tracks.{}.course_id".format(track_id)] = course_entries
+            reg_titles["tracks.{}.instructor".format(track_id)] = prefix + rs.gettext("Instructor")
+            reg_choices["tracks.{}.instructor".format(track_id)] = course_entries
+            reg_titles["tracks.{}.choices".format(track_id)] = prefix + rs.gettext("Course Choices")
+            reg_choices["tracks.{}.choices".format(track_id)] = course_entries
+            course_titles["segments.{}".format(track_id)] = prefix + rs.gettext("Status")
+            course_choices["segments.{}".format(track_id)] = segment_stati_entries
+
+        # Titles and choices for part-specific fields
+        for part_id, part in event['parts'].items():
+            if len(event['parts']) > 1:
+                prefix = "{title}: ".format(title=part['shortname'])
+            else:
+                prefix = ""
+            reg_titles["parts.{}.status".format(part_id)] = prefix + rs.gettext("Status")
+            reg_choices["parts.{}.status".format(part_id)] = reg_part_stati_entries
+            reg_titles["parts.{}.lodgement_id".format(part_id)] = prefix + rs.gettext("Lodgement")
+            reg_choices["parts.{}.lodgement_id".format(part_id)] = lodgement_entries
+            reg_titles["parts.{}.is_reserve".format(part_id)] = prefix + rs.gettext("Camping Mat")
+
+        return reg_titles, reg_choices, course_titles, course_choices
 
     @access("event")
     def register_form(self, rs, event_id):

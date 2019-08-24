@@ -1,5 +1,6 @@
 {% set sidenav_active='partial_import' %}
 {% extends "web/event/base.tmpl" %}
+{% set jshint='weak' %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] -%}
@@ -16,483 +17,239 @@
         {% trans %}Partial Import{% endtrans %} <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
-{% macro format_diff(key, old, new) %}
-    {% if new is mapping %}
-        <li>
-            <p>{{ key }}</p>
-            <ul>
-                {% for key, val in new|dictsort %}
-                    {{ format_diff(key, old[key], val) }}
-                {% endfor %}
-            </ul>
-        </li>
-    {% else %}
-        <li> {{ key }}: {{ old }} -> {{ new }} </li>
-    {% endif %}
+
+{# The following macro generates the diff table for a changed registration, lodgement or course. It takes the (flattened)
+diff of the item and shows a table with all changed attributes, old and new values. #}
+{% macro diff_table(diff, titles, choices) %}
+    <table class="table table-slim small diff-details" style="clear: right;">
+        <thead>
+            <tr>
+                <th>{% trans %}Attribute{% endtrans %}</th>
+                <th>{% trans %}Old Value{% endtrans %}</th>
+                <th>{% trans %}New Value{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key, (old, new) in diff.items() %}
+                <tr>
+                    <td>{{ titles.get(key, key) }}</td>
+                    <td class="{% if old is not none %}bg-danger{% endif %}">
+                        {% if old is sequence and not old is string%}
+                            [{% for o in old %}
+                                {{- choices.get(key, {}).get(o, o) }}
+                                {%- if not loop.last %}, {% endif %}
+                            {%- endfor %}]
+                        {% else %}
+                            {{ choices.get(key, {}).get(old, old) }}
+                        {% endif %}
+                    </td>
+                    <td class="{% if new is not none %}bg-success{% endif %}">
+                        {% if new is sequence and not new is string %}
+                            [{% for n in new %}
+                                {{- choices.get(key, {}).get(n, n) }}
+                                {%- if not loop.last %}, {% endif %}
+                            {%- endfor %}]
+                        {% else %}
+                            {{ choices.get(key, {}).get(new, new) }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endmacro %}
+
+{% do reg_titles.update({
+    "notes": gettext("Notes"),
+    "orga_notes": gettext("Orga-Notes"),
+    "payment": gettext("Payment"),
+    "parental_agreement": gettext("Parental Consent"),
+    "mixed_lodging": gettext("Mixed Lodging"),
+    "checkin": gettext("Checkin"),
+    "list_consent": gettext("Participant List Consent"),
+    }) %}
+{% do course_titles.update({
+    "nr": gettext("Coursenumber"),
+    "shortname": gettext("Shortname"),
+    "title": gettext("Long Title"),
+    "description": gettext("Description"),
+    "instructors": gettext("Instructors"),
+    "max_size": gettext("Max. Size"),
+    "min_size": gettext("Min. Size"),
+    "notes": gettext("Notes"),
+    }) %}
+{% set lodgement_titles = {
+    "moniker": gettext("Moniker"),
+    "capacity": gettext("Regular Capacity"),
+    "reserve": gettext("Camping Mat Capacity"),
+    "notes": gettext("Notes"),
+    } %}
+
 {% block content %}
     <p class="text-warning">
-        {% trans -%}
-            Carefully check the diff below, this tool has the potential to do irreversible damage
-            to your event. (You read the manual, right?)
+        {{ util.make_icon('warning-sign') }}
+        {% trans manual=util.href(docurl('Handbuch_partieller_Import'), gettext('manual')) -%}
+            Carefully check the summary below, as this tool has the potential to do irreversible damage
+            to your event. (You read the {{ manual }}, right?)
         {%- endtrans %}
     </p>
 
-    <h2>{% trans %}Summary{% endtrans %}</h2>
+    <h2>{% trans %}Summary of Changes{% endtrans %}</h2>
 
-    {% if summary['changed_registration_ids'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}
+    {% if summary['deleted_registration_ids']|length > summary['real_deleted_registration_ids']|length %}
+         <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were double registration deletions. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+    {% if summary['deleted_course_ids']|length > summary['real_deleted_course_ids']|length %}
+        <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were double course deletions. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+    {% if summary['deleted_lodgement_ids']|length > summary['real_deleted_lodgement_ids']|length %}
+        <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were double lodgement deletions. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+    {% if suspicious_courses %}
+        <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were hints at double course creations. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+    {% if suspicious_lodgements %}
+        <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were hints at double lodgement creations. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+
+    {% if summary['changed_registrations'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}
         <h3>{% trans %}Registrations{% endtrans %}</h3>
-        {% if summary['changed_registration_ids'] %}
-            {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info', icon='user') %}
-                <div class="row">
-                    <div class="col-md-6">
+        <!-- ---------------------- Changed registrations ---------------------- -->
+        {% if summary['changed_registrations'] %}
+            <div class="row">
+                <div class="col-md-8">
+                    {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info', icon='user') %}
                         <ul class="slim">
-                            {% for reg_id in summary['changed_registration_ids'][:11] %}
+                            {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
                                 <li>
+                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
                                     {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                    {{ personas[registrations[reg_id]['persona_id']]['last_name'] }}
+                                    {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                    {{ diff_table(reg_diff, reg_titles, reg_choices) }}
                                 </li>
                             {% endfor %}
-                            {% if summary['changed_registration_ids']|length == 12 %}
-                                <li>
-                                    {{ personas[summary['changed_registration_ids'][11]['persona_id']]['given_names'] }}
-                                    {{ personas[summary['changed_registration_ids'][11]['persona_id']]['last_name'] }}
-                                </li>
-                            {% elif summary['changed_registration_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['changed_registration_ids']|length) - 11) -%}
-                                        and %(count)s more registrations
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
                         </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h4>{% trans %}Affected attributes{% endtrans %}</h4>
+                    {% endcall %}
+                </div>
+                <div class="col-md-4">
+                    {% call util.bootstrap_panel(gettext("Changed registration attributes"), aclass='panel panel-info', icon='user') %}
                         <ul class="slim">
                             {% for field in summary['changed_registration_fields'] %}
-                                <li>{{ field }}{# TODO translation/human readable #}</li>
+                                <li>{{ reg_titles.get(field, field) }}</li>
                             {% endfor %}
                         </ul>
-                    </div>
+                    {% endcall %}
                 </div>
-            {% endcall %}
+            </div>
         {% endif %}
+
         <div class="row">
+            <!-- ---------------------- New registrations ---------------------- -->
             {% if summary['new_registration_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel panel-success', icon='user') %}
                         <ul class="slim">
-                            {% for reg_id in summary['new_registration_ids'][:11] %}
-                                    <li>
-                                        {{ personas[delta['registrations'][reg_id]['persona_id']]['given_names'] }}
-                                        {{ personas[delta['registrations'][reg_id]['persona_id']]['family_name'] }}
-                                    </li>
+                            {% for reg_id in summary['new_registration_ids'] %}
+                                <li>
+                                    {{ personas[delta['registrations'][reg_id]['persona_id']]['given_names'] }}
+                                    {{ personas[delta['registrations'][reg_id]['persona_id']]['family_name'] }}
+                                </li>
                             {% endfor %}
-                            {% if summary['new_registration_ids']|length == 12 %}
-                                <li>
-                                    {{ personas[summary['new_registration_ids'][11]['persona_id']]['given_names'] }}
-                                    {{ personas[summary['new_registration_ids'][11]['persona_id']]['last_name'] }}
-                                </li>
-                            {% elif summary['new_registration_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['new_registration_ids']|length) - 11) -%}
-                                        and %(count)s more registrations
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
                         </ul>
                     {% endcall %}
                 </div>
             {% endif %}
+
+            <!-- ---------------------- Deleted registrations ---------------------- -->
             {% if summary['real_deleted_registration_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel panel-danger', icon='user') %}
                         <ul class="slim">
-                            {% for reg_id in summary['real_deleted_registration_ids'][:11] %}
-                                    <li>
-                                        {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                        {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
-                                    </li>
+                            {% for reg_id in summary['real_deleted_registration_ids'] %}
+                                <li>
+                                    {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
+                                    {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                </li>
                             {% endfor %}
-                            {% if summary['real_deleted_registration_ids']|length == 12 %}
-                                <li>
-                                    {{ personas[summary['real_deleted_registration_ids'][11]['persona_id']]['given_names'] }}
-                                    {{ personas[summary['real_deleted_registration_ids'][11]['persona_id']]['last_name'] }}
-                                </li>
-                            {% elif summary['real_deleted_registration_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['real_deleted_registration_ids']|length) - 11) -%}
-                                        and %(count)s more registrations
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
                         </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
-            {% if summary['deleted_registration_ids']|length > summary['real_deleted_registration_ids']|length %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Doubly deleted registrations"), aclass='panel panel-warning', icon='user') %}
-                        {% trans %}There were double deletions.{% endtrans %}
                     {% endcall %}
                 </div>
             {% endif %}
         </div>
     {% endif %}
-    {% if summary['changed_course_ids'] or summary['new_course_ids'] or summary['deleted_course_ids'] %}
+    {% if summary['changed_courses'] or summary['new_course_ids'] or summary['deleted_course_ids'] %}
         <h3>{% trans %}Courses{% endtrans %}</h3>
-        {% if summary['changed_course_ids'] %}
-            {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='user') %}
-                <div class="row">
-                    <div class="col-md-6">
+        <!-- ---------------------- Changed Courses ---------------------- -->
+        {% if summary['changed_courses'] %}
+            <div class="row">
+                <div class="col-md-8">
+                    {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book') %}
                         <ul class="slim">
-                            {% for course_id in summary['changed_course_ids'][:11] %}
+                            {% for course_id, course_diff in summary['changed_courses'].items() %}
                                 <li>
-                                    {{ courses[course_id]['nr'] }} {{ courses[course_id]['title'] }}
+                                    {{ courses[course_id]['nr'] }}.{# -#}
+                                    {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}{% endif %}
+                                    {{ courses[course_id]['shortname'] }}
+                                    {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
+                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
+                                    {{ diff_table(course_diff, course_titles, course_choices) }}
                                 </li>
                             {% endfor %}
-                            {% if summary['changed_course_ids']|length == 12 %}
-                                <li>
-                                    {{ courses[course_id]['nr'] }} {{ courses[course_id]['title'] }}
-                                </li>
-                            {% elif summary['changed_course_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['changed_course_ids']|length) - 11) -%}
-                                        and %(count)s more courses
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
                         </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h4>{% trans %}Affected attributes{% endtrans %}</h4>
+                    {% endcall %}
+                </div>
+                <div class="col-md-4">
+                    {% call util.bootstrap_panel(gettext("Changed course attributes"), aclass='panel panel-info', icon='book') %}
                         <ul class="slim">
                             {% for field in summary['changed_course_fields'] %}
-                                <li>{{ field }}{# TODO translation/human readable #}</li>
+                                <li>{{ course_titles.get(field, field) }}</li>
                             {% endfor %}
                         </ul>
-                    </div>
+                    {% endcall %}
                 </div>
-            {% endcall %}
+            </div>
         {% endif %}
+
         <div class="row">
+            <!-- ---------------------- New Courses---------------------- -->
             {% if summary['new_course_ids'] %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='user') %}
-                        <ul class="slim">
-                            {% for course_id in summary['new_course_ids'][:11] %}
-                                    <li>
-                                        {{ delta['courses'][course_id]['nr'] }} {{ delta['courses'][course_id]['title'] }}
-                                    </li>
-                            {% endfor %}
-                            {% if summary['new_course_ids']|length == 12 %}
-                                <li>
-                                    {{ delta['courses'][summary['new_course_ids'][11]]['nr'] }}
-                                    {{ delta['courses'][summary['new_course_ids'][11]]['title'] }}
-                                </li>
-                            {% elif summary['new_course_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['new_course_ids']|length) - 11) -%}
-                                        and %(count)s more courses
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
-                        </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
-            {% if suspicious_courses %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Doubly created courses"), aclass='panel panel-warning', icon='user') %}
-                        {% trans %}There were hints at double creations.{% endtrans %}
-                    {% endcall %}
-                </div>
-            {% endif %}
-            {% if summary['real_deleted_course_ids'] %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='user') %}
-                        <ul class="slim">
-                            {% for course_id in summary['real_deleted_course_ids'][:11] %}
-                                <li>
-                                    {{ courses[course_id]['nr'] }} {{ courses[course_id]['title'] }}
-                                </li>
-                            {% endfor %}
-                            {% if summary['real_deleted_course_ids']|length == 12 %}
-                                <li>
-                                    {{ courses[summary['real_deleted_course_ids'][11]]['nr'] }}
-                                    {{ courses[summary['real_deleted_course_ids'][11]]['title'] }}
-                                </li>
-                            {% elif summary['real_deleted_course_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['real_deleted_course_ids']|length) - 11) -%}
-                                        and %(count)s more courses
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
-                        </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
-            {% if summary['deleted_course_ids']|length > summary['real_deleted_course_ids']|length %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Doubly deleted courses"), aclass='panel panel-warning', icon='user') %}
-                        {% trans %}There were double deletions.{% endtrans %}
-                    {% endcall %}
-                </div>
-            {% endif %}
-        </div>
-    {% endif %}
-    {% if summary['changed_lodgement_ids'] or summary['new_lodgement_ids'] or summary['deleted_lodgement_ids'] %}
-        <h3>{% trans %}Lodgements{% endtrans %}</h3>
-        {% if summary['changed_lodgement_ids'] %}
-            {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='user') %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <ul class="slim">
-                            {% for lodgement_id in summary['changed_lodgement_ids'][:11] %}
-                                <li>
-                                    {{ lodgements[lodgement_id]['moniker'] }}
-                                </li>
-                            {% endfor %}
-                            {% if summary['changed_lodgement_ids']|length == 12 %}
-                                <li>
-                                    {{ lodgements[lodgement_id]['moniker'] }}
-                                </li>
-                            {% elif summary['changed_lodgement_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['changed_lodgement_ids']|length) - 11) -%}
-                                        and %(count)s more lodgements
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h4>{% trans %}Affected attributes{% endtrans %}</h4>
-                        <ul class="slim">
-                            {% for field in summary['changed_lodgement_fields'] %}
-                                <li>{{ field }}{# TODO translation/human readable #}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            {% endcall %}
-        {% endif %}
-        <div class="row">
-            {% if summary['new_lodgement_ids'] %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='user') %}
-                        <ul class="slim">
-                            {% for lodgement_id in summary['new_lodgement_ids'][:11] %}
-                                    <li>
-                                        {{ delta['lodgements'][lodgement_id]['moniker'] }}
-                                    </li>
-                            {% endfor %}
-                            {% if summary['new_lodgement_ids']|length == 12 %}
-                                <li>
-                                    {{ delta['lodgements'][summary['new_lodgement_ids'][11]]['moniker'] }}
-                                </li>
-                            {% elif summary['new_lodgement_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['new_lodgement_ids']|length) - 11) -%}
-                                        and %(count)s more lodgements
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
-                        </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
-            {% if suspicious_lodgements %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Doubly created lodgements"), aclass='panel panel-warning', icon='user') %}
-                        {% trans %}There were hints at double creations.{% endtrans %}
-                    {% endcall %}
-                </div>
-            {% endif %}
-            {% if summary['real_deleted_lodgement_ids'] %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel panel-danger', icon='user') %}
-                        <ul class="slim">
-                            {% for lodgement_id in summary['real_deleted_lodgement_ids'][:11] %}
-                                <li>
-                                    {{ lodgements[lodgement_id]['moniker'] }}
-                                </li>
-                            {% endfor %}
-                            {% if summary['real_deleted_lodgement_ids']|length == 12 %}
-                                <li>
-                                    {{ lodgements[summary['real_deleted_lodgement_ids'][11]]['moniker'] }}
-                                </li>
-                            {% elif summary['real_deleted_lodgement_ids']|length > 12 %}
-                                <li>
-                                    {% trans count=((summary['real_deleted_lodgement_ids']|length) - 11) -%}
-                                        and %(count)s more lodgements
-                                    {%- endtrans %}
-                                </li>
-                            {% endif %}
-                        </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
-            {% if summary['deleted_lodgement_ids']|length > summary['real_deleted_lodgement_ids']|length %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Doubly deleted lodgements"), aclass='panel panel-warning', icon='user') %}
-                        {% trans %}There were double deletions.{% endtrans %}
-                    {% endcall %}
-                </div>
-            {% endif %}
-        </div>
-    {% endif %}
-
-    {% if not summary['changed_registration_ids'] and not summary['new_registration_ids'] and not summary['deleted_registration_ids']
-            and not summary['changed_course_ids'] and not summary['new_course_ids'] and not summary['deleted_course_ids']
-            and not summary['changed_lodgement_ids'] and not summary['new_lodgement_ids'] and not summary['deleted_lodgement_ids'] %}
-        {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
-    {% else %}
-        <h2>{% trans %}Detailed View{% endtrans %}</h2>
-    {% endif %}
-
-    {% if summary['changed_registration_ids'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}
-        <h3>{% trans %}Registrations{% endtrans %}</h3>
-        {% if summary['changed_registration_ids'] %}
-            {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info', icon='user') %}
-                <div class="row">
-                    <div class="col-md-12">
-                        <ul class="slim">
-                            {% for reg_id, registration in delta['registrations']|dictsort %}
-                                {% if reg_id > 0 and registration %}
-                                    {{ format_diff(
-                                           "{} {}".format(
-                                               personas[registrations[reg_id]['persona_id']]['given_names'],
-                                               personas[registrations[reg_id]['persona_id']]['family_name']),
-                                           registrations[reg_id], registration) }}
-                                {% endif %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            {% endcall %}
-        {% endif %}
-        <div class="row">
-            {% if summary['new_registration_ids'] %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel panel-success', icon='user') %}
-                        <ul class="slim">
-                            {% for reg_id, registration in delta['registrations']|dictsort %}
-                                {% if reg_id < 0 %}
-                                    <li>
-                                        {{ personas[registration['persona_id']]['given_names'] }}
-                                        {{ personas[registration['persona_id']]['family_name'] }}
-                                        <ul>
-                                            {% for part_id, part in registration['parts']|dictsort %}
-                                                <li>
-                                                    {{ ambience['event']['parts'][part_id]['title'] }}
-                                                    <ul>
-                                                        {% for attribute in ('status', 'lodgement_id') %}
-                                                            <li>{{ attribute }}: {{ part[attribute] }}</li>
-                                                        {% endfor%}
-                                                    </ul>
-                                                </li>
-                                            {% endfor%}
-                                            {% for track_id, track in registration['tracks']|dictsort %}
-                                                <li>
-                                                    {{ ambience['event']['tracks'][track_id]['title'] }}
-                                                    <ul>
-                                                        {% for attribute in ('course_id', 'course_instructor') %}
-                                                            <li>{{ attribute }}: {{ track[attribute] }}</li>
-                                                        {% endfor%}
-                                                    </ul>
-                                                </li>
-                                            {% endfor%}
-                                        </ul>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-                        </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
-            {% if summary['deleted_registration_ids'] %}
-                <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel panel-danger', icon='user') %}
-                        <ul class="slim">
-                            {% for reg_id, registration in delta['registrations']|dictsort %}
-                                {% if registration is none %}
-                                    {% if reg_id in registrations %}
-                                        <li>{{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}</li>
-                                    {% else %}
-                                        <li>{% trans %}Double deletion of registration {{ reg_id }}.{% endtrans %}</li>
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                        </ul>
-                    {% endcall %}
-                </div>
-            {% endif %}
-        </div>
-    {% endif %}
-
-    {% if summary['changed_course_ids'] or summary['new_course_ids'] or summary['deleted_course_ids'] %}
-        <h3>{% trans %}Courses{% endtrans %}</h3>
-        {% if summary['changed_course_ids'] %}
-            {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book') %}
-                <div class="row">
-                    <div class="col-md-12">
-                        <ul class="slim">
-                            {% for course_id, course in delta['courses']|dictsort %}
-                                {% if course_id > 0 and course %}
-                                    {{ format_diff("{} {}".format(courses[course_id]['nr'],
-                                                                  courses[course_id]['title']),
-                                                   courses[course_id], course) }}
-                                {% endif %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            {% endcall %}
-        {% endif %}
-        <div class="row">
-            {% if summary['new_course_ids'] %}
-                <div class="col-md-6">
+                <div class="col-md-4">
                     {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='book') %}
                         <ul class="slim">
-                            {% for course_id, course in delta['courses']|dictsort %}
-                                {% if course_id < 0 %}
-                                    <li>
-                                        {{ course['nr'] }} {{ course['title'] }}
-                                        {% if course_id in suspicious_courses %}
-                                            <emph>
-                                                {% trans -%}
-                                                    (Warning: Similar course found; risk of double creation.)
-                                                {%- endtrans %}
-                                            </emph>
-                                        {% endif %}
-                                        <ul>
-                                            {% for attribute in ('instructors', 'segments', 'shortname') %}
-                                                <li>{{ attribute }}: {{ course[attribute] }}</li>
-                                            {% endfor%}
-                                        </ul>
-                                    </li>
-                                {% endif %}
+                            {% for course_id in summary['new_course_ids'] %}
+                                <li>
+                                    {{ delta['courses'][course_id]['nr'] }} {{ delta['courses'][course_id]['title'] }}
+                                </li>
                             {% endfor %}
                         </ul>
                     {% endcall %}
                 </div>
             {% endif %}
-            {% if summary['deleted_course_ids'] %}
+
+            <!-- ---------------------- Deleted Courses ---------------------- -->
+            {% if summary['real_deleted_course_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='book') %}
                         <ul class="slim">
-                            {% for course_id, course in delta['courses']|dictsort %}
-                                {% if course is none %}
-                                    {% if course_id in courses %}
-                                        <li>{{ courses[course_id]['nr'] }} {{ courses[course_id]['title'] }}</li>
-                                    {% else %}
-                                        <li>{% trans %}Double deletion of course {{ course_id }}.{% endtrans %}</li>
-                                    {% endif %}
-                                {% endif %}
+                            {% for course_id in summary['real_deleted_course_ids'] %}
+                                <li>
+                                    {{ courses[course_id]['nr'] }} {{ courses[course_id]['title'] }}
+                                </li>
                             {% endfor %}
                         </ul>
                     {% endcall %}
@@ -501,66 +258,62 @@
         </div>
     {% endif %}
 
-    {% if summary['changed_lodgement_ids'] or summary['new_lodgement_ids'] or summary['deleted_lodgement_ids'] %}
+    {% if summary['changed_lodgements'] or summary['new_lodgement_ids'] or summary['deleted_lodgement_ids'] %}
         <h3>{% trans %}Lodgements{% endtrans %}</h3>
-        {% if summary['changed_lodgement_ids'] %}
-            {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home') %}
-                <div class="row">
-                    <div class="col-md-12">
+        <!-- ---------------------- Changed Lodgements ---------------------- -->
+        {% if summary['changed_lodgements'] %}
+            <div class="row">
+                <div class="col-md-8">
+                    {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home') %}
                         <ul class="slim">
-                            {% for lodgement_id, lodgement in delta['lodgements']|dictsort %}
-                                {% if lodgement_id > 0 and lodgement %}
-                                    {{ format_diff(lodgements[lodgement_id]['moniker'], lodgements[lodgement_id],
-                                                   lodgement) }}
-                                {% endif %}
+                            {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
+                                <li>
+                                    {{ lodgements[lodgement_id]['moniker'] }}{# -#}
+                                    {% if 'moniker' in course_diff %}/{{ course_diff['moniker'][1] }}{% endif %}
+                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
+                                    {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
+                                </li>
                             {% endfor %}
                         </ul>
-                    </div>
+                    {% endcall %}
                 </div>
-            {% endcall %}
+                <div class="col-md-4">
+                    {% call util.bootstrap_panel(gettext("Changed lodgement attributes"), aclass='panel panel-info', icon='home') %}
+                        <ul class="slim">
+                            {% for field in summary['changed_lodgement_fields'] %}
+                                <li>{{ lodgement_titles.get(field, field) }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            </div>
         {% endif %}
+
         <div class="row">
+            <!-- ---------------------- New Lodgements ---------------------- -->
             {% if summary['new_lodgement_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='home') %}
                         <ul class="slim">
-                            {% for lodgement_id, lodgement in delta['lodgements']|dictsort %}
-                                {% if lodgement_id < 0 %}
-                                    <li>
-                                        {{ lodgement['moniker'] }}
-                                        {% if lodgement_id in suspicious_lodgements %}
-                                            <emph>
-                                                {% trans -%}
-                                                    (Warning: Similar lodgement found; risk of double creation.)
-                                                {%- endtrans %}
-                                            </emph>
-                                        {% endif %}
-                                        <ul>
-                                            {% for attribute in ('capacity', 'reserve') %}
-                                                <li>{{ attribute }}: {{ lodgement[attribute] }}</li>
-                                            {% endfor%}
-                                        </ul>
-                                    </li>
-                                {% endif %}
+                            {% for lodgement_id in summary['new_lodgement_ids'] %}
+                                <li>
+                                    {{ delta['lodgements'][lodgement_id]['moniker'] }}
+                                </li>
                             {% endfor %}
                         </ul>
                     {% endcall %}
                 </div>
             {% endif %}
-            {% if summary['deleted_lodgement_ids'] %}
+
+            <!-- ---------------------- Deleted Lodgements ---------------------- -->
+            {% if summary['real_deleted_lodgement_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel panel-danger', icon='home') %}
                         <ul class="slim">
-                            {% for lodgement_id, lodgement in delta['lodgements']|dictsort %}
-                                {% if lodgement is none %}
-                                    {% if lodgement_id in lodgements %}
-                                        <li>{{ lodgements[lodgement_id]['moniker'] }}</li>
-                                    {% else %}
-                                        <li>
-                                            {% trans %}Double deletion of lodgement {{ lodgement_id }}.{% endtrans %}
-                                        </li>
-                                    {% endif %}
-                                {% endif %}
+                            {% for lodgement_id in summary['real_deleted_lodgement_ids'] %}
+                                <li>
+                                    {{ lodgements[lodgement_id]['moniker'] }}
+                                </li>
                             {% endfor %}
                         </ul>
                     {% endcall %}
@@ -569,10 +322,37 @@
         </div>
     {% endif %}
 
-    <form action="{{ cdedblink('event/partial_import') }}" method="POST" id="importexecuteform" class="form-horizontal">
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
+        $('.diff-details').hide();
+        $('.show-details')
+            .show()
+            .on('click', function() {
+                var $details = $(this).siblings('.diff-details');
+                if ($details.is(':visible')) {
+                    $details.hide();
+                    $(this).children('.glyphicon')
+                        .removeClass('glyphicon-collapse-down')
+                        .addClass('glyphicon-expand');
+                } else {
+                    $details.show();
+                    $(this).children('.glyphicon')
+                        .removeClass('glyphicon-expand')
+                        .addClass('glyphicon-collapse-down');
+                }
+                return false;
+            });
+    </script>
+
+    {% if not summary['changed_registratios'] and not summary['new_registration_ids'] and not summary['real_deleted_registration_ids']
+            and not summary['changed_courses'] and not summary['new_course_ids'] and not summary['real_deleted_course_ids']
+            and not summary['changed_lodgements'] and not summary['new_lodgement_ids'] and not summary['real_deleted_lodgement_ids'] %}
+        {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
+    {% endif %}
+
+    <form action="{{ cdedblink('event/partial_import') }}" method="POST" id="importexecuteform">
         {{ util.anti_csrf_token('event/partial_import') }}
         {{ util.input_hidden(name='token') }}
         {{ util.input_hidden(name='partial_import_data') }}
-        {{ util.form_input_submit(value=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form')) }}
+        {{ util.form_input_submit(value=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form'), horizontal=False) }}
     </form>
 {% endblock %}
