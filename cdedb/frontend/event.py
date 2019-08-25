@@ -2524,7 +2524,11 @@ class EventFrontend(AbstractUserFrontend):
     def _make_partial_import_diff_aux(rs, event, courses, lodgements):
         """ Helper method, similar to make_registration_query_aux(), to
         generate human readable field names and values for the diff presentation
-        of partial_import()"""
+        of partial_import().
+
+        This method does only generate titles and choice-dicts for the dynamic,
+        event-specific fields (i.e. part- and track-specific and custom fields).
+        Titles for all static fields are added in the template file."""
         reg_titles = {}
         reg_choices = {}
         course_titles = {}

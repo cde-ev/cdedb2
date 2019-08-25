@@ -1773,7 +1773,42 @@ etc;anything else""", f['entries_2'].value)
         f['json_file'] = webtest.Upload("partial_event_import.json", data,
                                         "application/octet-stream")
         self.submit(f, check_notification=False)
+        # Check diff
         self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
+        # Registrations
+        self.assertPresence("Emilia", "box-changed-registrations")
+        self.assertPresence("2.H.: Unterkunft", "box-changed-registrations")
+        self.assertPresence("Warme Stube", "box-changed-registrations")
+        self.assertPresence("brings_balls", "box-changed-registration-fields")
+        self.assertPresence("Notizen", "box-changed-registration-fields")
+        self.assertPresence("2.H.: Unterkunft", "box-changed-registration-fields")
+        self.assertPresence("Morgenkreis: Kurswahlen", "box-changed-registration-fields")
+        self.assertNonPresence("Sitzung: Kursleiter", "box-changed-registration-fields")
+        self.assertNonPresence("Inga", "box-changed-registrations")
+        self.assertPresence("Bertålotta", "box-new-registrations")
+        self.assertPresence("Inga", "box-deleted-registrations")
+        # Courses
+        self.assertPresence("α.", "box-changed-courses")
+        self.assertPresence("GanzKurz", "box-changed-courses")
+        self.assertPresence("Kaffee: Status", "box-changed-courses")
+        self.assertPresence("nicht angeboten", "box-changed-courses")
+        self.assertPresence("fällt aus", "box-changed-courses")
+        self.assertPresence("room", "box-changed-courses")
+        self.assertPresence("room", "box-changed-course-fields")
+        self.assertPresence("Sitzung: Status", "box-changed-courses")
+        self.assertPresence("Max.-Größe", "box-changed-course-fields")
+        self.assertPresence("ζ.", "box-new-courses")
+        self.assertPresence("γ.", "box-deleted-courses")
+        # Lodgements
+        self.assertPresence("Kalte Kammer", "box-changed-lodgements")
+        self.assertPresence("contamination", "box-changed-lodgements")
+        self.assertPresence("Bezeichnung", "box-changed-lodgement-fields")
+        self.assertPresence("Wirklich eng.", "box-changed-lodgements")
+        self.assertPresence("Dafür mit Frischluft.", "box-changed-lodgements")
+        self.assertPresence("Geheimkabinett", "box-new-lodgements")
+        self.assertPresence("Kellerverlies", "box-deleted-lodgements")
+
+        # Do import
         f = self.response.forms["importexecuteform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
