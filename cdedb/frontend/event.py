@@ -971,7 +971,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @REQUESTdata(("segments", "[int]"))
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
-                     "max_size", "min_size", "notes", "fields")
+                     "max_size", "min_size", "notes")
     @event_guard(check_offline=True)
     def create_course(self, rs, event_id, segments, data):
         """Create a new course associated to an event organized via DB."""
@@ -3443,6 +3443,15 @@ class EventFrontend(AbstractUserFrontend):
     def create_lodgement(self, rs, event_id, data):
         """Add a new lodgement."""
         data['event_id'] = event_id
+        field_params = tuple(
+            ("fields.{}".format(field['field_name']),
+             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
+            for field in rs.ambience['event']['fields'].values()
+            if field['association'] == const.FieldAssociations.lodgement)
+        raw_fields = request_extractor(rs, field_params)
+        data['fields'] = {
+            key.split('.', 1)[1]: value for key, value in raw_fields.items()
+        }
         data = check(rs, "lodgement", data, creation=True)
         if rs.errors:
             return self.create_lodgement_form(rs, event_id)

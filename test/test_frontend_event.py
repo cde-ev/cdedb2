@@ -1267,10 +1267,12 @@ etc;anything else""", f['entries_2'].value)
         f['capacity'] = 0
         f['reserve'] = 20
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
+        f['fields.contamination'] = "low"
         self.submit(f)
         self.assertTitle("Unterkunft Zelte (Große Testakademie 2222)")
         self.traverse({'href': '/event/event/1/lodgement/5/change'})
         self.assertTitle("Unterkunft Zelte bearbeiten (Große Testakademie 2222)")
+        self.assertPresence("some radiation")
         f = self.response.forms['changelodgementform']
         self.assertEqual('20', f['reserve'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?", f['notes'].value)
