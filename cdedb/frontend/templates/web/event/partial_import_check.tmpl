@@ -78,12 +78,12 @@ diff of the item and shows a table with all changed attributes, old and new valu
     "min_size": gettext("Min. Size"),
     "notes": gettext("Notes"),
     }) %}
-{% set lodgement_titles = {
+{% do lodgement_titles.update({
     "moniker": gettext("Moniker"),
     "capacity": gettext("Regular Capacity"),
     "reserve": gettext("Camping Mat Capacity"),
     "notes": gettext("Notes"),
-    } %}
+    }) %}
 
 {% block content %}
     <p class="text-warning">

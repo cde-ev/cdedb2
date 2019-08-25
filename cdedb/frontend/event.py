@@ -22,6 +22,7 @@ import tempfile
 
 import magic
 import psycopg2.extensions
+import jinja2
 import werkzeug
 
 from cdedb.frontend.common import (
@@ -2497,7 +2498,7 @@ class EventFrontend(AbstractUserFrontend):
         summary['changed_lodgement_fields'] = tuple(sorted(
             changed_lodgement_fields))
 
-        reg_titles, reg_choices, course_titles, course_choices = \
+        reg_titles, reg_choices, course_titles, course_choices, lodgement_titles = \
             self._make_partial_import_diff_aux(
                 rs, rs.ambience['event'], courses, lodgements)
 
@@ -2515,6 +2516,7 @@ class EventFrontend(AbstractUserFrontend):
             'reg_choices': reg_choices,
             'course_titles': course_titles,
             'course_choices': course_choices,
+            'lodgement_titles': lodgement_titles,
         }
         return self.render(rs, "partial_import_check", template_data)
 
@@ -2527,6 +2529,7 @@ class EventFrontend(AbstractUserFrontend):
         reg_choices = {}
         course_titles = {}
         course_choices = {}
+        lodgement_titles = {}
 
         # Prepare choices lists
         # TODO distinguish old and new course/lodgement titles
@@ -2559,6 +2562,16 @@ class EventFrontend(AbstractUserFrontend):
             course_titles["segments.{}".format(track_id)] = prefix + rs.gettext("Status")
             course_choices["segments.{}".format(track_id)] = segment_stati_entries
 
+        for field in event['fields'].values():
+            # TODO add choices?
+            title = jinja2.Markup("<i>{}</i>").format(field['field_name'])
+            if field['association'] == const.FieldAssociations.registration:
+                reg_titles["fields.{}".format(field['field_name'])] = title
+            elif field['association'] == const.FieldAssociations.course:
+                course_titles["fields.{}".format(field['field_name'])] = title
+            elif field['association'] == const.FieldAssociations.lodgement:
+                lodgement_titles["fields.{}".format(field['field_name'])] = title
+
         # Titles and choices for part-specific fields
         for part_id, part in event['parts'].items():
             if len(event['parts']) > 1:
@@ -2571,7 +2584,7 @@ class EventFrontend(AbstractUserFrontend):
             reg_choices["parts.{}.lodgement_id".format(part_id)] = lodgement_entries
             reg_titles["parts.{}.is_reserve".format(part_id)] = prefix + rs.gettext("Camping Mat")
 
-        return reg_titles, reg_choices, course_titles, course_choices
+        return reg_titles, reg_choices, course_titles, course_choices, lodgement_titles
 
     @access("event")
     def register_form(self, rs, event_id):
