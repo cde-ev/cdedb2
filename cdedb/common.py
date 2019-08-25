@@ -1479,7 +1479,7 @@ EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
-                       "sortkey")
+                       "min_choices", "sortkey")
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",

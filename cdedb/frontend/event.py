@@ -469,7 +469,8 @@ class EventFrontend(AbstractUserFrontend):
             for key, value in part.items() if key not in ('id', 'tracks')}
         for part_id, part in rs.ambience['event']['parts'].items():
             for track_id, track in part['tracks'].items():
-                for k in ('title', 'shortname', 'num_choices', 'sortkey'):
+                for k in ('title', 'shortname', 'num_choices', 'min_choices',
+                          'sortkey'):
                     current["track_{}_{}_{}".format(k, part_id, track_id)] = \
                         track[k]
         merge_dicts(rs.values, current)
@@ -532,7 +533,8 @@ class EventFrontend(AbstractUserFrontend):
             return (
                 ("track_{}_{}_{}".format(k, part_id, track_id), t)
                 for k, t in (('title', 'str'), ('shortname', 'str'),
-                             ('num_choices', 'int'), ('sortkey', 'int')))
+                             ('num_choices', 'int'), ('min_choices', 'int'),
+                             ('sortkey', 'int')))
 
         def track_excavator(req_data, part_id, track_id):
             """
@@ -541,7 +543,8 @@ class EventFrontend(AbstractUserFrontend):
             """
             return {
                 k: req_data['track_{}_{}_{}'.format(k, part_id, track_id)]
-                for k in ('title', 'shortname', 'num_choices', 'sortkey')}
+                for k in ('title', 'shortname', 'num_choices', 'min_choices',
+                          'sortkey')}
 
         # Handle newly created parts
         marker = 1
@@ -590,6 +593,7 @@ class EventFrontend(AbstractUserFrontend):
                 track_id: (track_excavator(data, part_id, track_id)
                            if track_id not in track_deletes else None)
                 for track_id in part['tracks']}
+            # TODO validate min_choices <= num_choices
             marker = 1
             while marker < 2 ** 5:
                 will_create = unwrap(request_extractor(
@@ -603,6 +607,7 @@ class EventFrontend(AbstractUserFrontend):
                     newtrack = track_excavator(request_extractor(rs, params),
                                                part_id, -marker)
                     ret[part_id]['tracks'][-marker] = newtrack
+                    # TODO validate min_choices <= num_choices
                 else:
                     break
                 marker += 1
@@ -2656,7 +2661,7 @@ class EventFrontend(AbstractUserFrontend):
             standard['parts'] = tuple(
                 part_id for part_id, entry in parts.items()
                 if const.RegistrationPartStati(entry['status']).is_involved())
-        choice_params = (("course_choice{}_{}".format(track_id, i), "id")
+        choice_params = (("course_choice{}_{}".format(track_id, i), "id_or_None")
                          for part_id in standard['parts']
                          for track_id in event['parts'][part_id]['tracks']
                          for i in range(event['tracks'][track_id]
@@ -2671,16 +2676,25 @@ class EventFrontend(AbstractUserFrontend):
             rs.errors.append(("parts",
                               ValueError(n_("Must select at least one part."))))
         present_tracks = set()
+        choice_getter = lambda track_id, i: choices["course_choice{}_{}".format(track_id, i)]
         for part_id in standard['parts']:
             for track_id, track in event['parts'][part_id]['tracks'].items():
                 present_tracks.add(track_id)
-                cids = {choices["course_choice{}_{}".format(track_id, i)]
-                        for i in range(track['num_choices'])}
-                if len(cids) != track['num_choices']:
-                    rs.errors.extend(
-                        ("course_choice{}_{}".format(track_id, i),
-                         ValueError(n_("Must choose different courses.")))
-                        for i in range(track['num_choices']))
+                # Check for duplicate course choices
+                rs.errors.extend(
+                    ("course_choice{}_{}".format(track_id, j),
+                     ValueError(n_("You cannot have the same course as %(i)s. and %(j)s. choice"), {'i': i+1, 'j': j+1}))
+                    for j in range(track['num_choices'])
+                    for i in range(j)
+                    if (choice_getter(track_id, j) is not None
+                        and choice_getter(track_id, i) == choice_getter(track_id, j)))
+                # Check for unfilled mandatory course choices
+                rs.errors.extend(
+                    ("course_choice{}_{}".format(track_id, i),
+                     ValueError(n_("You must chose at least %(min_choices)s courses."),
+                                {'min_choices': track['min_choices']}))
+                    for i in range(track['min_choices'])
+                    if choice_getter(track_id, i) is None)
         reg_parts = {part_id: {} for part_id in event['parts']}
         if parts is None:
             for part_id in reg_parts:
@@ -2698,8 +2712,9 @@ class EventFrontend(AbstractUserFrontend):
         }
         for track_id in present_tracks:
             reg_tracks[track_id]['choices'] = tuple(
-                choices["course_choice{}_{}".format(track_id, i)]
-                for i in range(tracks[track_id]['num_choices']))
+                choice_getter(track_id, i)
+                for i in range(tracks[track_id]['num_choices'])
+                if choice_getter(track_id, i) is not None)
         registration = {
             'mixed_lodging': standard['mixed_lodging'],
             'list_consent': standard['list_consent'],

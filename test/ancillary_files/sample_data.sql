@@ -103,10 +103,10 @@ INSERT INTO event.event_parts (id, event_id, title, shortname, part_begin, part_
     (2, 1, 'Erste Hälfte', '1.H.', date '2222-11-01', date '2222-11-11', 123.00),
     (3, 1, 'Zweite Hälfte', '2.H.', date '2222-11-11', date '2222-11-30', 450.99),
     (4, 2, 'Party', 'Party', date '2050-01-15', date '2050-01-15', 15.00);
-INSERT INTO event.course_tracks (id, part_id, title, shortname, num_choices, sortkey) VALUES
-    (1, 2, 'Morgenkreis (Erste Hälfte)', 'Morgenkreis', 4, 1),
-    (2, 2, 'Kaffeekränzchen (Erste Hälfte)', 'Kaffee', 1, 2),
-    (3, 3, 'Arbeitssitzung (Zweite Hälfte)', 'Sitzung', 2, 3);
+INSERT INTO event.course_tracks (id, part_id, title, shortname, num_choices, min_choices, sortkey) VALUES
+    (1, 2, 'Morgenkreis (Erste Hälfte)', 'Morgenkreis', 4, 4, 1),
+    (2, 2, 'Kaffeekränzchen (Erste Hälfte)', 'Kaffee', 1, 1, 2),
+    (3, 3, 'Arbeitssitzung (Zweite Hälfte)', 'Sitzung', 2, 2, 3);
 INSERT INTO event.field_definitions (id, event_id, field_name, kind, association, entries) VALUES
     (1, 1, 'brings_balls', 2, 1, NULL),
     (2, 1, 'transportation', 1, 1, '{{"pedes", "by feet"}, {"car", "own car available"}, {"etc", "anything else"}}'),

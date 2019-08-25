@@ -592,6 +592,7 @@ CREATE TABLE event.course_tracks (
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         num_choices             integer NOT NULL,
+        min_choices             integer NOT NULL, -- required number of distinct course choices
         sortkey                 integer NOT NULL
 );
 CREATE INDEX idx_course_tracks_part_id ON event.course_tracks(part_id);
