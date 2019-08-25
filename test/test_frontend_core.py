@@ -926,6 +926,18 @@ class TestCoreFrontend(FrontendTest):
         # Submit once
         self.submit(f)
         # Submit twice
+        self.submit(f)
+        self.assertPresence("Bestätigungsmail erneut versendet.",
+                            div="notifications")
+        self.get("/core/genesis/request")
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Berta"
+        f['family_name'] = "Beispiel"
+        f['username'] = "berta@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "ml"
+        # Submit once
         self.submit(f, check_notification=False)
         self.assertPresence("E-Mail-Adresse bereits vorhanden.",
                             div="notifications")

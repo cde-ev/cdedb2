@@ -8765,6 +8765,9 @@ msgstr "Findet statt in"
 msgid "No custom fields for courses available."
 msgstr "Keine Datenfelder für Kurse vorhanden."
 
+msgid "Confirmation email has been resent."
+msgstr "Bestätigungsmail erneut versendet."
+
 #: cdedb/frontend/templates/web/event/change_course.tmpl:81
 #: cdedb/frontend/templates/web/event/create_course.tmpl:63
 #: cdedb/frontend/templates/web/event/change_course.tmpl:88

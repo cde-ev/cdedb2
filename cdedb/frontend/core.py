@@ -1477,10 +1477,17 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
-            rs.notify("error",
-                      n_("Email address already in DB. Reset password."))
-            return self.redirect(rs, "core/index")
-        case_id = self.coreproxy.genesis_request(rs, data)
+            case_id = self.coreproxy.get_genesis_case_by_email(
+                rs, data['username'])
+            if case_id:
+                rs.notify("info",
+                          n_("Confirmation email has been resent."))
+            else:
+                rs.notify("error",
+                          n_("Email address already in DB. Reset password."))
+                return self.redirect(rs, "core/index")
+        else:
+            case_id = self.coreproxy.genesis_request(rs, data)
         if not case_id:
             rs.notify("error", n_("Failed."))
             return self.genesis_request_form(rs)
