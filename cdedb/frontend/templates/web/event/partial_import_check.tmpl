@@ -203,8 +203,8 @@ diff of the item and shows a table with all changed attributes, old and new valu
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
                                 <li>
                                     {{ courses[course_id]['nr'] }}.{# -#}
-                                    {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}{% endif %}
-                                    {{ courses[course_id]['shortname'] }}
+                                    {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
+                                    {{ courses[course_id]['shortname'] }}{# -#}
                                     {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
                                     <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
                                     {{ diff_table(course_diff, course_titles, course_choices) }}
@@ -228,12 +228,12 @@ diff of the item and shows a table with all changed attributes, old and new valu
         <div class="row">
             <!-- ---------------------- New Courses---------------------- -->
             {% if summary['new_course_ids'] %}
-                <div class="col-md-4">
+                <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='book') %}
                         <ul class="slim">
                             {% for course_id in summary['new_course_ids'] %}
                                 <li>
-                                    {{ delta['courses'][course_id]['nr'] }} {{ delta['courses'][course_id]['title'] }}
+                                    {{ delta['courses'][course_id]['nr'] }}. {{ delta['courses'][course_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -248,7 +248,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim">
                             {% for course_id in summary['real_deleted_course_ids'] %}
                                 <li>
-                                    {{ courses[course_id]['nr'] }} {{ courses[course_id]['title'] }}
+                                    {{ courses[course_id]['nr'] }}. {{ courses[course_id]['title'] }}
                                 </li>
                             {% endfor %}
                         </ul>

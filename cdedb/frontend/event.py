@@ -2555,8 +2555,8 @@ class EventFrontend(AbstractUserFrontend):
                 prefix = ""
             reg_titles["tracks.{}.course_id".format(track_id)] = prefix + rs.gettext("Course")
             reg_choices["tracks.{}.course_id".format(track_id)] = course_entries
-            reg_titles["tracks.{}.instructor".format(track_id)] = prefix + rs.gettext("Instructor")
-            reg_choices["tracks.{}.instructor".format(track_id)] = course_entries
+            reg_titles["tracks.{}.course_instructor".format(track_id)] = prefix + rs.gettext("Instructor")
+            reg_choices["tracks.{}.course_instructor".format(track_id)] = course_entries
             reg_titles["tracks.{}.choices".format(track_id)] = prefix + rs.gettext("Course Choices")
             reg_choices["tracks.{}.choices".format(track_id)] = course_entries
             course_titles["segments.{}".format(track_id)] = prefix + rs.gettext("Status")
