@@ -11273,13 +11273,13 @@ msgid "Must specify gender for event realm."
 msgstr "Angabe des Geschlechts notwendig für den Veranstaltungsbereich."
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:7
-msgid "View Account Request"
-msgstr "Accountanfrage anzeigen"
+msgid "Account Request of %(given_names)s %(family_name)s"
+msgstr "Accountanfrage von %(given_names)s %(family_name)s"
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:13
 #, python-format
-msgid "View Account Request from %(given_names)s %(family_name)s"
-msgstr "Accounanfrage von %(given_names)s %(family_name)s anzeigen"
+msgid "Details of %(given_names)s %(family_name)s"
+msgstr "Details von %(given_names)s %(family_name)s"
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:19
 msgid "Case Meta-Information"
