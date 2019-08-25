@@ -1799,7 +1799,11 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms["importexecuteform"]
         self.submit(f, check_notification=False)
         self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
-        self.assertPresence("Doppelte Löschung")
+        self.assertPresence("doppelte Löschungen von Anmeldungen")
+        self.assertPresence("doppelte Löschungen von Kursen")
+        self.assertPresence("doppelte Löschungen von Unterkünften")
+        self.assertPresence("doppelt erstellte Kurse")
+        self.assertPresence("doppelt erstellte Unterkünfte")
 
     @as_users("anton")
     def test_delete_event(self, user):
