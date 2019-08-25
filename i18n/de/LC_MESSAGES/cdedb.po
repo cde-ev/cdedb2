@@ -8925,13 +8925,13 @@ msgid ""
 "The custom field in which the participants’ willingness to sleep on a "
 "camping mat will be saved. Fieldtype: Yes/No"
 msgstr ""
-"Das Feld, in dem die Bereitschaft, auf einer Isomatte zu schlafen, abgefragt "
-"wird. Feldtyp: Ja/Nein"
+"Das Datenfeld, in dem die Bereitschaft, auf einer Isomatte zu schlafen, "
+"abgefragt wird. Feldtyp: Ja/Nein"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:85
 #: cdedb/frontend/templates/web/event/change_event.tmpl:88
-msgid "Field for Course"
-msgstr "Feld für Kurs"
+msgid "Field for Course Room"
+msgstr "Feld für Kursraum"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:86
 #: cdedb/frontend/templates/web/event/change_event.tmpl:89
@@ -8939,8 +8939,8 @@ msgid ""
 "The custom field in which the course’s assigned course room will be saved. "
 "Fieldtype: Text"
 msgstr ""
-"Das Datenfeld in dem der dem Kurs zugewiesene Raum gespeichert wird (ein "
-"Textfeld)."
+"Das Datenfeld, in dem der dem Kurs zugewiesene Raum gespeichert wird. "
+"Feldtyp: Text"
 
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:7
 #, python-format

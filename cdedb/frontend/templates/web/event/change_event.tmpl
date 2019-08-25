@@ -85,7 +85,7 @@
                 if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].course %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
-        {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course"), entries=myentries,
+        {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=myentries,
                                   nulloption="", info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. Fieldtype: Text")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
