@@ -41,7 +41,10 @@ class TestAssemblyBackend(BackendTest):
     @as_users("anton")
     def test_entity_assembly(self, user):
         expectation = {1: {
-            'id': 1, 'is_active': True, 'title': 'Internationaler Kongress'}}
+            'id': 1,
+            'is_active': True,
+            'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
+            'title': 'Internationaler Kongress'}}
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
         expectation = {
             'description': 'Proletarier aller Länder vereinigt Euch!',
@@ -435,8 +438,11 @@ class TestAssemblyBackend(BackendTest):
     def test_prepsql(self, user):
         expectation = {
             1: {'id': 1, 'is_active': True,
+                'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
                 'title': 'Internationaler Kongress'},
-            2: {'id': 2, 'is_active': True, 'title': 'Umfrage'}
+            2: {'id': 2, 'is_active': True,
+                'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
+                'title': 'Umfrage'}
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 
