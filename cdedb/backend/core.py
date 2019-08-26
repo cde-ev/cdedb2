@@ -1469,19 +1469,6 @@ class CoreBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_EVENT_FIELDS)
-        if (ids != {rs.user.persona_id}
-                and "event_admin" not in rs.user.roles
-                and (any(e['is_cde_realm'] for e in ret.values()))):
-            # The event user view on a cde user contains lots of personal
-            # data. So we require the requesting user to be orga if (s)he
-            # wants to view it.
-            #
-            # This is a bit of a transgression since we access the event
-            # schema from the core backend, but we go for security instead of
-            # correctness here.
-            query = "SELECT event_id FROM event.orgas WHERE persona_id = %s"
-            if not self.query_all(rs, query, (rs.user.persona_id,)):
-                raise PrivilegeError(n_("Access to CdE data sets inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
         return ret

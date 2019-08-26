@@ -1,0 +1,92 @@
+{% set sidenav_active='event_participant_list' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['event']['title'] -%}
+        Participant List {{ title }}
+    {%- endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
+                        readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
+{{ util.breadcrumb_link(cdedblink("event/participant_list"), gettext("Participant List"), active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans -%}Participant List{%- endtrans %} [{{ ordered|length }}]
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    {% if not ambience['event']['is_participant_list_visible'] %}
+        <div class="alert alert-info" role="alert">
+            {{ util.make_icon('info-sign') }}
+            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            <span class="notificationMessage">
+                {% trans -%}The Participant List is currently only visible to Orgas and Admins.{%- endtrans %}
+            </span>
+        </div>
+    {% endif %}
+    {% if registrations and list_consent %}
+        <table class="table table-condensed">
+            <thead>
+                <tr>
+                    <th>{% trans -%}Given Name{%- endtrans %}</th>
+                    <th>{% trans -%}Family Name{%- endtrans %}</th>
+                    <th>{% trans -%}Email Address{%- endtrans %}</th>
+                    <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
+                    {% if ambience['event']['parts']|length > 1 %}
+                        <th>{% trans -%}Event Parts{%- endtrans %}</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
+                {% with registration = registrations[registration_id] %}
+                <tr>
+                    <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
+                    <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
+                    <td>{{ personas[registration['persona_id']]['username'] }}</td>
+                    <td>
+                        {{ personas[registration['persona_id']]['postal_code'] }}
+                        {{ personas[registration['persona_id']]['location'] }}
+                        {% if personas[registration['persona_id']]['country'] != "Deutschland" -%}
+                            {{- personas[registration['persona_id']]['country'] -}}
+                        {% endif %}
+                    </td>
+                    {% if ambience['event']['parts']|length > 1 %}
+                    <td>
+                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin')
+                                if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant -%}
+                            {% if not loop.first %}
+                                {%- if loop.last %}
+                                    {% trans -%}and{%- endtrans %}
+                                {% else -%}
+                                    ,
+                                {% endif %}
+                            {%- endif %}
+                            {{ part['title'] }}
+                        {%- endfor %}
+                    </td>
+                {% endif %}
+                </tr>
+                {% endwith %}
+            {% endfor %}
+            </tbody>
+        </table>
+    {% elif not list_consent %}
+        <div class="alert alert-info" role="alert">
+            {{ util.make_icon('info-sign') }}
+            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            <span class="notificationMessage">
+                {% trans -%}
+                    You can not access the Participant List as you have not agreed to have your own data
+                    sent to other participants before the event.
+                {%- endtrans %}
+            </span>
+        </div>
+    {% else %}
+        {% trans -%}There are no participants yet.{%- endtrans %}
+    {% endif %}
+{% endblock %}

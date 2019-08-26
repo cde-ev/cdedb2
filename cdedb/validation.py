@@ -1831,6 +1831,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'registration_soft_limit': _datetime_or_None,
     'registration_hard_limit': _datetime_or_None,
     'notes': _str_or_None,
+    'is_participant_list_visible': _bool,
     'is_archived': _bool,
     'iban': _iban_or_None,
     'orgas': _iterable,

@@ -1611,10 +1611,6 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         persona_id = affirm("id_or_None", persona_id)
-        if (persona_id != rs.user.persona_id
-                and not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
-            raise PrivilegeError(n_("Not privileged."))
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
         params = (event_id,)
@@ -1731,8 +1727,7 @@ class EventBackend(AbstractBackend):
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
 
-        All have to be from the same event. You must be orga to access
-        registrations which are not your own. This includes the following
+        All have to be from the same event. This includes the following
         additional data:
 
         * parts: per part data (like lodgement),
@@ -1754,10 +1749,6 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(events)
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)
-                    and not {rs.user.persona_id} >= personas):
-                raise PrivilegeError(n_("Not privileged."))
 
             ret = {e['id']: e for e in self.sql_select(
                 rs, "event.registrations", REGISTRATION_FIELDS, ids)}
