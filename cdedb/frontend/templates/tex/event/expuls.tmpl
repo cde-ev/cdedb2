@@ -1,7 +1,7 @@
 <<# This is just a part of a tex document, so we do not inherit the base template. #>>
 
 
-<<%- for track_id in ambience['event']['tracks']|sort %>>
+<<%- for track_id in tracks %>>
 \zwischentitel{<<< ambience['event']['tracks'][track_id]['title']|te >>>}
 <<% for course_id, course in courses|xdictsort('nr', pad=True) %>>
 <<%- if track_id in course['active_segments'] %>>

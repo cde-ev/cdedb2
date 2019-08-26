@@ -2172,7 +2172,10 @@ class EventFrontend(AbstractUserFrontend):
         """Create TeX-snippet for announcement in the exPuls."""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        tex = self.fill_template(rs, "tex", "expuls", {'courses': courses})
+        tracks = rs.ambience['event']['tracks']
+        tracks_sorted = sorted(tracks, key=lambda id: tracks[id]['sortkey'])
+        tex = self.fill_template(rs, "tex", "expuls", {'courses': courses,
+                                                       'tracks': tracks_sorted})
         file = self.send_file(
             rs, data=tex, inline=False,
             filename="{}_expuls.tex".format(rs.ambience['event']['shortname']))
