@@ -92,8 +92,8 @@ def get_event_name_pattern(event):
         ("Pfingst(en)?", r"Pfingst(en)?"),
         ("Multi(nationale)?", r"Multi(nationale)?"),
         ("Nachhaltigkeits", r"(Nachhaltigkeits|N)"),
-        ("(NRW|JuniorAka(demie)?|Velbert|Nachtreffen)",
-         r"(NRW|JuniorAka(demie)?|Velbert|Nachtreffen)"),
+        ("(JuniorAka(demie)?|Nachtreffen|Velbert|NRW)",
+         r"(JuniorAka(demie)?|Nachtreffen|Velbert|NRW)"),
         ("Studi(en)?info(rmations)?", r"Studi(en)?info(rmations)?"),
         ("Wochenende", r"(Wochenende)?"),
         ("Ski(freizeit)?", r"Ski(freizeit|fahrt)?"),
@@ -106,8 +106,11 @@ def get_event_name_pattern(event):
         ("Aka(demie)?", r"Aka(demie)?"),
     ]
     result_parts = []
-    for key, replacement in replacements:
-        if re.search(key, event["title"], flags=re.IGNORECASE):
+    search_title = event["title"]
+    for pattern, replacement in replacements:
+        result = re.search(pattern, search_title, flags=re.IGNORECASE)
+        if result:
+            search_title = re.sub(pattern, "", search_title, flags=re.I)
             result_parts.append(replacement)
 
     if result_parts:

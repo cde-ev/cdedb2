@@ -885,6 +885,9 @@ class TestCdEFrontend(FrontendTest):
         naka = {"title": "NachhaltigkeitsAkademie 2019",
                 "begin": datetime(2019, 3, 23),
                 "end": datetime(2019, 3, 30)}
+        velbert = {"title": "JuniorAkademie NRW - Nachtreffen Velbert 2019",
+                   "begin": datetime(2019, 11, 15),
+                   "end": datetime(2019, 11, 17)}
         
         pattern = re.compile(get_event_name_pattern(pseudo_winter),
                              flags=re.IGNORECASE)
@@ -907,6 +910,25 @@ class TestCdEFrontend(FrontendTest):
         self.assertTrue(pattern.search("N Akademie 19"))
         self.assertTrue(pattern.search("NachhaltigkeitsAka 2019"))
         self.assertTrue(pattern.search("nachhaltigkeitsakademie"))
+
+        p = re.compile(get_event_name_pattern(velbert), flags=re.I)
+
+        self.assertTrue(p.search("JuniorAkademie NRW - Nachtreffen Velbert 2019"))
+        self.assertTrue(p.search("JuniorAkademie NRW - Nachtreffen Velbert 19"))
+        self.assertTrue(p.search("JuniorAkademie NRW - Nachtreffen Velbert"))
+        self.assertTrue(p.search("JuniorAkademie NRW - Nachtreffen Velbert 2019"))
+        self.assertTrue(p.search("JuniorAkademie NRW Nachtreffen Velbert 2019"))
+        self.assertTrue(p.search("JuniorAkademie NRW-Nachtreffen Velbert 2019"))
+        self.assertTrue(p.search("NRW - Nachtreffen Velbert 2019"))
+        self.assertTrue(p.search("JuniorAkademie - Nachtreffen Velbert 2019"))
+        self.assertTrue(p.search("JuniorAkademie NRW - Velbert 2019"))
+        self.assertTrue(p.search("JuniorAkademie NRW - Nachtreffen  2019"))
+        self.assertTrue(p.search("JuniorAkademie 2019"))
+        self.assertTrue(p.search("NRW 2019"))
+        self.assertTrue(p.search("Nachtreffen 2019"))
+        self.assertTrue(p.search("Velbert 2019"))
+        self.assertTrue(p.search("JUNIORAKADDEMIENRW - NACHTREFFEN VELBERT2019"))
+        self.assertTrue(p.search("JUNIOR A.AKADEMIE NRW NACHTREFF VELBERT 2019"))
 
     @as_users("anton")
     def test_parse_statement(self, user):
