@@ -19,7 +19,7 @@ from cdedb.common import (
     COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
     CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
     REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms, json_serialize,
-    PartialImportError)
+    PartialImportError, CDEDB_EXPORT_EVENT_VERSION)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -127,11 +127,6 @@ _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations WHERE event_id={event_id}) AS reg_fields",
     "ON reg.id = reg_fields.reg_id",
 )
-
-#: Version tag, so we know that we don't run out of sync with exported event
-#: data
-_CDEDB_EXPORT_EVENT_VERSION = 2
-
 
 class EventBackend(AbstractBackend):
     """Take note of the fact that some personas are orgas and thus have
@@ -2458,7 +2453,7 @@ class EventBackend(AbstractBackend):
 
         with Atomizer(rs):
             ret = {
-                'CDEDB_EXPORT_EVENT_VERSION': _CDEDB_EXPORT_EVENT_VERSION,
+                'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
                 'kind': "full",  # could also be "partial"
                 'id': event_id,
                 'event.events': list_to_dict(self.sql_select(
@@ -2606,7 +2601,7 @@ class EventBackend(AbstractBackend):
                                        "happen via shell scripts.")))
         if not self.is_offline_locked(rs, event_id=data['id']):
             raise RuntimeError(n_("Not locked."))
-        if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
+        if data["CDEDB_EXPORT_EVENT_VERSION"] != CDEDB_EXPORT_EVENT_VERSION:
             raise ValueError(n_("Version mismatch – aborting."))
 
         with Atomizer(rs):
@@ -2679,7 +2674,7 @@ class EventBackend(AbstractBackend):
             event_fields = self._get_event_fields(rs, event_id)
             # basics
             ret = {
-                'CDEDB_EXPORT_EVENT_VERSION': _CDEDB_EXPORT_EVENT_VERSION,
+                'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
                 'kind': "partial",  # could also be "full"
                 'id': event_id,
                 'timestamp': now(),
@@ -2782,7 +2777,7 @@ class EventBackend(AbstractBackend):
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['id'])
-        if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
+        if data["CDEDB_EXPORT_EVENT_VERSION"] != CDEDB_EXPORT_EVENT_VERSION:
             raise ValueError(n_("Version mismatch – aborting."))
 
         def dict_diff(old, new):

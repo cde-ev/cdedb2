@@ -6,7 +6,7 @@ import webtest
 from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
-from cdedb.common import now
+from cdedb.common import now, CDEDB_EXPORT_EVENT_VERSION
 import cdedb.database.constants as const
 
 
@@ -1918,7 +1918,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/download/partial'})
         result = json.loads(self.response.text)
         expectation = {
-            'CDEDB_EXPORT_EVENT_VERSION': 1,
+            'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
             'courses': {'1': {'description': 'Wir werden die Bäume drücken.',
                               'fields': {'room': 'Wald'},
                               'instructors': 'ToFi & Co',

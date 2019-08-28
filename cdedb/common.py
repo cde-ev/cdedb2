@@ -1406,6 +1406,11 @@ def roles_to_db_role(roles):
             return DB_ROLE_MAPPING[role]
 
 
+#: Version tag, so we know that we don't run out of sync with exported event
+#: data. This has to be incremented whenever the event schema changes.
+CDEDB_EXPORT_EVENT_VERSION = 2
+
+
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
     "is_active", "is_admin", "is_core_admin", "is_cde_admin",

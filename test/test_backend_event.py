@@ -12,7 +12,8 @@ from test.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.backend.common import cast_fields
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
-from cdedb.common import PERSONA_EVENT_FIELDS, PartialImportError
+from cdedb.common import (
+    PERSONA_EVENT_FIELDS, PartialImportError, CDEDB_EXPORT_EVENT_VERSION)
 from cdedb.enums import ENUMS_DICT
 import cdedb.database.constants as const
 
@@ -1221,7 +1222,7 @@ class TestEventBackend(BackendTest):
     @as_users("anton", "garcia")
     def test_export_event(self, user):
         expectation =  {
-            'CDEDB_EXPORT_EVENT_VERSION': 2,
+            'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
             'core.personas': {1: {'address': 'Auf der Düne 42',
                                   'address_supplement': None,
                                   'birthday': datetime.date(1991, 3, 30),
@@ -2227,7 +2228,7 @@ class TestEventBackend(BackendTest):
     @as_users("anton")
     def test_partial_export_event(self, user):
         expectation = {
-            'CDEDB_EXPORT_EVENT_VERSION': 2,
+            'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
             'courses': {1: {'description': 'Wir werden die Bäume drücken.',
                             'fields': {'room': 'Wald'},
                             'instructors': 'ToFi & Co',
