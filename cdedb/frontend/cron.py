@@ -95,7 +95,8 @@ class CronFrontend(BaseApp):
                 'tstamp': 0,
                 'period': -1,
             }
-        if base_state['tstamp'] + 10*60 > now().timestamp():
+        if (not self.conf.CDEDB_DEV
+            and base_state['tstamp'] + 10*60 > now().timestamp()):
             print("Last execution at {} skipping this round.".format(
                 base_state['tstamp']))
             return False
