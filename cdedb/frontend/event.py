@@ -109,13 +109,14 @@ class EventFrontend(AbstractUserFrontend):
     @access("anonymous")
     def index(self, rs):
         """Render start page."""
-        open_event_list = self.eventproxy.list_visible_events(rs)
-        open_events = self.eventproxy.get_events(rs, open_event_list.keys())
-        orga_events = self.eventproxy.get_events(rs, rs.user.orga)
-        visible_event_list = self.eventproxy.list_db_events(rs,
-                                                            visible_only=True)
+        open_event_list = self.eventproxy.list_db_events(
+            rs, visible=True, current=True, archived=False)
+        other_event_list = self.eventproxy.list_db_events(
+            rs, visible=True, current=False, archived=False)
+        open_events = self.eventproxy.get_events(rs, open_event_list)
         other_events = self.eventproxy.get_events(
-            rs, set(visible_event_list) - set(open_event_list))
+            rs, set(other_event_list) - set(rs.user.orga))
+        orga_events = self.eventproxy.get_events(rs, rs.user.orga)
         return self.render(rs, "index", {
             'open_events': open_events, 'orga_events': orga_events,
             'other_events': other_events})

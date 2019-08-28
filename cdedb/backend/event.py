@@ -288,38 +288,42 @@ class EventBackend(AbstractBackend):
             time_start=time_start, time_stop=time_stop)
 
     @access("anonymous")
-    def list_db_events(self, rs, visible_only=False):
+    def list_db_events(self, rs, visible=None, current=None, archived=None):
         """List all events organized via DB.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type visible_only: bool
+        :type visible: bool or None
+        :type current: bool or None
+        :type archived: bool or None
         :rtype: {int: str}
         :returns: Mapping of event ids to titles.
         """
-        query = "SELECT id, title FROM event.events"
-        if visible_only:
-            query = glue(query, "WHERE is_visible = True")
-        data = self.query_all(rs, query, tuple())
+        subquery = glue(
+            "SELECT e.id, e.registration_start, e.title, e.is_visible,",
+            "e.is_archived, MAX(p.part_end) AS event_end",
+            "FROM event.events AS e JOIN event.event_parts AS p",
+            "ON p.event_id = e.id",
+            "GROUP BY e.id")
+        query = "SELECT e.* from ({}) as e".format(subquery)
+        constraints = []
+        params = []
+        if visible is not None:
+            constraints.append("is_visible = %s")
+            params.append(visible)
+        if current is not None:
+            if current:
+                constraints.append("e.event_end > now()")
+            else:
+                constraints.append("e.event_end <= now()")
+        if archived is not None:
+            constraints.append("is_archived = %s")
+            params.append(archived)
+
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
+
+        data = self.query_all(rs, query, params)
         return {e['id']: e['title'] for e in data}
-
-    @access("anonymous")
-    def list_visible_events(self, rs):
-        """List all events which are visible and not archived.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: {int: {str: object}}
-        :returns: Mapping of event ids to infos (title and registration status).
-        """
-        with Atomizer(rs):
-            query = glue(
-                "SELECT e.id, e.registration_start, e.title, e.is_visible,",
-                "MAX(p.part_end) AS event_end",
-                "FROM event.events AS e JOIN event.event_parts AS p",
-                "ON p.event_id = e.id",
-                "WHERE e.is_visible AND NOT e.is_archived",
-                "GROUP BY e.id")
-            data = self.query_all(rs, query, tuple())
-            return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
     def list_db_courses(self, rs, event_id):

@@ -516,7 +516,8 @@ class TestEventBackend(BackendTest):
     @as_users("anton", "garcia")
     def test_visible_events(self, user):
         expectation = {1: 'Große Testakademie 2222'}
-        self.assertEqual(expectation, self.event.list_visible_events(self.key))
+        self.assertEqual(expectation, self.event.list_db_events(
+            self.key, visible=True, archived=False))
 
     @as_users("anton", "garcia")
     def test_has_registrations(self, user):
