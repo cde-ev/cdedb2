@@ -13,7 +13,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Downloads <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        {% trans %}Downloads{% endtrans %} <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -121,9 +121,16 @@
             <tr>
                 <td>
                     {% trans -%}Full Event Export{%- endtrans %}<br />
-                    <small>({% trans -%}for Initilization of the Offline-VM and external Tools{%- endtrans %})</small>
+                    <small>({% trans -%}for initilization of the offline-VM{%- endtrans %})</small>
                 </td>
-                <td>{{ util.href(cdedblink('event/download_export'), gettext("JSON-File"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download') }}</td>
+            </tr>
+            <tr>
+                <td>
+                    {% trans -%}Partial Event Export{%- endtrans %}<br />
+                    <small>({% trans -%}for consumption by external tools{%- endtrans %})</small>
+                </td>
+                <td>{{ util.href(cdedblink('event/download_partial_export'), gettext("JSON file"), icon='download') }}</td>
             </tr>
             <tr>
                 <td>

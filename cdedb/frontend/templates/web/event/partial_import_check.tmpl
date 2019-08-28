@@ -1,0 +1,370 @@
+{% set sidenav_active='partial_import' %}
+{% extends "web/event/base.tmpl" %}
+{% set jshint='weak' %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans title=ambience['event']['title'] -%}
+    	Partial Import Validation ({{ title }})
+    {%- endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Partial Import{% endtrans %} <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+    </h1>
+{% endblock %}
+
+{# The following macro generates the diff table for a changed registration, lodgement or course. It takes the (flattened)
+diff of the item and shows a table with all changed attributes, old and new values. #}
+{% macro diff_table(diff, titles, choices) %}
+    <table class="table table-slim small diff-details" style="clear: right;">
+        <thead>
+            <tr>
+                <th>{% trans %}Attribute{% endtrans %}</th>
+                <th>{% trans %}Old Value{% endtrans %}</th>
+                <th>{% trans %}New Value{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key, (old, new) in diff.items() %}
+                <tr>
+                    <td>{{ titles.get(key, key) }}</td>
+                    <td class="{% if old is not none %}bg-danger{% endif %}">
+                        {% if old is sequence and not old is string%}
+                            [{% for o in old %}
+                                {{- choices.get(key, {}).get(o, o) }}
+                                {%- if not loop.last %}, {% endif %}
+                            {%- endfor %}]
+                        {% else %}
+                            {{ choices.get(key, {}).get(old, old) }}
+                        {% endif %}
+                    </td>
+                    <td class="{% if new is not none %}bg-success{% endif %}">
+                        {% if new is sequence and not new is string %}
+                            [{% for n in new %}
+                                {{- choices.get(key, {}).get(n, n) }}
+                                {%- if not loop.last %}, {% endif %}
+                            {%- endfor %}]
+                        {% else %}
+                            {{ choices.get(key, {}).get(new, new) }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endmacro %}
+
+{% do reg_titles.update({
+    "notes": gettext("Notes"),
+    "orga_notes": gettext("Orga-Notes"),
+    "payment": gettext("Payment"),
+    "parental_agreement": gettext("Parental Consent"),
+    "mixed_lodging": gettext("Mixed Lodging"),
+    "checkin": gettext("Checkin"),
+    "list_consent": gettext("Participant List Consent"),
+    }) %}
+{% do course_titles.update({
+    "nr": gettext("Coursenumber"),
+    "shortname": gettext("Shortname"),
+    "title": gettext("Long Title"),
+    "description": gettext("Description"),
+    "instructors": gettext("Instructors"),
+    "max_size": gettext("Max. Size"),
+    "min_size": gettext("Min. Size"),
+    "notes": gettext("Notes"),
+    }) %}
+{% do lodgement_titles.update({
+    "moniker": gettext("Moniker"),
+    "capacity": gettext("Regular Capacity"),
+    "reserve": gettext("Camping Mat Capacity"),
+    "notes": gettext("Notes"),
+    }) %}
+
+{% block content %}
+    <p class="text-warning">
+        {{ util.make_icon('warning-sign') }}
+        {% trans manual=util.href(docurl('Handbuch_partieller_Import'), gettext('manual')) -%}
+            Carefully check the summary below, as this tool has the potential to do irreversible damage
+            to your event. (You read the {{ manual }}, right?)
+        {%- endtrans %}
+    </p>
+
+    <h2>{% trans %}Summary of Changes{% endtrans %}</h2>
+
+    {% if summary['deleted_registration_ids']|length > summary['real_deleted_registration_ids']|length %}
+         <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were double registration deletions. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+    {% if summary['deleted_course_ids']|length > summary['real_deleted_course_ids']|length %}
+        <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were double course deletions. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+    {% if summary['deleted_lodgement_ids']|length > summary['real_deleted_lodgement_ids']|length %}
+        <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were double lodgement deletions. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+    {% if suspicious_courses %}
+        <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were hints at double course creations. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+    {% if suspicious_lodgements %}
+        <div class="alert alert-warning">
+            {{ util.make_icon('exclamation-sign') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
+            {% trans %}There were hints at double lodgement creations. Did you already import this file?{% endtrans %}
+        </div>
+    {% endif %}
+
+    {% if summary['changed_registrations'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}
+        <h3>{% trans %}Registrations{% endtrans %}</h3>
+        <!-- ---------------------- Changed registrations ---------------------- -->
+        {% if summary['changed_registrations'] %}
+            <div class="row">
+                <div class="col-md-8">
+                    {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info',
+                                                 icon='user', anid='box-changed-registrations') %}
+                        <ul class="slim">
+                            {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
+                                <li>
+                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
+                                    {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
+                                    {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                    {{ diff_table(reg_diff, reg_titles, reg_choices) }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+                <div class="col-md-4">
+                    {% call util.bootstrap_panel(gettext("Changed registration attributes"), aclass='panel panel-info',
+                                                 icon='user', anid='box-changed-registration-fields') %}
+                        <ul class="slim">
+                            {% for field in summary['changed_registration_fields'] %}
+                                <li>{{ reg_titles.get(field, field) }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <!-- ---------------------- New registrations ---------------------- -->
+            {% if summary['new_registration_ids'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel panel-success',
+                                                 icon='user', anid='box-new-registrations') %}
+                        <ul class="slim">
+                            {% for reg_id in summary['new_registration_ids'] %}
+                                <li>
+                                    {{ personas[delta['registrations'][reg_id]['persona_id']]['given_names'] }}
+                                    {{ personas[delta['registrations'][reg_id]['persona_id']]['family_name'] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+
+            <!-- ---------------------- Deleted registrations ---------------------- -->
+            {% if summary['real_deleted_registration_ids'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel panel-danger',
+                                                 icon='user', anid='box-deleted-registrations') %}
+                        <ul class="slim">
+                            {% for reg_id in summary['real_deleted_registration_ids'] %}
+                                <li>
+                                    {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
+                                    {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+    {% if summary['changed_courses'] or summary['new_course_ids'] or summary['deleted_course_ids'] %}
+        <h3>{% trans %}Courses{% endtrans %}</h3>
+        <!-- ---------------------- Changed Courses ---------------------- -->
+        {% if summary['changed_courses'] %}
+            <div class="row">
+                <div class="col-md-8">
+                    {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book',
+                                                 anid='box-changed-courses') %}
+                        <ul class="slim">
+                            {% for course_id, course_diff in summary['changed_courses'].items() %}
+                                <li>
+                                    {{ courses[course_id]['nr'] }}.{# -#}
+                                    {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
+                                    {{ courses[course_id]['shortname'] }}{# -#}
+                                    {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
+                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
+                                    {{ diff_table(course_diff, course_titles, course_choices) }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+                <div class="col-md-4">
+                    {% call util.bootstrap_panel(gettext("Changed course attributes"), aclass='panel panel-info',
+                                                 icon='book', anid='box-changed-course-fields') %}
+                        <ul class="slim">
+                            {% for field in summary['changed_course_fields'] %}
+                                <li>{{ course_titles.get(field, field) }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <!-- ---------------------- New Courses---------------------- -->
+            {% if summary['new_course_ids'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='book',
+                                                 anid='box-new-courses') %}
+                        <ul class="slim">
+                            {% for course_id in summary['new_course_ids'] %}
+                                <li>
+                                    {{ delta['courses'][course_id]['nr'] }}. {{ delta['courses'][course_id]['title'] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+
+            <!-- ---------------------- Deleted Courses ---------------------- -->
+            {% if summary['real_deleted_course_ids'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='book',
+                                                 anid='box-deleted-courses') %}
+                        <ul class="slim">
+                            {% for course_id in summary['real_deleted_course_ids'] %}
+                                <li>
+                                    {{ courses[course_id]['nr'] }}. {{ courses[course_id]['title'] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if summary['changed_lodgements'] or summary['new_lodgement_ids'] or summary['deleted_lodgement_ids'] %}
+        <h3>{% trans %}Lodgements{% endtrans %}</h3>
+        <!-- ---------------------- Changed Lodgements ---------------------- -->
+        {% if summary['changed_lodgements'] %}
+            <div class="row">
+                <div class="col-md-8">
+                    {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home',
+                                                 anid='box-changed-lodgements') %}
+                        <ul class="slim">
+                            {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
+                                <li>
+                                    {{ lodgements[lodgement_id]['moniker'] }}{# -#}
+                                    {% if 'moniker' in course_diff %}/{{ course_diff['moniker'][1] }}{% endif %}
+                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
+                                    {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+                <div class="col-md-4">
+                    {% call util.bootstrap_panel(gettext("Changed lodgement attributes"), aclass='panel panel-info',
+                                                 icon='home', anid='box-changed-lodgement-fields') %}
+                        <ul class="slim">
+                            {% for field in summary['changed_lodgement_fields'] %}
+                                <li>{{ lodgement_titles.get(field, field) }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <!-- ---------------------- New Lodgements ---------------------- -->
+            {% if summary['new_lodgement_ids'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='home',
+                                                 anid='box-new-lodgements') %}
+                        <ul class="slim">
+                            {% for lodgement_id in summary['new_lodgement_ids'] %}
+                                <li>
+                                    {{ delta['lodgements'][lodgement_id]['moniker'] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+
+            <!-- ---------------------- Deleted Lodgements ---------------------- -->
+            {% if summary['real_deleted_lodgement_ids'] %}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel panel-danger',
+                                                 icon='home', anid='box-deleted-lodgements') %}
+                        <ul class="slim">
+                            {% for lodgement_id in summary['real_deleted_lodgement_ids'] %}
+                                <li>
+                                    {{ lodgements[lodgement_id]['moniker'] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
+        $('.diff-details').hide();
+        $('.show-details')
+            .show()
+            .on('click', function() {
+                var $details = $(this).siblings('.diff-details');
+                if ($details.is(':visible')) {
+                    $details.hide();
+                    $(this).children('.glyphicon')
+                        .removeClass('glyphicon-collapse-down')
+                        .addClass('glyphicon-expand');
+                } else {
+                    $details.show();
+                    $(this).children('.glyphicon')
+                        .removeClass('glyphicon-expand')
+                        .addClass('glyphicon-collapse-down');
+                }
+                return false;
+            });
+    </script>
+
+    {% if not summary['changed_registratios'] and not summary['new_registration_ids'] and not summary['real_deleted_registration_ids']
+            and not summary['changed_courses'] and not summary['new_course_ids'] and not summary['real_deleted_course_ids']
+            and not summary['changed_lodgements'] and not summary['new_lodgement_ids'] and not summary['real_deleted_lodgement_ids'] %}
+        {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
+    {% endif %}
+
+    <form action="{{ cdedblink('event/partial_import') }}" method="POST" id="importexecuteform">
+        {{ util.anti_csrf_token('event/partial_import') }}
+        {{ util.input_hidden(name='token') }}
+        {{ util.input_hidden(name='partial_import_data') }}
+        {{ util.form_input_submit(value=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form'), horizontal=False) }}
+    </form>
+{% endblock %}

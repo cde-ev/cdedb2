@@ -3,20 +3,21 @@
 """Services for the event realm."""
 
 import cgitb
-import functools
 from collections import OrderedDict, Counter
+import collections.abc
 import copy
 import csv
-import hashlib
 import decimal
+import functools
+import hashlib
 import itertools
-import os
+import json
+import operator
 import pathlib
 import re
+import subprocess
 import sys
 import tempfile
-import operator
-import subprocess
 
 import magic
 import psycopg2.extensions
@@ -26,13 +27,13 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
-    xdictsort_filter, enum_entries_filter)
+    xdictsort_filter, enum_entries_filter, safe_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    CourseFilterPositions, diacritic_patterns, shutil_copy)
+    CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -447,7 +448,7 @@ class EventFrontend(AbstractUserFrontend):
                    else n_("Participant mailinglist created."))
             self.notify_return_code(rs, code, success=msg)
             if code and orgalist:
-                data ={
+                data = {
                     'id': event_id,
                     'orga_address': ml_data['address'],
                 }
@@ -2282,6 +2283,22 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
+    def download_partial_export(self, rs, event_id):
+        """Retrieve data for third-party applications."""
+        data = self.eventproxy.partial_export_event(rs, event_id)
+        json = json_serialize(data)
+        file = self.send_file(
+            rs, data=json, inline=False,
+            filename="{}_partial_export_event.json".format(
+                rs.ambience['event']['shortname']))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
+
+    @access("event")
+    @event_guard()
     def download_assets(self, rs, event_id):
         """Retrieve all assets for this event and provide download."""
         courses = self.eventproxy.list_db_courses(rs, event_id)
@@ -2313,6 +2330,259 @@ class EventFrontend(AbstractUserFrontend):
             return self.send_file(
                 rs, path=target, inline=False,
                 filename="{}_assets.tar.gz".format(shortname))
+
+    @access("event")
+    @event_guard()
+    def partial_import_form(self, rs, event_id):
+        """First step of partial import process: Render form to upload file"""
+        return self.render(rs, "partial_import")
+
+    @access("event", modi={"POST"})
+    @REQUESTfile("json_file")
+    @REQUESTdata(("partial_import_data", "str_or_None"),
+                 ("token", "str_or_None"))
+    @event_guard(check_offline=True)
+    def partial_import(self, rs, event_id, json_file, partial_import_data,
+                       token):
+        """Further steps of partial import process
+
+        This takes the changes and generates a transaction token. If the new
+        token agrees with the submitted token, the change were successfully
+        applied, otherwise a diff-view of the changes is displayed.
+
+        In the first iteration the data is extracted from a file upload and
+        in further iterations it is embedded in the page.
+        """
+        if partial_import_data:
+            data = check(rs, "serialized_partial_event",
+                         json.loads(partial_import_data))
+        else:
+            data = check(rs, "serialized_partial_event_upload", json_file)
+        if rs.errors:
+            return self.partial_import_form(rs, event_id)
+        if event_id != data['id']:
+            rs.notify("error", n_("Data from wrong event."))
+            return self.partial_import_form(rs, event_id)
+
+        # First gather infos for comparison
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(
+            rs, registration_ids)
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        persona_ids = (
+            ({e['persona_id'] for e in registrations.values()}
+             | {e.get('persona_id')
+                for e in data.get('registrations', {}).values() if e})
+            - {None})
+        personas = self.coreproxy.get_event_users(rs, persona_ids)
+
+        # Second invoke partial import
+        try:
+            new_token, delta = self.eventproxy.partial_import_event(
+                rs, data, dryrun=(not bool(token)), token=token)
+        except PartialImportError:
+            rs.notify("warning",
+                      n_("The data changed, please review the difference."))
+            token = None
+            new_token, delta = self.eventproxy.partial_import_event(
+                rs, data, dryrun=True)
+
+        # Third check if we were successful
+        if token == new_token:
+            rs.notify("success", n_("Changes applied."))
+            return self.redirect(rs, "event/show_event")
+
+        # Fourth look for double creations
+        all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
+        suspicious_courses = []
+        for course_id, course in delta.get('courses', {}).items():
+            if course_id < 0:
+                for current in all_current_data['courses'].values():
+                    if current == course:
+                        suspicious_courses.append(course_id)
+                        break
+        suspicious_lodgements = []
+        for lodgement_id, lodgement in delta.get('lodgements', {}).items():
+            if lodgement_id < 0:
+                for current in all_current_data['lodgements'].values():
+                    if current == lodgement:
+                        suspicious_lodgements.append(lodgement_id)
+                        break
+
+        # Fifth prepare
+        rs.values['token'] = new_token
+        rs.values['partial_import_data'] = json_serialize(data)
+        for course in courses.values():
+            course['segments'] = {
+                id: id in course['active_segments']
+                for id in course['segments']
+            }
+
+        # Sixth prepare summary
+        def flatten_recursive_delta(data, old, prefix=""):
+            ret = {}
+            for key, val in data.items():
+                if isinstance(val, collections.abc.Mapping):
+                    tmp = flatten_recursive_delta(val, old.get(key, {}),
+                                                 "{}{}.".format(prefix, key))
+                    ret.update(tmp)
+                else:
+                    ret["{}{}".format(prefix, key)] = (old.get(key, None), val)
+            return ret
+
+        summary = {
+            'changed_registrations': {
+                id: flatten_recursive_delta(val, registrations[id])
+                for id, val in delta.get('registrations', {}).items()
+                if id > 0 and val
+            },
+            'new_registration_ids': tuple(sorted(
+                id for id in delta.get('registrations', {})
+                if id < 0)),
+            'deleted_registration_ids': tuple(sorted(
+                id for id, val in delta.get('registrations', {}).items()
+                if val is None)),
+            'real_deleted_registration_ids': tuple(sorted(
+                id for id, val in delta.get('registrations', {}).items()
+                if val is None and registrations.get(id))),
+            'changed_courses': {
+                id: flatten_recursive_delta(val, courses[id])
+                for id, val in delta.get('courses', {}).items()
+                if id > 0 and val
+            },
+            'new_course_ids': tuple(sorted(
+                id for id in delta.get('courses', {}) if id < 0)),
+            'deleted_course_ids': tuple(sorted(
+                id for id, val in delta.get('courses', {}).items()
+                if val is None)),
+            'real_deleted_course_ids': tuple(sorted(
+                id for id, val in delta.get('courses', {}).items()
+                if val is None and courses.get(id))),
+            'changed_lodgements': {
+                id: flatten_recursive_delta(val, lodgements[id])
+                for id, val in delta.get('lodgements', {}).items()
+                if id > 0 and val
+            },
+            'new_lodgement_ids': tuple(sorted(
+                id for id in delta.get('lodgements', {}) if id < 0)),
+            'deleted_lodgement_ids': tuple(sorted(
+                id for id, val in delta.get('lodgements', {}).items()
+                if val is None)),
+            'real_deleted_lodgement_ids': tuple(sorted(
+                id for id, val in delta.get('lodgements', {}).items()
+                if val is None and lodgements.get(id))),
+        }
+
+        changed_registration_fields = set()
+        for reg in summary['changed_registrations'].values():
+            changed_registration_fields |= reg.keys()
+        summary['changed_registration_fields'] = tuple(sorted(
+            changed_registration_fields))
+        changed_course_fields = set()
+        for course in summary['changed_courses'].values():
+            changed_course_fields |= course.keys()
+        summary['changed_course_fields'] = tuple(sorted(
+            changed_course_fields))
+        changed_lodgement_fields = set()
+        for lodgement in summary['changed_lodgements'].values():
+            changed_lodgement_fields |= lodgement.keys()
+        summary['changed_lodgement_fields'] = tuple(sorted(
+            changed_lodgement_fields))
+
+        reg_titles, reg_choices, course_titles, course_choices, lodgement_titles = \
+            self._make_partial_import_diff_aux(
+                rs, rs.ambience['event'], courses, lodgements)
+
+        # Seventh render diff
+        template_data = {
+            'delta': delta,
+            'registrations': registrations,
+            'lodgements': lodgements,
+            'suspicious_lodgements': suspicious_lodgements,
+            'courses': courses,
+            'suspicious_courses': suspicious_courses,
+            'personas': personas,
+            'summary': summary,
+            'reg_titles': reg_titles,
+            'reg_choices': reg_choices,
+            'course_titles': course_titles,
+            'course_choices': course_choices,
+            'lodgement_titles': lodgement_titles,
+        }
+        return self.render(rs, "partial_import_check", template_data)
+
+    @staticmethod
+    def _make_partial_import_diff_aux(rs, event, courses, lodgements):
+        """ Helper method, similar to make_registration_query_aux(), to
+        generate human readable field names and values for the diff presentation
+        of partial_import().
+
+        This method does only generate titles and choice-dicts for the dynamic,
+        event-specific fields (i.e. part- and track-specific and custom fields).
+        Titles for all static fields are added in the template file."""
+        reg_titles = {}
+        reg_choices = {}
+        course_titles = {}
+        course_choices = {}
+        lodgement_titles = {}
+
+        # Prepare choices lists
+        # TODO distinguish old and new course/lodgement titles
+        # Heads up! There's a protected space (u+00A0) in the string below
+        course_entries = {
+            c["id"]: "{}. {}".format(c["nr"], c["shortname"])
+            for c in courses.values()}
+        lodgement_entries = {l["id"]: l["moniker"]
+                             for l in lodgements.values()}
+        reg_part_stati_entries =\
+            dict(enum_entries_filter(const.RegistrationPartStati, rs.gettext))
+        segment_stati_entries = {
+            None: rs.gettext('not offered'),
+            False: rs.gettext('cancelled'),
+            True: rs.gettext('takes place'),
+        }
+
+        # Titles and choices for track-specific fields
+        for track_id, track in event['tracks'].items():
+            if len(event['tracks']) > 1:
+                prefix = "{title}: ".format(title=track['shortname'])
+            else:
+                prefix = ""
+            reg_titles["tracks.{}.course_id".format(track_id)] = prefix + rs.gettext("Course")
+            reg_choices["tracks.{}.course_id".format(track_id)] = course_entries
+            reg_titles["tracks.{}.course_instructor".format(track_id)] = prefix + rs.gettext("Instructor")
+            reg_choices["tracks.{}.course_instructor".format(track_id)] = course_entries
+            reg_titles["tracks.{}.choices".format(track_id)] = prefix + rs.gettext("Course Choices")
+            reg_choices["tracks.{}.choices".format(track_id)] = course_entries
+            course_titles["segments.{}".format(track_id)] = prefix + rs.gettext("Status")
+            course_choices["segments.{}".format(track_id)] = segment_stati_entries
+
+        for field in event['fields'].values():
+            # TODO add choices?
+            title = safe_filter("<i>{}</i>").format(field['field_name'])
+            if field['association'] == const.FieldAssociations.registration:
+                reg_titles["fields.{}".format(field['field_name'])] = title
+            elif field['association'] == const.FieldAssociations.course:
+                course_titles["fields.{}".format(field['field_name'])] = title
+            elif field['association'] == const.FieldAssociations.lodgement:
+                lodgement_titles["fields.{}".format(field['field_name'])] = title
+
+        # Titles and choices for part-specific fields
+        for part_id, part in event['parts'].items():
+            if len(event['parts']) > 1:
+                prefix = "{title}: ".format(title=part['shortname'])
+            else:
+                prefix = ""
+            reg_titles["parts.{}.status".format(part_id)] = prefix + rs.gettext("Status")
+            reg_choices["parts.{}.status".format(part_id)] = reg_part_stati_entries
+            reg_titles["parts.{}.lodgement_id".format(part_id)] = prefix + rs.gettext("Lodgement")
+            reg_choices["parts.{}.lodgement_id".format(part_id)] = lodgement_entries
+            reg_titles["parts.{}.is_reserve".format(part_id)] = prefix + rs.gettext("Camping Mat")
+
+        return reg_titles, reg_choices, course_titles, course_choices, lodgement_titles
 
     @access("event")
     def register_form(self, rs, event_id):

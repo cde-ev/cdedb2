@@ -2438,6 +2438,41 @@ def _questionnaire(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
+def _json(val, argname=None, *, _convert=True):
+    """Deserialize a JSON payload.
+
+    This is a bit different from many other validatiors in that it is not
+    idempotent.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+
+    """
+    argname = argname or "json"
+    if not _convert:
+        raise RuntimeError("This is a conversion by definition.")
+    if isinstance(val, bytes):
+        try:
+            val = val.decode("utf-8")
+        except UnicodeDecodeError:
+            return None, [(argname, ValueError(n_("Invalid UTF-8 sequence.")))]
+    val, errs = _str(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if not val:
+        return None, [(argname, ValueError(n_("Must not be empty.")))]
+    try:
+        data = json.loads(val)
+    except json.decoder.JSONDecodeError as e:
+        msg = n_("Invalid JSON syntax (line %(line)s, col %(col)s).")
+        return None, [(argname, ValueError(msg, {'line': e.lineno,
+                                                 'col': e.colno}))]
+    return data, []
+
+
+@_addvalidator
 def _serialized_event_upload(val, argname=None, *, _convert=True):
     """Check an event data set for import after offline usage.
 
@@ -2450,8 +2485,10 @@ def _serialized_event_upload(val, argname=None, *, _convert=True):
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    data = json.loads(val.decode("utf-8"))
-    return _serialized_event(data, argname, _convert=_convert)
+    val, errs = _json(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    return _serialized_event(val, argname, _convert=_convert)
 
 @_addvalidator
 def _serialized_event(val, argname=None, *, _convert=True):
@@ -2583,8 +2620,10 @@ def _serialized_partial_event_upload(val, argname=None, *, _convert=True):
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    data = json.loads(val.decode("utf-8"))
-    return _serialized_partial_event(data, argname, _convert=_convert)
+    val, errs = _json(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    return _serialized_partial_event(val, argname, _convert=_convert)
 
 @_addvalidator
 def _serialized_partial_event(val, argname=None, *, _convert=True):
@@ -2595,7 +2634,7 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "serialized_event"
+    argname = argname or "serialized_partial_event"
     ## First a basic check
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:

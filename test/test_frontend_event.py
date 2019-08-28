@@ -1807,6 +1807,85 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
     @as_users("anton")
+    def test_partial_import_normal(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/import'})
+        self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json", 'rb') as datafile:
+            data = datafile.read()
+        f = self.response.forms["importform"]
+        f['json_file'] = webtest.Upload("partial_event_import.json", data,
+                                        "application/octet-stream")
+        self.submit(f, check_notification=False)
+        # Check diff
+        self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
+        # Registrations
+        self.assertPresence("Emilia", "box-changed-registrations")
+        self.assertPresence("2.H.: Unterkunft", "box-changed-registrations")
+        self.assertPresence("Warme Stube", "box-changed-registrations")
+        self.assertPresence("brings_balls", "box-changed-registration-fields")
+        self.assertPresence("Notizen", "box-changed-registration-fields")
+        self.assertPresence("2.H.: Unterkunft", "box-changed-registration-fields")
+        self.assertPresence("Morgenkreis: Kurswahlen", "box-changed-registration-fields")
+        self.assertNonPresence("Sitzung: Kursleiter", "box-changed-registration-fields")
+        self.assertNonPresence("Inga", "box-changed-registrations")
+        self.assertPresence("Bertålotta", "box-new-registrations")
+        self.assertPresence("Inga", "box-deleted-registrations")
+        # Courses
+        self.assertPresence("α.", "box-changed-courses")
+        self.assertPresence("GanzKurz", "box-changed-courses")
+        self.assertPresence("Kaffee: Status", "box-changed-courses")
+        self.assertPresence("nicht angeboten", "box-changed-courses")
+        self.assertPresence("fällt aus", "box-changed-courses")
+        self.assertPresence("room", "box-changed-courses")
+        self.assertPresence("room", "box-changed-course-fields")
+        self.assertPresence("Sitzung: Status", "box-changed-courses")
+        self.assertPresence("Max.-Größe", "box-changed-course-fields")
+        self.assertPresence("ζ.", "box-new-courses")
+        self.assertPresence("γ.", "box-deleted-courses")
+        # Lodgements
+        self.assertPresence("Kalte Kammer", "box-changed-lodgements")
+        self.assertPresence("contamination", "box-changed-lodgements")
+        self.assertPresence("Bezeichnung", "box-changed-lodgement-fields")
+        self.assertPresence("Wirklich eng.", "box-changed-lodgements")
+        self.assertPresence("Dafür mit Frischluft.", "box-changed-lodgements")
+        self.assertPresence("Geheimkabinett", "box-new-lodgements")
+        self.assertPresence("Kellerverlies", "box-deleted-lodgements")
+
+        # Do import
+        f = self.response.forms["importexecuteform"]
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+
+    @as_users("anton")
+    def test_partial_import_interleaved(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/import'})
+        self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json", 'rb') as datafile:
+            data = datafile.read()
+        f = self.response.forms["importform"]
+        f['json_file'] = webtest.Upload("partial_event_import.json", data,
+                                        "application/octet-stream")
+        self.submit(f, check_notification=False)
+        saved = self.response
+        self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
+        f = self.response.forms["importexecuteform"]
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        self.response = saved
+        f = self.response.forms["importexecuteform"]
+        self.submit(f, check_notification=False)
+        self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
+        self.assertPresence("doppelte Löschungen von Anmeldungen")
+        self.assertPresence("doppelte Löschungen von Kursen")
+        self.assertPresence("doppelte Löschungen von Unterkünften")
+        self.assertPresence("doppelt erstellte Kurse")
+        self.assertPresence("doppelt erstellte Unterkünfte")
+
+    @as_users("anton")
     def test_delete_event(self, user):
         self.traverse({'href': '/event'},
                       {'href': '/event/event/1/show'},
@@ -1829,6 +1908,234 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/cde/past/event/list'})
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertNonPresence("Testakademie")
+
+    @as_users("anton")
+    def test_partial_export(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/download'})
+        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
+        self.traverse({'href': '/event/event/1/download/partial'})
+        result = json.loads(self.response.text)
+        expectation = {
+            'CDEDB_EXPORT_EVENT_VERSION': 1,
+            'courses': {'1': {'description': 'Wir werden die Bäume drücken.',
+                              'fields': {'room': 'Wald'},
+                              'instructors': 'ToFi & Co',
+                              'max_size': 10,
+                              'min_size': 3,
+                              'notes': 'Promotionen in Mathematik und Ethik für '
+                                       'Teilnehmer notwendig.',
+                              'nr': 'α',
+                              'segments': {'1': True, '3': True},
+                              'shortname': 'Heldentum',
+                              'title': 'Planetenretten für Anfänger'},
+                        '2': {'description': 'Inklusive Post, Backwaren und frühzeitigem '
+                                             'Ableben.',
+                              'fields': {'room': 'Theater'},
+                              'instructors': 'Bernd Lucke',
+                              'max_size': 20,
+                              'min_size': 10,
+                              'notes': 'Kursleiter hat Sekt angefordert.',
+                              'nr': 'β',
+                              'segments': {'1': True, '2': False, '3': True},
+                              'shortname': 'Kabarett',
+                              'title': 'Lustigsein für Fortgeschrittene'},
+                        '3': {'description': 'mit hoher Leistung.',
+                              'fields': {'room': 'Seminarraum 42'},
+                              'instructors': 'Heinrich und Thomas Mann',
+                              'max_size': 14,
+                              'min_size': 5,
+                              'notes': None,
+                              'nr': 'γ',
+                              'segments': {'2': True},
+                              'shortname': 'Kurz',
+                              'title': 'Kurzer Kurs'},
+                        '4': {'description': 'mit hohem Umsatz.',
+                              'fields': {'room': 'Seminarraum 23'},
+                              'instructors': 'Stephen Hawking und Richard Feynman',
+                              'max_size': None,
+                              'min_size': None,
+                              'notes': None,
+                              'nr': 'δ',
+                              'segments': {'1': True, '2': True, '3': True},
+                              'shortname': 'Lang',
+                              'title': 'Langer Kurs'},
+                        '5': {'description': 'damit wir Auswahl haben',
+                              'fields': {'room': 'Nirwana'},
+                              'instructors': 'TBA',
+                              'max_size': None,
+                              'min_size': None,
+                              'notes': None,
+                              'nr': 'ε',
+                              'segments': {'1': True, '2': True, '3': False},
+                              'shortname': 'Backup',
+                              'title': 'Backup-Kurs'}},
+            'id': 1,
+            'kind': 'partial',
+            'lodgements': {'1': {'capacity': 5,
+                                 'fields': {'contamination': 'high'},
+                                 'moniker': 'Warme Stube',
+                                 'notes': None,
+                                 'reserve': 1},
+                           '2': {'capacity': 10,
+                                 'fields': {'contamination': 'none'},
+                                 'moniker': 'Kalte Kammer',
+                                 'notes': 'Dafür mit Frischluft.',
+                                 'reserve': 2},
+                           '3': {'capacity': 0,
+                                 'fields': {'contamination': 'low'},
+                                 'moniker': 'Kellerverlies',
+                                 'notes': 'Nur für Notfälle.',
+                                 'reserve': 100},
+                           '4': {'capacity': 1,
+                                 'fields': {'contamination': 'high'},
+                                 'moniker': 'Einzelzelle',
+                                 'notes': None,
+                                 'reserve': 0}},
+            'registrations': {'1': {'checkin': None,
+                                    'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
+                                    'list_consent': True,
+                                    'mixed_lodging': True,
+                                    'notes': None,
+                                    'orga_notes': None,
+                                    'parental_agreement': True,
+                                    'parts': {'1': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': -1},
+                                              '2': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': 1},
+                                              '3': {'is_reserve': False,
+                                                    'lodgement_id': 1,
+                                                    'status': 2}},
+                                    'payment': None,
+                                    'tracks': {'1': {'choices': [1, 3, 4, 2],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '2': {'choices': [2],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '3': {'choices': [1, 4],
+                                                     'course_id': None,
+                                                     'course_instructor': None}}},
+                              '2': {'checkin': None,
+                                    'fields': {'brings_balls': True,
+                                               'transportation': 'pedes'},
+                                    'list_consent': True,
+                                    'mixed_lodging': True,
+                                    'notes': 'Extrawünsche: Meerblick, Weckdienst und '
+                                             'Frühstück am Bett',
+                                    'orga_notes': 'Unbedingt in die Einzelzelle.',
+                                    'parental_agreement': True,
+                                    'parts': {'1': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': 3},
+                                              '2': {'is_reserve': False,
+                                                    'lodgement_id': 4,
+                                                    'status': 4},
+                                              '3': {'is_reserve': False,
+                                                    'lodgement_id': 4,
+                                                    'status': 2}},
+                                    'payment': '2014-02-02',
+                                    'tracks': {'1': {'choices': [5, 4, 2, 1],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '2': {'choices': [3],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '3': {'choices': [4, 2],
+                                                     'course_id': 1,
+                                                     'course_instructor': 1}}},
+                              '3': {'checkin': None,
+                                    'fields': {'transportation': 'car'},
+                                    'list_consent': False,
+                                    'mixed_lodging': True,
+                                    'notes': None,
+                                    'orga_notes': None,
+                                    'parental_agreement': True,
+                                    'parts': {'1': {'is_reserve': False,
+                                                    'lodgement_id': 2,
+                                                    'status': 2},
+                                              '2': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': 2},
+                                              '3': {'is_reserve': False,
+                                                    'lodgement_id': 2,
+                                                    'status': 2}},
+                                    'payment': '2014-03-03',
+                                    'tracks': {'1': {'choices': [4, 2, 1, 5],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '2': {'choices': [2],
+                                                     'course_id': 2,
+                                                     'course_instructor': None},
+                                               '3': {'choices': [2, 4],
+                                                     'course_id': None,
+                                                     'course_instructor': None}}},
+                              '4': {'checkin': None,
+                                    'fields': {'brings_balls': False,
+                                               'may_reserve': True,
+                                               'transportation': 'etc'},
+                                    'list_consent': True,
+                                    'mixed_lodging': False,
+                                    'notes': None,
+                                    'orga_notes': None,
+                                    'parental_agreement': False,
+                                    'parts': {'1': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': 6},
+                                              '2': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': 5},
+                                              '3': {'is_reserve': True,
+                                                    'lodgement_id': 2,
+                                                    'status': 2}},
+                                    'payment': '2014-04-04',
+                                    'tracks': {'1': {'choices': [2, 1, 4, 5],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '2': {'choices': [4],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '3': {'choices': [1, 2],
+                                                     'course_id': 1,
+                                                     'course_instructor': None}}}},
+        }
+        expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
+        self.assertEqual(expectation, result)
+
+    @as_users("anton")
+    def test_partial_idempotency(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/download'})
+        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
+        self.traverse({'href': '/event/event/1/download/partial'})
+        binary = self.response.body
+        first = json.loads(self.response.text)
+
+        self.get('/')
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/import'})
+        self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
+        f = self.response.forms["importform"]
+        f['json_file'] = webtest.Upload("partial_event_import.json", binary,
+                                        "application/octet-stream")
+        self.submit(f, check_notification=False)
+        self.assertTitle("Validierung Partieller Import (Große Testakademie 2222)")
+        f = self.response.forms["importexecuteform"]
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+
+
+        self.traverse({'href': '/event/event/1/download'},
+                      {'href': '/event/event/1/download/partial'})
+        second = json.loads(self.response.text)
+        del first['timestamp']
+        del second['timestamp']
+        self.assertEqual(first, second)
 
     @as_users("anton")
     def test_archive(self, user):

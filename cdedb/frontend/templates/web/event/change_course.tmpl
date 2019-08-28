@@ -28,14 +28,14 @@
     <form action="{{ cdedblink('event/change_course') }}" method="POST" id="changecourseform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_course') }}
         <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
-        {{ util.form_input_text(name="nr", label=gettext("Coursenumer")) }}
+        {{ util.form_input_text(name="nr", label=gettext("Coursenumber")) }}
         {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         <h4 class="heading-underline">{% trans -%}Course{%- endtrans %}</h4>
-        {{ util.form_input_text(name="instructors", label=gettext("Instructur")) }}
+        {{ util.form_input_text(name="instructors", label=gettext("Instructors")) }}
         {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (incl. instr.)")) }}
         {{ util.form_input_text(name="max_size", label=gettext("Maximum Size (incl. instr.)")) }}
         {% if ambience['event']['tracks']|length == 1 %}

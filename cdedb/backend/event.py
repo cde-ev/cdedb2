@@ -530,6 +530,13 @@ class EventBackend(AbstractBackend):
         The tracks are inside the parts entry. This allows to create tracks
         during event creation.
 
+        Furthermore we have the following derived keys:
+
+        * tracks,
+        * begin,
+        * end,
+        * is_open.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
@@ -2351,7 +2358,7 @@ class EventBackend(AbstractBackend):
                             rs, "event.registration_parts", deletor)
 
                 blockers = self.delete_lodgement_blockers(rs, lodgement_id)
-                
+
             if not blockers:
                 ret *= self.sql_delete_one(rs, "event.lodgements", lodgement_id)
                 self.event_log(rs, const.EventLogCodes.lodgement_deleted,
@@ -2751,7 +2758,7 @@ class EventBackend(AbstractBackend):
             return ret
 
     @access("event")
-    def partial_import_event(self, rs, data, dryrun, target=None):
+    def partial_import_event(self, rs, data, dryrun, token=None):
         """Incorporate changes into an event.
 
         In contrast to the full import in this case the data describes a
@@ -2761,8 +2768,8 @@ class EventBackend(AbstractBackend):
         :type data: dict
         :type dryrun: bool
         :param dryrun: If True we do not modify any state.
-        :type target: str
-        :param target: Expected transaction token. If the transaction would
+        :type token: str
+        :param token: Expected transaction token. If the transaction would
           generate a different token a PartialImportError is raised.
         :rtype: (str, dict)
         :returns: A tuple of a transaction token and the datasets that
@@ -2789,7 +2796,9 @@ class EventBackend(AbstractBackend):
                     if value == old[key]:
                         pass
                     elif isinstance(value, collections.abc.Mapping):
-                        delta[key], previous[key] = dict_diff(old[key], value)
+                        d, p = dict_diff(old[key], value)
+                        if d:
+                            delta[key], previous[key] = d, p
                     else:
                         delta[key] = value
                         previous[key] = old[key]
@@ -2801,23 +2810,65 @@ class EventBackend(AbstractBackend):
             oregistration_ids = self.list_registrations(rs, data['id'])
             old_registrations = self.get_registrations(rs, oregistration_ids)
 
+            # check referential integrity
+            all_track_ids = {key for course in data.get('courses', {}).values()
+                             if course
+                             for key in course.get('segments', {})}
+            all_track_ids |= {
+                key for registration in data.get('registrations', {}).values()
+                if registration
+                for key in registration.get('tracks', {})}
+            if not all_track_ids <= set(event['tracks']):
+                raise ValueError("Referential integrity of tracks violated.")
+
+            all_part_ids = {
+                key for registration in data.get('registrations', {}).values()
+                if registration
+                for key in registration.get('parts', {})}
+            if not all_part_ids <= set(event['parts']):
+                raise ValueError("Referential integrity of parts violated.")
+
+            all_lodgement_ids = {
+                part.get('lodgement_id')
+                for registration in data.get('registrations', {}).values()
+                if registration
+                for part in registration.get('parts', {}).values()}
+            all_lodgement_ids -= {None}
+            if not all_lodgement_ids <= set(all_current_data['lodgements']):
+                raise ValueError(
+                    "Referential integrity of lodgements violated.")
+
+            all_course_ids = set()
+            for attribute in ('course_id', 'course_choices',
+                              'course_instructor'):
+                all_course_ids |= {
+                    track.get(attribute)
+                    for registration in data.get('registrations', {}).values()
+                    if registration
+                    for track in registration.get('tracks', {}).values()}
+            all_course_ids -= {None}
+            if not all_course_ids <= set(all_current_data['courses']):
+                raise ValueError(
+                    "Referential integrity of courses violated.")
+
+            # go to work
             total_delta = {}
             total_previous = {}
             rdelta = {}
             rprevious = {}
+
+            dup = {
+                old_reg['persona_id']: old_reg['id']
+                for old_reg in old_registrations.values()
+            }
+
             data_regs = data.get('registrations', {})
-
-            def duplicate_reg(reg):
-                for old_reg in old_registrations.values():
-                    if old_reg['persona_id'] == reg['persona_id']:
-                        return old_reg['id']
-                return None
-
             for registration_id, new_registration in data_regs.items():
-                if registration_id < 0 and duplicate_reg(new_registration):
+                if (registration_id < 0
+                        and dup.get(new_registration.get('persona_id'))):
                     # the process got out of sync and the registration was
                     # already created, so we fix this
-                    registration_id =  duplicate_reg(new_registration)
+                    registration_id = dup[new_registration.get('persona_id')]
                     del new_registration['persona_id']
 
                 current = all_current_data['registrations'].get(
@@ -2950,7 +3001,7 @@ class EventBackend(AbstractBackend):
             m.update(json_serialize(total_delta, sort_keys=True).encode(
                 'utf-8'))
             result = m.hexdigest()
-            if target is not None and result != target:
+            if token is not None and result != token:
                 raise PartialImportError("The delta changed.")
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
