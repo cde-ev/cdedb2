@@ -13,7 +13,6 @@ import hashlib
 import itertools
 import json
 import operator
-import os
 import pathlib
 import re
 import subprocess
@@ -22,14 +21,13 @@ import tempfile
 
 import magic
 import psycopg2.extensions
-import jinja2
 import werkzeug
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
-    xdictsort_filter, enum_entries_filter)
+    xdictsort_filter, enum_entries_filter, safe_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -2568,7 +2566,7 @@ class EventFrontend(AbstractUserFrontend):
 
         for field in event['fields'].values():
             # TODO add choices?
-            title = jinja2.Markup("<i>{}</i>").format(field['field_name'])
+            title = safe_filter("<i>{}</i>").format(field['field_name'])
             if field['association'] == const.FieldAssociations.registration:
                 reg_titles["fields.{}".format(field['field_name'])] = title
             elif field['association'] == const.FieldAssociations.course:
