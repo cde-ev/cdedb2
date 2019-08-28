@@ -895,11 +895,24 @@ etc;anything else""", f['entries_2'].value)
         f['parts'] = ['1', '3']
         f['mixed_lodging'] = 'True'
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
-        f['course_choice3_0'] = 2
-        f['course_choice3_1'] = 4
+        self.assertIn('course_choice3_2', f.fields)
         self.assertNotIn('3', tuple(
             o for o, _, _ in f['course_choice3_1'].options))
+        f['course_choice3_0'] = 2
         f['course_instructor3'] = 2
+        # No second choice given -> expecting error
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        self.assertPresence("Du musst mindestens 2 Kurse wählen.")
+        f['course_choice3_1'] = 2
+        # Two equal choices given -> expecting error
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        self.assertPresence("Du kannst diesen Kurs nicht als 1. und 2 Wahl wählen.")
+        f['course_choice3_1'] = 4
+        # Now, we did it right.
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
@@ -913,11 +926,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Arbeitssitzung")
         f = self.response.forms['amendregistrationform']
         self.assertEqual("4", f['course_choice3_1'].value)
+        self.assertEqual("", f['course_choice3_2'].value)
         self.assertEqual("2", f['course_instructor3'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         f['notes'] = "Ich kann es kaum erwarten!"
         f['course_choice3_0'] = 4
         f['course_choice3_1'] = 1
+        f['course_choice3_2'] = 5
         f['course_instructor3'] = 1
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
@@ -926,6 +941,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']
         self.assertEqual("4", f['course_choice3_0'].value)
+        self.assertEqual("5", f['course_choice3_2'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
 
