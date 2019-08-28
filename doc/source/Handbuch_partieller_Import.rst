@@ -119,7 +119,7 @@ nutzerdefinierten Felder müssen vorher definiert sein.
 ::
 
     {
-        "CDEDB_EXPORT_EVENT_VERSION": 2,
+        "CDEDB_EXPORT_EVENT_VERSION": 3,
         "id": 1,
         "kind": "partial",
         "timestamp": "2018-10-21T20:18:43.414427+00:00",

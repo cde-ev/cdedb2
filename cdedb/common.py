@@ -1408,7 +1408,7 @@ def roles_to_db_role(roles):
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-CDEDB_EXPORT_EVENT_VERSION = 2
+CDEDB_EXPORT_EVENT_VERSION = 3
 
 
 #: All columns deciding on the current status of a persona
