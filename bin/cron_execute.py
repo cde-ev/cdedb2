@@ -6,6 +6,9 @@
 """
 
 import pathlib
+import sys
+
+sys.path.insert(0, "/cdedb2/")
 
 from cdedb.frontend.cron import CronFrontend
 
