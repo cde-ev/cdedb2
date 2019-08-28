@@ -8,13 +8,13 @@ import collections
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, csv_output,
+    REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
     check_validation as check, mailinglist_guard, query_result_to_json)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, name_key, merge_dicts, unwrap, ProxyShim, SubscriptionStates,
-    json_serialize)
+    json_serialize, now)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
@@ -579,6 +579,38 @@ class MlFrontend(AbstractUserFrontend):
             address=email)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
+
+    @periodic("subscription_request_remind")
+    def subscription_request_remind(self, rs, store):
+        """Send reminder email to moderators for pending subrequests."""
+        ml_ids = self.mlproxy.list_mailinglists(rs)
+        current = now().timestamp()
+        for ml_id in ml_ids:
+            requests = self.mlproxy.list_requests(rs, ml_id)
+
+            ml_store = store.get(str(ml_id))
+            if ml_store is None:
+                ml_store = {
+                    'persona_ids': requests,
+                    'tstamp': None
+                }
+
+            if requests:
+                if (ml_store['tstamp'] is None
+                    or set(requests) - set(ml_store['persona_ids'])
+                    or current > ml_store['tstamp'] + 7*24*60*60):
+
+                    ml_store['tstamp'] = current
+                    ml = self.mlproxy.get_mailinglist(rs, ml_id)
+                    owner = ml['address'].replace("@", "-owner@")
+                    self.do_mail(rs, "subscription_request_remind",
+                                 {'To': (owner,),
+                                  'Subject': "Offene Abonnement-Anfragen"},
+                                 {'count': len(requests), 'ml': ml})
+
+            ml_store['persona_ids'] = requests
+            store[str(ml_id)] = ml_store
+        return store
 
     @access("ml")
     @mailinglist_guard()

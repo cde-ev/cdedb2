@@ -121,6 +121,12 @@ def cron_template(**kwargs):
     return format_insert_sql("core.cron_store", data)
 
 
+def subscription_request_template(**kwargs):
+    defaults = {}
+    data = {**defaults, **kwargs}
+    return format_insert_sql("ml.subscription_requests", data)
+
+
 class TestCron(CronTest):
     def test_genesis_remind_empty(self):
         self.execute('genesis_remind')
@@ -218,3 +224,29 @@ class TestCron(CronTest):
         self.execute('pending_changelog_remind')
         self.assertEqual(["changelog_requests_pending"],
                          [mail.template for mail in self.mails])
+
+    def test_subscription_request_remind_empty(self):
+        self.execute('subscription_request_remind')
+
+    @prepsql(subscription_request_template(persona_id=3, mailinglist_id=4))
+    def test_subscription_request_remind_new(self):
+        self.execute('subscription_request_remind')
+        self.assertEqual(["subscription_request_remind"],
+                         [mail.template for mail in self.mails])
+
+    @prepsql(subscription_request_template(persona_id=3, mailinglist_id=4)
+             + subscription_request_template(persona_id=5, mailinglist_id=4)
+             + subscription_request_template(persona_id=3, mailinglist_id=5)
+             + subscription_request_template(persona_id=3, mailinglist_id=8))
+    def test_subscription_request_remind_multiple(self):
+        self.execute('subscription_request_remind')
+        self.assertEqual(["subscription_request_remind"] * 3,
+                         [mail.template for mail in self.mails])
+
+    @prepsql(subscription_request_template(persona_id=3, mailinglist_id=4)
+             + cron_template(moniker="subscription_request_remind",
+                             store={4: {'persona_ids': [3],
+                                        'tstamp': now().timestamp()}}))
+    def test_subscription_request_remind_old(self):
+        self.execute('subscription_request_remind')
+        self.assertEqual([], [mail.template for mail in self.mails])
