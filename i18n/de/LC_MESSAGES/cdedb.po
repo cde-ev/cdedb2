@@ -11987,7 +11987,7 @@ msgstr "Du kannst diesen Kurs nicht als %(i)s. und %(j)s Wahl wählen."
 #: cdedb/frontend/event.py:2421
 #, python-format
 msgid "You must chose at least %(min_choices)s courses."
-msgstr "Du musst mindestens "
+msgstr "Du musst mindestens %(min_choices)s Kurse wählen."
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:61
 msgid "Optional choice"

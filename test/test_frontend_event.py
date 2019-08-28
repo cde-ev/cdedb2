@@ -343,6 +343,7 @@ class TestEventFrontend(FrontendTest):
         f['track_title_-1_-1'] = "Chillout Training"
         f['track_shortname_-1_-1'] = "Chillout"
         f['track_num_choices_-1_-1'] = "1"
+        f['track_min_choices_-1_-1'] = "1"
         f['track_sortkey_-1_-1'] = "1"
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
@@ -360,8 +361,13 @@ class TestEventFrontend(FrontendTest):
         f['track_title_5_-1'] = "Spätschicht"
         f['track_shortname_5_-1'] = "Spät"
         f['track_num_choices_5_-1'] = "3"
+        f['track_min_choices_5_-1'] = "4"
         f['track_sortkey_5_-1'] = "1"
         f['track_create_5_-1'].checked = True
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertPresence("Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein.")
+        f['track_min_choices_5_-1'] = "2"
         self.submit(f)
         f = self.response.forms['partsummaryform']
         self.assertEqual("Spätschicht", f['track_title_5_5'].value)
@@ -430,6 +436,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/event/1/part/summary'})
         f = self.response.forms['partsummaryform']
         f['track_num_choices_2_1'] = "3"
+        f['track_min_choices_2_1'] = "3"
         self.submit(f)
 
         # Check registration as Orga
@@ -2201,6 +2208,7 @@ etc;anything else""", f['entries_2'].value)
         f['track_title_4_-1'] = "Chillout Training"
         f['track_shortname_4_-1'] = "Chill"
         f['track_num_choices_4_-1'] = "1"
+        f['track_min_choices_4_-1'] = "1"
         f['track_sortkey_4_-1'] = "1"
         self.submit(f)
 
