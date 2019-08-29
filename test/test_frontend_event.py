@@ -552,7 +552,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-        self.assertPresence("Ungültige Eingabe für eine Ganzzahl.")
+        self.assertValidationError("kind_-1",
+                                   "Ungültige Eingabe für eine Ganzzahl.")
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
         f['association_-1'] = const.FieldAssociations.registration.value
@@ -560,7 +561,9 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-        self.assertPresence("Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
+        self.assertValidationError(
+            "kind_-1",
+            "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
 
     @as_users("anton")
     def test_event_fields_change_datatype(self, user):
