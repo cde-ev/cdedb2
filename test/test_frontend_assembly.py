@@ -313,19 +313,28 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/1/show'},
                       {'href': '/attachment/add'},)
         self.assertTitle("Datei anhängen (Internationaler Kongress)")
-        f = self.response.forms['addattachmentform']
-        f['title'] = "Maßgebliche Beschlussvorlage"
-        f['filename'] = "beschluss.pdf"
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
             data = datafile.read()
-        f['attachment'] = webtest.Upload("form.pdf", data, "application/octet-stream")
+
+        # First try upload with invalid default filename
+        f = self.response.forms['addattachmentform']
+        f['title'] = "Maßgebliche Beschlussvorlage"
+        f['attachment'] = webtest.Upload("form….pdf", data, "application/octet-stream")
+        self.submit(f, check_notification=False)
+        self.assertValidationError("filename", "Darf nur aus druckbaren ASCII-Zeichen bestehen")
+        # Now, add an correct override filename
+        f = self.response.forms['addattachmentform']
+        f['attachment'] = webtest.Upload("form….pdf", data, "application/octet-stream")
+        f['filename'] = "beschluss.pdf"
         self.submit(f)
+
         self.traverse({'href': '/assembly/1/show'},)
         saved_response = self.response
         self.traverse({'description': 'Maßgebliche Beschlussvorlage'},)
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         self.response = saved_response
+
         self.traverse({'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/2/show'},
                       {'href': '/attachment/add'},)
