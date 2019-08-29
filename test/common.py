@@ -511,6 +511,34 @@ class FrontendTest(unittest.TestCase):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
 
+    def assertValidationError(self, fieldname, message=""):
+        """
+        Check for a specific form input field to be highlighted as .has-error
+        and a specific error message to be shown near the field.
+
+        :param fieldname: The field's 'name' attribute
+        :param message: The expected error message
+        :raise AssertionError: If field is not found, field is not within
+            .has-error container or error message is not found
+        """
+        node = self.response.lxml.xpath(
+            '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
+        if len(node) != 1:
+            raise AssertionError("input with name \"{}\" not found"
+                                 .format(fieldname))
+        # From https://devhints.io/xpath#class-check
+        container = node[0].xpath(
+            "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
+            "' has-error ')]")
+        if not container:
+            raise AssertionError(
+                "input with name \"{}\" is not contained in an .has-error box"
+                .format(fieldname))
+        self.assertIn(message, container[0].text_content(),
+                      "Expected error message not found near input with name "
+                      "\"{}\""
+                      .format(fieldname))
+
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])
 MailTrace = collections.namedtuple(
