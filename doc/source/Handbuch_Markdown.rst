@@ -88,9 +88,9 @@ direkt HTML zu verwenden. Folgende `Extensions <https://www.markdownguide.org/ba
 - ``smarty`` (mit deutschen Anführungszeichen)
 - ``toc``
 
-Folgende HTML-Tags sind erlaubt: ``a``, ``abbr``, ``acronym``, ``b``, ``blockquote``, ``br``, ``code``, ``colgroup``.
-``col``, ``div``, ``dl``, ``dt``, ``dd``, ``em``, ``i``, ``li``, ``h1``, ``h2``, ``h3``, ``h4``, ``h5``, ``h6``, ``hr``.
-``ol``, ``p``, ``pre``, ``span``, ``strong``, ``sup``, ``sub``, ``ul``, ``table``, ``tbody``, ``td``, ``tr``, ``th``.
+Folgende HTML-Tags sind erlaubt: ``a``, ``abbr``, ``acronym``, ``b``, ``blockquote``, ``br``, ``code``, ``colgroup``,
+``col``, ``div``, ``dl``, ``dt``, ``dd``, ``em``, ``i``, ``li``, ``h1``, ``h2``, ``h3``, ``h4``, ``h5``, ``h6``, ``hr``,
+``ol``, ``p``, ``pre``, ``span``, ``strong``, ``sup``, ``sub``, ``ul``, ``table``, ``tbody``, ``td``, ``tr``, ``th``,
 ``thead``, ``tt``, ``u``
 
 Folgende Attribute dürfen verwendet werden::
@@ -103,7 +103,6 @@ Folgende Attribute dürfen verwendet werden::
     'thead': ['valign'],
     'tbody': ['valign'],
     'table': ['border'],
-    'tr': ['colspan', 'rowspan'],
     'th': ['colspan', 'rowspan'],
     'td': ['colspan', 'rowspan'],
     'div': ['id'],

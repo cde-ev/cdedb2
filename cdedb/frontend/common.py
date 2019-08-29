@@ -526,7 +526,6 @@ def get_bleach_cleaner():
         'thead': ['valign'],
         'tbody': ['valign'],
         'table': ['border'],
-        'tr': ['colspan', 'rowspan'],
         'th': ['colspan', 'rowspan'],
         'td': ['colspan', 'rowspan'],
         'div': ['id'],
