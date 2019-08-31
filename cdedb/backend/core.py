@@ -1594,10 +1594,6 @@ class CoreBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
         :type salt: str
-        :type verify: bool
-        :param verify: Signal, that we are invoked by
-          :py:meth:`_verify_reset_cookie`, which means, that we have to skip
-          some checks.
         :type timeout: datetime.timedelta
         :rtype: str
         """
