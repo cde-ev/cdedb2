@@ -2760,12 +2760,13 @@ class EventBackend(AbstractBackend):
             del export_event['end']
             del export_event['is_open']
             del export_event['orgas']
+            del export_event['tracks']
             for part in export_event['parts'].values():
                 del part['id']
                 del part['event_id']
-                del part['tracks']
-            for track in export_event['tracks'].values():
-                del track['id']
+                for track in part['tracks'].values():
+                    del track['id']
+                    del track['part_id']
             new_fields = {
                 field['field_name']: field
                 for field in export_event['fields'].values()

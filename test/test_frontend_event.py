@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+
+import copy
 import csv
 import json
 import datetime
@@ -2024,16 +2026,29 @@ etc;anything else""", f['entries_2'].value)
                                       'part_begin': '2222-02-02',
                                       'part_end': '2222-02-02',
                                       'shortname': 'Wu',
+                                      'tracks': {},
                                       'title': 'Warmup'},
                                 '2': {'fee': '123.00',
                                       'part_begin': '2222-11-01',
                                       'part_end': '2222-11-11',
                                       'shortname': '1.H.',
+                                      'tracks': {'1': {'num_choices': 4,
+                                                       'shortname': 'Morgenkreis',
+                                                       'sortkey': 1,
+                                                       'title': 'Morgenkreis (Erste Hälfte)'},
+                                                 '2': {'num_choices': 1,
+                                                       'shortname': 'Kaffee',
+                                                       'sortkey': 2,
+                                                       'title': 'Kaffeekränzchen (Erste Hälfte)'}},
                                       'title': 'Erste Hälfte'},
                                 '3': {'fee': '450.99',
                                       'part_begin': '2222-11-11',
                                       'part_end': '2222-11-30',
                                       'shortname': '2.H.',
+                                      'tracks': {'3': {'num_choices': 2,
+                                                       'shortname': 'Sitzung',
+                                                       'sortkey': 3,
+                                                       'title': 'Arbeitssitzung (Zweite Hälfte)'}},
                                       'title': 'Zweite Hälfte'}},
                       'registration_hard_limit': '2220-10-30T00:00:00+00:00',
                       'registration_soft_limit': '2200-10-30T00:00:00+00:00',
@@ -2042,21 +2057,6 @@ etc;anything else""", f['entries_2'].value)
                       'reserve_field': 4,
                       'shortname': 'TestAka',
                       'title': 'Große Testakademie 2222',
-                      'tracks': {'1': {'num_choices': 4,
-                                       'part_id': 2,
-                                       'shortname': 'Morgenkreis',
-                                       'sortkey': 1,
-                                       'title': 'Morgenkreis (Erste Hälfte)'},
-                                 '2': {'num_choices': 1,
-                                       'part_id': 2,
-                                       'shortname': 'Kaffee',
-                                       'sortkey': 2,
-                                       'title': 'Kaffeekränzchen (Erste Hälfte)'},
-                                 '3': {'num_choices': 2,
-                                       'part_id': 3,
-                                       'shortname': 'Sitzung',
-                                       'sortkey': 3,
-                                       'title': 'Arbeitssitzung (Zweite Hälfte)'}},
                       'use_questionnaire': False},
             'id': 1,
             'kind': 'partial',
@@ -2271,7 +2271,7 @@ etc;anything else""", f['entries_2'].value)
 
         upload = copy.deepcopy(first)
         del upload['event']
-        for reg in upload['registrations'].values:
+        for reg in upload['registrations'].values():
             del reg['persona']
         self.get('/')
         self.traverse({'href': '/event/$'},
