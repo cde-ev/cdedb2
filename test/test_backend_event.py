@@ -2569,6 +2569,7 @@ class TestEventBackend(BackendTest):
                         -1: {'title': "First lecture",
                              'shortname': "First",
                              'num_choices': 3,
+                             'min_choices': 3,
                              'sortkey': 1}},
                     'title': "First coming",
                     'shortname': "First",
@@ -2580,6 +2581,7 @@ class TestEventBackend(BackendTest):
                         -1: {'title': "Second lecture",
                              'shortname': "Second",
                              'num_choices': 3,
+                             'min_choices': 3,
                              'sortkey': 1}},
                     'title': "Second coming",
                     'shortname': "Second",
@@ -2635,6 +2637,7 @@ class TestEventBackend(BackendTest):
                 -1: {'title': "Third lecture",
                      'shortname': "Third",
                      'num_choices': 2,
+                     'min_choices': 2,
                      'sortkey': 2}},
             'title': "Third coming",
             'shortname': "Third",
@@ -2650,6 +2653,7 @@ class TestEventBackend(BackendTest):
                 5: {'title': "Second lecture v2",  # hardcoded id 5
                     'shortname': "Second v2",
                     'num_choices': 5,
+                    'min_choices': 4,
                     'sortkey': 3}}
         }
         newfield = {
