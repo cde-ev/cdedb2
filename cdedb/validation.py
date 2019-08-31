@@ -1949,7 +1949,8 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
 _EVENT_TRACK_COMMON_FIELDS = {
     'title': _str,
     'shortname': _str,
-    'num_choices': _int,
+    'num_choices': _non_negative_int,
+    'min_choices': _non_negative_int,
     'sortkey': _int,
 }
 
@@ -1979,6 +1980,12 @@ def _event_track(val, argname=None, *, creation=False, _convert=True):
                                            optional_fields, _convert=_convert)
     if errs:
         return val, errs
+    if ('num_choices' in val and 'min_choices' in val
+            and val['min_choices'] > val['num_choices']):
+        errs.append(
+            ("min_choices",
+             ValueError(
+                 n_("Must be less or equal than total Course Choices."))))
     return val, errs
 
 

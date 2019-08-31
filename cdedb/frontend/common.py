@@ -1772,7 +1772,7 @@ def REQUESTdatadict(*proto_spec):
     return wrap
 
 
-def request_extractor(rs, args):
+def request_extractor(rs, args, constraints=None):
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1780,15 +1780,31 @@ def request_extractor(rs, args):
     registrations, here the parameter list has to be constructed from data
     retrieved from the backend.
 
+    Sometimes there are interdependencies between the individual
+    attributes of the input. It would be best to have them caught by
+    the original validators. However these are not easily usable in
+    the flexible input setting this function is designed for. So
+    instead of a complete rebuild of the validators we add the
+    ``constraints`` parameter to perform these checks here. It is a
+    list of callables that perform a check and associated errors that
+    are reported if the check fails.
+
     :type rs: :py:class:`RequestState`
     :type args: [(str, str)]
     :param args: handed through to the decorator
+    :type constraints: [(callable, (str, exception))]
+    :param constraints: additional constraints that shoud produce
+      validation errors
     :rtype: {str: object}
     :returns: dict containing the requested values
-    """
 
+    """
     @REQUESTdata(*args)
     def fun(_, rs, **kwargs):
+        if not rs.errors:
+            for checker, error in constraints or []:
+                if not checker(kwargs):
+                    rs.errors.append(error)
         return kwargs
 
     return fun(None, rs)

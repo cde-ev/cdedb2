@@ -343,6 +343,7 @@ class TestEventFrontend(FrontendTest):
         f['track_title_-1_-1'] = "Chillout Training"
         f['track_shortname_-1_-1'] = "Chillout"
         f['track_num_choices_-1_-1'] = "1"
+        f['track_min_choices_-1_-1'] = "1"
         f['track_sortkey_-1_-1'] = "1"
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
@@ -360,8 +361,13 @@ class TestEventFrontend(FrontendTest):
         f['track_title_5_-1'] = "Spätschicht"
         f['track_shortname_5_-1'] = "Spät"
         f['track_num_choices_5_-1'] = "3"
+        f['track_min_choices_5_-1'] = "4"
         f['track_sortkey_5_-1'] = "1"
         f['track_create_5_-1'].checked = True
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertPresence("Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein.")
+        f['track_min_choices_5_-1'] = "2"
         self.submit(f)
         f = self.response.forms['partsummaryform']
         self.assertEqual("Spätschicht", f['track_title_5_5'].value)
@@ -430,6 +436,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/event/1/part/summary'})
         f = self.response.forms['partsummaryform']
         f['track_num_choices_2_1'] = "3"
+        f['track_min_choices_2_1'] = "3"
         self.submit(f)
 
         # Check registration as Orga
@@ -898,11 +905,24 @@ etc;anything else""", f['entries_2'].value)
         f['parts'] = ['1', '3']
         f['mixed_lodging'] = 'True'
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
-        f['course_choice3_0'] = 2
-        f['course_choice3_1'] = 4
+        self.assertIn('course_choice3_2', f.fields)
         self.assertNotIn('3', tuple(
             o for o, _, _ in f['course_choice3_1'].options))
+        f['course_choice3_0'] = 2
         f['course_instructor3'] = 2
+        # No second choice given -> expecting error
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        self.assertPresence("Du musst mindestens 2 Kurse wählen.")
+        f['course_choice3_1'] = 2
+        # Two equal choices given -> expecting error
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        self.assertPresence("Du kannst diesen Kurs nicht als 1. und 2 Wahl wählen.")
+        f['course_choice3_1'] = 4
+        # Now, we did it right.
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
@@ -916,11 +936,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Arbeitssitzung")
         f = self.response.forms['amendregistrationform']
         self.assertEqual("4", f['course_choice3_1'].value)
+        self.assertEqual("", f['course_choice3_2'].value)
         self.assertEqual("2", f['course_instructor3'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         f['notes'] = "Ich kann es kaum erwarten!"
         f['course_choice3_0'] = 4
         f['course_choice3_1'] = 1
+        f['course_choice3_2'] = 5
         f['course_instructor3'] = 1
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
@@ -929,6 +951,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']
         self.assertEqual("4", f['course_choice3_0'].value)
+        self.assertEqual("5", f['course_choice3_2'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
 
@@ -2188,6 +2211,7 @@ etc;anything else""", f['entries_2'].value)
         f['track_title_4_-1'] = "Chillout Training"
         f['track_shortname_4_-1'] = "Chill"
         f['track_num_choices_4_-1'] = "1"
+        f['track_min_choices_4_-1'] = "1"
         f['track_sortkey_4_-1'] = "1"
         self.submit(f)
 

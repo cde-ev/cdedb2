@@ -110,7 +110,7 @@
                     {% set course_entries = courses|xdictsort('nr', pad=True)
                                             |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
                     {% for i in range(track['num_choices']) %}
-                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i),
+                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="",
                                                   label=gettext("%s. Choice")|format(i + 1), entries=course_entries) }}
                     {% endfor %}
 

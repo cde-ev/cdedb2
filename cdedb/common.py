@@ -1408,7 +1408,7 @@ def roles_to_db_role(roles):
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-CDEDB_EXPORT_EVENT_VERSION = 2
+CDEDB_EXPORT_EVENT_VERSION = 3
 
 
 #: All columns deciding on the current status of a persona
@@ -1479,7 +1479,7 @@ EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
 
 #: Fields of a track where courses can happen
 COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
-                       "sortkey")
+                       "min_choices", "sortkey")
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",

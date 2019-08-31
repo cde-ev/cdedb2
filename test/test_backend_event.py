@@ -59,6 +59,7 @@ class TestEventBackend(BackendTest):
                         -1: {'title': "First lecture",
                              'shortname': "First",
                              'num_choices': 3,
+                             'min_choices': 3,
                              'sortkey': 1}
                     },
                     'title': "First coming",
@@ -71,6 +72,7 @@ class TestEventBackend(BackendTest):
                         -1: {'title': "Second lecture",
                              'shortname': "Second",
                              'num_choices': 3,
+                             'min_choices': 1,
                              'sortkey': 1}
                     },
                     'title': "Second coming",
@@ -154,6 +156,7 @@ class TestEventBackend(BackendTest):
                 -1: {'title': "Third lecture",
                      'shortname': "Third",
                      'num_choices': 2,
+                     'min_choices': 2,
                      'sortkey': 2}
             },
             'title': "Third coming",
@@ -170,6 +173,7 @@ class TestEventBackend(BackendTest):
                 5: {'title': "Second lecture v2",  # hardcoded id 5
                     'shortname': "Second v2",
                     'num_choices': 5,
+                    'min_choices': 4,
                     'sortkey': 3}
             }}
         newfield = {
@@ -236,12 +240,14 @@ class TestEventBackend(BackendTest):
                               'title': 'Second lecture v2',
                               'shortname': "Second v2",
                               'num_choices': 5,
+                              'min_choices': 4,
                               'sortkey': 3},
                           6: {'id': 6,
                               'part_id': 7,
                               'title': 'Third lecture',
                               'shortname': 'Third',
                               'num_choices': 2,
+                              'min_choices': 2,
                               'sortkey': 2}}
 
         self.assertEqual(data,
@@ -343,6 +349,7 @@ class TestEventBackend(BackendTest):
             'title': "Neue Kursschiene",
             'shortname': "Neu",
             'num_choices': 3,
+            'min_choices': 1,
             'sortkey': 1,
         }
         update_event = {
@@ -1533,18 +1540,21 @@ class TestEventBackend(BackendTest):
                                            'track_id': 3}},
             'event.course_tracks': {1: {'id': 1,
                                         'num_choices': 4,
+                                        'min_choices': 4,
                                         'part_id': 2,
                                         'shortname': 'Morgenkreis',
                                         'sortkey': 1,
                                         'title': 'Morgenkreis (Erste Hälfte)'},
                                     2: {'id': 2,
                                         'num_choices': 1,
+                                        'min_choices': 1,
                                         'part_id': 2,
                                         'shortname': 'Kaffee',
                                         'sortkey': 2,
                                         'title': 'Kaffeekränzchen (Erste Hälfte)'},
                                     3: {'id': 3,
-                                        'num_choices': 2,
+                                        'num_choices': 3,
+                                        'min_choices': 2,
                                         'part_id': 3,
                                         'shortname': 'Sitzung',
                                         'sortkey': 3,
@@ -2020,6 +2030,7 @@ class TestEventBackend(BackendTest):
             'title': 'Enlightnment',
             'shortname': 'Enlightnment',
             'num_choices': 3,
+            'min_choices': 2,
             'sortkey': 1}
         ## lodgements
         new_data['event.lodgements'][6000] = {
@@ -2131,6 +2142,7 @@ class TestEventBackend(BackendTest):
             'id': 4,
             'shortname': 'Enlightnment',
             'num_choices': 3,
+            'min_choices': 2,
             'sortkey': 1,
             'title': 'Enlightnment'}
         stored_data['event.lodgements'][5] = {
@@ -2557,6 +2569,7 @@ class TestEventBackend(BackendTest):
                         -1: {'title': "First lecture",
                              'shortname': "First",
                              'num_choices': 3,
+                             'min_choices': 3,
                              'sortkey': 1}},
                     'title': "First coming",
                     'shortname': "First",
@@ -2568,6 +2581,7 @@ class TestEventBackend(BackendTest):
                         -1: {'title': "Second lecture",
                              'shortname': "Second",
                              'num_choices': 3,
+                             'min_choices': 3,
                              'sortkey': 1}},
                     'title': "Second coming",
                     'shortname': "Second",
@@ -2623,6 +2637,7 @@ class TestEventBackend(BackendTest):
                 -1: {'title': "Third lecture",
                      'shortname': "Third",
                      'num_choices': 2,
+                     'min_choices': 2,
                      'sortkey': 2}},
             'title': "Third coming",
             'shortname': "Third",
@@ -2638,6 +2653,7 @@ class TestEventBackend(BackendTest):
                 5: {'title': "Second lecture v2",  # hardcoded id 5
                     'shortname': "Second v2",
                     'num_choices': 5,
+                    'min_choices': 4,
                     'sortkey': 3}}
         }
         newfield = {

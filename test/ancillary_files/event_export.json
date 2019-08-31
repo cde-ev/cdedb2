@@ -264,7 +264,7 @@
             "association": 2
         }
     },
-    "CDEDB_EXPORT_EVENT_VERSION": 2,
+    "CDEDB_EXPORT_EVENT_VERSION": 3,
     "event.registration_parts": {
         "2": {
             "is_reserve": false,
@@ -529,6 +529,7 @@
     "id": 1,
     "event.course_tracks": {
         "2": {
+            "min_choices": 1,
             "num_choices": 1,
             "shortname": "Kaffee",
             "id": 2,
@@ -537,6 +538,7 @@
             "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)"
         },
         "1": {
+            "min_choices": 4,
             "num_choices": 4,
             "shortname": "Morgenkreis",
             "id": 1,
@@ -545,7 +547,8 @@
             "title": "Morgenkreis (Erste H\u00e4lfte)"
         },
         "3": {
-            "num_choices": 2,
+            "min_choices": 2,
+            "num_choices": 3,
             "shortname": "Sitzung",
             "id": 3,
             "part_id": 3,
