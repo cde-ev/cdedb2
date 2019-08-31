@@ -690,7 +690,8 @@ class TestCdEFrontend(FrontendTest):
              r"birthday:\W*Notwendige Angabe fehlt."),
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             (r"Zeilen 13 und 14 sind identisch.",),
-            (r"Zeilen 13 und 14 sind identisch.",),
+            (r"Zeilen 13 und 14 sind identisch.",
+             r"pcourse_id\W*Lediglich nach Titel zugeordnet."),
             (r"pevent_id\W*Nur unscharfer Treffer.",
              r"pcourse_id\W*Nur unscharfer Treffer.",
              r"birthday\W*Person ist jünger als 10 Jahre.",),
@@ -775,16 +776,16 @@ class TestCdEFrontend(FrontendTest):
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             tuple(),
             tuple(),
-            (r"pevent_id\W*Only fuzzy match.",
-             r"pcourse_id\W*Only fuzzy match.",),
+            (r"pevent_id\W*Nur unscharfer Treffer.",
+             r"pevent_id\W*Nur unscharfer Treffer.",),
             )
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
 
         inputdata = f['accounts'].value
-        inputdata = inputdata.replace('"Swish -- und alles ist gut";"Beispiel";"Bertålotta"',
-                                      '"Goethe zum Anfassen";"Beispiel";"Bertålotta"')
+        inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
+                                      '"Ω";"Beispiel";"Bertålotta"')
         f['accounts'] = inputdata
         f['resolution4'] = 5
         f['doppelganger_id4'] = '2'

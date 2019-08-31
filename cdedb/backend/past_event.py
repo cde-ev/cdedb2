@@ -652,35 +652,40 @@ class PastEventBackend(AbstractBackend):
             return unwrap(unwrap(ret)), warnings, []
 
     @access("cde_admin", "event_admin")
-    def find_past_course(self, rs, moniker, pevent_id):
-        """Look for courses with a certain name.
+    def find_past_course(self, rs, phrase, pevent_id):
+        """Look for courses with a certain number/name.
 
         This is mainly for batch admission, where we want to
         automatically resolve past courses to their ids.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type moniker: str
+        :type phrase: str
         :type pevent_id: int
         :param pevent_id: Restrict to courses of this past event.
         :rtype: (int or None, [exception])
         :returns: The id of the past course or None if there were errors.
         """
-        moniker = affirm("str_or_None", moniker)
-        if not moniker:
+        phrase = affirm("str_or_None", phrase)
+        if not phrase:
             return None, [], [("pcourse_id",
                                ValueError(n_("No input supplied.")))]
         pevent_id = affirm("id", pevent_id)
         query = glue("SELECT id FROM past_event.courses",
-                     "WHERE title ~* %s AND pevent_id = %s")
+                     "WHERE nr = %s AND pevent_id = %s")
         query2 = glue("SELECT id FROM past_event.courses",
+                     "WHERE title ~* %s AND pevent_id = %s")
+        query3 = glue("SELECT id FROM past_event.courses",
                       "WHERE similarity(title, %s) > %s AND pevent_id = %s")
-        ret = self.query_all(rs, query, (moniker, pevent_id))
+        ret = self.query_all(rs, query, (phrase, pevent_id))
         warnings = []
         # retry with less restrictive conditions until we find something or
         # give up
         if len(ret) == 0:
+            warnings.append(("pcourse_id", ValueError(n_("Only title match."))))
+            ret = self.query_all(rs, query2, (phrase, pevent_id))
+        if len(ret) == 0:
             warnings.append(("pcourse_id", ValueError(n_("Only fuzzy match."))))
-            ret = self.query_all(rs, query2, (moniker, 0.5, pevent_id))
+            ret = self.query_all(rs, query3, (phrase, 0.5, pevent_id))
         if len(ret) == 0:
             return None, [], [
                 ("pcourse_id", ValueError(n_("No course found.")))]
