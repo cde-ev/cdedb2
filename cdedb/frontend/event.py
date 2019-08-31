@@ -585,7 +585,18 @@ class EventFrontend(AbstractUserFrontend):
             for part_id, part in parts.items()
             for track_id in part['tracks']
             if track_id not in track_deletes))
-        data = request_extractor(rs, params)
+
+        def constraint_maker(part_id, track_id):
+            min = "track_min_choices_{}_{}".format(part_id, track_id)
+            num = "track_num_choices_{}_{}".format(part_id, track_id)
+            msg = n_("Must be less or equal than total Course Choices.")
+            return (lambda d: d[min] <= d[num], (min, msg))
+        constraints = tuple(
+            constraint_maker(part_id, track_id)
+            for part_id, part in parts.items()
+            for track_id in part['tracks']
+            if track_id not in track_deletes)
+        data = request_extractor(rs, params, constraints)
         rs.values['track_create_last_index'] = {}
         for part_id, part in parts.items():
             if part_id in deletes:
@@ -594,7 +605,6 @@ class EventFrontend(AbstractUserFrontend):
                 track_id: (track_excavator(data, part_id, track_id)
                            if track_id not in track_deletes else None)
                 for track_id in part['tracks']}
-            # TODO validate min_choices <= num_choices
             marker = 1
             while marker < 2 ** 5:
                 will_create = unwrap(request_extractor(
@@ -605,10 +615,11 @@ class EventFrontend(AbstractUserFrontend):
                         raise ValueError(
                             n_("Registrations exist, no creation."))
                     params = tuple(track_params(part_id, -marker))
-                    newtrack = track_excavator(request_extractor(rs, params),
-                                               part_id, -marker)
+                    constraints = (constraint_maker(part_id, -marker),)
+                    newtrack = track_excavator(
+                        request_extractor(rs, params, constraints),
+                        part_id, -marker)
                     ret[part_id]['tracks'][-marker] = newtrack
-                    # TODO validate min_choices <= num_choices
                 else:
                     break
                 marker += 1
@@ -625,8 +636,10 @@ class EventFrontend(AbstractUserFrontend):
                       "bool"),)))
                 if will_create:
                     params = tuple(track_params(-new_part_id, -marker))
-                    newtrack = track_excavator(request_extractor(rs, params),
-                                               -new_part_id, -marker)
+                    constraints = (constraint_maker(-new_part_id, -marker),)
+                    newtrack = track_excavator(
+                        request_extractor(rs, params, constraints),
+                        -new_part_id, -marker)
                     ret[-new_part_id]['tracks'][-marker] = newtrack
                 else:
                     break
