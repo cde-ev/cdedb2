@@ -131,7 +131,7 @@
                 	{{ assign }} {{ participants }} {{ course }} {{ tracks }} {{ submit }}
                 {%- endtrans %}
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
-                    {
+                    $(function() {
                         var $actionSelect = $('#input-action');
                         var $courseSelect = $('#input-course_id');
                         var updateCourseVisibility = function() {
@@ -142,7 +142,7 @@
                         };
                         $actionSelect.change(updateCourseVisibility);
                         updateCourseVisibility();
-                    }
+                    });
                 </script>
             </div>
         {% endcall %}
