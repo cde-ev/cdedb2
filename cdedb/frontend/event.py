@@ -590,7 +590,7 @@ class EventFrontend(AbstractUserFrontend):
             min = "track_min_choices_{}_{}".format(part_id, track_id)
             num = "track_num_choices_{}_{}".format(part_id, track_id)
             msg = n_("Must be less or equal than total Course Choices.")
-            return (lambda d: d[min] <= d[num], (min, msg))
+            return (lambda d: d[min] <= d[num], (min, ValueError(msg)))
         constraints = tuple(
             constraint_maker(part_id, track_id)
             for part_id, part in parts.items()

@@ -54,7 +54,7 @@
                                attributes=('data-basename="track_min_choices_" data-basename1="_"'|s if newrow else '')
                                     + ' min="0"'|s,
                                arialabel=gettext("Number of Course Choices"), type="number", defaultvalue="3") }}
-            {{ util.output_errors("track_num_choices_{}_{}".format(part_id, track_id)) }}
+            {{ util.output_errors("track_min_choices_{}_{}".format(part_id, track_id)) }}
         </td>
         <td {% if "track_sortkey_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text(name="track_sortkey_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
