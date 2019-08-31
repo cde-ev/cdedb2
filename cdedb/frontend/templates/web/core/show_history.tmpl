@@ -129,7 +129,11 @@
 
             {% call history_field(gettext("Gender")) %}
                 {% call(c) print_history('gender') %}
-                     {{ gettext(enums['Genders'](entries[c]['gender'])|string) }}
+		    {% if entries[c]['gender'] %}
+                        {{ gettext(enums['Genders'](entries[c]['gender'])|string) }}
+		    {% else %}
+                        {# leave empty #}
+		    {% endif %}
                 {% endcall %}
             {% endcall %}
         {% endif %}
