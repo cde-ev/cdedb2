@@ -2293,6 +2293,94 @@ class TestEventBackend(BackendTest):
                             'segments': {1: True, 2: True, 3: False},
                             'shortname': 'Backup',
                             'title': 'Backup-Kurs'}},
+            'event': {'course_room_field': 2,
+                      'description': 'Everybody come!',
+                      'fields': {'brings_balls': {'association': 1,
+                                                  'entries': None,
+                                                  'id': 1,
+                                                  'kind': 2},
+                                 'contamination': {'association': 3,
+                                                   'entries': [['high',
+                                                                'lots of radiation'],
+                                                               ['medium',
+                                                                'elevated level of '
+                                                                'radiation'],
+                                                               ['low', 'some radiation'],
+                                                               ['none', 'no radiation']],
+                                                   'id': 6,
+                                                   'kind': 1},
+                                 'lodge': {'association': 1,
+                                           'entries': None,
+                                           'id': 3,
+                                           'kind': 1},
+                                 'may_reserve': {'association': 1,
+                                                 'entries': None,
+                                                 'id': 4,
+                                                 'kind': 2},
+                                 'room': {'association': 2,
+                                          'entries': None,
+                                          'id': 5,
+                                          'kind': 1},
+                                 'transportation': {'association': 1,
+                                                    'entries': [['pedes', 'by feet'],
+                                                                ['car',
+                                                                 'own car available'],
+                                                                ['etc', 'anything else']],
+                                                    'id': 2,
+                                                    'kind': 1}},
+                      'iban': 'DE96370205000008068901',
+                      'institution': 1,
+                      'is_archived': False,
+                      'is_course_list_visible': True,
+                      'is_course_state_visible': False,
+                      'is_visible': True,
+                      'lodge_field': 3,
+                      'mail_text': 'Wir verwenden ein neues Kristallkugel-basiertes '
+                                   'Kurszuteilungssystem; bis wir das ordentlich ans '
+                                   'Laufen gebracht haben, müsst ihr leider etwas auf die '
+                                   'Teilnehmerliste warten.',
+                      'notes': 'Todoliste ... just kidding ;)',
+                      'offline_lock': False,
+                      'orga_address': 'aka@example.cde',
+                      'parts': {1: {'fee': decimal.Decimal('10.50'),
+                                    'part_begin': datetime.date(2222, 2, 2),
+                                    'part_end': datetime.date(2222, 2, 2),
+                                    'shortname': 'Wu',
+                                    'tracks': {},
+                                    'title': 'Warmup'},
+                                2: {'fee': decimal.Decimal('123.00'),
+                                    'part_begin': datetime.date(2222, 11, 1),
+                                    'part_end': datetime.date(2222, 11, 11),
+                                    'shortname': '1.H.',
+                                    'tracks': {1: {'num_choices': 4,
+                                                   'min_choices': 4,
+                                                   'shortname': 'Morgenkreis',
+                                                   'sortkey': 1,
+                                                   'title': 'Morgenkreis (Erste Hälfte)'},
+                                               2: {'num_choices': 1,
+                                                   'min_choices': 1,
+                                                   'shortname': 'Kaffee',
+                                                   'sortkey': 2,
+                                                   'title': 'Kaffeekränzchen (Erste Hälfte)'}},
+                                    'title': 'Erste Hälfte'},
+                                3: {'fee': decimal.Decimal('450.99'),
+                                    'part_begin': datetime.date(2222, 11, 11),
+                                    'part_end': datetime.date(2222, 11, 30),
+                                    'shortname': '2.H.',
+                                    'tracks': {3: {'num_choices': 3,
+                                                   'min_choices': 2,
+                                                   'shortname': 'Sitzung',
+                                                   'sortkey': 3,
+                                                   'title': 'Arbeitssitzung (Zweite Hälfte)'}},
+                                    'title': 'Zweite Hälfte'}},
+                      'registration_hard_limit': datetime.datetime(2220, 10, 30, 0, 0, tzinfo=pytz.utc),
+                      'registration_soft_limit': datetime.datetime(2200, 10, 30, 0, 0, tzinfo=pytz.utc),
+                      'registration_start': datetime.datetime(2000, 10, 30, 0, 0, tzinfo=pytz.utc),
+                      'registration_text': None,
+                      'reserve_field': 4,
+                      'shortname': 'TestAka',
+                      'title': 'Große Testakademie 2222',
+                      'use_questionnaire': False},
             'id': 1,
             'kind': 'partial',
             'lodgements': {1: {'capacity': 5,
@@ -2332,6 +2420,23 @@ class TestEventBackend(BackendTest):
                                                 'lodgement_id': 1,
                                                 'status': 2}},
                                   'payment': None,
+                                  'persona': {'address': 'Auf der Düne 42',
+                                              'address_supplement': None,
+                                              'birthday': datetime.date(1991, 3, 30),
+                                              'country': None,
+                                              'display_name': 'Anton',
+                                              'family_name': 'Administrator',
+                                              'gender': 2,
+                                              'given_names': 'Anton Armin A.',
+                                              'is_member': True,
+                                              'is_orga': False,
+                                              'location': 'Musterstadt',
+                                              'mobile': None,
+                                              'name_supplement': None,
+                                              'postal_code': '03205',
+                                              'telephone': '+49 (234) 98765',
+                                              'title': None,
+                                              'username': 'anton@example.cde'},
                                   'tracks': {1: {'choices': [1, 3, 4, 2],
                                                  'course_id': None,
                                                  'course_instructor': None},
@@ -2360,6 +2465,23 @@ class TestEventBackend(BackendTest):
                                                 'lodgement_id': 4,
                                                 'status': 2}},
                                   'payment': datetime.date(2014, 2, 2),
+                                  'persona': {'address': 'Hohle Gasse 13',
+                                              'address_supplement': None,
+                                              'birthday': datetime.date(2012, 6, 2),
+                                              'country': 'Deutschland',
+                                              'display_name': 'Emilia',
+                                              'family_name': 'Eventis',
+                                              'gender': 1,
+                                              'given_names': 'Emilia E.',
+                                              'is_member': False,
+                                              'is_orga': False,
+                                              'location': 'Wolkenkuckuksheim',
+                                              'mobile': None,
+                                              'name_supplement': None,
+                                              'postal_code': '56767',
+                                              'telephone': '+49 (5432) 555666777',
+                                              'title': None,
+                                              'username': 'emilia@example.cde'},
                                   'tracks': {1: {'choices': [5, 4, 2, 1],
                                                  'course_id': None,
                                                  'course_instructor': None},
@@ -2386,6 +2508,23 @@ class TestEventBackend(BackendTest):
                                                 'lodgement_id': 2,
                                                 'status': 2}},
                                   'payment': datetime.date(2014, 3, 3),
+                                  'persona': {'address': 'Bei der Wüste 39',
+                                              'address_supplement': None,
+                                              'birthday': datetime.date(1978, 12, 12),
+                                              'country': None,
+                                              'display_name': 'Garcia',
+                                              'family_name': 'Generalis',
+                                              'gender': 1,
+                                              'given_names': 'Garcia G.',
+                                              'is_member': True,
+                                              'is_orga': True,
+                                              'location': 'Weltstadt',
+                                              'mobile': None,
+                                              'name_supplement': None,
+                                              'postal_code': '88484',
+                                              'telephone': None,
+                                              'title': None,
+                                              'username': 'garcia@example.cde'},
                                   'tracks': {1: {'choices': [4, 2, 1, 5],
                                                  'course_id': None,
                                                  'course_instructor': None},
@@ -2414,6 +2553,23 @@ class TestEventBackend(BackendTest):
                                                 'lodgement_id': 2,
                                                 'status': 2}},
                                   'payment': datetime.date(2014, 4, 4),
+                                  'persona': {'address': 'Zwergstraße 1',
+                                              'address_supplement': None,
+                                              'birthday': datetime.date(2222, 1, 1),
+                                              'country': None,
+                                              'display_name': 'Inga',
+                                              'family_name': 'Iota',
+                                              'gender': 1,
+                                              'given_names': 'Inga',
+                                              'is_member': True,
+                                              'is_orga': False,
+                                              'location': 'Liliput',
+                                              'mobile': '0163/456897',
+                                              'name_supplement': None,
+                                              'postal_code': '10999',
+                                              'telephone': None,
+                                              'title': None,
+                                              'username': 'inga@example.cde'},
                                   'tracks': {1: {'choices': [2, 1, 4, 5],
                                                  'course_id': None,
                                                  'course_instructor': None},
@@ -2432,7 +2588,8 @@ class TestEventBackend(BackendTest):
     def test_partial_import_event(self, user):
         event = self.event.get_event(self.key, 1)
         previous = self.event.partial_export_event(self.key, 1)
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") as datafile:
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
+                as datafile:
             data = json.load(datafile)
 
         # first a test run
@@ -2463,6 +2620,7 @@ class TestEventBackend(BackendTest):
             'lodgements': {'fields': {}},
             'registrations': {'parts': {}, 'tracks': {}, 'fields': {}},
         }
+
         def recursive_update(old, new, hint=None):
             if hint == 'fields':
                 new = cast_fields(new, event['fields'])
@@ -2470,7 +2628,7 @@ class TestEventBackend(BackendTest):
                          if val is None and key in old]
             for key in deletions:
                 if (isinstance(old[key], collections.abc.Mapping)
-                        or hint =='segments'):
+                        or hint == 'segments'):
                     del old[key]
                     del new[key]
             recursions = [key for key, val in new.items()
@@ -2501,11 +2659,13 @@ class TestEventBackend(BackendTest):
         recursive_update(expectation, delta)
         del expectation['timestamp']
         del updated['timestamp']
+        del updated['registrations'][6]['persona']  # ignore additional info
         self.assertEqual(expectation, updated)
 
     @as_users("anton")
     def test_partial_import_event_twice(self, user):
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") as datafile:
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
+                as datafile:
             data = json.load(datafile)
 
         # first a test run
