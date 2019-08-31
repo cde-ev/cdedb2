@@ -289,8 +289,8 @@ class AssemblyBackend(AbstractBackend):
           signup end. The latter is used to sort the assemblies in index.
         """
         is_active = affirm("bool_or_None", is_active)
-        query = "SELECT id, title, signup_end, is_active " \
-                "FROM assembly.assemblies"
+        query = ("SELECT id, title, signup_end, is_active "
+                 "FROM assembly.assemblies")
         params = tuple()
         if is_active is not None:
             query = glue(query, "WHERE is_active = %s")
