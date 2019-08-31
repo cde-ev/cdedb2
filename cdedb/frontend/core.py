@@ -1478,9 +1478,13 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
-            case_id = self.coreproxy.get_genesis_case_by_email(
+            case_id = self.coreproxy.genesis_case_by_email(
                 rs, data['username'])
             if case_id:
+                # TODO this case is kind of a hack since it throws
+                # away the information entered by the user, but in
+                # theory this should not happen too often (reality
+                # notwithstanding)
                 rs.notify("info",
                           n_("Confirmation email has been resent."))
             else:
@@ -1494,14 +1498,11 @@ class CoreFrontend(AbstractFrontend):
             return self.genesis_request_form(rs)
         self.do_mail(rs, "genesis_verify",
                      {'To': (data['username'],),
-                      'Subject': "CdEDB Accountanfrage verifizieren",
-                      },
-                     {
-                         'case_id': self.encode_parameter(
-                             "core/genesis_verify", "case_id", case_id),
-                         'given_names': data['given_names'],
-                         'family_name': data['family_name'],
-                     })
+                      'Subject': "CdEDB Accountanfrage verifizieren",},
+                     {'case_id': self.encode_parameter(
+                         "core/genesis_verify", "case_id", case_id),
+                      'given_names': data['given_names'],
+                      'family_name': data['family_name'],})
         rs.notify(
             "success",
             n_("Email sent. Please follow the link contained in the email."))

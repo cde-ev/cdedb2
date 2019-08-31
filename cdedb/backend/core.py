@@ -1583,22 +1583,6 @@ class CoreBackend(AbstractBackend):
         data2 = self.query_one(rs, query, (email, stati))
         return bool(data['num'] + data2['num'])
 
-    @access("anonymous")
-    def get_genesis_case_by_email(self, rs, email):
-        """Get the id of an unconfirmed genesis case for a given email.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type email: str
-        :rtype: int or None
-        :returns: The case id or None if no such case exists.
-        """
-        email = affirm("str", email)
-        query = glue("SELECT id FROM core.genesis_cases",
-                     "WHERE username = %s AND case_status = ANY(%s)")
-        params = (email, (const.GenesisStati.unconfirmed,))
-        data = self.query_one(rs, query, params)
-        return unwrap(data) if data else None
-    
     RESET_COOKIE_PAYLOAD = "X"
 
     def _generate_reset_cookie(self, rs, persona_id, salt,
@@ -1961,6 +1945,22 @@ class CoreBackend(AbstractBackend):
 
         return ret
 
+    @access("anonymous")
+    def genesis_case_by_email(self, rs, email):
+        """Get the id of an unconfirmed genesis case for a given email.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type email: str
+        :rtype: int or None
+        :returns: The case id or None if no such case exists.
+        """
+        email = affirm("str", email)
+        query = glue("SELECT id FROM core.genesis_cases",
+                     "WHERE username = %s AND case_status = %s")
+        params = (email, const.GenesisStati.unconfirmed)
+        data = self.query_one(rs, query, params)
+        return unwrap(data) if data else None
+    
     @access("anonymous")
     def genesis_verify(self, rs, case_id):
         """Confirm the new email address and proceed to the next stage.
