@@ -533,7 +533,8 @@ class EventFrontend(AbstractUserFrontend):
             return (
                 ("track_{}_{}_{}".format(k, part_id, track_id), t)
                 for k, t in (('title', 'str'), ('shortname', 'str'),
-                             ('num_choices', 'int'), ('min_choices', 'int'),
+                             ('num_choices', 'non_negative_int'),
+                             ('min_choices', 'non_negative_int'),
                              ('sortkey', 'int')))
 
         def track_excavator(req_data, part_id, track_id):

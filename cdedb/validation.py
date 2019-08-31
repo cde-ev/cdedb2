@@ -1949,8 +1949,8 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
 _EVENT_TRACK_COMMON_FIELDS = {
     'title': _str,
     'shortname': _str,
-    'num_choices': _int,
-    'min_choices': _int,
+    'num_choices': _non_negative_int,
+    'min_choices': _non_negative_int,
     'sortkey': _int,
 }
 
