@@ -147,7 +147,7 @@
             {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
                                          aclass='panel-warning') %}
                 <ul class="slim">
-                    {% for mailinglist_id, mailinglist in dashboard['moderator']|dictsort %}
+                    {% for mailinglist_id, mailinglist in dashboard['moderator']|xdictsort('title') %}
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
                                          mailinglist['title'], icon='envelope') }}
@@ -220,7 +220,7 @@
             {% call util.bootstrap_panel(title=gettext("Current Assemblies"), icon='bullhorn',
                                          aclass='panel-success') %}
                 <ul class="slim">
-                    {% for assembly_id, assembly in dashboard['assemblies']|dictsort %}
+                    {% for assembly_id, assembly in dashboard['assemblies']|xdictsort('signup_end') %}
                         <li>
                             {{ util.href(cdedblink('assembly/show_assembly', {'assembly_id': assembly_id}),
                                          assembly['title'], icon='bullhorn') }}

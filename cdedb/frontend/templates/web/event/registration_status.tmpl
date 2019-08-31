@@ -78,7 +78,7 @@
 
     <h3 class="heading-underline">Status</h3>
     <dl class="dl-horizontal">
-        {% for part_id, part in registration['parts']|dictsort %}
+        {% for part_id, part in registration['parts'].items() %}
             <dt>
                 {% if ambience['event']['parts']|length > 1 %}
                     {{ ambience['event']['parts'][part_id]['title'] }}

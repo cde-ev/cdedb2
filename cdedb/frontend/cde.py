@@ -1169,6 +1169,12 @@ class CdEFrontend(AbstractUserFrontend):
         open_permits = self.determine_open_permits(rs, lastschrift_ids)
         for lastschrift in lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
+        last_order = sorted(
+            lastschrifts.keys(),
+            key=lambda anid: name_key(
+                personas[lastschrifts[anid]['persona_id']]))
+        lastschrifts = OrderedDict(
+            (last_id, lastschrifts[last_id]) for last_id in last_order)
         return self.render(rs, "lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
             'transactions': transactions, 'all_lastschrifts': all_lastschrifts})

@@ -26,7 +26,7 @@
     \usepackage[top=.5cm,bottom=.5cm, left=.5cm, right=.5cm]{geometry}
 <<% endblock %>>
 <<% block content %>>
-    <<% for lodgement_id, lodgement in lodgements|dictsort %>>
+    <<% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %>>
         <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
             \lodgement{<<< lodgement['moniker']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['capacity']|te >>>}%
                       {<<< lodgement['reserve']|te >>>}{<<< lodgement['notes']|te >>>}

@@ -419,7 +419,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
-        tmp = {f.get('vote', index=0).value, f.get('vote', index=1).value}
+        tmp = {f.get('vote', index=1).value, f.get('vote', index=4).value}
         self.assertEqual({"W", "S"}, tmp)
         self.assertEqual(None, f.get('vote', index=2).value)
         f['vote'] = [ASSEMBLY_BAR_MONIKER]
@@ -440,9 +440,9 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
-        self.assertEqual(None, f.get('vote', index=0).value)
+        self.assertEqual("E", f.get('vote', index=0).value)
         self.assertEqual(None, f.get('vote', index=1).value)
-        self.assertEqual("E", f.get('vote', index=2).value)
+        self.assertEqual(None, f.get('vote', index=2).value)
 
     @as_users("anton", "inga", "kalif")
     def test_tally_and_get_result(self, user):

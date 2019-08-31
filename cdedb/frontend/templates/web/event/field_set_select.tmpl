@@ -25,7 +25,7 @@
           class="form-horizontal">
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|dictsort
+        {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
                 if field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name'])) -%}
         {%- endfor %}
@@ -37,7 +37,7 @@
     {% if reg_ids %}
         <h4 class="mosp">{% trans -%}Participants/Registrations to be changed{%- endtrans %}</h4>
         <ul>
-            {% for reg_id, registration in registrations|dictsort %}
+            {% for reg_id, registration in registrations.items() %}
                 <li>{{ personas[registration['persona_id']]['given_names'] }}
                     {{ personas[registration['persona_id']]['family_name'] }}</li>
             {% endfor %}

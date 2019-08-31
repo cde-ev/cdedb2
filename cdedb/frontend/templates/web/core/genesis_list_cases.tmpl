@@ -24,7 +24,7 @@
             {%- endtrans %}
         </h3>
         {% if event_cases|length > 0 %}
-            {% for case_id, entry in event_cases|dictsort %}
+            {% for case_id, entry in event_cases|xdictsort('ctime') %}
                 <div class="row">
                     <div class="col-sm-3">
                         <p>
@@ -57,7 +57,7 @@
             {%- endtrans %}
         </h3>
         {% if ml_cases|length > 0 %}
-            {% for case_id, entry in ml_cases|dictsort %}
+            {% for case_id, entry in ml_cases|xdictsort('ctime') %}
                 <div class="row">
                     <div class="col-sm-3">
                         <p>

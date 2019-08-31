@@ -39,7 +39,7 @@
 
     <table class="table table-condensed">
         <tbody>
-        {% for lastschrift_id, lastschrift in lastschrifts|dictsort if lastschrift['open'] %}
+        {% for lastschrift_id, lastschrift in lastschrifts.items() if lastschrift['open']%}
             <tr>
                 <td>
                     {% set persona = personas[lastschrift['persona_id']] %}
@@ -187,7 +187,7 @@
 
     <h2>{% trans -%}All active Authorizations{%- endtrans %}</h2>
     <div class="row">
-        {% for chunk in lastschrifts|dictsort|slice(3 if lastschrifts|length > 10
+        {% for chunk in lastschrifts.items()|slice(3 if lastschrifts|length > 10
                                                     else 2 if lastschrifts|length > 5
                                                          else 1) %}
             <div class="col-sm-4">

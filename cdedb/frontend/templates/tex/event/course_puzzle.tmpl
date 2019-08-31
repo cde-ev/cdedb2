@@ -18,8 +18,8 @@
         #6}
 <<% endblock %>>
 <<% block content %>>
-    <<% for course_id, course in courses|dictsort %>>
-        <<% for track_id in course['active_segments']|sort %>>
+    <<% for course_id, course in courses|xdictsort('title') %>>
+        <<% for track_id in tracks_sorted if track_id in course['active_segments'] %>>
             \course{<<< course['title']|te >>>}{<<< ambience['event']['tracks'][track_id]['title']|te >>>}%
                    {<<< course['instructors']|te >>>}{<<< course['min_size']|te >>>}{<<< course['max_size']|te >>>}%
                    {<<< course['notes']|te >>>}{<<< counts[course_id][(track_id, 0)]|te >>>/%
@@ -28,8 +28,9 @@
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
-    <<% for registration_id, registration in registrations|dictsort %>>
-            <<% for track_id, track in ambience['event']['tracks']|dictsort %>>
+    <<% for registration_id, registration in registrations.items() %>>
+        <<% for track_id in tracks_sorted %>>
+            <<% set track = ambience['event']['tracks'][track_id] %>>
                 <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
                     \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
                                  <<< personas[registration['persona_id']]['family_name']|te >>>}%
@@ -47,6 +48,6 @@
                                  <<% endif %>>}%
                     <<% endfor %>>
                 <<% endif %>>
-            <<% endfor %>>
+        <<% endfor %>>
     <<% endfor %>>
 <<% endblock %>>

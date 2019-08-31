@@ -25,9 +25,9 @@
         <input type="text" id="selector" class="form-control" value=""
                aria-label="{% trans -%}Name to Search{%- endtrans %}" />
     {% endcall %}
+
     <div class="list-group list-group-hover">
-        {% for registration_id in ordered %}
-            {% with registration = registrations[registration_id] %}
+        {% for registration_id, registration in registrations.items() %}
                 <div class="selectee list-group-item row">
                     <div class="col-sm-4">
                         <span class="searchname">
@@ -82,7 +82,6 @@
                                      gettext("Edit"), icon='pencil', aclass="btn btn-sm btn-warning") }}
                         </div>
                 </div>
-            {% endwith %}
         {% endfor %}
     </div>
     <script type="text/javascript" nonce="{{ csp_nonce }}">

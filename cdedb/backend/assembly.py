@@ -285,10 +285,12 @@ class AssemblyBackend(AbstractBackend):
         :param is_active: If not None list only assemblies which have this
           activity status.
         :rtype: {int: {str: str}}
-        :returns: Mapping of event ids to dict with title and activity status.
+        :returns: Mapping of event ids to dict with title, activity status and
+          signup end. The latter is used to sort the assemblies in index.
         """
         is_active = affirm("bool_or_None", is_active)
-        query = "SELECT id, title, is_active FROM assembly.assemblies"
+        query = ("SELECT id, title, signup_end, is_active "
+                 "FROM assembly.assemblies")
         params = tuple()
         if is_active is not None:
             query = glue(query, "WHERE is_active = %s")
