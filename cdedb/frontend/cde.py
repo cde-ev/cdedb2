@@ -211,13 +211,12 @@ class CdEFrontend(AbstractUserFrontend):
             if count == 1:
                 return self.redirect_show_user(rs, result[0]['id'],
                                                quote_me=True)
-            if count > cutoff and not self.is_admin(rs):
+            if count > cutoff:
                 result = result[:cutoff]
                 rs.notify("info", n_("Too many query results."))
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
-            'cutoff': 0 if self.is_admin(rs) else cutoff,
-            'count': count,
+            'cutoff': cutoff, 'count': count,
         })
 
     @access("cde_admin")
