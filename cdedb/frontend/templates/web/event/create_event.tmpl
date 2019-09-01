@@ -19,32 +19,24 @@
     {% endcall %}
     <form action="{{ cdedblink('event/create_event') }}" method="POST" id="createeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/create_event') }}
+        <h4 class="heading-underline">{% trans -%}Event Meta Data{%- endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value'),
-                defaultvalue=institutions['cde']) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value'),
+                defaultvalue=institutions['cde']) }}
         {{ util.form_input_text(name="event_begin", label=gettext("Event Begin"), type="date",
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="event_end", label=gettext("Event End"), type="date",
                                 placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type="datetime-local",
-                                placeholder="YYYY-MM-DD HH:MM:SS") }}
-        {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
-                                type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
-                                info=gettext("Is displayed initially. Changes to registration are only possible until "
-                                "then. If left empty, Changes will be possible indefinitely.")) }}
-        {{ util.form_input_text(name="registration_hard_limit", label=gettext("Registration Hard Limit"),
-                                type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
-                                info=gettext("Final registration end. Until then late registrations are possible. "
-                                "If left empty, late registrations will be possible indefinitely.")) }}
+        <h4 class="heading-underline">{% trans -%}Financial{%- endtrans %}</h4>
         {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="") }}
-        {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
+        <h4 class="heading-underline">{% trans -%}Orgas{%- endtrans %}</h4>
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
         <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('#input-orgas').cdedbSearchPerson(
                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_admin_user&phrase=%s'|s) }}',
@@ -55,20 +47,10 @@
             );
         </script>
         {% if "ml_admin" in user.roles %}
+            <h4 class="heading-underline">{% trans -%}Mailinglists{%- endtrans %}</h4>
             {{ util.form_input_checkbox(name="create_orga_list", label=gettext("Create Orga Mailinglist")) }}
             {{ util.form_input_checkbox(name="create_participant_list", label=gettext("Create Participant Mailinglist")) }}
         {% endif %}
-        {{ util.input_hidden(name="use_questionnaire", value=False) }}
-
-        <div class="form-group">
-            <div class="col-sm-offset-4 col-sm-8">
-                <div class="form-control-static text-info">
-                    {{ util.make_icon('info-sign') }}
-                    {{ gettext("Warning: The description and the timeframe will be publicly visible once "
-                    "visibility is activated in the configuration.") }}
-                </div>
-            </div>
-        </div>
 
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_db_events")) }}
     </form>
