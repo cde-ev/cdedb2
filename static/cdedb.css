@@ -841,6 +841,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
     padding: 2px 0;
 }
 .miniature-checkbox {
+    margin-left: 120px;
     font-size: 0.8em;
     padding: 1px 4px;
 }

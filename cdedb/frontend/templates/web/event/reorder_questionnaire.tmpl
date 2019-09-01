@@ -27,8 +27,11 @@
                 <div class="orderrow-inner clearfix" draggable="true">
                     <div class="orderrow-indicator"><span class="label label-primary">{{ loop.index0 }}</span></div>
                     {% if entry['field_id'] %}
-                        <div class="miniature-label">{% if entry['title'] %}{{ entry['title']|truncate(50,False,' …') }}{% endif %}</div>
                         {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
+                            {# In case of a checkbox (bool field without choices), we don't need a left-hand side label #}
+                            {% if FIELD['kind'] != enums['FieldDatatypes'].bool or FIELD['entries'] %}
+                                <div class="miniature-label">{% if entry['title'] %}{{ entry['title']|truncate(50,False,' …') }}{% endif %}</div>
+                            {% endif %}
                             {% if FIELD['entries'] %}
                                 <div class="miniature-text">
                                     {{ util.make_icon('menu-down', aclass='pull-right') }}
@@ -37,7 +40,11 @@
                             {% else %}
                                 {% if FIELD['kind'] == enums['FieldDatatypes'].bool %}
                                     <div class="miniature-checkbox">
-                                        {{ util.make_icon('check') }} → [{{ FIELD['field_name'] }}]
+                                        {{ util.make_icon('check') }}
+                                        {% if entry['title'] -%}
+                                            <b>{{ entry['title']|truncate(50,False,' …') }}</b>
+                                        {%- endif %}
+                                        <span class="nowrap">→ [{{ FIELD['field_name'] }}]</span>
                                     </div>
                                 {% else %}
                                     {% if entry['input_size'] %}
