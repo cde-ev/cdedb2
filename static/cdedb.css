@@ -441,6 +441,11 @@ a.headerlink {
     margin-bottom: 10px;
     text-align: right;
 }
+.btn-lang-change {
+    border: none;
+    background: none;
+    padding: 0 5px;
+}
 
 .profilepic {
     max-width: 150px;
