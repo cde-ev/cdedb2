@@ -39,7 +39,13 @@
                                 "courselist.")) }}
         {{ util.form_input_checkbox(name="is_course_state_visible", label=gettext("Visibility of the cancelled courses"),
                                 info=gettext("If checked, cancelled courses are shown publicly in the course list. "
-                                "Additionally participants may not chose cancelled courses anymore.")) }}
+                                "Additionally, participants may not chose cancelled courses anymore.")
+                                    + (gettext(" Attention: Activating this before Registration Soft Limit, will force "
+                                               "people to change their course choices for cancelled courses, when "
+                                               "updating their registration.")
+                                       if not (ambience['event']['registration_soft_limit']
+                                               and now() >= ambience['event']['registration_soft_limit'])
+                                       else "")) }}
         {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local',
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
@@ -50,6 +56,9 @@
                                 type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
                                 info=gettext("Final registration end. Until then late registrations are possible. "
                                 "If left empty, late registrations will be possible indefinitely.")) }}
+        {{ util.form_input_checkbox(name="use_questionnaire", label=gettext("Show Questionnaire"),
+                                info=gettext("If this is checked, all registrated users can fill out the Questionnaire. "
+                                "You can configure every part of the questionnaire individually in the questionnaire configuration.")) }}
         {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="",
                                 info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address")) }}
@@ -58,9 +67,6 @@
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
                                                            title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
-        {{ util.form_input_checkbox(name="use_questionnaire", label=gettext("Show Questionnaire"),
-                                info=gettext("If this is checked, all registrated users can fill out the Questionnaire. "
-                                "You can configure every part of the questionnaire individually in the questionnaire configuration.")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
@@ -69,7 +75,8 @@
         {%- endfor %}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
                                   nulloption="", info=gettext("The custom field in which the participants’ "
-                                  "rooming preferences will be saved. Fieldtype: Text")) }}
+                                  "rooming preferences will be saved. It is used for the PDF lodgement puzzle "
+                                  "download. Fieldtype: Text")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
@@ -78,7 +85,8 @@
         {%- endfor %}
         {{ util.form_input_select(name="reserve_field", label=gettext("Field for Camping Mat"), entries=myentries,
                                   nulloption="", info=gettext("The custom field in which the participants’ "
-                                  "willingness to sleep on a camping mat will be saved. Fieldtype: Yes/No")) }}
+                                  "willingness to sleep on a camping mat will be saved. It is used for the PDF "
+                                  "lodgement puzzle download. Fieldtype: Yes/No")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
         {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
@@ -87,7 +95,8 @@
         {%- endfor %}
         {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=myentries,
                                   nulloption="", info=gettext("The custom field in which the course’s "
-                                  "assigned course room will be saved. Fieldtype: Text")) }}
+                                  "assigned course room will be saved. It is used for PDF participant lists and "
+                                  "nametags. Fieldtype: Text")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>
