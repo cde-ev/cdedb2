@@ -749,7 +749,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             (r"pevent_id:\W*Teilnahme bereits erfasst.",),
             tuple(),
-            (r"doppelganger:\W*Doppelganger will upgrade to CdE.",),
+            (r"doppelganger:\W*Accountzusammenführung mit nicht-CdE Account.",),
             tuple(),
             (r"Eintrag geändert.",),
             (r"Eintrag geändert.",),
@@ -758,7 +758,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             (r"Eintrag geändert.",),
-            (r"doppelganger:\W*Doppelganger will upgrade to CdE.",),
+            (r"doppelganger:\W*Accountzusammenführung mit nicht-CdE Account.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:

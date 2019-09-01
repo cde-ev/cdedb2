@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-09-01 13:32+0000\n"
+"POT-Creation-Date: 2019-09-01 19:28+0200\n"
 "PO-Revision-Date: 2019-08-10 22:44+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.6.0\n"
+"Generated-By: Babel 2.7.0\n"
 
 #: bin/archive/migrate_execute.py:393
 msgid "Initial import."
@@ -1707,7 +1707,7 @@ msgstr "Versammlung hat noch offene Abstimmungen"
 msgid "Conclusion of assembly blocked by %(block)s."
 msgstr "Archivierung der Versammlung blockert durch %(block)s."
 
-#: cdedb/backend/cde.py:205 cdedb/frontend/cde.py:1253
+#: cdedb/backend/cde.py:205 cdedb/frontend/cde.py:1317
 msgid "Multiple active permits are disallowed."
 msgstr "Mehrere aktive Einzugsermächtigungen sind unzulässig."
 
@@ -1715,8 +1715,8 @@ msgstr "Mehrere aktive Einzugsermächtigungen sind unzulässig."
 msgid "Lastschrift already revoked."
 msgstr "Lastschriftmandat bereits widerrufen."
 
-#: cdedb/backend/cde.py:294 cdedb/frontend/cde.py:1391
-#: cdedb/frontend/cde.py:1460
+#: cdedb/backend/cde.py:294 cdedb/frontend/cde.py:1455
+#: cdedb/frontend/cde.py:1524
 msgid "Existing pending transaction."
 msgstr "Es liegen noch unbearbeitete Transaktionen vor."
 
@@ -1734,7 +1734,7 @@ msgstr "Kein Saldo für fehlgeschlagene Transaktion angegeben."
 
 #: cdedb/backend/cde.py:386 cdedb/backend/common.py:569
 #: cdedb/database/constants.py:212 cdedb/database/constants.py:230
-#: cdedb/frontend/cde.py:493 cdedb/frontend/cde.py:628
+#: cdedb/frontend/cde.py:533 cdedb/frontend/cde.py:692
 #: cdedb/frontend/common.py:1250
 msgid "Impossible."
 msgstr "Unmöglich."
@@ -1950,8 +1950,8 @@ msgstr "Passwort ist falsch."
 msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
-#: cdedb/backend/core.py:1743 cdedb/frontend/cde.py:733
-#: cdedb/frontend/cde.py:1070 cdedb/frontend/event.py:1804
+#: cdedb/backend/core.py:1743 cdedb/frontend/cde.py:797
+#: cdedb/frontend/cde.py:1134 cdedb/frontend/event.py:1804
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
 
@@ -2187,7 +2187,7 @@ msgstr "Der Anti-CSRF-Token enthält keine gültige Benutzer-ID."
 
 #: cdedb/frontend/assembly.py:266 cdedb/frontend/assembly.py:358
 #: cdedb/frontend/assembly.py:520 cdedb/frontend/assembly.py:687
-#: cdedb/frontend/cde.py:2315 cdedb/frontend/cde.py:2367
+#: cdedb/frontend/cde.py:2379 cdedb/frontend/cde.py:2431
 #: cdedb/frontend/core.py:1783 cdedb/frontend/core.py:1814
 #: cdedb/frontend/event.py:347 cdedb/frontend/event.py:390
 #: cdedb/frontend/event.py:1023 cdedb/frontend/event.py:3416
@@ -2261,84 +2261,88 @@ msgstr "Person ist jünger als 10 Jahre."
 msgid "No course available."
 msgstr "Kein Kurs verfügbar."
 
-#: cdedb/frontend/cde.py:401
+#: cdedb/frontend/cde.py:402
 msgid "Doppelgangers found."
 msgstr "Ähnlicher Account gefunden."
 
-#: cdedb/frontend/cde.py:408
+#: cdedb/frontend/cde.py:409
 msgid "Doppelganger choice doesn’t fit resolution."
 msgstr "Accountzusammenführung inkonsistent mit Aktion."
 
-#: cdedb/frontend/cde.py:412
+#: cdedb/frontend/cde.py:414
 msgid "Doppelganger unavailable."
 msgstr "Accountzusammenführung nicht möglich."
 
-#: cdedb/frontend/cde.py:417
-msgid "Doppelganger not a CdE-Account."
-msgstr "Accountzusammenführung mit einem nicht-CdE-Account."
+#: cdedb/frontend/cde.py:420
+msgid "Doppelganger will upgrade to CdE."
+msgstr "Accountzusammenführung mit nicht-CdE Account."
 
-#: cdedb/frontend/cde.py:424
+#: cdedb/frontend/cde.py:425
+msgid "Unmodified realm upgrade."
+msgstr "Übergang in CdE-Bereich ohne Datenübernahme."
+
+#: cdedb/frontend/cde.py:429
+msgid "Missing data for realm upgrade."
+msgstr "Fehlende Datengrundlage für Bereichswechsel."
+
+#: cdedb/frontend/cde.py:437
 msgid "Participation already recorded."
 msgstr "Teilnahme bereits erfasst."
 
-#: cdedb/frontend/cde.py:481
-msgid "Renewed trial membership."
-msgstr "Probemitgliedschaft erneuert."
+#: cdedb/frontend/cde.py:499
+msgid "Need extra data."
+msgstr "Weitere Daten benötigt."
 
-#: cdedb/frontend/cde.py:488
-msgid "Imported recent data."
-msgstr "Aktualisierte Daten aufgenommen."
-
-#: cdedb/frontend/cde.py:615
+#: cdedb/frontend/cde.py:679
 #, python-format
 msgid "Lines %(first)s and %(second)s are the same."
 msgstr "Zeilen %(first)s und %(second)s sind identisch."
 
-#: cdedb/frontend/cde.py:621
+#: cdedb/frontend/cde.py:685
 #, python-format
 msgid "Lines %(first)s and %(second)s look the same."
 msgstr "Zeilen %(first)s und %(second)s sehen gleich aus."
 
-#: cdedb/frontend/cde.py:640 cdedb/frontend/cde.py:1094
+#: cdedb/frontend/cde.py:704 cdedb/frontend/cde.py:1158
 #: cdedb/frontend/event.py:1821
 msgid "Lines didn’t match up."
 msgstr "Daten wurden geändert."
 
-#: cdedb/frontend/cde.py:644
+#: cdedb/frontend/cde.py:708
 msgid "Only member admission supported."
 msgstr "Nur Aufnahme von Mitglieder unterstützt."
 
-#: cdedb/frontend/cde.py:659
+#: cdedb/frontend/cde.py:723
 #, python-format
 msgid "Created %(num)s accounts."
 msgstr "%(num)s Accounts erstellt."
 
-#: cdedb/frontend/cde.py:663 cdedb/frontend/cde.py:1117
+#: cdedb/frontend/cde.py:727 cdedb/frontend/cde.py:1181
 #: cdedb/frontend/event.py:1843
 msgid "DB serialization error."
 msgstr "Datenbank-Transaktions-Fehler."
 
-#: cdedb/frontend/cde.py:665 cdedb/frontend/cde.py:1119
+#: cdedb/frontend/cde.py:729 cdedb/frontend/cde.py:1183
 #, python-format
 msgid "Unexpected error on line %(num)s."
 msgstr "Unerwarteter Fehler in Zeile %(num)s."
 
-#: cdedb/frontend/cde.py:725 cdedb/frontend/cde.py:1061
+#: cdedb/frontend/cde.py:789 cdedb/frontend/cde.py:1125
 #: cdedb/frontend/event.py:1795
 msgid "Only one input method allowed."
 msgstr "Nur eine Eingabe-Methode erlaubt."
 
-#: cdedb/frontend/cde.py:756
+#: cdedb/frontend/cde.py:820
 #, python-format
 msgid "Line %(lineno)s does not have the correct number of columns."
 msgstr "Zeile %(lineno)s hat nicht die korrekte Anzahl Spalten."
 
-#: cdedb/frontend/cde.py:938 cdedb/frontend/event.py:1693
+#: cdedb/frontend/cde.py:1002 cdedb/frontend/event.py:1693
 #, python-format
 msgid "No Member with ID %(p_id)s found."
 msgstr "Kein Account mit ID %(p_id)s gefunden."
 
-#: cdedb/frontend/cde.py:943 cdedb/frontend/core.py:439
+#: cdedb/frontend/cde.py:1007 cdedb/frontend/core.py:439
 #: cdedb/frontend/core.py:911 cdedb/frontend/core.py:977
 #: cdedb/frontend/core.py:1016 cdedb/frontend/core.py:1066
 #: cdedb/frontend/core.py:1128 cdedb/frontend/core.py:1397
@@ -2346,127 +2350,127 @@ msgstr "Kein Account mit ID %(p_id)s gefunden."
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
-#: cdedb/frontend/cde.py:948 cdedb/frontend/event.py:1724
+#: cdedb/frontend/cde.py:1012 cdedb/frontend/event.py:1724
 msgid "Family name doesn’t match."
 msgstr "Nachname passt nicht."
 
-#: cdedb/frontend/cde.py:953 cdedb/frontend/event.py:1729
+#: cdedb/frontend/cde.py:1017 cdedb/frontend/event.py:1729
 msgid "Given names don’t match."
 msgstr "Vornamen passen nicht zusammen."
 
-#: cdedb/frontend/cde.py:1087
+#: cdedb/frontend/cde.py:1151
 #, python-format
 msgid "More than one transfer for this account (lines %(first)s and %(second)s)."
 msgstr ""
 "Mehrere Überweisungen für diesen Account (Zeilen %(first)s und "
 "%(second)s)."
 
-#: cdedb/frontend/cde.py:1111
+#: cdedb/frontend/cde.py:1175
 #, python-format
 msgid "Committed %(num)s transfers. There were %(new_members)s new members."
 msgstr "%(num)s Überweisungen gebucht. %(new_members)s neue Mitglieder."
 
-#: cdedb/frontend/cde.py:1273 cdedb/frontend/core.py:1111
+#: cdedb/frontend/cde.py:1337 cdedb/frontend/core.py:1111
 msgid "Permit revoked."
 msgstr "Lastschriftmandat widerrufen."
 
-#: cdedb/frontend/cde.py:1435
+#: cdedb/frontend/cde.py:1499
 msgid "Creation of SEPA-PAIN-file failed."
 msgstr "Erstellung der SEPA-PAIN-Datei fehlgeschlagen."
 
-#: cdedb/frontend/cde.py:1496
+#: cdedb/frontend/cde.py:1560
 #, python-format
 msgid "%(num)s Direct Debits issued. Notification mails sent."
 msgstr ""
 "%(num)s Lastschriften initialisiert. Benachrichtigungsmails wurden "
 "verschickt."
 
-#: cdedb/frontend/cde.py:1513
+#: cdedb/frontend/cde.py:1577
 msgid "Unable to skip transaction."
 msgstr "Einzug kann nicht pausiert werden."
 
-#: cdedb/frontend/cde.py:1515
+#: cdedb/frontend/cde.py:1579
 msgid "Skipped."
 msgstr "Pausiert."
 
-#: cdedb/frontend/cde.py:1566
+#: cdedb/frontend/cde.py:1630
 msgid "Wrong number of actions."
 msgstr "Falsche Anzahl an Aktionen."
 
-#: cdedb/frontend/cde.py:1570
+#: cdedb/frontend/cde.py:1634
 msgid "No transactions selected."
 msgstr "Keine Transaktionen ausgewählt."
 
-#: cdedb/frontend/cde.py:1731
+#: cdedb/frontend/cde.py:1795
 msgid "Billing already done."
 msgstr "Zahlungserinnerung bereits erledigt."
 
-#: cdedb/frontend/cde.py:1793 cdedb/frontend/cde.py:2008
+#: cdedb/frontend/cde.py:1857 cdedb/frontend/cde.py:2072
 msgid "Started sending mail."
 msgstr "E-Mail-Versand hat begonnen."
 
-#: cdedb/frontend/cde.py:1802
+#: cdedb/frontend/cde.py:1866
 msgid "Wrong timing for ejection."
 msgstr "Falscher Zeitpunkt für Bereinigung."
 
-#: cdedb/frontend/cde.py:1851
+#: cdedb/frontend/cde.py:1915
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
 
-#: cdedb/frontend/cde.py:1860
+#: cdedb/frontend/cde.py:1924
 msgid "Wrong timing for balance update."
 msgstr "Falscher Zeitpunkt für Guthabenaktualisierung."
 
-#: cdedb/frontend/cde.py:1887
+#: cdedb/frontend/cde.py:1951
 msgid "Balance too low."
 msgstr "Guthaben zu niedrig."
 
-#: cdedb/frontend/cde.py:1915
+#: cdedb/frontend/cde.py:1979
 msgid "Started updating balance."
 msgstr "Aktualisierung der Guthaben gestartet."
 
-#: cdedb/frontend/cde.py:1924
+#: cdedb/frontend/cde.py:1988
 msgid "Wrong timing for advancing the semester."
 msgstr "Falscher Zeitpunkt für Beendigung des Semesters."
 
-#: cdedb/frontend/cde.py:1929
+#: cdedb/frontend/cde.py:1993
 msgid "New period started."
 msgstr "Nächstes Semester initialisiert."
 
-#: cdedb/frontend/cde.py:1943
+#: cdedb/frontend/cde.py:2007
 msgid "Addresscheck already done."
 msgstr "Adressabfrage bereits erledigt."
 
-#: cdedb/frontend/cde.py:2004
+#: cdedb/frontend/cde.py:2068
 msgid "Not sending mail."
 msgstr "Keine E-Mail verschickt."
 
-#: cdedb/frontend/cde.py:2019
+#: cdedb/frontend/cde.py:2083
 msgid "Addresscheck not done."
 msgstr "Adressabfrage noch nicht erledigt."
 
-#: cdedb/frontend/cde.py:2022
+#: cdedb/frontend/cde.py:2086
 msgid "New expuls started."
 msgstr "Nächster Expuls initialisiert."
 
-#: cdedb/frontend/cde.py:2298
+#: cdedb/frontend/cde.py:2362
 #, python-format
 msgid "Line %(lineno)s is faulty."
 msgstr "Zeile %(lineno)s ist fehlerhaft."
 
-#: cdedb/frontend/cde.py:2307 cdedb/frontend/event.py:905
+#: cdedb/frontend/cde.py:2371 cdedb/frontend/event.py:905
 msgid "Event created."
 msgstr "Veranstaltung erstellt."
 
-#: cdedb/frontend/cde.py:2356 cdedb/frontend/event.py:1014
+#: cdedb/frontend/cde.py:2420 cdedb/frontend/event.py:1014
 msgid "Course created."
 msgstr "Kurs erstellt"
 
-#: cdedb/frontend/cde.py:2393
+#: cdedb/frontend/cde.py:2457
 msgid "Participant already present."
 msgstr "Teilnehmer bereits vorhanden."
 
-#: cdedb/frontend/cde.py:2426
+#: cdedb/frontend/cde.py:2490
 msgid "*Nothing here yet.*"
 msgstr "*Hier gibt es noch nichts.*"
 
@@ -11216,3 +11220,13 @@ msgstr "Diese Nutzer-Suche findet nur reine Mailinglisten-Nutzer."
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:9
 msgid "Mailinglists Log"
 msgstr "Mailinglisten-Log"
+
+#~ msgid "Doppelganger not a CdE-Account."
+#~ msgstr "Accountzusammenführung mit einem nicht-CdE-Account."
+
+#~ msgid "Renewed trial membership."
+#~ msgstr "Probemitgliedschaft erneuert."
+
+#~ msgid "Imported recent data."
+#~ msgstr "Aktualisierte Daten aufgenommen."
+
