@@ -134,7 +134,7 @@
                                                 value['given_names'], value['family_name'],
                                                 value['birth_name'] or value['family_name'],
                                                 value['username'], gettext("born"),
-                                                value['birthday']|date(lang=lang), key|cdedbid,
+                                                value['birthday']|date(lang=lang) or "–", key|cdedbid,
                                                 '' if value['is_member'] else gettext(" (not a Member)")) %}
                                             {%- do myentries.append((key, description)) %}
                                         {%- endwith %}

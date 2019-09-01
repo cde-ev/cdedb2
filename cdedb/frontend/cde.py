@@ -398,7 +398,8 @@ class CdEFrontend(AbstractUserFrontend):
             temp['id'] = 1
             doppelgangers = self.coreproxy.find_doppelgangers(rs, temp)
         if doppelgangers:
-            warnings.append(("persona", ValueError(n_("Doppelgangers found."))))
+            warnings.append(("persona",
+                             ValueError(n_("Doppelgangers found."))))
         if (datum['resolution'] is not None and
                 (bool(datum['doppelganger_id'])
                  != datum['resolution'].is_modification())):
@@ -409,12 +410,24 @@ class CdEFrontend(AbstractUserFrontend):
         if datum['doppelganger_id']:
             if datum['doppelganger_id'] not in doppelgangers:
                 problems.append(
-                    ("doppelganger", KeyError(n_("Doppelganger unavailable."))))
+                    ("doppelganger",
+                     KeyError(n_("Doppelganger unavailable."))))
             else:
-                if not doppelgangers[datum['doppelganger_id']]['is_cde_realm']:
-                    problems.append(
+                dg = doppelgangers[datum['doppelganger_id']]
+                if not dg['is_cde_realm']:
+                    warnings.append(
                         ("doppelganger",
-                         ValueError(n_("Doppelganger not a CdE-Account."))))
+                         ValueError(n_("Doppelganger will upgrade to CdE."))))
+                    if not datum['resolution'].do_update():
+                        if dg['is_event_realm']:
+                            warnings.append(
+                                ("doppelganger",
+                                 ValueError(n_("Unmodified realm upgrade."))))
+                        else:
+                            problems.append(
+                                ("doppelganger",
+                                 ValueError(n_(
+                                     "Missing data for realm upgrade."))))
         if datum['doppelganger_id'] and pevent_id:
             existing = self.pasteventproxy.list_participants(
                 rs, pevent_id=pevent_id)
@@ -432,6 +445,100 @@ class CdEFrontend(AbstractUserFrontend):
         })
         return datum
 
+    def _perform_one_batch_admission(self, rs, datum, trial_membership, consent):
+        """Uninlined code from perform_batch_admission().
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type datum: {str: object}
+        :type trial_membership: bool
+        :type consent: bool
+        :rtype: int
+        :returns: number of created accounts (0 or 1)
+        """
+        ret = 0
+        batch_fields = (
+            'family_name', 'given_names', 'title', 'name_supplement',
+            'birth_name', 'gender', 'address_supplement', 'address',
+            'postal_code', 'location', 'country', 'telephone',
+            'mobile', 'birthday') # email omitted as it is handled separately
+        persona_id = None
+        if datum['resolution'] == LineResolutions.skip:
+            return ret
+        elif datum['resolution'] == LineResolutions.create:
+            new_persona = copy.deepcopy(datum['persona'])
+            new_persona.update({
+                'is_member': True,
+                'trial_member': trial_membership,
+                'is_searchable': consent,
+            })
+            persona_id = self.coreproxy.create_persona(rs, new_persona)
+            ret = 1
+        elif datum['resolution'].is_modification():
+            persona_id = datum['doppelganger_id']
+            current = self.coreproxy.get_persona(rs, persona_id)
+            if not current['is_cde_realm']:
+                # Promote to cde realm dependent on current realm
+                promotion = {
+                    'is_{}_realm'.format(realm): True
+                    for realm in ('cde', 'event', 'assembly', 'ml')}
+                promotion.update({
+                    'decided_search': False,
+                    'trial_member': False,
+                    'bub_search': False,
+                    'id': persona_id,
+                })
+                empty_fields = (
+                    'address_supplement2', 'address2', 'postal_code2',
+                    'location2', 'country2', 'weblink', 'specialisation',
+                    'affiliation', 'timeline', 'interests', 'free_form')
+                for field in empty_fields:
+                    promotion[field] = None
+                invariant_fields = {'family_name', 'given_names'}
+                if not current['is_event_realm']:
+                    if not datum['resolution'].do_update():
+                        raise RuntimeError(n_("Need extra data."))
+                    # This applies a part of the newly imported data,
+                    # however email and name are not changed during a
+                    # realm transition and thus we update again later
+                    # on
+                    for field in set(batch_fields) - invariant_fields:
+                        promotion[field] = datum['persona'][field]
+                else:
+                    stored = self.coreproxy.get_event_user(rs, persona_id)
+                    for field in set(batch_fields) - invariant_fields:
+                        promotion[field] = stored.get(field)
+                code = self.coreproxy.change_persona_realms(rs, promotion)
+            if datum['resolution'].do_trial():
+                self.coreproxy.change_membership(
+                    rs, datum['doppelganger_id'], is_member=True)
+                update = {
+                    'id': datum['doppelganger_id'],
+                    'trial_member': True,
+                }
+                self.coreproxy.change_persona(
+                    rs, update, may_wait=False,
+                    change_note="Probemitgliedschaft erneuert.")
+            if datum['resolution'].do_update():
+                update = {'id': datum['doppelganger_id']}
+                for field in batch_fields:
+                    update[field] = datum['persona'][field]
+                self.coreproxy.change_username(
+                    rs, datum['doppelganger_id'],
+                    datum['persona']['username'], password=None)
+                # TODO the following should be must_wait=True
+                self.coreproxy.change_persona(
+                    rs, update, may_wait=False,
+                    change_note="Import aktualisierter Daten.")
+        else:
+            raise RuntimeError(n_("Impossible."))
+        if datum['pevent_id']:
+            # TODO preserve instructor/orga information
+            self.pasteventproxy.add_participant(
+                rs, datum['pevent_id'], datum['pcourse_id'],
+                persona_id, is_instructor=False, is_orga=False)
+        return ret
+
+    
     def perform_batch_admission(self, rs, data, trial_membership, consent,
                                 sendmail):
         """Resolve all entries in the batch admission form.
@@ -447,55 +554,12 @@ class CdEFrontend(AbstractUserFrontend):
           where an exception was triggered or None if it was a DB
           serialization error.
         """
-        fields = ('family_name', 'given_names', 'title', 'name_supplement',
-                  'birth_name', 'gender', 'address_supplement', 'address',
-                  'postal_code', 'location', 'country', 'telephone',
-                  'mobile')
         try:
             with Atomizer(rs):
                 count = 0
                 for index, datum in enumerate(data):
-                    persona_id = None
-                    if datum['resolution'] == LineResolutions.skip:
-                        continue
-                    elif datum['resolution'] == LineResolutions.create:
-                        datum['persona'].update({
-                            'is_member': True,
-                            'trial_member': trial_membership,
-                            'is_searchable': consent,
-                        })
-                        persona_id = self.coreproxy.create_persona(
-                            rs, datum['persona'])
-                        count += 1
-                    elif datum['resolution'].is_modification():
-                        persona_id = datum['doppelganger_id']
-                        if datum['resolution'].do_trial():
-                            self.coreproxy.change_membership(
-                                rs, datum['doppelganger_id'], is_member=True)
-                            update = {
-                                'id': datum['doppelganger_id'],
-                                'trial_member': True,
-                            }
-                            self.coreproxy.change_persona(
-                                rs, update, may_wait=False,
-                                change_note=n_("Renewed trial membership."))
-                        if datum['resolution'].do_update():
-                            update = {'id': datum['doppelganger_id']}
-                            for field in fields:
-                                update[field] = datum['persona'][field]
-                            self.coreproxy.change_persona(
-                                rs, update, may_wait=False,
-                                change_note=n_("Imported recent data."))
-                            self.coreproxy.change_username(
-                                rs, datum['doppelganger_id'],
-                                datum['persona']['username'], password=None)
-                    else:
-                        raise RuntimeError(n_("Impossible."))
-                    if datum['pevent_id']:
-                        # TODO preserve instructor/orga information
-                        self.pasteventproxy.add_participant(
-                            rs, datum['pevent_id'], datum['pcourse_id'],
-                            persona_id, is_instructor=False, is_orga=False)
+                    count += self._perform_one_batch_admission(
+                        rs, datum, trial_membership, consent)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.

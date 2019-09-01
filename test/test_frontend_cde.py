@@ -695,6 +695,7 @@ class TestCdEFrontend(FrontendTest):
             (r"pevent_id\W*Nur unscharfer Treffer.",
              r"pcourse_id\W*Nur unscharfer Treffer.",
              r"birthday\W*Person ist jünger als 10 Jahre.",),
+            (r"persona:\W*Ähnlicher Account gefunden.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
@@ -713,7 +714,7 @@ class TestCdEFrontend(FrontendTest):
         f['doppelganger_id4'] = '2'
         f['resolution5'] = 4
         f['doppelganger_id5'] = '4'
-        f['resolution6'] = 3
+        f['resolution6'] = 5
         f['doppelganger_id6'] = '5'
         inputdata = inputdata.replace("pa99", "pa14")
         inputdata = inputdata.replace("Doomed course from hell", "Swish -- und alles ist gut")
@@ -724,6 +725,8 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
         f['resolution12'] = 2
         f['resolution13'] = 2
+        f['resolution15'] = 5
+        f['doppelganger_id15'] = '10'
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
 
@@ -746,7 +749,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             (r"pevent_id:\W*Teilnahme bereits erfasst.",),
             tuple(),
-            (r"doppelganger:\W*Accountzusammenführung mit einem nicht-CdE-Account.",),
+            (r"doppelganger:\W*Doppelganger will upgrade to CdE.",),
             tuple(),
             (r"Eintrag geändert.",),
             (r"Eintrag geändert.",),
@@ -755,6 +758,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             (r"Eintrag geändert.",),
+            (r"doppelganger:\W*Doppelganger will upgrade to CdE.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
@@ -778,6 +782,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             (r"pevent_id\W*Nur unscharfer Treffer.",
              r"pevent_id\W*Nur unscharfer Treffer.",),
+            tuple(),
             )
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
@@ -852,8 +857,7 @@ class TestCdEFrontend(FrontendTest):
                 self.assertFalse(re.search(piece, out))
         f['resolution4'] = 5
         f['doppelganger_id4'] = '2'
-        f['resolution6'] = 2
-        f['doppelganger_id6'] = ''
+        f['resolution6'] = 5
         self.assertEqual('', f['finalized'].value)
         self.submit(f, check_notification=False)
 
@@ -863,7 +867,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['admissionform']
         self.assertEqual('5', f['resolution4'].value)
         self.assertEqual('True', f['finalized'].value)
-        self.submit(f)
+        self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
 
         ## validate
