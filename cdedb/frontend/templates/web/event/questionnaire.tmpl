@@ -62,25 +62,28 @@
                             {{ util.form_input_checkbox(
                                 name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                 readonly=(entry['readonly'] or is_locked
-                                          or ambience['event']['is_archived'])) }}
+                                          or ambience['event']['is_archived']),
+                                defaultvalue=entry['default_value']) }}
                         {% elif FIELD['kind'] == datatypes.str  %}
                             {% if entry['input_size'] %}
                                 {{ util.form_input_textarea(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                     readonly=(entry['readonly'] or is_locked
                                               or ambience['event']['is_archived']),
-                                    rows=(1+entry['input_size']*2)) }}
+                                    rows=(1+entry['input_size']*2), defaultvalue=entry['default_value']) }}
                             {% else %}
                                 {{ util.form_input_text(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                     readonly=(entry['readonly'] or is_locked
-                                              or ambience['event']['is_archived'])) }}
+                                              or ambience['event']['is_archived']),
+                                    defaultvalue=entry['default_value']) }}
                             {% endif %}
                         {% else %}
                             {{ util.form_event_field_input(
                                 FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                 readonly=(entry['readonly'] or is_locked
-                                          or ambience['event']['is_archived'])) }}
+                                          or ambience['event']['is_archived']),
+                                defaultvalue=entry['default_value']) }}
                         {% endif %}
                     {% endif %}
                 {% endwith %}

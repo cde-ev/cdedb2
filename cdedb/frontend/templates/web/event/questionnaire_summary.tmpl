@@ -55,6 +55,10 @@
                             (2, gettext("multiline") + "+"), (3, gettext("multiline") + "++")),
                         attributes=('data-basename="input_size_"'|s if newrow else ''),
                         aclass='input-inputsize drow-input', horizontal=False) }}
+                    {{ util.form_input_text(
+                        "default_value_{}".format(part_id), label=gettext("Default Value"),
+                        attributes=('data-basename="default_value_"'|s if newrow else ''),
+                        aclass='drow-input', horizontal=False) }}
                     <div class="form-group row">
                         <div class="col-sm-8">
                             <div class="checkbox">

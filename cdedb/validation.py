@@ -2054,6 +2054,8 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                 else:
                     # Validate value according to type and use the opportunity
                     # to normalize the value by transforming it back to string
+                    # TODO extract into separate function (together with similar
+                    #  code in _questionnaire)
                     kind = val.get(kind_key, FieldDatatypes.str)
                     validator = getattr(
                         current_module,
@@ -2412,10 +2414,11 @@ def _lodgement(val, argname=None, *, creation=False, _convert=True):
 
 
 @_addvalidator
-def _questionnaire(val, argname=None, *, _convert=True):
+def _questionnaire(val, field_definitions, argname=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
+    :type field_definitions: Dict[int, Dict]
     :type _convert: bool
     :rtype: ([dict] or None, [(str or None, exception)])
     """
@@ -2435,13 +2438,36 @@ def _questionnaire(val, argname=None, *, _convert=True):
                 'info': _str_or_None,
                 'input_size': _int_or_None,
                 'readonly': _bool_or_None,
+                'default_value': _str_or_None,
             }
             value, e = _examine_dictionary_fields(
                 value, mandatory_fields, {}, _convert=_convert)
             if e:
                 errs.extend(e)
-            else:
-                ret.append(value)
+                continue
+            if value['field_id'] and value['default_value']:
+                field = field_definitions.get(value['field_id'], None)
+                if not field:
+                    errs.extend(('default_value',
+                                 KeyError("Referenced field does not exist.")))
+                    continue
+                # TODO extract into separate function (together with similar
+                #  code in _event_field)
+                kind = FieldDatatypes(field.get('kind', FieldDatatypes.str))
+                validator = getattr(current_module,
+                                    "_{}".format(kind.name))
+                val, e = validator(value['default_value'],
+                                   "default_value", _convert=_convert)
+                if e:
+                    errs.extend(e)
+                    continue
+                if kind == FieldDatatypes.date:
+                    value['default_value'] = val.strftime('%Y-%m-%d')
+                if kind == FieldDatatypes.datetime:
+                    value['default_value'] = val.strftime('%Y-%m-%dT%H:%M:%S')
+                else:
+                    value['default_value'] = str(val)
+            ret.append(value)
     return ret, errs
 
 

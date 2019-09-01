@@ -203,13 +203,13 @@ INSERT INTO event.course_choices (registration_id, track_id, course_id, rank) VA
     (4, 2, 4, 0),
     (4, 3, 1, 0),
     (4, 3, 2, 1);
-INSERT INTO event.questionnaire_rows (event_id, field_id, pos, title, info, input_size, readonly) VALUES
-    (1, NULL, 0, 'Unterüberschrift', 'mit Text darunter', NULL, NULL),
-    (1, 1, 1, 'Bälle', 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.', NULL, False),
-    (1, NULL, 2, NULL, 'nur etwas Text', NULL, NULL),
-    (1, NULL, 3, 'Weitere Überschrift', NULL, NULL, NULL),
-    (1, 2, 4, 'Vehikel', NULL, NULL, False),
-    (1, 3, 5, 'Hauswunsch', NULL, 3, False);
+INSERT INTO event.questionnaire_rows (event_id, field_id, pos, title, info, input_size, readonly, default_value) VALUES
+    (1, NULL, 0, 'Unterüberschrift', 'mit Text darunter', NULL, NULL, NULL),
+    (1, 1, 1, 'Bälle', 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.', NULL, False, 'True'),
+    (1, NULL, 2, NULL, 'nur etwas Text', NULL, NULL, NULL),
+    (1, NULL, 3, 'Weitere Überschrift', NULL, NULL, NULL, NULL),
+    (1, 2, 4, 'Vehikel', NULL, NULL, False, 'etc'),
+    (1, 3, 5, 'Hauswunsch', NULL, 3, False, NULL);
 INSERT INTO event.log (ctime, code, submitted_by, event_id, persona_id, additional_info) VALUES
     (timestamp with time zone '2014-01-01 03:04:05+02', 50, 1, 1, 1, NULL),
     (timestamp with time zone '2014-01-01 04:05:06+02', 50, 5, 1, 5, NULL),

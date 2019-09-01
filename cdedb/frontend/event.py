@@ -3075,6 +3075,7 @@ class EventFrontend(AbstractUserFrontend):
             'info': "str_or_None",
             'input_size': "int_or_None",
             'readonly': "bool_or_None",
+            'default_value': "str_or_None",
         }
         params = tuple(("{}_{}".format(key, i), value)
                        for i in range(num) if i not in deletes
@@ -3098,6 +3099,9 @@ class EventFrontend(AbstractUserFrontend):
                 break
             marker += 1
         rs.values['create_last_index'] = marker - 1
+        # TODO check for duplicate fields
+        # TODO check/convert default values
+        # TODO maybe use _questionnaire validator to do this?
         for i, row in enumerate(questionnaire):
             if row['field_id'] and row['field_id'] not in reg_fields:
                 rs.errors.append(("field_id_{}".format(i),

@@ -2397,7 +2397,8 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         data = self.sql_select(
             rs, "event.questionnaire_rows",
-            ("field_id", "pos", "title", "info", "input_size", "readonly"),
+            ("field_id", "pos", "title", "info", "input_size", "readonly",
+             "default_value"),
             (event_id,), entity_key="event_id")
         return sorted(data, key=lambda x: x['pos'])
 
@@ -2414,7 +2415,8 @@ class EventBackend(AbstractBackend):
         :returns: default return code
         """
         event_id = affirm("id", event_id)
-        data = affirm("questionnaire", data)
+        event = self.get_event(rs, event_id)
+        data = affirm("questionnaire", data, field_definitions=event['fields'])
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
