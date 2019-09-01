@@ -2,7 +2,7 @@
 
 import sys
 sys.path.insert(0, "/cdedb2/")
-from cdedb.scripts import setup, make_backend
+from cdedb.script import setup, make_backend
 
 # Configuration
 
@@ -14,6 +14,7 @@ part_id = -1
 new_track = {
     'title': "Neue Kursschiene",
     'shortname': "Neu",
+    'min_choices': 3,
     'num_choices': 3,
     'sortkey': 1,
 }
