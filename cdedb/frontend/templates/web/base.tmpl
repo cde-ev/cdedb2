@@ -103,9 +103,9 @@
                 </div>
 
                 <div class="collapse navbar-collapse in" id="navbar-collapse-1">
-                    {% if "persona" in user.roles %}
-                        <ul class="nav navbar-nav navbar-right">
-                            <li>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            {% if "persona" in user.roles %}
                                 <form action="{{ cdedblink("core/logout") }}" method="POST" id="logoutform"
                                   class="navbar-form">
                                     <p class="navbar-text">
@@ -120,9 +120,13 @@
                                         <span class="visible-xs-inline-block">{% trans -%}Logout{%- endtrans %}</span>
                                     </button>
                                 </form>
-                            </li>
-                        </ul>
-                    {% endif %}
+                            {% elif not login_form %}
+                                {{ util.href(cdedblink('core/index', {'wants': encode_parameter("core/index", "wants",
+                                                                                                original_request.url)}),
+                                             gettext("Login"), aclass='btn navbar-button btn-default', icon='off') }}
+                            {% endif %}
+                        </li>
+                    </ul>
 
                     <ul class="nav navbar-nav">
                         <li {% if mainnav_active == 'core' %}class="active" aria-current="page"{% endif %}>

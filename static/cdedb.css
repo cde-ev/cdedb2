@@ -255,6 +255,10 @@ ul.nosp, ol.nosp {
 .navbar-form .navbar-text {
     margin: 7px 15px;
 }
+.navbar-nav>li>a.btn {
+    padding: 5px 10px;
+    margin: 10px 5px;
+}
 .navbar-collapse.collapse .navbar-form .navbar-text, .navbar-collapse.collapsing .navbar-form .navbar-text {
     display: inline-block;
 }
