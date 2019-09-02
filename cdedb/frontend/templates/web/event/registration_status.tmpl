@@ -92,7 +92,7 @@
 
     <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
     {% if ambience['event']['registration_soft_limit'] is none or
-            ambience['event']['registration_soft_limit'] >= now() %}
+            ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning",
                          icon='pencil') }}

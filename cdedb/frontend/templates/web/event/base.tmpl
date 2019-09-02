@@ -15,7 +15,7 @@
         {% if is_registered %}
             {{ util.href(cdedblink("event/registration_status", {"event_id": data['id']}), gettext("My Registration"),
                     aclass="list-group-item", icon="log-in", active=(sidenav_active == 'event_register')) }}
-            {% if data['use_questionnaire'] %}
+            {% if data['use_questionnaire'] and not data['is_archived'] %}
                 {{ util.href(cdedblink("event/questionnaire_form", {"event_id": data['id']}), gettext("Questionnaire"),
                         aclass="list-group-item", icon="edit", active=(sidenav_active == 'event_quest')) }}
             {% endif %}

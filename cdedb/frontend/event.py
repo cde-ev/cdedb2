@@ -2853,6 +2853,9 @@ class EventFrontend(AbstractUserFrontend):
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
+        if event['is_archived']:
+            rs.notify("warning", n_("Event is already archived."))
+            return self.redirect(rs, "event/show_event")
         registration = self.eventproxy.get_registration(rs, registration_id)
         if (event['registration_soft_limit'] and
                 now() > event['registration_soft_limit']):
@@ -2947,6 +2950,9 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/registration_status")
             if self.is_locked(rs.ambience['event']):
                 rs.notify("info", n_("Event locked."))
+            if rs.ambience['event']['is_archived']:
+                rs.notify("warning", n_("Event is already archived."))
+                return self.redirect(rs, "event/show_event")
             merge_dicts(rs.values, registration['fields'])
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):
