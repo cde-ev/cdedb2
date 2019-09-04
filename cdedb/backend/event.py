@@ -2767,6 +2767,9 @@ class EventBackend(AbstractBackend):
                 for track in part['tracks'].values():
                     del track['id']
                     del track['part_id']
+            for f in ('lodge_field', 'reserve_field', 'course_room_field'):
+                if export_event[f]:
+                    export_event[f] = event['fields'][event[f]]['field_name']
             new_fields = {
                 field['field_name']: field
                 for field in export_event['fields'].values()
@@ -2774,6 +2777,7 @@ class EventBackend(AbstractBackend):
             for field in new_fields.values():
                 del field['field_name']
                 del field['event_id']
+                del field['id']
             export_event['fields'] = new_fields
             ret['event'] = export_event
             # personas
@@ -2783,7 +2787,7 @@ class EventBackend(AbstractBackend):
             for reg_id, registration in ret['registrations'].items():
                 persona = personas[backup_registrations[reg_id]['persona_id']]
                 persona['is_orga'] = persona['id'] in event['orgas']
-                for attr in ('id', 'is_active', 'is_admin', 'is_archived',
+                for attr in ('is_active', 'is_admin', 'is_archived',
                              'is_assembly_admin', 'is_assembly_realm',
                              'is_cde_admin', 'is_cde_realm', 'is_core_admin',
                              'is_event_admin', 'is_event_realm', 'is_ml_admin',

@@ -121,7 +121,7 @@ nutzerdefinierten Felder müssen vorher definiert sein.
 ::
 
     {
-        "CDEDB_EXPORT_EVENT_VERSION": 3,
+        "CDEDB_EXPORT_EVENT_VERSION": 4,
         "id": 1,
         "kind": "partial",
         "timestamp": "2018-10-21T20:18:43.414427+00:00",

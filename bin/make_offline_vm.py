@@ -112,7 +112,7 @@ def work(args):
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data["CDEDB_EXPORT_EVENT_VERSION"] != 3:
+    if data["CDEDB_EXPORT_EVENT_VERSION"] != 4:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
