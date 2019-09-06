@@ -2753,9 +2753,10 @@ class EventFrontend(AbstractUserFrontend):
         reg_tracks = {
             track_id: {
                 'course_instructor':
-                    instructor.get("course_instructor{}".format(track_id)),
+                    instructor.get("course_instructor{}".format(track_id))
+                    if track['num_choices'] else None,
             }
-            for track_id in tracks
+            for track_id, track in tracks.items()
         }
         for track_id in present_tracks:
             reg_tracks[track_id]['choices'] = tuple(
