@@ -95,7 +95,7 @@
 
         {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% set course_list = course_choices[track_id] %}
-            {% if course_list and track['num_choices'] %}
+            {% if track['num_choices'] %}
                 <div id="course_choice_container-{{ track_id }}" class="course_choice_container"
                      data-part="{{ track['part_id'] }}">
                     <h4>
