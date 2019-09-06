@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2019-09-01 19:28+0200\n"
+"POT-Creation-Date: 2019-09-06 17:32+0000\n"
 "PO-Revision-Date: 2019-08-10 22:44+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.7.0\n"
+"Generated-By: Babel 2.6.0\n"
 
 #: bin/archive/migrate_execute.py:393
 msgid "Initial import."
@@ -1530,7 +1530,7 @@ msgstr "Muss mit „qview_“ beginnen."
 msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
-#: cdedb/frontend/event.py:3067 cdedb/validation.py:3347
+#: cdedb/frontend/event.py:3082 cdedb/validation.py:3347
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
@@ -1594,7 +1594,7 @@ msgstr "Zu viele Eingaben gemacht."
 #: cdedb/backend/event.py:2275 cdedb/backend/event.py:2328
 #: cdedb/backend/event.py:2398 cdedb/backend/event.py:2423
 #: cdedb/backend/event.py:2449 cdedb/backend/event.py:2598
-#: cdedb/backend/event.py:2667 cdedb/backend/event.py:2818
+#: cdedb/backend/event.py:2667 cdedb/backend/event.py:2822
 #: cdedb/backend/ml.py:115 cdedb/backend/ml.py:230 cdedb/backend/ml.py:460
 #: cdedb/backend/ml.py:549 cdedb/backend/ml.py:617 cdedb/backend/ml.py:693
 #: cdedb/backend/ml.py:764 cdedb/backend/ml.py:786 cdedb/backend/ml.py:825
@@ -2062,7 +2062,7 @@ msgstr "Unterkünfte referenzieren mehr als eine Veranstaltung."
 msgid "Not locked."
 msgstr "Veranstaltungssperre ist nicht aktiv."
 
-#: cdedb/backend/event.py:2605 cdedb/backend/event.py:2821
+#: cdedb/backend/event.py:2605 cdedb/backend/event.py:2825
 msgid "Version mismatch – aborting."
 msgstr "Versionen stimmen nicht überein."
 
@@ -2190,9 +2190,9 @@ msgstr "Der Anti-CSRF-Token enthält keine gültige Benutzer-ID."
 #: cdedb/frontend/cde.py:2379 cdedb/frontend/cde.py:2431
 #: cdedb/frontend/core.py:1783 cdedb/frontend/core.py:1814
 #: cdedb/frontend/event.py:347 cdedb/frontend/event.py:390
-#: cdedb/frontend/event.py:1023 cdedb/frontend/event.py:3416
-#: cdedb/frontend/event.py:3849 cdedb/frontend/event.py:4754
-#: cdedb/frontend/event.py:4780 cdedb/frontend/ml.py:323
+#: cdedb/frontend/event.py:1023 cdedb/frontend/event.py:3431
+#: cdedb/frontend/event.py:3864 cdedb/frontend/event.py:4769
+#: cdedb/frontend/event.py:4795 cdedb/frontend/ml.py:323
 #: cdedb/frontend/ml.py:496
 msgid "Must be checked."
 msgstr "Muss markiert sein."
@@ -2666,6 +2666,10 @@ msgstr "Änderung unterdrückt."
 msgid "Must supply archival note."
 msgstr "Archivierungsnotiz muss angegeben werden."
 
+#: cdedb/frontend/event.py:72
+msgid "This event has been archived."
+msgstr "Diese Veranstaltung wurde archiviert."
+
 #: cdedb/frontend/event.py:231 cdedb/frontend/event.py:283
 msgid "The event is not published yet."
 msgstr "Die Veranstaltung ist noch nicht öffentlich."
@@ -2814,7 +2818,7 @@ msgstr "Unbekannter Veranstaltungsteil."
 msgid "Empty File."
 msgstr "Leere Datei."
 
-#: cdedb/frontend/event.py:2413 cdedb/frontend/event.py:4726
+#: cdedb/frontend/event.py:2413 cdedb/frontend/event.py:4741
 msgid "Data from wrong event."
 msgstr "Daten passen nicht zur Veranstaltung."
 
@@ -2910,323 +2914,329 @@ msgstr "Unterkunft"
 msgid "Camping Mat"
 msgstr "Isomatte"
 
-#: cdedb/frontend/event.py:2644 cdedb/frontend/event.py:3392
+#: cdedb/frontend/event.py:2644 cdedb/frontend/event.py:3407
 msgid "Already registered."
 msgstr "Bereits angemeldet."
 
-#: cdedb/frontend/event.py:2647 cdedb/frontend/event.py:2775
+#: cdedb/frontend/event.py:2647 cdedb/frontend/event.py:2778
 msgid "Registration not open."
 msgstr "Anmeldung noch nicht eröffnet."
 
-#: cdedb/frontend/event.py:2650 cdedb/frontend/event.py:2778
-#: cdedb/frontend/event.py:2863 cdedb/frontend/event.py:2913
-#: cdedb/frontend/event.py:2949 cdedb/frontend/event.py:2982
+#: cdedb/frontend/event.py:2650 cdedb/frontend/event.py:2781
+#: cdedb/frontend/event.py:2872 cdedb/frontend/event.py:2925
+#: cdedb/frontend/event.py:2961 cdedb/frontend/event.py:2994
 msgid "Event locked."
 msgstr "Veranstaltungssperre aktiviert."
 
-#: cdedb/frontend/event.py:2659
+#: cdedb/frontend/event.py:2653 cdedb/frontend/event.py:2784
+#: cdedb/frontend/event.py:2863 cdedb/frontend/event.py:2922
+#: cdedb/frontend/event.py:2997
+msgid "Event is already archived."
+msgstr "Veranstaltung ist bereits archiviert."
+
+#: cdedb/frontend/event.py:2662
 msgid "No minors may register. Please contact the Orgateam."
 msgstr "Minderjährige können sich nicht anmelden. Kontaktiere bitte das Orgateam."
 
-#: cdedb/frontend/event.py:2721
+#: cdedb/frontend/event.py:2724
 msgid "Must select at least one part."
 msgstr "Mindestens ein Teil muss ausgewählt werden."
 
-#: cdedb/frontend/event.py:2730
+#: cdedb/frontend/event.py:2733
 #, python-format
 msgid "You cannot have the same course as %(i)s. and %(j)s. choice"
 msgstr "Du kannst diesen Kurs nicht als %(i)s. und %(j)s Wahl wählen."
 
-#: cdedb/frontend/event.py:2738
+#: cdedb/frontend/event.py:2741
 #, python-format
 msgid "You must chose at least %(min_choices)s courses."
 msgstr "Du musst mindestens %(min_choices)s Kurse wählen."
 
-#: cdedb/frontend/event.py:2794
+#: cdedb/frontend/event.py:2800
 msgid "No minors may register. Please contact the Orgateam"
 msgstr ""
 "Minderjährige können sich nicht anmelden. Kontaktiere ggf. bitt das "
 "Orgateam."
 
-#: cdedb/frontend/event.py:2815
+#: cdedb/frontend/event.py:2821
 msgid "Registered for event."
 msgstr "Für Veranstaltung angemeldet."
 
-#: cdedb/frontend/event.py:2824 cdedb/frontend/event.py:2854
-#: cdedb/frontend/event.py:2906 cdedb/frontend/event.py:2941
-#: cdedb/frontend/event.py:2975
+#: cdedb/frontend/event.py:2830 cdedb/frontend/event.py:2860
+#: cdedb/frontend/event.py:2915 cdedb/frontend/event.py:2953
+#: cdedb/frontend/event.py:2987
 msgid "Not registered for event."
 msgstr "Nicht für Veranstaltung angemeldet."
 
-#: cdedb/frontend/event.py:2860
+#: cdedb/frontend/event.py:2869
 msgid "Registration closed, no changes possible."
 msgstr "Anmeldung vorbei; es sind keine Änderungen mehr möglich."
 
-#: cdedb/frontend/event.py:2910
+#: cdedb/frontend/event.py:2919
 msgid "No changes allowed anymore."
 msgstr "Keine Änderungen mehr möglich."
 
-#: cdedb/frontend/event.py:2946 cdedb/frontend/event.py:2979
+#: cdedb/frontend/event.py:2958 cdedb/frontend/event.py:2991
 msgid "Questionnaire disabled."
 msgstr "Fragebogen nicht aktiviert."
 
-#: cdedb/frontend/event.py:2954
+#: cdedb/frontend/event.py:2966
 msgid "Must be Orga to use preview."
 msgstr "Du musst Orga sein, um die Fragebogen-Vorschau zu nutzen."
 
-#: cdedb/frontend/event.py:2956
+#: cdedb/frontend/event.py:2968
 msgid "Questionnaire is not enabled yet."
 msgstr "Der Fragebogen ist noch nicht für die Teilnehmer freigeschaltet."
 
-#: cdedb/frontend/event.py:3311
+#: cdedb/frontend/event.py:3326
 msgid "Must choose different courses."
 msgstr "Bitte verschiedene Kurse wählen."
 
-#: cdedb/frontend/event.py:3388
+#: cdedb/frontend/event.py:3403
 msgid "Invalid persona."
 msgstr "Ungültiger Account."
 
-#: cdedb/frontend/event.py:3399
+#: cdedb/frontend/event.py:3414
 msgid "Rate-limit reached."
 msgstr "Limit erreicht."
 
-#: cdedb/frontend/event.py:3445
+#: cdedb/frontend/event.py:3460
 msgid "No participants found to edit."
 msgstr "Keine Teilnehmer zur Bearbeitung ausgewählt."
 
-#: cdedb/frontend/event.py:3633
+#: cdedb/frontend/event.py:3648
 msgid "Mixed lodgement with non-mixing participants."
 msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmern."
 
-#: cdedb/frontend/event.py:3649
+#: cdedb/frontend/event.py:3664
 msgid "Too many camping mats used."
 msgstr "Zu viele Isomattenplätze genutzt."
 
-#: cdedb/frontend/event.py:3662
+#: cdedb/frontend/event.py:3677
 msgid "Overful lodgement."
 msgstr "Überfüllte Unterkunft"
 
-#: cdedb/frontend/event.py:3665
+#: cdedb/frontend/event.py:3680
 msgid "Too few camping mats used."
 msgstr "Zu wenige Isomattenplätze genutzt."
 
-#: cdedb/frontend/event.py:3676
+#: cdedb/frontend/event.py:3691
 msgid "Non-Binary Participant."
 msgstr "nicht-binärer Teilnehmer"
 
-#: cdedb/frontend/event.py:4317
+#: cdedb/frontend/event.py:4332
 msgid "instructs their course"
 msgstr "Hält seinen/ihren Kurs"
 
-#: cdedb/frontend/event.py:4319
+#: cdedb/frontend/event.py:4334
 msgid "course"
 msgstr "Kurs"
 
-#: cdedb/frontend/event.py:4321
+#: cdedb/frontend/event.py:4336
 msgid "instructed course"
 msgstr "geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4323
+#: cdedb/frontend/event.py:4338
 msgid "course ID"
 msgstr "Kurs-ID"
 
-#: cdedb/frontend/event.py:4325
+#: cdedb/frontend/event.py:4340
 msgid "course nr"
 msgstr "Kursnummer"
 
-#: cdedb/frontend/event.py:4327
+#: cdedb/frontend/event.py:4342
 msgid "course title"
 msgstr "Kurstitel"
 
-#: cdedb/frontend/event.py:4329
+#: cdedb/frontend/event.py:4344
 msgid "course shortname"
 msgstr "Kurskurzname"
 
-#: cdedb/frontend/event.py:4331
+#: cdedb/frontend/event.py:4346
 msgid "course notes"
 msgstr "Kursnotizen"
 
-#: cdedb/frontend/event.py:4333
+#: cdedb/frontend/event.py:4348
 msgid "instructed course ID"
 msgstr "ID geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4335
+#: cdedb/frontend/event.py:4350
 msgid "instructed course nr"
 msgstr "Nummer geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4337
+#: cdedb/frontend/event.py:4352
 msgid "instructed course title"
 msgstr "Titel geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4339
+#: cdedb/frontend/event.py:4354
 msgid "instructed course shortname"
 msgstr "Kurzname geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4341
+#: cdedb/frontend/event.py:4356
 msgid "instructed courese notes"
 msgstr "Notizen geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4346
+#: cdedb/frontend/event.py:4361
 msgid "course {field}"
 msgstr "Kurs {field}"
 
-#: cdedb/frontend/event.py:4353
+#: cdedb/frontend/event.py:4368
 msgid "instructed course {field}"
 msgstr "{field} geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4361
+#: cdedb/frontend/event.py:4376
 msgid "any track: instructs their course"
 msgstr "Bel. Schiene: Hält seinen/ihren Kurs"
 
-#: cdedb/frontend/event.py:4364
+#: cdedb/frontend/event.py:4379
 msgid "any track: course"
 msgstr "Bel. Schiene: Kurs"
 
-#: cdedb/frontend/event.py:4367
+#: cdedb/frontend/event.py:4382
 msgid "any track: instructed course"
 msgstr "Bel. Schiene: geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4370
+#: cdedb/frontend/event.py:4385
 msgid "any track: course ID"
 msgstr "Bel. Schiene: Kurs-ID"
 
-#: cdedb/frontend/event.py:4373
+#: cdedb/frontend/event.py:4388
 msgid "any track: course nr"
 msgstr "Bel. Schiene: Kursnummer"
 
-#: cdedb/frontend/event.py:4376
+#: cdedb/frontend/event.py:4391
 msgid "any track: course title"
 msgstr "Bel. Schiene: Kurstitel"
 
-#: cdedb/frontend/event.py:4379
+#: cdedb/frontend/event.py:4394
 msgid "any track: course shortname"
 msgstr "Bel. Schiene: Kurskurzname"
 
-#: cdedb/frontend/event.py:4382
+#: cdedb/frontend/event.py:4397
 msgid "any track: course notes"
 msgstr "Bel. Schiene: Kursnotizen"
 
-#: cdedb/frontend/event.py:4385
+#: cdedb/frontend/event.py:4400
 msgid "any track: instructed course ID"
 msgstr "Bel. Schiene: ID geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4388
+#: cdedb/frontend/event.py:4403
 msgid "any track: instructed course nr"
 msgstr "Bel. Schiene: Nummer geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4391
+#: cdedb/frontend/event.py:4406
 msgid "any track: instructed course title"
 msgstr "Bel. Schiene: Titel geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4394
+#: cdedb/frontend/event.py:4409
 msgid "any track: instructed course shortname"
 msgstr "Bel. Schiene: Kurzname geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4397
+#: cdedb/frontend/event.py:4412
 msgid "any track: instructed course notes"
 msgstr "Bel. Schiene: Notizen geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4403
+#: cdedb/frontend/event.py:4418
 msgid "any track: course {field}"
 msgstr "Bel. Schiene: Kurs {field}"
 
-#: cdedb/frontend/event.py:4411
+#: cdedb/frontend/event.py:4426
 msgid "any track: instructed course {field}"
 msgstr "Bel. Schiene: {field} geleiteter Kurs"
 
-#: cdedb/frontend/event.py:4422
+#: cdedb/frontend/event.py:4437
 msgid "registration status"
 msgstr "Status"
 
-#: cdedb/frontend/event.py:4424
+#: cdedb/frontend/event.py:4439
 msgid "camping mat user"
 msgstr "Isomattenschläfer"
 
-#: cdedb/frontend/event.py:4426
+#: cdedb/frontend/event.py:4441
 msgid "lodgement"
 msgstr "Unterkunft"
 
-#: cdedb/frontend/event.py:4428
+#: cdedb/frontend/event.py:4443
 msgid "lodgement ID"
 msgstr "Unterkunfts-ID"
 
-#: cdedb/frontend/event.py:4430
+#: cdedb/frontend/event.py:4445
 msgid "lodgement moniker"
 msgstr "Unterkunftskurzname"
 
-#: cdedb/frontend/event.py:4432
+#: cdedb/frontend/event.py:4447
 msgid "lodgement notes"
 msgstr "Unterkunftsnotizen"
 
-#: cdedb/frontend/event.py:4437
+#: cdedb/frontend/event.py:4452
 msgid "lodgement {field}"
 msgstr "Unterkunft {field}"
 
-#: cdedb/frontend/event.py:4445
+#: cdedb/frontend/event.py:4460
 msgid "any part: registration status"
 msgstr "Bel. Teil: Status"
 
-#: cdedb/frontend/event.py:4448
+#: cdedb/frontend/event.py:4463
 msgid "any part: camping mat user"
 msgstr "Bel. Teil: Isomattenschläfer"
 
-#: cdedb/frontend/event.py:4451
+#: cdedb/frontend/event.py:4466
 msgid "any part: lodgement"
 msgstr "Bel. Teil: Unterkunft"
 
-#: cdedb/frontend/event.py:4454
+#: cdedb/frontend/event.py:4469
 msgid "any part: lodgement ID"
 msgstr "Bel. Teil: Unterkunfts-ID"
 
-#: cdedb/frontend/event.py:4457
+#: cdedb/frontend/event.py:4472
 msgid "any part: lodgement moniker"
 msgstr "Bel. Teil: Unterkunftskurzname"
 
-#: cdedb/frontend/event.py:4460
+#: cdedb/frontend/event.py:4475
 msgid "any part: lodgement notes"
 msgstr "Bel. Teil: Unterkunftsnotizen"
 
-#: cdedb/frontend/event.py:4466
+#: cdedb/frontend/event.py:4481
 msgid "any part: lodgement {field}"
 msgstr "Bel. Teil: Unterkunft {field}"
 
-#: cdedb/frontend/event.py:4573 cdedb/frontend/event.py:4611
-#: cdedb/frontend/event.py:4629 cdedb/frontend/event.py:4662
+#: cdedb/frontend/event.py:4588 cdedb/frontend/event.py:4626
+#: cdedb/frontend/event.py:4644 cdedb/frontend/event.py:4677
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/frontend/event.py:4575
+#: cdedb/frontend/event.py:4590
 msgid "Already checked in."
 msgstr "Bereits eingecheckt."
 
-#: cdedb/frontend/event.py:4615 cdedb/frontend/event.py:4632
-#: cdedb/frontend/event.py:4665
+#: cdedb/frontend/event.py:4630 cdedb/frontend/event.py:4647
+#: cdedb/frontend/event.py:4680
 msgid "Wrong associated field."
 msgstr "Feld einer anderen Veranstaltung angegeben."
 
-#: cdedb/frontend/event.py:4733
+#: cdedb/frontend/event.py:4748
 msgid "There exist unmigrated personas."
 msgstr "Unmigrierte Accounts gefunden."
 
-#: cdedb/frontend/event.py:4750
+#: cdedb/frontend/event.py:4765
 msgid "Event already archived."
 msgstr "Veranstaltung bereits archiviert."
 
-#: cdedb/frontend/event.py:4759 cdedb/frontend/event.py:4785
+#: cdedb/frontend/event.py:4774 cdedb/frontend/event.py:4800
 #: cdedb/frontend/templates/web/event/show_event.tmpl:357
 #: cdedb/frontend/templates/web/event/show_event.tmpl:384
 msgid "Event is not concluded yet."
 msgstr "Veranstaltung ist noch nicht abgeschlossen."
 
-#: cdedb/frontend/event.py:4766
+#: cdedb/frontend/event.py:4781
 msgid "Event archived."
 msgstr "Veranstaltung archiviert."
 
-#: cdedb/frontend/event.py:4771
+#: cdedb/frontend/event.py:4786
 msgid "Created multiple past events."
 msgstr "Mehrere vergangene Veranstaltungen erstellt."
 
-#: cdedb/frontend/event.py:4797
+#: cdedb/frontend/event.py:4812
 msgid "Event deleted."
 msgstr "Veranstaltung gelöscht."
 

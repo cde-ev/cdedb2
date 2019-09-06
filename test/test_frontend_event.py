@@ -2350,9 +2350,21 @@ etc;anything else""", f['entries_2'].value)
         f['ack_archive'].checked = True
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Diese Veranstaltung wurde archiviert.", div="notifications")
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/past/event/list'})
         self.assertPresence("Große Testakademie 2222 (Warmup)")
+
+        # Check visibility but un-modifiability for participants
+        self.logout()
+        self.login(USER_DICT["emilia"])
+        self.get("/event/event/1/show")
+        self.assertPresence("Diese Veranstaltung wurde archiviert.", div="notifications")
+        self.traverse({'href': '/event/event/1/registration/status'})
+        self.assertNonPresence("Bearbeiten")
+        self.get("/event/event/1/registration/amend")
+        self.follow()
+        self.assertPresence("Veranstaltung ist bereits archiviert.", div="notifications")
 
     @as_users("anton")
     def test_one_track_no_courses(self, user):

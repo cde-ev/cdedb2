@@ -69,7 +69,7 @@ class EventFrontend(AbstractUserFrontend):
                     self.eventproxy.list_registrations(
                         rs, rs.ambience['event']['id'], rs.user.persona_id))
             if rs.ambience['event'].get('is_archived'):
-                rs.notify("info", "This event has been archived.")
+                rs.notify("info", n_("This event has been archived."))
         return super().render(rs, templatename, params=params)
 
     @classmethod
@@ -2649,6 +2649,9 @@ class EventFrontend(AbstractUserFrontend):
         if self.is_locked(event):
             rs.notify("warning", n_("Event locked."))
             return self.redirect(rs, "event/show_event")
+        if rs.ambience['event']['is_archived']:
+            rs.notify("error", n_("Event is already archived."))
+            return self.redirect(rs, "event/show_event")
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
             persona['birthday'],
@@ -2776,6 +2779,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
+            return self.redirect(rs, "event/show_event")
+        if rs.ambience['event']['is_archived']:
+            rs.notify("warning", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -2912,6 +2918,9 @@ class EventFrontend(AbstractUserFrontend):
                 now() > rs.ambience['event']['registration_soft_limit']):
             rs.notify("error", n_("No changes allowed anymore."))
             return self.redirect(rs, "event/registration_status")
+        if rs.ambience['event']['is_archived']:
+            rs.notify("error", n_("Event is already archived."))
+            return self.redirect(rs, "event/registration_status")
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
@@ -2950,9 +2959,6 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/registration_status")
             if self.is_locked(rs.ambience['event']):
                 rs.notify("info", n_("Event locked."))
-            if rs.ambience['event']['is_archived']:
-                rs.notify("warning", n_("Event is already archived."))
-                return self.redirect(rs, "event/show_event")
             merge_dicts(rs.values, registration['fields'])
         else:
             if event_id not in rs.user.orga and not self.is_admin(rs):
@@ -2987,6 +2993,9 @@ class EventFrontend(AbstractUserFrontend):
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
+        if rs.ambience['event']['is_archived']:
+            rs.notify("error", n_("Event is already archived."))
+            return self.redirect(rs, "event/show_event")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params = tuple(

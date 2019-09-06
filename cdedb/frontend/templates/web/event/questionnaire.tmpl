@@ -54,28 +54,33 @@
                     {% if FIELD['entries'] %}
                         {{ util.form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
                                                   label=entry['title'], info=entry['info'],
-                                                  readonly=(entry['readonly'] or is_locked)) }}
+                                                  readonly=(entry['readonly'] or is_locked
+                                                            or ambience['event']['is_archived'])) }}
                     {% else %}
                         {% set datatypes = enums['FieldDatatypes'] %}
                         {% if FIELD['kind'] == datatypes.bool %}
                             {{ util.form_input_checkbox(
                                 name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                                readonly=(entry['readonly'] or is_locked)) }}
+                                readonly=(entry['readonly'] or is_locked
+                                          or ambience['event']['is_archived'])) }}
                         {% elif FIELD['kind'] == datatypes.str  %}
                             {% if entry['input_size'] %}
                                 {{ util.form_input_textarea(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                                    readonly=(entry['readonly'] or is_locked),
+                                    readonly=(entry['readonly'] or is_locked
+                                              or ambience['event']['is_archived']),
                                     rows=(1+entry['input_size']*2)) }}
                             {% else %}
                                 {{ util.form_input_text(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                                    readonly=(entry['readonly'] or is_locked)) }}
+                                    readonly=(entry['readonly'] or is_locked
+                                              or ambience['event']['is_archived'])) }}
                             {% endif %}
                         {% else %}
                             {{ util.form_event_field_input(
                                 FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                                readonly=(entry['readonly'] or is_locked)) }}
+                                readonly=(entry['readonly'] or is_locked
+                                          or ambience['event']['is_archived'])) }}
                         {% endif %}
                     {% endif %}
                 {% endwith %}
@@ -92,7 +97,7 @@
         {% endfor %}
         {% if not preview %}
             {{ util.form_input_submit(value="Abschicken", cancellink=cdedblink("event/registration_status"),
-                                      readonly=is_locked) }}
+                                      readonly=is_locked or ambience['event']['is_archived']) }}
         {% endif %}
     {% if preview %}
         </div>
