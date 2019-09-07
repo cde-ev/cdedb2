@@ -83,7 +83,7 @@ Die möglichen Operationen sind wie folgt.
   ``null`` zugewiesen.
 
 Ein Beispiel mit allen möglichen Operationen findet sich am Ende
-:ref:`handbuch_partieller_import_beispiel`.
+:ref:`handbuch-partieller-import-beispiel`.
 
 Hinweise
 --------
@@ -110,7 +110,8 @@ Hinweise
   Außerdem ist es bei der Erstellung einer Anmeldungen erforderlich die
   zugehörige Person mit dem Attribut ``persona_id`` anzugeben.
 
-.. _handbuch_partieller_import_beispiel:
+.. _handbuch-partieller-import-beispiel:
+
 Beispiel
 --------
 
