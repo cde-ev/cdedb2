@@ -28,15 +28,10 @@
         {{ util.form_input_textarea(name="courses", label=gettext("Courses"),
                                info=gettext('Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”.')|
                                     format(number=gettext("Number"), title=gettext("Title"), desc=gettext("Description"))) }}
-        <div class="form-group">
-            <div class="col-sm-offset-4 col-sm-8">
-                <div class="form-control-static text-info">
-                    {{ util.make_icon('info-sign') }} 
-                    {% trans -%}Warning: The new Event will be immediately visible to all CdE-Members
-                        viewing the list of past Events.{%- endtrans %}
-                </div>
-            </div>
-        </div>
+
+        {{ util.form_input_static(aclass='text-info', icon='info-sign',
+                          value=gettext("Warning: The new Event will be immediately visible to all CdE-Members "
+                                        "viewing the list of past Events.")) }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("cde/list_past_events")) }}
     </form>
 {% endblock %}

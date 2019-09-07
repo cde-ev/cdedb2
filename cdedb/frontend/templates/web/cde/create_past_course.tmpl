@@ -30,14 +30,9 @@
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-        <div class="form-group">
-            <div class="col-sm-offset-4 col-sm-8">
-                <div class="form-control-static text-info">
-                    {{ util.make_icon('info-sign') }}
-                    {% trans -%}Warning: The new Course will be immediately visible to all CdE-Members viewing past Events.{%- endtrans %}
-                </div>
-            </div>
-        </div>
+        {{ util.form_input_static(aclass='text-info', icon='info-sign',
+                          value=gettext("Warning: The new Course will be immediately visible to all CdE members "
+                                        "viewing this past event.")) }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("cde/show_past_event")) }}
     </form>
 {% endblock %}

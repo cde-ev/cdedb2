@@ -11355,6 +11355,42 @@ msgstr ""
 "Kursschienen enthält, müssen diese später über die Konfigurations-Seite "
 "„Veranstaltungsteile“ hinzugefügt werden."
 
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:37
+msgid ""
+"Warning: The new Course will be immediately visible to all CdE members "
+"viewing this past event."
+msgstr ""
+"Achtung: Der neue Kurs ist direkt für CdE-Mitglieder, die sich die "
+"vergangene Veranstaltung ansehen, sichtbar."
+
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:35
+msgid ""
+"Warning: The new Event will be immediately visible to all CdE-Members "
+"viewing the list of past Events."
+msgstr ""
+"Achtung: Die neue Veranstaltung ist direkt für alle CdE-Mitglieder in der "
+"Liste der verg. Veranstaltungen sichtbar."
+
+#: cdedb/frontend/templates/web/event/change_course.tmpl:91
+#: cdedb/frontend/templates/web/event/create_course.tmpl:63
+msgid ""
+"Warning: The description will be publicly visible, once courselist "
+"visibility is activated in the configuration. Course instructors will be "
+"visible to event users."
+msgstr ""
+"Achtung: Die Beschreibung wird öffentlich sichtbar sein, sobald die "
+"Kursliste in der Konfiguration sichtbar geschaltet wird. Die Kursleiter sind "
+"sichtbar für Veranstaltungsnutzer."
+
+#: cdedb/frontend/templates/web/event/create_event.tmpl:38
+msgid ""
+"If the event comprises multiple parts or multiple course tracks, they have "
+"to be added later, using the “Event-Parts” configuration page."
+msgstr ""
+"Falls die Veranstaltung aus mehreren Teilen besteht oder mehrere "
+"Kursschienen enthält, müssen diese später über die Konfigurations-Seite "
+"„Veranstaltungsteile“ hinzugefügt werden."
+
 #~ msgid "Hello %(given_names)s,"
 #~ msgstr "Hallo %(given_names)s,"
 
