@@ -3,6 +3,7 @@
 import copy
 import csv
 import json
+import re
 import datetime
 import webtest
 from test.common import as_users, USER_DICT, FrontendTest
@@ -788,6 +789,21 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("anton", "ferdinand")
     def test_create_event(self, user):
+        # Some helper to find dynamic ids
+        find_event_id = lambda url: int(re.search(r'event\/event\/(\d+)',
+                                                  url).group(1))
+        find_parts = lambda f: [int(m.group(1))
+                                for m in (re.match(r'delete_(\d+)', field)
+                                          for field in f.fields
+                                          if field is not None)
+                                if m]
+        find_tracks = lambda f: \
+            [int(m.group(1))
+             for m in (re.match(r'track_delete_\d+_(\d+)', field)
+                       for field in f.fields
+                       if field is not None)
+             if m]
+
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/list'},
                       {'href': '/event/event/create'})
@@ -799,7 +815,6 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "UnAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
-        f['registration_start'] = "2000-01-01 00:00:00+0000"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
@@ -807,6 +822,40 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Mit Co und Coco.")
         self.assertPresence("Bertålotta")
         self.assertPresence("Garcia")
+
+        # Check creation of parts and no tracks
+        self.traverse({'href': '/event/event/{}/part/summary'
+                      .format(find_event_id(self.response.request.url))})
+        f = self.response.forms['partsummaryform']
+        parts = find_parts(f)
+        self.assertEqual(len(parts), 1)
+        self.assertEqual('2345-01-01', f["part_begin_{}".format(parts[0])].value)
+        self.assertEqual('2345-06-07', f["part_end_{}".format(parts[0])].value)
+        tracks = find_tracks(f)
+        self.assertEqual(len(tracks), 0)
+
+        # Create another event with course track and orga mailinglist
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/list'},
+                      {'href': '/event/event/create'})
+        f = self.response.forms['createeventform']
+        f['title'] = "Alternative Akademie"
+        f['institution'] = 1
+        f['shortname'] = "AltAka"
+        f['event_begin'] = "2345-01-01"
+        f['event_end'] = "2345-6-7"
+        f['orga_ids'] = "DB-1-9, DB-5-1"
+        f['create_track'].checked = True
+        f['create_orga_list'].checked = True
+        self.submit(f)
+        self.assertTitle("Alternative Akademie")
+        self.assertPresence("altaka@aka.cde-ev.de")
+        self.traverse({'href': '/event/event/{}/part/summary'
+                      .format(find_event_id(self.response.request.url))})
+        f = self.response.forms['partsummaryform']
+        tracks = find_tracks(f)
+        self.assertEqual(len(tracks), 1)
+
 
     @as_users("anton", "garcia")
     def test_change_course(self, user):

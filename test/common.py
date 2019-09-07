@@ -358,7 +358,7 @@ class FrontendTest(unittest.TestCase):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
         self.app.reset()
-        self.response = None
+        self.response = None  # type: webtest.TestResponse
 
     def basic_validate(self, verbose=False):
         if not verbose:
