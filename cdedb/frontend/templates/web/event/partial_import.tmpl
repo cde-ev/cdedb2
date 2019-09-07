@@ -18,6 +18,31 @@
     </h1>
 {% endblock %}
 {% block content %}
+    {% if errors %}
+        {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel panel-warning',
+                                     icon='exclamation-sign') %}
+            <p class="text-warning">
+                {% trans -%}
+                    Your upload contained errors and was not processed.
+                    The following is a list of the observed violations.
+                {%- endtrans %}
+            </p>
+            <ul>
+                {%- for argname, errorlist in errors|dictsort %}
+                    {%- for error in errorlist %}
+                        <li>
+                            {{ argname }}:
+                            {% if error.args %}
+                                {{ util.format_error(error) }}
+                            {% else %}
+                                {% trans %}unspecific error{% endtrans %}
+                            {% endif %}
+                        </li>
+                    {%- endfor %}
+                {%- endfor %}
+            </ul>
+        {% endcall %}
+    {% endif %}
     <p>
         {% trans -%}
             Update of event data with prefabricated changesets (e.g. known

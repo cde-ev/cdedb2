@@ -47,7 +47,8 @@ import zxcvbn
 
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
-    ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
+    ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
+    CDEDB_EXPORT_EVENT_VERSION)
 from cdedb.database.constants import FieldDatatypes
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
@@ -2513,7 +2514,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
         return val, errs
     if 'kind' not in val or val['kind'] != "full":
         return None, [(argname, KeyError(n_(
-            "Only full exports are supported")))]
+            "Only full exports are supported.")))]
 
     mandatory_fields = {
         'CDEDB_EXPORT_EVENT_VERSION': _int,
@@ -2539,6 +2540,8 @@ def _serialized_event(val, argname=None, *, _convert=True):
         val, mandatory_fields, {'core.personas': _mapping}, _convert=_convert)
     if errs:
         return val, errs
+    if val['CDEDB_EXPORT_EVENT_VERSION'] != CDEDB_EXPORT_EVENT_VERSION:
+        return None, [(argname, ValueError(n_("Schema version mismatch.")))]
     # Second a thorough investigation
     #
     # We reuse the existing validators, but have to augment them since the
@@ -2665,6 +2668,8 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
+    if val['CDEDB_EXPORT_EVENT_VERSION'] != CDEDB_EXPORT_EVENT_VERSION:
+        return None, [(argname, ValueError(n_("Schema version mismatch.")))]
     for domain, validator in (('courses', _partial_course_or_None),
                               ('lodgements', _partial_lodgement_or_None),
                               ('registrations', _partial_registration_or_None)):
@@ -2672,7 +2677,8 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
             continue
         new_dict = {}
         for key, entry in val[domain].items():
-            new_key, e = _int(key, domain, _convert=True) # fix JSON key restriction
+            # fix JSON key restriction
+            new_key, e = _int(key, domain, _convert=True)
             if e:
                 errs.extend(e)
                 continue
