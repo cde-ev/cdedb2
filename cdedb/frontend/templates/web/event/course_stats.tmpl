@@ -128,7 +128,7 @@
                                              choice_counts[course_id][(track_id, i)]) }}
                             {% endfor %}
                         {% else %}
-                            <td class="b-left">{{ util.make_icon('remove-sign', title=gettext("Not Offered")) }}</td>
+                            <td class="b-left"></td>
                             <td colspan="{{ track['num_choices'] + 1 }}"></td>
                         {% endif %}
                     {% endfor %}
