@@ -3415,6 +3415,7 @@ msgstr "Veranstaltungen"
 #: cdedb/frontend/templates/web/ml/index.tmpl:4
 #: cdedb/frontend/templates/web/ml/index.tmpl:7
 #: cdedb/frontend/templates/web/event/create_event.tmpl:54
+#: cdedb/frontend/templates/web/event/create_event.tmpl:61
 msgid "Mailinglists"
 msgstr "Mailinglisten"
 
@@ -3612,6 +3613,7 @@ msgstr "Person"
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:38
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:23
 #: cdedb/frontend/templates/web/event/create_event.tmpl:24
+#: cdedb/frontend/templates/web/event/create_event.tmpl:21
 msgid "Title"
 msgstr "Titel"
 
@@ -4075,6 +4077,7 @@ msgstr "Notizen"
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:26
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:29
 #: cdedb/frontend/templates/web/event/create_event.tmpl:26
+#: cdedb/frontend/templates/web/event/create_event.tmpl:23
 #, python-format
 msgid "Supports %(infolink)s."
 msgstr "Unterstützt %(infolink)s."
@@ -4120,6 +4123,7 @@ msgstr "Unterstützt %(infolink)s."
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:27
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:30
 #: cdedb/frontend/templates/web/event/create_event.tmpl:27
+#: cdedb/frontend/templates/web/event/create_event.tmpl:24
 msgid "Markdown"
 msgstr "Markdown"
 
@@ -4164,6 +4168,7 @@ msgstr "Markdown"
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:27
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:30
 #: cdedb/frontend/templates/web/event/create_event.tmpl:27
+#: cdedb/frontend/templates/web/event/create_event.tmpl:24
 msgid "Short Markdown summary"
 msgstr "Kurze Markdown-Zusammenfassung"
 
@@ -4644,6 +4649,7 @@ msgstr "Betroffen"
 #: cdedb/frontend/templates/web/generic.tmpl:656
 #: cdedb/frontend/templates/web/ml/management.tmpl:164
 #: cdedb/frontend/templates/web/event/create_event.tmpl:50
+#: cdedb/frontend/templates/web/event/create_event.tmpl:57
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr "CdEDB-ID, Name oder E-Mail"
 
@@ -4908,6 +4914,7 @@ msgstr "%(title)s bearbeiten"
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:40
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:25
 #: cdedb/frontend/templates/web/event/create_event.tmpl:25
+#: cdedb/frontend/templates/web/event/create_event.tmpl:22
 msgid "Description"
 msgstr "Beschreibung"
 
@@ -5035,6 +5042,7 @@ msgstr "Achtung: Die Versammlung ist sofort für alle CdE-Mitglieder sichtbar."
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:40
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:56
 #: cdedb/frontend/templates/web/event/create_event.tmpl:59
+#: cdedb/frontend/templates/web/event/create_event.tmpl:66
 msgid "Create"
 msgstr "Anlegen"
 
@@ -5402,6 +5410,7 @@ msgstr "Kandidaten hinzufügen"
 #: cdedb/frontend/templates/web/event/create_event.tmpl:28
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:97
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:139
+#: cdedb/frontend/templates/web/event/create_event.tmpl:25
 msgid "Shortname"
 msgstr "Kurzname"
 
@@ -6131,6 +6140,7 @@ msgstr "%(pevent)s bearbeiten"
 #: cdedb/frontend/templates/web/event/create_event.tmpl:28
 #: cdedb/frontend/templates/web/event/show_event.tmpl:81
 #: cdedb/frontend/templates/web/event/create_event.tmpl:29
+#: cdedb/frontend/templates/web/event/create_event.tmpl:26
 msgid "Institution"
 msgstr "Organisation"
 
@@ -8344,6 +8354,7 @@ msgstr "Online CdEDB-ID"
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:74
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:79
 #: cdedb/frontend/templates/web/event/create_event.tmpl:43
+#: cdedb/frontend/templates/web/event/create_event.tmpl:50
 msgid "Orga-Notes"
 msgstr "Orga-Notizen"
 
@@ -8697,6 +8708,7 @@ msgstr "%(title)s – Konfiguration"
 #: cdedb/frontend/templates/web/event/change_event.tmpl:28
 #: cdedb/frontend/templates/web/event/create_event.tmpl:22
 #: cdedb/frontend/templates/web/event/create_event.tmpl:23
+#: cdedb/frontend/templates/web/event/create_event.tmpl:20
 msgid "Event Meta Data"
 msgstr "Veranstaltungs-Metadaten"
 
@@ -8826,6 +8838,7 @@ msgstr "Zusätzliche Informationen bei der Anmeldung"
 #: cdedb/frontend/templates/web/event/create_event.tmpl:35
 #: cdedb/frontend/templates/web/event/show_event.tmpl:83
 #: cdedb/frontend/templates/web/event/create_event.tmpl:38
+#: cdedb/frontend/templates/web/event/create_event.tmpl:45
 msgid "CdE-Account IBAN"
 msgstr "CdE-Konto IBAN"
 
@@ -9354,16 +9367,19 @@ msgstr "Veranstaltung anlegen"
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:30
 #: cdedb/frontend/templates/web/event/create_event.tmpl:31
+#: cdedb/frontend/templates/web/event/create_event.tmpl:28
 msgid "Event Begin"
 msgstr "Veranstaltungsbeginn"
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:32
 #: cdedb/frontend/templates/web/event/create_event.tmpl:33
+#: cdedb/frontend/templates/web/event/create_event.tmpl:30
 msgid "Event End"
 msgstr "Veranstaltungsende"
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:34
 #: cdedb/frontend/templates/web/event/create_event.tmpl:37
+#: cdedb/frontend/templates/web/event/create_event.tmpl:44
 msgid "Financial"
 msgstr "Finanzielles"
 
@@ -9373,16 +9389,20 @@ msgstr "Finanzielles"
 #: cdedb/frontend/templates/web/event/stats.tmpl:31
 #: cdedb/frontend/templates/web/event/create_event.tmpl:40
 #: cdedb/frontend/templates/web/event/create_event.tmpl:41
+#: cdedb/frontend/templates/web/event/create_event.tmpl:47
+#: cdedb/frontend/templates/web/event/create_event.tmpl:48
 msgid "Orgas"
 msgstr "Orgas"
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:51
 #: cdedb/frontend/templates/web/event/create_event.tmpl:55
+#: cdedb/frontend/templates/web/event/create_event.tmpl:62
 msgid "Create Orga Mailinglist"
 msgstr "Orga-Mailingliste erstellen"
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:52
 #: cdedb/frontend/templates/web/event/create_event.tmpl:56
+#: cdedb/frontend/templates/web/event/create_event.tmpl:63
 msgid "Create Participant Mailinglist"
 msgstr "Teilnehmermailingliste erstellen"
 
@@ -11321,8 +11341,19 @@ msgid "Only full exports are supported"
 msgstr "Nur vollständige Exporte sind unterstützt."
 
 #: cdedb/frontend/templates/web/event/create_event.tmpl:35
+#: cdedb/frontend/templates/web/event/create_event.tmpl:32
 msgid "Event with courses"
 msgstr "Veranstaltung mit Kursen"
+
+#: cdedb/frontend/templates/web/event/create_event.tmpl:38
+msgid ""
+"If the event comprises multiple parts or multiple course tracks,\n"
+"                        they have to be added later, using the “Event-Parts” "
+"configuration page."
+msgstr ""
+"Falls die Veranstaltung aus mehreren Teilen besteht oder mehrere "
+"Kursschienen enthält, müssen diese später über die Konfigurations-Seite "
+"„Veranstaltungsteile“ hinzugefügt werden."
 
 #~ msgid "Hello %(given_names)s,"
 #~ msgstr "Hallo %(given_names)s,"
