@@ -77,50 +77,6 @@
     </script>
 {% endmacro %}
 
-{% macro genesis(realm) %}
-    <p>{{ gettext("Hello %(given_names)s,")|
-            format(given_names=case['given_names']) }},</p>
-
-    <p>
-        {% trans -%}
-            To create Your CdE-Datenbank Account, enter Your data into this form.
-            Then You can set up Your password. Your Account will be activated shortly.
-        {%- endtrans %}
-    </p>
-
-    <form action="{{ cdedblink('{}/genesis'.format(realm)) }}" method="POST" id="newuserform" class="form-horizontal">
-        {{ util.input_hidden(name="case_id") }}
-        {{ util.input_hidden(name="secret") }}
-
-        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title"), info=gettext("Prof., Dr., etc.")) }}
-        {{ util.form_input_static(label=gettext("Given Names"), value=case['given_names']) }}
-        {{ util.form_input_static(label=gettesxt("Family Name"), value=case['family_name']) }}
-        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("First Given Name"), info=gettext("What do people call you?")) }}
-        {% if realm == "event" %}
-            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", placeholder="YYYY-MM-DD") }}
-            {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                      label=gettext("Gender")) }}
-        {% endif %}
-
-        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
-        {{ util.form_input_static(label=gettext("E-Mail"), value=case['username']) }}
-        {% if realm == "event" %}
-            {{ util.form_input_text(name="telephone", label=gettext("Phone"), placeholder="+49 (0000) 000000") }}
-            {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), placeholder="+49 (000) 0000000") }}
-
-            <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
-            {{ util.form_input_text(name="address", label=gettext("Street")) }}
-            {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
-            {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
-            {{ util.form_input_text(name="location", label=gettext("City")) }}
-            {{ util.form_input_text(name="country", label=gettext("Country")) }}
-        {% endif %}
-        {{ util.form_input_submit(value=gettext("Create Account"), cancellink=cdedblink('core/index')) }}
-    </form>
-{% endmacro %}
-
 {% macro user_search(realm, info="") %}
     <div class="row">
         <div class="col-md-4">
