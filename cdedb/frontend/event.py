@@ -853,12 +853,10 @@ class EventFrontend(AbstractUserFrontend):
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
-        "registration_start", "registration_soft_limit",
-        "registration_hard_limit", "iban", "mail_text", "use_questionnaire",
-        "notes")
+        "iban", "notes")
     def create_event(self, rs, event_begin, event_end, orga_ids, data,
                      create_orga_list, create_participant_list):
-        """Create a new event organized via DB."""
+        """Create a new event, organized via DB."""
         if orga_ids:
             data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
                              for anid in orga_ids.split(",")}

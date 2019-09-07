@@ -61,6 +61,10 @@
                 {% endif %}
             </dd>
         {% endif %}
+        {% if ambience['event']['orga_address'] %}
+            <dt>{% trans %}Orga Address{% endtrans %}</dt>
+            <dd><a href="mailto:{{ ambience['event']['orga_address'] }}">{{ ambience['event']['orga_address'] }}</a></dd>
+        {% endif %}
         {% if "event" in user.roles %}
             <dt>{% trans -%}Orgas{%- endtrans %}</dt>
             <dd>
