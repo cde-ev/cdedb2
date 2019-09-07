@@ -19,6 +19,7 @@
     {% endcall %}
     <form action="{{ cdedblink('event/create_event') }}" method="POST" id="createeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/create_event') }}
+
         <h4 class="heading-underline">{% trans -%}Event Meta Data{%- endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
@@ -31,8 +32,11 @@
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="event_end", label=gettext("Event End"), type="date",
                                 placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_checkbox(name="create_track", label=gettext("Event with courses")) }}
+
         <h4 class="heading-underline">{% trans -%}Financial{%- endtrans %}</h4>
         {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="") }}
+
         <h4 class="heading-underline">{% trans -%}Orgas{%- endtrans %}</h4>
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}

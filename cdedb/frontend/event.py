@@ -33,7 +33,8 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError)
+    CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
+    DEFAULT_NUM_COURSE_CHOICES)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -697,7 +698,8 @@ class EventFrontend(AbstractUserFrontend):
         if rs.ambience['event']['reserve_field']:
             is_referenced.add(rs.ambience['event']['reserve_field'])
         return self.render(rs, "field_summary", {
-            'is_referenced': is_referenced})
+            'is_referenced': is_referenced,
+            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
     @staticmethod
     def process_field_input(rs, fields):
@@ -849,26 +851,33 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
-                 ("orga_ids", "str"), ("create_orga_list", "bool"),
+                 ("orga_ids", "str"), ("create_track", "bool"),
+                 ("create_orga_list", "bool"),
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "iban", "notes")
     def create_event(self, rs, event_begin, event_end, orga_ids, data,
-                     create_orga_list, create_participant_list):
+                     create_track, create_orga_list, create_participant_list):
         """Create a new event, organized via DB."""
         if orga_ids:
             data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
                              for anid in orga_ids.split(",")}
         # multi part events will have to edit this later on
+        new_track = {
+            'title': data['title'],
+            'shortname': data['shortname'],
+            'num_choices': DEFAULT_NUM_COURSE_CHOICES,
+            'min_choices': DEFAULT_NUM_COURSE_CHOICES,
+            'sortkey': 1}
         data['parts'] = {
             -1: {
-                'tracks': {},
                 'title': data['title'],
                 'shortname': data['shortname'],
                 'part_begin': event_begin,
                 'part_end': event_end,
                 'fee': decimal.Decimal(0),
+                'tracks': ({-1: new_track} if create_track else {}),
             }
         }
         if create_orga_list and "ml_admin" in rs.user.roles:

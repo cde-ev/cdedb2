@@ -1410,6 +1410,8 @@ def roles_to_db_role(roles):
 #: data. This has to be incremented whenever the event schema changes.
 CDEDB_EXPORT_EVENT_VERSION = 4
 
+#: Default number of course choices of new event course tracks
+DEFAULT_NUM_COURSE_CHOICES = 3
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (

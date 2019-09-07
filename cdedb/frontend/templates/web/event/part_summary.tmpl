@@ -45,7 +45,8 @@
                                aclass='drow-input1 form-control input-num-choices',
                                attributes=('data-basename="track_num_choices_" data-basename1="_"'|s if newrow else '')
                                     + ' min="0"'|s,
-                               arialabel=gettext("Number of Course Choices"), type="number", defaultvalue="3") }}
+                               arialabel=gettext("Number of Course Choices"), type="number",
+                               defaultvalue=DEFAULT_NUM_COURSE_CHOICES) }}
             {{ util.output_errors("track_num_choices_{}_{}".format(part_id, track_id)) }}
         </td>
         <td {% if "track_min_choices_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
@@ -53,7 +54,8 @@
                                aclass='drow-input1 form-control input-min-choices',
                                attributes=('data-basename="track_min_choices_" data-basename1="_"'|s if newrow else '')
                                     + ' min="0"'|s,
-                               arialabel=gettext("Number of Course Choices"), type="number", defaultvalue="3") }}
+                               arialabel=gettext("Number of Course Choices"), type="number",
+                               defaultvalue=DEFAULT_NUM_COURSE_CHOICES) }}
             {{ util.output_errors("track_min_choices_{}_{}".format(part_id, track_id)) }}
         </td>
         <td {% if "track_sortkey_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
