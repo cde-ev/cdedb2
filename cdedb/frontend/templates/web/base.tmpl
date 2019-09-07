@@ -120,7 +120,7 @@
                                         <span class="visible-xs-inline-block">{% trans -%}Logout{%- endtrans %}</span>
                                     </button>
                                 </form>
-                            {% elif not login_form %}
+                            {% elif not login_form and original_request %}
                                 {{ util.href(cdedblink('core/index', {'wants': encode_parameter("core/index", "wants",
                                                                                                 original_request.url)}),
                                              gettext("Login"), aclass='btn navbar-button btn-default', icon='off') }}
