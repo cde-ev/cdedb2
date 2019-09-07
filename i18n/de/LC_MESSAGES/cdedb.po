@@ -3717,7 +3717,7 @@ msgstr "Geschlecht"
 #: cdedb/frontend/templates/web/generic.tmpl:162
 #: cdedb/frontend/templates/web/generic.tmpl:228
 msgid "Birthday"
-msgstr "Geburtstag"
+msgstr "Geburtsdatum"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:50
 #: cdedb/frontend/templates/web/core/change_user.tmpl:37

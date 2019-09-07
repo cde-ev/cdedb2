@@ -789,7 +789,7 @@ class TestCoreFrontend(FrontendTest):
         f['gender'] = 1
         self.submit(f)
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
-        self.assertPresence("Geburtstag")
+        self.assertPresence("Geburtsdatum")
 
     def test_genesis_event(self):
         user = USER_DICT['anton']
