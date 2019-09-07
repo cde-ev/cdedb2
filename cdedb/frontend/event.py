@@ -488,7 +488,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "part_summary", {
             'referenced_parts': referenced_parts,
             'referenced_tracks': referenced_tracks,
-            'has_registrations': has_registrations})
+            'has_registrations': has_registrations,
+            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
     @staticmethod
     def process_part_input(rs, parts, has_registrations):
@@ -698,8 +699,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.ambience['event']['reserve_field']:
             is_referenced.add(rs.ambience['event']['reserve_field'])
         return self.render(rs, "field_summary", {
-            'is_referenced': is_referenced,
-            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
+            'is_referenced': is_referenced})
 
     @staticmethod
     def process_field_input(rs, fields):
