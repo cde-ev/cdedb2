@@ -168,6 +168,7 @@
             </div>
         </div>
 
+        <div class="table-container">
         <table class="table table-condensed table-hover ls-list" id="course_choice_table">
             <thead>
                 {% if ambience['event']['tracks']|length > 1 %}
@@ -252,6 +253,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
 
         <script type="text/javascript" nonce="{{ csp_nonce }}">
             $('#course_choice_table').cdedbListSelect();

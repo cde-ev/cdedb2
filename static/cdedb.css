@@ -68,7 +68,7 @@ body{
 .alert-info a {
     text-decoration: underline;
 }
-.alert-info a:hover, .alert-info a:focus {
+.alert-info a:hover, .alert-info a:focus, .alert-info a.btn {
     text-decoration: none;
 }
 .table-slim {
