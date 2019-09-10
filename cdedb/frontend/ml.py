@@ -592,13 +592,12 @@ class MlFrontend(AbstractUserFrontend):
             if ml_store is None:
                 ml_store = {
                     'persona_ids': requests,
-                    'tstamp': None
+                    'tstamp': 0
                 }
 
             if requests:
-                if (ml_store['tstamp'] is None
-                    or set(requests) - set(ml_store['persona_ids'])
-                    or current > ml_store['tstamp'] + 7*24*60*60):
+                if (set(requests) - set(ml_store['persona_ids'])
+                        or current > ml_store['tstamp'] + 7*24*60*60):
 
                     ml_store['tstamp'] = current
                     ml = self.mlproxy.get_mailinglist(rs, ml_id)
