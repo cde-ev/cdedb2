@@ -1460,15 +1460,43 @@ class CoreBackend(AbstractBackend):
 
     @access("event")
     @singularize("get_event_user")
-    def get_event_users(self, rs, ids):
+    def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
+        :type event_id: int or none
+        :param event_id: allows all users which are registered to this event
+            to query for other participants of the same event by their ids.
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
+        event_id = affirm("id_or_None", event_id)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_EVENT_FIELDS)
+        # The event user view on a cde user contains lots of personal
+        # data. So we require the requesting user to be orga if (s)he
+        # wants to view it.
+        #
+        # This is a bit of a transgression since we access the event
+        # schema from the core backend, but we go for security instead of
+        # correctness here.
+        orga = "SELECT event_id FROM event.orgas WHERE persona_id = %s"
+        is_orga = self.query_all(rs, orga, (rs.user.persona_id,))
+        if (ids != {rs.user.persona_id}
+                and not is_orga
+                and "event_admin" not in rs.user.roles
+                and (any(e['is_cde_realm'] for e in ret.values()))):
+            # To provide features like the online participant list without
+            # stripping off every security level, we enforce the requesting
+            # user to be registered to the same event as every user (s)he
+            # is requesting data from.
+            query = ("SELECT persona_id FROM event.registrations "
+                     "WHERE event_id = %s")
+            data = self.query_all(rs, query, (event_id,))
+            all_registrations = set([e['persona_id'] for e in data])
+            same_event = set([e for e in ret.keys()]) <= all_registrations
+            if not (rs.user.persona_id in all_registrations and same_event):
+                raise PrivilegeError(n_("Access to CdE data sets inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
         return ret

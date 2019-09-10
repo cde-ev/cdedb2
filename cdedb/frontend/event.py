@@ -303,7 +303,7 @@ class EventFrontend(AbstractUserFrontend):
                    const.RegistrationPartStati.participant
                    for part_id in parts)}
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         ordered = sorted(
             registrations.keys(),
             key=lambda anid: name_key(
