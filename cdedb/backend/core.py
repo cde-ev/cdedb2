@@ -1488,14 +1488,18 @@ class CoreBackend(AbstractBackend):
                 and (any(e['is_cde_realm'] for e in ret.values()))):
             # To provide features like the online participant list without
             # stripping off every security level, we enforce the requesting
-            # user to be registered to the same event as every user (s)he
+            # user to be participant to the same event as every user (s)he
             # is requesting data from.
-            query = ("SELECT persona_id FROM event.registrations "
-                     "WHERE event_id = %s")
-            data = self.query_all(rs, query, (event_id,))
-            all_registrations = set([e['persona_id'] for e in data])
-            same_event = set([e for e in ret.keys()]) <= all_registrations
-            if not (rs.user.persona_id in all_registrations and same_event):
+            query = ("SELECT DISTINCT regs.id, regs.persona_id "
+                     "FROM event.registrations AS regs "
+                     "LEFT OUTER JOIN event.registration_parts AS rparts "
+                     "ON rparts.registration_id = regs.id "
+                     "WHERE regs.event_id = %s AND rparts.status = %s")
+            status = const.RegistrationPartStati.participant
+            data = self.query_all(rs, query, (event_id, status))
+            all_participants = set([e['persona_id'] for e in data])
+            same_event = set([e for e in ret.keys()]) <= all_participants
+            if not (rs.user.persona_id in all_participants and same_event):
                 raise PrivilegeError(n_("Access to CdE data sets inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))

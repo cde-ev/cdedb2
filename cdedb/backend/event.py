@@ -1602,6 +1602,8 @@ class EventBackend(AbstractBackend):
     @access("event")
     def list_registrations(self, rs, event_id, persona_id=None):
         """List all registrations of an event.
+        If an ordinary event_user is requesting this, just participants of this
+        event are returned and he himself must have the status 'participant'.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
@@ -1614,11 +1616,24 @@ class EventBackend(AbstractBackend):
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
         params = (event_id,)
-        if persona_id:
+        is_list_query = (persona_id != rs.user.persona_id
+                         and not self.is_orga(rs, event_id=event_id)
+                         and not self.is_admin(rs))
+        if is_list_query:
+            query = ("SELECT DISTINCT regs.id, regs.persona_id "
+                     "FROM event.registrations AS regs "
+                     "LEFT OUTER JOIN event.registration_parts AS rparts "
+                     "ON rparts.registration_id = regs.id "
+                     "WHERE regs.event_id = %s AND rparts.status = %s")
+            params += (const.RegistrationPartStati.participant,)
+        if persona_id and not is_list_query:
             query = glue(query, "AND persona_id = %s")
             params += (persona_id,)
         data = self.query_all(rs, query, params)
-        return {e['id']: e['persona_id'] for e in data}
+        ret = {e['id']: e['persona_id'] for e in data}
+        if is_list_query and rs.user.persona_id not in ret.values():
+            raise PrivilegeError(n_("Not privileged."))
+        return ret
 
     @access("event")
     def get_registration_map(self, rs, event_ids):
@@ -1727,8 +1742,11 @@ class EventBackend(AbstractBackend):
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
 
-        All have to be from the same event. This includes the following
-        additional data:
+        All have to be from the same event. You must be orga to access
+        registrations which are not your own, or participant to access data from
+        other participants in exactly the parts where they are participants.
+        Otherwise it will override to 'part_id' : ''.
+        This includes the following additional data:
 
         * parts: per part data (like lodgement),
         * tracks: per track data (like course choices)
@@ -1749,6 +1767,13 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(events)
+            status = [e for e in const.RegistrationPartStati]
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                if rs.user.persona_id not in personas:
+                    raise PrivilegeError(n_("Not privileged."))
+                elif {rs.user.persona_id} < personas:
+                    status = [const.RegistrationPartStati.participant.value]
 
             ret = {e['id']: e for e in self.sql_select(
                 rs, "event.registrations", REGISTRATION_FIELDS, ids)}
@@ -1758,7 +1783,9 @@ class EventBackend(AbstractBackend):
                 entity_key="registration_id")
             for anid in ret:
                 assert ('parts' not in ret[anid])
-                ret[anid]['parts'] = {e['part_id']: e for e in pdata
+                ret[anid]['parts'] = {e['part_id']: e
+                                      if e['status'] in status
+                                      else '' for e in pdata
                                       if e['registration_id'] == anid}
             tdata = self.sql_select(
                 rs, "event.registration_tracks", REGISTRATION_TRACK_FIELDS, ids,

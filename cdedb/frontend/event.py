@@ -299,8 +299,7 @@ class EventFrontend(AbstractUserFrontend):
         registrations = {
             k: v
             for k, v in registrations.items()
-            if any(v['parts'][part_id]['status'] ==
-                   const.RegistrationPartStati.participant
+            if any(v['parts'][part_id]
                    for part_id in parts)}
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
