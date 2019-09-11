@@ -84,7 +84,7 @@
                                 <i>{{ track['title'] }}</i>
                             {%- endif %}
                         {%- endfor %}</span>.
-                    {% elif track_id not in entry['active_segments'] and
+                    {% elif (ambience['event']['tracks'].keys()|list)[0] not in entry['active_segments'] and
                             (ambience['event']['is_course_state_visible']
                                 or ambience['event']['id'] in user.orga) %}
                         – <span class="text-info">{% trans -%}cancelled{%- endtrans %}</span>
