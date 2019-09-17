@@ -44,6 +44,12 @@
         </div>
     {% endif %}
     {% if courses %}
+        {% if "event" not in user.roles %}
+            <div class="alert alert-info" role="alert">
+                {{ util.make_icon('info-sign') }}
+                {% trans -%}The instructors for each course are only visible to logged in users.{%- endtrans %}
+            </div>
+        {% endif %}
         {% for anid, entry in courses|xdictsort('nr', pad=True) if entry['segments'] %}
             <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
