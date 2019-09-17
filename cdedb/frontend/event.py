@@ -34,7 +34,7 @@ from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
-    DEFAULT_NUM_COURSE_CHOICES, PrivilegeError)
+    DEFAULT_NUM_COURSE_CHOICES, PrivilegeError, mixed_existence_sorter)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -3062,13 +3062,13 @@ class EventFrontend(AbstractUserFrontend):
         :type rs: :py:class:`FrontendRequestState`
         :type num: int
         :param num: number of rows to expect
-        :type reg_fields: [int]
-        :param reg_fields: Available field ids
+        :type reg_fields: {int: {str: obj}}}
+        :param reg_fields: Available fields
         :rtype: [{str: object}]
         """
-        delete_flags = request_extractor(
+        del_flags = request_extractor(
             rs, (("delete_{}".format(i), "bool") for i in range(num)))
-        deletes = {i for i in range(num) if delete_flags['delete_{}'.format(i)]}
+        deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
         spec = {
             'field_id': "id_or_None",
             'title': "str_or_None",
@@ -3077,36 +3077,61 @@ class EventFrontend(AbstractUserFrontend):
             'readonly': "bool_or_None",
             'default_value': "str_or_None",
         }
-        params = tuple(("{}_{}".format(key, i), value)
-                       for i in range(num) if i not in deletes
-                       for key, value in spec.items())
-        data = request_extractor(rs, params)
-        questionnaire = tuple(
-            {key: data["{}_{}".format(key, i)] for key in spec}
-            for i in range(num) if i not in deletes
-        )
         marker = 1
         while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(
-                rs, (("create_-{}".format(marker), "bool"),)))
-            if will_create:
-                params = tuple(("{}_-{}".format(key, marker), value)
-                               for key, value in spec.items())
-                data = request_extractor(rs, params)
-                questionnaire += ({key: data["{}_-{}".format(key, marker)]
-                                   for key in spec},)
-            else:
+            if not unwrap(request_extractor(
+                    rs, (("create_-{}".format(marker), "bool"),))):
                 break
             marker += 1
         rs.values['create_last_index'] = marker - 1
-        # TODO check for duplicate fields
-        # TODO check/convert default values
-        # TODO maybe use _questionnaire validator to do this?
-        for i, row in enumerate(questionnaire):
-            if row['field_id'] and row['field_id'] not in reg_fields:
-                rs.errors.append(("field_id_{}".format(i),
-                                  ValueError(n_("Invalid field."))))
+        indices = set(range(num)) - deletes + {-i for i in range(1, marker)}
+
+        def duplicate_constraint(idx1, idx2):
+             if idx1 == idx2:
+                 return None
+             key1 = "field_id_{}".format(idx1)
+             key2 = "field_id_{}".format(idx2)
+             msg = n_("Must not duplicate field.")
+             return (lambda d: d[key1] != d[key2], (key1, ValueError(msg)))
+         
+        def valid_field_constraint(idx):
+             key = "field_id_{}".format(idx)
+             return (lambda d: not d[key] or d[key] in reg_fields,
+                     (key, ValueError(n_("Invalid field."))))
+        constraints = tuple(filter(
+            None, (duplicate_constraint(idx1, idx2)
+                   for idx1 in indices for idx2 in indices)))
+        constraints += tuple(valid_field_constraint(idx) for idx in indices)
+                            
+        params = tuple(("{}_{}".format(key, i), value)
+                       for i in indices for key, value in spec.items())
+        data = request_extractor(rs, params, constraints)
+        for idx in indices:
+            name = "default_value_{}".format(idx)
+            kind = reg_fields.get(data.get("field_id_{}".format(idx)), {}).get(
+                "kind")
+            if data[name] is None or kind is None:
+                continue
+            data[name] = check_validation(rs, "by_field_datatype_or_None",
+                                          data[name], name, kind=kind)
+        questionnaire = tuple(
+            {key: data["{}_{}".format(key, i)] for key in spec}
+            for i in mixed_existence_sorter(indices))
         return questionnaire
+
+
+        # def constraint_maker(part_id, track_id):
+        #     min = "track_min_choices_{}_{}".format(part_id, track_id)
+        #     num = "track_num_choices_{}_{}".format(part_id, track_id)
+        #     msg = n_("Must be less or equal than total Course Choices.")
+        #     return (lambda d: d[min] <= d[num], (min, ValueError(msg)))
+        # constraints = tuple(
+        #     constraint_maker(part_id, track_id)
+        #     for part_id, part in parts.items()
+        #     for track_id in part['tracks']
+        #     if track_id not in track_deletes)
+        # data = request_extractor(rs, params, constraints)
+    
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -3118,7 +3143,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         registration_fields = {
-            k for k, v in rs.ambience['event']['fields'].items()
+            k: v for k, v in rs.ambience['event']['fields'].items()
             if v['association'] == const.FieldAssociations.registration}
         new_questionnaire = self.process_questionnaire_input(
             rs, len(questionnaire), registration_fields)

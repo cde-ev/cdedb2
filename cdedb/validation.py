@@ -2055,8 +2055,9 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                     # Validate value according to type and use the opportunity
                     # to normalize the value by transforming it back to string
                     value, e = _by_field_datatype(
-                        value, val.get(kind_key, FieldDatatypes.str),
-                        entries_key, _convert=_convert)
+                        value, entries_key,
+                        kind=val.get(kind_key, FieldDatatypes.str),
+                        _convert=_convert)
                     description, ee = _str(description, entries_key,
                                            _convert=_convert)
                     if value in seen_values:
@@ -2403,7 +2404,8 @@ def _lodgement(val, argname=None, *, creation=False, _convert=True):
                                       _convert=_convert)
 
 
-def _by_field_datatype(val, kind, argname=None, *, _convert=True):
+@_addvalidator
+def _by_field_datatype(val, argname=None, *, kind=None, _convert=True):
     """
     :type val: object
     :type kind: FieldDatatypes or int
@@ -2464,9 +2466,9 @@ def _questionnaire(val, field_definitions, argname=None, *, _convert=True):
                                  KeyError("Referenced field does not exist.")))
                     continue
                 value['default_value'], e = _by_field_datatype(
-                    value['default_value'],
-                    field.get('kind', FieldDatatypes.str),
-                    "default_value", _convert=_convert)
+                    value['default_value'], "default_value",
+                    kind=field.get('kind', FieldDatatypes.str),
+                    _convert=_convert)
                 errs.extend(e)
             ret.append(value)
     return ret, errs
