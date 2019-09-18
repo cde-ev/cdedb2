@@ -1616,22 +1616,22 @@ class EventBackend(AbstractBackend):
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
         params = (event_id,)
-        is_list_query = (persona_id != rs.user.persona_id
-                         and not self.is_orga(rs, event_id=event_id)
-                         and not self.is_admin(rs))
-        if is_list_query:
+        is_participant_list_query = (persona_id != rs.user.persona_id
+                                     and not self.is_orga(rs, event_id=event_id)
+                                     and not self.is_admin(rs))
+        if is_participant_list_query:
             query = ("SELECT DISTINCT regs.id, regs.persona_id "
                      "FROM event.registrations AS regs "
                      "LEFT OUTER JOIN event.registration_parts AS rparts "
                      "ON rparts.registration_id = regs.id "
                      "WHERE regs.event_id = %s AND rparts.status = %s")
             params += (const.RegistrationPartStati.participant,)
-        if persona_id and not is_list_query:
+        if persona_id and not is_participant_list_query:
             query = glue(query, "AND persona_id = %s")
             params += (persona_id,)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e['persona_id'] for e in data}
-        if is_list_query and rs.user.persona_id not in ret.values():
+        if is_participant_list_query and rs.user.persona_id not in ret.values():
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
@@ -1744,8 +1744,9 @@ class EventBackend(AbstractBackend):
 
         All have to be from the same event. You must be orga to access
         registrations which are not your own, or participant to access data from
-        other participants in exactly the parts where they are participants.
-        Otherwise it will override to 'part_id' : ''.
+        other participants in exactly the parts where they are participants
+        (this is important for the online participant list).
+        Otherwise it will override to 'part_id' : {}.
         This includes the following additional data:
 
         * parts: per part data (like lodgement),
@@ -1767,13 +1768,15 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(events)
-            status = [e for e in const.RegistrationPartStati]
+            visible = list(const.RegistrationPartStati)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
-                elif {rs.user.persona_id} < personas:
-                    status = [const.RegistrationPartStati.participant.value]
+                elif {rs.user.persona_id} >= personas:
+                    pass
+                else:
+                    visible = [const.RegistrationPartStati.participant.value]
 
             ret = {e['id']: e for e in self.sql_select(
                 rs, "event.registrations", REGISTRATION_FIELDS, ids)}
@@ -1783,10 +1786,11 @@ class EventBackend(AbstractBackend):
                 entity_key="registration_id")
             for anid in ret:
                 assert ('parts' not in ret[anid])
-                ret[anid]['parts'] = {e['part_id']: e
-                                      if e['status'] in status
-                                      else '' for e in pdata
-                                      if e['registration_id'] == anid}
+                ret[anid]['parts'] = {
+                    e['part_id']: e
+                    if e['status'] in visible else {} for e in pdata
+                    if e['registration_id'] == anid
+                }
             tdata = self.sql_select(
                 rs, "event.registration_tracks", REGISTRATION_TRACK_FIELDS, ids,
                 entity_key="registration_id")
