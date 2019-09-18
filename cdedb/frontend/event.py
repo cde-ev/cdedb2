@@ -3084,7 +3084,7 @@ class EventFrontend(AbstractUserFrontend):
                 break
             marker += 1
         rs.values['create_last_index'] = marker - 1
-        indices = set(range(num)) - deletes + {-i for i in range(1, marker)}
+        indices = (set(range(num)) | {-i for i in range(1, marker)}) - deletes
 
         def duplicate_constraint(idx1, idx2):
              if idx1 == idx2:
@@ -3092,7 +3092,8 @@ class EventFrontend(AbstractUserFrontend):
              key1 = "field_id_{}".format(idx1)
              key2 = "field_id_{}".format(idx2)
              msg = n_("Must not duplicate field.")
-             return (lambda d: d[key1] != d[key2], (key1, ValueError(msg)))
+             return (lambda d: not d[key1] or d[key1] != d[key2],
+                     (key1, ValueError(msg)))
          
         def valid_field_constraint(idx):
              key = "field_id_{}".format(idx)
@@ -3112,26 +3113,12 @@ class EventFrontend(AbstractUserFrontend):
                 "kind")
             if data[name] is None or kind is None:
                 continue
-            data[name] = check_validation(rs, "by_field_datatype_or_None",
-                                          data[name], name, kind=kind)
+            data[name] = check(rs, "by_field_datatype_or_None",
+                               data[name], name, kind=kind)
         questionnaire = tuple(
             {key: data["{}_{}".format(key, i)] for key in spec}
             for i in mixed_existence_sorter(indices))
         return questionnaire
-
-
-        # def constraint_maker(part_id, track_id):
-        #     min = "track_min_choices_{}_{}".format(part_id, track_id)
-        #     num = "track_num_choices_{}_{}".format(part_id, track_id)
-        #     msg = n_("Must be less or equal than total Course Choices.")
-        #     return (lambda d: d[min] <= d[num], (min, ValueError(msg)))
-        # constraints = tuple(
-        #     constraint_maker(part_id, track_id)
-        #     for part_id, part in parts.items()
-        #     for track_id in part['tracks']
-        #     if track_id not in track_deletes)
-        # data = request_extractor(rs, params, constraints)
-    
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -3166,7 +3153,8 @@ class EventFrontend(AbstractUserFrontend):
         :type row: {str: object}
         :rtype: {str: object}
         """
-        whitelist = ('field_id', 'title', 'info', 'input_size', 'readonly',)
+        whitelist = ('field_id', 'title', 'info', 'input_size', 'readonly',
+                     'default_value')
         return {k: v for k, v in row.items() if k in whitelist}
 
     @access("event")
