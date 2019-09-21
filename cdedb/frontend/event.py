@@ -4820,6 +4820,115 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("success", n_("Event deleted."))
             return self.redirect(rs, "event/index")
 
+    @access("persona")
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
+    def select_registration(self, rs, phrase, kind, aux):
+        """Provide data for inteligent input fields.
+
+        This searches for registrations (and associated users) by name
+        so they can be easily selected without entering their
+        numerical ids. This is similar to the select_persona()
+        functionality in the core realm.
+
+        The kind parameter specifies the purpose of the query which
+        decides the privilege level required and the basic search
+        paramaters.
+
+        Allowed kinds:
+
+        - ``orga_registration``: Search for a registration as event orga
+
+        The aux parameter allows to supply an additional id. This will
+        probably be an event id in the overwhelming majority of cases.
+
+        Required aux value based on the 'kind':
+        * orga_registration: Id of the event you are orga of
+        """
+        if rs.errors:
+            return self.send_json(rs, {})
+
+        spec_additions = {}
+        search_additions = []
+        event = None
+        num_preview_personas = (self.conf.NUM_PREVIEW_PERSONAS_CORE_ADMIN
+                                if {"core_admin", "admin"} & rs.user.roles
+                                else self.conf.NUM_PREVIEW_PERSONAS)
+        if kind == "orga_registration":
+            event = self.eventproxy.get_event(rs, aux)
+            if "event_admin" not in rs.user.roles:
+                if rs.user.persona_id not in event['orgas']:
+                    raise PrivilegeError(n_("Not privileged."))
+            if aux is None:
+                return self.send_json(rs, {})
+        else:
+            return self.send_json(rs, {})
+
+        data = None
+
+        anid, errs = validate.check_id(phrase, "phrase")
+        if not errs:
+            tmp = self.eventproxy.get_registrations(rs, (anid,))
+            if tmp:
+                tmp = unwrap(tmp)
+                if tmp['event_id'] == aux:
+                    data = [tmp]
+
+        # Don't query, if search phrase is too short
+        if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
+            return self.send_json(rs, {})
+
+        terms = []
+        if data is None:
+            terms = tuple(t.strip() for t in phrase.split(' ') if t)
+            search = [("username,family_name,given_names,display_name",
+                       QueryOperators.similar, t) for t in terms]
+            search.extend(search_additions)
+            spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
+            spec["username,family_name,given_names,display_name"] = "str"
+            spec.update(spec_additions)
+            query = Query(
+                "qview_quick_registration", spec,
+                ("registrations.id", "username", "family_name",
+                 "given_names", "display_name"),
+                search, (("registrations.id", True),))
+            data = self.eventproxy.submit_general_query(
+                rs, query, event_id=aux)
+
+        # Strip data to contain at maximum `num_preview_personas` results
+        if len(data) > num_preview_personas:
+            tmp = sorted(data, key=lambda e: e['id'])
+            data = tmp[:num_preview_personas]
+
+        def name(x):
+            return "{} {}".format(x['given_names'], x['family_name'])
+
+        # Check if name occurs multiple times to add email address in this case
+        counter = collections.defaultdict(lambda: 0)
+        for entry in data:
+            counter[name(entry)] += 1
+
+        # Generate return JSON list
+        ret = []
+        for entry in sorted(data, key=name_key):
+            result = {
+                'id': entry['id'],
+                'name': name(entry),
+                'display_name': entry['display_name'],
+            }
+            # Email/username is only delivered if we have admins
+            # rights, a search term with an @ (and more) matches the
+            # mail address, or the mail address is required to
+            # distinguish equally named users
+            searched_email = any(
+                '@' in t and len(t) > self.conf.NUM_PREVIEW_CHARS
+                and entry['username'] and t in entry['username']
+                for t in terms)
+            if (counter[name(entry)] > 1 or searched_email or
+                    self.is_admin(rs)):
+                result['email'] = entry['username']
+            ret.append(result)
+        return self.send_json(rs, {'registrations': ret})
+
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),

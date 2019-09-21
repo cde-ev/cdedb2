@@ -270,6 +270,16 @@ QUERY_SPECS = {
             ("mtime.modification_time", "datetime"),
             # This will be augmented with additional fields on the fly.
         ]),
+    "qview_quick_registration":
+        collections.OrderedDict([
+            ("registrations.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("username", "str"),
+            ("display_name", "str"),
+            ("title", "str"),
+            ("name_supplement", "str"),
+        ]),
     "qview_core_user":  # query for a general user including past event infos
         collections.OrderedDict([
             ("personas.id", "id"),
@@ -338,6 +348,10 @@ QUERY_VIEWS = {
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_registration": None,  # dummy -- value will be generated on the fly
+    "qview_quick_registration": glue(
+        "core.personas",
+        "INNER JOIN event.registrations",
+        "ON personas.id = registrations.persona_id"),
     "qview_core_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
@@ -357,6 +371,7 @@ QUERY_PRIMARIES = {
     "qview_cde_user": "personas.id",
     "qview_event_user": "personas.id",
     "qview_registration": "reg.id",
+    "qview_quick_registration": "registrations.id",
     "qview_core_user": "personas.id",
     "qview_persona": "id",
     "qview_archived_persona": "personas.id",

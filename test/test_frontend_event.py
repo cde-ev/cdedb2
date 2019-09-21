@@ -1986,6 +1986,18 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertNonPresence("Testakademie")
 
+    @as_users("anton", "garcia")
+    def test_selectregistration(self, user):
+        self.get('/event/registration/select?kind=orga_registration&phrase=emil&aux=1')
+        expectation = {
+            'registrations': [{'display_name': 'Emilia',
+                               'email': 'emilia@example.cde',
+                               'id': 2,
+                               'name': 'Emilia E. Eventis'}]}
+        if user['id'] != 1:
+            del expectation['registrations'][0]['email']
+        self.assertEqual(expectation, self.response.json)
+
     @as_users("anton")
     def test_partial_export(self, user):
         self.traverse({'href': '/event/$'},
