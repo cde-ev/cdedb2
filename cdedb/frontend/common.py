@@ -463,7 +463,8 @@ def querytoparams_filter(val):
         params['qsel_{}'.format(field)] = True
     for field, op, value in val.constraints:
         params['qop_{}'.format(field)] = op.value
-        if isinstance(value, collections.Iterable):
+        if (isinstance(value, collections.Iterable)
+                and not isinstance(value, str)):
             # TODO: Get separator from central place (also used in validation._
             # query_input)
             params['qval_{}'.format(field)] = ','.join(str(x) for x in value)

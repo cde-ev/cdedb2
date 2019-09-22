@@ -4504,8 +4504,8 @@ class EventFrontend(AbstractUserFrontend):
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:
-            query = check(rs, "query_input", query_input, "query", spec=spec,
-                          allow_empty=False)
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
         else:
             query = None
 
@@ -4820,7 +4820,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("success", n_("Event deleted."))
             return self.redirect(rs, "event/index")
 
-    @access("persona")
+    @access("event")
     @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
     def select_registration(self, rs, phrase, kind, aux):
         """Provide data for inteligent input fields.
@@ -4928,6 +4928,75 @@ class EventFrontend(AbstractUserFrontend):
                 result['email'] = entry['username']
             ret.append(result)
         return self.send_json(rs, {'registrations': ret})
+
+    @access("event")
+    @event_guard()
+    @REQUESTdata(("phrase", "str"))
+    def quick_show_registration(self, rs, event_id, phrase):
+        """Allow orgas to quickly retrieve a registration.
+
+        The search phrase may be anything: a numeric id or a string
+        matching the data set.
+        """
+        if rs.errors:
+            return self.show_event(rs, event_id)
+        anid, errs = validate.check_id(phrase, "phrase")
+        if not errs:
+            tmp = self.eventproxy.get_registrations(rs, (anid,))
+            if tmp:
+                tmp = unwrap(tmp)
+                if tmp['event_id'] == event_id:
+                    return self.redirect(rs, "event/show_registration",
+                                         {'registration_id': tmp['id']})
+
+        terms = tuple(t.strip() for t in phrase.split(' ') if t)
+        search = [("username,family_name,given_names,display_name",
+                   QueryOperators.similar, t) for t in terms]
+        spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
+        spec["username,family_name,given_names,display_name"] = "str"
+        query = Query(
+            "qview_quick_registration", spec,
+            ("registrations.id", "username", "family_name",
+             "given_names", "display_name"),
+            search, (("registrations.id", True),))
+        result = self.eventproxy.submit_general_query(
+            rs, query, event_id=event_id)
+        if len(result) == 1:
+            return self.redirect(rs, "event/show_registration",
+                                 {'registration_id': result[0]['id']})
+        elif len(result) > 0:
+            # TODO make this accessible
+            pass
+        base_query = Query(
+            "qview_registration",
+            self.make_registration_query_spec(rs.ambience['event']),
+            ["reg.id", "persona.given_names", "persona.family_name",
+             "persona.username"],
+            [],
+            (("persona.family_name", True), ("persona.given_names", True))
+        )
+        regex = "({})".format("|".join(terms))
+        given_names_constraint =(
+            'persona.given_names', QueryOperators.regex, regex)
+        family_name_constraint = (
+            'persona.family_name', QueryOperators.regex, regex)
+
+        for effective in ([given_names_constraint, family_name_constraint],
+                          [given_names_constraint],
+                          [family_name_constraint]):
+            query = copy.deepcopy(base_query)
+            query.constraints.extend(effective)
+            result = self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id)
+            if len(result) == 1:
+                return self.redirect(rs, "event/show_registration",
+                                     {'registration_id': result[0]['id']})
+            elif len(result) > 0:
+                params = querytoparams_filter(query)
+                return self.redirect(rs, "event/registration_query",
+                                     params)
+        rs.notify("warning", n_("No registration found."))
+        return self.show_event(rs, event_id)
 
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),

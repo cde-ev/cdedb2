@@ -1988,7 +1988,8 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("anton", "garcia")
     def test_selectregistration(self, user):
-        self.get('/event/registration/select?kind=orga_registration&phrase=emil&aux=1')
+        self.get('/event/registration'
+                 + '/select?kind=orga_registration&phrase=emil&aux=1')
         expectation = {
             'registrations': [{'display_name': 'Emilia',
                                'email': 'emilia@example.cde',
@@ -1997,6 +1998,23 @@ etc;anything else""", f['entries_2'].value)
         if user['id'] != 1:
             del expectation['registrations'][0]['email']
         self.assertEqual(expectation, self.response.json)
+
+    @as_users("anton", "garcia")
+    def test_quick_registration(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        f = self.response.forms['quickregistrationform']
+        f['phrase'] = "Emilia"
+        self.submit(f)
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        f = self.response.forms['quickregistrationform']
+        f['phrase'] = "i a"
+        self.submit(f)
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.assertPresence("Ergebnis [4]")
 
     @as_users("anton")
     def test_partial_export(self, user):
