@@ -28,6 +28,9 @@ fi;
 # build images
 cd $AUTOBUILDDIR
 
+echo "free space report no. 1"
+df
+
 if [[ $COMPLETE = "YES" ]]; then
     echo "stage1"
     rm -f work/.done_*
@@ -39,6 +42,9 @@ fi;
 
 echo "stage3"
 make install-stage3 || exit 101
+
+echo "free space report no. 2"
+df
 
 echo "early cleanup, removing work/stage3.qcow2"
 rm -f $AUTOBUILDDIR/work/stage3.qcow2
@@ -58,6 +64,9 @@ if [ ! -e $AUTOBUILDDIR/images/cdedb-$PORT.vdi ]; then
    exit 105
 fi;
 gzip $AUTOBUILDDIR/images/cdedb-$PORT.vdi
+
+echo "free space report no. 3"
+df
 
 # cleanup, move to WWW
 echo "moving images"
