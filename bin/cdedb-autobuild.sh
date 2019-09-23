@@ -40,6 +40,10 @@ fi;
 echo "stage3"
 make install-stage3 || exit 101
 
+echo "early cleanup, removing work/stage3.qcow2"
+rm -f $AUTOBUILDDIR/work/stage3.qcow2
+echo "[zap]"
+
 echo "make fullimage"
 make fullimage || exit 102
 if [[ ! -e $AUTOBUILDDIR/images/cdedb-$PORT.qcow2 ]]; then
