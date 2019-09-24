@@ -149,9 +149,11 @@ I18N_STRINGS = (
     n_("MlLogCodes.subscription_changed"),
     n_("MlLogCodes.unsubscribed"),
     n_("MlLogCodes.marked_override"),
+    n_("MlLogCodes.marked_blocked"),
     n_("MlLogCodes.request_approved"),
     n_("MlLogCodes.request_denied"),
     n_("MlLogCodes.request_cancelled"),
+    n_("MlLogCodes.request_blocked"),
 
     n_("ModerationPolicy.unmoderated"),
     n_("ModerationPolicy.non_subscribers"),
@@ -187,6 +189,7 @@ I18N_STRINGS = (
     n_("MailinglistInteractionPolicy.opt_in"),
     n_("MailinglistInteractionPolicy.moderated_opt_in"),
     n_("MailinglistInteractionPolicy.invitation_only"),
+    n_("MailinglistInteractionPolicy.implicits_only"),
 
     n_("LastschriftTransactionStati.issued"),
     n_("LastschriftTransactionStati.skipped"),

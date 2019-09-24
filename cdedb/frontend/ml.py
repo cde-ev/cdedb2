@@ -603,7 +603,7 @@ class MlFrontend(AbstractUserFrontend):
             return self.show_mailinglist(rs, mailinglist_id)
         code = self.mlproxy.request_subscription(rs, mailinglist_id)
         self.notify_return_code(rs, code,
-            success="Subscription request awaits moderation.")
+            success=n_("Subscription request awaits moderation."))
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
