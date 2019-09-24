@@ -14556,5 +14556,9 @@ msgstr ""
 msgid "Remove %(given_names)s %(family_name)s as blocked subscriber"
 msgstr ""
 
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:139
+msgid "Cancel request"
+msgstr ""
+
 #~ msgid " MlLogCodes.request_blocked"
 #~ msgstr "Request blocked"

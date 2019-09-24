@@ -14555,7 +14555,7 @@ msgstr "Diese Mailingliste ist nicht mehr aktiv."
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:73
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:60
 msgid "Your Subscription"
-msgstr "Dein Abbonement"
+msgstr "Dein Abonnement"
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:77
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:64
@@ -15777,6 +15777,10 @@ msgstr "ID des neuen geblockten Nutzers"
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as blocked subscriber"
 msgstr "%(given_names)s %(family_name)s als geblockten Nutzer entfernen"
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:139
+msgid "Cancel request"
+msgstr "Abonnementantrag zurückziehen"
 
 #~ msgid ""
 #~ "If the event comprises multiple parts or multiple course tracks,\n"

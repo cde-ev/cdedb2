@@ -136,7 +136,7 @@
                         <form action="{{ cdedblink('ml/cancel_subscription') }}" method="POST"
                                 id="cancel-request-form">
                             {{ util.anti_csrf_token('ml/cancel_subscription') }}
-                            {{ util.input_submit(value=gettext("Cancel"), aclass="btn btn-sm btn-danger",
+                            {{ util.input_submit(value=gettext("Cancel request"), aclass="btn btn-sm btn-danger",
                                     icon="remove") }}
                         </form>
                     {% elif state != enums['SubscriptionStates'].mod_unsubscribed %}
