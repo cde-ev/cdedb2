@@ -134,7 +134,7 @@
                             {%- endtrans %}
                         </strong></p>
                         <form action="{{ cdedblink('ml/cancel_subscription') }}" method="POST"
-                                id="subscribeform">
+                                id="cancel-request-form">
                             {{ util.anti_csrf_token('ml/cancel_subscription') }}
                             {{ util.input_submit(value=gettext("Cancel"), aclass="btn btn-sm btn-danger",
                                     icon="remove") }}
@@ -144,14 +144,14 @@
                             {% trans -%}You are not currently subscribed to this mailinglist.{%- endtrans %}
                         </strong></p>
                         {% if interaction_policy == enums['MailinglistInteractionPolicy'].moderated_opt_in %}
-                            <form action="{{ cdedblink('ml/request_subscription') }}" method="POST" id="subscribeform">
+                            <form action="{{ cdedblink('ml/request_subscription') }}" method="POST" id="subscribe-mod-form">
                                 {{ util.anti_csrf_token('ml/request_subscription') }}
                                 <div>
                                     {{ util.input_submit(value=gettext("Request subscription"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
                         {% elif interaction_policy in (enums['MailinglistInteractionPolicy'].opt_in, enums['MailinglistInteractionPolicy'].opt_out) %}
-                            <form action="{{ cdedblink('ml/subscribe') }}" method="POST" id="subscribeform">
+                            <form action="{{ cdedblink('ml/subscribe') }}" method="POST" id="subscribe-no-mod-form">
                                 {{ util.anti_csrf_token('ml/subscribe') }}
                                 <div>
                                     {{ util.input_submit(value=gettext("Subscribe"), aclass="btn btn-sm btn-success") }}

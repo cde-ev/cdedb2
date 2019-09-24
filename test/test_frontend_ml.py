@@ -93,6 +93,53 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
+    @as_users("anton")
+    def test_show_mailinglist_buttons(self, user):
+        # not-mandatory
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3'},)
+        self.assertTitle("Witz des Tages")
+        self.assertPresence("new-anton@example.cde")
+        self.assertIn("resetaddressform", self.response.forms)
+        self.assertIn("unsubscribeform", self.response.forms)
+        self.assertIn("changeaddressform", self.response.forms)
+        self.assertNonPresence("Diese Mailingliste ist obligatorisch.")
+
+        # mandatory
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1'},)
+        self.assertTitle("Verkündungen")
+        self.assertPresence("anton@example.cde (default)")
+        self.assertNotIn("resetaddressform", self.response.forms)
+        self.assertNotIn("unsubscribeform", self.response.forms)
+        self.assertNotIn("changeaddressform", self.response.forms)
+        self.assertPresence("Diese Mailingliste ist obligatorisch.")
+
+        # moderated opt-in
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/4'},)
+        self.assertTitle("Klatsch und Tratsch")
+        f = self.response.forms['unsubscribeform']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Du bist zurzeit kein Abonnent dieser Mailingliste")
+        self.assertIn("subscribe-mod-form", self.response.forms)
+
+        f = self.response.forms['subscribe-mod-form']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Deine Anfrage für diese Mailingliste wartet auf "
+                            "Bestätigung durch einen Moderator. ")
+        self.assertIn("cancel-request-form", self.response.forms)
+
+        # opt-in
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7'},)
+        self.assertTitle("Aktivenforum 2001")
+        self.assertPresence("Du bist zurzeit kein Abonnent dieser Mailingliste")
+        self.assertIn("subscribe-no-mod-form", self.response.forms)
+
+        # blocked
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/11'},)
+        self.assertTitle("Kampfbrief-Kommentare")
+        self.assertPresence("Du kannst diese Mailingliste nicht abonnieren")
+        self.assertNotIn("subscribe-mod-form", self.response.forms)
+        self.assertNotIn("subscribe-no-mod-form", self.response.forms)
+
     @as_users("norbert")
     def test_show_other_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},)
@@ -316,7 +363,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},)
         self.assertTitle("Klatsch und Tratsch")
-        f = self.response.forms['subscribeform']
+        f = self.response.forms['subscribe-mod-form']
         self.submit(f, check_notification=False)
         self.logout()
         self.login(USER_DICT['berta'])
@@ -339,7 +386,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/3'},)
         self.assertTitle("Witz des Tages")
-        f = self.response.forms['subscribeform']
+        f = self.response.forms['subscribe-no-mod-form']
         self.submit(f)
         self.assertTitle("Witz des Tages")
         f = self.response.forms['unsubscribeform']

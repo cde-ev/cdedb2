@@ -359,7 +359,7 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (9, 7, 1),
     (9, 9, 30),
     (10, 5, 30),
-    (11, 1, 30),
+    (11, 1, 11),
     (11, 2, 30),
     (11, 3, 1),
     (11, 4, 2),
@@ -368,6 +368,7 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
 
 INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
     (3, 10, 'janis-spam@example.cde'),
+    (3, 1, 'new-anton@example.cde'),
     (4, 6, 'ferdinand-unterhaltung@example.cde');
 
 INSERT INTO ml.whitelist (mailinglist_id, address) VALUES
