@@ -392,7 +392,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['unsubscribeform']
         self.submit(f)
         self.assertTitle("Witz des Tages")
-        self.assertIn('subscribeform', self.response.forms)
+        self.assertIn('subscribe-no-mod-form', self.response.forms)
 
     @as_users("janis")
     def test_moderator_add_subscriber(self, user):
