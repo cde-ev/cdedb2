@@ -236,34 +236,40 @@ class TestMlBackend(BackendTest):
             self.assertIsNone(state)
 
     def _change_own_sub(self, persona_id, mailinglist_id, function, code=None,
-                        state=None):
+                        state=None, kind=None):
         """This calls functions to modify the own subscription state on a given
         mailinglist to state and asserts they return code and have the correct
-        state after the operation. code=None asserts that a SubscriptionError is
-        raised."""
+        state after the operation. code=None asserts that a SubscriptionError
+        is raised. If kind is given, the error is verified to be of the
+        specified kind."""
         if code is not None:
             result = function(self.key, mailinglist_id=mailinglist_id)
             self.assertEqual(result, code)
         else:
-            with self.assertRaises(SubscriptionError):
+            with self.assertRaises(SubscriptionError) as cm:
                 function(self.key, mailinglist_id=mailinglist_id)
+            if kind is not None:
+                self.assertEqual(cm.exception.kind, kind)
         self._check_state(persona_id=persona_id, mailinglist_id=mailinglist_id,
                           expected_state=state)
 
     def _change_sub(self, persona_id, mailinglist_id, function, code=None,
-                    state=None):
+                    state=None, kind=None):
         """This calls functions to administratively modify the own subscription
         state on a given mailinglist to state and asserts they return code and
         have the correct state after the operation. code=None asserts that a
-        RuntimeError is raised."""
+        SubscriptionError is raised. If kind is given, the error is verified
+        to be of the specified kind."""
         if code is not None:
             result = function(self.key, mailinglist_id=mailinglist_id, 
                               persona_id=persona_id)
             self.assertEqual(result, code)
         else:
-            with self.assertRaises(SubscriptionError):
+            with self.assertRaises(SubscriptionError) as cm:
                 function(self.key, mailinglist_id=mailinglist_id,
                          persona_id=persona_id)
+            if kind is not None:
+                self.assertEqual(cm.exception.kind, kind)
         self._check_state(persona_id=persona_id, mailinglist_id=mailinglist_id,
                           expected_state=state)
 

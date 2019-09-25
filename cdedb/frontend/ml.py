@@ -12,7 +12,7 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, name_key, merge_dicts, unwrap, ProxyShim, json_serialize, now)
+    n_, name_key, merge_dicts, ProxyShim, SubscriptionError)
 import cdedb.database.constants as const
 from cdedb.database.constants import (
     SubscriptionStates as SS, MailinglistInteractionPolicy as MIP)
@@ -510,8 +510,12 @@ class MlFrontend(AbstractUserFrontend):
             'persona_id': persona_id,
             'resolution': resolution,
         }
-        code = self.mlproxy.decide_subscription_request(rs, datum)
-        self.notify_return_code(rs, code)
+        try:
+            code = self.mlproxy.decide_subscription_request(rs, datum)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -521,9 +525,13 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively subscribe somebody."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        code, msg = self.mlproxy.add_subscriber(
-            rs, mailinglist_id, subscriber_id)
-        self.notify_return_code(rs, code, error=msg, pending=msg)
+        try:
+            code = self.mlproxy.add_subscriber(
+                rs, mailinglist_id, subscriber_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -533,9 +541,13 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively unsubscribe somebody."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        code, msg = self.mlproxy.remove_subscriber(
-            rs, mailinglist_id, subscriber_id)
-        self.notify_return_code(rs, code, error=msg, pending=msg)
+        try:
+            code = self.mlproxy.remove_subscriber(
+                rs, mailinglist_id, subscriber_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -545,9 +557,13 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively subscribe somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        code, error = self.mlproxy.add_mod_subscriber(
-            rs, mailinglist_id, modsubscriber_id)
-        self.notify_return_code(rs, code, error=error)
+        try:
+            code = self.mlproxy.add_mod_subscriber(
+                rs, mailinglist_id, modsubscriber_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
@@ -557,9 +573,13 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively remove subscribe somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        code, error = self.mlproxy.remove_mod_subscriber(
-            rs, mailinglist_id, modsubscriber_id)
-        self.notify_return_code(rs, code, error=error)
+        try:
+            code = self.mlproxy.remove_mod_subscriber(
+                rs, mailinglist_id, modsubscriber_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
@@ -569,9 +589,13 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively block somebody."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        code, error = self.mlproxy.add_mod_unsubscriber(
-            rs, mailinglist_id, modunsubscriber_id)
-        self.notify_return_code(rs, code, error=error)
+        try:
+            code = self.mlproxy.add_mod_unsubscriber(
+                rs, mailinglist_id, modunsubscriber_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
@@ -581,9 +605,13 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively remove block."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        code, error = self.mlproxy.remove_mod_unsubscriber(
-            rs, mailinglist_id, modunsubscriber_id)
-        self.notify_return_code(rs, code, error=error)
+        try:
+            code = self.mlproxy.remove_mod_unsubscriber(
+                rs, mailinglist_id, modunsubscriber_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
 
@@ -592,8 +620,12 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to subscribed or pending."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        code = self.mlproxy.subscribe(rs, mailinglist_id)
-        self.notify_return_code(rs, code)
+        try:
+            code = self.mlproxy.subscribe(rs, mailinglist_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -601,9 +633,12 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to subscribed or pending."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        code = self.mlproxy.request_subscription(rs, mailinglist_id)
-        self.notify_return_code(rs, code,
-            success=n_("Subscription request awaits moderation."))
+        try:
+            code = self.mlproxy.request_subscription(rs, mailinglist_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -611,8 +646,12 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to unsubscribed."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        code = self.mlproxy.unsubscribe(rs, mailinglist_id)
-        self.notify_return_code(rs, code)
+        try:
+            code = self.mlproxy.unsubscribe(rs, mailinglist_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -620,8 +659,12 @@ class MlFrontend(AbstractUserFrontend):
         """Cancel subscription request."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        code = self.mlproxy.cancel_subscription(rs, mailinglist_id)
-        self.notify_return_code(rs, code)
+        try:
+            code = self.mlproxy.cancel_subscription(rs, mailinglist_id)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})

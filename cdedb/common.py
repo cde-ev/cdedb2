@@ -430,6 +430,13 @@ class SubscriptionError(RuntimeError):
     Exception for signalling that an action trying to change a subscription
     failed.
     """
+    def __init__(self, *args, kind="error", **kwargs):
+        super().__init__(*args, **kwargs)
+        if args:
+            self.msg = args[0]
+        else:
+            self.msg = ""
+        self.kind = kind
     pass
 
 # TODO decide whether we sort by first or last name
