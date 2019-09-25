@@ -665,6 +665,14 @@ class TestMlBackend(BackendTest):
         ml_id = 11
         SS = const.SubscriptionStates
 
+        # Fix broken test data.
+        sdata = {
+            'persona_id': 1,
+            'mailinglist_id': ml_id,
+            'subscription_state': SS.implicit,
+        }
+        self.ml._set_subscription(self.key, sdata)
+
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
@@ -1112,7 +1120,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 2))
         expectation = {
-            1: 'anton@example.cde',
+            1: 'new-anton@example.cde',
             10: 'janis-spam@example.cde',
         }
         self.assertEqual(expectation,
@@ -1155,7 +1163,7 @@ class TestMlBackend(BackendTest):
 
         # Check sample data.
         expectation = {
-            1: USER_DICT["anton"]["username"],
+            1: 'new-anton@example.cde',
             10: 'janis-spam@example.cde',
         }
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
@@ -1201,7 +1209,7 @@ class TestMlBackend(BackendTest):
 
         # Check sample data.
         expectation = {
-            1: USER_DICT["anton"]["username"],
+            1: 'new-anton@example.cde',
             10: 'janis-spam@example.cde',
         }
         result = self.ml.get_subscription_addresses(self.key, mailinglist_id)
@@ -1218,7 +1226,7 @@ class TestMlBackend(BackendTest):
         # Now let janis delete his changed address
 
         expectation = {
-            1: USER_DICT["anton"]["username"],
+            1: 'new-anton@example.cde',
             10: USER_DICT["janis"]["username"],
         }
         datum = {'persona_id': 10, 'mailinglist_id': mailinglist_id}
