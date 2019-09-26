@@ -2015,6 +2015,12 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         self.assertPresence("Ergebnis [4]")
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        f = self.response.forms['quickregistrationform']
+        f['phrase'] = "DB-5-1"
+        self.submit(f)
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
 
     @as_users("anton")
     def test_partial_export(self, user):

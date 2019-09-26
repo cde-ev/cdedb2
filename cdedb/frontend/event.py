@@ -34,7 +34,7 @@ from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
-    DEFAULT_NUM_COURSE_CHOICES)
+    DEFAULT_NUM_COURSE_CHOICES, PrivilegeError)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -4940,6 +4940,16 @@ class EventFrontend(AbstractUserFrontend):
         """
         if rs.errors:
             return self.show_event(rs, event_id)
+
+        anid, errs = validate.check_cdedbid(phrase, "phrase")
+        if not errs:
+            tmp = self.eventproxy.list_registrations(rs, event_id,
+                                                     persona_id=anid)
+            if tmp:
+                tmp = unwrap(tmp, keys=True)
+                return self.redirect(rs, "event/show_registration",
+                                     {'registration_id': tmp})
+
         anid, errs = validate.check_id(phrase, "phrase")
         if not errs:
             tmp = self.eventproxy.get_registrations(rs, (anid,))
@@ -4976,7 +4986,7 @@ class EventFrontend(AbstractUserFrontend):
             (("persona.family_name", True), ("persona.given_names", True))
         )
         regex = "({})".format("|".join(terms))
-        given_names_constraint =(
+        given_names_constraint = (
             'persona.given_names', QueryOperators.regex, regex)
         family_name_constraint = (
             'persona.family_name', QueryOperators.regex, regex)
