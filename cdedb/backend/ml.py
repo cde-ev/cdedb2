@@ -972,8 +972,12 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             policy = self.get_interaction_policy(rs, rs.user.persona_id,
                                                  mailinglist_id=mailinglist_id)
-            if policy not in (const.MailinglistInteractionPolicy.opt_out,
-                              const.MailinglistInteractionPolicy.opt_in):
+            if policy == const.MailinglistInteractionPolicy.moderated_opt_in:
+                raise SubscriptionError(
+                    n_("Please make a subscription request."),
+                    kind="warning")
+            elif policy not in (const.MailinglistInteractionPolicy.opt_out,
+                                const.MailinglistInteractionPolicy.opt_in):
                 raise SubscriptionError(
                     n_("Can not change subscription."),
                     kind="error")
@@ -1060,7 +1064,7 @@ class MlBackend(AbstractBackend):
                 if not state or not state.is_subscribed:
                     raise SubscriptionError(
                         n_("You are already unsubscribed."),
-                        kind="error")
+                        kind="info")
                 else:
                     return self._set_subscription(rs, datum)
 
