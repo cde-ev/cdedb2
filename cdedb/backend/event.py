@@ -491,6 +491,11 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
+        elif query.scope == "qview_quick_registration":
+            event_id = affirm("id", event_id)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
         elif query.scope == "qview_event_user":
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))

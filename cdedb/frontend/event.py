@@ -34,7 +34,7 @@ from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
-    DEFAULT_NUM_COURSE_CHOICES)
+    DEFAULT_NUM_COURSE_CHOICES, PrivilegeError)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -4504,8 +4504,8 @@ class EventFrontend(AbstractUserFrontend):
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:
-            query = check(rs, "query_input", query_input, "query", spec=spec,
-                          allow_empty=False)
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
         else:
             query = None
 
@@ -4819,6 +4819,194 @@ class EventFrontend(AbstractUserFrontend):
         else:
             rs.notify("success", n_("Event deleted."))
             return self.redirect(rs, "event/index")
+
+    @access("event")
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
+    def select_registration(self, rs, phrase, kind, aux):
+        """Provide data for inteligent input fields.
+
+        This searches for registrations (and associated users) by name
+        so they can be easily selected without entering their
+        numerical ids. This is similar to the select_persona()
+        functionality in the core realm.
+
+        The kind parameter specifies the purpose of the query which
+        decides the privilege level required and the basic search
+        paramaters.
+
+        Allowed kinds:
+
+        - ``orga_registration``: Search for a registration as event orga
+
+        The aux parameter allows to supply an additional id. This will
+        probably be an event id in the overwhelming majority of cases.
+
+        Required aux value based on the 'kind':
+        * orga_registration: Id of the event you are orga of
+        """
+        if rs.errors:
+            return self.send_json(rs, {})
+
+        spec_additions = {}
+        search_additions = []
+        event = None
+        num_preview_personas = (self.conf.NUM_PREVIEW_PERSONAS_CORE_ADMIN
+                                if {"core_admin", "admin"} & rs.user.roles
+                                else self.conf.NUM_PREVIEW_PERSONAS)
+        if kind == "orga_registration":
+            event = self.eventproxy.get_event(rs, aux)
+            if "event_admin" not in rs.user.roles:
+                if rs.user.persona_id not in event['orgas']:
+                    raise PrivilegeError(n_("Not privileged."))
+            if aux is None:
+                return self.send_json(rs, {})
+        else:
+            return self.send_json(rs, {})
+
+        data = None
+
+        anid, errs = validate.check_id(phrase, "phrase")
+        if not errs:
+            tmp = self.eventproxy.get_registrations(rs, (anid,))
+            if tmp:
+                tmp = unwrap(tmp)
+                if tmp['event_id'] == aux:
+                    data = [tmp]
+
+        # Don't query, if search phrase is too short
+        if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
+            return self.send_json(rs, {})
+
+        terms = []
+        if data is None:
+            terms = tuple(t.strip() for t in phrase.split(' ') if t)
+            search = [("username,family_name,given_names,display_name",
+                       QueryOperators.similar, t) for t in terms]
+            search.extend(search_additions)
+            spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
+            spec["username,family_name,given_names,display_name"] = "str"
+            spec.update(spec_additions)
+            query = Query(
+                "qview_quick_registration", spec,
+                ("registrations.id", "username", "family_name",
+                 "given_names", "display_name"),
+                search, (("registrations.id", True),))
+            data = self.eventproxy.submit_general_query(
+                rs, query, event_id=aux)
+
+        # Strip data to contain at maximum `num_preview_personas` results
+        if len(data) > num_preview_personas:
+            tmp = sorted(data, key=lambda e: e['id'])
+            data = tmp[:num_preview_personas]
+
+        def name(x):
+            return "{} {}".format(x['given_names'], x['family_name'])
+
+        # Check if name occurs multiple times to add email address in this case
+        counter = collections.defaultdict(lambda: 0)
+        for entry in data:
+            counter[name(entry)] += 1
+
+        # Generate return JSON list
+        ret = []
+        for entry in sorted(data, key=name_key):
+            result = {
+                'id': entry['id'],
+                'name': name(entry),
+                'display_name': entry['display_name'],
+            }
+            # Email/username is only delivered if we have admins
+            # rights, a search term with an @ (and more) matches the
+            # mail address, or the mail address is required to
+            # distinguish equally named users
+            searched_email = any(
+                '@' in t and len(t) > self.conf.NUM_PREVIEW_CHARS
+                and entry['username'] and t in entry['username']
+                for t in terms)
+            if (counter[name(entry)] > 1 or searched_email or
+                    self.is_admin(rs)):
+                result['email'] = entry['username']
+            ret.append(result)
+        return self.send_json(rs, {'registrations': ret})
+
+    @access("event")
+    @event_guard()
+    @REQUESTdata(("phrase", "str"))
+    def quick_show_registration(self, rs, event_id, phrase):
+        """Allow orgas to quickly retrieve a registration.
+
+        The search phrase may be anything: a numeric id or a string
+        matching the data set.
+        """
+        if rs.errors:
+            return self.show_event(rs, event_id)
+
+        anid, errs = validate.check_cdedbid(phrase, "phrase")
+        if not errs:
+            tmp = self.eventproxy.list_registrations(rs, event_id,
+                                                     persona_id=anid)
+            if tmp:
+                tmp = unwrap(tmp, keys=True)
+                return self.redirect(rs, "event/show_registration",
+                                     {'registration_id': tmp})
+
+        anid, errs = validate.check_id(phrase, "phrase")
+        if not errs:
+            tmp = self.eventproxy.get_registrations(rs, (anid,))
+            if tmp:
+                tmp = unwrap(tmp)
+                if tmp['event_id'] == event_id:
+                    return self.redirect(rs, "event/show_registration",
+                                         {'registration_id': tmp['id']})
+
+        terms = tuple(t.strip() for t in phrase.split(' ') if t)
+        search = [("username,family_name,given_names,display_name",
+                   QueryOperators.similar, t) for t in terms]
+        spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
+        spec["username,family_name,given_names,display_name"] = "str"
+        query = Query(
+            "qview_quick_registration", spec,
+            ("registrations.id", "username", "family_name",
+             "given_names", "display_name"),
+            search, (("registrations.id", True),))
+        result = self.eventproxy.submit_general_query(
+            rs, query, event_id=event_id)
+        if len(result) == 1:
+            return self.redirect(rs, "event/show_registration",
+                                 {'registration_id': result[0]['id']})
+        elif len(result) > 0:
+            # TODO make this accessible
+            pass
+        base_query = Query(
+            "qview_registration",
+            self.make_registration_query_spec(rs.ambience['event']),
+            ["reg.id", "persona.given_names", "persona.family_name",
+             "persona.username"],
+            [],
+            (("persona.family_name", True), ("persona.given_names", True))
+        )
+        regex = "({})".format("|".join(terms))
+        given_names_constraint = (
+            'persona.given_names', QueryOperators.regex, regex)
+        family_name_constraint = (
+            'persona.family_name', QueryOperators.regex, regex)
+
+        for effective in ([given_names_constraint, family_name_constraint],
+                          [given_names_constraint],
+                          [family_name_constraint]):
+            query = copy.deepcopy(base_query)
+            query.constraints.extend(effective)
+            result = self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id)
+            if len(result) == 1:
+                return self.redirect(rs, "event/show_registration",
+                                     {'registration_id': result[0]['id']})
+            elif len(result) > 0:
+                params = querytoparams_filter(query)
+                return self.redirect(rs, "event/registration_query",
+                                     params)
+        rs.notify("warning", n_("No registration found."))
+        return self.show_event(rs, event_id)
 
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),

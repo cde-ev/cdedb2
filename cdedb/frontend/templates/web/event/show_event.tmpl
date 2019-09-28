@@ -3,7 +3,9 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
     {% if values['event_id'] in user.orga or is_admin %}
-        {{ util.cdedb_script('cdedb_searchpersona.js') }}{{ util.cdedb_script('cdedb_helper.js') }}
+        {{ util.cdedb_script('cdedb_searchpersona.js') }}
+        {{ util.cdedb_script('cdedb_helper.js') }}
+        {{ util.cdedb_script('cdedb_searchregistration.js') }}
     {% endif %}
 {% endblock %}
 {% if values['event_id'] in user.orga or is_admin %}
@@ -112,6 +114,30 @@
         {% endif %}
 
         <div class="row">
+            <div class="col-md-6">
+                {% call util.bootstrap_panel(title=gettext("Registration Quick-Access"), aclass="panel-warning", icon='list') %}
+                    <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
+                        <div class="sr-only">{% trans -%}Search for registration by ID or name{%- endtrans %}</div>
+                        <div class="input-group">
+                            <input type="text" name="phrase" class="form-control" id="input-showregistration-id"
+                                   aria-label="{% trans -%}ID, name or email{%- endtrans %}"/>
+                            <span class="input-group-btn">
+                                {{ util.input_submit("", icon='search', title=gettext("Search")) }}
+                            </span>
+                        </div>
+                    </form>
+                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                        var $i = $('#input-showregistration-id');
+                        $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
+                                                       + ('?kind=orga_registration&aux='|s)
+                                                       + (values['event_id']|e)
+                                                       + ('&phrase=%s'|s) }}',
+                                                   [], true, false, "{{ gettext("ID, name or email") }}");
+                        $i.change(function(){$('#quickregistrationform').submit();})
+                    </script>
+                {% endcall %}
+            </div>
+        
             {% if is_admin %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title="Orgas", icon='user') %}
