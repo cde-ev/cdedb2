@@ -1213,13 +1213,17 @@ class MlBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         states = states or set()
         states = affirm_set("enum_subscriptionstates", states)
-        mailinglist_ids = mailinglist_ids or set()
-        mailinglist_ids = affirm_set("id", mailinglist_ids)
-
-        if (not rs.user.persona_id == persona_id
-            and not all(self.may_manage(rs, ml_id)
-                        for ml_id in mailinglist_ids)):
-            raise PrivilegeError(n_("Not privileged."))
+        if not mailinglist_ids:
+            if self.is_admin(rs) or rs.user.persona_id == persona_id:
+                mailinglist_ids = mailinglist_ids or set()
+            else:
+                raise PrivilegeError(n_("Not privileged."))
+        else:
+            mailinglist_ids = affirm_set("id", mailinglist_ids)
+            if (not self.is_admin(rs) and rs.user.persona_id != persona_id
+                    and any(not self.may_manage(rs, ml_id)
+                            for ml_id in mailinglist_ids)):
+                raise PrivilegeError(n_("Not privileged."))
 
         query = ("SELECT mailinglist_id, subscription_state "
                  "FROM ml.subscription_states")
@@ -1295,23 +1299,20 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm("id", mailinglist_id)
 
+        ret = {}
         with Atomizer(rs):
-            if persona_ids is None:
-                if not self.may_manage(rs, mailinglist_id):
+            if not self.may_manage(rs, mailinglist_id):
                     raise PrivilegeError(n_("Not privileged."))
-                subscribers = self.get_subscription_states(
-                    rs, mailinglist_id,
-                    states=const.SubscriptionStates.subscribing_states())
+
+            subscribers = self.get_subscription_states(
+                rs, mailinglist_id,
+                states=const.SubscriptionStates.subscribing_states())
+            if persona_ids is None:
+                # Default to all subscribers.
                 persona_ids = set(subscribers)
             else:
                 persona_ids = affirm_set("id", persona_ids)
-
-            if not all(rs.user.persona_id == p_id for p_id in persona_ids):
-                if not self.may_manage(rs, mailinglist_id):
-                    raise PrivilegeError(n_("Not privileged."))
-                subscribers = self.get_subscription_states(
-                    rs, mailinglist_id,
-                    states=const.SubscriptionStates.subscribing_states())
+                # Limit to actual subscribers.
                 persona_ids = {p_id for p_id in persona_ids
                                if p_id in subscribers}
 
@@ -1341,6 +1342,9 @@ class MlBackend(AbstractBackend):
                                  explicits_only=False):
         """Return the subscription address for one persona and one mailinglist.
 
+        This slightly differs for requesting another users subscription address
+        and one's own, due to differing privilege requirements.
+
         Manual implementation of singularization of
         `get_subscription_addresses`, to make sure the parameters work.
 
@@ -1350,10 +1354,27 @@ class MlBackend(AbstractBackend):
         :type explicits_only: bool
         :rtype: str or None
         """
-        # Validation is done inside.
-        return unwrap(self.get_subscription_addresses(
-            rs, mailinglist_id, persona_ids=(persona_id,),
-            explicits_only=explicits_only))
+
+        if persona_id == rs.user.persona_id:
+            mailinglist_id = affirm("id", mailinglist_id)
+            persona_id = affirm("id", persona_id)
+
+            query = ("SELECT address FROM ml.subscription_addresses"
+                     "WHERE mailinglist_id = %s AND persona_id = %s")
+            params = (mailinglist_id, persona_id)
+
+            data = self.query_one(rs, query, params)
+
+            if data:
+                ret = data["address"]
+            else:
+                ret = rs.user.username
+            return ret
+        else:
+            # Validation is done inside.
+            return unwrap(self.get_subscription_addresses(
+                rs, mailinglist_id, persona_ids=(persona_id,),
+                explicits_only=explicits_only))
 
     @access("ml")
     def get_persona_addresses(self, rs):
