@@ -228,6 +228,20 @@ def escape(s):
     return s
 
 
+def _reconstruct_cdedbid(db_id):
+
+    value = db_id[:-1]
+    for pattern in STATEMENT_DB_ID_REMOVE:
+        value = re.sub(pattern, "", value)
+    checkdigit = db_id[-1].upper()
+
+    # Check the DB-ID
+    p_id, p = validate.check_cdedbid(
+        "DB-{}-{}".format(value, checkdigit), "persona_id")
+
+    return p_id, p
+
+
 @enum.unique
 class Accounts(enum.Enum):
     """Store the existing CdE Accounts."""
@@ -392,21 +406,31 @@ class Transaction:
 
         if STATEMENT_CSV_RESTKEY in raw:
             reference = "".join(raw[STATEMENT_CSV_RESTKEY])
-            reference_parts = []
+            reference_parts = {}
             for delimiter in STATEMENT_REFERENCE_DELIMITERS:
                 pattern = re.compile(r"{}\+(.*)$".format(delimiter))
                 result = pattern.findall(reference)
                 if result:
-                    if delimiter in STATEMENT_RELEVANT_REFERENCE_DELIMITERS:
-                        reference_parts.extend(result)
+                    reference_parts[delimiter] = result[0]
                     reference = pattern.sub("", reference)
             if reference_parts:
-                self.reference = "; ".join(part for part in reference_parts
-                                           if part and part != "NOTPROVIDED")
+                self.reference = "; ".join(
+                    v for k, v in reference_parts.items()
+                    if v and v != "NOTPROVIDED")
+                self.reference_parts = {
+                    k: v for k, v in reference_parts.items()
+                    if (v and v != "NOTPROVIDED"
+                        and k in STATEMENT_RELEVANT_REFERENCE_DELIMITERS)}
             else:
                 self.reference = "".join(raw[STATEMENT_CSV_RESTKEY])
+                self.reference_parts = {
+                    STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]: self.reference
+                }
         else:
             self.reference = ""
+            self.reference_parts = {
+                STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]: self.reference
+            }
 
         self.account_holder = "".join([raw["accHolder"],
                                        raw["accHolder2"]])
@@ -461,6 +485,33 @@ class Transaction:
                 confidence = confidence.decrease(2)
                 self.type_confidence = confidence
                 break
+
+    def _find_cdedbids(self, confidence=ConfidenceLevel.Full):
+
+        ret = {}
+        patterns = [STATEMENT_DB_ID_EXACT, STATEMENT_DB_ID_CLOSE]
+        orig_confidence = confidence
+        for pattern in patterns:
+            for kind in STATEMENT_RELEVANT_REFERENCE_DELIMITERS:
+                if kind in self.reference_parts:
+                    result = re.findall(pattern, self.reference_parts[kind])
+                    if result:
+                        for db_id in result:
+                            p_id, p = _reconstruct_cdedbid(db_id)
+
+                            if not p:
+                                if p_id not in ret:
+                                    ret[p_id] = confidence
+
+                confidence = confidence.decrease(1)
+
+            confidence = orig_confidence.decrease(1)
+
+        if len(ret) > 1:
+            for p_id in ret:
+                ret[p_id] = ret[p_id].decrease(2)
+
+        return ret
 
     def guess_type(self, event_names):
         """
@@ -554,116 +605,84 @@ class Transaction:
             if self.type_confidence == ConfidenceLevel.Full:
                 return
 
-        exact_matches = re.findall(STATEMENT_DB_ID_EXACT, self.reference)
-
-        close_matches = re.findall(STATEMENT_DB_ID_CLOSE, self.reference)
-
-        result = ([(res, ConfidenceLevel.Full) for res in exact_matches]
-                  + [(res, ConfidenceLevel.High) for res in close_matches
-                     if res not in exact_matches])
-
+        result = self._find_cdedbids()
         if result:
             if len(result) > 1:
-                db_id1, confidence = result[0]
-                if any(db_id1 != db_id for db_id, _ in result):
-                    # Multiple different DB-IDs found.
-                    p = ("reference",
-                         ValueError("Multiple (%(count)s) DB-IDs found "
-                                    "in line %(t_id)s!",
-                                    {"count": len(result),
-                                     "t_id": self.t_id}))
-                    self.problems.append(p)
-                else:
-                    # Ignore multiples of the same ID.
-                    result = [(db_id1, confidence)]
+                p = ("reference",
+                     ValueError("Multiple (%(count)s) DB-IDs found "
+                                "in line %(t_id)s!",
+                                {"count": len(result),
+                                 "t_id": self.t_id}))
+                self.problems.append(p)
 
-            for db_id, confidence in result:
-                confidence = confidence.decrease(2 if len(result) > 1 else 0)
-
-                # Reconstruct DB-ID
-                value = db_id[:-1]
-                for pattern in STATEMENT_DB_ID_REMOVE:
-                    value = re.sub(pattern, "", value)
-                checkdigit = db_id[-1].upper()
-
-                # Check the DB-ID
-                p_id, p = validate.check_cdedbid(
-                    "DB-{}-{}".format(value, checkdigit), "persona_id")
-                self.problems.extend(p)
+            for p_id, confidence in result.items():
 
                 persona_id = cdedbid_filter(p_id)
 
-                if not p:
-                    try:
-                        persona = get_persona(rs, p_id)
-                    except KeyError as e:
-                        if p_id in e.args:
-                            p = ("persona_id",
-                                 KeyError("No Member with ID %(p_id)s found.",
-                                          {"p_id": p_id}))
-                            self.problems.append(p)
-                        else:
-                            p = ("persona_id", e)
-                            self.problems.append(p)
-
-                        members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
-                                              STATEMENT_FAMILY_NAME_UNKNOWN,
-                                              persona_id,
-                                              confidence.decrease(2)))
-                        continue
+                try:
+                    persona = get_persona(rs, p_id)
+                except KeyError as e:
+                    if p_id in e.args:
+                        p = ("persona_id",
+                             KeyError("No Member with ID %(p_id)s found.",
+                                      {"p_id": p_id}))
+                        self.problems.append(p)
                     else:
-                        given_names = persona.get('given_names', "")
-                        d_p = diacritic_patterns
-                        gn_pattern = d_p(escape(given_names),
-                                         two_way_replace=True)
-                        family_name = persona.get('family_name', "")
-                        fn_pattern = d_p(escape(family_name),
-                                         two_way_replace=True)
-                        try:
-                            if not re.search(gn_pattern, self.reference,
-                                             flags=re.IGNORECASE):
-                                p = ("given_names",
-                                     KeyError(
-                                         "(%(gnp)s) not found in (%(ref)s)",
-                                         {"gnp": given_names,
-                                          "ref": self.reference}))
-                                self.problems.append(p)
-                                confidence = confidence.decrease()
-                        except re.error as e:
-                            p = ("given_names",
-                                 TypeError(
-                                     "(%(gnp)s) is not a valid regEx (%(e)s)",
-                                     {"gnp": gn_pattern, "e": e}))
-                            self.problems.append(p)
-                            confidence = confidence.decrease()
-                        try:
-                            if not re.search(fn_pattern, self.reference,
-                                             flags=re.IGNORECASE):
-                                p = ("family_name",
-                                     KeyError(
-                                         "(%(fnp)s) not found in (%(ref)s)",
-                                         {"fnp": family_name,
-                                          "ref": self.reference}))
-                                self.problems.append(p)
-                                confidence = confidence.decrease()
-                        except re.error as e:
-                            p = ("family_name",
-                                 TypeError(
-                                     "(%(fnp)s) is not a valid regEx (%(e)s)",
-                                     {"fnp": fn_pattern, "e": e}))
-                            self.problems.append(p)
-                            confidence = confidence.decrease()
+                        p = ("persona_id", e)
+                        self.problems.append(p)
 
-                        members.append(Member(given_names,
-                                              family_name,
-                                              persona_id,
-                                              confidence))
-
+                    members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
+                                          STATEMENT_FAMILY_NAME_UNKNOWN,
+                                          persona_id,
+                                          confidence.decrease(2)))
+                    continue
                 else:
-                    p = ("persona_id",
-                         ValueError("Invalid checkdigit: %(db_id)s",
-                                    {"db_id": db_id}))
-                    self.problems.append(p)
+                    given_names = persona.get('given_names', "")
+                    d_p = diacritic_patterns
+                    gn_pattern = d_p(escape(given_names),
+                                     two_way_replace=True)
+                    family_name = persona.get('family_name', "")
+                    fn_pattern = d_p(escape(family_name),
+                                     two_way_replace=True)
+                    try:
+                        if not re.search(gn_pattern, self.reference,
+                                         flags=re.IGNORECASE):
+                            p = ("given_names",
+                                 KeyError(
+                                     "(%(gnp)s) not found in (%(ref)s)",
+                                     {"gnp": given_names,
+                                      "ref": self.reference}))
+                            self.problems.append(p)
+                            confidence = confidence.decrease()
+                    except re.error as e:
+                        p = ("given_names",
+                             TypeError(
+                                 "(%(gnp)s) is not a valid regEx (%(e)s)",
+                                 {"gnp": gn_pattern, "e": e}))
+                        self.problems.append(p)
+                        confidence = confidence.decrease()
+                    try:
+                        if not re.search(fn_pattern, self.reference,
+                                         flags=re.IGNORECASE):
+                            p = ("family_name",
+                                 KeyError(
+                                     "(%(fnp)s) not found in (%(ref)s)",
+                                     {"fnp": family_name,
+                                      "ref": self.reference}))
+                            self.problems.append(p)
+                            confidence = confidence.decrease()
+                    except re.error as e:
+                        p = ("family_name",
+                             TypeError(
+                                 "(%(fnp)s) is not a valid regEx (%(e)s)",
+                                 {"fnp": fn_pattern, "e": e}))
+                        self.problems.append(p)
+                        confidence = confidence.decrease()
+
+                    members.append(Member(given_names,
+                                          family_name,
+                                          persona_id,
+                                          confidence))
 
         else:
             result = re.search(STATEMENT_REFERENCE_EXTERNAL, self.reference)
