@@ -1011,6 +1011,10 @@ class CdEFrontend(AbstractUserFrontend):
                 if persona['is_archived']:
                     problems.append(('persona_id',
                                      ValueError(n_("Persona is archived."))))
+                if not persona['is_cde_realm']:
+                    problems.append((
+                        'persona_id',
+                        ValueError(n_("Persona is not in CdE realm."))))
                 if not re.search(diacritic_patterns(family_name),
                                  persona['family_name'], flags=re.IGNORECASE):
                     problems.append(('family_name',
