@@ -4703,7 +4703,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         for track_id, track in tracks.items():
             if len(tracks) > 1:
-                prefix = "{title}: ".format(title=track['title'])
+                prefix = "{shortname}: ".format(shortname=track['shortname'])
             else:
                 prefix = ""
             titles.update({
@@ -4808,7 +4808,7 @@ class EventFrontend(AbstractUserFrontend):
             })
         for part_id, part in event['parts'].items():
             if len(event['parts']) > 1:
-                prefix = "{title}: ".format(title=part['title'])
+                prefix = "{shortname}: ".format(shortname=part['shortname'])
             else:
                 prefix = ""
             titles.update({
