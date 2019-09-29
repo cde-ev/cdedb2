@@ -49,19 +49,19 @@ from cdedb.frontend.parse_statement import (
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
     'qsel_family_name,birth_name': True,
-    'qop_family_name,birth_name': QueryOperators.similar,
+    'qop_family_name,birth_name': QueryOperators.match,
     'qsel_given_names,display_name': True,
-    'qop_given_names,display_name': QueryOperators.similar,
+    'qop_given_names,display_name': QueryOperators.match,
     'qsel_username': True,
-    'qop_username': QueryOperators.similar,
-    'qop_telephone,mobile': QueryOperators.similar,
+    'qop_username': QueryOperators.match,
+    'qop_telephone,mobile': QueryOperators.match,
     'qop_address,address_supplement,address2,address_supplement2':
-        QueryOperators.similar,
+        QueryOperators.match,
     'qop_postal_code,postal_code2': QueryOperators.between,
-    'qop_location,location2': QueryOperators.similar,
-    'qop_country,country2': QueryOperators.similar,
+    'qop_location,location2': QueryOperators.match,
+    'qop_country,country2': QueryOperators.match,
     'qop_weblink,specialisation,affiliation,timeline,interests,free_form':
-        QueryOperators.similar,
+        QueryOperators.match,
     'qop_pevent_id': QueryOperators.equal,
     'qop_pcourse_id': QueryOperators.equal,
     'qord_primary': 'family_name,birth_name',
@@ -180,7 +180,7 @@ class CdEFrontend(AbstractUserFrontend):
         elif pu:
             defaults['qval_postal_code,postal_code2'] = "0000 {}".format(pu)
         else:
-            defaults['qop_postal_code,postal_code2'] = QueryOperators.similar
+            defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
         query = check(
             rs, "query_input",

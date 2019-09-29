@@ -593,7 +593,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/search/user'})
         self.assertTitle("Allgemeine Nutzerverwaltung")
         f = self.response.forms['queryform']
-        f['qop_username'] = QueryOperators.similar.value
+        f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'n'
         for field in f.fields:
             if field and field.startswith('qsel_'):
@@ -608,7 +608,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/search/archiveduser'})
         self.assertTitle("Archivsuche")
         f = self.response.forms['queryform']
-        f['qop_given_names'] = QueryOperators.similar.value
+        f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'des'
         for field in f.fields:
             if field and field.startswith('qsel_'):

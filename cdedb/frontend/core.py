@@ -527,7 +527,7 @@ class CoreFrontend(AbstractFrontend):
                 return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         search = [("username,family_name,given_names,display_name",
-                   QueryOperators.similar, t) for t in terms]
+                   QueryOperators.match, t) for t in terms]
         spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
         spec["username,family_name,given_names,display_name"] = "str"
         query = Query(
@@ -670,17 +670,25 @@ class CoreFrontend(AbstractFrontend):
         terms = []
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
-            search = [("username,family_name,given_names,display_name",
-                       QueryOperators.similar, t) for t in terms]
-            search.extend(search_additions)
-            spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
-            spec["username,family_name,given_names,display_name"] = "str"
-            spec.update(spec_additions)
-            query = Query(
-                "qview_core_user", spec,
-                ("personas.id", "username", "family_name", "given_names",
-                 "display_name"), search, (("personas.id", True),))
-            data = self.coreproxy.submit_select_persona_query(rs, query)
+            valid = True
+            for t in terms:
+                _, errs = validate.check_non_regex(t, "phrase")
+                if errs:
+                    valid = False
+            if not valid:
+                data = []
+            else:
+                search = [("username,family_name,given_names,display_name",
+                           QueryOperators.match, t) for t in terms]
+                search.extend(search_additions)
+                spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
+                spec["username,family_name,given_names,display_name"] = "str"
+                spec.update(spec_additions)
+                query = Query(
+                    "qview_core_user", spec,
+                    ("personas.id", "username", "family_name", "given_names",
+                     "display_name"), search, (("personas.id", True),))
+                data = self.coreproxy.submit_select_persona_query(rs, query)
 
         # Filter result to get only valid audience, if mailinglist is given
         if mailinglist:

@@ -65,7 +65,7 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/search/user'})
         self.assertTitle("Versammlungs-Nutzerverwaltung")
         f = self.response.forms['queryform']
-        f['qop_username'] = QueryOperators.similar.value
+        f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'f@'
         for field in f.fields:
             if field and field.startswith('qsel_'):

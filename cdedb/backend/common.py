@@ -488,9 +488,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             # fulfilling their constraint.
             if operator in (_ops.containsall, _ops.containsnone,
                             _ops.containssome):
-                values = tuple("%{}%".format(diacritic_patterns(x.lower()))
-                               for x in value)
-                subphrase = "lower({0}) SIMILAR TO %s"
+                values = tuple(diacritic_patterns(x) for x in value)
+                subphrase = "{0} ~* %s"
                 phrase = "( ( {} ) )".format(" ) OR ( ".join(
                     subphrase.format(c) for c in columns))
                 for v in values:
@@ -514,9 +513,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             elif operator in (_ops.equal, _ops.unequal, _ops.equalornull,
                               _ops.unequalornull):
                 if operator in (_ops.equal, _ops.equalornull):
-                    phrase = "( {0} = %s".format(sql_param_str)
+                    phrase = "( {0} = %s"
                 else:
-                    phrase = "( {0} != %s".format(sql_param_str)
+                    phrase = "( {0} != %s"
                 params.extend((caser(value),) * len(columns))
                 if operator in (_ops.equalornull, _ops.unequalornull):
                     if query.spec[field] == "str":
@@ -525,19 +524,19 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                         phrase += " OR {0} IS NULL )"
                 else:
                     phrase += " )"
+                phrase = phrase.format(sql_param_str)
             elif operator in (_ops.oneof, _ops.otherthan):
                 if operator == _ops.oneof:
                     phrase = "{0} = ANY(%s)".format(sql_param_str)
                 else:
                     phrase = "NOT({0} = ANY(%s))".format(sql_param_str)
                 params.extend((tuple(caser(x) for x in value),) * len(columns))
-            elif operator in (_ops.similar, _ops.dissimilar):
-                if operator == _ops.similar:
-                    phrase = "lower({}) SIMILAR TO %s"
+            elif operator in (_ops.match, _ops.unmatch):
+                if operator == _ops.match:
+                    phrase = "{} ~* %s"
                 else:
-                    phrase = "lower({}) NOT SIMILAR TO %s"
-                value = "%{}%".format(diacritic_patterns(value.lower()))
-                params.extend((value,) * len(columns))
+                    phrase = "{} !~* %s"
+                params.extend((diacritic_patterns(value),) * len(columns))
             elif operator in (_ops.regex, _ops.notregex):
                 if operator == _ops.regex:
                     phrase = "{} ~ %s"
@@ -637,7 +636,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             "restrictive_identifier", additional_columns, allow_None=True)
         persona_id = affirm_validation("id_or_None", persona_id)
         submitted_by = affirm_validation("id_or_None", submitted_by)
-        additional_info = affirm_validation("str_or_None", additional_info)
+        additional_info = affirm_validation("regex_or_None", additional_info)
         time_start = affirm_validation("datetime_or_None", time_start)
         time_stop = affirm_validation("datetime_or_None", time_stop)
 
@@ -672,9 +671,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             conditions.append("submitted_by = %s")
             params.append(submitted_by)
         if additional_info:
-            conditions.append("lower(additional_info) SIMILAR to %s")
-            value = "%{}%".format(diacritic_patterns(additional_info.lower()))
-            params.append(value)
+            conditions.append("additional_info ~* %s")
+            params.append(diacritic_patterns(additional_info))
         if time_start and time_stop:
             conditions.append("%s <= ctime AND ctime <= %s")
             params.extend((time_start, time_stop))

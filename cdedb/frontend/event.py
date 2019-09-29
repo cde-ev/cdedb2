@@ -4880,19 +4880,27 @@ class EventFrontend(AbstractUserFrontend):
         terms = []
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
-            search = [("username,family_name,given_names,display_name",
-                       QueryOperators.similar, t) for t in terms]
-            search.extend(search_additions)
-            spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
-            spec["username,family_name,given_names,display_name"] = "str"
-            spec.update(spec_additions)
-            query = Query(
-                "qview_quick_registration", spec,
-                ("registrations.id", "username", "family_name",
-                 "given_names", "display_name"),
-                search, (("registrations.id", True),))
-            data = self.eventproxy.submit_general_query(
-                rs, query, event_id=aux)
+            valid = True
+            for t in terms:
+                _, errs = validate.check_non_regex(t, "phrase")
+                if errs:
+                    valid = False
+            if not valid:
+                data = []
+            else:
+                search = [("username,family_name,given_names,display_name",
+                           QueryOperators.match, t) for t in terms]
+                search.extend(search_additions)
+                spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
+                spec["username,family_name,given_names,display_name"] = "str"
+                spec.update(spec_additions)
+                query = Query(
+                    "qview_quick_registration", spec,
+                    ("registrations.id", "username", "family_name",
+                     "given_names", "display_name"),
+                    search, (("registrations.id", True),))
+                data = self.eventproxy.submit_general_query(
+                    rs, query, event_id=aux)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
@@ -4960,8 +4968,17 @@ class EventFrontend(AbstractUserFrontend):
                                          {'registration_id': tmp['id']})
 
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
+        valid = True
+        for t in terms:
+            _, errs = validate.check_non_regex(t, "phrase")
+            if errs:
+                valid = False
+        if not valid:
+            rs.notify("warning", n_("Active characters found in search."))
+            return self.show_event(rs, event_id)
+
         search = [("username,family_name,given_names,display_name",
-                   QueryOperators.similar, t) for t in terms]
+                   QueryOperators.match, t) for t in terms]
         spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
         spec["username,family_name,given_names,display_name"] = "str"
         query = Query(

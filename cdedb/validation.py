@@ -3181,14 +3181,34 @@ def _regex(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str_or_None(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert)
     if errs:
         return val, errs
     try:
         re.compile(val)
-    # TODO Is there something more specific we can catch? This is bad style.
-    except Exception:
-        return None, [(argname, ValueError(n_("Invalid input for regex.")))]
+    except re.error as exc:
+        err = ValueError(n_("Invalid  regular expression (position %(pos)s)."),
+                         {'pos': exc.pos})
+        return None, [(argname, err)]
+    return val, errs
+
+
+@_addvalidator
+def _non_regex(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _str(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    forbidden_chars = r'\*+?{}()[]|'
+    msg = n_(r"Must not contain any forbidden characters"
+             r" (which are \*+?{}()[]| while .^$ are allowed).")
+    if any(char in val for char in forbidden_chars):
+        return None, [(argname, ValueError(msg))]
     return val, errs
 
 
@@ -3267,12 +3287,23 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                 errs.extend(e)
                 if e or not vv:
                     continue
+                if operator in (QueryOperators.containsall,
+                                QueryOperators.containssome,
+                                QueryOperators.containsnone):
+                    vv, e = _non_regex(vv, field, _convert=_convert)
+                if e or not vv:
+                    continue
                 value.append(vv)
             if not value:
                 continue
             if (operator in (QueryOperators.between, QueryOperators.outside)
                     and len(value) != 2):
                 errs.append((field, ValueError(n_("Two endpoints required."))))
+                continue
+        elif operator in (QueryOperators.match, QueryOperators.unmatch):
+            value, e = _non_regex_or_None(value, field, _convert=_convert)
+            errs.extend(e)
+            if e or not value:
                 continue
         elif operator in (QueryOperators.regex, QueryOperators.notregex):
             value, e = _regex_or_None(value, field, _convert=_convert)

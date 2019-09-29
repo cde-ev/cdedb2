@@ -78,7 +78,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/$'}, {'href': '/event/search/user'})
         self.assertTitle("Veranstaltungsnutzersuche")
         f = self.response.forms['queryform']
-        f['qop_username'] = QueryOperators.similar.value
+        f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'a@'
         for field in f.fields:
             if field and field.startswith('qsel_'):
@@ -1119,7 +1119,7 @@ etc;anything else""", f['entries_2'].value)
         for field in f.fields:
             if field and field.startswith('qsel_'):
                 f[field].checked = True
-        f['qop_persona.family_name'] = QueryOperators.similar.value
+        f['qop_persona.family_name'] = QueryOperators.match.value
         f['qval_persona.family_name'] = 'e'
         f['qord_primary'] = 'reg.id'
         self.submit(f)

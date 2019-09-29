@@ -816,12 +816,12 @@ msgid "QueryOperators.otherthan"
 msgstr "is not one of"
 
 #: cdedb/i18n_additional.py:196
-msgid "QueryOperators.similar"
-msgstr "matches pattern"
+msgid "QueryOperators.match"
+msgstr "matches"
 
 #: cdedb/i18n_additional.py:197
-msgid "QueryOperators.dissimilar"
-msgstr "does not match pattern"
+msgid "QueryOperators.unmatch"
+msgstr "does not match"
 
 #: cdedb/i18n_additional.py:198
 msgid "QueryOperators.regex"

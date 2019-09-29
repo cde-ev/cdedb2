@@ -1035,8 +1035,7 @@ def diacritic_patterns(s, two_way_replace=False):
 
     Thus ommitting diacritics in the query input is possible.
 
-    This is intended for use with the sql SIMILAR TO clause or the python
-    re module.
+    This is intended for use with regular expressions.
 
     :type s: str or None
     :type two_way_replace: bool
@@ -1053,11 +1052,9 @@ def diacritic_patterns(s, two_way_replace=False):
     if s is None:
         return s
     # if fragile special chars are present do nothing
-    # all special chars: '_%|*+?{}()[]'
-    special_chars = '|*+?{}()[]'
-    for char in special_chars:
-        if char in s:
-            return s
+    special_chars = r'\*+?{}()[]|'  # .^$ are also special but do not interfere
+    if any(char in s for char in special_chars):
+        return s
     # some of the diacritics in use according to wikipedia
     umlaut_map = (
         ("ae", "(ae|ä|æ)"),

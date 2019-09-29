@@ -236,7 +236,7 @@ class CoreBackend(AbstractBackend):
         stop = affirm("int_or_None", stop)
         persona_id = affirm("id_or_None", persona_id)
         submitted_by = affirm("id_or_None", submitted_by)
-        additional_info = affirm("str_or_None", additional_info)
+        additional_info = affirm("regex_or_None", additional_info)
         reviewed_by = affirm("id_or_None", reviewed_by)
         time_start = affirm("datetime_or_None", time_start)
         time_stop = affirm("datetime_or_None", time_stop)
@@ -274,11 +274,9 @@ class CoreBackend(AbstractBackend):
             params.append(persona_id)
         if additional_info:
             condition = glue(condition,
-                             "{} lower(change_note) SIMILAR to %s".format(
-                                 connector))
+                             "{} change_note ~* %s".format(connector))
             connector = "AND"
-            value = "%{}%".format(diacritic_patterns(additional_info.lower()))
-            params.append(value)
+            params.append(diacritic_patterns(additional_info))
         if time_start and time_stop:
             condition = glue(condition,
                              "{} %s <= ctime AND ctime <= %s".format(connector))

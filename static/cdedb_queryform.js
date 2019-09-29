@@ -250,8 +250,8 @@
             case 4: //unequal
             case 7: //equalornull
             case 8: //unequalornull
-            case 10: //similar
-            case 11: //dissimilar
+            case 10: //match
+            case 11: //unmatch
             case 12: //regex
             case 13: //notregex
             case 17: //fuzzy

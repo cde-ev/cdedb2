@@ -26,8 +26,8 @@ class QueryOperators(enum.IntEnum):
     otherthan = 6
     equalornull = 7
     unequalornull = 8
-    similar = 10
-    dissimilar = 11
+    match = 10
+    unmatch = 11
     regex = 12
     notregex = 13
     containsall = 14
@@ -46,12 +46,12 @@ _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
 VALID_QUERY_OPERATORS = {
-    "str": (_ops.similar, _ops.equal, _ops.unequal, _ops.equalornull,
-            _ops.unequalornull, _ops.containsall, _ops.containsnone,
-            _ops.containssome, _ops.oneof, _ops.otherthan, _ops.regex,
-            _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty, _ops.greater,
-            _ops.greaterequal, _ops.less, _ops.lessequal, _ops.between,
-            _ops.outside),
+    "str": (_ops.match, _ops.unmatch, _ops.equal, _ops.unequal,
+            _ops.equalornull, _ops.unequalornull, _ops.containsall,
+            _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
+            _ops.regex, _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty,
+            _ops.greater, _ops.greaterequal, _ops.less, _ops.lessequal,
+            _ops.between, _ops.outside),
     "id": (_ops.equal, _ops.unequal, _ops.equalornull, _ops.unequalornull,
            _ops.oneof, _ops.otherthan, _ops.empty, _ops.nonempty),
     "int": (_ops.equal, _ops.equalornull, _ops.unequal, _ops.unequalornull,

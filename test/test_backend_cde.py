@@ -314,7 +314,7 @@ class TestCdEBackend(BackendTest):
             spec=dict(QUERY_SPECS["qview_cde_user"]),
             fields_of_interest=("personas.id", "family_name",
                                    "birthday"),
-            constraints=[("given_names", QueryOperators.similar, 'Berta'),
+            constraints=[("given_names", QueryOperators.match, 'Berta'),
                             ("address", QueryOperators.oneof, ("Auf der Düne 42", "Im Garten 77")),
                             ("weblink", QueryOperators.containsall, ("/", ":", "http")),
                             ("birthday", QueryOperators.between, (datetime.datetime(1000, 1, 1),

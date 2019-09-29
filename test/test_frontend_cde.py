@@ -206,7 +206,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
         self.assertTitle("CdE-Nutzerverwaltung")
         f = self.response.forms['queryform']
-        f['qop_address'] = QueryOperators.similar.value
+        f['qop_address'] = QueryOperators.match.value
         f['qval_address'] = 'Garten'
         for field in f.fields:
             if field and field.startswith('qsel_'):
