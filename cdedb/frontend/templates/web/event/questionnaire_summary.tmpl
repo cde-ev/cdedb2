@@ -32,12 +32,12 @@
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-6">
-                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title"), aclass='drow-input',
+                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title"),
                                             attributes=('data-basename="title_"'|s if newrow else ''),
-                                            horizontal=false) }}
-                    {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"), aclass='drow-input',
+                                            aclass='input-title drow-input', horizontal=false) }}
+                    {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
                                                 attributes=('data-basename="info_"'|s if newrow else ''),
-                                                horizontal=false,
+                                                aclass='input-info drow-input', horizontal=false,
                                                 info=gettext("Supports %(infolink)s for “Text-Only” fields.")|format(
                                                     infolink=util.href(docurl("Handbuch_Markdown"),
                                                                        gettext("Markdown"),

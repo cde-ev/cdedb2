@@ -90,6 +90,7 @@ var inputTypes = {
             var $input_group_size = $(this).find('.input-inputsize').closest('.form-group');
             var $input_group_readonly = $(this).find('.input-readonly').closest('.checkbox');
             var $input_group_defaultvalue = $(this).find('.input-defaultvalue').closest('.form-group');
+            var $input_helpblock = $(this).find('.input-info').closest('.form-group').find('.help-block');
 
             /* Callback handler to be executed when the data field of this questionnaire part is triggered */
             var input_field_handler = function() {
@@ -99,12 +100,14 @@ var inputTypes = {
                     $input_group_size.hide();
                     $input_group_readonly.hide();
                     $input_group_defaultvalue.hide();
+                    $input_helpblock.show();
                     $container.addClass('shaded-info');
 
                 /* Questionnaire part with input field */
                 } else {
                     $input_group_readonly.show();
                     $input_group_defaultvalue.show();
+                    $input_helpblock.hide();
                     $container.removeClass('shaded-info');
 
                     // Show input_size field only for string fields without entries
