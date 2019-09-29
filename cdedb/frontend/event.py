@@ -1850,7 +1850,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.notify("warning", n_("DB serialization error."))
             else:
                 rs.notify("error", n_("Unexpected error on line {num}."),
-                          {'num': num})
+                          {'num': num + 1})
             return self.batch_fees_form(rs, event_id, data=data,
                                         csvfields=fields)
 

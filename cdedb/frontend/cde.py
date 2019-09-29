@@ -733,7 +733,7 @@ class CdEFrontend(AbstractUserFrontend):
                 rs.notify("warning", n_("DB serialization error."))
             else:
                 rs.notify("error", n_("Unexpected error on line %(num)s."),
-                          {'num': num})
+                          {'num': num + 1})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("cde_admin")
@@ -1187,7 +1187,7 @@ class CdEFrontend(AbstractUserFrontend):
                 rs.notify("warning", n_("DB serialization error."))
             else:
                 rs.notify("error", n_("Unexpected error on line %(num)s."),
-                          {'num': num})
+                          {'num': num + 1})
             return self.money_transfers_form(rs, data=data, csvfields=fields,
                                              saldo=saldo)
 
