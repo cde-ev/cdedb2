@@ -11,7 +11,7 @@ import hashlib
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
     affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
-    cast_fields)
+    cast_fields, internal_access)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
@@ -842,6 +842,19 @@ class EventBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
+    @internal_access("event")
+    def set_event_archived(self, rs, data):
+        """Wrapper around ``set_event()`` for archiving an event.
+        
+        This exists to emit the correct log message. It delegates
+        everything else (like validation) to the wrapped method.
+        """
+        with Atomizer(rs):
+            with Silencer(rs):
+                self.set_event(rs, data)
+            self.event_log(rs, const.EventLogCodes.event_archived,
+                           data['id'])
+        
     @access("event")
     def set_event(self, rs, data):
         """Update some keys of an event organized via DB.

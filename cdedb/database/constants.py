@@ -299,6 +299,7 @@ class EventLogCodes(enum.IntEnum):
     event_created = 1  #:
     event_changed = 2  #:
     event_deleted = 3  #:
+    event_archived = 4  #:
     orga_added = 10  #:
     orga_removed = 11  #:
     part_created = 15  #:
