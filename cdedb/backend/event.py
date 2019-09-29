@@ -520,6 +520,75 @@ class EventBackend(AbstractBackend):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
                 query.spec["is_{}_realm".format(realm)] = "bool"
+        elif query.scope == "qview_event_course":
+            event_id = affirm("id", event_id)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+            event = self.get_event(rs, event_id)
+            # Fix for custom fields with uppercase letters so they do not
+            # get misinterpreted by postgres
+            query.fields_of_interest = [
+                ",".join(
+                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                             for atom in moniker.split("."))
+                    for moniker in column.split(","))
+                for column in query.fields_of_interest]
+            query.constraints = [
+                (",".join(
+                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
+                             for atom in moniker.split("."))
+                    for moniker in column.split(",")),
+                 operator, value)
+                for column, operator, value in query.constraints
+            ]
+            query.order = [
+                (".".join(atom if atom.islower() else '"{}"'.format(atom)
+                          for atom in entry.split(".")),
+                 ascending)
+                for entry, ascending in query.order]
+            for field, _, _ in query.constraints:
+                if '"' in field:
+                    query.spec[field] = query.spec[field.replace('"', '')]
+                    del query.spec[field.replace('"', '')]
+
+            course_fields = {
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.course
+            }
+            course_columns = ", ".join(
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
+                 for name, kind in course_fields.items()]
+                + ["id", "nr", "title", "shortname", "notes", "event_id"]
+            )
+
+            course_table = glue(
+                "(SELECT {course_columns} FROM event.courses AS course",
+                "{segment_tables}) AS course")
+
+            segment_table = glue(
+                "LEFT OUTER JOIN",
+                "(SELECT is_active, course_id, track_id",
+                "FROM event.course_segments",
+                "WHERE track_id = {track_id})",
+                "AS segment{track_id}",
+                "ON course.id = segment{track_id}.track_id"
+            )
+
+            view = course_table.format(
+                course_columns = course_columns,
+                segment_tables=" ".join(
+                    segment_table.format(track_id=t_id)
+                    for t_id in event["tracks"]
+                )
+            )
+
+            query.constraints.append(
+                ("event_id", QueryOperators.equal, event_id))
+            query.spec['event_id'] = "id"
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, view=view)

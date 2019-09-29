@@ -4924,6 +4924,147 @@ class EventFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "registration_query", params)
 
+    @staticmethod
+    def make_course_view_query_spec(event):
+
+        tracks = event['tracks']
+        course_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.course
+        }
+
+        spec = copy.deepcopy(QUERY_SPECS["qview_event_course"])
+        # This is an OrderedDict, so order should be respected.
+
+        spec.update({
+            "course.xfield_{0}".format(field['field_name']):
+                const.FieldDatatypes(field['kind']).name
+            for field in course_fields.values()
+        })
+
+        for track_id in tracks:
+            spec["segment{0}.is_active".format(track_id)] = "bool"
+
+        return spec
+
+    @staticmethod
+    def make_course_view_query_aux(rs, event, courses, fixed_gettext=False):
+
+        tracks = event['tracks']
+
+        if fixed_gettext:
+            gettext = rs.default_gettext
+            enum_gettext = lambda x: x.name
+        else:
+            gettext = rs.gettext
+            enum_gettext = rs.gettext
+
+        course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
+        course_choices = OrderedDict(
+            sorted((c["id"], course_identifier(c)) for c in courses.values()))
+
+        # Construct choices.
+        choices = {
+            "course.id": course_choices
+        }
+
+        course_fields = {
+            field_id: field for field_id, field in event['fields'].items()
+            if field['association'] == const.FieldAssociations.course
+            }
+
+        if not fixed_gettext:
+            # Course fields value -> description
+            choices.update({
+                "course.xfield_{0}".format(field['field_name']):
+                    OrderedDict(field['entries'])
+                for field in course_fields.values() if field['entries']
+            })
+
+        # Construct titles.
+        titles = {
+            "course.id": gettext("course id"),
+            "course.nr": gettext("course nr"),
+            "course.title": gettext("course title"),
+            "course.description": gettext("course description"),
+            "course.shortname": gettext("course shortname"),
+            "course.instructors": gettext("course instructors"),
+            "course.min_size": gettext("course min size"),
+            "course.max_size": gettext("course max size"),
+            "course.notes": gettext("course notes"),
+        }
+
+        titles.update({
+            "course.xfield_{}".format(field['field_name']):
+                field['field_name']
+            for field in course_fields.values()
+        })
+
+        for track_id, track in tracks.items():
+            if len(tracks) > 1:
+                prefix = "{title}: ".format(title=track['title'])
+            else:
+                prefix = ""
+            titles.update({
+                "segment{0}.is_active".format(track_id):
+                    prefix + gettext("takes place"),
+            })
+
+        return choices, titles
+
+    @access("event")
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    @event_guard()
+    def course_query(self, rs, event_id, download, is_search):
+
+        spec = self.make_course_view_query_spec(rs.ambience['event'])
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
+        else:
+            query = None
+
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        choices, titles = self.make_course_view_query_aux(
+            rs, rs.ambience['event'], courses,
+            fixed_gettext=download is not None)
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+
+        default_queries = []
+
+        params = {
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'query': query, 'default_queries': default_queries,
+            'titles': titles,
+        }
+
+        if not rs.errors and is_search:
+            query.scope = "qview_event_course"
+            result = self.eventproxy.submit_general_query(
+                rs, query, event_id=event_id)
+            params['result'] = result
+            if download:
+                fields = []
+                for csvfield in query.fields_of_interest:
+                    fields.extend(csvfield.split(','))
+                shortname = rs.ambience['event']['shortname']
+                if download == "csv":
+                    csv_data = csv_output(result, fields, substitutions=choices)
+                    return self.send_csv_file(
+                        rs, data=csv_data, inline=False,
+                        filename="{}_course_result.csv".format(shortname))
+                elif download == "json":
+                    json_data = query_result_to_json(
+                        result, fields, substitutions=choices)
+                    return self.send_file(
+                        rs, data=json_data, inline=False,
+                        filename="{}_course_result.json".format(shortname))
+        else:
+            rs.values['is_search'] = is_search = False
+        return self.render(rs, "course_query", params)
+
     @access("event")
     @event_guard(check_offline=True)
     def checkin_form(self, rs, event_id):
