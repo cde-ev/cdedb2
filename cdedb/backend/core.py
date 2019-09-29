@@ -1297,10 +1297,11 @@ class CoreBackend(AbstractBackend):
             ret = self.retrieve_personas(rs, ids, columns=PERSONA_CDE_FIELDS)
             if any(not e['is_cde_realm'] for e in ret.values()):
                 raise RuntimeError(n_("Not a CdE user."))
-            if (not {"searchable", "cde_admin", "core_admin"} & rs.user.roles
-                    and any(
-                        e['id'] != rs.user.persona_id and not e['is_searchable']
-                        for e in ret.values())):
+            if (not {"cde_admin", "core_admin"} & rs.user.roles
+                    and ("searchable" not in rs.user.roles
+                         or any((e['id'] != rs.user.persona_id
+                                 and not e['is_searchable'])
+                                for e in ret.values()))):
                 raise RuntimeError(n_("Improper access to member data."))
             return ret
 
