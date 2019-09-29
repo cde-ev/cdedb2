@@ -414,6 +414,12 @@ class CdEFrontend(AbstractUserFrontend):
                      KeyError(n_("Doppelganger unavailable."))))
             else:
                 dg = doppelgangers[datum['doppelganger_id']]
+                if (dg['username'] != persona['username']
+                        and self.coreproxy.verify_existence(
+                            rs, persona['username'])):
+                    warnings.append(
+                        ("doppelganger",
+                         ValueError(n_("Email address already taken."))))
                 if not dg['is_cde_realm']:
                     warnings.append(
                         ("doppelganger",
