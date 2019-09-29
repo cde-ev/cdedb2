@@ -2,9 +2,10 @@
 
 """To be executed by the cron of user www-data with the following settings:
 
-*/15 * * * * PYTHONPATH="/cdedb2/:${PYTHONPATH}" flock -n /var/lib/cdedb/cron.lock /cdedb2/bin/cron_execute.py
+*/15 * * * * flock -n /var/lib/cdedb/cron.lock /cdedb2/bin/cron_execute.py
 """
 
+import getpass
 import pathlib
 import sys
 
@@ -13,6 +14,8 @@ sys.path.insert(0, "/cdedb2/")
 from cdedb.frontend.cron import CronFrontend
 
 if __name__ == "__main__":
+    if getpass.getuser() != "www-data":
+        raise RuntimeError("Must be run as user www-data.")
     configpath = pathlib.Path("/etc/cdedb-application-config.py")
     if not configpath.exists():
         configpath = None
