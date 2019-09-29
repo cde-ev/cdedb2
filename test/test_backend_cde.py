@@ -26,9 +26,9 @@ class TestCdEBackend(BackendTest):
     @as_users("berta")
     def test_quota(self, user):
         for _ in range(21):
-            self.core.get_cde_users(self.key, (1, 2, 3))
+            self.core.get_cde_users(self.key, (1, 2, 6))
         with self.assertRaises(QuotaException):
-            self.core.get_cde_users(self.key, (1, 2, 3))
+            self.core.get_cde_users(self.key, (1, 2, 6))
 
     @as_users("berta")
     def test_displacement(self, user):

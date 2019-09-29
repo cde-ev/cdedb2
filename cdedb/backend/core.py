@@ -1299,9 +1299,9 @@ class CoreBackend(AbstractBackend):
                 raise RuntimeError(n_("Not a CdE user."))
             if (not {"cde_admin", "core_admin"} & rs.user.roles
                     and ("searchable" not in rs.user.roles
-                         or any((e['id'] != rs.user.persona_id
-                                 and not e['is_searchable'])
-                                for e in ret.values()))):
+                         and any((e['id'] != rs.user.persona_id
+                                  and not e['is_searchable'])
+                                 for e in ret.values()))):
                 raise RuntimeError(n_("Improper access to member data."))
             return ret
 
