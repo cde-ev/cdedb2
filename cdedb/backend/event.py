@@ -606,13 +606,29 @@ class EventBackend(AbstractBackend):
             choices_table = glue(
                 "LEFT OUTER JOIN",
                 "(SELECT COUNT(*) as num_choices{rank}, course_id AS c_id",
-                "FROM event.course_choices",
+                "FROM ({status_table})",
                 "WHERE track_id = {track_id} AND rank = {rank}",
+                "AND STATUS = ANY({stati})",
                 "GROUP BY course_id)",
                 "AS choices{track_id}_{rank}",
-                "ON segment{track_id}.c_id =",
-                "choices{track_id}_{rank}.c_id",
+                "ON segment{track_id}.c_id = choices{track_id}_{rank}.c_id",
             )
+
+            status_table = glue(
+                "event.course_choices AS choices",
+                "LEFT OUTER JOIN",
+                "(SELECT status, registration_id",
+                "FROM event.registration_parts",
+                "WHERE part_id = {part_id})",
+                "AS reg_part",
+                "ON choices.registration_id = reg_part.registration_id",
+            )
+            stati = {
+                const.RegistrationPartStati.participant,
+                const.RegistrationPartStati.guest,
+                const.RegistrationPartStati.waitlist,
+                const.RegistrationPartStati.applied,
+            }
 
             view = course_table.format(
                 course_fields_table=course_fields_table.format(
@@ -627,11 +643,17 @@ class EventBackend(AbstractBackend):
                         ),
                         choices_table=" ".join(
                             choices_table.format(
-                                rank=rank, track_id=track['id']
+                                rank=rank, track_id=track['id'],
+                                status_table=status_table.format(
+                                    part_id=track['part_id']
+                                ),
+                                stati="ARRAY[{}]".format(
+                                    ",".join(str(x.value) for x in stati)
+                                )
                             )
                             for rank in range(track['num_choices'])
                         ),
-                        track_id=track['id']
+                        track_id=track['id'],
                     )
                     for track in event['tracks'].values()
                 )
