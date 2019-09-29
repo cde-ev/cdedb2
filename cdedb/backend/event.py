@@ -552,37 +552,88 @@ class EventBackend(AbstractBackend):
                     query.spec[field] = query.spec[field.replace('"', '')]
                     del query.spec[field.replace('"', '')]
 
+            course_table = glue(
+                "event.courses AS course",
+                "{course_fields_table}",
+                "{track_table}",
+            )
+
             course_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.course
             }
-            course_columns = ", ".join(
+            course_field_columns = ", ".join(
                 ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
                     name, kind)
                  for name, kind in course_fields.items()]
-                + ["id", "nr", "title", "shortname", "notes", "event_id"]
+            )
+            course_fields_table = glue(
+                "LEFT OUTER JOIN",
+                "(SELECT {course_field_columns}, id",
+                "FROM event.courses)",
+                "AS course_fields",
+                "ON course.id = course_fields.id",
+            ).format(course_field_columns=course_field_columns)
+
+            track_table = glue(
+                "LEFT OUTER JOIN (",
+                "{segment_table}",
+                "{attendees_table}",
+                "{choices_table}",
+                ") AS track{track_id}",
+                "ON course.id = track{track_id}.course_id",
             )
 
-            course_table = glue(
-                "(SELECT {course_columns} FROM event.courses AS course",
-                "{segment_tables}) AS course")
-
             segment_table = glue(
-                "LEFT OUTER JOIN",
-                "(SELECT is_active, course_id, track_id",
+                "(SELECT is_active, course_id, course_id AS c_id",
                 "FROM event.course_segments",
                 "WHERE track_id = {track_id})",
                 "AS segment{track_id}",
-                "ON course.id = segment{track_id}.track_id"
+            )
+
+            attendees_table = glue(
+                "LEFT OUTER JOIN",
+                "(SELECT COUNT(*) as attendees, course_id AS c_id",
+                "FROM event.registration_tracks",
+                "WHERE track_id = {track_id}",
+                "GROUP BY course_id)",
+                "AS attendees{track_id}",
+                "ON segment{track_id}.c_id = attendees{track_id}.c_id"
+            )
+
+            choices_table = glue(
+                "LEFT OUTER JOIN",
+                "(SELECT COUNT(*) as num_choices{rank}, course_id AS c_id",
+                "FROM event.course_choices",
+                "WHERE track_id = {track_id} AND rank = {rank}",
+                "GROUP BY course_id)",
+                "AS choices{track_id}_{rank}",
+                "ON segment{track_id}.c_id =",
+                "choices{track_id}_{rank}.c_id",
             )
 
             view = course_table.format(
-                course_columns = course_columns,
-                segment_tables=" ".join(
-                    segment_table.format(track_id=t_id)
-                    for t_id in event["tracks"]
+                course_fields_table=course_fields_table.format(
+                    course_field_columns=course_field_columns),
+                track_table=" ".join(
+                    track_table.format(
+                        segment_table=segment_table.format(
+                            track_id=track['id']
+                        ),
+                        attendees_table=attendees_table.format(
+                            track_id=track['id']
+                        ),
+                        choices_table=" ".join(
+                            choices_table.format(
+                                rank=rank, track_id=track['id']
+                            )
+                            for rank in range(track['num_choices'])
+                        ),
+                        track_id=track['id']
+                    )
+                    for track in event['tracks'].values()
                 )
             )
 

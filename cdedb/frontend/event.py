@@ -4937,13 +4937,16 @@ class EventFrontend(AbstractUserFrontend):
         # This is an OrderedDict, so order should be respected.
 
         spec.update({
-            "course.xfield_{0}".format(field['field_name']):
+            "course_fields.xfield_{0}".format(field['field_name']):
                 const.FieldDatatypes(field['kind']).name
             for field in course_fields.values()
         })
 
-        for track_id in tracks:
-            spec["segment{0}.is_active".format(track_id)] = "bool"
+        for track_id, track in tracks.items():
+            spec["track{0}.is_active".format(track_id)] = "bool"
+            spec["track{0}.attendees".format(track_id)] = "int"
+            for rank in range(track['num_choices']):
+                spec["track{0}.num_choices{1}".format(track_id, rank)] = "int"
 
         return spec
 
@@ -4976,7 +4979,7 @@ class EventFrontend(AbstractUserFrontend):
         if not fixed_gettext:
             # Course fields value -> description
             choices.update({
-                "course.xfield_{0}".format(field['field_name']):
+                "course_fields.xfield_{0}".format(field['field_name']):
                     OrderedDict(field['entries'])
                 for field in course_fields.values() if field['entries']
             })
@@ -5002,13 +5005,20 @@ class EventFrontend(AbstractUserFrontend):
 
         for track_id, track in tracks.items():
             if len(tracks) > 1:
-                prefix = "{title}: ".format(title=track['title'])
+                prefix = "{shortname}: ".format(shortname=track['shortname'])
             else:
                 prefix = ""
             titles.update({
-                "segment{0}.is_active".format(track_id):
+                "track{0}.is_active".format(track_id):
                     prefix + gettext("takes place"),
+                "track{0}.attendees".format(track_id):
+                    prefix + gettext("attendees"),
             })
+            for rank in range(track['num_choices']):
+                titles.update({
+                    "track{0}.num_choices{1}".format(track_id, rank):
+                        prefix + gettext("number of {}. choices").format(rank),
+                })
 
         return choices, titles
 
