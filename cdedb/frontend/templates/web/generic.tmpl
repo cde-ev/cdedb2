@@ -576,7 +576,7 @@
                     <td>
                         {%- if query.scope == 'qview_registration' -%}
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
-                                         gettext('Details'), icon='user', aclass='btn btn-xs btn-info') }}
+                                         gettext('Details'), icon='user', aclass='btn btn-xs btn-info', rel='noreferrer') }}
                         {%- else -%}
                             {{ util.href(show_user_link(row[primary_field]),
                                          gettext('Profile'), icon='user', aclass='btn btn-xs btn-info') }}

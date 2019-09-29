@@ -38,9 +38,10 @@
    aclass     Additional HTML/CSS classes to be added to the link tag
    active     If this link is part of a navigation menu, the current active page/tag can be highlighted by setting this
               to True
-   title      A HTML `title` attribute (hover text) to add to the link #}
-{% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='') -%}
-{% if readonly %}<span {% else -%}<a href="{{ ref }}"{% endif %}
+   title      A HTML `title` attribute (hover text) to add to the link
+   rel        Allows to set the rel attribute #}
+{% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='', rel='') -%}
+{% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {%- if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif -%}
            {% if readonly %} {% if not 'btn' in aclass %}link-{% endif%}disabled{% endif %}"
