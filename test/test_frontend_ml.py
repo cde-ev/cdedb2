@@ -424,6 +424,77 @@ class TestMlFrontend(FrontendTest):
         self.assertIn('unsubscribeform', self.response.forms)
         self.assertNonPresence('pepper@example.cde')
 
+    @as_users("anton", "berta")
+    def test_subscription_errors(self, user):
+        # preparation: subscription request from inga
+        self.logout()
+        self.login(USER_DICT['inga'])
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/4'}, )
+        self.assertTitle("Klatsch und Tratsch")
+        f = self.response.forms['subscribe-mod-form']
+        self.submit(f, check_notification=False)
+        self.logout()
+        self.login(user)
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/4'},
+                      {'href': '/ml/mailinglist/4/management'}, )
+        self.assertTitle("Klatsch und Tratsch – Verwalten")
+
+        # testing: try to add a subscription request
+        # as normal user
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_id'] = "DB-9-4"
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn(
+            "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
+            self.response.text)
+        # as mod subscriber
+        self.traverse({'href': '/ml/mailinglist/4/details'}, )
+        f = self.response.forms['addmodsubscriberform']
+        f['modsubscriber_id'] = "DB-9-4"
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn(
+            "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
+            self.response.text)
+        # as mod unsubscribe
+        f = self.response.forms['addmodunsubscriberform']
+        f['modunsubscriber_id'] = "DB-9-4"
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn(
+            "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
+            self.response.text)
+
+        # testing: mod subscribe and unsubscribe
+        # add already subscribed user as mod subscribe
+        f = self.response.forms['addmodsubscriberform']
+        f['modsubscriber_id'] = "DB-1-9"
+        self.submit(f, check_notification=True)
+        # add already subscribed user as mod unsubscribe
+        f = self.response.forms['addmodunsubscriberform']
+        f['modunsubscriber_id'] = "DB-10-8"
+        self.submit(f, check_notification=True)
+        # try to remove mod subscribe with normal subscriber form
+        self.traverse({'href': '/ml/mailinglist/4/management'}, )
+        f = self.response.forms['removesubscriberform1']
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn(
+            "Der Nutzer kann nicht entfernt werden, da er fixiert ist. "
+            "Dies kannst du unter Abonnementdetails ändern.",
+            self.response.text)
+        # try to add a mod unsubscribed user
+        f = self.response.forms['addsubscriberform']
+        f['subscriber_id'] = "DB-10-8"
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn("Der Nutzer wurde geblockt. "
+                      "Dies kannst du unter Abonnementdetails ändern.",
+                      self.response.text)
+
     def test_export(self):
         HEADERS = {'SCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
         expectation =  [{'address': 'announce@example.cde', 'is_active': True},

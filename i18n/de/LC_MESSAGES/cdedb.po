@@ -15726,7 +15726,7 @@ msgid ""
 "User cannot be removed, because of moderator override. You can use "
 "Subscription Details to change this."
 msgstr ""
-"Der Nutzer kann nicht entfernt werden, da er fixiert ist. Dies kannstdu "
+"Der Nutzer kann nicht entfernt werden, da er fixiert ist. Dies kannst du "
 "unter Abonnementdetails ändern."
 
 #: cdedb/backend/ml.py:1361
