@@ -288,14 +288,14 @@
                 {{- label -}}
             </label>
         {%- endif %}
-        <div {%- if horizontal %} class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
+        {%- if horizontal %}<div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
                                        {%- if not label %}
                                            {%- if small %} col-sm-offset-2{% else %} col-sm-offset-4{% endif %}
-                                       {%- endif %}"{% endif %}>
+                                       {%- endif %}">{% endif %}
             {{- caller() }}
             {{- output_errors(name, displayerrors) }}
             {{- output_info(info, infolink) }}
-        </div>
+        {%- if horizontal %}</div>{% endif %}
     </div>
 {%- endmacro %}
 
