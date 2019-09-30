@@ -393,6 +393,11 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             warnings.append(("course", ValueError(n_("No course available."))))
         doppelgangers = tuple()
+        if (datum['resolution'] == LineResolutions.create
+                and self.coreproxy.verify_existence(rs, persona['username'])):
+            warnings.append(
+                ("persona",
+                 ValueError(n_("Email address already taken."))))
         if persona:
             temp = copy.deepcopy(persona)
             temp['id'] = 1
