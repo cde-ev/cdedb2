@@ -55,10 +55,10 @@
                             (2, gettext("multiline") + "+"), (3, gettext("multiline") + "++")),
                         attributes=('data-basename="input_size_"'|s if newrow else ''),
                         aclass='input-inputsize drow-input', horizontal=False) }}
-                    {{ util.form_input_text(
-                        "default_value_{}".format(part_id), label=gettext("Default Value"),
+                    {{ util.form_input_textarea(
+                        "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
                         attributes=('data-basename="default_value_"'|s if newrow else ''),
-                        aclass='drow-input', horizontal=False) }}
+                        aclass='input-defaultvalue drow-input', horizontal=False) }}
                     <div class="form-group row">
                         <div class="col-sm-8">
                             <div class="checkbox">
@@ -117,16 +117,19 @@
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {
             var field_list = {{ registration_fields|json|s }};
+            var translations = {
+                'true': "{{ gettext("true") }}",
+                'false': "{{ gettext("false") }}"};
             $('#drow-container').cdedbDynamicRow(
                 {
                     addButton: $('#drow-addbutton'),
                     callback: function () {
-                        $(this).cdedbQuestionnaireConfig(field_list);
+                        $(this).cdedbQuestionnaireConfig(field_list, translations);
                     },
                     delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
                 });
             $('#questionnairesummaryform').cdedbProtectChanges();
-            $('.drow-row').cdedbQuestionnaireConfig(field_list);
+            $('.drow-row').cdedbQuestionnaireConfig(field_list, translations);
         })()
     </script>
 {% endblock %}
