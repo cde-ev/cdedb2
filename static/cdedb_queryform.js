@@ -268,7 +268,6 @@
                 if (f.type == 'bool' || f.type == 'list') {
                     var $s = $('<select>',{
                         'class' : "form-control input-sm input-slim",
-                        'type': inputTypes[f.type],
                         'aria-label': settings.labels['filter_val'] || ''
                     })
                             .change(changeFunction);
@@ -276,8 +275,8 @@
                         for (var i=0; i < f.choices.length; i++)
                             $s.append($('<option>',{'value' : f.choices[i]['value']}).text(f.choices[i]['text']))
                     } else {
-                        $s.append($('<option>',{'value' : 'True'}).text('wahr'))
-                            .append($('<option>',{'value' : 'False'}).text('falsch'));
+                        $s.append($('<option>',{'value' : 'True'}).text(settings.labels['true'] || 'true'))
+                            .append($('<option>',{'value' : 'False'}).text(settings.labels['false'] || 'false'));
                     }
 
                     if (f.input_filter_value.val() !== '')
