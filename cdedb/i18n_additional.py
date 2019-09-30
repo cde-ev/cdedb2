@@ -193,6 +193,8 @@ I18N_STRINGS = (
     n_("QueryOperators.unequal"),
     n_("QueryOperators.oneof"),
     n_("QueryOperators.otherthan"),
+    n_("QueryOperators.equalornull"),
+    n_("QueryOperators.unequalornull"),
     n_("QueryOperators.match"),
     n_("QueryOperators.unmatch"),
     n_("QueryOperators.regex"),
