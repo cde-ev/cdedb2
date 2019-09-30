@@ -231,7 +231,12 @@ ul.nosp, ol.nosp {
 .strip-inner-space>:last-child {
     margin-bottom: 0;
 }
-
+ul.mosp li {
+    margin-bottom: 5px;
+}
+ul.mosp li:last-child {
+    margin-bottom: 0px;
+}
 
 /* Main navbar */
 .navbar {
