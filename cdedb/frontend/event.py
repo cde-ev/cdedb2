@@ -27,7 +27,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
-    xdictsort_filter, enum_entries_filter, safe_filter)
+    xdictsort_filter, enum_entries_filter, safe_filter, cdedburl)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -444,6 +444,9 @@ class EventFrontend(AbstractUserFrontend):
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
         if not self.mlproxy.verify_existence(rs, ml_data['address']):
+            if not orgalist:
+                link = cdedburl(rs, "event/register", {'event_id': event_id})
+                ml_data['description'] = ml_data['description'].format(link)
             code = self.mlproxy.create_mailinglist(rs, ml_data)
             msg = (n_("Orga mailinglist created.") if orgalist
                    else n_("Participant mailinglist created."))
@@ -801,10 +804,13 @@ class EventFrontend(AbstractUserFrontend):
         if address_only:
             return address
         if orgalist:
+            descr = ("Bitte wende dich bei Fragen oder Problemen, die mit "
+                     "unserer Veranstaltung zusammenhängen, über diese Liste "
+                     "an uns.")
             orga_ml_data = {
                 'title': "{} Orgateam".format(event['title']),
                 'address': address,
-                'description': None,
+                'description': descr,
                 'sub_policy': const.SubscriptionPolicy.invitation_only,
                 'mod_policy': const.ModerationPolicy.unmoderated,
                 'attachment_policy': const.AttachmentPolicy.allow,
@@ -821,10 +827,15 @@ class EventFrontend(AbstractUserFrontend):
             }
             return orga_ml_data
         else:
+            descr = ("Dieser Liste kannst du nur beitreten, indem du dich zu "
+                     "unserer [Veranstaltung anmeldest]({}) und den Status "
+                     "*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
+                     "Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
+                     "zum Austausch untereinander genutzt werden.")
             participant_ml_data = {
                 'title': "{} Teilnehmer".format(event['title']),
                 'address': address,
-                'description': None,
+                'description': descr,
                 'sub_policy': const.SubscriptionPolicy.invitation_only,
                 'mod_policy': const.ModerationPolicy.non_subscribers,
                 'attachment_policy': const.AttachmentPolicy.pdf_only,
@@ -903,6 +914,8 @@ class EventFrontend(AbstractUserFrontend):
         if create_participant_list and "ml_admin" in rs.user.roles:
             ml_data = self._get_mailinglist_setter(data)
             if not self.mlproxy.verify_existence(rs, ml_data['address']):
+                link = cdedburl(rs, "event/register", {'event_id' : new_id})
+                ml_data['description'] = ml_data['description'].format(link)
                 code = self.mlproxy.create_mailinglist(rs, ml_data)
                 self.notify_return_code(
                     rs, code, success=n_("Participant mailinglist created."))
