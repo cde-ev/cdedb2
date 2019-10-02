@@ -1359,7 +1359,7 @@ class MlBackend(AbstractBackend):
             mailinglist_id = affirm("id", mailinglist_id)
             persona_id = affirm("id", persona_id)
 
-            query = ("SELECT address FROM ml.subscription_addresses"
+            query = ("SELECT address FROM ml.subscription_addresses "
                      "WHERE mailinglist_id = %s AND persona_id = %s")
             params = (mailinglist_id, persona_id)
 
