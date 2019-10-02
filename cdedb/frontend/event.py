@@ -2857,6 +2857,7 @@ class EventFrontend(AbstractUserFrontend):
             persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        meta_info = self.coreproxy.get_meta_info(rs)
         fee = sum(rs.ambience['event']['parts'][part_id]['fee']
                   for part_id, e in registration['parts'].items()
                   if const.RegistrationPartStati(e['status']).is_involved())
@@ -2868,7 +2869,7 @@ class EventFrontend(AbstractUserFrontend):
             (part_id, registration['parts'][part_id]) for part_id in part_order)
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
-            'fee': fee})
+            'meta_info': meta_info, 'fee': fee})
 
     @access("event")
     def amend_registration_form(self, rs, event_id):
@@ -3179,9 +3180,13 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        meta_info = self.coreproxy.get_meta_info(rs)
+        fee = sum(rs.ambience['event']['parts'][part_id]['fee']
+                  for part_id, e in rs.ambience['registration']['parts'].items()
+                  if const.RegistrationPartStati(e['status']).is_involved())
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
-            'lodgements': lodgements,
+            'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
         })
 
     @access("event")

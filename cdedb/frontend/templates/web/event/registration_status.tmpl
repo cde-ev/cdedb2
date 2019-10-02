@@ -40,7 +40,7 @@
             <tbody>
                 <tr>
                     <td>{% trans -%}Account holder{%- endtrans %}</td>
-                    <td>{% trans -%}CdE e.V.{%- endtrans %}</td>
+                    <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
                 </tr>
                 <tr>
                     <td>{% trans -%}IBAN{%- endtrans %}</td>
@@ -48,11 +48,11 @@
                 </tr>
                 <tr>
                     <td>{% trans -%}BIC{%- endtrans %}</td>
-                    <td>BFSWDE33XXX</td>
+                    <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
                 </tr>
                 <tr>
                     <td>{% trans -%}Bank{%- endtrans %}</td>
-                    <td>Bank für Sozialwirtschaft</td>
+                    <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
                 </tr>
                 <tr>
                     <td>{% trans -%}Amount{%- endtrans %}</td>
@@ -60,8 +60,7 @@
                 </tr>
                 <tr>
                     <td>{% trans -%}Reference{%- endtrans %}</td>
-                    <td>{{ user['given_names'] }} {{ user['family_name'] }},
-                          {{ user['persona_id']|cdedbid }}, {{ ambience['event']['title'] }}</td>
+                    <td>{{ user['given_names'] }} {{ user['family_name'] }}, {{ user['persona_id']|cdedbid }}, {{ ambience['event']['title'] }}</td>
                 </tr>
             </tbody>
         </table>
