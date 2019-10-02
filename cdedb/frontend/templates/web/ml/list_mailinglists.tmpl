@@ -13,7 +13,7 @@
     <div class="row list-group-item{% if not ml['is_active'] %} list-group-item-muted{% endif %}">
         {# {{ util.deko_checkbox(mailinglist_id in subscriptions) }} #}
         <div class="col-sm-3">
-            {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
+            {{ util.href(cdedblink("ml/management", {'mailinglist_id': mailinglist_id}), title) }}
             {% if mailinglist_id in subscriptions %}
                 {{ util.make_icon('ok-sign', title=gettext("subscribed")) }}
             {% endif %}<br />
