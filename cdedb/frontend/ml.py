@@ -359,6 +359,9 @@ class MlFrontend(AbstractUserFrontend):
         """Render form."""
         subscribers = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=SS.subscribing_states())
+        explicits = self.mlproxy.get_subscription_addresses(
+            rs, mailinglist_id, explicits_only=True)
+        explicits = {k: v for (k, v) in explicits.items() if v is not None}
         requests = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=(SS.pending,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
@@ -376,7 +379,7 @@ class MlFrontend(AbstractUserFrontend):
              requests, key=lambda anid: name_key(personas[anid])))
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
-            'moderators': moderators})
+            'moderators': moderators, 'explicits': explicits})
 
     @access("ml")
     @mailinglist_guard()
