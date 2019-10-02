@@ -23,6 +23,7 @@
         {{ util.anti_csrf_token('event/batch_fees') }}
         {{ util.input_hidden(name="checksum") }}
         {{ util.form_input_checkbox(name="force", horizontal=False, label=gettext("Ignore Warnings")) }}
+        {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications")) }}
         {{ util.form_input_file(name="fee_data_file", horizontal=False, label=gettext("Transfers")) }}
         {{ util.form_input_textarea(name="fee_data", horizontal=False, rows="10",
                                     anid="input-data") }}

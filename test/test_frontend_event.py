@@ -1092,6 +1092,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         f = self.response.forms['batchfeesform']
         f['force'].checked = True
+        f['send_notifications'].checked = True
         self.submit(f, check_notification=False)
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
