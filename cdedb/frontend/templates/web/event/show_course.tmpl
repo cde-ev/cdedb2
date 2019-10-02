@@ -56,13 +56,13 @@
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
-                                {% if field['kind'] == "bool" %}
+                                {% if field['kind'] == enums['FieldDatatypes'].bool %}
                                     {{ util.deko_checkbox(
                                         checked=ambience['course']['fields'].get(field['field_name'])) }}
-                                {% elif field['kind'] == "date" %}
+                                {% elif field['kind'] == enums['FieldDatatypes'].date %}
                                     {{ ambience['course']['fields'].get(field['field_name'])
                                        |date(lang=lang, passthrough=True) }}
-                                {% elif field['kind'] == "datetime" %}
+                                {% elif field['kind'] == enums['FieldDatatypes'].datetime %}
                                     {{ ambience['course']['fields'].get(field['field_name'])
                                        |datetime(lang=lang, passthrough=True) }}
                                 {% else %}
