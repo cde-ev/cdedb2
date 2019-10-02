@@ -18,6 +18,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import datetime
 
 import magic
 import psycopg2.extensions
@@ -1217,12 +1218,12 @@ class EventFrontend(AbstractUserFrontend):
             ' u18': lambda e, p, t: (
                 participant_filter,
                 ("persona.birthday", QueryOperators.between,
-                 (deduct_years(p['part_begin'], 18),
+                 (deduct_years(p['part_begin'], 18) + datetime.timedelta(days=1),
                   deduct_years(p['part_begin'], 16)),),),
             ' u16': lambda e, p, t: (
                 participant_filter,
                 ("persona.birthday", QueryOperators.between,
-                 (deduct_years(p['part_begin'], 16),
+                 (deduct_years(p['part_begin'], 16) + datetime.timedelta(days=1),
                   deduct_years(p['part_begin'], 14)),),),
             ' u14': lambda e, p, t: (
                 participant_filter,
