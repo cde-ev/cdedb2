@@ -93,47 +93,65 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
-    @as_users("anton")
-    def test_show_mailinglist_buttons(self, user):
+    @as_users("anton", "janis")
+    def test_show_ml_buttons_change_address(self, user):
         # not-mandatory
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3'},)
         self.assertTitle("Witz des Tages")
-        self.assertPresence("new-anton@example.cde")
+        if user['id'] == USER_DICT['anton']['id']:
+            self.assertPresence("new-anton@example.cde")
+        else:
+            self.assertPresence("janis-spam@example.cde")
         self.assertIn("resetaddressform", self.response.forms)
         self.assertIn("unsubscribeform", self.response.forms)
         self.assertIn("changeaddressform", self.response.forms)
         self.assertNonPresence("Diese Mailingliste ist obligatorisch.")
 
         # mandatory
+        # janis is no cde-member, so use inga instead
+        if user['id'] == USER_DICT['janis']['id']:
+            self.logout()
+            self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1'},)
         self.assertTitle("Verkündungen")
-        self.assertPresence("anton@example.cde (default)")
+        if user['id'] == USER_DICT['anton']['id']:
+            self.assertPresence("anton@example.cde (default)")
+        else:
+            self.assertPresence("inga@example.cde (default)")
         self.assertNotIn("resetaddressform", self.response.forms)
         self.assertNotIn("unsubscribeform", self.response.forms)
         self.assertNotIn("changeaddressform", self.response.forms)
         self.assertPresence("Diese Mailingliste ist obligatorisch.")
 
-        # moderated opt-in
+    @as_users("anton", "janis")
+    def test_show_ml_buttons_mod_opt_in(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/4'},)
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['unsubscribeform']
-        self.submit(f, check_notification=False)
+        self.submit(f)
         self.assertPresence("Du bist zurzeit kein Abonnent dieser Mailingliste")
         self.assertIn("subscribe-mod-form", self.response.forms)
 
         f = self.response.forms['subscribe-mod-form']
-        self.submit(f, check_notification=False)
+        self.submit(f)
         self.assertPresence("Deine Anfrage für diese Mailingliste wartet auf "
                             "Bestätigung durch einen Moderator. ")
         self.assertIn("cancel-request-form", self.response.forms)
 
-        # opt-in
+    @as_users("anton", "berta")
+    def test_show_ml_buttons_opt_in(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/7'},)
         self.assertTitle("Aktivenforum 2001")
         self.assertPresence("Du bist zurzeit kein Abonnent dieser Mailingliste")
         self.assertIn("subscribe-no-mod-form", self.response.forms)
 
-        # blocked
+        f = self.response.forms['subscribe-no-mod-form']
+        self.submit(f)
+        self.assertPresence("Du hast diese Mailingliste abonniert.")
+        self.assertIn("unsubscribeform", self.response.forms)
+
+    @as_users("anton", "inga")
+    def test_show_ml_buttons_blocked(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/11'},)
         self.assertTitle("Kampfbrief-Kommentare")
         self.assertPresence("Du kannst diese Mailingliste nicht abonnieren")
