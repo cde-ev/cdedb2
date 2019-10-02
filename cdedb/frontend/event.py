@@ -1208,10 +1208,10 @@ class EventFrontend(AbstractUserFrontend):
         # get_query(). `e` is the event, `p` is the event_part.
         query_filters = {
             'pending': lambda e, p, t: (
-                ('part{part}.status'.format(part=p['id']), QueryOperators.equal,
+                ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.applied.value),),
             ' payed': lambda e, p, t: (
-                ('part{part}.status'.format(part=p['id']), QueryOperators.equal,
+                ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.applied.value),
                 ("reg.payment", QueryOperators.nonempty, None),),
             'participant': lambda e, p, t: (participant_filter,),
@@ -1239,10 +1239,10 @@ class EventFrontend(AbstractUserFrontend):
                 ('persona.id', QueryOperators.oneof,
                  rs.ambience['event']['orgas']),),
             'waitlist': lambda e, p, t: (
-                ('part{part}.status'.format(part=p['id']), QueryOperators.equal,
+                ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.waitlist.value),),
             'guest': lambda e, p, t: (
-                ('part{part}.status'.format(part=p['id']), QueryOperators.equal,
+                ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.guest.value),),
             'total involved': lambda e, p, t: (involved_filter,),
             ' not payed': lambda e, p, t: (
@@ -1254,31 +1254,31 @@ class EventFrontend(AbstractUserFrontend):
                  deduct_years(p['part_begin'], 18)),
                 ("reg.parental_agreement", QueryOperators.equal, False),),
             'no lodgement': lambda e, p, t: (
-                ('part{part}.status'.format(part=p['id']), QueryOperators.oneof,
+                ('part{}.status'.format(p['id']), QueryOperators.oneof,
                  [x.value for x in stati if x.is_present()]),
-                ('lodgement{part}.id'.format(part=p['id']), 
+                ('lodgement{}.id'.format(p['id']),
                  QueryOperators.empty, None)),
             'cancelled': lambda e, p, t: (
-                ('part{part}.status'.format(part=p['id']), QueryOperators.equal,
+                ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.cancelled.value),),
             'rejected': lambda e, p, t: (
-                ('part{part}.status'.format(part=p['id']), QueryOperators.equal,
+                ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.rejected.value),),
             'total': lambda e, p, t: (
-                ('part{part}.status'.format(part=p['id']), QueryOperators.unequal,
+                ('part{}.status'.format(p['id']), QueryOperators.unequal,
                  stati.not_applied.value),),
 
             'all instructors': lambda e, p, t: (
                 participant_filter,
-                ('course_instructor{track}.id'.format(track=t['id']),
+                ('course_instructor{}.id'.format(t['id']),
                  QueryOperators.nonempty, None),),
             'instructors': lambda e, p, t: (
                 participant_filter,
-                ('track{track}.is_course_instructor'.format(track=t['id']),
+                ('track{}.is_course_instructor'.format(t['id']),
                  QueryOperators.equal, True),),
             'no course': lambda e, p, t: (
                 participant_filter,
-                ('course{track}.id'.format(track=t['id']), 
+                ('course{}.id'.format(t['id']),
                  QueryOperators.empty, None),
                 ('persona.id', QueryOperators.otherthan,
                  rs.ambience['event']['orgas']),)
