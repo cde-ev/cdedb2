@@ -1,5 +1,6 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_voting.js') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }}){% endblock %}
@@ -21,6 +22,11 @@
         <div class="p">
             {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="pencil",
                     aclass="btn btn-sm btn-warning") }}
+
+            {% if CDEDB_DEV %}
+                {{ util.href(cdedblink("assembly/ballot_start_voting"), gettext("Start Voting Period"),
+                        aclass="btn btn-sm btn-success", icon="check") }}
+            {% endif %}
         </div>
     {% endif %}
 
