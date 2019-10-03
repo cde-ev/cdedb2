@@ -53,7 +53,7 @@
     {% if 'ml_admin' in user.roles or 'core_admin' in user.roles %}
         <h3>
             {% trans count=ml_cases|length -%}
-            	Malinglist-Account Requests [{{ count }}]
+            	Mailinglist-Account Requests [{{ count }}]
             {%- endtrans %}
         </h3>
         {% if ml_cases|length > 0 %}

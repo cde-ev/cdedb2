@@ -41,7 +41,7 @@
         <h4>Mailinglisten</h4>
         <div class="list-group tear-down">
             {% if is_admin %}
-                {{ util.href(cdedblink("ml/index"), gettext("Active Malinglists"), icon="triangle-right",
+                {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="triangle-right",
                         aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists"), icon="cog",
                         aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}

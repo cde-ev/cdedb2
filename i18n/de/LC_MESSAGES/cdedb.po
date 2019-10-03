@@ -10357,7 +10357,7 @@ msgstr "Veranstaltungs-Admin"
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:26
 #: cdedb/frontend/templates/web/core/show_user.tmpl:148
 msgid "Mailinglist-Admin"
-msgstr "Malinglisten-Admin"
+msgstr "Mailinglisten-Admin"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:22
 #: cdedb/frontend/templates/web/core/show_history.tmpl:171
@@ -15781,6 +15781,15 @@ msgstr "%(given_names)s %(family_name)s als geblockten Nutzer entfernen"
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:139
 msgid "Cancel request"
 msgstr "Abonnementantrag zurückziehen"
+
+#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:73
+#, python-format
+msgid "Mailinglist-Account Requests [%(count)s]"
+msgstr "Mailinglisten-Accountanfragen [%(count)s]"
+
+#: cdedb/frontend/templates/web/ml/base.tmpl:44
+msgid "Active Mailinglists"
+msgstr "Aktive Mailinglisten"
 
 #~ msgid ""
 #~ "If the event comprises multiple parts or multiple course tracks,\n"
