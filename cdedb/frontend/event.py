@@ -1069,6 +1069,9 @@ class EventFrontend(AbstractUserFrontend):
         stati = const.RegistrationPartStati
         get_age = lambda u, p: determine_age_class(
             u['birthday'], rs.ambience['event']['parts'][p['part_id']]['part_begin'])
+
+        # Tests for participant/registration statistics.
+        # `e` is the event, `r` is a registration, `p` is a registration_part.
         tests1 = OrderedDict((
             ('pending', (lambda e, r, p: (
                     p['status'] == stati.applied))),
@@ -1130,6 +1133,7 @@ class EventFrontend(AbstractUserFrontend):
                 for part_id in rs.ambience['event']['parts']}
 
         # Test for course statistics
+        # `c` is a course, `t` is a track.
         tests2 = OrderedDict((
             ('courses', lambda c, t: (
                     t in c['segments'])),
@@ -1139,6 +1143,8 @@ class EventFrontend(AbstractUserFrontend):
         ))
 
         # Tests for course attendee statistics
+        # `e` is the event, `r` is the registration, `p` is a event_part,
+        # `t` is a track.
         tests3 = OrderedDict((
             ('all instructors', (lambda e, r, p, t: (
                     p['status'] == stati.participant
@@ -1205,7 +1211,8 @@ class EventFrontend(AbstractUserFrontend):
         )
         # Query filters for all the statistics defined and calculated above.
         # They are customized and inserted into the query on the fly by
-        # get_query(). `e` is the event, `p` is the event_part.
+        # get_query().
+        # `e` is the event, `p` is the event_part, `t` is the track.
         query_filters = {
             'pending': lambda e, p, t: (
                 ('part{}.status'.format(p['id']), QueryOperators.equal,
