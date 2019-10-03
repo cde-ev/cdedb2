@@ -596,16 +596,16 @@ class MlFrontend(AbstractUserFrontend):
                 }
 
             if requests:
-                if (set(requests) - set(ml_store['persona_ids'])
-                        or current > ml_store['tstamp'] + 7*24*60*60):
-
+                new_request = set(requests) - set(ml_store['persona_ids'])
+                if new_request or current > ml_store['tstamp'] + 7*24*60*60:
                     ml_store['tstamp'] = current
                     ml = self.mlproxy.get_mailinglist(rs, ml_id)
                     owner = ml['address'].replace("@", "-owner@")
                     self.do_mail(rs, "subscription_request_remind",
                                  {'To': (owner,),
                                   'Subject': "Offene Abonnement-Anfragen"},
-                                 {'count': len(requests), 'ml': ml})
+                                 {'count_all': len(requests), 'ml': ml,
+                                  'count_new': len(new_request)})
 
             ml_store['persona_ids'] = requests
             store[str(ml_id)] = ml_store
