@@ -1367,8 +1367,10 @@ class MlBackend(AbstractBackend):
 
             if data:
                 ret = data["address"]
-            else:
+            elif not explicits_only:
                 ret = rs.user.username
+            else:
+                ret = None
             return ret
         else:
             # Validation is done inside.
