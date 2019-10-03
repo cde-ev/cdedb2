@@ -1199,13 +1199,13 @@ class EventFrontend(AbstractUserFrontend):
             (("persona.family_name", True), ("persona.given_names", True),)
         )
         # Some reusable query filter definitions
-        involved_filter = (
-            'part{part}.status',
+        involved_filter = lambda p: (
+            'part{}.status'.format(p['id']),
             QueryOperators.oneof,
             [x.value for x in stati if x.is_involved()],
         )
-        participant_filter = (
-            'part{part}.status',
+        participant_filter = lambda p: (
+            'part{}.status'.format(p['id']),
             QueryOperators.equal,
             stati.participant.value,
         )
@@ -1221,26 +1221,26 @@ class EventFrontend(AbstractUserFrontend):
                 ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.applied.value),
                 ("reg.payment", QueryOperators.nonempty, None),),
-            'participant': lambda e, p, t: (participant_filter,),
+            'participant': lambda e, p, t: (participant_filter(p),),
             ' u18': lambda e, p, t: (
-                participant_filter,
+                participant_filter(p),
                 ("persona.birthday", QueryOperators.between,
                  (deduct_years(p['part_begin'], 18) + datetime.timedelta(days=1),
                   deduct_years(p['part_begin'], 16)),),),
             ' u16': lambda e, p, t: (
-                participant_filter,
+                participant_filter(p),
                 ("persona.birthday", QueryOperators.between,
                  (deduct_years(p['part_begin'], 16) + datetime.timedelta(days=1),
                   deduct_years(p['part_begin'], 14)),),),
             ' u14': lambda e, p, t: (
-                participant_filter,
+                participant_filter(p),
                 ("persona.birthday", QueryOperators.greater,
                  deduct_years(p['part_begin'], 14)),),
             ' checked in': lambda e, p, t: (
-                participant_filter,
+                participant_filter(p),
                 ("reg.checkin", QueryOperators.nonempty, None),),
             ' not checked in': lambda e, p, t: (
-                participant_filter,
+                participant_filter(p),
                 ("reg.checkin", QueryOperators.empty, None),),
             ' orgas': lambda e, p, t: (
                 ('persona.id', QueryOperators.oneof,
@@ -1251,12 +1251,12 @@ class EventFrontend(AbstractUserFrontend):
             'guest': lambda e, p, t: (
                 ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.guest.value),),
-            'total involved': lambda e, p, t: (involved_filter,),
+            'total involved': lambda e, p, t: (involved_filter(p),),
             ' not payed': lambda e, p, t: (
-                involved_filter,
+                involved_filter(p),
                 ("reg.payment", QueryOperators.empty, None),),
             ' no parental agreement': lambda e, p, t: (
-                involved_filter,
+                involved_filter(p),
                 ("persona.birthday", QueryOperators.greater,
                  deduct_years(p['part_begin'], 18)),
                 ("reg.parental_agreement", QueryOperators.equal, False),),
@@ -1276,15 +1276,15 @@ class EventFrontend(AbstractUserFrontend):
                  stati.not_applied.value),),
 
             'all instructors': lambda e, p, t: (
-                participant_filter,
+                participant_filter(p),
                 ('course_instructor{}.id'.format(t['id']),
                  QueryOperators.nonempty, None),),
             'instructors': lambda e, p, t: (
-                participant_filter,
+                participant_filter(p),
                 ('track{}.is_course_instructor'.format(t['id']),
                  QueryOperators.equal, True),),
             'no course': lambda e, p, t: (
-                participant_filter,
+                participant_filter(p),
                 ('course{}.id'.format(t['id']),
                  QueryOperators.empty, None),
                 ('persona.id', QueryOperators.otherthan,
