@@ -1802,9 +1802,13 @@ class EventFrontend(AbstractUserFrontend):
             subject = "Überweisung für {} eingetroffen".format(
                 rs.ambience['event']['title'])
             for persona in personas.values():
-                self.do_mail(rs, "transfer_received",
-                             {'To': (persona['username'],),
-                              'Subject': subject,},
+                headers = {
+                    'To': (persona['username'],),
+                    'Subject': subject,
+                }
+                if rs.ambience['event']['orga_address']:
+                    headers['Reply-To'] = rs.ambience['event']['orga_address']
+                self.do_mail(rs, "transfer_received", headers,
                              {'persona': persona})
         return True, count
 
