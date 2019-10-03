@@ -12,7 +12,7 @@
 {% block content %}
     <h3>{% trans -%}Current Events{%- endtrans %}</h3>
     {% if open_events %}
-        <ul>
+        <ul class="mosp">
             {% for event_id, event in open_events|xdictsort('begin') %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
@@ -29,7 +29,7 @@
 
     {% if orga_events %}
         <h3>{% trans -%}Organized Events{%- endtrans %}</h3>
-        <ul>
+        <ul class="mosp">
             {% for event_id, entry in orga_events|xdictsort('begin') %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
@@ -55,7 +55,7 @@
 
     {% if other_events %}
         <h3>{% trans -%}Other Events{%- endtrans %}</h3>
-        <ul>
+        <ul class="mosp">
             {% for event_id, event in other_events|xdictsort('begin') %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
