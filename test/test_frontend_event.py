@@ -1097,6 +1097,14 @@ etc;anything else""", f['entries_2'].value)
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
+        mails = self.fetch_mail()
+        self.assertEqual(2, len(mails))
+        for mail in mails:
+            text = mail.get_body().get_content()
+            self.assertIn(
+                "Vielen Dank für Deine Überweisung für die Veranstaltung", text)
+            self.assertIn(
+                "Große Testakademie 2222.", text)
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
         self.traverse({'description': 'Alle Anmeldungen'},
