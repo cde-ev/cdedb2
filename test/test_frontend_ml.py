@@ -172,7 +172,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/list'})
         self.assertTitle("Mailinglisten Komplettübersicht")
         self.traverse({'href': '/ml/mailinglist/6'})
-        self.assertTitle("Aktivenforum 2000")
+        self.assertTitle("Aktivenforum 2000 – Verwalten")
 
     @as_users("anton", "ferdinand", "berta")
     def test_mailinglist_management(self, user):
