@@ -1470,6 +1470,10 @@ def reconnoitre_ambience(obj, rs):
               'registration_id', 'registration',
               ((lambda a: do_assert(a['registration']['event_id']
                                     == a['event']['id'])),)),
+        Scout(lambda anid: obj.eventproxy.get_lodgement_group(rs, anid),
+              'group_id', 'group',
+              ((lambda a: do_assert(a['group']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
               'lodgement_id', 'lodgement',
               ((lambda a: do_assert(a['lodgement']['event_id']
