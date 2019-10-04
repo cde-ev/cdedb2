@@ -593,7 +593,8 @@ class CdEFrontend(AbstractUserFrontend):
             for datum in data:
                 if datum['resolution'] == LineResolutions.create:
                     success, message = self.coreproxy.make_reset_cookie(
-                        rs, datum['raw']['username'])
+                        rs, datum['raw']['username'],
+                        timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
                     email = self.encode_parameter(
                         "core/do_password_reset_form", "email",
                         datum['raw']['username'],
