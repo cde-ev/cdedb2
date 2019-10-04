@@ -2420,12 +2420,43 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
                     (field, ValueError(n_("Entry not in definition list."))))
     return val, errs
 
+_LODGEMENT_GROUP_FIELDS = lambda: {
+    'moniker': _str,
+}
+
+
+@_addvalidator
+def _lodgement_group(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set for fitness for creation
+        of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "lodgement group"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = dict(_LODGEMENT_GROUP_FIELDS(), event_id=_id)
+        optional_fields = {}
+    else:
+        # no event_id, since the associated event should be fixed.
+        mandatory_fields = {'id': _id}
+        optional_fields = _LODGEMENT_GROUP_FIELDS()
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      _convert=_convert)
+
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
     'capacity': _non_negative_int,
     'reserve': _non_negative_int,
     'notes': _str_or_None,
+    'group_id': _id_or_None,
 }
 _LODGEMENT_OPTIONAL_FIELDS = {
     'fields': _mapping,
