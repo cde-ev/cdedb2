@@ -145,11 +145,14 @@ INSERT INTO event.orgas (persona_id, event_id) VALUES
     (7, 1),
     (1, 2),
     (2, 2);
-INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, fields) VALUES
-    (1, 1, 'Warme Stube', 5, 1, NULL, '{"contamination": "high"}'::jsonb),
-    (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.', '{"contamination": "none"}'::jsonb),
-    (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.', '{"contamination": "low"}'::jsonb),
-    (4, 1, 'Einzelzelle', 1, 0, NULL, '{"contamination": "high"}'::jsonb);
+INSERT INTO event.lodgement_groups (id, event_id, moniker) VALUES
+    (1, 1, 'Haupthaus'),
+    (2, 1, 'AußenWohnGruppe');
+INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, group_id, fields) VALUES
+    (1, 1, 'Warme Stube', 5, 1, NULL, 2, '{"contamination": "high"}'::jsonb),
+    (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.', 1, '{"contamination": "none"}'::jsonb),
+    (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.', NULL, '{"contamination": "low"}'::jsonb),
+    (4, 1, 'Einzelzelle', 1, 0, NULL, 1, '{"contamination": "high"}'::jsonb);
 INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, payment, parental_agreement, mixed_lodging, checkin, list_consent, fields) VALUES
     (1, 1, 1, NULL, NULL, NULL, True, True, NULL, True, '{"lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
     (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', True, True, NULL, True, '{"brings_balls": true, "transportation": "pedes"}'::jsonb),
@@ -364,6 +367,7 @@ SELECT setval('event.event_parts_id_seq', 4);
 SELECT setval('event.course_tracks_id_seq', 3);
 SELECT setval('event.courses_id_seq', 5);
 SELECT setval('event.field_definitions_id_seq', 6);
+SELECT setval('event.lodgement_groups_id_seq', 2);
 SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
 SELECT setval('event.log_id_seq', 4);

@@ -286,6 +286,7 @@ class TestEventBackend(BackendTest):
             'moniker': 'Hyrule',
             'notes': "Notizen",
             'reserve': 11,
+            'group_id': None,
         }
         new_lodge_id = self.event.create_lodgement(self.key, new_lodgement)
         self.assertLess(0, new_lodge_id)
@@ -1021,16 +1022,69 @@ class TestEventBackend(BackendTest):
             self.key, event_id, course_id=1, position=ENUMS_DICT['CourseFilterPositions'].assigned))
 
     @as_users("anton", "garcia")
+    def test_entity_lodgement_group(self, user):
+        event_id = 1
+        expectation_list = {
+            1: "Haupthaus",
+            2: "AußenWohnGruppe",
+        }
+        group_ids = self.event.list_lodgement_groups(self.key, event_id)
+        self.assertEqual(expectation_list, group_ids)
+
+        expectation_groups = {
+            1: {
+                'id': 1,
+                'event_id': 1,
+                'moniker': "Haupthaus",
+            },
+            2: {
+                'id': 2,
+                'event_id': 1,
+                'moniker': "AußenWohnGruppe",
+            },
+        }
+        self.assertEqual(expectation_groups,
+                         self.event.get_lodgement_groups(self.key, group_ids))
+
+        new_group = {
+            'event_id': event_id,
+            'moniker': "Nebenan",
+        }
+        new_group_id = self.event.create_lodgement_group(self.key, new_group)
+        self.assertLess(0, new_group_id)
+        new_group['id'] = new_group_id
+        self.assertEqual(
+            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+        update = {
+            'id': new_group_id,
+            'moniker': "Auf der anderen Rheinseite",
+        }
+        self.assertLess(0, self.event.set_lodgement_group(self.key, update))
+        new_group.update(update)
+        self.assertEqual(
+            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+
+        expectation_list[new_group_id] = new_group['moniker']
+        self.assertEqual(expectation_list,
+                         self.event.list_lodgement_groups(self.key, event_id))
+        self.assertLess(
+            0, self.event.delete_lodgement_group(self.key, new_group_id))
+        del expectation_list[new_group_id]
+        self.assertEqual(expectation_list,
+                         self.event.list_lodgement_groups(self.key, event_id))
+
+    @as_users("anton", "garcia")
     def test_entity_lodgement(self, user):
         event_id = 1
-        expectation = {
+        expectation_list = {
             1: 'Warme Stube',
             2: 'Kalte Kammer',
             3: 'Kellerverlies',
-            4: 'Einzelzelle'}
-        self.assertEqual(expectation,
+            4: 'Einzelzelle',
+        }
+        self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
-        expectation = {
+        expectation_get = {
             1: {
                 'capacity': 5,
                 'event_id': 1,
@@ -1038,7 +1092,9 @@ class TestEventBackend(BackendTest):
                 'id': 1,
                 'moniker': 'Warme Stube',
                 'notes': None,
-                'reserve': 1},
+                'reserve': 1,
+                'group_id': 2,
+            },
             4: {
                 'capacity': 1,
                 'event_id': 1,
@@ -1046,15 +1102,18 @@ class TestEventBackend(BackendTest):
                 'id': 4,
                 'moniker': 'Einzelzelle',
                 'notes': None,
-                'reserve': 0}
+                'reserve': 0,
+                'group_id': 1,
+            }
         }
-        self.assertEqual(expectation, self.event.get_lodgements(self.key, (1,4)))
+        self.assertEqual(expectation_get, self.event.get_lodgements(self.key, (1,4)))
         new = {
             'capacity': 42,
             'event_id': 1,
             'moniker': 'Hyrule',
             'notes': "Notizen",
-            'reserve': 11
+            'reserve': 11,
+            'group_id': None,
         }
         new_id = self.event.create_lodgement(self.key, new)
         self.assertLess(0, new_id)
@@ -1069,17 +1128,18 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.set_lodgement(self.key, update))
         new.update(update)
         self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
-        expectation = {
+        expectation_list = {
             1: 'Warme Stube',
             2: 'Kalte Kammer',
             3: 'Kellerverlies',
             4: 'Einzelzelle',
-            new_id: 'Hyrule'}
-        self.assertEqual(expectation,
+            new_id: 'Hyrule',
+        }
+        self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
         self.assertLess(0, self.event.delete_lodgement(self.key, new_id))
-        del expectation[new_id]
-        self.assertEqual(expectation,
+        del expectation_list[new_id]
+        self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
 
     @as_users("berta", "emilia")
@@ -1821,12 +1881,19 @@ class TestEventBackend(BackendTest):
                                             'field_name': 'contamination',
                                             'id': 6,
                                             'kind': 1}},
+            'event.lodgement_groups': {1: {'id': 1,
+                                           'event_id': 1,
+                                           'moniker': 'Haupthaus'},
+                                       2: {'id': 2,
+                                           'event_id': 1,
+                                           'moniker': 'AußenWohnGruppe'}},
             'event.lodgements': {1: {'capacity': 5,
                                      'event_id': 1,
                                      'fields': {'contamination': 'high'},
                                      'id': 1,
                                      'moniker': 'Warme Stube',
                                      'notes': None,
+                                     'group_id': 2,
                                      'reserve': 1},
                                  2: {'capacity': 10,
                                      'event_id': 1,
@@ -1834,6 +1901,7 @@ class TestEventBackend(BackendTest):
                                      'id': 2,
                                      'moniker': 'Kalte Kammer',
                                      'notes': 'Dafür mit Frischluft.',
+                                     'group_id': 1,
                                      'reserve': 2},
                                  3: {'capacity': 0,
                                      'event_id': 1,
@@ -1841,6 +1909,7 @@ class TestEventBackend(BackendTest):
                                      'id': 3,
                                      'moniker': 'Kellerverlies',
                                      'notes': 'Nur für Notfälle.',
+                                     'group_id': None,
                                      'reserve': 100},
                                  4: {'capacity': 1,
                                      'event_id': 1,
@@ -1848,6 +1917,7 @@ class TestEventBackend(BackendTest):
                                      'id': 4,
                                      'moniker': 'Einzelzelle',
                                      'notes': None,
+                                     'group_id': 1,
                                      'reserve': 0}},
             'event.log': {1: {'additional_info': None,
                               'code': 50,
@@ -2494,25 +2564,31 @@ class TestEventBackend(BackendTest):
                       'use_questionnaire': False},
             'id': 1,
             'kind': 'partial',
+            'lodgement_groups': {1: {'moniker': 'Haupthaus'},
+                                 2: {'moniker': 'AußenWohnGruppe'}},
             'lodgements': {1: {'capacity': 5,
                                'fields': {'contamination': 'high'},
                                'moniker': 'Warme Stube',
                                'notes': None,
+                               'group_id': 2,
                                'reserve': 1},
                            2: {'capacity': 10,
                                'fields': {'contamination': 'none'},
                                'moniker': 'Kalte Kammer',
                                'notes': 'Dafür mit Frischluft.',
+                               'group_id': 1,
                                'reserve': 2},
                            3: {'capacity': 0,
                                'fields': {'contamination': 'low'},
                                'moniker': 'Kellerverlies',
                                'notes': 'Nur für Notfälle.',
+                               'group_id': None,
                                'reserve': 100},
                            4: {'capacity': 1,
                                'fields': {'contamination': 'high'},
                                'moniker': 'Einzelzelle',
                                'notes': None,
+                               'group_id': 1,
                                'reserve': 0}},
             'registrations': {1: {'checkin': None,
                                   'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
@@ -3068,7 +3144,8 @@ class TestEventBackend(BackendTest):
             'event_id': 1,
             'moniker': 'Hyrule',
             'notes': "Notizen",
-            'reserve': 11
+            'reserve': 11,
+            'group_id': None,
         }
         new_id = self.event.create_lodgement(self.key, new)
         update = {

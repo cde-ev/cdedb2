@@ -2738,6 +2738,7 @@ class EventBackend(AbstractBackend):
                     'id', 'persona_id', 'event_id',)),
                 ('event.field_definitions', "event_id",
                  FIELD_DEFINITION_FIELDS),
+                ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
                 ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 ('event.registration_parts', "part_id",
@@ -2962,6 +2963,14 @@ class EventBackend(AbstractBackend):
                 course['segments'] = lookup[course_id]
                 course['fields'] = cast_fields(course['fields'], event['fields'])
             ret['courses'] = courses
+            # lodgement groups
+            lodgement_groups = list_to_dict(self.sql_select(
+                rs, 'event.lodgement_groups', LODGEMENT_GROUP_FIELDS,
+                (event_id,), entity_key='event_id'))
+            for lodgement_group in lodgement_groups.values():
+                del lodgement_group['id']
+                del lodgement_group['event_id']
+            ret['lodgement_groups'] = lodgement_groups
             # lodgements
             lodgements = list_to_dict(self.sql_select(
                 rs, 'event.lodgements', LODGEMENT_FIELDS, (event_id,),
