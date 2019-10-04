@@ -62,6 +62,18 @@
         }
     },
     "kind": "full",
+    "event.lodgement_groups": {
+        "1": {
+            "id": 1,
+            "event_id": 1,
+            "moniker": "Haupthaus"
+        },
+        "2": {
+            "id": 2,
+            "event_id": 1,
+            "moniker": "AußenWohnGruppe"
+        }
+    },
     "event.lodgements": {
         "2": {
             "capacity": 10,
@@ -70,6 +82,7 @@
             "moniker": "Kalte Kammer",
             "event_id": 1,
             "notes": "Daf\u00fcr mit Frischluft.",
+            "group_id": 1,
             "fields": {
                 "contamination": "none"
             }
@@ -81,6 +94,7 @@
             "moniker": "Warme Stube",
             "event_id": 1,
             "notes": null,
+            "group_id": 2,
             "fields": {
                 "contamination": "high"
             }
@@ -92,6 +106,7 @@
             "moniker": "Kellerverlies",
             "event_id": 1,
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
+            "group_id": null,
             "fields": {
                 "contamination": "low"
             }
@@ -103,6 +118,7 @@
             "moniker": "Einzelzelle",
             "event_id": 1,
             "notes": null,
+            "group_id": 1,
             "fields": {
                 "contamination": "high"
             }
