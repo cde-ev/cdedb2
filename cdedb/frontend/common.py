@@ -1722,6 +1722,9 @@ def REQUESTdata(*spec):
                                     rs.notify("warning", n_("Link expired."))
                                 if timeout is False:
                                     rs.notify("warning", n_("Link invalid."))
+                                if val is None:
+                                    # Clean out the invalid value
+                                    rs.values[name] = None
                         kwargs[name] = check_validation(rs, argtype, val, name)
             return fun(obj, rs, *args, **kwargs)
 

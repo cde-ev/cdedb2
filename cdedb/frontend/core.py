@@ -1301,7 +1301,7 @@ class CoreFrontend(AbstractFrontend):
         validation from changing the target again.
         """
         if rs.errors and not internal:
-            rs.values['email'] = None
+            # Clean errors prior to displaying a new form for the first step
             rs.errors = []
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
