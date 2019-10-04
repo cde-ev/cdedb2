@@ -15,11 +15,11 @@ from cdedb.backend.common import (
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
-    COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
-    CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
-    REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms, json_serialize,
-    PartialImportError, CDEDB_EXPORT_EVENT_VERSION)
+    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_GROUP_FIELDS,
+    LODGEMENT_FIELDS, COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim,
+    PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
+    COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
+    json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -2258,6 +2258,175 @@ class EventBackend(AbstractBackend):
             params = (event_id, const.EventLogCodes.registration_created)
             num = unwrap(self.query_one(rs, query, params))
         return num < self.conf.ORGA_ADD_LIMIT
+
+    @access("event")
+    def list_lodgement_groups(self, rs, event_id):
+        """List all lodgement groups for an event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: {int: str}
+        :returns: dict mapping ids to names
+        """
+        event_id = affirm("id", event_id)
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
+        data = self.sql_select(rs, "event.lodgement_groups", ("id", "moniker"),
+                               (event_id,), entity_key="event_id")
+        return {e['id']: e['moniker'] for e in data}
+
+    @access("event")
+    @singularize("get_lodgement_group")
+    def get_lodgement_groups(self, rs, ids):
+        """Retrieve data for some lodgement groups.
+
+        All have to be from the same event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ids: [int]
+        :rtype: {int: {str: object}}
+        """
+        ids = affirm_set("id", ids)
+        with Atomizer(rs):
+            data = self.sql_select(
+                rs, "event.lodgement_groups", LODGEMENT_GROUP_FIELDS, ids)
+            if not data:
+                return {}
+            events = {e['event_id'] for e in data}
+            if len(events) > 1:
+                raise ValueError(n_(
+                    "Only lodgement groups from exactly one event allowed!"))
+            event_id = unwrap(events)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+        return {e['id']: e for e in data}
+
+    @access("event")
+    def set_lodgement_group(self, rs, data):
+        """Update some keys of a lodgement group.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: default return code
+        """
+        data = affirm("lodgement_group", data)
+        ret = 1
+        with Atomizer(rs):
+            current = unwrap(self.get_lodgement_groups(rs, (data['id'],)))
+            event_id, moniker = current['event_id'], current['moniker']
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+            self.assert_offline_lock(rs, event_id=event_id)
+
+            # Do the actual work:
+            ret *= self.sql_update(rs, "event.lodgement_groups", data)
+            self.event_log(
+                rs, const.EventLogCodes.lodgement_group_changed, event_id,
+                additional_info=moniker)
+
+        return ret
+
+    @access("event")
+    def create_lodgement_group(self, rs, data):
+        """Make a new lodgement group.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: the id of the new lodgement group
+        """
+        data = affirm("lodgement_group", data, creation=True)
+
+        if (not self.is_orga(rs, event_id=data['event_id'])
+                and not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=data['event_id'])
+        with Atomizer(rs):
+            new_id = self.sql_insert(rs, "event.lodgement_groups", data)
+            self.event_log(
+                rs, const.EventLogCodes.lodgement_group_created,
+                data['event_id'], additional_info=data['moniker'])
+        return new_id
+
+    @access("event")
+    def delete_lodgement_group_blockers(self, rs, group_id):
+        """Determine what keeps a lodgement group from being deleted.
+
+        Possible blockers:
+
+        * lodgements: A lodgement that is part of this lodgement group.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type group_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        group_id = affirm("id", group_id)
+        blockers = {}
+
+        lodgements = self.sql_select(
+            rs, "event.lodgements", ("id",), (group_id,),
+            entity_key="group_id")
+        if lodgements:
+            blockers["lodgements"] = [e["id"] for e in lodgements]
+
+        return blockers
+
+    @access("event")
+    def delete_lodgement_group(self, rs, group_id, cascade=None):
+        """Delete a lodgement group.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type group: int
+        :type cascade: bool
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        :rtype: int
+        :returns: default return code
+        """
+        group_id = affirm("id", group_id)
+        blockers = self.delete_lodgement_group_blockers(rs, group_id)
+        if not cascade:
+            cascade= set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "lodgement group",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        with Atomizer(rs):
+            if cascade:
+                if "lodgements" in cascade:
+                    with Silencer(rs):
+                        for lodgement_id in cascade["lodgements"]:
+                            deletor = {
+                                "id": lodgement_id,
+                                "groupd_id": None,
+                            }
+                            ret *= self.set_lodgement(rs, deletor)
+
+                blockers = self.delete_lodgement_group_blockers(rs, group_id)
+
+            if not blockers:
+                group = unwrap(self.get_lodgement_groups(rs, (group_id,)))
+                ret *= self.sql_delete_one(
+                    rs, "event.lodgement_groups", group_id)
+                self.event_log(rs, const.EventLogCodes.lodgement_group_deleted,
+                               event_id=group['event_id'],
+                               additional_info=group['moniker'])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "lodgement group", "block": blockers.keys()})
+        return ret
 
     @access("event")
     def list_lodgements(self, rs, event_id):
