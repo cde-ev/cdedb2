@@ -708,6 +708,15 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON event.orgas TO cdb_persona;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_persona;
 GRANT SELECT ON event.orgas TO cdb_anonymous;
 
+CREATE TABLE event.lodgement_groups (
+        id                      serial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        moniker                 varchar NOT NULL
+);
+CREATE INDEX ids_lodgement_groups_event_id ON event.lodgement_groups(event_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgement_groups TO cdb_persona;
+GRANT SELECT, UPDATE ON event.lodgement_groups_id_seq TO cdb_persona;
+
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
@@ -716,6 +725,7 @@ CREATE TABLE event.lodgements (
         -- number of people which can be accommodated with reduced comfort
         reserve                 integer NOT NULL DEFAULT 0,
         notes                   varchar,
+        group_id                integer REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
