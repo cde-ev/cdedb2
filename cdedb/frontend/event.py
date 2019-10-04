@@ -3866,6 +3866,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(
@@ -3912,8 +3914,21 @@ class EventFrontend(AbstractUserFrontend):
                 max(p[4] for p in problems_here) if len(problems_here) else 0,
                 "; ".join(rs.gettext(p[0]) for p in problems_here),)
 
+        grouped_lodgements = OrderedDict([
+            (group_id, OrderedDict([
+                (lodgement_id, lodgement)
+                for lodgement_id, lodgement
+                in xdictsort_filter(lodgements, 'moniker')
+                if lodgement['group_id'] == group_id
+            ]))
+            for group_id, group
+            in (xdictsort_filter(groups, 'moniker') + [(None, None)])
+        ])
+
         return self.render(rs, "lodgements", {
             'lodgements': lodgements,
+            'groups': groups,
+            'grouped_lodgements': grouped_lodgements,
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitant_nums,
             'inhabitants_sum': inhabitant_sum,
