@@ -3170,7 +3170,7 @@ class EventBackend(AbstractBackend):
                 if v is None)
             if not used_lodgement_group_ids <= available_lodgement_group_ids:
                 raise ValueError(
-                    n_("Referential integretiy of lodgement groups violated."))
+                    n_("Referential integrity of lodgement groups violated."))
 
             used_lodgement_ids = {
                 part.get('lodgement_id')

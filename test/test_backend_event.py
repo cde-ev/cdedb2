@@ -280,13 +280,23 @@ class TestEventBackend(BackendTest):
         self.assertEqual(new_course, self.event.get_course(
             self.key, new_course_id))
 
+        new_group = {
+            'event_id': new_id,
+            'moniker': "Nebenan",
+        }
+        new_group_id = self.event.create_lodgement_group(self.key, new_group)
+        self.assertLess(0, new_group_id)
+        new_group['id'] = new_group_id
+        self.assertEqual(
+            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+
         new_lodgement = {
             'capacity': 42,
             'event_id': new_id,
             'moniker': 'Hyrule',
             'notes': "Notizen",
             'reserve': 11,
-            'group_id': None,
+            'group_id': new_group_id,
         }
         new_lodge_id = self.event.create_lodgement(self.key, new_lodgement)
         self.assertLess(0, new_lodge_id)
@@ -332,8 +342,8 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.delete_event(
             self.key, new_id,
             ("event_parts", "course_tracks", "field_definitions", "courses",
-             "orgas", "lodgements", "registrations", "questionnaire", "log",
-             "mailinglists")))
+             "orgas", "lodgement_groups", "lodgements", "registrations",
+             "questionnaire", "log", "mailinglists")))
 
     @as_users("anton")
     def test_aposteriori_track_creation(self, user):
@@ -1064,14 +1074,34 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             new_group, self.event.get_lodgement_group(self.key, new_group_id))
 
+        new_lodgement = {
+            'capacity': 42,
+            'event_id': 1,
+            'moniker': 'Hyrule',
+            'notes': "Notizen",
+            'reserve': 11,
+            'group_id': new_group_id,
+        }
+        new_lodgement_id = self.event.create_lodgement(self.key, new_lodgement)
+        self.assertLess(0, new_lodgement_id)
+        new_lodgement['id'] = new_lodgement_id
+        new_lodgement['fields'] = {}
+        self.assertEqual(
+            new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
+
         expectation_list[new_group_id] = new_group['moniker']
         self.assertEqual(expectation_list,
                          self.event.list_lodgement_groups(self.key, event_id))
         self.assertLess(
-            0, self.event.delete_lodgement_group(self.key, new_group_id))
+            0, self.event.delete_lodgement_group(
+                self.key, new_group_id, ("lodgements",)))
         del expectation_list[new_group_id]
         self.assertEqual(expectation_list,
                          self.event.list_lodgement_groups(self.key, event_id))
+
+        new_lodgement['group_id'] = None
+        self.assertEqual(
+            new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
 
     @as_users("anton", "garcia")
     def test_entity_lodgement(self, user):
@@ -2922,9 +2952,10 @@ class TestEventBackend(BackendTest):
                                 'fields': {'contamination': 'none'},
                                 'moniker': 'Geheimkabinett',
                                 'notes': 'Einfach den unsichtbaren Schildern folgen.',
-                                'group_id': 1,
+                                'group_id': -1,
                                 'reserve': 2},
-                           3: None},
+                           3: None,
+                           4: {'group_id': -1}},
             'registrations': {3: {'tracks': {3: {'course_id': -1,
                                                  'choices': [4, -1, 5]}}},
                               4: None,
