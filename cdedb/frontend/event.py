@@ -3926,6 +3926,51 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
+    def create_lodgement_group_form(self, rs, event_id):
+        """Display form for lodgement group creation."""
+        return self.render(rs, "create_lodgement_group")
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdatadict("moniker")
+    @event_guard(check_offline=True)
+    def create_lodgement_group(self, rs, event_id, data):
+        data['event_id'] = event_id
+        data = check(rs, "lodgement_group", data, creation=True)
+        if rs.errors:
+            return self.create_lodgement_group_form(rs, event_id)
+
+        new_id = self.eventproxy.create_lodgement_group(rs, data)
+        self.notify_return_code(rs, new_id)
+        return self.redirect(rs, "event/lodgements")
+
+    @access("event")
+    @event_guard()
+    def change_lodgement_group_form(self, rs, event_id, group_id):
+        merge_dicts(rs.values, rs.ambience['group'])
+        return self.render(rs, "change_lodgement_group")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdatadict("moniker")
+    def change_lodgement_group(self, rs, event_id, group_id, data):
+        data['id'] = group_id
+        data = check(rs, "lodgement_group", data)
+
+        code = self.eventproxy.set_lodgement_group(rs, data)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/lodgements")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def delete_lodgement_group(self, rs, event_id, group_id):
+        code = self.eventproxy.delete_lodgement_group(
+            rs, group_id, ("lodgements",))
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/lodgements")
+
+    @access("event")
+    @event_guard()
     def show_lodgement(self, rs, event_id, lodgement_id):
         """Display details of one lodgement."""
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
