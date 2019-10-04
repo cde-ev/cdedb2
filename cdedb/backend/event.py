@@ -1112,6 +1112,8 @@ class EventBackend(AbstractBackend):
                    blockers.
         * course_tracks: A course track of the event.
         * orgas: An orga of the event.
+        * lodgement_groups: A lodgement group associated with the event.
+                            This can have it's own blockers.
         * lodgements: A lodgement associated with the event. This can have
                       it's own blockers.
         * registrations: A registration associated with the event. This can
@@ -1156,6 +1158,12 @@ class EventBackend(AbstractBackend):
             rs, "event.orgas", ("id",), (event_id,), entity_key="event_id")
         if orgas:
             blockers["orgas"] = [e["id"] for e in orgas]
+
+        lodgement_groups = self.sql_select(
+            rs, "event.lodgement_groups", ("id",), (event_id,),
+            entity_key="event_id")
+        if lodgement_groups:
+            blockers["lodgement_groups"] = [e["id"] for e in lodgement_groups]
 
         lodgements = self.sql_select(
             rs, "event.lodgements", ("id",), (event_id,), entity_key="event_id")
@@ -1232,6 +1240,9 @@ class EventBackend(AbstractBackend):
                 if "lodgements" in cascade:
                     ret *= self.sql_delete(rs, "event.lodgements",
                                            blockers["lodgements"])
+                if "lodgement_groups" in cascade:
+                    ret *= self.sql_delete(rs, "event.lodgement_groups",
+                                           blockers["lodgement_groups"])
                 if "questionnaire" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.questionnaire_rows",
@@ -2406,10 +2417,10 @@ class EventBackend(AbstractBackend):
             if cascade:
                 if "lodgements" in cascade:
                     with Silencer(rs):
-                        for lodgement_id in cascade["lodgements"]:
+                        for lodgement_id in blockers["lodgements"]:
                             deletor = {
                                 "id": lodgement_id,
-                                "groupd_id": None,
+                                "group_id": None,
                             }
                             ret *= self.set_lodgement(rs, deletor)
 

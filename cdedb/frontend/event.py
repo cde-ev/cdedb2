@@ -5029,7 +5029,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
 
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
-        cascade = {"registrations", "courses", "lodgements",
+        cascade = {"registrations", "courses", "lodgement_groups", "lodgements",
                    "field_definitions", "course_tracks", "event_parts", "orgas",
                    "questionnaire", "log", "mailinglists"} & blockers.keys()
 
