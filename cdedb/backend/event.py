@@ -2898,6 +2898,7 @@ class EventBackend(AbstractBackend):
                       ('event.course_segments', None),
                       ('event.orgas', None),
                       ('event.field_definitions', 'field_id'),
+                      ('event.lodgement_groups', 'group_id'),
                       ('event.lodgements', 'lodgement_id'),
                       ('event.registrations', 'registration_id'),
                       ('event.registration_parts', None),
@@ -3144,6 +3145,22 @@ class EventBackend(AbstractBackend):
             if not all_part_ids <= set(event['parts']):
                 raise ValueError("Referential integrity of parts violated.")
 
+            used_lodgement_group_ids = {
+                lodgement.get('group_id')
+                for lodgement in data.get('lodgements', {}).values()
+                if lodgement}
+            used_lodgement_group_ids -= {None}
+            available_lodgement_group_ids = set(
+                all_current_data['lodgement_groups'])
+            available_lodgement_group_ids |= set(
+                key for key in data.get('lodgement_groups', {}) if key < 0)
+            available_lodgement_group_ids -= set(
+                k for k, v in data.get('lodgement_groups', {}).items()
+                if v is None)
+            if not used_lodgement_group_ids <= available_lodgement_group_ids:
+                raise ValueError(
+                    n_("Referential integretiy of lodgement groups violated."))
+
             used_lodgement_ids = {
                 part.get('lodgement_id')
                 for registration in data.get('registrations', {}).values()
@@ -3180,7 +3197,44 @@ class EventBackend(AbstractBackend):
             total_previous = {}
 
             # This needs to be processed in the following order:
-            # lodgements -> courses -> registrations.
+            # lodgement groups -> lodgements -> courses -> registrations.
+
+            gmap = {}
+            gdelta = {}
+            gprevious = {}
+            for group_id, new_group in data.get('lodgement_groups', {}).items():
+                current = all_current_data['lodgement_groups'].get(group_id)
+                if group_id > 0 and current is None:
+                    # group was deleted online in the meantime
+                    gdelta[group_id] = None
+                    gprevious[group_id] = None
+                elif new_group is None:
+                    gdelta[group_id] = None
+                    gprevious[group_id] = current
+                    if not dryrun:
+                        self.delete_lodgement_group(
+                            rs, group_id, ("lodgements",))
+                elif group_id < 0:
+                    gdelta[group_id] = new_group
+                    gprevious[group_id] = None
+                    if not dryrun:
+                        new = copy.deepcopy(new_group)
+                        new['event_id'] = data['id']
+                        new_id = self.create_lodgement_group(rs, new)
+                        gmap[group_id] = new_id
+                else:
+                    delta, previous = dict_diff(current, new_group)
+                    if delta:
+                        gdelta[group_id] = delta
+                        gprevious[group_id] = previous
+                        if not dryrun:
+                            todo = copy.deepcopy(delta)
+                            todo['id'] = group_id
+                            self.set_lodgement_group(rs, todo)
+            if gdelta:
+                total_delta['lodgement_groups'] = gdelta
+                total_previous['lodgement_groups'] = gprevious
+
             lmap = {}
             ldelta = {}
             lprevious = {}
@@ -3203,6 +3257,9 @@ class EventBackend(AbstractBackend):
                     if not dryrun:
                         new = copy.deepcopy(new_lodgement)
                         new['event_id'] = data['id']
+                        if new['group_id'] in gmap:
+                            old_id = new['group_id']
+                            new['group_id'] = gmap[old_id]
                         new_id = self.create_lodgement(rs, new)
                         lmap[lodgement_id] = new_id
                 else:
@@ -3213,6 +3270,10 @@ class EventBackend(AbstractBackend):
                         if not dryrun:
                             changed_lodgement = copy.deepcopy(delta)
                             changed_lodgement['id'] = lodgement_id
+                            if 'group_id' in changed_lodgement:
+                                old_id = changed_lodgement['group_id']
+                                if old_id in gmap:
+                                    changed_lodgement['group_id'] = gmap[old_id]
                             self.set_lodgement(rs, changed_lodgement)
             if ldelta:
                 total_delta['lodgements'] = ldelta

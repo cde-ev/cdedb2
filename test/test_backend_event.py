@@ -2217,6 +2217,12 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 2,
             'sortkey': 1}
+        ## lodgemnet groups
+        new_data['event.lodgement_groups'][5000] = {
+            'id': 5000,
+            'event_id': 1,
+            'moniker': 'Nebenan',
+        }
         ## lodgements
         new_data['event.lodgements'][6000] = {
             'capacity': 1,
@@ -2225,6 +2231,7 @@ class TestEventBackend(BackendTest):
             'id': 6000,
             'moniker': 'Matte im Orgabüro',
             'notes': None,
+            'group_id': 1,
             'reserve': 0}
         ## registration
         new_data['event.registrations'][1000] = {
@@ -2330,6 +2337,11 @@ class TestEventBackend(BackendTest):
             'min_choices': 2,
             'sortkey': 1,
             'title': 'Enlightnment'}
+        stored_data['event.lodgement_groups'][3] = {
+            'id': 3,
+            'event_id': 1,
+            'moniker': 'Nebenan',
+        }
         stored_data['event.lodgements'][5] = {
             'capacity': 1,
             'event_id': 1,
@@ -2337,6 +2349,7 @@ class TestEventBackend(BackendTest):
             'id': 5,
             'moniker': 'Matte im Orgabüro',
             'notes': None,
+            'group_id': 1,
             'reserve': 0}
         stored_data['event.registrations'][5] = {
             'checkin': None,
@@ -2803,11 +2816,13 @@ class TestEventBackend(BackendTest):
 
         CMAP = {
             ('courses', -1): 7,
+            ('lodgement_groups', -1): 4,
             ('lodgements', -1): 6,
             ('registrations', -1): 6,
         }
         TMAP = {
             'courses': {'segments': {}, 'fields': {}},
+            'lodgement_groups': {},
             'lodgements': {'fields': {}},
             'registrations': {'parts': {}, 'tracks': {}, 'fields': {}},
         }
@@ -2902,10 +2917,12 @@ class TestEventBackend(BackendTest):
                              'title': 'Blitzkurs'},
                         3: None,
                         4: {'segments': {1: None}}},
+            'lodgement_groups': {-1: {'moniker': 'Geheime Etage'}},
             'lodgements': {-1: {'capacity': 12,
                                 'fields': {'contamination': 'none'},
                                 'moniker': 'Geheimkabinett',
                                 'notes': 'Einfach den unsichtbaren Schildern folgen.',
+                                'group_id': 1,
                                 'reserve': 2},
                            3: None},
             'registrations': {3: {'tracks': {3: {'course_id': -1,
