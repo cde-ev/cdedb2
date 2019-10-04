@@ -2580,9 +2580,8 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type lodgement_id: int
         :type cascade: bool
-        :param cascade: If False this function has the precondition, that no
-          dependent entities exist. If True these dependent entities are
-          excised as well.
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
         :rtype: int
         :returns: default return code
         """
