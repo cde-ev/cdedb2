@@ -4020,10 +4020,11 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def create_lodgement_form(self, rs, event_id):
         """Render form."""
-        return self.render(rs, "create_lodgement")
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
+        return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "capacity", "reserve", "notes")
+    @REQUESTdatadict("moniker", "capacity", "reserve", "group_id", "notes")
     @event_guard(check_offline=True)
     def create_lodgement(self, rs, event_id, data):
         """Add a new lodgement."""
