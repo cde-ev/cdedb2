@@ -2684,6 +2684,8 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.field_definitions': _augment_dict_validator(
             _event_field, {'id': _id, 'event_id': _id,
                            'field_name': _restrictive_identifier}),
+        'event.lodgement_groups': _augment_dict_validator(
+            _lodgement_group, {'event_id': _id}),
         'event.lodgements': _augment_dict_validator(
             _lodgement, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
