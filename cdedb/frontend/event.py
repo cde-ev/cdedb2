@@ -3973,6 +3973,8 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def show_lodgement(self, rs, event_id, lodgement_id):
         """Display details of one lodgement."""
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = {
             k: v
@@ -3996,6 +3998,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_lodgement", {
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
+            'groups': groups,
         })
 
     @access("event")
@@ -4032,14 +4035,15 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def change_lodgement_form(self, rs, event_id, lodgement_id):
         """Render form."""
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
         field_values = {
             "fields.{}".format(key): value
             for key, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
-        return self.render(rs, "change_lodgement")
+        return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "capacity", "reserve", "notes")
+    @REQUESTdatadict("moniker", "capacity", "reserve", "notes", "group_id")
     @event_guard(check_offline=True)
     def change_lodgement(self, rs, event_id, lodgement_id, data):
         """Alter the attributes of a lodgement.
