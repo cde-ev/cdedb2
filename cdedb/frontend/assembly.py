@@ -680,7 +680,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly_admin")
+    @access("assembly_admin", modi={"POST"})
     def ballot_start_voting(self, rs, assembly_id, ballot_id):
         """Immediately start voting period of a ballot.
         Only possible in CDEDB_DEV mode."""
