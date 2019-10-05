@@ -14,8 +14,6 @@ from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, name_key, merge_dicts, ProxyShim, SubscriptionError)
 import cdedb.database.constants as const
-from cdedb.database.constants import (
-    SubscriptionStates as SS, MailinglistInteractionPolicy as MIP)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
@@ -63,8 +61,9 @@ class MlFrontend(AbstractUserFrontend):
         overrides = self.mlproxy.list_overrides(rs)
         mailinglists.update(overrides)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
+        sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id, states=SS.subscribing_states())
+            rs, rs.user.persona_id, states=sub_states)
         return self.render(rs, "index", {
             'mailinglists': mailinglists, 'overrides': overrides,
             'subscriptions': subscriptions,
@@ -137,13 +136,14 @@ class MlFrontend(AbstractUserFrontend):
         """Show all mailinglists."""
         mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
+        sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id, states=SS.subscribing_states())
+            rs, rs.user.persona_id, states=sub_states)
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         for mailinglist_id in mailinglists:
             subs = self.mlproxy.get_subscription_states(
-                rs, mailinglist_id, states=SS.subscribing_states())
+                rs, mailinglist_id, states=sub_states)
             mailinglist_infos[mailinglist_id]['num_subscribers'] = len(subs)
         return self.render(rs, "list_mailinglists", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
@@ -357,13 +357,14 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def management(self, rs, mailinglist_id):
         """Render form."""
+        sub_states = const.SubscriptionStates.subscribing_states()
         subscribers = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=SS.subscribing_states())
+            rs, mailinglist_id, states=sub_states)
         explicits = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
         explicits = {k: v for (k, v) in explicits.items() if v is not None}
         requests = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=(SS.pending,))
+            rs, mailinglist_id, states=(const.SubscriptionStates.pending,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -386,9 +387,11 @@ class MlFrontend(AbstractUserFrontend):
     def show_subscription_details(self, rs, mailinglist_id):
         """Render form."""
         mod_subscribed = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=(SS.mod_subscribed,))
+            rs, mailinglist_id,
+            states=(const.SubscriptionStates.mod_subscribed,))
         mod_unsubscribed = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=(SS.mod_unsubscribed,))
+            rs, mailinglist_id,
+            states=(const.SubscriptionStates.mod_unsubscribed,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(mod_subscribed.keys()) | set(mod_unsubscribed))
         personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -617,7 +620,6 @@ class MlFrontend(AbstractUserFrontend):
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
-
     @access("ml", modi={"POST"})
     def subscribe(self, rs, mailinglist_id):
         """Change own subscription state to subscribed or pending."""
@@ -686,7 +688,7 @@ class MlFrontend(AbstractUserFrontend):
             return self.redirect(rs, "ml/show_mailinglist")
         policy = const.MailinglistInteractionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
-        if email and policy == MIP.mandatory:
+        if email and policy == const.MailinglistInteractionPolicy.mandatory:
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
@@ -729,7 +731,7 @@ class MlFrontend(AbstractUserFrontend):
             return self.redirect(rs, "ml/show_mailinglist")
         policy = const.MailinglistInteractionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
-        if policy == MIP.mandatory:
+        if policy == const.MailinglistInteractionPolicy.mandatory:
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
