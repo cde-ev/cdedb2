@@ -1590,6 +1590,8 @@ class EventFrontend(AbstractUserFrontend):
                         != const.RegistrationPartStati.participant):
                     continue
                 if assign_action.enum == CourseChoiceToolActions.specific_rank:
+                    if assign_action.int >= len(reg_track['choices']):
+                        continue
                     choice = reg_track['choices'][assign_action.int]
                     tmp['tracks'][atrack_id] = {'course_id': choice}
                 elif assign_action.enum == CourseChoiceToolActions.assign_fixed:
