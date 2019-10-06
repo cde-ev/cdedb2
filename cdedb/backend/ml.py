@@ -1280,7 +1280,7 @@ class MlBackend(AbstractBackend):
         If they have expicitly specified a subscription address that one is
         returned, otherwise the username is returned.
         If a subscriber has neither a username nor a explicit subscription
-        address then that for subscriber None is returned.
+        address then for that subscriber None is returned.
 
         With `explicits_only = True` every subscriber is mapped to their
         explicit subscription address or None, if none is given.
