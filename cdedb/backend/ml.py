@@ -1267,17 +1267,12 @@ class MlBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         states = states or set()
         states = affirm_set("enum_subscriptionstates", states)
-        if not mailinglist_ids:
-            if self.is_admin(rs) or rs.user.persona_id == persona_id:
-                mailinglist_ids = mailinglist_ids or set()
-            else:
-                raise PrivilegeError(n_("Not privileged."))
-        else:
-            mailinglist_ids = affirm_set("id", mailinglist_ids)
-            if (not self.is_admin(rs) and rs.user.persona_id != persona_id
-                    and any(not self.may_manage(rs, ml_id)
-                            for ml_id in mailinglist_ids)):
-                raise PrivilegeError(n_("Not privileged."))
+        mailinglist_ids = affirm_set("id", mailinglist_ids or set())
+        if (not self.is_admin(rs) and rs.user.persona_id != persona_id
+                and (not mailinglist_ids
+                     or any(not self.may_manage(rs, ml_id)
+                            for ml_id in mailinglist_ids))):
+            raise PrivilegeError(n_("Not privileged."))
 
         query = ("SELECT mailinglist_id, subscription_state "
                  "FROM ml.subscription_states")
