@@ -503,6 +503,14 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
+    def _subscription_action_handler(self, rs, action, **kwargs):
+        try:
+            code = self.mlproxy.subscription_action(rs, action, **kwargs)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
+
     @access("ml", modi={"POST"})
     @REQUESTdata(("persona_id", "id"),
                  ("resolution", "enum_subscriptionrequestresolutions"))
@@ -511,17 +519,10 @@ class MlFrontend(AbstractUserFrontend):
         """Evaluate whether to admit subscribers."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': persona_id,
-            'resolution': resolution,
-        }
-        try:
-            code = self.mlproxy.decide_subscription_request(rs, datum)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.decide_request,
+            mailinglist_id=mailinglist_id, persona_id=persona_id,
+            resolution=resolution)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -531,13 +532,9 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively subscribe somebody."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.add_subscriber(
-                rs, mailinglist_id, subscriber_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.add_subscriber,
+            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -547,13 +544,9 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively unsubscribe somebody."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.remove_subscriber(
-                rs, mailinglist_id, subscriber_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.remove_subscriber,
+            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -563,29 +556,21 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively subscribe somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.add_mod_subscriber(
-                rs, mailinglist_id, modsubscriber_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.add_mod_subscriber,
+            mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modsubscriber_id", "id"))
     @mailinglist_guard()
     def remove_mod_subscriber(self, rs, mailinglist_id, modsubscriber_id):
-        """Administratively remove subscribe somebody with moderator override."""
+        """Administratively remove somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.remove_mod_subscriber(
-                rs, mailinglist_id, modsubscriber_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.remove_mod_subscriber,
+            mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
@@ -595,13 +580,9 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively block somebody."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.add_mod_unsubscriber(
-                rs, mailinglist_id, modunsubscriber_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.add_mod_unsubscriber,
+            mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
@@ -611,13 +592,9 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively remove block."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.remove_mod_unsubscriber(
-                rs, mailinglist_id, modunsubscriber_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.remove_mod_unsubscriber,
+            mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
@@ -625,12 +602,9 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to subscribed or pending."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.subscribe(rs, mailinglist_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.subscribe,
+            mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -638,12 +612,9 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to subscribed or pending."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.request_subscription(rs, mailinglist_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.request_subscription,
+            mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -651,12 +622,9 @@ class MlFrontend(AbstractUserFrontend):
         """Change own subscription state to unsubscribed."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.unsubscribe(rs, mailinglist_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.unsubscribe,
+            mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -664,12 +632,9 @@ class MlFrontend(AbstractUserFrontend):
         """Cancel subscription request."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        try:
-            code = self.mlproxy.cancel_subscription(rs, mailinglist_id)
-        except SubscriptionError as se:
-            rs.notify(se.kind, se.msg)
-        else:
-            self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.cancel_request,
+            mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -692,18 +657,16 @@ class MlFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
-        subscriptions = self.mlproxy.get_persona_addresses(rs)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': rs.user.persona_id,
-        }
-
+        known_addresses = self.mlproxy.get_persona_addresses(rs)
         if not email:
-            code = self.mlproxy.remove_subscription_address(rs, datum)
+            code = self.mlproxy.remove_subscription_address(
+                rs, mailinglist_id=mailinglist_id,
+                persona_id=rs.user.persona_id)
             self.notify_return_code(rs, code)
-        elif email in subscriptions:
-            datum['address'] = email
-            code = self.mlproxy.set_subscription_address(rs, datum)
+        elif email in known_addresses:
+            code = self.mlproxy.set_subscription_address(
+                rs, mailinglist_id=mailinglist_id,
+                persona_id=rs.user.persona_id, email=email)
             self.notify_return_code(rs, code)
         else:
             self.do_mail(
@@ -735,12 +698,9 @@ class MlFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': rs.user.persona_id,
-            'address': email,
-        }
-        code = self.mlproxy.set_subscription_address(rs, datum)
+        code = self.mlproxy.set_subscription_address(
+            rs, mailinglist_id=mailinglist_id, persona_id=rs.user.persona_id,
+            email=email)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 

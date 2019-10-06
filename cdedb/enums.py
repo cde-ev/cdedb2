@@ -18,6 +18,7 @@ ALL_ENUMS = (
     const.PrivilegeChangeStati,
     const.GenesisStati,
     const.SubscriptionStates,
+    const.SubscriptionActions,
     const.MailinglistInteractionPolicy,
     const.ModerationPolicy,
     const.AttachmentPolicy,

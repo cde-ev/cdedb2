@@ -690,19 +690,55 @@ class MlBackend(AbstractBackend):
         return self._remove_subscriptions(rs, [datum])
 
     @access("ml")
-    @singularize("decide_subscription_request", "data", "datum",
-                 passthrough=True)
+    def subscription_action(self, rs, action, **kwargs):
+        """Provide a single entry point for all subscription actions.
+
+        All validation is done inside the called functions.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type action: `const.SubscriptionActions`
+        :rtype int:
+        :returns: number of affected rows.
+        """
+        action = affirm("enum_subscriptionactions", action)
+
+        sa = const.SubscriptionActions
+
+        if action == sa.subscribe:
+            return self.subscribe(rs, **kwargs)
+        elif action == sa.unsubscribe:
+            return self.unsubscribe(rs, **kwargs)
+        elif action == sa.request_subscription:
+            return self.request_subscription(rs, **kwargs)
+        elif action == sa.cancel_request:
+            return self.cancel_subscription(rs, **kwargs)
+        elif action == sa.decide_request:
+            return self.decide_subscription_request(rs, **kwargs)
+        elif action == sa.add_subscriber:
+            return self.add_subscriber(rs, **kwargs)
+        elif action == sa.add_mod_subscriber:
+            return self.add_mod_subscriber(rs, **kwargs)
+        elif action == sa.add_mod_unsubscriber:
+            return self.add_mod_unsubscriber(rs, **kwargs)
+        elif action == sa.remove_subscriber:
+            return self.remove_subscriber(rs, **kwargs)
+        elif action == sa.remove_mod_subscriber:
+            return self.remove_mod_subscriber(rs, **kwargs)
+        elif action == sa.remove_mod_unsubscriber:
+            return self.remove_mod_unsubscriber(rs, **kwargs)
+        else:
+            raise RuntimeError(n_("Unknown subscription action."))
+
     def decide_subscription_requests(self, rs, data):
         """Handle subscription requests.
 
         This is separate from `_set_subscriptions` because logging is different.
 
-
-
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: [{str: int}]
         :rtype: int
         :return: Default return code.
+        :raises: SubscriptionError
         """
         data = affirm_array("subscription_request_resolution", data)
 
@@ -739,7 +775,26 @@ class MlBackend(AbstractBackend):
 
         return num
 
-    @access("ml")
+    def decide_subscription_request(self, rs, mailinglist_id, persona_id,
+                                    resolution):
+        """Maunual singularization of `decide_rubscription_requests.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :type resolution: const.SubscriptionRequestResolutions
+        :rtype: int
+        :returns: Number of affected rows.
+        :raises: SubscriptionError
+        """
+
+        datum = {
+            'mailinglist_id': mailinglist_id,
+            'persona_id': persona_id,
+            'resolution': resolution,
+        }
+        return self.decide_subscription_requests(rs, [datum])
+
     def add_subscriber(self, rs, mailinglist_id, persona_id):
         """Administratively subscribe a persona.
 
@@ -748,6 +803,7 @@ class MlBackend(AbstractBackend):
         :type persona_id: int
         :rtype: int
         :return: Default return code.
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -787,7 +843,6 @@ class MlBackend(AbstractBackend):
             else:
                 raise RuntimeError(n_("Impossible"))
 
-    @access("ml")
     def remove_subscriber(self, rs, mailinglist_id, persona_id):
         """Administratively unsubscribe a persona.
 
@@ -796,6 +851,7 @@ class MlBackend(AbstractBackend):
         :type persona_id: int
         :rtype: int
         :return: Default return code.
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -832,7 +888,6 @@ class MlBackend(AbstractBackend):
             else:
                 raise RuntimeError(n_("Impossible"))
 
-    @access("ml")
     def add_mod_subscriber(self, rs, mailinglist_id, persona_id):
         """Administratively subscribe a persona with moderator override.
 
@@ -841,6 +896,7 @@ class MlBackend(AbstractBackend):
         :type persona_id: int
         :rtype: int
         :return: Default return code.
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -861,7 +917,6 @@ class MlBackend(AbstractBackend):
             else:
                 return self._set_subscription(rs, datum)
 
-    @access("ml")
     def remove_mod_subscriber(self, rs, mailinglist_id, persona_id):
         """Administratively remove a subscription with moderator override.
 
@@ -870,6 +925,7 @@ class MlBackend(AbstractBackend):
         :type persona_id: int
         :rtype: int
         :return: Default return code.
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -890,7 +946,6 @@ class MlBackend(AbstractBackend):
             else:
                 return self._set_subscription(rs, datum)
 
-    @access("ml")
     def add_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
         """Administratively block a persona.
 
@@ -899,6 +954,7 @@ class MlBackend(AbstractBackend):
         :type persona_id: int
         :rtype: int
         :return: Default return code.
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -926,7 +982,6 @@ class MlBackend(AbstractBackend):
             else:
                 return self._set_subscription(rs, datum)
 
-    @access("ml")
     def remove_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
         """Administratively remove block of a persona.
 
@@ -935,6 +990,7 @@ class MlBackend(AbstractBackend):
         :type persona_id: int
         :rtype: int
         :return: Default return code.
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
@@ -955,13 +1011,13 @@ class MlBackend(AbstractBackend):
             else:
                 return self._set_subscription(rs, datum)
 
-    @access("ml")
     def subscribe(self, rs, mailinglist_id):
         """Change own subscription state to subscribed.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :rtype: int
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         datum = {
@@ -996,13 +1052,13 @@ class MlBackend(AbstractBackend):
                 else:
                     return self._set_subscription(rs, datum)
 
-    @access("ml")
     def request_subscription(self, rs, mailinglist_id):
         """Change own subscription state to pending.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :rtype: int
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         datum = {
@@ -1036,13 +1092,13 @@ class MlBackend(AbstractBackend):
                 else:
                     return self._set_subscription(rs, datum)
 
-    @access("ml")
     def unsubscribe(self, rs, mailinglist_id):
         """Change own subscription state to unsubscribed.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :rtype: int
+        :raises: SubscriptionError
         """
         mailinglist_id = affirm("id", mailinglist_id)
         datum = {
@@ -1068,21 +1124,15 @@ class MlBackend(AbstractBackend):
                 else:
                     return self._set_subscription(rs, datum)
 
-    @access("ml")
     def cancel_subscription(self, rs, mailinglist_id):
         """Cancel subscription request.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :rtype: int
+        :raises: SubscriptionError
         """
-        # TODO call decide_subscription_request directly from the frontend.
         mailinglist_id = affirm("id", mailinglist_id)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': rs.user.persona_id,
-            'resolution': const.SubscriptionRequestResolutions.cancelled,
-        }
         with Atomizer(rs):
             state = self.get_subscription(rs, rs.user.persona_id,
                                           mailinglist_id=mailinglist_id)
@@ -1091,23 +1141,27 @@ class MlBackend(AbstractBackend):
                     n_("No subscription requested."),
                     kind="info")
             else:
-                return self.decide_subscription_request(rs, datum)
+                return self.decide_subscription_request(
+                    rs, mailinglist_id=mailinglist_id,
+                    persona_id=rs.user.persona_id,
+                    resolution=const.SubscriptionRequestResolutions.cancelled)
 
     @access("ml")
-    def set_subscription_address(self, rs, datum):
+    def set_subscription_address(self, rs, mailinglist_id, persona_id, email):
         """Change or add a subscription address.
 
-        Datum must contain both a mailinglist id and a persona_id, as well as an
-        email address.
-
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: int}
+        :type mailinglist_id: int
+        :type persona_id: int
+        :type email: str
         :rtype: int
         :return: Default return code.
         """
-        datum = affirm("subscription_address", datum)
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
+        email = affirm("email", email)
 
-        if datum['persona_id'] != rs.user.persona_id:
+        if persona_id != rs.user.persona_id:
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
@@ -1116,40 +1170,40 @@ class MlBackend(AbstractBackend):
                      "VALUES (%s, %s, %s) "
                      "ON CONFLICT (mailinglist_id, persona_id) DO UPDATE "
                      "SET address=EXCLUDED.address")
-            params = (datum['mailinglist_id'], datum['persona_id'],
-                      datum['address'])
+            params = (mailinglist_id, persona_id, email)
             ret = self.query_exec(rs, query, params)
             if ret:
                 self.ml_log(
                     rs, const.MlLogCodes.subscription_changed,
-                    datum['mailinglist_id'], datum['persona_id'],
-                    additional_info=datum['address'])
+                    mailinglist_id, persona_id, additional_info=email)
 
         return ret
 
     @access("ml")
-    def remove_subscription_address(self, rs, datum):
+    def remove_subscription_address(self, rs, mailinglist_id, persona_id):
         """Remove a subscription address.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: int}
+        :type mailinglist_id: int
+        :type persona_id: int
         :rtype: int
         :return: Default return code.
         """
-        datum = affirm("subscription_identifier", datum)
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
 
-        if datum['persona_id'] != rs.user.persona_id:
+        if persona_id != rs.user.persona_id:
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
             query = ("DELETE FROM ml.subscription_addresses "
                      "WHERE mailinglist_id = %s AND persona_id = %s")
-            params = (datum['mailinglist_id'], datum['persona_id'])
+            params = (mailinglist_id, persona_id)
 
             ret = self.query_exec(rs, query, params)
 
             self.ml_log(rs, const.MlLogCodes.subscription_changed,
-                        datum['mailinglist_id'], datum['persona_id'])
+                        mailinglist_id, persona_id)
 
         return ret
 

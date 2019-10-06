@@ -226,6 +226,22 @@ class MailinglistInteractionPolicy(enum.IntEnum):
 
 
 @enum.unique
+class SubscriptionActions(enum.IntEnum):
+    """All possible actions a subscriber or moderator can take."""
+    subscribe = 1  #:
+    unsubscribe = 2  #:
+    request_subscription = 10  #:
+    cancel_request = 11  #:
+    decide_request = 12  #:
+    add_subscriber = 20  #:
+    add_mod_subscriber = 21  #:
+    add_mod_unsubscriber = 22  #:
+    remove_subscriber = 30  #:
+    remove_mod_subscriber = 31  #:
+    remove_mod_unsubscriber = 32  #:
+
+
+@enum.unique
 class ModerationPolicy(enum.IntEnum):
     """Regulate posting of mail to a list."""
     unmoderated = 1  #:
