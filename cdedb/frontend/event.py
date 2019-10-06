@@ -1622,7 +1622,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, "event/course_choices_form",
             {'course_id': course_id, 'track_id': track_id,
              'position': position.value if position is not None else None,
-             'ids': ids, 'include_active': include_active})
+             'ids': ",".join(str(i) for i in ids), 'include_active': include_active})
 
     @access("event")
     @event_guard()
