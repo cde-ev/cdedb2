@@ -22,13 +22,15 @@ var inputTypes = {
 (function($){
     /**
      * Helper function for replacing the 'default_value' input field with one of the correct input type; to be used by
-     * cdedbQuestionnaireConfig's event callback.
+     * cdedbQuestionnaireConfig's event callbacks for the field-input and the size-input.
      *
-     * @param field_spec The specification of the new relevant data field (entry from the `field_list` json object)
+     * @param field_spec The specification of the relevant data field (entry from the `field_list` json object)
      * @param $input_defaultvalue jQuery object of the current default_value input
      * @param translations An object of translation strings
+     * @param size Current value of the size-input to adapt the defaultvalue input's to the size of the input in
+     *      questionnaire for string-fields.
      */
-    function replace_defaultvalue_input(field_spec, $input_defaultvalue, translations) {
+    function replace_defaultvalue_input(field_spec, $input_defaultvalue, translations, size) {
         var has_entries = field_spec['entries'] !== null;
         var field_type = field_spec['kind'];
 
@@ -54,12 +56,13 @@ var inputTypes = {
                 $i.val($input_defaultvalue.val());
 
             // For string type fields, we use a textarea (to allow entering line breaks w/o copy&paste)
-            } else if (field_type === FieldDatatypes.str) {
+            } else if (field_type === FieldDatatypes.str && size > 0) {
                 $i = $('<textarea>', {
                     'class': "form-control input-defaultvalue drow-input",
                     'name': $input_defaultvalue.attr('name'),
                     'rows': 2
-                });
+                })
+                    .val($input_defaultvalue.val());
             } else {
                 $i = $('<input>', {
                     'class': "form-control input-defaultvalue drow-input",
@@ -87,10 +90,12 @@ var inputTypes = {
     $.fn.cdedbQuestionnaireConfig = function(field_list, translations) {
         $(this).each(function(){
             var $container = $(this);
-            var $input_group_size = $(this).find('.input-inputsize').closest('.form-group');
+            var $input_field = $(this).find('.input-field');
+            var $input_size = $(this).find('.input-inputsize');
+            var $input_group_size = $input_size.closest('.form-group');
             var $input_group_readonly = $(this).find('.input-readonly').closest('.checkbox');
             var $input_group_defaultvalue = $(this).find('.input-defaultvalue').closest('.form-group');
-            var $input_helpblock = $(this).find('.input-info').closest('.form-group').find('.help-block');
+            var $input_helpblock_info = $(this).find('.input-info').closest('.form-group').find('.help-block');
 
             /* Callback handler to be executed when the data field of this questionnaire part is triggered */
             var input_field_handler = function() {
@@ -100,14 +105,14 @@ var inputTypes = {
                     $input_group_size.hide();
                     $input_group_readonly.hide();
                     $input_group_defaultvalue.hide();
-                    $input_helpblock.show();
+                    $input_helpblock_info.show();
                     $container.addClass('shaded-info');
 
                 /* Questionnaire part with input field */
                 } else {
                     $input_group_readonly.show();
                     $input_group_defaultvalue.show();
-                    $input_helpblock.hide();
+                    $input_helpblock_info.hide();
                     $container.removeClass('shaded-info');
 
                     // Show input_size field only for string fields without entries
@@ -122,13 +127,23 @@ var inputTypes = {
                     var field_spec = field_list[val];
                     if (field_spec) {
                         var $input_defaultvalue = $container.find('.input-defaultvalue');
-                        replace_defaultvalue_input(field_spec, $input_defaultvalue, translations);
+                        replace_defaultvalue_input(field_spec, $input_defaultvalue, translations, $input_size.val());
                     }
                 }
             };
 
-            var $input_field = $(this).find('.input-field').change(input_field_handler);
+            /* Call input_field_handler() on change of field-input and once for intialization */
+            $input_field.change(input_field_handler);
             $input_field.trigger('change');
+
+            /* Additionally, call replace_defaultvalue_input when size-field is changed */
+            $input_size.change(function(){
+                var field_spec = field_list[$input_field.val()];
+                if (field_spec) {
+                    var $input_defaultvalue = $container.find('.input-defaultvalue');
+                    replace_defaultvalue_input(field_spec, $input_defaultvalue, translations, $(this).val());
+                }
+            });
         });
 
         return this;
