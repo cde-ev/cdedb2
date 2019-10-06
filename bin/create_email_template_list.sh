@@ -31,6 +31,8 @@ EOF
     do
         ln -si "../../../../$mail" "$1/doc/source/emails/$realm/$(basename $mail)"
         cat >> "$1/doc/source/Email_Templates.rst" <<EOF
+.. _email-templates-for-realm-$realm-template-$(basename $mail):
+
 Template $(basename $mail)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
