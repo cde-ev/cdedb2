@@ -22,12 +22,6 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <div>
-        {% trans -%}
-            A download file of the subscription states of every user.
-        {%- endtrans %}
-        {{ util.href(cdedblink('ml/download_csv_subscription_states'), gettext("CSV-File"), icon='download') }}
-    </div>
 
     <div class="row">
         <div class="col-md-6">
@@ -75,8 +69,6 @@
             </ul>
         </div>
 
-
-
         <div class="col-md-6">
             <h2>{% trans -%}Blocked Users{%- endtrans %} [{{ mod_unsubscribed|length }}]</h2>
             <form action="{{ cdedblink('ml/add_mod_unsubscriber') }}" method="POST"
@@ -116,14 +108,11 @@
                                         given_names=persona['given_names'],
                                         family_name=persona['family_name'])) }}
                         </form>
-
                     </li>
                 {% endfor %}
             </ul>
         </div>
     </div>
-
-
     
     <h2>{% trans -%}Whitelist{%- endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
     <form action="{{ cdedblink('ml/add_whitelist') }}" method="POST"
@@ -155,5 +144,20 @@
             </li>
         {% endfor %}
     </ul>
+
+    {% call util.bootstrap_panel(title=gettext("Downloads"), icon="file", aclass="panel-default mosp") %}
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="p">
+                    {{ util.href(cdedblink('ml/download_csv_subscription_states'), gettext("Overview"), icon='', aclass='btn btn-info') }}
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <p class="text-muted">
+                    {% trans -%}A download file of the subscription state of every user related to this mailinglist.{%- endtrans %}
+                </p>
+            </div>
+        </div>
+    {% endcall %}
 
 {% endblock %}
