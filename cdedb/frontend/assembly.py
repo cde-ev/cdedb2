@@ -7,6 +7,8 @@ import hashlib
 import json
 import pathlib
 import collections
+import datetime
+import time
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
@@ -676,6 +678,24 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.change_ballot_form(rs, assembly_id, ballot_id)
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/show_ballot")
+
+    @access("assembly_admin", modi={"POST"})
+    def ballot_start_voting(self, rs, assembly_id, ballot_id):
+        """Immediately start voting period of a ballot.
+        Only possible in CDEDB_DEV mode."""
+        if not self.conf.CDEDB_DEV:
+            raise RuntimeError(
+                n_("Force starting a ballot is only possible in dev mode."))
+
+        bdata = {
+            "id": ballot_id,
+            "vote_begin": now() + datetime.timedelta(seconds=1),
+            "vote_end": now() + datetime.timedelta(minutes=1),
+        }
+
+        code = self.assemblyproxy.set_ballot(rs, bdata)
+        time.sleep(1)
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly_admin", modi={"POST"})
