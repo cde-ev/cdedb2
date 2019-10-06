@@ -971,6 +971,25 @@ class SubscriptionStates(enum.IntEnum):
     requested = 10  #: A subscription request is waiting for moderation.
 
 
+def mixed_existence_sorter(iterable):
+    """Iterate over a set of indices in the relevant way.
+
+    That is first over the non-negative indices in ascending order and
+    then over the negative indices in descending order.
+
+    This is the desired order if the UI offers the possibility to
+    create multiple new entities enumerated by negative IDs.
+
+    :type iterable: [int]
+    """
+    for i in sorted(iterable):
+        if i >= 0:
+            yield i
+    for i in reversed(sorted(iterable)):
+        if i < 0:
+            yield i
+
+
 def n_(x):
     """
     Alias of the identity for i18n.

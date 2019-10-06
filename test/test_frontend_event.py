@@ -1055,8 +1055,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
-        self.assertEqual(False, f['brings_balls'].checked)
-        f['brings_balls'].checked = True
+        self.assertEqual(True, f['brings_balls'].checked)
+        f['brings_balls'].checked = False
         self.assertEqual("car", f['transportation'].value)
         f['transportation'] = "etc"
         self.assertEqual("", f['lodge'].value)
@@ -1065,7 +1065,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
-        self.assertEqual(True, f['brings_balls'].checked)
+        self.assertEqual(False, f['brings_balls'].checked)
         self.assertEqual("etc", f['transportation'].value)
         self.assertEqual("Bitte in ruhiger Lage.\nEcht.", f['lodge'].value)
 
@@ -1750,7 +1750,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("Unterüberschrift", f['title_0'].value)
         self.assertEqual("nur etwas Text", f['info_1'].value)
         f['create_-1'].checked = True
-        f['field_id_-1'] = 3
+        f['field_id_-1'] = 4
         f['title_-1'] = "Input"
         f['readonly_-1'].checked = True
         f['input_size_-1'] = 2
@@ -1758,7 +1758,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
         self.assertIn("field_id_5", f.fields)
-        self.assertEqual("3", f['field_id_5'].value)
+        self.assertEqual("4", f['field_id_5'].value)
         self.assertEqual("Input", f['title_5'].value)
 
     @as_users("garcia")

@@ -2054,11 +2054,10 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                 else:
                     # Validate value according to type and use the opportunity
                     # to normalize the value by transforming it back to string
-                    kind = val.get(kind_key, FieldDatatypes.str)
-                    validator = getattr(
-                        current_module,
-                        "_{}".format(val[kind_key].name))
-                    value, e = validator(value, entries_key, _convert=_convert)
+                    value, e = _by_field_datatype(
+                        value, entries_key,
+                        kind=val.get(kind_key, FieldDatatypes.str),
+                        _convert=_convert)
                     description, ee = _str(description, entries_key,
                                            _convert=_convert)
                     if value in seen_values:
@@ -2067,15 +2066,9 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                     if e or ee:
                         errs.extend(e)
                         errs.extend(ee)
-                    else:
-                        if kind == FieldDatatypes.date:
-                            value = value.strftime('%Y-%m-%d')
-                        if kind == FieldDatatypes.datetime:
-                            value = value.strftime('%Y-%m-%dT%H:%M:%S')
-                        else:
-                            value = str(value)
-                        entries.append((value, description))
-                        seen_values.add(value)
+                        continue
+                    entries.append((value, description))
+                    seen_values.add(value)
             val[entries_key] = entries
     return val, errs
 
@@ -2412,10 +2405,34 @@ def _lodgement(val, argname=None, *, creation=False, _convert=True):
 
 
 @_addvalidator
-def _questionnaire(val, argname=None, *, _convert=True):
+def _by_field_datatype(val, argname=None, *, kind=None, _convert=True):
+    """
+    :type val: object
+    :type kind: FieldDatatypes or int
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    kind = FieldDatatypes(kind)
+    validator = getattr(current_module, "_{}".format(kind.name))
+    val, errs = validator(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if kind == FieldDatatypes.date:
+        val = val.strftime('%Y-%m-%d')
+    elif kind == FieldDatatypes.datetime:
+        val = val.strftime('%Y-%m-%dT%H:%M:%S')
+    else:
+        val = str(val)
+    return val, errs
+
+
+@_addvalidator
+def _questionnaire(val, field_definitions, argname=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
+    :type field_definitions: Dict[int, Dict]
     :type _convert: bool
     :rtype: ([dict] or None, [(str or None, exception)])
     """
@@ -2435,13 +2452,25 @@ def _questionnaire(val, argname=None, *, _convert=True):
                 'info': _str_or_None,
                 'input_size': _int_or_None,
                 'readonly': _bool_or_None,
+                'default_value': _str_or_None,
             }
             value, e = _examine_dictionary_fields(
                 value, mandatory_fields, {}, _convert=_convert)
             if e:
                 errs.extend(e)
-            else:
-                ret.append(value)
+                continue
+            if value['field_id'] and value['default_value']:
+                field = field_definitions.get(value['field_id'], None)
+                if not field:
+                    errs.extend(('default_value',
+                                 KeyError("Referenced field does not exist.")))
+                    continue
+                value['default_value'], e = _by_field_datatype(
+                    value['default_value'], "default_value",
+                    kind=field.get('kind', FieldDatatypes.str),
+                    _convert=_convert)
+                errs.extend(e)
+            ret.append(value)
     return ret, errs
 
 

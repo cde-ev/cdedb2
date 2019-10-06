@@ -764,7 +764,8 @@ CREATE TABLE event.questionnaire_rows (
         info                    varchar,
         input_size              integer,
         -- may be NULL for text
-        readonly                boolean
+        readonly                boolean,
+        default_value           varchar
 );
 CREATE INDEX idx_questionnaire_rows_event_id ON event.questionnaire_rows(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
