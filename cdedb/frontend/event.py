@@ -1806,7 +1806,7 @@ class EventFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def book_fees(self, rs, data):
+    def book_fees(self, rs, data, send_notifications=False):
         """Book all paid fees.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -1845,15 +1845,29 @@ class EventFrontend(AbstractUserFrontend):
             self.logger.error("SECOND TRY CGITB")
             self.logger.error(cgitb.text(sys.exc_info(), context=7))
             return False, index
+        if send_notifications:
+            persona_ids = tuple(e['persona_id'] for e in data)
+            personas = self.coreproxy.get_personas(rs, persona_ids)
+            subject = "Überweisung für {} eingetroffen".format(
+                rs.ambience['event']['title'])
+            for persona in personas.values():
+                headers = {
+                    'To': (persona['username'],),
+                    'Subject': subject,
+                }
+                if rs.ambience['event']['orga_address']:
+                    headers['Reply-To'] = rs.ambience['event']['orga_address']
+                self.do_mail(rs, "transfer_received", headers,
+                             {'persona': persona})
         return True, count
 
     @access("event", modi={"POST"})
     @REQUESTdata(("force", "bool"), ("fee_data", "str_or_None"),
-                 ("checksum", "str_or_None"))
+                 ("checksum", "str_or_None"), ("send_notifications", "bool"))
     @REQUESTfile("fee_data_file")
     @event_guard(check_offline=True)
     def batch_fees(self, rs, event_id, force, fee_data, fee_data_file,
-                   checksum):
+                   checksum, send_notifications):
         """Allow orgas to add lots paid of participant fee at once."""
         fee_data_file = check(rs, "csvfile_or_None", fee_data_file,
                               "fee_data_file")
@@ -1903,7 +1917,7 @@ class EventFrontend(AbstractUserFrontend):
                                         csvfields=fields, saldo=saldo)
 
         # Here validation is finished
-        success, num = self.book_fees(rs, data)
+        success, num = self.book_fees(rs, data, send_notifications)
         if success:
             rs.notify("success", n_("Committed %(num)s fees."), {'num': num})
             return self.redirect(rs, "event/show_event")

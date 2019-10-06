@@ -47,6 +47,14 @@ genutzt werden. Die allgemeine Dokumentation zur Benutzung der virtuellen
 Maschine ist unter :ref:`event-offline-usage` zu finden.
 
 
+Email-Templates
+---------------
+
+Die Templates für die Emails, die von der Datenbank verschickt werden
+können auf
+:ref:`der Seite mit den Email-Templates <email-templates-for-realm-event>`
+eingesehen werden.
+
 Eine Veranstaltung Planen - ein Ablaufplan
 ------------------------------------------
 

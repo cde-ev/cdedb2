@@ -25,6 +25,7 @@ PYTHONBIN ?= python3
 TESTPATTERN ?=
 
 doc:
+	bin/create_email_template_list.sh .
 	make -C doc html
 
 reload:

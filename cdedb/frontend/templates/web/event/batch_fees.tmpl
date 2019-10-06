@@ -23,6 +23,7 @@
         {{ util.anti_csrf_token('event/batch_fees') }}
         {{ util.input_hidden(name="checksum") }}
         {{ util.form_input_checkbox(name="force", horizontal=False, label=gettext("Ignore Warnings")) }}
+        {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications")) }}
         {{ util.form_input_file(name="fee_data_file", horizontal=False, label=gettext("Transfers")) }}
         {{ util.form_input_textarea(name="fee_data", horizontal=False, rows="10",
                                     anid="input-data") }}
@@ -36,6 +37,11 @@
                 format(_("Amount"), _("CdEDB-ID"), _("Family Name"), _("Given Names"), _("Date"))|s }}</pre>
         <p class="help-block">
             {% trans -%}e.g.{%- endtrans %} <code>123.00;DB-9-4;Iota;Inga;01.04.2018</code>
+        </p>
+        <p class="help-block">
+            {% trans infolink=util.href(docurl("Email_Templates"), gettext("email template list")) -%}
+                The template for the notification can be found on the %(infolink)s.
+            {%- endtrans %}
         </p>
 
     {% if data %}

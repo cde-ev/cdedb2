@@ -1,0 +1,13 @@
+Hallo {{ persona['display_name'] }},
+
+Vielen Dank für Deine Überweisung für die Veranstaltung
+{{ ambience['event']['title'] }}.
+
+{% if ambience['event']['orga_address'] %}
+Wenn Du Fragen hast, so erreichst Du uns unter
+	<{{ ambience['event']['orga_address'] }}>
+
+{% endif %}
+Viele Grüße
+
+das Orga-Team

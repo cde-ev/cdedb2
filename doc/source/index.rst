@@ -13,6 +13,7 @@ Contents:
    Auxiliary
    Workflows
    Specification
+   Email_Templates
    Paraphernalia
    Migration
    Handbuch
