@@ -1543,16 +1543,83 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/choices'},)
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
-        self.assertPresence("Heldentum")
-        self.assertPresence("Anton Armin")
-        self.assertPresence("Emilia")
-        self.assertPresence("Garcia")
-        self.assertPresence("Inga")
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 2, 3, 4]
         f['assign_track_ids'] = [1, 2, 3]
         f['assign_action'] = -5
         self.submit(f)
+
+    @as_users("garcia")
+    def test_course_choices_filter_persistence(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/choices'},)
+        self.assertTitle("Kurswahlen (Große Testakademie 2222)")
+
+        # Test persistence of filters when submitting assignment
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = 2
+        f['track_id'] = 3
+        f['position'] = -5
+        f['ids'] = "2,3"
+        self.submit(f)
+        self.assertNonPresence("Anton Armin")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertNonPresence("Inga")
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [2]
+        f['assign_track_ids'] = [3]
+        f['assign_action'] = 0
+        self.submit(f)
+
+        f = self.response.forms['choicefilterform']
+        self.assertEqual(f['course_id'].value, "2")
+        self.assertEqual(f['track_id'].value, "3")
+        self.assertEqual(f['position'].value, "-5")
+        self.assertEqual(f['ids'].value, "2,3")
+        self.assertNonPresence("Anton Armin")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertNonPresence("Inga")
+
+    @as_users("garcia")
+    def test_course_choices_problems(self, user):
+        self.traverse({'href': '/event/$'}, {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/choices'}, )
+        self.assertTitle("Kurswahlen (Große Testakademie 2222)")
+        # Assigning Anton and Emilia to their 3rd choice (which is not present)
+        # should not raise an exception but a warning
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [1, 2]
+        f['assign_track_ids'] = [3]
+        f['assign_action'] = 2
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-warning", self.response.text)
+        self.assertPresence("Emilia E. Eventis hat keine 3. Kurswahl",
+                            div="notifications")
+        self.assertPresence("0 von 2 Anmeldungen gespeichert",
+                            div="notifications")
+
+        # Deleting Anton's choices and doing an automatic assignment should also
+        # raise a warning (but no exception)
+        self.traverse({'href': '/event/event/1/registration/1/show'},
+                      {'href': '/event/event/1/registration/1/change'})
+        f = self.response.forms['changeregistrationform']
+        f['track3.course_choice_0'] = ''
+        f['track3.course_choice_1'] = ''
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/course/choices'})
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [1, 3]
+        f['assign_track_ids'] = [3]
+        f['assign_action'] = -5
+        self.submit(f, check_notification=False)
+        self.assertIn("alert alert-warning", self.response.text)
+        self.assertPresence("Keine Kurswahlen für Anton Armin A. Administrator",
+                            div="notifications")
+        self.assertPresence("1 von 2 Anmeldungen gespeichert",
+                            div="notifications")
 
     @as_users("garcia")
     def test_assignment_checks(self, user):
