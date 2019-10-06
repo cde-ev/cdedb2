@@ -1571,13 +1571,16 @@ class EventFrontend(AbstractUserFrontend):
 
         tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        personas = self.coreproxy.get_event_users(rs, tuple(
+            reg['persona_id'] for reg in registrations.values()))
         courses = None
         if assign_action.enum == CourseChoiceToolActions.assign_auto:
             course_ids = self.eventproxy.list_db_courses(rs, event_id)
             courses = self.eventproxy.get_courses(rs, course_ids)
 
-        code = 1
+        num_committed = 0
         for registration_id in registration_ids:
+            persona = personas[registrations[registration_id]['persona_id']]
             tmp = {
                 'id': registration_id,
                 'tracks': {}
@@ -1591,6 +1594,16 @@ class EventFrontend(AbstractUserFrontend):
                     continue
                 if assign_action.enum == CourseChoiceToolActions.specific_rank:
                     if assign_action.int >= len(reg_track['choices']):
+                        rs.notify("warning",
+                                  (n_("%(given_names)s %(family_name)s has no "
+                                      "%(rank)i. choice in %(track_name)s.")
+                                   if len(tracks) > 1
+                                   else n_("%(given_names)s %(family_name)s "
+                                           "has no %(rank)i. choice.")),
+                                  {'given_names': persona['given_names'],
+                                   'family_name': persona['family_name'],
+                                   'rank': assign_action.int + 1,
+                                   'track_name': tracks[atrack_id]['title']})
                         continue
                     choice = reg_track['choices'][assign_action.int]
                     tmp['tracks'][atrack_id] = {'course_id': choice}
@@ -1616,10 +1629,30 @@ class EventFrontend(AbstractUserFrontend):
                             tmp['tracks'][atrack_id] = {'course_id': choice}
                             break
                     else:
-                        rs.notify("error", n_("No choice available."))
+                        rs.notify("warning",
+                                  (n_("No choice available for %(given_names)s "
+                                      "%(family_name)s in %(track_name)s.")
+                                   if len(tracks) > 1
+                                   else n_("No choice available for "
+                                           "%(given_names)s %(family_name)s.")),
+                                  {'given_names': persona['given_names'],
+                                   'family_name': persona['family_name'],
+                                   'track_name': tracks[atrack_id]['title']})
             if tmp['tracks']:
-                code *= self.eventproxy.set_registration(rs, tmp)
-        self.notify_return_code(rs, code)
+                res = self.eventproxy.set_registration(rs, tmp)
+                if res:
+                    num_committed += 1
+                else:
+                    rs.notify("warning",
+                              n_("Error committing changes for %(given_names)s "
+                                 "%(family_name)s."),
+                              {'given_names': persona['given_names'],
+                               'family_name': persona['family_name']})
+        rs.notify("success" if num_committed > 0 else "warning",
+                  n_("Course assignment for %(num_committed)s of %(num_total)s "
+                     "registrations committed."),
+                  {'num_total': len(registration_ids),
+                   'num_committed': num_committed})
         return self.redirect(
             rs, "event/course_choices_form",
             {'course_id': course_id, 'track_id': track_id,
