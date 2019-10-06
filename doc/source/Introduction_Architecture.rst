@@ -48,6 +48,7 @@ Each persona can have the following privileges:
 * access to a specific realm (cde, event, ml, assembly)
 * admin privileges in a realm (core, cde, event, ml, assembly)
 * super admin
+* finance admin
 * membership
 * searchability
 
