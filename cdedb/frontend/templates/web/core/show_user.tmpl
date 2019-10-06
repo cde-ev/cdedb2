@@ -341,7 +341,7 @@
             </tbody>
             </table>
         {% endif %}
-        {%  if is_admin and data["is_cde_realm"] %}
+        {%  if is_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
             <h4 class="heading-underline">{% trans -%}Copy-Paste Template{%- endtrans %}</h4>
             <pre>
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
