@@ -93,6 +93,18 @@ class TestParseFrontend(FrontendTest):
         self.assertTrue(p.search("JUNIORAKADDEMIENRW - NACHTREFFEN VELBERT2019"))
         self.assertTrue(p.search("JUNIOR A.AKADEMIE NRW NACHTREFF VELBERT 2019"))
 
+    def check_dict(self, adict, **kwargs):
+        for k, v in kwargs.items():
+            if "_" not in k:
+                assertion = ""
+            else:
+                assertion, key = k.split("_", 1)
+            if assertion == "In":
+                self.assertIn(v, adict[key])
+            elif assertion == "NotIn":
+                self.assertNotIn(v, adict[key])
+            else:
+                self.assertEqual(v, adict[k])
 
     @as_users("anton")
     def test_parse_statement(self, user):
@@ -118,32 +130,39 @@ class TestParseFrontend(FrontendTest):
                                      delimiter=";",
                                      fieldnames=EVENT_FEE_FIELDS))
 
-        self.assertEqual("584.49", result[0]["amount_export"])
-        self.assertEqual("DB-1-9", result[0]["db_id"])
-        self.assertEqual("Administrator", result[0]["family_name"])
-        self.assertEqual("Anton Armin A.", result[0]["given_names"])
-        self.assertEqual("28.12.2018", result[0]["date"])
-        self.assertEqual("ConfidenceLevel.Full", result[0]["type_confidence"])
-        self.assertEqual("ConfidenceLevel.Full", result[0]["member_confidence"])
-        self.assertEqual("ConfidenceLevel.Full", result[0]["event_confidence"])
-
-        self.assertEqual("584.49", result[1]["amount_export"])
-        self.assertEqual("DB-7-8", result[1]["db_id"])
-        self.assertEqual("Generalis", result[1]["family_name"])
-        self.assertEqual("Garcia G.", result[1]["given_names"])
-        self.assertEqual("27.12.2018", result[1]["date"])
-        self.assertEqual("ConfidenceLevel.High", result[1]["type_confidence"])
-        self.assertEqual("ConfidenceLevel.High", result[1]["member_confidence"])
-        self.assertEqual("ConfidenceLevel.High", result[1]["event_confidence"])
-
-        self.assertEqual("100.00", result[2]["amount_export"])
-        self.assertEqual("DB-5-1", result[2]["db_id"])
-        self.assertEqual("Eventis", result[2]["family_name"])
-        self.assertEqual("Emilia E.", result[2]["given_names"])
-        self.assertEqual("20.12.2018", result[2]["date"])
-        self.assertEqual("ConfidenceLevel.Medium", result[2]["type_confidence"])
-        self.assertEqual("ConfidenceLevel.Full", result[2]["member_confidence"])
-        self.assertEqual("ConfidenceLevel.High", result[2]["event_confidence"])
+        self.check_dict(
+            result[0],
+            amount_export="584.49",
+            db_id="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            date="28.12.2018",
+            type_confidence="ConfidenceLevel.Full",
+            member_confidence="ConfidenceLevel.Full",
+            event_confidence="ConfidenceLevel.Full"
+        )
+        self.check_dict(
+            result[1],
+            amount_export="584.49",
+            db_id="DB-7-8",
+            family_name="Generalis",
+            given_names="Garcia G.",
+            date="27.12.2018",
+            type_confidence="ConfidenceLevel.High",
+            member_confidence="ConfidenceLevel.High",
+            event_confidence="ConfidenceLevel.High",
+        )
+        self.check_dict(
+            result[2],
+            amount_export="100.00",
+            db_id="DB-5-1",
+            family_name="Eventis",
+            given_names="Emilia E.",
+            date="20.12.2018",
+            type_confidence="ConfidenceLevel.Medium",
+            member_confidence="ConfidenceLevel.Full",
+            event_confidence="ConfidenceLevel.High",
+        )
 
         # check Testakademie file
         f = save.forms["Große_Testakademie_2222"]
@@ -161,19 +180,24 @@ class TestParseFrontend(FrontendTest):
                                      delimiter=";",
                                      fieldnames=MEMBERSHIP_FEE_FIELDS))
 
-        self.assertEqual("DB-2-7", result[0]["db_id"])
-        self.assertEqual("Beispiel", result[0]["family_name"])
-        self.assertEqual("Bertålotta", result[0]["given_names"])
-        self.assertEqual("5.00", result[0]["amount_export"])
-        self.assertEqual("25.12.2018", result[0]["date"])
-        self.assertNotIn("not found in", result[0]["problems"])
-
-        self.assertEqual("DB-7-8", result[1]["db_id"])
-        self.assertEqual("Generalis", result[1]["family_name"])
-        self.assertEqual("Garcia G.", result[1]["given_names"])
-        self.assertEqual("2.50", result[1]["amount_export"])
-        self.assertEqual("24.12.2018", result[1]["date"])
-        self.assertIn("not found in", result[1]["problems"])
+        self.check_dict(
+            result[0],
+            amount_export="5.00",
+            db_id="DB-2-7",
+            family_name="Beispiel",
+            given_names="Bertålotta",
+            date="25.12.2018",
+            NotIn_problems="not found in",
+        )
+        self.check_dict(
+            result[1],
+            amount_export="2.50",
+            db_id="DB-7-8",
+            family_name="Generalis",
+            given_names="Garcia G.",
+            date="24.12.2018",
+            In_problems="not found in",
+        )
 
         # check other_transactions
         f = save.forms["other_transactions"]
@@ -181,65 +205,73 @@ class TestParseFrontend(FrontendTest):
         result = list(csv.DictReader(self.response.text.split("\n"),
                                      delimiter=";"))
 
-        self.assertEqual("8068900", result[0]["account"])
-        self.assertEqual("26.12.2018", result[0]["date"])
-        self.assertEqual("10.00", result[0]["amount_export"])
-        self.assertEqual("DB-1-9", result[0]["db_id"])
-        self.assertEqual("Administrator", result[0]["family_name"])
-        self.assertEqual("Anton Armin A.", result[0]["given_names"])
-        self.assertEqual("Mitgliedsbeitrag", result[0]["category"])
-        self.assertIn("not found in", result[0]["problems"])
-
-        self.assertEqual("8068900", result[1]["account"])
-        self.assertEqual("23.12.2018", result[1]["date"])
-        self.assertEqual("2.50", result[1]["amount_export"])
-        self.assertEqual(STATEMENT_DB_ID_UNKNOWN, result[1]["db_id"])
-        self.assertEqual(STATEMENT_FAMILY_NAME_UNKNOWN,
-                         result[1]["family_name"])
-        self.assertEqual(STATEMENT_GIVEN_NAMES_UNKNOWN,
-                         result[1]["given_names"])
-        self.assertEqual("Mitgliedsbeitrag", result[0]["category"])
-        self.assertIn("No DB-ID found.", result[1]["problems"])
-
-        self.assertEqual("8068900", result[2]["account"])
-        self.assertEqual("21.12.2018", result[2]["date"])
-        self.assertEqual("10.00", result[2]["amount_export"])
-        self.assertEqual("Mitgliedsbeitrag für Anton Armin A. Administrator "
+        self.check_dict(
+            result[0],
+            account="8068900",
+            amount_export="10.00",
+            db_id="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            date="26.12.2018",
+            category="Mitgliedsbeitrag",
+            In_problems="not found in",
+        )
+        self.check_dict(
+            result[1],
+            account="8068900",
+            amount_export="2.50",
+            db_id=STATEMENT_DB_ID_UNKNOWN,
+            family_name="",
+            given_names="",
+            date="23.12.2018",
+            category="Mitgliedsbeitrag",
+            In_problems="No DB-ID found.",
+        )
+        self.check_dict(
+            result[2],
+            account="8068900",
+            amount_export="10.00",
+            db_id="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            date="21.12.2018",
+            In_reference="Mitgliedsbeitrag für Anton Armin A. Administrator "
                          "DB-1-9 und Bertalotta Beispiel DB-2.7",
-                         result[2]["reference"])
-        self.assertEqual("Anton & Berta", result[2]["account_holder"])
-        self.assertEqual("Mitgliedsbeitrag", result[2]["category"])
-        self.assertEqual("ConfidenceLevel.Full", result[2]["type_confidence"])
-        self.assertIn("reference: Multiple (2) DB-IDs found in line 11!",
-                      result[2]["problems"])
-
-        self.assertEqual("8068901", result[3]["account"])
-        self.assertEqual("31.12.2018", result[3]["date"])
-        self.assertEqual("-18.54", result[3]["amount_export"])
-        self.assertIn("Genutzte Freiposten", result[3]["reference"])
-        self.assertEqual("", result[3]["account_holder"])
-        self.assertEqual("Sonstiges", result[3]["category"])
-        self.assertEqual("ConfidenceLevel.Full", result[3]["type_confidence"])
-        self.assertEqual("", result[3]["problems"])
-
-        self.assertEqual("8068901", result[4]["account"])
-        self.assertEqual("30.12.2018", result[4]["date"])
-        self.assertEqual("-52.50", result[4]["amount_export"])
-        self.assertEqual("KONTOFUEHRUNGSGEBUEHREN", result[4]["reference"])
-        self.assertEqual("", result[4]["account_holder"])
-        self.assertEqual("Sonstiges", result[4]["category"])
-        self.assertEqual("ConfidenceLevel.Full", result[4]["type_confidence"])
-        self.assertEqual("", result[4]["problems"])
-
-        self.assertEqual("8068900", result[5]["account"])
-        self.assertEqual("22.12.2018", result[5]["date"])
-        self.assertEqual("50.00", result[5]["amount_export"])
-        self.assertEqual("Anton Armin A. Administrator DB-1-9 Spende",
-                         result[5]["reference"])
-        self.assertEqual("Anton", result[5]["account_holder"])
-        self.assertEqual("Sonstiges", result[5]["category"])
-        self.assertEqual("ConfidenceLevel.Full", result[5]["type_confidence"])
-        self.assertEqual("", result[5]["problems"])
+            account_holder="Anton & Berta",
+            category="Mitgliedsbeitrag",
+            type_confidence="ConfidenceLevel.Full",
+            In_problems="reference: Multiple (2) DB-IDs found in line 11!",
+        )
+        self.check_dict(
+            result[3],
+            account="8068901",
+            amount_export="-18.54",
+            date="31.12.2018",
+            In_reference="Genutzte Freiposten",
+            category="Sonstiges",
+            type_confidence="ConfidenceLevel.Full",
+            problems="",
+        )
+        self.check_dict(
+            result[4],
+            account="8068901",
+            amount_export="-52.50",
+            date="30.12.2018",
+            reference="KONTOFUEHRUNGSGEBUEHREN",
+            category="Sonstiges",
+            type_confidence="ConfidenceLevel.Full",
+            problems="",
+        )
+        self.check_dict(
+            result[5],
+            account="8068900",
+            amount_export="50.00",
+            db_id="",
+            date="22.12.2018",
+            category="Sonstiges",
+            type_confidence="ConfidenceLevel.Full",
+            problems="",
+        )
 
         # check transactions files
         # check account 00
@@ -248,63 +280,79 @@ class TestParseFrontend(FrontendTest):
         result = list(csv.DictReader(self.response.text.split("\n"),
                                      delimiter=";",
                                      fieldnames=ACCOUNT_FIELDS))
-
-        self.assertEqual("26.12.2018", result[0]["date"])
-        self.assertEqual("10,00", result[0]["amount"])
-        self.assertEqual("DB-1-9", result[0]["db_id"])
-        self.assertEqual("Administrator", result[0]["name_or_holder"])
-        self.assertEqual("Anton Armin A.", result[0]["name_or_ref"])
-        self.assertEqual("Mitgliedsbeitrag", result[0]["category"])
-        self.assertEqual("8068900", result[0]["account"])
-
-        self.assertEqual("25.12.2018", result[1]["date"])
-        self.assertEqual("5,00", result[1]["amount"])
-        self.assertEqual("DB-2-7", result[1]["db_id"])
-        self.assertEqual("Beispiel", result[1]["name_or_holder"])
-        self.assertEqual("Bertålotta", result[1]["name_or_ref"])
-        self.assertEqual("Mitgliedsbeitrag", result[1]["category"])
-        self.assertEqual("8068900", result[1]["account"])
-
-        self.assertEqual("24.12.2018", result[2]["date"])
-        self.assertEqual("2,50", result[2]["amount"])
-        self.assertEqual("DB-7-8", result[2]["db_id"])
-        self.assertEqual("Generalis", result[2]["name_or_holder"])
-        self.assertEqual("Garcia G.", result[2]["name_or_ref"])
-        self.assertEqual("Mitgliedsbeitrag", result[2]["category"])
-        self.assertEqual("8068900", result[2]["account"])
-
-        self.assertEqual("23.12.2018", result[3]["date"])
-        self.assertEqual("2,50", result[3]["amount"])
-        self.assertEqual(STATEMENT_DB_ID_UNKNOWN, result[3]["db_id"])
-        self.assertEqual("Daniel Dino", result[3]["name_or_holder"])
-        self.assertEqual("Mitgliedsbeitrag", result[3]["name_or_ref"])
-        self.assertEqual("Mitgliedsbeitrag", result[3]["category"])
-        self.assertEqual("8068900", result[3]["account"])
-
-        self.assertEqual("22.12.2018", result[4]["date"])
-        self.assertEqual("50,00", result[4]["amount"])
-        self.assertEqual(STATEMENT_DB_ID_UNKNOWN, result[4]["db_id"])
-        self.assertEqual("Anton", result[4]["name_or_holder"])
-        self.assertEqual("Anton Armin A. Administrator DB-1-9 Spende",
-                         result[4]["name_or_ref"])
-        self.assertEqual("Sonstiges", result[4]["category"])
-        self.assertEqual("8068900", result[4]["account"])
-
-        self.assertEqual("21.12.2018", result[5]["date"])
-        self.assertEqual("10,00", result[5]["amount"])
-        self.assertEqual("DB-1-9", result[5]["db_id"])
-        self.assertEqual("Administrator", result[5]["name_or_holder"])
-        self.assertEqual("Anton Armin A.", result[5]["name_or_ref"])
-        self.assertEqual("Mitgliedsbeitrag", result[5]["category"])
-        self.assertEqual("8068900", result[5]["account"])
-
-        self.assertEqual("20.12.2018", result[6]["date"])
-        self.assertEqual("100,00", result[6]["amount"])
-        self.assertEqual("DB-5-1", result[6]["db_id"])
-        self.assertEqual("Eventis", result[6]["name_or_holder"])
-        self.assertEqual("Emilia E.", result[6]["name_or_ref"])
-        self.assertEqual("TestAka", result[6]["category"])
-        self.assertEqual("8068900", result[6]["account"])
+        self.check_dict(
+            result[0],
+            date="26.12.2018",
+            amount="10,00",
+            db_id="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            category="Mitgliedsbeitrag",
+            account="8068900",
+        )
+        self.check_dict(
+            result[1],
+            date="25.12.2018",
+            amount="5,00",
+            db_id="DB-2-7",
+            family_name="Beispiel",
+            given_names="Bertålotta",
+            category="Mitgliedsbeitrag",
+            account="8068900",
+        )
+        self.check_dict(
+            result[2],
+            date="24.12.2018",
+            amount="2,50",
+            db_id="DB-7-8",
+            family_name="Generalis",
+            given_names="Garcia G.",
+            category="Mitgliedsbeitrag",
+            account="8068900",
+        )
+        self.check_dict(
+            result[3],
+            date="23.12.2018",
+            amount="2,50",
+            db_id=STATEMENT_DB_ID_UNKNOWN,
+            family_name="",
+            given_names="",
+            category="Mitgliedsbeitrag",
+            account="8068900",
+            reference="Mitgliedsbeitrag",
+            account_holder="Daniel Dino",
+        )
+        self.check_dict(
+            result[4],
+            date="22.12.2018",
+            amount="50,00",
+            db_id="",
+            family_name="",
+            given_names="",
+            category="Sonstiges",
+            account="8068900",
+            reference="Anton Armin A. Administrator DB-1-9 Spende",
+        )
+        self.check_dict(
+            result[5],
+            date="21.12.2018",
+            amount="10,00",
+            db_id="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            category="Mitgliedsbeitrag",
+            account="8068900",
+        )
+        self.check_dict(
+            result[6],
+            date="20.12.2018",
+            amount="100,00",
+            db_id="DB-5-1",
+            family_name="Eventis",
+            given_names="Emilia E.",
+            category="TestAka",
+            account="8068900",
+        )
 
         # check account 01
         f = save.forms["transactions_8068901"]
@@ -313,43 +361,57 @@ class TestParseFrontend(FrontendTest):
                                      delimiter=";",
                                      fieldnames=ACCOUNT_FIELDS))
 
-        self.assertEqual("31.12.2018", result[0]["date"])
-        self.assertEqual("-18,54", result[0]["amount"])
-        self.assertEqual(STATEMENT_DB_ID_UNKNOWN, result[0]["db_id"])
-        self.assertEqual("", result[0]["name_or_holder"])
-        self.assertIn("Genutzte Freiposten", result[0]["name_or_ref"])
-        self.assertEqual("Sonstiges", result[0]["category"])
-        self.assertEqual("8068901", result[0]["account"])
-
-        self.assertEqual("30.12.2018", result[1]["date"])
-        self.assertEqual("-52,50", result[1]["amount"])
-        self.assertEqual(STATEMENT_DB_ID_UNKNOWN, result[1]["db_id"])
-        self.assertEqual("", result[1]["name_or_holder"])
-        self.assertEqual("KONTOFUEHRUNGSGEBUEHREN", result[1]["name_or_ref"])
-        self.assertEqual("Sonstiges", result[1]["category"])
-        self.assertEqual("8068901", result[1]["account"])
-
-        self.assertEqual("29.12.2018", result[2]["date"])
-        self.assertEqual("-584,49", result[2]["amount"])
-        self.assertEqual(STATEMENT_DB_ID_UNKNOWN, result[2]["db_id"])
-        self.assertEqual("Anton Administrator", result[2]["name_or_holder"])
-        self.assertEqual("Kursleitererstattung Anton Armin A. Administrator "
-                         "Große Testakademie 2222", result[2]["name_or_ref"])
-        self.assertEqual("TestAka", result[2]["category"])
-        self.assertEqual("8068901", result[2]["account"])
-
-        self.assertEqual("28.12.2018", result[3]["date"])
-        self.assertEqual("584,49", result[3]["amount"])
-        self.assertEqual("DB-1-9", result[3]["db_id"])
-        self.assertEqual("Administrator", result[3]["name_or_holder"])
-        self.assertEqual("Anton Armin A.", result[3]["name_or_ref"])
-        self.assertEqual("TestAka", result[3]["category"])
-        self.assertEqual("8068901", result[3]["account"])
-
-        self.assertEqual("27.12.2018", result[4]["date"])
-        self.assertEqual("584,49", result[4]["amount"])
-        self.assertEqual("DB-7-8", result[4]["db_id"])
-        self.assertEqual("Generalis", result[4]["name_or_holder"])
-        self.assertEqual("Garcia G.", result[4]["name_or_ref"])
-        self.assertEqual("TestAka", result[4]["category"])
-        self.assertEqual("8068901", result[4]["account"])
+        self.check_dict(
+            result[0],
+            date="31.12.2018",
+            amount="-18,54",
+            db_id="",
+            family_name="",
+            given_names="",
+            category="Sonstiges",
+            account="8068901",
+            In_reference="Genutzte Freiposten",
+        )
+        self.check_dict(
+            result[1],
+            date="30.12.2018",
+            amount="-52,50",
+            db_id="",
+            family_name="",
+            given_names="",
+            category="Sonstiges",
+            account="8068901",
+            reference="KONTOFUEHRUNGSGEBUEHREN",
+        )
+        self.check_dict(
+            result[2],
+            date="29.12.2018",
+            amount="-584,49",
+            db_id=STATEMENT_DB_ID_UNKNOWN,
+            family_name="",
+            given_names="",
+            category="TestAka",
+            account="8068901",
+            account_holder="Anton Administrator",
+            In_reference="Kursleitererstattung Anton Armin A. Administrator",
+        )
+        self.check_dict(
+            result[3],
+            date="28.12.2018",
+            amount="584,49",
+            db_id="DB-1-9",
+            family_name="Administrator",
+            given_names="Anton Armin A.",
+            category="TestAka",
+            account="8068901",
+        )
+        self.check_dict(
+            result[4],
+            date="27.12.2018",
+            amount="584,49",
+            db_id="DB-7-8",
+            family_name="Generalis",
+            given_names="Garcia G.",
+            category="TestAka",
+            account="8068901",
+        )
