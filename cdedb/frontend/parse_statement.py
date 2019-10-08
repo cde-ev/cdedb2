@@ -25,9 +25,9 @@ OTHER_TRANSACTION_FIELDS = ("account", "amount_export", "db_id", "family_name",
                             "event", "event_confidence", "posting",
                             "type", "type_confidence", "category", "reference",
                             "account_holder", "iban", "bic", "problems")
-ACCOUNT_FIELDS = ("date", "amount", "db_id", "name_or_holder",
-                  "name_or_ref", "category", "account", "reference",
-                  "account_holder", "iban", "bic")
+ACCOUNT_FIELDS = ("date", "amount", "db_id", "family_name", "given_names",
+                  "category", "account", "reference", "account_holder", "iban",
+                  "bic")
 STATEMENT_REFERENCE_DELIMITERS = ["ABWE", "ABWA", "SVWZ", "OAMT", "COAM",
                                   "DEBT", "CRED", "MREF", "KREF", "EREF"]
 STATEMENT_RELEVANT_REFERENCE_DELIMITERS = ["SVWZ", "EREF"]
@@ -46,7 +46,7 @@ STATEMENT_POSTING_REFUND = re.compile(
     r"(Sammel-?)?(ü|ue|u|\s+)berweisung", flags=re.I)
 # This matches a reference that is likely a refund.
 STATEMENT_REFERENCE_REFUND = re.compile(
-    r"(R(ü|ue|u|\s+)ck)?erstattung", flags=re.I)
+    r"(R(ü|ue|u|\s+)ck)?erstattung|R(ü|ue|u|\s+)ckzahlung", flags=re.I)
 # This matches a reference that is likely a membership fee (but without DB-ID).
 STATEMENT_REFERENCE_MEMBERSHIP = re.compile(
     r"Mitglied(schaft)?(sbeitrag)?|(Halb)?Jahresbeitrag", flags=re.I)
@@ -685,20 +685,7 @@ class Transaction:
                                           confidence))
 
         else:
-            result = re.search(STATEMENT_REFERENCE_EXTERNAL, self.reference)
-            if result:
-                # Reference matches External Event Fee
-                members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
-                                      STATEMENT_FAMILY_NAME_UNKNOWN,
-                                      STATEMENT_DB_ID_EXTERN,
-                                      ConfidenceLevel.Medium))
-            else:
-                members.append(Member(STATEMENT_GIVEN_NAMES_UNKNOWN,
-                                      STATEMENT_FAMILY_NAME_UNKNOWN,
-                                      STATEMENT_DB_ID_UNKNOWN,
-                                      ConfidenceLevel.Low))
-                self.problems.append(("reference",
-                                      ValueError("No DB-ID found.")))
+            self.problems.append(("reference", ValueError("No DB-ID found.")))
 
         if members:
             # Save all matched members
@@ -775,7 +762,9 @@ class Transaction:
             "amount": self.amount,
             "date": self.statement_date.strftime(STATEMENT_OUTPUT_DATEFORMAT),
             "db_id": self.best_member_match.db_id if (
-                self.best_member_match) else STATEMENT_DB_ID_UNKNOWN,
+                self.best_member_match) else (
+                "" if self.type == TransactionType.Other else
+                STATEMENT_DB_ID_UNKNOWN),
             "db_id_value": self.best_member_match.db_id.split("-")[1] if (
                 self.best_member_match) else "",
             "name_or_holder": self.best_member_match.family_name if (
