@@ -16,7 +16,8 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,
-    extract_roles, implying_realms, now, ProxyShim, SubscriptionError)
+    extract_roles, implying_realms, now, ProxyShim, SubscriptionError,
+    SubscriptionInfo, SubscriptionWarning)
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -693,8 +694,6 @@ class MlBackend(AbstractBackend):
     def subscription_action(self, rs, action, **kwargs):
         """Provide a single entry point for all subscription actions.
 
-        All validation is done inside the called functions.
-
         :type rs: :py:class:`cdedb.common.RequestState`
         :type action: `const.SubscriptionActions`
         :rtype int:
@@ -703,31 +702,93 @@ class MlBackend(AbstractBackend):
         action = affirm("enum_subscriptionactions", action)
 
         sa = const.SubscriptionActions
-
-        if action == sa.subscribe:
-            return self.subscribe(rs, **kwargs)
-        elif action == sa.unsubscribe:
-            return self.unsubscribe(rs, **kwargs)
-        elif action == sa.request_subscription:
-            return self.request_subscription(rs, **kwargs)
+        # Handle decide_request separately, as it does not have a unique taqrget
+        # state. This should be split up.
+        if action == sa.decide_request:
+            return self.decide_subscription_request(rs, **kwargs)
         elif action == sa.cancel_request:
             return self.cancel_subscription(rs, **kwargs)
-        elif action == sa.decide_request:
-            return self.decide_subscription_request(rs, **kwargs)
-        elif action == sa.add_subscriber:
-            return self.add_subscriber(rs, **kwargs)
-        elif action == sa.add_mod_subscriber:
-            return self.add_mod_subscriber(rs, **kwargs)
-        elif action == sa.add_mod_unsubscriber:
-            return self.add_mod_unsubscriber(rs, **kwargs)
-        elif action == sa.remove_subscriber:
-            return self.remove_subscriber(rs, **kwargs)
-        elif action == sa.remove_mod_subscriber:
-            return self.remove_mod_subscriber(rs, **kwargs)
-        elif action == sa.remove_mod_unsubscriber:
-            return self.remove_mod_unsubscriber(rs, **kwargs)
+
+        """Check if everything is alright – current state comes later"""
+        mailinglist_id = affirm("id", kwargs['mailinglist_id'])
+        # Managing actions can only be done by moderators. Other options always
+        # change your own subscription state.
+        if action.is_managing:
+            if not self.may_manage(rs, mailinglist_id):
+                raise PrivilegeError("Not privileged.")
+            persona_id = affirm("id", kwargs['persona_id'])
         else:
-            raise RuntimeError(n_("Unknown subscription action."))
+            persona_id = rs.user.persona_id
+
+        with Atomizer(rs):
+            self._check_transition_requirements(rs, action, mailinglist_id,
+                                                persona_id)
+
+            """Check if current state allows transition"""
+            old_state = self.get_subscription(
+                rs, persona_id, mailinglist_id=mailinglist_id)
+            error_matrix = sa.error_matrix()
+            if isinstance(error_matrix[action][old_state], SubscriptionError):
+                raise error_matrix[action][old_state]
+            elif error_matrix[action][old_state] is not None:
+                raise RuntimeError(n_("Impossible."))
+
+            """Do the transition"""
+            new_state = action.get_target_state()
+            datum = {
+                'mailinglist_id': mailinglist_id,
+                'persona_id': persona_id,
+                'subscription_state': new_state,
+            }
+
+            if new_state is not None:
+                return self._set_subscription(rs, datum)
+            else:
+                return self._remove_subscription(rs, datum)
+
+    def _check_transition_requirements(self, rs, action, mailinglist_id,
+                                       persona_id):
+        """Un-inlined code from `subscription_action`.
+
+        This has to be called with an atomized context.
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type action: `const.SubscriptionActions`
+        :type mailinglist_id: int
+        :type persona_id: int
+        """
+        sa = const.SubscriptionActions
+
+        # It is not allowed to unsubscribe from mandatory lists.
+        # This is not using get_interaction_policy, as even people with
+        # moderator override may not unsubscribe
+        if action.is_unsubscribing:
+            sub_policy = self.get_mailinglist(rs, mailinglist_id)[
+                "sub_policy"]
+            if sub_policy == const.MailinglistInteractionPolicy.mandatory:
+                raise SubscriptionError(n_("Can not change subscription."),
+                                        kind="error")
+
+        # This checks if a user may subscribe via the action triggered
+        # This does not check for the override states, as they are always
+        # allowed
+        policy = self.get_interaction_policy(rs, persona_id,
+                                             mailinglist_id=mailinglist_id)
+        if action == sa.add_subscriber and (
+                not policy or policy.is_implicit()):
+            raise SubscriptionError(n_(
+                "User has no means to access this list."),
+                kind="error")
+        elif action == sa.subscribe and policy not in (
+                const.MailinglistInteractionPolicy.opt_out,
+                const.MailinglistInteractionPolicy.opt_in):
+            raise SubscriptionError(
+                n_("Can not change subscription."),
+                kind="error")
+        elif (action == sa.request_subscription and
+              policy != const.MailinglistInteractionPolicy.moderated_opt_in):
+            raise SubscriptionError(
+                n_("Can not change subscription"),
+                kind="error")
 
     def decide_subscription_requests(self, rs, data):
         """Handle subscription requests.
@@ -794,335 +855,6 @@ class MlBackend(AbstractBackend):
             'resolution': resolution,
         }
         return self.decide_subscription_requests(rs, [datum])
-
-    def add_subscriber(self, rs, mailinglist_id, persona_id):
-        """Administratively subscribe a persona.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :rtype: int
-        :return: Default return code.
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        persona_id = affirm("id", persona_id)
-        if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': persona_id,
-            'subscription_state': const.SubscriptionStates.subscribed,
-        }
-        with Atomizer(rs):
-            policy = self.get_interaction_policy(rs, persona_id,
-                                                 mailinglist_id=mailinglist_id)
-            # This is the deletion conditional from write_subscription_states,
-            # so people which would be deleted anyway cannot be subscribed.
-            if not policy or policy.is_implicit():
-                raise SubscriptionError(n_(
-                    "User has no means to access this list."),
-                    kind="error")
-            state = self.get_subscription(
-                rs, persona_id, mailinglist_id=mailinglist_id)
-            if state is None or state == const.SubscriptionStates.unsubscribed:
-                return self._set_subscription(rs, datum)
-            elif state.is_subscribed:
-                raise SubscriptionError(
-                    n_("User already subscribed."),
-                    kind="info")
-            elif state == const.SubscriptionStates.mod_unsubscribed:
-                raise SubscriptionError(
-                    n_("User has been blocked. You can use Subscription "
-                       "Details to change this."),
-                    kind="warning")
-            elif state == const.SubscriptionStates.pending:
-                raise SubscriptionError(
-                    n_("User has pending subscription request."),
-                    kind="warning")
-            else:
-                raise RuntimeError(n_("Impossible"))
-
-    def remove_subscriber(self, rs, mailinglist_id, persona_id):
-        """Administratively unsubscribe a persona.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :rtype: int
-        :return: Default return code.
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        persona_id = affirm("id", persona_id)
-        if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': persona_id,
-            'subscription_state': const.SubscriptionStates.unsubscribed,
-        }
-        with Atomizer(rs):
-            # This is not using get_interaction_policy, as even people with
-            # moderator override may not unsubscribe
-            policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
-            if policy == const.MailinglistInteractionPolicy.mandatory:
-                raise SubscriptionError(
-                    n_("Can not change subscription."),
-                    kind="error")
-            state = self.get_subscription(
-                rs, persona_id, mailinglist_id=mailinglist_id)
-            if (state and state.is_subscribed
-                    and state != const.SubscriptionStates.mod_subscribed):
-                return self._set_subscription(rs, datum)
-            elif state is None or not state.is_subscribed:
-                raise SubscriptionError(
-                    n_("User already unsubscribed."),
-                    kind="info")
-            elif state == const.SubscriptionStates.mod_subscribed:
-                raise SubscriptionError(
-                    n_("User cannot be removed, because of moderator "
-                       "override. You can use Subscription Details to "
-                       "change this."),
-                    kind="warning")
-            else:
-                raise RuntimeError(n_("Impossible"))
-
-    def add_mod_subscriber(self, rs, mailinglist_id, persona_id):
-        """Administratively subscribe a persona with moderator override.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :rtype: int
-        :return: Default return code.
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        persona_id = affirm("id", persona_id)
-        if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': persona_id,
-            'subscription_state': const.SubscriptionStates.mod_subscribed,
-        }
-        with Atomizer(rs):
-            state = self.get_subscription(
-                rs, persona_id, mailinglist_id=mailinglist_id)
-            if state and state == const.SubscriptionStates.pending:
-                raise SubscriptionError(
-                    n_("User has pending subscription request."),
-                    kind="warning")
-            else:
-                return self._set_subscription(rs, datum)
-
-    def remove_mod_subscriber(self, rs, mailinglist_id, persona_id):
-        """Administratively remove a subscription with moderator override.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :rtype: int
-        :return: Default return code.
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        persona_id = affirm("id", persona_id)
-        if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': persona_id,
-            'subscription_state': const.SubscriptionStates.subscribed,
-        }
-        with Atomizer(rs):
-            state = self.get_subscription(
-                rs, persona_id, mailinglist_id=mailinglist_id)
-            if not state or state != const.SubscriptionStates.mod_subscribed:
-                raise SubscriptionError(
-                    n_("User is not force-subscribed."),
-                    kind="error")
-            else:
-                return self._set_subscription(rs, datum)
-
-    def add_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
-        """Administratively block a persona.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :rtype: int
-        :return: Default return code.
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        persona_id = affirm("id", persona_id)
-        if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': persona_id,
-            'subscription_state': const.SubscriptionStates.mod_unsubscribed,
-        }
-        with Atomizer(rs):
-            # This is not using get_interaction_policy, as even people with
-            # moderator override may not unsubscribe
-            policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
-            if policy == const.MailinglistInteractionPolicy.mandatory:
-                raise SubscriptionError(
-                    n_("Can not change subscription."),
-                    kind="error")
-            state = self.get_subscription(
-                rs, persona_id, mailinglist_id=mailinglist_id)
-            if state and state == const.SubscriptionStates.pending:
-                raise SubscriptionError(
-                    n_("User has pending subscription request."),
-                    kind="warning")
-            else:
-                return self._set_subscription(rs, datum)
-
-    def remove_mod_unsubscriber(self, rs, mailinglist_id, persona_id):
-        """Administratively remove block of a persona.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :rtype: int
-        :return: Default return code.
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        persona_id = affirm("id", persona_id)
-        if not self.may_manage(rs, mailinglist_id):
-            raise PrivilegeError("Not privileged.")
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': persona_id,
-            'subscription_state': const.SubscriptionStates.unsubscribed,
-        }
-        with Atomizer(rs):
-            state = self.get_subscription(
-                rs, persona_id, mailinglist_id=mailinglist_id)
-            if not state or state != const.SubscriptionStates.mod_unsubscribed:
-                raise SubscriptionError(
-                    n_("User is not force-unsubscribed."),
-                    kind="error")
-            else:
-                return self._set_subscription(rs, datum)
-
-    def subscribe(self, rs, mailinglist_id):
-        """Change own subscription state to subscribed.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :rtype: int
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': rs.user.persona_id,
-            'subscription_state': const.SubscriptionStates.subscribed,
-        }
-        with Atomizer(rs):
-            policy = self.get_interaction_policy(rs, rs.user.persona_id,
-                                                 mailinglist_id=mailinglist_id)
-            if policy == const.MailinglistInteractionPolicy.moderated_opt_in:
-                raise SubscriptionError(
-                    n_("Please make a subscription request."),
-                    kind="warning")
-            elif policy not in (const.MailinglistInteractionPolicy.opt_out,
-                                const.MailinglistInteractionPolicy.opt_in):
-                raise SubscriptionError(
-                    n_("Can not change subscription."),
-                    kind="error")
-            else:
-                state = self.get_subscription(rs, rs.user.persona_id,
-                                              mailinglist_id=mailinglist_id)
-                if state and state == const.SubscriptionStates.mod_unsubscribed:
-                    raise SubscriptionError(
-                        n_("Can not change subscription because you "
-                           "are blocked."),
-                        kind="error")
-                elif state and state.is_subscribed:
-                    raise SubscriptionError(
-                        n_("You are already subscribed."),
-                        kind="info")
-                else:
-                    return self._set_subscription(rs, datum)
-
-    def request_subscription(self, rs, mailinglist_id):
-        """Change own subscription state to pending.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :rtype: int
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': rs.user.persona_id,
-            'subscription_state': const.SubscriptionStates.pending,
-        }
-        with Atomizer(rs):
-            policy = self.get_interaction_policy(rs, rs.user.persona_id,
-                                                 mailinglist_id=mailinglist_id)
-            if policy != const.MailinglistInteractionPolicy.moderated_opt_in:
-                raise SubscriptionError(
-                    n_("Can not change subscription"),
-                    kind="error")
-            else:
-                state = self.get_subscription(rs, rs.user.persona_id,
-                                              mailinglist_id=mailinglist_id)
-                if state and state == const.SubscriptionStates.mod_unsubscribed:
-                    raise SubscriptionError(
-                        n_("Can not change subscription because you "
-                           "are blocked."),
-                        kind="error")
-                elif state and state.is_subscribed:
-                    raise SubscriptionError(
-                        n_("You are already subscribed."),
-                        kind="info")
-                elif state and state == const.SubscriptionStates.pending:
-                    raise SubscriptionError(
-                        n_("You already requested subscription"),
-                        kind="info")
-                else:
-                    return self._set_subscription(rs, datum)
-
-    def unsubscribe(self, rs, mailinglist_id):
-        """Change own subscription state to unsubscribed.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :rtype: int
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': rs.user.persona_id,
-            'subscription_state': const.SubscriptionStates.unsubscribed,
-        }
-        with Atomizer(rs):
-            # This is not using get_interaction_policy, as even people with
-            # moderator override may not unsubscribe
-            policy = self.get_mailinglist(rs, mailinglist_id)["sub_policy"]
-            if policy == const.MailinglistInteractionPolicy.mandatory:
-                raise SubscriptionError(
-                    n_("Can not change subscription."),
-                    kind="error")
-            else:
-                state = self.get_subscription(rs, rs.user.persona_id,
-                                              mailinglist_id=mailinglist_id)
-                if not state or not state.is_subscribed:
-                    raise SubscriptionError(
-                        n_("You are already unsubscribed."),
-                        kind="info")
-                else:
-                    return self._set_subscription(rs, datum)
 
     def cancel_subscription(self, rs, mailinglist_id):
         """Cancel subscription request.

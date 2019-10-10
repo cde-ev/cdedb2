@@ -439,6 +439,19 @@ class SubscriptionError(RuntimeError):
         self.kind = kind
     pass
 
+
+class SubscriptionWarning(SubscriptionError):
+    """Exception for SubscriptionErrors with kind warning."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, kind="warning", **kwargs)
+
+
+class SubscriptionInfo(SubscriptionError):
+    """Exception for SubscriptionErrors with kind info."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, kind="info", **kwargs)
+
+
 # TODO decide whether we sort by first or last name
 def name_key(entry):
     """Create a sorting key associated to a persona dataset.

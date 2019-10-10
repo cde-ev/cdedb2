@@ -9,7 +9,8 @@ their symbolic names provided by this module should be used.
 
 import enum
 
-from cdedb.common import n_
+from cdedb.common import (
+    n_, SubscriptionError, SubscriptionInfo, SubscriptionWarning)
 
 
 @enum.unique
@@ -234,6 +235,143 @@ class SubscriptionActions(enum.IntEnum):
     remove_subscriber = 30  #:
     remove_mod_subscriber = 31  #:
     remove_mod_unsubscriber = 32  #:
+
+    def get_target_state(self):
+        log_code_map = {
+            SubscriptionActions.subscribe:
+                SubscriptionStates.subscribed,
+            SubscriptionActions.unsubscribe:
+                SubscriptionStates.unsubscribed,
+            SubscriptionActions.request_subscription:
+                SubscriptionStates.pending,
+            SubscriptionActions.cancel_request:
+                False,
+            SubscriptionActions.decide_request:
+                False,
+            SubscriptionActions.add_subscriber:
+                SubscriptionStates.subscribed,
+            SubscriptionActions.add_mod_subscriber:
+                SubscriptionStates.mod_subscribed,
+            SubscriptionActions.add_mod_unsubscriber:
+                SubscriptionStates.mod_unsubscribed,
+            SubscriptionActions.remove_subscriber:
+                SubscriptionStates.unsubscribed,
+            SubscriptionActions.remove_mod_subscriber:
+                SubscriptionStates.subscribed,
+            SubscriptionActions.remove_mod_unsubscriber:
+                SubscriptionStates.unsubscribed
+        }
+        return log_code_map.get(self)
+
+    @staticmethod
+    def error_matrix():
+        ss = SubscriptionStates
+        error = SubscriptionError
+        warning = SubscriptionWarning
+        info = SubscriptionInfo
+
+        matrix = {
+            SubscriptionActions.add_subscriber: {
+                ss.subscribed: info(n_("User already subscribed.")),
+                ss.unsubscribed: None,
+                ss.mod_subscribed: info(n_("User already subscribed.")),
+                ss.mod_unsubscribed: warning(n_(
+                    "User has been blocked. You can use Subscription Details to"
+                    " change this.")),
+                ss.pending: warning(n_("User has pending subscription request.")),
+            },
+            SubscriptionActions.remove_subscriber: {
+                ss.subscribed: None,
+                ss.unsubscribed: info(n_("User already unsubscribed.")),
+                ss.mod_subscribed: warning(n_(
+                    "User cannot be removed, because of moderator override. You"
+                    " can use Subscription Details to change this.")),
+                ss.mod_unsubscribed: info(n_("User already unsubscribed.")),
+                ss.pending: warning(n_("User has pending subscription request.")),
+            },
+            SubscriptionActions.add_mod_subscriber: {
+                ss.subscribed: None,
+                ss.unsubscribed: None,
+                ss.mod_subscribed: None,
+                ss.mod_unsubscribed: None,
+                ss.pending: warning(n_("User has pending subscription request.")),
+            },
+            SubscriptionActions.remove_mod_subscriber: {
+                ss.subscribed: error(n_("User is not force-subscribed.")),
+                ss.unsubscribed: error(n_("User is not force-subscribed.")),
+                ss.mod_subscribed: None,
+                ss.mod_unsubscribed: error(n_("User is not force-subscribed.")),
+                ss.pending: error(n_("User is not force-subscribed.")),
+            },
+            SubscriptionActions.add_mod_unsubscriber: {
+                ss.subscribed: None,
+                ss.unsubscribed: None,
+                ss.mod_subscribed: None,
+                ss.mod_unsubscribed: None,
+                ss.pending: warning(n_("User has pending subscription request.")),
+            },
+            SubscriptionActions.remove_mod_unsubscriber: {
+                ss.subscribed: error(n_("User is not force-unsubscribed.")),
+                ss.unsubscribed: error(n_("User is not force-unsubscribed.")),
+                ss.mod_subscribed: error(n_("User is not force-unsubscribed.")),
+                ss.mod_unsubscribed: None,
+                ss.pending: error(n_("User is not force-unsubscribed.")),
+            },
+            SubscriptionActions.subscribe: {
+                ss.subscribed: info(n_("You are already subscribed.")),
+                ss.unsubscribed: None,
+                ss.mod_subscribed: info(n_("You are already subscribed.")),
+                ss.mod_unsubscribed: error(
+                    n_("Can not change subscription because you are blocked.")),
+                ss.pending: None,
+            },
+            SubscriptionActions.request_subscription: {
+                ss.subscribed: info(n_("You are already subscribed.")),
+                ss.unsubscribed: None,
+                ss.mod_subscribed: info(n_("You are already subscribed.")),
+                ss.mod_unsubscribed: error(
+                    n_("Can not change subscription because you are blocked.")),
+                ss.pending: info(n_("You already requested subscription")),
+            },
+            SubscriptionActions.unsubscribe: {
+                ss.subscribed: None,
+                ss.unsubscribed: info(n_("You are already unsubscribed.")),
+                ss.mod_subscribed: None,  # This is on purpose.
+                ss.mod_unsubscribed: info(n_("You are already unsubscribed.")),
+                ss.pending: info(n_("You are already unsubscribed.")),
+            },
+        }
+        for row in matrix.keys():
+            matrix[row][ss.implicit] = matrix[row][ss.subscribed]
+            matrix[row][None] = matrix[row][ss.unsubscribed]
+        return matrix
+
+    @classmethod
+    def unsubscribing_actions(cls):
+        return {
+            SubscriptionActions.unsubscribe,
+            SubscriptionActions.remove_subscriber,
+            SubscriptionActions.add_mod_unsubscriber,
+        }
+
+    @property
+    def is_unsubscribing(self):
+        return self in self.unsubscribing_actions()
+
+    @classmethod
+    def managing_actions(cls):
+        return {
+            SubscriptionActions.add_subscriber,
+            SubscriptionActions.add_mod_subscriber,
+            SubscriptionActions.add_mod_unsubscriber,
+            SubscriptionActions.remove_subscriber,
+            SubscriptionActions.remove_mod_subscriber,
+            SubscriptionActions.remove_mod_unsubscriber
+        }
+
+    @property
+    def is_managing(self):
+        return self in self.managing_actions()
 
 
 @enum.unique

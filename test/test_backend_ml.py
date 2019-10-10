@@ -386,7 +386,7 @@ class TestMlBackend(BackendTest):
         # Try to subscribe
         expected_state = SS.unsubscribed if user['id'] in {1, 2} else None
         self._change_own_sub(user['id'], mailinglist_id, SA.subscribe,
-                             code=None, state=expected_state, kind="warning")
+                             code=None, state=expected_state, kind="error")
 
         # Test cancelling a subscription request
         self._change_own_sub(user['id'], mailinglist_id,
@@ -834,7 +834,7 @@ class TestMlBackend(BackendTest):
             self._change_own_sub(user['id'],  4, SA.unsubscribe,
                                  code=1, state=SS.unsubscribed)
             self._change_own_sub(user['id'],  4, SA.subscribe,
-                                 code=None, state=SS.unsubscribed, kind="warning")
+                                 code=None, state=SS.unsubscribed, kind="error")
         self._change_own_sub(user['id'],  4, SA.request_subscription,
                              code=1, state=SS.pending)
         self._change_own_sub(user['id'],  4, SA.cancel_request,
