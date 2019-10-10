@@ -122,9 +122,11 @@ def cron_template(**kwargs):
 
 
 def subscription_request_template(**kwargs):
-    defaults = {}
+    defaults = {
+        'subscription_state': const.SubscriptionStates.pending
+    }
     data = {**defaults, **kwargs}
-    return format_insert_sql("ml.subscription_requests", data)
+    return format_insert_sql("ml.subscription_states", data)
 
 
 class TestCron(CronTest):
