@@ -118,11 +118,11 @@ class MlBackend(AbstractBackend):
             # First, check if assembly link allows resubscribing.
             if ml['assembly_id'] and self.assembly.check_attends(
                     rs, persona_id, ml['assembly_id']):
-                return const.MailinglistInteractionPolicy.opt_in
+                return const.MailinglistInteractionPolicy.opt_out
             # Second, check if event link allows resubscribing.
             elif ml['event_id'] and self.event.check_registration_status(
                     rs, persona_id, ml['event_id'], ml['registration_stati']):
-                return const.MailinglistInteractionPolicy.opt_in
+                return const.MailinglistInteractionPolicy.opt_out
             return const.MailinglistInteractionPolicy(ml["sub_policy"])
         else:
             return None
@@ -819,7 +819,7 @@ class MlBackend(AbstractBackend):
                                                  mailinglist_id=mailinglist_id)
             # This is the deletion conditional from write_subscription_states,
             # so people which would be deleted anyway cannot be subscribed.
-            if not policy or not policy.is_additive():
+            if not policy or policy.is_implicit():
                 raise SubscriptionError(n_(
                     "User has no means to access this list."),
                     kind="error")
@@ -1547,7 +1547,7 @@ class MlBackend(AbstractBackend):
                 state = old_subscribers[persona['id']]
                 if (state == const.SubscriptionStates.implicit
                     or not may_subscribe
-                    or not may_subscribe.is_additive()):
+                    or may_subscribe.is_implicit()):
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona['id'],

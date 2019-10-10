@@ -497,18 +497,24 @@ class TestMlBackend(BackendTest):
         self._change_own_sub(user['id'], mailinglist_id, SA.unsubscribe,
                              code=None, state=SS.unsubscribed, kind="info")
 
+        # Test administrative subscriptions
+        self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
+                         code=1, state=SS.subscribed)
+        self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
+                         code=None, state=SS.subscribed, kind="info")
+        self._change_own_sub(user['id'], mailinglist_id, SA.subscribe,
+                             code=None, state=SS.subscribed, kind="info")
+        self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
+                        code=1, state=SS.unsubscribed)
+
         # Test blocks
-        self._change_sub(user['id'], mailinglist_id,
-                         SA.add_mod_unsubscriber,
+        self._change_sub(user['id'], mailinglist_id, SA.add_mod_unsubscriber,
                          code=1, state=SS.mod_unsubscribed)
         self._change_own_sub(user['id'], mailinglist_id, SA.subscribe,
                              code=None, state=SS.mod_unsubscribed, kind="error")
-        # TODO: should be "warning" but is "error", caused by ignoring
-        # of mod_unsubscribe in get_interaction_policy
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.mod_unsubscribed)
-        self._change_sub(user['id'], mailinglist_id,
-                         SA.remove_mod_unsubscriber,
+                         code=None, state=SS.mod_unsubscribed, kind="warning")
+        self._change_sub(user['id'], mailinglist_id, SA.remove_mod_unsubscriber,
                          code=1, state=SS.unsubscribed)
 
         # Test forced subscriptions
@@ -570,9 +576,8 @@ class TestMlBackend(BackendTest):
         # Try to subscribe somehow
         self._change_own_sub(user['id'], mailinglist_id, SA.subscribe,
                              code=None, state=None, kind="error")
-        # TODO like above
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=None)
+                         code=None, state=None, kind="error")
 
         # Force subscription
         self._change_sub(user['id'], mailinglist_id, SA.add_mod_subscriber,
@@ -585,9 +590,8 @@ class TestMlBackend(BackendTest):
         # It is impossible to unsubscribe normally
         self._change_own_sub(user['id'], mailinglist_id, SA.unsubscribe,
                              code=None, state=SS.mod_subscribed, kind="error")
-        # TODO like above
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.mod_subscribed)
+                         code=None, state=SS.mod_subscribed, kind="error")
 
         # Remove subscription
         self._change_sub(user['id'], mailinglist_id, SA.remove_mod_subscriber,

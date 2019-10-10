@@ -211,18 +211,13 @@ class MailinglistInteractionPolicy(enum.IntEnum):
     #: only implicit subscribers allowed
     implicits_only = 6
 
-    def is_additive(self):
-        """Differentiate between additive and subtractive mailing lists.
-
-        Additive means, that only explicit subscriptions are on the list,
-        while subtractive means, that only explicit unsubscriptions are not
-        on the list.
+    def is_implicit(self):
+        """Short-hand for
+        policy == const.MailinglistInteractionPolicy.implicits_only
 
         :rtype: bool
         """
-        return self in (MailinglistInteractionPolicy.opt_in,
-                        MailinglistInteractionPolicy.moderated_opt_in,
-                        MailinglistInteractionPolicy.invitation_only)
+        return self == MailinglistInteractionPolicy.implicits_only
 
 
 @enum.unique
