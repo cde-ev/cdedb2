@@ -3031,10 +3031,6 @@ _SUBSCRIPTION_ADDRESS_FIELDS = {
     'address': _email,
 }
 
-_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS = lambda: {
-    'resolution': _enum_subscriptionrequestresolutions,
-}
-
 
 @_addvalidator
 def _subscription_identifier(val, argname=None, *, _convert=True):

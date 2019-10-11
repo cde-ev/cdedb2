@@ -145,59 +145,6 @@ class SubscriptionStates(enum.IntEnum):
                 SubscriptionStates.mod_subscribed,
                 SubscriptionStates.implicit}
 
-    def get_log_code(self):
-        log_code_map = {
-            SubscriptionStates.subscribed:
-                MlLogCodes.subscribed,
-            SubscriptionStates.unsubscribed:
-                MlLogCodes.unsubscribed,
-            SubscriptionStates.mod_subscribed:
-                MlLogCodes.marked_override,
-            SubscriptionStates.mod_unsubscribed:
-                MlLogCodes.marked_blocked,
-            SubscriptionStates.pending:
-                MlLogCodes.subscription_requested,
-            SubscriptionStates.implicit:
-                None,
-        }
-        return log_code_map.get(self)
-
-
-@enum.unique
-class SubscriptionRequestResolutions(enum.IntEnum):
-    """Define possible results of subscription requests."""
-    approved = 1
-    denied = 2
-    blocked = 10
-    cancelled = 20
-
-    def get_log_code(self):
-        log_code_map = {
-            SubscriptionRequestResolutions.approved:
-                MlLogCodes.request_approved,
-            SubscriptionRequestResolutions.denied:
-                MlLogCodes.request_denied,
-            SubscriptionRequestResolutions.blocked:
-                MlLogCodes.request_blocked,
-            SubscriptionRequestResolutions.cancelled:
-                MlLogCodes.request_cancelled,
-        }
-        return log_code_map.get(self)
-
-    def get_new_state(self):
-        state_map = {
-            SubscriptionRequestResolutions.approved:
-                SubscriptionStates.subscribed,
-            SubscriptionRequestResolutions.denied:
-                None,
-            SubscriptionRequestResolutions.blocked:
-                SubscriptionStates.mod_unsubscribed,
-            SubscriptionRequestResolutions.cancelled:
-                None,
-        }
-        return state_map.get(self)
-
-
 @enum.unique
 class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
@@ -228,7 +175,9 @@ class SubscriptionActions(enum.IntEnum):
     unsubscribe = 2  #:
     request_subscription = 10  #:
     cancel_request = 11  #:
-    decide_request = 12  #:
+    approve_request = 12  #:
+    deny_request = 13  #:
+    block_request = 14  #:
     add_subscriber = 20  #:
     add_mod_subscriber = 21  #:
     add_mod_unsubscriber = 22  #:
@@ -237,7 +186,7 @@ class SubscriptionActions(enum.IntEnum):
     remove_mod_unsubscriber = 32  #:
 
     def get_target_state(self):
-        log_code_map = {
+        target_state = {
             SubscriptionActions.subscribe:
                 SubscriptionStates.subscribed,
             SubscriptionActions.unsubscribe:
@@ -245,9 +194,13 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.request_subscription:
                 SubscriptionStates.pending,
             SubscriptionActions.cancel_request:
-                False,
-            SubscriptionActions.decide_request:
-                False,
+                None,
+            SubscriptionActions.approve_request:
+                SubscriptionStates.subscribed,
+            SubscriptionActions.deny_request:
+                None,
+            SubscriptionActions.block_request:
+                SubscriptionStates.mod_unsubscribed,
             SubscriptionActions.add_subscriber:
                 SubscriptionStates.subscribed,
             SubscriptionActions.add_mod_subscriber:
@@ -260,6 +213,37 @@ class SubscriptionActions(enum.IntEnum):
                 SubscriptionStates.subscribed,
             SubscriptionActions.remove_mod_unsubscriber:
                 SubscriptionStates.unsubscribed
+        }
+        return target_state.get(self)
+
+    def get_log_code(self):
+        log_code_map = {
+            SubscriptionActions.subscribe:
+                MlLogCodes.subscribed,
+            SubscriptionActions.unsubscribe:
+                MlLogCodes.unsubscribed,
+            SubscriptionActions.request_subscription:
+                MlLogCodes.subscription_requested,
+            SubscriptionActions.cancel_request:
+                MlLogCodes.request_cancelled,
+            SubscriptionActions.approve_request:
+                MlLogCodes.request_approved,
+            SubscriptionActions.deny_request:
+                MlLogCodes.request_denied,
+            SubscriptionActions.block_request:
+                MlLogCodes.request_blocked,
+            SubscriptionActions.add_subscriber:
+                MlLogCodes.subscribed,
+            SubscriptionActions.add_mod_subscriber:
+                MlLogCodes.marked_override,
+            SubscriptionActions.add_mod_unsubscriber:
+                MlLogCodes.marked_blocked,
+            SubscriptionActions.remove_subscriber:
+                MlLogCodes.unsubscribed,
+            SubscriptionActions.remove_mod_subscriber:
+                MlLogCodes.subscribed,
+            SubscriptionActions.remove_mod_unsubscriber:
+                MlLogCodes.unsubscribed,
         }
         return log_code_map.get(self)
 
@@ -340,7 +324,28 @@ class SubscriptionActions(enum.IntEnum):
                 ss.mod_unsubscribed: info(n_("You are already unsubscribed.")),
                 ss.pending: info(n_("You are already unsubscribed.")),
             },
+            SubscriptionActions.cancel_request: {
+                ss.subscribed: info(n_("No subscription requested.")),
+                ss.unsubscribed: info(n_("No subscription requested.")),
+                ss.mod_subscribed: info(n_("No subscription requested.")),
+                ss.mod_unsubscribed: info(n_("No subscription requested.")),
+                ss.pending: None,
+            },
+            SubscriptionActions.approve_request: {
+                ss.subscribed: error(n_("Not a pending subscription request.")),
+                ss.unsubscribed: error(n_("Not a pending subscription request.")),
+                ss.mod_subscribed: error(n_("Not a pending subscription request.")),
+                ss.mod_unsubscribed: error(n_("Not a pending subscription request.")),
+                ss.pending: None,
+            },
+            SubscriptionActions.deny_request: {},
+            SubscriptionActions.block_request: {},
         }
+        matrix[SubscriptionActions.deny_request] =\
+            matrix[SubscriptionActions.approve_request]
+        matrix[SubscriptionActions.block_request] =\
+            matrix[SubscriptionActions.approve_request]
+
         for row in matrix.keys():
             matrix[row][ss.implicit] = matrix[row][ss.subscribed]
             matrix[row][None] = matrix[row][ss.unsubscribed]
@@ -361,6 +366,9 @@ class SubscriptionActions(enum.IntEnum):
     @classmethod
     def managing_actions(cls):
         return {
+            SubscriptionActions.approve_request,
+            SubscriptionActions.deny_request,
+            SubscriptionActions.block_request,
             SubscriptionActions.add_subscriber,
             SubscriptionActions.add_mod_subscriber,
             SubscriptionActions.add_mod_unsubscriber,

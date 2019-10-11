@@ -512,17 +512,39 @@ class MlFrontend(AbstractUserFrontend):
             self.notify_return_code(rs, code)
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("persona_id", "id"),
-                 ("resolution", "enum_subscriptionrequestresolutions"))
+    @REQUESTdata(("persona_id", "id"))
     @mailinglist_guard()
-    def decide_request(self, rs, mailinglist_id, persona_id, resolution):
+    def approve_request(self, rs, mailinglist_id, persona_id):
         """Evaluate whether to admit subscribers."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.decide_request,
-            mailinglist_id=mailinglist_id, persona_id=persona_id,
-            resolution=resolution)
+            rs, const.SubscriptionActions.approve_request,
+            mailinglist_id=mailinglist_id, persona_id=persona_id)
+        return self.redirect(rs, "ml/management")
+
+    @access("ml", modi={"POST"})
+    @REQUESTdata(("persona_id", "id"))
+    @mailinglist_guard()
+    def deny_request(self, rs, mailinglist_id, persona_id):
+        """Evaluate whether to admit subscribers."""
+        if rs.errors:
+            return self.management(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.deny_request,
+            mailinglist_id=mailinglist_id, persona_id=persona_id)
+        return self.redirect(rs, "ml/management")
+
+    @access("ml", modi={"POST"})
+    @REQUESTdata(("persona_id", "id"))
+    @mailinglist_guard()
+    def block_request(self, rs, mailinglist_id, persona_id):
+        """Evaluate whether to admit subscribers."""
+        if rs.errors:
+            return self.management(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, const.SubscriptionActions.block_request,
+            mailinglist_id=mailinglist_id, persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})

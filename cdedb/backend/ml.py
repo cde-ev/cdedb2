@@ -9,15 +9,14 @@ if it has moderator privileges for all lists.
 """
 
 from cdedb.backend.common import (
-    access, affirm_validation as affirm, Silencer, AbstractBackend,
+    access, affirm_validation as affirm, AbstractBackend,
     affirm_set_validation as affirm_set, singularize,
     affirm_array_validation as affirm_array, internal_access)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,
-    extract_roles, implying_realms, now, ProxyShim, SubscriptionError,
-    SubscriptionInfo, SubscriptionWarning)
+    extract_roles, implying_realms, now, ProxyShim, SubscriptionError)
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -609,12 +608,7 @@ class MlBackend(AbstractBackend):
         for datum in data:
             state = datum['subscription_state']
 
-            code = state.get_log_code()
             with Atomizer(rs):
-                existing = self.get_subscription(
-                    rs, datum['persona_id'],
-                    mailinglist_id=datum['mailinglist_id'])
-
                 query = ("INSERT INTO ml.subscription_states "
                          "(subscription_state, mailinglist_id, persona_id) "
                          "VALUES (%s, %s, %s) "
@@ -622,11 +616,7 @@ class MlBackend(AbstractBackend):
                          "SET subscription_state = EXCLUDED.subscription_state")
                 params = (state, datum['mailinglist_id'], datum['persona_id'])
 
-                ret = self.query_exec(rs, query, params)
-                if ret and code:
-                    self.ml_log(
-                        rs, code, datum['mailinglist_id'], datum['persona_id'])
-                num += ret
+                num += self.query_exec(rs, query, params)
 
         return num
 
@@ -660,8 +650,6 @@ class MlBackend(AbstractBackend):
                    for datum in data):
             raise PrivilegeError("Not privileged.")
 
-        code = const.MlLogCodes.unsubscribed
-
         with Atomizer(rs):
             query = "DELETE FROM ml.subscription_states"
             phrase = "mailinglist_id = %s AND persona_id = %s"
@@ -669,8 +657,6 @@ class MlBackend(AbstractBackend):
             params = []
             for datum in data:
                 params.extend((datum['mailinglist_id'], datum['persona_id']))
-                self.ml_log(
-                    rs, code, datum['mailinglist_id'], datum['persona_id'])
 
             ret = self.query_exec(rs, query, params)
 
@@ -691,32 +677,27 @@ class MlBackend(AbstractBackend):
         return self._remove_subscriptions(rs, [datum])
 
     @access("ml")
-    def subscription_action(self, rs, action, **kwargs):
+    def subscription_action(self, rs, action, mailinglist_id, persona_id=None):
         """Provide a single entry point for all subscription actions.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type action: `const.SubscriptionActions`
-        :rtype int:
+        :type mailinglist_id: int
+        :type persona_id: int
+        :rtype int
         :returns: number of affected rows.
         """
         action = affirm("enum_subscriptionactions", action)
-
         sa = const.SubscriptionActions
-        # Handle decide_request separately, as it does not have a unique taqrget
-        # state. This should be split up.
-        if action == sa.decide_request:
-            return self.decide_subscription_request(rs, **kwargs)
-        elif action == sa.cancel_request:
-            return self.cancel_subscription(rs, **kwargs)
 
         """Check if everything is alright – current state comes later"""
-        mailinglist_id = affirm("id", kwargs['mailinglist_id'])
+        mailinglist_id = affirm("id", mailinglist_id)
         # Managing actions can only be done by moderators. Other options always
         # change your own subscription state.
         if action.is_managing:
             if not self.may_manage(rs, mailinglist_id):
                 raise PrivilegeError("Not privileged.")
-            persona_id = affirm("id", kwargs['persona_id'])
+            persona_id = affirm("id", persona_id)
         else:
             persona_id = rs.user.persona_id
 
@@ -735,6 +716,7 @@ class MlBackend(AbstractBackend):
 
             """Do the transition"""
             new_state = action.get_target_state()
+            code = action.get_log_code()
             datum = {
                 'mailinglist_id': mailinglist_id,
                 'persona_id': persona_id,
@@ -742,9 +724,15 @@ class MlBackend(AbstractBackend):
             }
 
             if new_state is not None:
-                return self._set_subscription(rs, datum)
+                ret = self._set_subscription(rs, datum)
             else:
-                return self._remove_subscription(rs, datum)
+                del datum['subscription_state']
+                ret = self._remove_subscription(rs, datum)
+            if ret and code:
+                self.ml_log(
+                    rs, code, datum['mailinglist_id'], datum['persona_id'])
+
+            return ret
 
     def _check_transition_requirements(self, rs, action, mailinglist_id,
                                        persona_id):
@@ -789,94 +777,6 @@ class MlBackend(AbstractBackend):
             raise SubscriptionError(
                 n_("Can not change subscription"),
                 kind="error")
-
-    def decide_subscription_requests(self, rs, data):
-        """Handle subscription requests.
-
-        This is separate from `_set_subscriptions` because logging is different.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: int}]
-        :rtype: int
-        :return: Default return code.
-        :raises: SubscriptionError
-        """
-        data = affirm_array("subscription_request_resolution", data)
-
-        if not all((datum['persona_id'] == rs.user.persona_id
-                    and datum['resolution'] ==
-                        const.SubscriptionRequestResolutions.cancelled)
-                   or self.may_manage(rs, datum['mailinglist_id'])
-                   for datum in data):
-            raise PrivilegeError("Not privileged.")
-
-        num = 0
-        with Atomizer(rs):
-            for datum in data:
-                current_state = self.get_subscription(
-                    rs, datum['persona_id'],
-                    mailinglist_id=datum['mailinglist_id'])
-                if current_state != const.SubscriptionStates.pending:
-                    raise SubscriptionError(
-                        n_("Not a pending subscription request."),
-                        kind="error")
-
-                state = datum['resolution'].get_new_state()
-                code = datum['resolution'].get_log_code()
-                del datum['resolution']
-                with Silencer(rs):
-                    if state:
-                        datum['subscription_state'] = state
-                        num += self._set_subscription(rs, datum)
-                    else:
-                        num += self._remove_subscription(rs, datum)
-                if code:
-                    self.ml_log(
-                        rs, code, datum['mailinglist_id'], datum['persona_id'])
-
-        return num
-
-    def decide_subscription_request(self, rs, mailinglist_id, persona_id,
-                                    resolution):
-        """Maunual singularization of `decide_rubscription_requests.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :type resolution: const.SubscriptionRequestResolutions
-        :rtype: int
-        :returns: Number of affected rows.
-        :raises: SubscriptionError
-        """
-
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': persona_id,
-            'resolution': resolution,
-        }
-        return self.decide_subscription_requests(rs, [datum])
-
-    def cancel_subscription(self, rs, mailinglist_id):
-        """Cancel subscription request.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :rtype: int
-        :raises: SubscriptionError
-        """
-        mailinglist_id = affirm("id", mailinglist_id)
-        with Atomizer(rs):
-            state = self.get_subscription(rs, rs.user.persona_id,
-                                          mailinglist_id=mailinglist_id)
-            if state != const.SubscriptionStates.pending:
-                raise SubscriptionError(
-                    n_("No subscription requested."),
-                    kind="info")
-            else:
-                return self.decide_subscription_request(
-                    rs, mailinglist_id=mailinglist_id,
-                    persona_id=rs.user.persona_id,
-                    resolution=const.SubscriptionRequestResolutions.cancelled)
 
     @access("ml")
     def set_subscription_address(self, rs, mailinglist_id, persona_id, email):
@@ -1297,8 +1197,7 @@ class MlBackend(AbstractBackend):
 
             # Remove those who may not stay subscribed.
             if delete:
-                with Silencer(rs):
-                    num = self._remove_subscriptions(rs, delete)
+                num = self._remove_subscriptions(rs, delete)
                 ret *= num
                 msg = "Removed {} subscribers from mailinglist {}."
                 self.logger.info(msg.format(num, mailinglist_id))
@@ -1320,8 +1219,7 @@ class MlBackend(AbstractBackend):
                 for persona_id in write
             ]
             if data:
-                with Silencer(rs):
-                    self._set_subscriptions(rs, data)
+                self._set_subscriptions(rs, data)
                 ret *= len(data)
                 msg = "Added {} subscribers to mailinglist {}."
                 self.logger.debug(msg.format(len(write), mailinglist_id))

@@ -398,10 +398,9 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': user['id'],
-            'resolution': const.SubscriptionRequestResolutions.denied,
         }
         with self.assertRaises(SubscriptionError):
-            self.ml.subscription_action(self.key, SA.decide_request, **datum)
+            self.ml.subscription_action(self.key, SA.deny_request, **datum)
         self._check_state(user['id'], mailinglist_id, None)
 
         # Test different resolutions
@@ -411,17 +410,15 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': mailinglist_id,
             'persona_id': user['id'],
-            'resolution': const.SubscriptionRequestResolutions.denied,
         }
-        code = self.ml.subscription_action(self.key, SA.decide_request, **datum)
+        code = self.ml.subscription_action(self.key, SA.deny_request, **datum)
         self.assertEqual(code, 1)
         self._check_state(user['id'], mailinglist_id, None)
 
         self._change_own_sub(user['id'], mailinglist_id,
                              SA.request_subscription,
                              code=1, state=SS.pending)
-        datum['resolution'] = const.SubscriptionRequestResolutions.approved
-        code = self.ml.subscription_action(self.key, SA.decide_request, **datum)
+        code = self.ml.subscription_action(self.key, SA.approve_request, **datum)
         self.assertEqual(code, 1)
         self._check_state(user['id'], mailinglist_id,
                           SS.subscribed)
@@ -433,12 +430,7 @@ class TestMlBackend(BackendTest):
         self._change_own_sub(user['id'], mailinglist_id,
                              SA.request_subscription,
                              code=1, state=SS.pending)
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': user['id'],
-            'resolution': const.SubscriptionRequestResolutions.blocked,
-        }
-        code = self.ml.subscription_action(self.key, SA.decide_request, **datum)
+        code = self.ml.subscription_action(self.key, SA.block_request, **datum)
         self.assertEqual(code, 1)
         self._check_state(user['id'], mailinglist_id,
                           SS.mod_unsubscribed)
@@ -462,12 +454,8 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_mod_unsubscriber,
                          code=None, state=SS.pending, kind="warning")
-        datum = {
-            'mailinglist_id': mailinglist_id,
-            'persona_id': user['id'],
-            'resolution': const.SubscriptionRequestResolutions.denied,
-        }
-        code = self.ml.subscription_action(self.key, SA.decide_request, **datum)
+
+        code = self.ml.subscription_action(self.key, SA.deny_request, **datum)
         self.assertEqual(code, 1)
         self._check_state(user['id'], mailinglist_id, None)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
@@ -791,8 +779,6 @@ class TestMlBackend(BackendTest):
 
     @as_users("charly", "emilia", "janis")
     def test_no_privileges(self, user):
-        # TODO Write less thorough tests testing non-moderators work as well,
-        # especially for cases where policies differ for non cde users
 
         def _try_everything(ml_id, user_id):
             moderator_actions = {
@@ -806,9 +792,8 @@ class TestMlBackend(BackendTest):
                         persona_id=user_id)
             with self.assertRaises(PrivilegeError):
                 self.ml.subscription_action(
-                    self.key, SA.decide_request, mailinglist_id=ml_id,
-                    persona_id=user_id,
-                    resolution=const.SubscriptionRequestResolutions.approved)
+                    self.key, SA.approve_request, mailinglist_id=ml_id,
+                    persona_id=user_id)
             # You had never the chance to actually change something anyway.
             with self.assertRaises(PrivilegeError):
                 datum = {
@@ -1315,8 +1300,7 @@ class TestMlBackend(BackendTest):
             {
                 'mailinglist_id': 4,
                 'persona_id': 9,
-                'subscription_state':
-                    SS.pending,
+                'subscription_state': SS.pending,
             },
         ]
         self.ml._set_subscriptions(self.key, data)
@@ -1335,11 +1319,10 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': 4,
             'persona_id': 9,
-            'resolution': const.SubscriptionRequestResolutions.approved,
         }
         self.assertLess(
             0,
-            self.ml.subscription_action(self.key, SA.decide_request, **datum))
+            self.ml.subscription_action(self.key, SA.approve_request, **datum))
 
         self.login(USER_DICT['inga'])
         expectation = {
@@ -1373,8 +1356,7 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': 4,
             'persona_id': 9,
-            'subscription_state':
-                SS.pending,
+            'subscription_state': SS.pending,
         }
         self.ml._set_subscription(self.key, datum)
         expectation = {
@@ -1392,11 +1374,10 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': 4,
             'persona_id': 9,
-            'resolution': const.SubscriptionRequestResolutions.denied,
         }
         self.assertLess(
             0,
-            self.ml.subscription_action(self.key, SA.decide_request, **datum))
+            self.ml.subscription_action(self.key, SA.deny_request, **datum))
 
         self.login(USER_DICT['inga'])
         expectation = {
@@ -1418,8 +1399,7 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': 4,
             'persona_id': 9,
-            'subscription_state':
-                SS.pending,
+            'subscription_state': SS.pending,
         }
         self.ml._set_subscription(self.key, datum)
         expectation = SS.pending
@@ -1429,11 +1409,10 @@ class TestMlBackend(BackendTest):
         datum = {
             'mailinglist_id': 4,
             'persona_id': 9,
-            'resolution': const.SubscriptionRequestResolutions.cancelled,
         }
         self.assertLess(
             0,
-            self.ml.subscription_action(self.key, SA.decide_request, **datum))
+            self.ml.subscription_action(self.key, SA.cancel_request, **datum))
         expectation = None
         self.assertEqual(expectation,
                          self.ml.get_subscription(
@@ -1442,24 +1421,14 @@ class TestMlBackend(BackendTest):
     @as_users("anton")
     def test_log(self, user):
         # first generate some data
-        datum = {
-            'mailinglist_id': 1,
-            'persona_id': 1,
-            'subscription_state': SS.unsubscribed,
-        }
-        self.ml._set_subscription(self.key, datum)
+        self.ml.subscription_action(self.key, SA.unsubscribe, 2, 1)
         datum = {
             'mailinglist_id': 4,
             'persona_id': 1,
             'email': 'devnull@example.cde',
         }
         self.ml.set_subscription_address(self.key, **datum)
-        datum = {
-            'mailinglist_id': 7,
-            'persona_id': 1,
-            'subscription_state': SS.subscribed,
-        }
-        self.ml._set_subscription(self.key, datum)
+        self.ml.subscription_action(self.key, SA.add_subscriber, 7, 1)
         new_data = {
             'address': 'revolution@example.cde',
             'description': 'Vereinigt Euch',
@@ -1532,7 +1501,7 @@ class TestMlBackend(BackendTest):
             {'additional_info': None,
              'code': const.MlLogCodes.unsubscribed,
              'ctime': nearly_now(),
-             'mailinglist_id': 1,
+             'mailinglist_id': 2,
              'persona_id': 1,
              'submitted_by': 1})
         self.assertEqual(expectation, self.ml.retrieve_log(self.key))

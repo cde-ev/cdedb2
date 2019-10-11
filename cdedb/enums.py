@@ -33,7 +33,6 @@ ALL_ENUMS = (
     const.MlLogCodes,
     const.FieldAssociations,
     const.FieldDatatypes,
-    const.SubscriptionRequestResolutions,
     QueryOperators,
     AgeClasses,
     LineResolutions,
