@@ -261,7 +261,8 @@ class AssemblyBackend(AbstractBackend):
 
         This is mostly used for checking mailinglist eligibility.
 
-        A user may check this for themselves, an admin may do so for anyone.
+        As assembly attendees are public to all assembly users, this does not
+        check for any privileges,
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
@@ -271,10 +272,6 @@ class AssemblyBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         assembly_id = affirm("id", assembly_id)
 
-        if not (rs.user.persona_id == persona_id
-                or self.is_admin(rs)
-                or "ml_admin" in rs.user.roles):
-            raise PrivilegeError(n_("Not privileged."))
         return self.check_attendance(
             rs, assembly_id=assembly_id, persona_id=persona_id)
 
