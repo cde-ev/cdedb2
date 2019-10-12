@@ -566,9 +566,10 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
-    def select_persona(self, rs, phrase, kind, aux):
-        """Provide data for inteligent input fields.
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
+                 ("aux2", "any"))
+    def select_persona(self, rs, phrase, kind, aux, aux2=None):
+        """Provide data for intelligent input fields.
 
         This searches for users by name so they can be easily selected
         without entering their numerical ids. This is for example
@@ -630,9 +631,8 @@ class CoreFrontend(AbstractFrontend):
                 ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "mod_ml_user" and aux:
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
-            if "ml_admin" not in rs.user.roles:
-                if rs.user.persona_id not in mailinglist['moderators']:
-                    raise PrivilegeError(n_("Not privileged."))
+            if not self.mlproxy.may_manage(rs, aux):
+                raise PrivilegeError(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "event_admin_user":
@@ -698,11 +698,19 @@ class CoreFrontend(AbstractFrontend):
         if mailinglist:
             persona_ids = tuple(e['id'] for e in data)
             personas = self.coreproxy.get_personas(rs, persona_ids)
-            pol = const.AudiencePolicy(mailinglist['audience_policy'])
-            data = tuple(
-                e for e in data
-                if pol.check(extract_roles(
-                    personas[e['id']], introspection_only=True)))
+            pol = const.MailinglistInteractionPolicy
+            action = check(rs, "enum_subscriptionactions_or_None", aux2)
+            if rs.errors:
+                return self.send_json(rs, {})
+            if action == const.SubscriptionActions.add_subscriber:
+                allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
+                                pol.invitation_only}
+                # This does not remove pending and mod_unsubscribed states,
+                # as it wouldn't be trivial why they are not shown.
+                data = tuple(
+                    e for e in data
+                    if (self.mlproxy.get_interaction_policy_persona(
+                        rs, personas[e['id']], mailinglist) in allowed_pols))
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:

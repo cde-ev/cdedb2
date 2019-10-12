@@ -80,21 +80,53 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def get_interaction_policy(self, rs, persona_id, *, mailinglist=None,
-                               mailinglist_id=None):
+    def get_interaction_policy_persona(self, rs, persona, ml):
         """What may the user do with a mailinglist. Be aware, that this does
         not take unsubscribe overrides into account.
 
         If the mailinglist is available to the caller, they should pass it,
         otherwise it will be retrieved from the database.
 
+        The additional endpoint this function provides in comparison to
+        get_interaction_policy is only supposed to be used for
+        `cdedb.frontend.core.select_persona()`.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona: {str: object}
+        :type ml: {str: object}
+        :rtype: const.MailinglistInteractionPolicy or None
+        :return: The applicable subscription policy for the user or None if the
+            user is not in the audience.
+        """
+        persona = affirm("persona", persona)
+        ml = affirm("mailinglist", ml)
+
+        if not (rs.user.persona_id == persona['id']
+                or self.may_manage(rs, ml['id'])):
+            raise PrivilegeError(n_("Not privileged."))
+        audience_policy = const.AudiencePolicy(ml["audience_policy"])
+        if audience_policy.check(extract_roles(persona)):
+            # First, check if assembly link allows resubscribing.
+            if ml['assembly_id'] and self.assembly.check_attends(
+                    rs, persona['id'], ml['assembly_id']):
+                return const.MailinglistInteractionPolicy.opt_out
+            # Second, check if event link allows resubscribing.
+            elif ml['event_id'] and self.event.check_registration_status(
+                    rs, persona['id'], ml['event_id'], ml['registration_stati']):
+                return const.MailinglistInteractionPolicy.opt_out
+            return const.MailinglistInteractionPolicy(ml["sub_policy"])
+        else:
+            return None
+
+    @access("ml")
+    def get_interaction_policy(self, rs, persona_id, *, mailinglist=None,
+                               mailinglist_id=None):
+        """
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
         :type mailinglist: {str: object}
         :type mailinglist_id: int
         :rtype: const.MailinglistInteractionPolicy or None
-        :return: The applicable subscription policy for the user or None if the
-            user is not in the audience.
         """
         # TODO put these checks in an atomizer?
         if mailinglist is None and mailinglist_id is None:
@@ -113,19 +145,8 @@ class MlBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         persona = self.core.get_persona(rs, persona_id)
 
-        audience_policy = const.AudiencePolicy(ml["audience_policy"])
-        if audience_policy.check(extract_roles(persona)):
-            # First, check if assembly link allows resubscribing.
-            if ml['assembly_id'] and self.assembly.check_attends(
-                    rs, persona_id, ml['assembly_id']):
-                return const.MailinglistInteractionPolicy.opt_out
-            # Second, check if event link allows resubscribing.
-            elif ml['event_id'] and self.event.check_registration_status(
-                    rs, persona_id, ml['event_id'], ml['registration_stati']):
-                return const.MailinglistInteractionPolicy.opt_out
-            return const.MailinglistInteractionPolicy(ml["sub_policy"])
-        else:
-            return None
+        return self.get_interaction_policy_persona(rs, persona, mailinglist)
+
 
     @access("ml")
     def may_view(self, rs, ml, state=None):
@@ -690,7 +711,7 @@ class MlBackend(AbstractBackend):
         action = affirm("enum_subscriptionactions", action)
         sa = const.SubscriptionActions
 
-        """Check if everything is alright – current state comes later"""
+        # 1: Check if everything is alright – current state comes later
         mailinglist_id = affirm("id", mailinglist_id)
         # Managing actions can only be done by moderators. Other options always
         # change your own subscription state.
@@ -705,16 +726,14 @@ class MlBackend(AbstractBackend):
             self._check_transition_requirements(rs, action, mailinglist_id,
                                                 persona_id)
 
-            """Check if current state allows transition"""
+            # 2: Check if current state allows transition
             old_state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id)
             error_matrix = sa.error_matrix()
-            if isinstance(error_matrix[action][old_state], SubscriptionError):
+            if error_matrix[action][old_state]:
                 raise error_matrix[action][old_state]
-            elif error_matrix[action][old_state] is not None:
-                raise RuntimeError(n_("Impossible."))
 
-            """Do the transition"""
+            # 3: Do the transition
             new_state = action.get_target_state()
             code = action.get_log_code()
             datum = {
