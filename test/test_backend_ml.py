@@ -269,7 +269,7 @@ class TestMlBackend(BackendTest):
         # In case of success and check if log entry was created, if the required
         # permissions are present. This should work for moderators as well,
         # but it does not for some reason.
-        if code is not None and self.ml.is_relevant_admin(self.key):
+        if code is not None and self.ml.may_manage(self.key, mailinglist_id):
             log_entry = {
                 'additional_info': None,
                 'code': action.get_log_code(),
@@ -278,7 +278,9 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
                 'submitted_by': persona_id
             }
-            self.assertIn(log_entry, self.ml.retrieve_log(self.key))
+            self.assertIn(
+                log_entry, self.ml.retrieve_log(
+                    self.key, mailinglist_id=mailinglist_id))
 
     @as_users("anton", "berta", "ferdinand")
     def test_opt_in(self, user):
