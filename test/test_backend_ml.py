@@ -625,6 +625,15 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'],  ml_id, SA.request_subscription,
                          code=None, state=None, kind="error")
 
+    @as_users("ferdinand")
+    def test_ml_event_two(self, user):
+        ml_id = 9
+
+        self._change_sub(user['id'], ml_id, SA.subscribe,
+                         code=None, state=None, kind="error")
+        self._change_sub(user['id'], ml_id, SA.add_subscriber,
+                         code=None, state=None, kind="error")
+
     @as_users("anton")
     def test_ml_assembly(self, user):
         ml_id = 5

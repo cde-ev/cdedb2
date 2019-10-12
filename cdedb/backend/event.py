@@ -1611,9 +1611,10 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         persona_id = affirm("id_or_None", persona_id)
-        if (persona_id != rs.user.persona_id
-                and not self.is_orga(rs, event_id=event_id)
-                and not self.is_admin(rs)):
+        if not (persona_id == rs.user.persona_id
+                or self.is_orga(rs, event_id=event_id)
+                or self.is_admin(rs)
+                or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
@@ -1652,7 +1653,7 @@ class EventBackend(AbstractBackend):
             return self.is_orga(rs, event_id=event_id)
 
         registration_ids = self.list_registrations(
-            rs, event_id, rs.user.persona_id)
+            rs, event_id, persona_id)
         if not registration_ids:
             return False
         reg_id = unwrap(registration_ids, keys=True)
@@ -1791,7 +1792,8 @@ class EventBackend(AbstractBackend):
             event_id = unwrap(events)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
-                    and not {rs.user.persona_id} >= personas):
+                    and not {rs.user.persona_id} >= personas
+                    and not "ml_admin" in rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
 
             ret = {e['id']: e for e in self.sql_select(
