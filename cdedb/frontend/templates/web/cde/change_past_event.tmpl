@@ -32,6 +32,8 @@
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="tempus", type="date", label=gettext("Cutoff date")) }}
+        {{ util.form_input_text(name="gallery", label=gettext("Photo gallery"), type="url", placeholder="https://user:pwd@example.cde",
+                info=gettext('URL of photo gallery with http authentification information encoded.')) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("cde/show_past_event")) }}
     </form>
 {% endblock %}

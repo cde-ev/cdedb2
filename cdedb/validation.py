@@ -702,6 +702,19 @@ def _password_strength(val, argname=None, *, _convert=True, admin=False,
     return val, errors
 
 
+_URL_REGEX = re.compile(r'^http[s]?://[a-z0-9._+:-]+@[a-z0-9.-]+\.[a-z]{2,}$')
+
+
+@_addvalidator
+def _url(val, argname=None, *, _convert=True):
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return None, errs
+    if not _URL_REGEX.search(val):
+        errs.append((argname, ValueError(n_("Must be a valid url."))))
+    return val, errs
+
+
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
 
 
@@ -1788,6 +1801,9 @@ _PAST_EVENT_COMMON_FIELDS = lambda: {
     'tempus': _date,
     'description': _str_or_None,
 }
+_PAST_EVENT_OPTIONAL_FIELDS = lambda: {
+    'gallery': _url_or_None
+}
 
 
 @_addvalidator
@@ -1807,10 +1823,11 @@ def _past_event(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = _PAST_EVENT_COMMON_FIELDS()
-        optional_fields = {}
+        optional_fields = _PAST_EVENT_OPTIONAL_FIELDS()
     else:
         mandatory_fields = {'id': _id}
-        optional_fields = _PAST_EVENT_COMMON_FIELDS()
+        optional_fields = dict(_PAST_EVENT_COMMON_FIELDS(),
+                               **_PAST_EVENT_OPTIONAL_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
 

@@ -28,6 +28,10 @@
         {% endif %}
         <dt>{% trans -%}Institution{%- endtrans %}</dt>
         <dd>{{ institutions[ambience['pevent']['institution']] }}</dd>
+        {% if ambience['pevent']['gallery'] and (is_admin or is_participant) %}
+            <dt>{% trans -%}Photo gallery{%- endtrans %}</dt>
+            <dd><a href="{{ ambience['pevent']['gallery'] }}">{{ ambience['pevent']['gallery'] }}</a></dd>
+        {% endif %}
     </dl>
     
     {{ ambience['pevent']['description']|md }}

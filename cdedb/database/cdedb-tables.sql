@@ -494,13 +494,15 @@ CREATE TABLE past_event.events (
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution               integer NOT NULL REFERENCES past_event.institutions(id),
+        institution             integer NOT NULL REFERENCES past_event.institutions(id),
         description             varchar,
         -- any day of the event, used for ordering and determining the first
         -- event a persona participated in
         --
         -- Note, that this is not present in event.events.
-        tempus                  date NOT NULL
+        tempus                  date NOT NULL,
+        -- The url of a photo gallery, if one exists.
+        gallery                 varchar
 );
 GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
 GRANT DELETE, INSERT ON past_event.events TO cdb_admin;
