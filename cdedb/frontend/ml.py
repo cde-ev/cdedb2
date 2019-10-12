@@ -12,7 +12,7 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, name_key, merge_dicts, ProxyShim, SubscriptionError)
+    n_, name_key, merge_dicts, ProxyShim, SubscriptionError, now)
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -732,7 +732,8 @@ class MlFrontend(AbstractUserFrontend):
         ml_ids = self.mlproxy.list_mailinglists(rs)
         current = now().timestamp()
         for ml_id in ml_ids:
-            requests = self.mlproxy.list_requests(rs, ml_id)
+            states = {const.SubscriptionStates.pending}
+            requests = self.mlproxy.get_subscription_states(rs, ml_id, states)
 
             ml_store = store.get(str(ml_id))
             if ml_store is None:
