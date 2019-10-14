@@ -63,7 +63,7 @@ There is a default data set for the development it contains some users
    janis@example.cde       secret     mailinglist user                                 DB-10-8
    kalif@example.cde       secret     assembly user                                    DB-11-6
    lisa                    secret     member with whacked data                         DB-12-4
-   martin@example.cde      secret     second superadmin to confirm privilege changes   DB-13-2
+   martin@example.cde      secret     second meta admin to confirm privilege changes   DB-13-2
   ======================= ========== ================================================ =========
 
 Random Thoughts

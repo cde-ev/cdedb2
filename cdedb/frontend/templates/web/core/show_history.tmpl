@@ -160,10 +160,10 @@
         {% endcall %}
 
         {% call history_field(gettext("Admin Privileges")) %}
-            {% call(c) print_multifield_history(['is_admin','is_core_admin','is_cde_admin','is_event_admin',
+            {% call(c) print_multifield_history(['is_meta_admin','is_core_admin','is_cde_admin','is_event_admin',
                                                  'is_ml_admin', 'is_assembly_admin']) %}
                 {% set vars = {'any_privilege': False} %}
-                {% for bit, desc, icon in (("is_admin", gettext("Super-Admin"), "wrench"),
+                {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
                                           ("is_core_admin", gettext("Core-Admin"), "user"),
                                           ("is_cde_admin", gettext("CdE-Admin"), "education"),
                                           ("is_event_admin", gettext("Event-Admin"), "blackboard"),

@@ -1214,8 +1214,8 @@ def extract_roles(session, introspection_only=False):
     if "cde" in ret:
         if session.get("is_core_admin"):
             ret.add("core_admin")
-        if session.get("is_admin"):
-            ret.add("admin")
+        if session.get("is_meta_admin"):
+            ret.add("meta_admin")
         if session["is_member"]:
             ret.add("member")
             if session.get("is_searchable"):
@@ -1309,7 +1309,7 @@ def privilege_tier(roles, conjunctive=False):
     is controlled by the conjunctive parameter, if it is True the operation
     lies in the intersection of all realms.
 
-    Note that core admins and super admins are always allowed access.
+    Note that core admins and meta admins are always allowed access.
 
     :type roles: {str}
     :type conjunctive: bool
@@ -1389,7 +1389,7 @@ ANTI_CSRF_TOKEN_NAME = "_anti_csrf"
 #: This is an ordered dict, so that we can select the highest privilege
 #: level.
 DB_ROLE_MAPPING = collections.OrderedDict((
-    ("admin", "cdb_admin"),
+    ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
     ("cde_admin", "cdb_admin"),
     ("ml_admin", "cdb_admin"),
@@ -1429,7 +1429,7 @@ DEFAULT_NUM_COURSE_CHOICES = 3
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
-    "is_active", "is_admin", "is_core_admin", "is_cde_admin",
+    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
     "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
     "is_member", "is_searchable", "is_archived")
@@ -1476,7 +1476,7 @@ GENESIS_CASE_FIELDS = (
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
     "id", "ctime", "ftime", "persona_id", "submitted_by", "status",
-    "is_admin", "is_core_admin", "is_cde_admin",
+    "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin",
     "is_assembly_admin", "notes", "reviewer")
 

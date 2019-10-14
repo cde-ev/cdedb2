@@ -13,17 +13,17 @@
         {%- endtrans %}
     </p>
 
-    {# Everyone can see superadmins #}
-    <h3>{% trans -%}Super-Admins{%- endtrans %}</h3>
+    {# Everyone can see meta admins #}
+    <h3>{% trans -%}Meta-Admins{%- endtrans %}</h3>
     <div class="p">
         {% trans -%}
-            Super-Admins may modify admin privileges of other users based on a
-            four-eye principle. One Super-Admin may initiate a change, another has to
+            Meta-Admins may modify admin privileges of other users based on a
+            four-eye principle. One Meta-Admin may initiate a change, another has to
             approve that change.
         {%- endtrans %}
     </div>
-    <ul id="admin">
-        {% for admin in admins["admin"] %}
+    <ul id="meta">
+        {% for admin in admins["meta"] %}
             <li>{{ util.persona_anchor(personas[admin]) }}</li>
         {% endfor %}
     </ul>

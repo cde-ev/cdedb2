@@ -28,7 +28,7 @@ CREATE TABLE core.personas (
         notes                   varchar,
 
         -- global admin, grants all privileges
-        is_admin                boolean NOT NULL DEFAULT False,
+        is_meta_admin           boolean NOT NULL DEFAULT False,
         -- allows managing all users and general database configuration
         is_core_admin           boolean NOT NULL DEFAULT False,
         -- allows managing of cde users (members and former members) and
@@ -134,7 +134,7 @@ CREATE INDEX idx_personas_is_ml_realm ON core.personas(is_ml_realm);
 CREATE INDEX idx_personas_is_assembly_realm ON core.personas(is_assembly_realm);
 CREATE INDEX idx_personas_is_member ON core.personas(is_member);
 CREATE INDEX idx_personas_is_searchable ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived) ON core.personas TO cdb_anonymous;
+GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived) ON core.personas TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.personas TO cdb_persona; -- TODO maybe be more restrictive
 GRANT INSERT ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
@@ -194,7 +194,7 @@ CREATE TABLE core.privilege_changes (
         -- see cdedb.database.constants.PrivilegeChangeStati
         status                  integer NOT NULL DEFAULT 0,
         -- changes to the admin bits. NULL is for no change.
-        is_admin                boolean DEFAULT NULL,
+        is_meta_admin           boolean DEFAULT NULL,
         is_core_admin           boolean DEFAULT NULL,
         is_cde_admin            boolean DEFAULT NULL,
         is_finance_admin        boolean DEFAULT NULL,
@@ -293,7 +293,7 @@ CREATE TABLE core.changelog (
         username                varchar,
         is_active               boolean,
         notes                   varchar,
-        is_admin                boolean,
+        is_meta_admin           boolean,
         is_core_admin           boolean,
         is_cde_admin            boolean,
         is_finance_admin        boolean,

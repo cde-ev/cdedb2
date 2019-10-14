@@ -11,7 +11,7 @@ token "<script>abcdef</script>" in every user definable string:
     sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql
     cp cdedb/testconfig.py.off cdedb/testconfig.py
 
-This script logs in as Anton (our testing super admin account) and traverses all
+This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string
 being present without escaping and for double escaped '<' characters. We also
 submit every form with the magic token entered into every form field to check if

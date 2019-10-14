@@ -225,7 +225,7 @@ I18N_STRINGS = (
     n_("[<class 'decimal.ConversionSyntax'>]"),
 
     # admin bits and privilege changes
-    n_("is_admin"),
+    n_("is_meta_admin"),
     n_("is_core_admin"),
     n_("is_cde_admin"),
     n_("is_finance_admin"),

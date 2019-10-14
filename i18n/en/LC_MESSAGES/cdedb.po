@@ -13120,7 +13120,7 @@ msgstr "Rejected"
 
 #: cdedb/i18n_additional.py:226
 msgid "is_admin"
-msgstr "Super-Admin"
+msgstr "Meta-Admin"
 
 #: cdedb/i18n_additional.py:227
 msgid "is_core_admin"
@@ -13559,4 +13559,52 @@ msgid ""
 "                They may create and manage Assembly-Users, i.e. users with "
 "access to assemblies, that are not CdE members.\n"
 "                They may also add these users as participants of assemblies."
+msgstr ""
+
+#: cdedb/backend/core.py:832 cdedb/backend/core.py:897
+#: cdedb/frontend/core.py:1052 cdedb/frontend/core.py:1126
+msgid "Cannot modify own meta admin privileges."
+msgstr ""
+
+#: cdedb/backend/core.py:1172
+#: cdedb/frontend/templates/web/core/show_user.tmpl:448
+msgid "Cannot archive meta admins."
+msgstr ""
+
+#: cdedb/frontend/core.py:1062
+msgid "Privilege change waiting for approval by another Meta-Admin."
+msgstr ""
+
+#: cdedb/frontend/core.py:1096
+msgid ""
+"This privilege change is affecting your Meta-Admin privileges, so it has to "
+"be approved by another Meta-Admin."
+msgstr ""
+
+#: cdedb/frontend/core.py:1101
+msgid ""
+"This privilege change was submitted by you, so it has to be approved by "
+"another Meta-Admin."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:15
+msgid "Privilege changes will have to be approved by another Meta-Admin."
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:21
+#: cdedb/frontend/templates/web/core/show_history.tmpl:162
+#: cdedb/frontend/templates/web/core/show_user.tmpl:143
+msgid "Meta-Admin"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:17
+msgid "Meta-Admins"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:19
+msgid ""
+"Meta-Admins may modify admin privileges of other users based on a\n"
+"            four-eye principle. One Meta-Admin may initiate a change, "
+"another has to\n"
+"            approve that change."
 msgstr ""

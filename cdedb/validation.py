@@ -686,7 +686,7 @@ def _password_strength(val, argname=None, *, _convert=True, admin=False,
         # if user is admin in any realm, require a score of 4. After
         # migration, everyone must change their password, so this is
         # actually enforced for admins of the old db. Afterwards,
-        # super admins are intended to do a password reset.
+        # meta admins are intended to do a password reset.
         if results['score'] < 2:
             feedback = [results['feedback']['warning']]
             feedback.extend(results['feedback']['suggestions'][0:2])
@@ -820,7 +820,7 @@ _PERSONA_EVENT_CREATION = lambda: {
 _PERSONA_COMMON_FIELDS = lambda: {
     'username': _email,
     'notes': _str_or_None,
-    'is_admin': _bool,
+    'is_meta_admin': _bool,
     'is_core_admin': _bool,
     'is_cde_admin': _bool,
     'is_finance_admin': _bool,
@@ -905,7 +905,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
         if errs:
             return temp, errs
         temp.update({
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -1292,7 +1292,7 @@ _PRIVILEGE_CHANGE_COMMON_FIELDS = lambda: {
 }
 
 _PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {
-    'is_admin': _bool_or_None,
+    'is_meta_admin': _bool_or_None,
     'is_core_admin': _bool_or_None,
     'is_cde_admin': _bool_or_None,
     'is_finance_admin': _bool_or_None,

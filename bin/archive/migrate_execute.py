@@ -238,7 +238,7 @@ class User:
         self.roles = {
             "anonymous", "persona", "cde", "event", "ml", "assembly",
             "cde_admin", "event_admin", "ml_admin", "assembly_admin",
-            "core_admin", "admin", "member", "searchable"}
+            "core_admin", "meta_admin", "member", "searchable"}
         self.orga = set()
         self.moderator = set()
         self.username = None
@@ -349,7 +349,7 @@ for persona_id in persona_ids:
         'password_hash': ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
                           "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHZ/si/"),
         'is_active': auth['active_account'],
-        'is_admin': False,
+        'is_meta_admin': False,
         'is_core_admin': False,
         'is_cde_admin': False,
         'is_event_admin': False,
@@ -1372,10 +1372,10 @@ INIT_PASSWORD = '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6
 query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
 query_exec(cdb, query, (INIT_PASSWORD, DEFAULT_ID))
 
-for superadmin in (2158, 5124, 10705, 17476):
+for meta_admin in (2158, 5124, 10705, 17476):
     core.change_admin_bits(rs(DEFAULT_ID), {
-        'id': superadmin,
-        'is_admin': True,
+        'id': meta_admin,
+        'is_meta_admin': True,
         'is_core_admin': True,
         'is_cde_admin': True,
         'is_event_admin': True,
@@ -1387,7 +1387,7 @@ for admin in (1475, 4463, 8586, 5843, 51, 7311, 12925, 8737, 16231, 20109,
               21011, 16563):
     core.change_admin_bits(rs(DEFAULT_ID), {
         'id': admin,
-        'is_admin': False,
+        'is_meta_admin': False,
         'is_core_admin': True,
         'is_cde_admin': True,
         'is_event_admin': True,

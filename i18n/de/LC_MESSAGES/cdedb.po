@@ -14477,6 +14477,69 @@ msgstr ""
 "Minderjährige können sich nicht anmelden. Bitte setze Dich mit dem Orgateam "
 "in Verbindung."
 
+#: cdedb/i18n_additional.py:219
+msgid "is_meta_admin"
+msgstr "Meta-Admin"
+
+#: cdedb/backend/core.py:832 cdedb/backend/core.py:897
+#: cdedb/frontend/core.py:1052 cdedb/frontend/core.py:1126
+msgid "Cannot modify own meta admin privileges."
+msgstr "Die eigenen Meta-Admin-Privilegien können nicht bearbeitet werden."
+
+#: cdedb/backend/core.py:1172
+#: cdedb/frontend/templates/web/core/show_user.tmpl:448
+msgid "Cannot archive meta admins."
+msgstr "Meta-Admins können nicht archiviert werden."
+
+#: cdedb/frontend/core.py:1062
+msgid "Privilege change waiting for approval by another Meta-Admin."
+msgstr ""
+"Änderung der Admin-Privilegien wartet auf Bestätigung durch einen anderen "
+"Meta-Admin."
+
+#: cdedb/frontend/core.py:1096
+msgid ""
+"This privilege change is affecting your Meta-Admin privileges, so it has to "
+"be approved by another Meta-Admin."
+msgstr ""
+"Diese Änderung betrifft Deine Meta-Admin-Privilegien und muss daher von "
+"einem anderen Meta-Admin bestätigt werden."
+
+#: cdedb/frontend/core.py:1101
+msgid ""
+"This privilege change was submitted by you, so it has to be approved by "
+"another Meta-Admin."
+msgstr ""
+"Diese Änderung der Admin-Privilegien wurde von Dir angestoßen und muss daher "
+"von einem anderen Meta-Admin bestätigt werden."
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:15
+msgid "Privilege changes will have to be approved by another Meta-Admin."
+msgstr ""
+"Änderungen der Admin-Privilegien müssen durch einen anderen Meta-Admin "
+"bestötigt werden."
+
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:21
+#: cdedb/frontend/templates/web/core/show_history.tmpl:162
+#: cdedb/frontend/templates/web/core/show_user.tmpl:143
+msgid "Meta-Admin"
+msgstr "Meta-Admin"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:17
+msgid "Meta-Admins"
+msgstr "Meta-Admins"
+
+#: cdedb/frontend/templates/web/core/view_admins.tmpl:19
+msgid ""
+"Meta-Admins may modify admin privileges of other users based on a\n"
+"            four-eye principle. One Meta-Admin may initiate a change, "
+"another has to\n"
+"            approve that change."
+msgstr ""
+"Meta-Admins können Adminprivilegien anderer Nutzer nach einem Vier-Augen-"
+"Prinzip bearbeiten. Ein Meta-Admin kann eine Änderung anstoßen, ein anderer "
+"muss sie bestätigen."
+
 #~ msgid ""
 #~ "If the event comprises multiple parts or multiple course tracks,\n"
 #~ "                        they have to be added later, using the “Event-"

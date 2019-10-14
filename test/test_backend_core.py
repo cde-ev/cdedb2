@@ -150,7 +150,7 @@ class TestCoreBackend(BackendTest):
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
             'balance': None,
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -187,7 +187,7 @@ class TestCoreBackend(BackendTest):
                 'id': new_id,
                 'interests': None,
                 'is_active': True,
-                'is_admin': False,
+                'is_meta_admin': False,
                 'is_archived': False,
                 'is_assembly_admin': False,
                 'is_assembly_realm': False,
@@ -263,7 +263,7 @@ class TestCoreBackend(BackendTest):
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
             'balance': decimal.Decimal('0.00'),
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -298,7 +298,7 @@ class TestCoreBackend(BackendTest):
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
             'balance': None,
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -321,7 +321,7 @@ class TestCoreBackend(BackendTest):
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
             'balance': None,
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -357,7 +357,7 @@ class TestCoreBackend(BackendTest):
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
             'balance': None,
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -441,7 +441,7 @@ class TestCoreBackend(BackendTest):
         value = self.core.get_event_user(self.key, new_id)
         expectation = {k: v for k, v in expectation.items() if k in PERSONA_EVENT_FIELDS}
         expectation.update({
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -510,7 +510,7 @@ class TestCoreBackend(BackendTest):
         value = self.core.get_ml_user(self.key, new_id)
         expectation = {k: v for k, v in expectation.items() if k in PERSONA_ML_FIELDS}
         expectation.update({
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -548,7 +548,7 @@ class TestCoreBackend(BackendTest):
             'title': 'Dr.',
             'id': 2,
             'is_active': True,
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_assembly_realm': True,
@@ -643,7 +643,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual("N.", data['given_names'])
 
     def test_privilege_change(self):
-        # This is somewhat hacky for now, because we need a second superadmin
+        # This is somewhat hacky for now, because we need a second meta admin
         # for this to work with the new pending PrivilegeChange system
         admin1 = USER_DICT["anton"]
         admin2 = USER_DICT["martin"]
@@ -723,7 +723,7 @@ class TestCoreBackend(BackendTest):
     def test_invalid_privilege_change(self, user):
         data = {
             "persona_id": USER_DICT["janis"]["id"],
-            "is_admin": True,
+            "is_meta_admin": True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):

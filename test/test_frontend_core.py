@@ -539,7 +539,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Privilegien ändern für {} {}".format(
             new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
-        self.assertEqual(False, f['is_admin'].checked)
+        self.assertEqual(False, f['is_meta_admin'].checked)
         self.assertEqual(False, f['is_event_admin'].checked)
         self.assertEqual(False, f['is_assembly_admin'].checked)
         f['is_event_admin'].checked = True
@@ -558,7 +558,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Privilegien ändern für {} {}".format(
             new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
-        self.assertEqual(False, f['is_admin'].checked)
+        self.assertEqual(False, f['is_meta_admin'].checked)
         self.assertEqual(True, f['is_event_admin'].checked)
         self.assertEqual(True, f['is_assembly_admin'].checked)
 
@@ -804,8 +804,8 @@ class TestCoreFrontend(FrontendTest):
         self.test_privilege_change()
         self.traverse({"href": "/core/admins"})
         self.assertTitle("Administratorenübersicht")
-        self.assertPresence("Anton Armin A. Administrator", "admin")
-        self.assertPresence("Martin Meiste", "admin")
+        self.assertPresence("Anton Armin A. Administrator", "meta")
+        self.assertPresence("Martin Meiste", "meta")
         self.assertPresence("Anton Armin A. Administrator", "core")
         self.assertNonPresence("Martin Meister", "core")
         self.assertNonPresence("Bertålotta Beispiel", "core")

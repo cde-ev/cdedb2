@@ -61,7 +61,7 @@ class CoreBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("persona")
-    def is_relative_admin(self, rs, persona_id, allow_superadmin=False):
+    def is_relative_admin(self, rs, persona_id, allow_meta_admin=False):
         """Check whether the user is privileged with respect to a persona.
 
         A mailinglist admin may not edit cde users, but the other way
@@ -69,15 +69,15 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
-        :type allow_superadmin: bool
-        :param allow_superadmin: In some cases we need to allow superadmins
+        :type allow_meta_admin: bool
+        :param allow_meta_admin: In some cases we need to allow meta admins
             access where they should not normally have it. This is to allow that
             override.
         :rtype: bool
         """
         if self.is_admin(rs):
             return True
-        if allow_superadmin and "admin" in rs.user.roles:
+        if allow_meta_admin and "meta_admin" in rs.user.roles:
             return True
         roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
                               introspection_only=True)
@@ -554,7 +554,7 @@ class CoreBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         if (persona_id != rs.user.persona_id
                 and not self.is_relative_admin(
-                rs, persona_id, allow_superadmin=True)):
+                rs, persona_id, allow_meta_admin=True)):
             raise PrivilegeError(n_("Not privileged."))
         generations = affirm_set("int", generations, allow_None=True)
         fields = list(PERSONA_ALL_FIELDS)
@@ -685,9 +685,9 @@ class CoreBackend(AbstractBackend):
                 raise PrivilegeError(n_("Realm modification prevented."))
         admin_keys = {'is_cde_admin', 'is_finance_admin', 'is_event_admin',
                       'is_ml_admin', 'is_assembly_admin', 'is_core_admin',
-                      'is_admin'}
+                      'is_meta_admin'}
         if (set(data) & admin_keys
-                and ("admin" not in rs.user.roles
+                and ("meta_admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
             # Allow unsetting adminbits during archival.
             if (any(data[key] for key in admin_keys)
@@ -718,10 +718,10 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Own activation prevented."))
 
         # check for permission to edit
-        allow_superadmin = data.keys() <= admin_keys | {"id"}
+        allow_meta_admin = data.keys() <= admin_keys | {"id"}
         if (rs.user.persona_id != data['id']
                 and not self.is_relative_admin(rs, data['id'],
-                                               allow_superadmin)):
+                                               allow_meta_admin)):
             raise PrivilegeError(n_("Not privileged."))
 
         # Prevent modification of archived members. This check is
@@ -811,7 +811,7 @@ class CoreBackend(AbstractBackend):
             rs, data, may_wait=False, change_note="Profilbild geändert.",
             allow_specials=("foto",))
 
-    @access("admin")
+    @access("meta_admin")
     def initialize_privilege_change(self, rs, data):
         """Initialize a change to a users admin bits.
 
@@ -826,8 +826,8 @@ class CoreBackend(AbstractBackend):
         data['status'] = const.PrivilegeChangeStati.pending
         data = affirm("privilege_change", data)
 
-        if "is_admin" in data and data['persona_id'] == rs.user.persona_id:
-            raise PrivilegeError(n_("Cannot modify own superadmin privileges."))
+        if "is_meta_admin" in data and data['persona_id'] == rs.user.persona_id:
+            raise PrivilegeError(n_("Cannot modify own meta admin privileges."))
         if self.list_privilege_changes(
                 rs, persona_id=data['persona_id'],
                 stati=(const.PrivilegeChangeStati.pending,)):
@@ -851,7 +851,7 @@ class CoreBackend(AbstractBackend):
                     "User does not fit the requirements for this "
                     "admin privilege."))
 
-        if data.get('is_core_admin') or data.get('is_admin'):
+        if data.get('is_core_admin') or data.get('is_meta_admin'):
             if not persona['is_cde_realm']:
                 raise ValueError(n_(
                     "User does not fit the requirements for this "
@@ -863,7 +863,7 @@ class CoreBackend(AbstractBackend):
 
         return self.sql_insert(rs, "core.privilege_changes", data)
 
-    @access("admin")
+    @access("meta_admin")
     def finalize_privilege_change(self, rs, case_id, case_status):
         """Finalize a pending change to a users admin bits.
 
@@ -891,10 +891,10 @@ class CoreBackend(AbstractBackend):
         }
         with Atomizer(rs):
             if case_status == const.PrivilegeChangeStati.approved:
-                if (case["is_admin"] is not None
+                if (case["is_meta_admin"] is not None
                     and case['persona_id'] == rs.user.persona_id):
                     raise PrivilegeError(
-                        n_("Cannot modify own superadmin privileges."))
+                        n_("Cannot modify own meta admin privileges."))
                 if case['submitted_by'] == rs.user.persona_id:
                     raise PrivilegeError(
                         n_("Only a different admin than the submitter "
@@ -909,7 +909,7 @@ class CoreBackend(AbstractBackend):
                 data = {
                     "id": case["persona_id"]
                 }
-                admin_keys = {"is_admin", "is_core_admin", "is_cde_admin",
+                admin_keys = {"is_meta_admin", "is_core_admin", "is_cde_admin",
                               "is_finance_admin", "is_event_admin",
                               "is_ml_admin", "is_assembly_admin"}
                 for key in admin_keys:
@@ -942,7 +942,7 @@ class CoreBackend(AbstractBackend):
 
         return ret
 
-    @access("admin")
+    @access("meta_admin")
     def list_privilege_changes(self, rs, persona_id=None, stati=None):
         """List privilge changes.
 
@@ -980,7 +980,7 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e["id"]: e for e in data}
 
-    @access("admin")
+    @access("meta_admin")
     @singularize("get_privilege_change")
     def get_privilege_changes(self, rs, ids):
         """Retrieve datasets for priviledge changes.
@@ -1008,7 +1008,7 @@ class CoreBackend(AbstractBackend):
         query = "SELECT id from core.personas WHERE {constraint}"
 
         constraints = {
-            "admin": "is_admin = TRUE",
+            "meta": "is_meta_admin = TRUE",
             "core": "is_core_admin = TRUE",
             "cde": "is_cde_admin = TRUE",
             "finance": "is_finance_admin = TRUE",
@@ -1139,10 +1139,10 @@ class CoreBackend(AbstractBackend):
             if persona['is_archived']:
                 return 0
 
-            # Disallow archival of superadmins to ensure there always remain
+            # Disallow archival of meta admins to ensure there always remain
             # atleast two.
-            if persona['is_admin']:
-                raise ArchiveError(n_("Cannot archive superadmins."))
+            if persona['is_meta_admin']:
+                raise ArchiveError(n_("Cannot archive meta admins."))
 
             #
             # 2. Remove complicated attributes (membership, foto and password)
@@ -1171,7 +1171,7 @@ class CoreBackend(AbstractBackend):
                 'username': None,
                 'is_active': False,
                 'notes': note,  # Note on why the persona was archived.
-                'is_admin': False,
+                'is_meta_admin': False,
                 'is_core_admin': False,
                 'is_cde_admin': False,
                 'is_finance_admin': False,
@@ -1569,7 +1569,7 @@ class CoreBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         if (ids != {rs.user.persona_id} and not self.is_admin(rs)
                 and any(not self.is_relative_admin(rs, anid,
-                                                   allow_superadmin=True)
+                                                   allow_meta_admin=True)
                         for anid in ids)):
             raise PrivilegeError(n_("Must be privileged."))
         return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
@@ -1592,7 +1592,7 @@ class CoreBackend(AbstractBackend):
         data = affirm("persona", data, creation=True)
         # zap any admin attempts
         data.update({
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
@@ -1656,7 +1656,7 @@ class CoreBackend(AbstractBackend):
         ip = affirm("printable_ascii", ip)
         # note the lower-casing for email addresses
         query = glue(
-            "SELECT id, password_hash, is_admin, is_core_admin",
+            "SELECT id, password_hash, is_meta_admin, is_core_admin",
             "FROM core.personas",
             "WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
@@ -1669,7 +1669,7 @@ class CoreBackend(AbstractBackend):
                 ip, username))
             return None
         else:
-            if self.conf.LOCKDOWN and not (data['is_admin']
+            if self.conf.LOCKDOWN and not (data['is_meta_admin']
                                            or data['is_core_admin']):
                 # Short circuit in case of lockdown
                 return None
@@ -1971,7 +1971,7 @@ class CoreBackend(AbstractBackend):
                 rs, "core.personas", ("id",), email, entity_key="username"))
 
         columns_of_interest = [
-            "is_cde_realm", "is_admin", "is_core_admin", "is_cde_admin",
+            "is_cde_realm", "is_meta_admin", "is_core_admin", "is_cde_admin",
             "is_event_admin", "is_ml_admin", "is_assembly_admin", "username",
             "given_names", "family_name", "display_name", "title",
             "name_supplement", "birthday"]
@@ -1993,7 +1993,7 @@ class CoreBackend(AbstractBackend):
                 rs.conn = orig_conn
 
         admin = any(persona[admin] for admin in
-                    ("is_admin", "is_core_admin", "is_cde_admin",
+                    ("is_meta_admin", "is_core_admin", "is_cde_admin",
                      "is_event_admin", "is_ml_admin", "is_assembly_admin"))
         inputs = (persona['username'].split('@') +
                   persona['given_names'].replace('-', ' ').split() +
