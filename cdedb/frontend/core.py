@@ -309,6 +309,9 @@ class CoreFrontend(AbstractFrontend):
         # Core admins see everything
         if "core_admin" in rs.user.roles:
             access_levels.update(ALL_ACCESS_LEVELS)
+        # Meta admins are meta
+        if "meta_admin" in rs.user.roles:
+            access_levels.add("meta")
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
             # Relative admins can see core data
@@ -371,26 +374,25 @@ class CoreFrontend(AbstractFrontend):
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
-        if "meta" in access_levels:
-            data.update(self.coreproxy.get_total_persona(rs, persona_id))
 
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
-                and 'foto' in data):
+                 and 'foto' in data):
             del data['foto']
         if "core" not in access_levels:
-            masks = (
-                "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
-                "is_event_admin", "is_ml_admin", "is_assembly_admin",
-                "is_cde_realm", "is_event_realm", "is_ml_realm",
-                "is_assembly_realm", "is_searchable",
-                "is_archived", "balance", "decided_search",
-                "trial_member", "bub_search")
+            masks = ["balance", "decided_search", "trial_member", "bub_search",
+                     "is_searchable"]
+            if "meta" not in access_levels:
+                masks.extend([
+                    "is_active", "is_meta_admin", "is_core_admin",
+                    "is_cde_admin", "is_event_admin", "is_ml_admin",
+                    "is_assembly_admin", "is_cde_realm", "is_event_realm",
+                    "is_ml_realm", "is_assembly_realm", "is_archived"])
+            if "orga" not in access_levels and not is_relative_admin:
+                masks.append("is_member")
             for key in masks:
                 if key in data:
                     del data[key]
-            if "orga" not in access_levels and "is_member" in data:
-                del data["is_member"]
         if not is_relative_admin and "notes" in data:
             del data['notes']
 

@@ -102,18 +102,18 @@
         </dl>
 
 
+        <h4 class="heading-underline">{% trans -%}Account & Membership{%- endtrans %}</h4>
+        <dl class="dl-horizontal">
+            <dt>{% trans -%}CdEDB-ID{%- endtrans %}</dt>
+            <dd>{{ data['id']|cdedbid }}</dd>
+            {% if is_relative_admin %}
+                <dt>{% trans -%}Account active{%- endtrans %}</dt>
+                <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
+                                          titles=[gettext("No"), gettext("Yes")]) }}</dd>
+            {% endif %}
+        </dl>
 
-            <h4 class="heading-underline">{% trans -%}Account & Membership{%- endtrans %}</h4>
-            <dl class="dl-horizontal">
-                <dt>{% trans -%}CdEDB-ID{%- endtrans %}</dt>
-                <dd>{{ data['id']|cdedbid }}</dd>
-                {% if is_relative_admin %}
-                    <dt>{% trans -%}Account active{%- endtrans %}</dt>
-                    <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
-                                              titles=[gettext("No"), gettext("Yes")]) }}</dd>
-                {% endif %}
-            </dl>
-        {% if data['id'] == user.persona_id or is_relative_admin %}
+        {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.roles %}
             <dl class="dl-horizontal">
                 <dt>{% trans -%}Realms{%- endtrans %}</dt>
                 <dd>
@@ -167,60 +167,60 @@
                     <dd>{{ data['notes']|md|linebreaks }}</dd>
                 {% endif %}
             </dl>
+        {% endif %}
 
-            {% if data['is_cde_realm'] %}
-                <dl class="dl-horizontal">
-                    <dt>{% trans -%}Membership{%- endtrans %}</dt>
+        {% if data['is_cde_realm'] and (data['id'] == user.persona_id or is_relative_admin) %}
+            <dl class="dl-horizontal">
+                <dt>{% trans -%}Membership{%- endtrans %}</dt>
+                <dd>
+                    {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
+                    {% if data['is_member'] %}{% trans -%}CdE-Member{%- endtrans %}{% endif %}
+                    {% if data['trial_member'] %}
+                        {% trans -%}(Trialmembership){%- endtrans %}
+                    {% endif %}
+                    {% if is_relative_admin %}
+                        {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pencil",
+                                     aclass="btn btn-xs btn-warning") }}
+                    {% endif %}
+                </dd>
+
+                <dt>{% trans -%}Balance{%- endtrans %}</dt>
+                {% if data['has_lastschrift'] %}
                     <dd>
-                        {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
-                        {% if data['is_member'] %}{% trans -%}CdE-Member{%- endtrans %}{% endif %}
-                        {% if data['trial_member'] %}
-                            {% trans -%}(Trialmembership){%- endtrans %}
-                        {% endif %}
-                        {% if is_relative_admin %}
-                            {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pencil",
-                                         aclass="btn btn-xs btn-warning") }}
+                        {{ data['balance']|money(lang=lang) }} {% trans -%}and{%- endtrans %}
+                        {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                gettext("Direct Debit Authorization"), icon="euro") }}
+                    </dd>
+                {% else %}
+                    <dd>{{ data['balance']|money(lang=lang) }}</dd>
+                    {% if 'cde_admin' in user.roles %}
+                        <dd>
+                            {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                    gettext("New Direct Debit Authorization …"), icon="euro") }}
+                        </dd>
+                    {% endif %}
+                {% endif %}
+
+                {% if data['is_member'] %}
+                    <dt>{% trans -%}Searchability{%- endtrans %}</dt>
+                    <dd>
+                        {{ util.deko_checkbox(checked=data['is_searchable']) }}
+                        {% if data['is_searchable'] %}
+                            <td>{% trans -%}Data is visible for other Members.{%- endtrans %}</td>
+                        {% else %}
+                            {% if not data['decided_search'] %}
+                                {% trans -%}Not yet decided. (Data is not visible){%- endtrans %}
+                                {% if data['id'] == user.persona_id %}
+                                    {{ util.href(cdedblink('cde/consent_decision'), gettext("Give Consent"),
+                                                 icon="hand-right", aclass="btn btn-xs btn-primary") }}
+                                {% endif %}
+                            {% else %}
+                                {% trans -%}Data is not visible.{%- endtrans %}
+                            {% endif %}
                         {% endif %}
                     </dd>
-
-                    <dt>{% trans -%}Balance{%- endtrans %}</dt>
-                    {% if data['has_lastschrift'] %}
-                        <dd>
-                            {{ data['balance']|money(lang=lang) }} {% trans -%}and{%- endtrans %}
-                            {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                    gettext("Direct Debit Authorization"), icon="euro") }}
-                        </dd>
-                    {% else %}
-                        <dd>{{ data['balance']|money(lang=lang) }}</dd>
-                        {% if 'cde_admin' in user.roles %}
-                            <dd>
-                                {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                        gettext("New Direct Debit Authorization …"), icon="euro") }}
-                            </dd>
-                        {% endif %}
-                    {% endif %}
-
-                    {% if data['is_member'] %}
-                        <dt>{% trans -%}Searchability{%- endtrans %}</dt>
-                        <dd>
-                            {{ util.deko_checkbox(checked=data['is_searchable']) }}
-                            {% if data['is_searchable'] %}
-                                <td>{% trans -%}Data is visible for other Members.{%- endtrans %}</td>
-                            {% else %}
-                                {% if not data['decided_search'] %}
-                                    {% trans -%}Not yet decided. (Data is not visible){%- endtrans %}
-                                    {% if data['id'] == user.persona_id %}
-                                        {{ util.href(cdedblink('cde/consent_decision'), gettext("Give Consent"),
-                                                     icon="hand-right", aclass="btn btn-xs btn-primary") }}
-                                    {% endif %}
-                                {% else %}
-                                    {% trans -%}Data is not visible.{%- endtrans %}
-                                {% endif %}
-                            {% endif %}
-                        </dd>
-                    {% endif %}
-                </dl>
-            {% endif %}
+                {% endif %}
+            </dl>
         {% endif %}
 
         <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
