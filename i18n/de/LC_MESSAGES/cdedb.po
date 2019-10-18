@@ -2674,6 +2674,9 @@ msgstr "zu bewilligen"
 msgid "to revoke"
 msgstr "zu widerrufen"
 
+msgid "Change rejected."
+msgstr "Änderung abgelehnt."
+
 #: cdedb/backend/event.py:1418 cdedb/backend/event.py:1290
 #: cdedb/backend/event.py:1289 cdedb/backend/event.py:1287
 msgid "Wrong-associated segments found."

@@ -1134,7 +1134,9 @@ class CoreFrontend(AbstractFrontend):
                        "may approve a privilege change."))
         code = self.coreproxy.finalize_privilege_change(
             rs, case_id, case_status)
-        self.notify_return_code(rs, code)
+        self.notify_return_code(
+            rs, code, success=(n_("Change committed.")
+                               if ack else n_("Change rejected.")))
         return self.redirect(rs, "core/list_privilege_changes")
 
     @access("core_admin")
