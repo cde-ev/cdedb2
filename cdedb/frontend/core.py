@@ -988,9 +988,11 @@ class CoreFrontend(AbstractFrontend):
             "core": self.coreproxy.list_admins(rs, "core"),
         }
 
-        for realm in ("cde", "event", "ml", "assembly"):
-            if realm in rs.user.roles:
-                admins[realm] = self.coreproxy.list_admins(rs, realm)
+        display_realms = REALM_INHERITANCE.keys() & rs.user.roles
+        if "cde" in display_realms:
+            display_realms.add("finance")
+        for realm in display_realms:
+            admins[realm] = self.coreproxy.list_admins(rs, realm)
 
         persona_ids = set()
         for adminlist in admins.values():
