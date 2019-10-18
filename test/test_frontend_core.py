@@ -574,6 +574,22 @@ class TestCoreFrontend(FrontendTest):
         for k, v in old_privileges.items():
             self.assertEqual(f[k].checked, v)
 
+    @as_users("anton")
+    def test_privilege_change_realm_restrictions(self, user):
+        new_admin = USER_DICT["emilia"]
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = new_admin["DB-ID"]
+        self.submit(f)
+        self.traverse(
+            {'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
+        self.assertTitle("Privilegien ändern für {} {}".format(
+            new_admin["given_names"], new_admin["family_name"]))
+        f = self.response.forms['privilegechangeform']
+        self.assertNotIn('is_meta_admin', f.fields)
+        self.assertNotIn('is_core_admin', f.fields)
+        self.assertNotIn('is_cde_admin', f.fields)
+        self.assertNotIn('is_finance_admin', f.fields)
+
     def test_archival_admin_requirement(self):
         # First grant admin privileges to new admin.
         new_admin = USER_DICT["berta"]
