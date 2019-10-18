@@ -356,7 +356,7 @@ class CoreFrontend(AbstractFrontend):
         #
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
-        roles = extract_roles(rs.ambience['persona'])
+        roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         data = self.coreproxy.get_persona(rs, persona_id)
         # The base version of the data set should only contain the name,
         # however the PERSONA_CORE_FIELDS also contain the email address
