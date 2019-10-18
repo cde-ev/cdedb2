@@ -494,28 +494,17 @@ class TestCoreFrontend(FrontendTest):
         admin2 = USER_DICT["martin"]
         new_admin1 = USER_DICT["garcia"]
         new_admin2 = USER_DICT["berta"]
+        new_privileges1 = {
+            'is_ml_admin': True,
+        }
+        new_privileges2 = {
+            'is_assembly_admin': True,
+        }
         # Grant new admin privileges.
-        self.login(admin1)
-        self.get('/core/persona/{}/privileges'.format(new_admin1["id"]))
-        f = self.response.forms['privilegechangeform']
-        f['is_ml_admin'].checked = True
-        f['notes'] = "For Testing."
-        self.submit(f)
-        self.get('/core/persona/{}/privileges'.format(new_admin2["id"]))
-        f = self.response.forms['privilegechangeform']
-        f['is_assembly_admin'].checked = True
-        f['notes'] = "For Testing."
-        self.submit(f)
-        self.logout()
-        # Confirm privilege changes.
-        self.login(admin2)
-        self.get('/core/privileges/list')
-        self.traverse({"description": new_admin1["given_names"]})
-        f = self.response.forms["ackprivilegechangeform"]
-        self.submit(f)
-        self.traverse({"description": new_admin2["given_names"]})
-        f = self.response.forms["ackprivilegechangeform"]
-        self.submit(f)
+        self._approve_privilege_change(
+            admin1, admin2, new_admin1, new_privileges1)
+        self._approve_privilege_change(
+            admin1, admin2, new_admin2, new_privileges2)
         # Check results of Any Admin query.
         self.logout()
         self.login(admin1)
@@ -530,59 +519,71 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Meister")
 
     def test_privilege_change(self):
-        admin1 = USER_DICT["anton"]
-        admin2 = USER_DICT["martin"]
-        new_admin = USER_DICT["berta"]
         # Grant new admin privileges.
-        self.login(admin1)
-        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle("Privilegien ändern für {} {}".format(
-            new_admin["given_names"], new_admin["family_name"]))
-        f = self.response.forms['privilegechangeform']
-        self.assertEqual(False, f['is_meta_admin'].checked)
-        self.assertEqual(False, f['is_event_admin'].checked)
-        self.assertEqual(False, f['is_assembly_admin'].checked)
-        f['is_event_admin'].checked = True
-        f['is_assembly_admin'].checked = True
-        f['notes'] = "For testing."
-        self.submit(f)
-        self.logout()
-        # Confirm privilege change.
-        self.login(admin2)
-        self.get("/core/privileges/list")
-        self.traverse({"description": new_admin["given_names"]})
-        f = self.response.forms["ackprivilegechangeform"]
-        self.submit(f)
+        new_admin = USER_DICT["berta"]
+        new_privileges = {
+            'is_event_admin': True,
+            'is_assembly_admin': True,
+        }
+        old_privileges = {
+            'is_meta_admin': False,
+            'is_core_admin': False,
+            'is_cde_admin': False,
+            'is_finance_admin': False,
+            'is_event_admin': False,
+            'is_assembly_admin': False,
+            'is_ml_admin': False,
+        }
+        self._approve_privilege_change(
+            USER_DICT["anton"], USER_DICT["martin"], new_admin,
+            new_privileges, old_privileges)
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
         self.assertTitle("Privilegien ändern für {} {}".format(
             new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
-        self.assertEqual(False, f['is_meta_admin'].checked)
-        self.assertEqual(True, f['is_event_admin'].checked)
-        self.assertEqual(True, f['is_assembly_admin'].checked)
+        old_privileges.update(new_privileges)
+        for k, v in old_privileges.items():
+            self.assertEqual(f[k].checked, v)
+
+    def test_privilege_change_reject(self):
+        # Grant new admin privileges.
+        new_admin = USER_DICT["berta"]
+        new_privileges = {
+            'is_event_admin': True,
+            'is_assembly_admin': True,
+        }
+        old_privileges = {
+            'is_meta_admin': False,
+            'is_core_admin': False,
+            'is_cde_admin': False,
+            'is_finance_admin': False,
+            'is_event_admin': False,
+            'is_assembly_admin': False,
+            'is_ml_admin': False,
+        }
+        self._reject_privilege_change(
+            USER_DICT["anton"], USER_DICT["martin"], new_admin,
+            new_privileges, old_privileges)
+        # Check success.
+        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
+        self.assertTitle("Privilegien ändern für {} {}".format(
+            new_admin["given_names"], new_admin["family_name"]))
+        f = self.response.forms['privilegechangeform']
+        # Check that old privileges are still active.
+        for k, v in old_privileges.items():
+            self.assertEqual(f[k].checked, v)
 
     def test_archival_admin_requirement(self):
-        admin1 = USER_DICT["anton"]
-        admin2 = USER_DICT["martin"]
-        new_admin = USER_DICT["berta"]
         # First grant admin privileges to new admin.
-        self.login(admin1)
-        self.get("/core/persona/{}/privileges".format(new_admin["id"]))
-        f = self.response.forms['privilegechangeform']
-        f['is_core_admin'].checked = True
-        f['is_cde_admin'].checked = True
-        f['notes'] = "For testing."
-        self.submit(f)
-        self.logout()
-        # This requires confirmation.
-        self.login(admin2)
-        self.get("/core/privileges/list")
-        self.traverse({"description": "{}".format(new_admin["given_names"])})
-        f = self.response.forms["ackprivilegechangeform"]
-        self.submit(f)
-        self.logout()
-        # Now login and test archival.
+        new_privileges = {
+            'is_core_admin': True,
+            'is_cde_admin': True,
+        }
+        self._approve_privilege_change(
+            USER_DICT["martin"], USER_DICT["anton"], USER_DICT["berta"],
+            new_privileges)
+        # Test archival
         self.login(new_admin)
         self.admin_view_profile("daniel")
         f = self.response.forms["archivepersonaform"]
@@ -590,6 +591,56 @@ class TestCoreFrontend(FrontendTest):
         f["ack_delete"].checked = True
         self.submit(f)
         self.assertPresence("Der Benutzer ist archiviert.")
+
+    def _initialize_privilege_change(self, admin1, admin2, new_admin,
+                                     new_privileges, old_privileges=None,
+                                     note="For testing."):
+        """Helper to initialize a privilege change."""
+        self.login(admin1)
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = new_admin["DB-ID"]
+        self.submit(f)
+        self.traverse(
+            {'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
+        self.assertTitle("Privilegien ändern für {} {}".format(
+            new_admin["given_names"], new_admin["family_name"]))
+        f = self.response.forms['privilegechangeform']
+        if old_privileges:
+            for k, v in old_privileges.items():
+                self.assertEqual(v, f[k].checked)
+        for k, v in new_privileges.items():
+            f[k].checked = v
+        f['notes'] = note
+        self.submit(f)
+        self.logout()
+
+    def _approve_privilege_change(self, admin1, admin2, new_admin,
+                                  new_privileges, old_privileges=None,
+                                  note="For testing."):
+        """Helper to make a user an admin."""
+        self._initialize_privilege_change(
+            admin1, admin2, new_admin, new_privileges, old_privileges)
+        # Confirm privilege change.
+        self.login(admin2)
+        self.traverse({'href': "/core/privileges/list"},
+                      {'description': new_admin["given_names"]})
+        f = self.response.forms["ackprivilegechangeform"]
+        self.submit(f)
+        self.assertPresence("Änderung wurde übernommen.", "notifications")
+
+    def _reject_privilege_change(self, admin1, admin2, new_admin,
+                                 new_privileges, old_privileges=None,
+                                 note="For testing."):
+        """Helper to reject a privilege change."""
+        self._initialize_privilege_change(
+            admin1, admin2, new_admin, new_privileges, old_privileges)
+        # Confirm privilege change.
+        self.login(admin2)
+        self.traverse({'href': "/core/privileges/list"},
+                      {'description': new_admin["given_names"]})
+        f = self.response.forms["nackprivilegechangeform"]
+        self.submit(f)
+        self.assertPresence("Änderung abgelehnt.", "notifications")
 
     @as_users("anton", "berta")
     def test_get_foto(self, user):
@@ -801,7 +852,23 @@ class TestCoreFrontend(FrontendTest):
 
     def test_admin_overview(self):
         # Makes Berta Event + CdE Admin
-        self.test_privilege_change()
+        new_privileges = {
+            'is_event_admin': True,
+            'is_assembly_admin': True,
+        }
+        old_privileges = {
+            'is_meta_admin': False,
+            'is_core_admin': False,
+            'is_cde_admin': False,
+            'is_finance_admin': False,
+            'is_event_admin': False,
+            'is_assembly_admin': False,
+            'is_ml_admin': False,
+        }
+        self._approve_privilege_change(
+            USER_DICT["anton"], USER_DICT["martin"], USER_DICT["berta"],
+            new_privileges, old_privileges)
+        # Check the overview.
         self.traverse({"href": "/core/admins"})
         self.assertTitle("Administratorenübersicht")
         self.assertPresence("Anton Armin A. Administrator", "meta")
