@@ -25,6 +25,10 @@ import psycopg2.extras
 import pytz
 import werkzeug.datastructures
 
+from cdedb.subscription_aux import (
+    SubscriptionError, SubscriptionInfo, SubscriptionWarning,
+    SubscriptionActions)
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -423,33 +427,6 @@ class PartialImportError(RuntimeError):
     Making this an exception rolls back the database transaction.
     """
     pass
-
-
-class SubscriptionError(RuntimeError):
-    """
-    Exception for signalling that an action trying to change a subscription
-    failed.
-    """
-    def __init__(self, *args, kind="error", **kwargs):
-        super().__init__(*args, **kwargs)
-        if args:
-            self.msg = args[0]
-        else:
-            self.msg = ""
-        self.kind = kind
-    pass
-
-
-class SubscriptionWarning(SubscriptionError):
-    """Exception for SubscriptionErrors with kind warning."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, kind="warning", **kwargs)
-
-
-class SubscriptionInfo(SubscriptionError):
-    """Exception for SubscriptionErrors with kind info."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, kind="info", **kwargs)
 
 
 # TODO decide whether we sort by first or last name

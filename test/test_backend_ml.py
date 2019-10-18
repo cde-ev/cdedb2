@@ -2,9 +2,9 @@
 
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.query import QUERY_SPECS, QueryOperators
-from cdedb.common import PrivilegeError, SubscriptionError
-from cdedb.database.constants import (SubscriptionStates as SS,
-    SubscriptionActions as SA)
+from cdedb.common import (
+    PrivilegeError, SubscriptionError, SubscriptionActions as SA)
+from cdedb.database.constants import (SubscriptionStates as SS,)
 import cdedb.database.constants as const
 import datetime
 import decimal

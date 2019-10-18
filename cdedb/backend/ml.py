@@ -16,7 +16,9 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,
-    extract_roles, implying_realms, now, ProxyShim, SubscriptionError)
+    extract_roles, implying_realms, now, ProxyShim,
+    SubscriptionError, SubscriptionWarning, SubscriptionInfo,
+    SubscriptionActions)
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -702,14 +704,14 @@ class MlBackend(AbstractBackend):
         """Provide a single entry point for all subscription actions.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type action: `const.SubscriptionActions`
+        :type action: `SubscriptionActions`
         :type mailinglist_id: int
         :type persona_id: int
         :rtype int
         :returns: number of affected rows.
         """
         action = affirm("enum_subscriptionactions", action)
-        sa = const.SubscriptionActions
+        sa = SubscriptionActions
 
         # 1: Check if everything is alright – current state comes later
         mailinglist_id = affirm("id", mailinglist_id)
@@ -759,11 +761,11 @@ class MlBackend(AbstractBackend):
 
         This has to be called with an atomized context.
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type action: `const.SubscriptionActions`
+        :type action: `SubscriptionActions`
         :type mailinglist_id: int
         :type persona_id: int
         """
-        sa = const.SubscriptionActions
+        sa = SubscriptionActions
 
         # It is not allowed to unsubscribe from mandatory lists.
         # This is not using get_interaction_policy, as even people with
@@ -772,8 +774,7 @@ class MlBackend(AbstractBackend):
             sub_policy = self.get_mailinglist(rs, mailinglist_id)[
                 "sub_policy"]
             if sub_policy == const.MailinglistInteractionPolicy.mandatory:
-                raise SubscriptionError(n_("Can not change subscription."),
-                                        kind="error")
+                raise SubscriptionError(n_("Can not change subscription."))
 
         # This checks if a user may subscribe via the action triggered
         # This does not check for the override states, as they are always
@@ -783,19 +784,14 @@ class MlBackend(AbstractBackend):
         if action == sa.add_subscriber and (
                 not policy or policy.is_implicit()):
             raise SubscriptionError(n_(
-                "User has no means to access this list."),
-                kind="error")
+                "User has no means to access this list."))
         elif action == sa.subscribe and policy not in (
                 const.MailinglistInteractionPolicy.opt_out,
                 const.MailinglistInteractionPolicy.opt_in):
-            raise SubscriptionError(
-                n_("Can not change subscription."),
-                kind="error")
+            raise SubscriptionError(n_("Can not change subscription."))
         elif (action == sa.request_subscription and
               policy != const.MailinglistInteractionPolicy.moderated_opt_in):
-            raise SubscriptionError(
-                n_("Can not change subscription"),
-                kind="error")
+            raise SubscriptionError(n_("Can not change subscription"))
 
     @access("ml")
     def set_subscription_address(self, rs, mailinglist_id, persona_id, email):
