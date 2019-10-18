@@ -201,6 +201,18 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Anton Armin A. Administrator")
         self.assertPresence("Bertålotta Beispiel")
 
+    @as_users("charly")
+    def test_member_search_non_searchable(self, user):
+        self.get("/cde/")
+        self.assertPresence("Mitglieder-Schnellsuche")
+        self.assertPresence("Um die Mitgliedersuche verwenden zu können, musst "
+                            "Du die Datenschutzerklärung bestätigen.")
+        self.assertNonPresence("CdE-Mitglied suchen")
+        with self.assertRaises(webtest.app.AppError) as exc:
+            self.get("/cde/search/member")
+
+        self.assertIn("Bad response: 403 FORBIDDEN", exc.exception.args[0])
+
     @as_users("anton")
     def test_user_search(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
@@ -1430,7 +1442,7 @@ class TestCdEFrontend(FrontendTest):
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/core/changelog/view'})
-        self.assertTitle("Nutzerdaten-Log [0–11]")
+        self.assertTitle("Nutzerdaten-Log [0–12]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)

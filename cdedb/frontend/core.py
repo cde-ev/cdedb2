@@ -297,7 +297,7 @@ class CoreFrontend(AbstractFrontend):
         is_relative_admin = self.coreproxy.is_relative_admin(rs, persona_id)
 
         ALL_ACCESS_LEVELS = {
-            "persona", "ml", "assembly", "event", "cde", "core", "admin",
+            "persona", "ml", "assembly", "event", "cde", "core", "meta",
             "orga", "moderator"}
         # The basic access level provides only the name (this should only
         # happen in case of un-quoted searchable member access)
@@ -371,7 +371,7 @@ class CoreFrontend(AbstractFrontend):
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
-        if "admin" in access_levels:
+        if "meta" in access_levels:
             data.update(self.coreproxy.get_total_persona(rs, persona_id))
 
         # Cull unwanted data
@@ -380,7 +380,7 @@ class CoreFrontend(AbstractFrontend):
             del data['foto']
         if "core" not in access_levels:
             masks = (
-                "is_active", "is_admin", "is_core_admin", "is_cde_admin",
+                "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
                 "is_event_admin", "is_ml_admin", "is_assembly_admin",
                 "is_cde_realm", "is_event_realm", "is_ml_realm",
                 "is_assembly_realm", "is_searchable",
@@ -602,10 +602,10 @@ class CoreFrontend(AbstractFrontend):
         mailinglist = None
         event = None
         num_preview_personas = (self.conf.NUM_PREVIEW_PERSONAS_CORE_ADMIN
-                                if {"core_admin", "admin"} & rs.user.roles
+                                if {"core_admin"} & rs.user.roles
                                 else self.conf.NUM_PREVIEW_PERSONAS)
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin", "admin"} & rs.user.roles:
+            if not {"core_admin", "cde_admin"} & rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
         elif kind == "past_event_user":
             if "cde_admin" not in rs.user.roles:
@@ -648,9 +648,9 @@ class CoreFrontend(AbstractFrontend):
 
         data = None
 
-        # Core admins and super admins are allowed to search by raw ID or
+        # Core admins and meta admins are allowed to search by raw ID or
         # CDEDB-ID
-        if {"core_admin", "admin"} & rs.user.roles:
+        if "core_admin" in rs.user.roles:
             anid, errs = validate.check_cdedbid(phrase, "phrase")
             if not errs:
                 tmp = self.coreproxy.get_personas(rs, (anid,))
@@ -902,7 +902,7 @@ class CoreFrontend(AbstractFrontend):
         :rtype: {str}
         """
         ret = set()
-        if rs.user.roles & {"core_admin", "admin"}:
+        if "core_admin" in rs.user.roles:
             ret |= REALM_INHERITANCE.keys()
         for realm in REALM_INHERITANCE:
             if "{}_admin".format(realm) in rs.user.roles:
@@ -978,38 +978,162 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("admin")
+    @access("persona")
+    def view_admins(self, rs):
+        """Render list of all admins of the users realms."""
+
+        admins = {
+            # meta admins
+            "meta": self.coreproxy.list_admins(rs, "meta"),
+            "core": self.coreproxy.list_admins(rs, "core"),
+        }
+
+        for realm in ("cde", "event", "ml", "assembly"):
+            if realm in rs.user.roles:
+                admins[realm] = self.coreproxy.list_admins(rs, realm)
+
+        persona_ids = set()
+        for adminlist in admins.values():
+            persona_ids |= set(adminlist)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+
+        return self.render(
+            rs, "view_admins", {"admins": admins, 'personas': personas})
+
+    @access("meta_admin")
     def change_privileges_form(self, rs, persona_id):
         """Render form."""
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
+
+        stati = (const.PrivilegeChangeStati.pending,)
+        case_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
+        if case_ids:
+            rs.notify("error", n_("Resolve pending privilege change first."))
+            case_id = unwrap(case_ids, keys=True)
+            return self.redirect(
+                rs, "core/show_privilege_change", {"case_id": case_id})
+
         merge_dicts(rs.values, rs.ambience['persona'])
         return self.render(rs, "change_privileges")
 
-    @access("admin", modi={"POST"})
+    @access("meta_admin", modi={"POST"})
     @REQUESTdata(
-        ("is_admin", "bool"), ("is_core_admin", "bool"),
-        ("is_cde_admin", "bool"), ("is_event_admin", "bool"),
-        ("is_ml_admin", "bool"), ("is_assembly_admin", "bool"))
-    def change_privileges(self, rs, persona_id, is_admin, is_core_admin,
-                          is_cde_admin, is_event_admin, is_ml_admin,
-                          is_assembly_admin):
+        ("is_meta_admin", "bool"), ("is_core_admin", "bool"),
+        ("is_cde_admin", "bool"), ("is_finance_admin", "bool"),
+        ("is_event_admin", "bool"), ("is_ml_admin", "bool"),
+        ("is_assembly_admin", "bool"), ("notes", "str"))
+    def change_privileges(self, rs, persona_id, is_meta_admin, is_core_admin,
+                          is_cde_admin, is_finance_admin, is_event_admin,
+                          is_ml_admin, is_assembly_admin, notes):
         """Grant or revoke admin bits."""
         if rs.errors:
             return self.change_privileges_form(rs, persona_id)
+
+        stati = (const.PrivilegeChangeStati.pending,)
+        case_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
+        if case_ids:
+            rs.notify("error", n_("Resolve pending privilege change first."))
+            case_id = unwrap(case_ids, keys=True)
+            return self.redirect(
+                rs, "core/show_privilege_change", {"case_id": case_id})
+
+        persona = self.coreproxy.get_persona(rs, persona_id)
+
         data = {
-            "id": persona_id,
-            "is_admin": is_admin,
-            "is_core_admin": is_core_admin,
-            "is_cde_admin": is_cde_admin,
-            "is_event_admin": is_event_admin,
-            "is_ml_admin": is_ml_admin,
-            "is_assembly_admin": is_assembly_admin,
+            "persona_id": persona_id,
+            "notes": notes,
         }
-        code = self.coreproxy.change_admin_bits(rs, data)
-        self.notify_return_code(rs, code)
+
+        admin_keys = {"is_meta_admin", "is_core_admin", "is_cde_admin",
+                      "is_finance_admin", "is_event_admin", "is_ml_admin",
+                      "is_assembly_admin"}
+
+        for key in admin_keys:
+            if locals()[key] != persona[key]:
+                data[key] = locals()[key]
+
+        if "is_meta_admin" in data and data["persona_id"] == rs.user.persona_id:
+            rs.notify("error", n_("Cannot modify own meta admin privileges."))
+            return self.redirect_show_user(rs, persona_id)
+
+        if admin_keys & data.keys():
+            code = self.coreproxy.initialize_privilege_change(rs, data)
+            self.notify_return_code(
+                rs, code, success=n_("Privilege change waiting for approval by "
+                                     "another Meta-Admin."))
+        else:
+            rs.notify("info", n_("No changes were made."))
         return self.redirect_show_user(rs, persona_id)
+
+    @access("meta_admin")
+    def list_privilege_changes(self, rs):
+        """Show list of privilege changes pending review."""
+        case_ids = self.coreproxy.list_privilege_changes(
+            rs, stati=(const.PrivilegeChangeStati.pending,))
+
+        cases = self.coreproxy.get_privilege_changes(rs, case_ids)
+        cases = {e["persona_id"]: e for e in cases.values()}
+
+        personas = self.coreproxy.get_personas(rs, cases.keys())
+
+        cases = collections.OrderedDict(
+            sorted(cases.items(), key=lambda item: name_key(personas[item[0]])))
+
+        return self.render(rs, "list_privilege_changes",
+                           {"cases": cases, "personas": personas})
+
+    @access("meta_admin")
+    def show_privilege_change(self, rs, case_id):
+        """Show detailed infromation about pending privilege change."""
+        case = self.coreproxy.get_privilege_change(rs, case_id)
+        if case["status"] != const.PrivilegeChangeStati.pending:
+            rs.notify("error", n_("Privilege change not pending."))
+            return self.redirect(rs, "core/list_privilege_changes")
+
+        if (case["is_meta_admin"] is not None
+            and case["persona_id"] == rs.user.persona_id):
+            rs.notify(
+                "info", n_("This privilege change is affecting your Meta-Admin"
+                           " privileges, so it has to be approved by another "
+                           "Meta-Admin."))
+        if case["submitted_by"] == rs.user.persona_id:
+            rs.notify(
+                "info", n_("This privilege change was submitted by you, so it "
+                           "has to be approved by another Meta-Admin."))
+
+        persona = self.coreproxy.get_persona(rs, case["persona_id"])
+        submitter = self.coreproxy.get_persona(rs, case["submitted_by"])
+
+        return self.render(rs, "show_privilege_change",
+                           {"case": case, "persona": persona,
+                            "submitter": submitter})
+
+    @access("meta_admin", modi={"POST"})
+    @REQUESTdata(("ack", "bool"))
+    def decide_privilege_change(self, rs, case_id, ack):
+        """Approve or reject a privilege change."""
+        case = self.coreproxy.get_privilege_change(rs, case_id)
+        if case["status"] != const.PrivilegeChangeStati.pending:
+            rs.notify("error", n_("Privilege change not pending."))
+            return self.redirect(rs, "core/list_privilege_changes")
+        if not ack:
+            case_status = const.PrivilegeChangeStati.rejected
+        else:
+            case_status = const.PrivilegeChangeStati.approved
+            if (case["is_meta_admin"] is not None
+                and case['persona_id'] == rs.user.persona_id):
+                raise PrivilegeError(
+                    n_("Cannot modify own meta admin privileges."))
+            if rs.user.persona_id == case["submitted_by"]:
+                raise PrivilegeError(
+                    n_("Only a different admin than the submitter "
+                       "may approve a privilege change."))
+        code = self.coreproxy.finalize_privilege_change(
+            rs, case_id, case_status)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "core/list_privilege_changes")
 
     @access("core_admin")
     @REQUESTdata(("target_realm", "realm_or_None"))
@@ -1103,8 +1227,8 @@ class CoreFrontend(AbstractFrontend):
                     rs, lastschrift_ids=active_permits,
                     stati=(const.LastschriftTransactionStati.issued,))
                 if transaction_ids:
-                    subject = glue("Einzugsermächtigung zu ausstehender"
-                                   "Lastschrift widerrufen.")
+                    subject = ("Einzugsermächtigung zu ausstehender "
+                               "Lastschrift widerrufen.")
                     self.do_mail(rs, "pending_lastschrift_revoked",
                                  {'To': (self.conf.MANAGEMENT_ADDRESS,),
                                   'Subject': subject},

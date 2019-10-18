@@ -1,0 +1,22 @@
+{% set sidenav_active='core_privilege_changes' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans count=cases|length -%}
+    	Pending Privilege Changes [{{ count }}]
+    {%- endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes"), active="True") }}
+{% endblock %}
+{% block content %}
+   <ul>
+        {% for persona_id, entry in cases.items() %} {# This is already sorted. #}
+           <li>
+               {{ util.href(cdedblink('core/show_privilege_change', {'case_id': entry["id"]}),
+                            "{} {}".format(personas[persona_id]['given_names'], personas[persona_id]['family_name'])) }}
+           </li>
+        {% endfor %}
+   </ul>
+{% endblock %}

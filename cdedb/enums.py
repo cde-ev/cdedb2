@@ -13,7 +13,8 @@ from cdedb.common import (AgeClasses, LineResolutions, CourseFilterPositions,
 #: The list of normal enums
 ALL_ENUMS = (
     const.Genders, const.MemberChangeStati, const.RegistrationPartStati,
-    const.GenesisStati, const.SubscriptionPolicy, const.ModerationPolicy,
+    const.GenesisStati, const.PrivilegeChangeStati,
+    const.SubscriptionPolicy, const.ModerationPolicy,
     const.AttachmentPolicy, const.AudiencePolicy,
     const.LastschriftTransactionStati, const.CoreLogCodes,
     const.CdeLogCodes, const.FinanceLogCodes, const.EventLogCodes,

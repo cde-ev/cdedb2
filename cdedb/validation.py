@@ -686,7 +686,7 @@ def _password_strength(val, argname=None, *, _convert=True, admin=False,
         # if user is admin in any realm, require a score of 4. After
         # migration, everyone must change their password, so this is
         # actually enforced for admins of the old db. Afterwards,
-        # super admins are intended to do a password reset.
+        # meta admins are intended to do a password reset.
         if results['score'] < 2:
             feedback = [results['feedback']['warning']]
             feedback.extend(results['feedback']['suggestions'][0:2])
@@ -820,9 +820,10 @@ _PERSONA_EVENT_CREATION = lambda: {
 _PERSONA_COMMON_FIELDS = lambda: {
     'username': _email,
     'notes': _str_or_None,
-    'is_admin': _bool,
+    'is_meta_admin': _bool,
     'is_core_admin': _bool,
     'is_cde_admin': _bool,
+    'is_finance_admin': _bool,
     'is_event_admin': _bool,
     'is_ml_admin': _bool,
     'is_assembly_admin': _bool,
@@ -904,10 +905,11 @@ def _persona(val, argname=None, *, creation=False, transition=False,
         if errs:
             return temp, errs
         temp.update({
-            'is_admin': False,
+            'is_meta_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
+            'is_finance_admin': False,
             'is_core_admin': False,
             'is_event_admin': False,
             'is_ml_admin': False,
@@ -1255,7 +1257,7 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
     if ((not val.get('country') or val.get('country') == "Deutschland")
             and val.get('postal_code')):
         postal_code, e = _german_postal_code(
-            val['postal_code'], 'postal_code',_convert=_convert)
+            val['postal_code'], 'postal_code', _convert=_convert)
         val['postal_code'] = postal_code
         errs.extend(e)
 
@@ -1278,6 +1280,45 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
                 errs.extend(e)
         else:
             errs.append(('realm', ValueError(n_("Invalid target realm."))))
+
+    return val, errs
+
+
+_PRIVILEGE_CHANGE_COMMON_FIELDS = lambda: {
+    'persona_id': _id,
+    'submitted_by': _id,
+    'status': _enum_privilegechangestati,
+    'notes': _str,
+}
+
+_PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {
+    'is_meta_admin': _bool_or_None,
+    'is_core_admin': _bool_or_None,
+    'is_cde_admin': _bool_or_None,
+    'is_finance_admin': _bool_or_None,
+    'is_event_admin': _bool_or_None,
+    'is_ml_admin': _bool_or_None,
+    'is_assembly_admin': _bool_or_None,
+}
+
+
+@_addvalidator
+def _privilege_change(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)]
+    """
+    argname = argname or "privilege_change"
+
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+
+    val, errs = _examine_dictionary_fields(
+        val, _PRIVILEGE_CHANGE_COMMON_FIELDS(),
+        _PRIVILEGE_CHANGE_OPTIONAL_FIELDS(), _convert=_convert)
 
     return val, errs
 

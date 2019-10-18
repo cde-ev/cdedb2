@@ -77,7 +77,7 @@ def changelog_template(**kwargs):
         'given_names': 'Zelda',
         'interests': 'never',
         'is_active': True,
-        'is_admin': False,
+        'is_meta_admin': False,
         'is_archived': False,
         'is_assembly_admin': False,
         'is_assembly_realm': True,

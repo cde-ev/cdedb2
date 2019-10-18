@@ -1214,17 +1214,15 @@ def extract_roles(session, introspection_only=False):
     if "cde" in ret:
         if session.get("is_core_admin"):
             ret.add("core_admin")
-        if session.get("is_admin"):
-            ret.add("admin")
+        if session.get("is_meta_admin"):
+            ret.add("meta_admin")
         if session["is_member"]:
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
-    # Grant global admin all roles
-    if "admin" in ret:
-        for level in ("core", "cde", "event", "assembly", "ml"):
-            ret.add("{}_admin".format(level))
-        ret = ret | realms | {"member", "searchable"}
+    if "cde_admin" in ret:
+        if session.get("is_finance_admin"):
+            ret.add("finance_admin")
     return ret
 
 
@@ -1311,7 +1309,7 @@ def privilege_tier(roles, conjunctive=False):
     is controlled by the conjunctive parameter, if it is True the operation
     lies in the intersection of all realms.
 
-    Note that core admins and super admins are always allowed access.
+    Note that core admins and meta admins are always allowed access.
 
     :type roles: {str}
     :type conjunctive: bool
@@ -1327,10 +1325,10 @@ def privilege_tier(roles, conjunctive=False):
         relevant -= implied_roles
     if conjunctive:
         ret = ({realm + "_admin" for realm in relevant},
-               {"core_admin"}, {"admin"})
+               {"core_admin"})
     else:
         ret = tuple({realm + "_admin"} for realm in relevant)
-        ret += ({"core_admin"}, {"admin"})
+        ret += ({"core_admin"},)
     return ret
 
 
@@ -1391,7 +1389,7 @@ ANTI_CSRF_TOKEN_NAME = "_anti_csrf"
 #: This is an ordered dict, so that we can select the highest privilege
 #: level.
 DB_ROLE_MAPPING = collections.OrderedDict((
-    ("admin", "cdb_admin"),
+    ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
     ("cde_admin", "cdb_admin"),
     ("ml_admin", "cdb_admin"),
@@ -1431,10 +1429,10 @@ DEFAULT_NUM_COURSE_CHOICES = 3
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
-    "is_active", "is_admin", "is_core_admin", "is_cde_admin",
-    "is_event_admin", "is_ml_admin", "is_assembly_admin", "is_cde_realm",
-    "is_event_realm", "is_ml_realm", "is_assembly_realm", "is_member",
-    "is_searchable", "is_archived")
+    "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
+    "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
+    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
+    "is_member", "is_searchable", "is_archived")
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
@@ -1474,6 +1472,13 @@ GENESIS_CASE_FIELDS = (
     "gender", "birthday", "telephone", "mobile", "address_supplement",
     "address", "postal_code", "location", "country",
     "realm", "notes", "case_status", "reviewer")
+
+#: Fields of a pending privilege change.
+PRIVILEGE_CHANGE_FIELDS = (
+    "id", "ctime", "ftime", "persona_id", "submitted_by", "status",
+    "is_meta_admin", "is_core_admin", "is_cde_admin",
+    "is_finance_admin", "is_event_admin", "is_ml_admin",
+    "is_assembly_admin", "notes", "reviewer")
 
 #: Fields for institutions of events
 INSTITUTION_FIELDS = ("id", "title", "moniker")

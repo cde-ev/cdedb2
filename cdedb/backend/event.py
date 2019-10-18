@@ -2810,11 +2810,12 @@ class EventBackend(AbstractBackend):
             for reg_id, registration in ret['registrations'].items():
                 persona = personas[backup_registrations[reg_id]['persona_id']]
                 persona['is_orga'] = persona['id'] in event['orgas']
-                for attr in ('is_active', 'is_admin', 'is_archived',
+                for attr in ('is_active', 'is_meta_admin', 'is_archived',
                              'is_assembly_admin', 'is_assembly_realm',
-                             'is_cde_admin', 'is_cde_realm', 'is_core_admin',
-                             'is_event_admin', 'is_event_realm', 'is_ml_admin',
-                             'is_ml_realm', 'is_searchable'):
+                             'is_cde_admin', 'is_finance_admin', 'is_cde_realm',
+                             'is_core_admin', 'is_event_admin',
+                             'is_event_realm', 'is_ml_admin', 'is_ml_realm',
+                             'is_searchable'):
                     del persona[attr]
                 registration['persona'] = persona
             return ret

@@ -2882,7 +2882,7 @@ class EventFrontend(AbstractUserFrontend):
                 self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
             rs.notify("error", n_("No minors may register. "
-                                  "Please contact the Orgateam"))
+                                  "Please contact the Orgateam."))
             return self.redirect(rs, "event/show_event")
         registration['parental_agreement'] = not age.is_minor()
         registration['mixed_lodging'] = (registration['mixed_lodging']

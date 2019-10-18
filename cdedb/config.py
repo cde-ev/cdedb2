@@ -425,9 +425,9 @@ _DEFAULTS = {
                 "qview_persona", QUERY_SPECS['qview_core_user'],
                 ("personas.id", "given_names", "family_name", "is_ml_admin",
                  "is_event_admin", "is_assembly_admin", "is_cde_admin",
-                 "is_core_admin", "is_admin"),
+                 "is_core_admin", "is_meta_admin"),
                 (("is_ml_admin,is_event_admin,is_assembly_admin,"
-                  "is_cde_admin,is_core_admin,is_admin",
+                  "is_cde_admin,is_core_admin,is_meta_admin",
                   QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),

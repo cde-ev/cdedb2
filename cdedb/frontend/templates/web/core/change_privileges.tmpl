@@ -12,14 +12,23 @@
     {{ util.breadcrumb_link(cdedblink("core/change_privileges_form"), gettext("Change Privileges"), active=True) }}
 {% endblock %}
 {% block content %}
+    {% trans -%}
+        Privilege changes will have to be approved by another Meta-Admin.
+    {%- endtrans %}
     <form action="{{ cdedblink('core/change_privileges') }}" method="POST" id="privilegechangeform">
         {{ util.anti_csrf_token('core/change_privileges') }}
-        {{ util.form_input_checkbox(name="is_admin", label=gettext("Super-Admin"), small=True) }}
-        {{ util.form_input_checkbox(name="is_core_admin", label=gettext("Core-Admin"), small=True) }}
-        {{ util.form_input_checkbox(name="is_cde_admin", label=gettext("CdE-Admin"), small=True) }}
-        {{ util.form_input_checkbox(name="is_event_admin", label=gettext("Event-Admin"), small=True) }}
-        {{ util.form_input_checkbox(name="is_ml_admin", label=gettext("Mailinglist-Admin"), small=True) }}
-        {{ util.form_input_checkbox(name="is_assembly_admin", label=gettext("Assembly-Admin"), small=True) }}
+        <div class="row">
+            {{ util.form_input_checkbox(name="is_meta_admin", label=gettext("Meta-Admin"), small=True) }}
+            {{ util.form_input_checkbox(name="is_core_admin", label=gettext("Core-Admin"), small=True) }}
+            {{ util.form_input_checkbox(name="is_cde_admin", label=gettext("CdE-Admin"), small=True) }}
+            {{ util.form_input_checkbox(name="is_finance_admin", label=gettext("Finance-Admin"), small=True) }}
+            {{ util.form_input_checkbox(name="is_event_admin", label=gettext("Event-Admin"), small=True) }}
+            {{ util.form_input_checkbox(name="is_ml_admin", label=gettext("Mailinglist-Admin"), small=True) }}
+            {{ util.form_input_checkbox(name="is_assembly_admin", label=gettext("Assembly-Admin"), small=True) }}
+        </div>
+        <div class="row">
+            {{ util.form_input_textarea(name="notes", label=gettext("Notes"), small=True) }}
+        </div>
         {{ util.form_input_submit(value=gettext("Confirm"), cancellink=show_user_link(ambience['persona']['id']),
                 small=True) }}
     </form>

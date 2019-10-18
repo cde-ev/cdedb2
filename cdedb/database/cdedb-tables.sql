@@ -28,12 +28,13 @@ CREATE TABLE core.personas (
         notes                   varchar,
 
         -- global admin, grants all privileges
-        is_admin                boolean NOT NULL DEFAULT False,
+        is_meta_admin           boolean NOT NULL DEFAULT False,
         -- allows managing all users and general database configuration
         is_core_admin           boolean NOT NULL DEFAULT False,
         -- allows managing of cde users (members and former members) and
         -- other cde stuff (past events, direct debit)
         is_cde_admin            boolean NOT NULL DEFAULT False,
+        is_finance_admin        boolean NOT NULL DEFAULT False,
         -- allows managing of events and event users
         is_event_admin          boolean NOT NULL DEFAULT False,
         -- allows managing of mailinglists and ml users
@@ -133,7 +134,7 @@ CREATE INDEX idx_personas_is_ml_realm ON core.personas(is_ml_realm);
 CREATE INDEX idx_personas_is_assembly_realm ON core.personas(is_assembly_realm);
 CREATE INDEX idx_personas_is_member ON core.personas(is_member);
 CREATE INDEX idx_personas_is_searchable ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_admin, is_core_admin, is_cde_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived) ON core.personas TO cdb_anonymous;
+GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived) ON core.personas TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.personas TO cdb_persona; -- TODO maybe be more restrictive
 GRANT INSERT ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
@@ -179,6 +180,35 @@ GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
 GRANT SELECT, UPDATE ON core.genesis_cases_id_seq TO cdb_anonymous;
 GRANT UPDATE (case_status) ON core.genesis_cases TO cdb_anonymous;
 GRANT UPDATE, DELETE ON core.genesis_cases TO cdb_admin;
+
+-- this table tracks pending priviledge changes
+CREATE TABLE core.privilege_changes (
+        id                      bigserial PRIMARY KEY,
+        -- creation time
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        -- finalization time
+        ftime                   TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        -- enum
+        -- see cdedb.database.constants.PrivilegeChangeStati
+        status                  integer NOT NULL DEFAULT 0,
+        -- changes to the admin bits. NULL is for no change.
+        is_meta_admin           boolean DEFAULT NULL,
+        is_core_admin           boolean DEFAULT NULL,
+        is_cde_admin            boolean DEFAULT NULL,
+        is_finance_admin        boolean DEFAULT NULL,
+        is_event_admin          boolean DEFAULT NULL,
+        is_ml_admin             boolean DEFAULT NULL,
+        is_assembly_admin       boolean DEFAULT NULL,
+        -- justification supplied by the submitter
+        notes                   varchar,
+        -- persona who approved the change
+        reviewer                integer REFERENCES core.personas(id) DEFAULT NULL
+);
+CREATE INDEX idx_privilege_changes_status ON core.privilege_changes(status);
+GRANT SELECT, INSERT, UPDATE, DELETE ON core.privilege_changes TO cdb_admin;
+GRANT SELECT, UPDATE ON core.privilege_changes_id_seq TO cdb_admin;
 
 -- this table serves as access log, so entries are never deleted
 CREATE TABLE core.sessions (
@@ -263,9 +293,10 @@ CREATE TABLE core.changelog (
         username                varchar,
         is_active               boolean,
         notes                   varchar,
-        is_admin                boolean,
+        is_meta_admin           boolean,
         is_core_admin           boolean,
         is_cde_admin            boolean,
+        is_finance_admin        boolean,
         is_event_admin          boolean,
         is_ml_admin             boolean,
         is_assembly_admin       boolean,

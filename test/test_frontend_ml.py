@@ -417,7 +417,8 @@ class TestMlFrontend(FrontendTest):
                             'garcia@example.cde',
                             'inga@example.cde',
                             'janis@example.cde',
-                            'kalif@example.cde'],
+                            'kalif@example.cde',
+                            'martin@example.cde'],
             'whitelist': ['honeypot@example.cde']}
         self.get("/ml/script/one?address=werbung@example.cde", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -481,7 +482,8 @@ class TestMlFrontend(FrontendTest):
                                        'garcia@example.cde',
                                        'inga@example.cde',
                                        'janis@example.cde',
-                                       'kalif@example.cde'],
+                                       'kalif@example.cde',
+                                       'martin@example.cde'],
                        'whitelist': ['honeypot@example.cde',]}
         self.get("/ml/script/one/compat?address=werbung@example.cde",
                  headers=HEADERS)

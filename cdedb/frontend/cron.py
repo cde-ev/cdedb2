@@ -61,7 +61,7 @@ class CronFrontend(BaseApp):
             "member", "searchable",
             "cde_admin", "event_admin", "ml_admin", "assembly_admin",
             "core_admin",
-            "admin",
+            "meta_admin",
         }
         user = User(roles=roles, persona_id=None, username=None,
                     given_names=None, display_name=None, family_name=None)

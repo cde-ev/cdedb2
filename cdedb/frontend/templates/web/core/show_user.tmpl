@@ -140,9 +140,10 @@
                 <dt>{% trans -%}Admin Privileges{%- endtrans %}</dt>
                 <dd>
                     {% set vars = {'any_privilege': False} %}
-                    {% for bit, desc, icon in (("is_admin", gettext("Super-Admin"), "wrench"),
+                    {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
                                               ("is_core_admin", gettext("Core-Admin"), "user"),
                                               ("is_cde_admin", gettext("CdE-Admin"), "education"),
+                                              ("is_finance_admin", gettext("Finance-Admin"), "euro"),
                                               ("is_event_admin", gettext("Event-Admin"), "blackboard"),
                                               ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
                                               ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
@@ -155,7 +156,7 @@
                     {% if not vars['any_privilege'] %}
                         <i>{% trans -%}None{%- endtrans %}</i>
                     {% endif %}
-                    {% if 'admin' in user.roles and not ambience['persona']['is_archived'] %}
+                    {% if 'meta_admin' in user.roles and not ambience['persona']['is_archived'] %}
                         {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pencil",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
@@ -443,7 +444,8 @@ Mitglied.</pre>
 
                                     <div class="form-group">
                                         {{ util.input_submit(value=gettext("Archive Account"), icon="erase",
-                                            aclass="btn btn-danger btn-sm") }}
+                                                aclass="btn btn-danger btn-sm", readonly=data['is_meta_admin'],
+                                                title=gettext("Cannot archive meta admins.") if data['is_meta_admin'] else "") }}
                                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                     </div>
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}

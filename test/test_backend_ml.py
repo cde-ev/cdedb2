@@ -191,7 +191,8 @@ class TestMlBackend(BackendTest):
                        9: 'inga@example.cde',
                        10: 'janis@example.cde',
                        11: 'kalif@example.cde',
-                       12: None}
+                       12: None,
+                       13: 'martin@example.cde'}
         self.assertEqual(expectation, self.ml.subscribers(self.key, 2))
         expectation = {1: 'anton@example.cde', 10: 'janis-spam@example.cde'}
         self.assertEqual(expectation, self.ml.subscribers(self.key, 3))
@@ -450,7 +451,8 @@ class TestMlBackend(BackendTest):
                             'garcia@example.cde',
                             'inga@example.cde',
                             'janis@example.cde',
-                            'kalif@example.cde'),
+                            'kalif@example.cde',
+                            'martin@example.cde'),
             'whitelist': {'honeypot@example.cde'}}
         self.assertEqual(
             expectation,
@@ -516,7 +518,8 @@ class TestMlBackend(BackendTest):
                                        'garcia@example.cde',
                                        'inga@example.cde',
                                        'janis@example.cde',
-                                       'kalif@example.cde'),
+                                       'kalif@example.cde',
+                                       'martin@example.cde'),
                        'whitelist': ['honeypot@example.cde']}
         self.assertEqual(
             expectation,

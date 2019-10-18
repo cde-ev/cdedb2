@@ -34,6 +34,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="logout"),
             rule("/locale", methods=_POST,
                  endpoint="change_locale"),
+            rule("/admins", methods=_GET,
+                 endpoint="view_admins"),
             rule("/log", methods=_GET,
                  endpoint="view_log"),
             rule("/meta", methods=_GET,
@@ -147,6 +149,14 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="genesis_modify"),
                 rule("/decide", methods=_POST,
                      endpoint="genesis_decide"),)),
+            sub('/privileges', (
+                rule("/list", methods=_GET,
+                     endpoint="list_privilege_changes"),)),
+            sub('/privileges/<int:case_id>', (
+                rule("/show", methods=_GET,
+                     endpoint="show_privilege_change"),
+                rule("/decide", methods=_POST,
+                     endpoint="decide_privilege_change"),)),
         )),)),
     werkzeug.routing.EndpointPrefix('cde/', (
         sub('/cde', (

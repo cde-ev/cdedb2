@@ -127,7 +127,7 @@ class SessionBackend:
                 cur.execute(query, (sessionkey,))
                 cur.execute(query2, (persona_id,))
                 data = cur.fetchone()
-        if self.conf.LOCKDOWN and not (data['is_admin']
+        if self.conf.LOCKDOWN and not (data['is_meta_admin']
                                        or data['is_core_admin']):
             # Short circuit in case of lockdown
             return User()
