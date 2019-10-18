@@ -25,6 +25,9 @@ internationalization.
 
 * Ultimately pybabel needs to be compiled(``make i18n-compile``) and the apache restarted. This can both be done via one command: ``make reload``.
 
+Be aware that messages that need to be translated, but do not appear explicitly in the code,
+are listed in ``i18n_additional.py``. This applies especially human-readable descriptions of enum members.
+
 Deployment
 ----------
 
