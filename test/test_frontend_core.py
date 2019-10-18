@@ -592,6 +592,31 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Der Benutzer ist archiviert.")
 
+    def test_privilege_change_self_approval(self):
+        user = USER_DICT["anton"]
+        new_privileges = {
+            'is_event_admin': False,
+        }
+        self._initialize_privilege_change(user, None, user, new_privileges)
+        self.traverse({'href': "/core/privileges/list"},
+                      {'description': user["given_names"]})
+        self.assertPresence(
+            "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen")
+        self.assertNotIn('ackprivilegechangeform', self.response.forms)
+
+    @as_users("anton")
+    def test_meta_admin_archival(self, user):
+        meta_admin = USER_DICT["martin"]
+        self.admin_view_profile("martin")
+        f = self.response.forms["archivepersonaform"]
+        f["note"] = "Archived for testing."
+        f["ack_delete"].checked = True
+        self.submit(f, check_notification=False)
+        self.assertPresence("Meta-Admins können nicht archiviert werden.",
+                            "notifications")
+        self.assertNonPresence("Benutzer ist archiviert", "notifications")
+        self.assertPresence(USER_DICT["martin"]["username"])
+
     def _initialize_privilege_change(self, admin1, admin2, new_admin,
                                      new_privileges, old_privileges=None,
                                      note="For testing."):
