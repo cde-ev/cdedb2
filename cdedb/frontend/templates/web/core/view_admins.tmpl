@@ -6,6 +6,10 @@
         Admin Overview
     {%- endtrans %}
 {% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/view_admins"), gettext("Admin Overview"), active="True") }}
+{% endblock %}
 {% block content %}
     <p>
         {% trans -%}
