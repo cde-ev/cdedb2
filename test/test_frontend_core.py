@@ -576,14 +576,16 @@ class TestCoreFrontend(FrontendTest):
 
     def test_archival_admin_requirement(self):
         # First grant admin privileges to new admin.
+        new_admin = USER_DICT["berta"]
         new_privileges = {
             'is_core_admin': True,
             'is_cde_admin': True,
         }
         self._approve_privilege_change(
-            USER_DICT["martin"], USER_DICT["anton"], USER_DICT["berta"],
+            USER_DICT["anton"], USER_DICT["martin"], new_admin,
             new_privileges)
         # Test archival
+        self.logout()
         self.login(new_admin)
         self.admin_view_profile("daniel")
         f = self.response.forms["archivepersonaform"]
@@ -598,10 +600,12 @@ class TestCoreFrontend(FrontendTest):
             'is_event_admin': False,
         }
         self._initialize_privilege_change(user, None, user, new_privileges)
+        self.login(user)
         self.traverse({'href': "/core/privileges/list"},
                       {'description': user["given_names"]})
         self.assertPresence(
-            "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen")
+            "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen",
+            "notifications")
         self.assertNotIn('ackprivilegechangeform', self.response.forms)
 
     @as_users("anton")
@@ -647,8 +651,9 @@ class TestCoreFrontend(FrontendTest):
             admin1, admin2, new_admin, new_privileges, old_privileges)
         # Confirm privilege change.
         self.login(admin2)
-        self.traverse({'href': "/core/privileges/list"},
-                      {'description': new_admin["given_names"]})
+        self.traverse({'href': "/core/privileges/list"})
+        self.traverse({'description': new_admin["given_names"] + " " +
+                                      new_admin["family_name"]})
         f = self.response.forms["ackprivilegechangeform"]
         self.submit(f)
         self.assertPresence("Änderung wurde übernommen.", "notifications")
@@ -662,7 +667,8 @@ class TestCoreFrontend(FrontendTest):
         # Confirm privilege change.
         self.login(admin2)
         self.traverse({'href': "/core/privileges/list"},
-                      {'description': new_admin["given_names"]})
+                      {'description': new_admin["given_names"] + " " +
+                                      new_admin["family_name"]})
         f = self.response.forms["nackprivilegechangeform"]
         self.submit(f)
         self.assertPresence("Änderung abgelehnt.", "notifications")
