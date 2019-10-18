@@ -689,6 +689,20 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Änderung abgelehnt.", "notifications")
 
+    @as_users("anton")
+    def toggle_activity(self, user):
+        # TODO subtests
+        for k in ("berta", "charly", "emilia", "garcia", "inga", "janis",
+                  "kalif", "lisa", "martin"):
+            u = USER_DICT[k]
+            self.admin_view_profile(k)
+            f = self.response.forms['deactivatepersonaform']
+            self.submit(f)
+            self.assertPresence("Benutzer ist deaktiviert.", "notifications")
+            f = self.response.forms['activatepersonaform']
+            self.submit(f)
+            self.assertNonPresence("Benutzer ist deaktiviert.", "notifications")
+
     @as_users("anton", "berta")
     def test_get_foto(self, user):
         response = self.app.get('/core/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9')
