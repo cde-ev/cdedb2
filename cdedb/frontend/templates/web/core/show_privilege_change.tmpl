@@ -33,7 +33,8 @@
                         {{ gettext(privilege) }}
                     </label>
                     <div class="col-sm-4">
-                        {{ util.deko_checkbox(case[privilege], anid="{}-display".format(privilege)) }}
+                        {{ util.deko_checkbox(case[privilege], anid="{}-display".format(privilege),
+                                              titles=[gettext("to revoke"), gettext("to grant")]) }}
                     </div>
                 </div>
             {% endif %}
