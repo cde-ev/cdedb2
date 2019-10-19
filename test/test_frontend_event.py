@@ -191,6 +191,28 @@ class TestEventFrontend(FrontendTest):
         self.assertIn("addorgaform", self.response.forms)
         self.assertIn("removeorgaform7", self.response.forms)
 
+    @as_users("anton", "garcia")
+    def test_no_hard_limit(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/2/show'})
+        self.assertTitle("CdE-Party 2050")
+        self.assertPresence("Let‘s have a party!")
+        self.assertNonPresence("Nachmeldungen bis")
+
+    @as_users("anton", "garcia")
+    def test_hard_limit_orga(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Nachmeldungen bis")
+
+    @as_users("charly", "emilia")
+    def test_hard_limit_noorga(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        self.assertNonPresence("Nachmeldungen bis")
+
     @as_users("anton", "berta", "emilia")
     def test_course_list(self, user):
         self.traverse({'href': '/event/$'},
