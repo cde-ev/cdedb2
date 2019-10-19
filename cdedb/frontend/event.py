@@ -3930,7 +3930,8 @@ class EventFrontend(AbstractUserFrontend):
             in (xdictsort_filter(groups, 'moniker') + [(None, None)])
         ])
 
-        # Calculate group_inhabitants_sum and group_reserve_inhabitants_sum
+        # Calculate group_inhabitants_sum, group_reserve_inhabitants_sum,
+        # group_capacity_sum and group_reserve_sum
         group_inhabitants_sum = {
             (group_id, part_id): sum(inhabitant_nums[(lodgement_id, part_id)]
                                      for lodgement_id in group)
@@ -3941,6 +3942,12 @@ class EventFrontend(AbstractUserFrontend):
                 sum(reserve_inhabitant_nums[(lodgement_id, part_id)]
                     for lodgement_id in group)
             for part_id in parts
+            for group_id, group in grouped_lodgements.items()}
+        group_capacity_sum = {
+            group_id: sum(lodgement['capacity'] for lodgement in group.values())
+            for group_id, group in grouped_lodgements.items()}
+        group_reserve_sum = {
+            group_id: sum(lodgement['reserve'] for lodgement in group.values())
             for group_id, group in grouped_lodgements.items()}
 
         return self.render(rs, "lodgements", {
@@ -3954,6 +3961,8 @@ class EventFrontend(AbstractUserFrontend):
             'reserve_inhabitants': reserve_inhabitant_nums,
             'reserve_inhabitants_sum': reserve_inhabitant_sum,
             'group_reserve_inhabitants_sum': group_reserve_inhabitants_sum,
+            'group_capacity_sum': group_capacity_sum,
+            'group_reserve_sum': group_reserve_sum,
             'capacity_sum': capacity_sum,
             'reserve_sum': reserve_sum,
             'problems': problems_condensed,

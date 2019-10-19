@@ -71,8 +71,8 @@
                                 {% endif %}
                             </td>
                         {% endfor %}
-                        <td class="text-right">X</td>
-                        <td class=" text-right">+ Y</td>
+                        <td class="text-right">{{ group_capacity_sum[group_id] }}</td>
+                        <td class=" text-right">+ {{ group_reserve_sum[group_id] }}</td>
                         <td class="">
                     </tr>
                 {% endif %}
