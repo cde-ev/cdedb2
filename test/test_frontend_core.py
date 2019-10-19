@@ -113,7 +113,7 @@ class TestCoreFrontend(FrontendTest):
                            'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
         self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15)
+        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
@@ -125,10 +125,41 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
+    @as_users("garcia", "norbert")
+    def test_selectpersona_ml_event(self, user):
+        # Only event participants are shown
+        # ml_admins are allowed to do this even if they are no orgas.
+        self.get(
+            '/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=9&aux2=20')
+        expectation = (1, 5, 7)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get(
+            '/core/persona/select?kind=mod_ml_user&phrase=inga&aux=9&aux2=20')
+        expectation = (9,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("berta")
+    def test_selectpersona_ml_event_403(self, user):
+        self.get(
+            '/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=9&aux2=20',
+            status=403)
+        self.assertTitle('403: Forbidden')
+
+    @as_users("berta", "garcia")
+    def test_selectpersona_ml_assembly(self, user):
+        # Only assembly participants are shown
+        self.get(
+            '/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5&aux2=20')
+        expectation = (1, 2, 9)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
     @as_users("garcia")
     def test_selectpersona_unprivileged_event(self, user):
         self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
-        expectation = (2,)
+        expectation = (2, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 

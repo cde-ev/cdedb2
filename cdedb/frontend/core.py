@@ -566,6 +566,8 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
+    @event_usage
+    @ml_usage
     @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
                  ("aux2", "any"))
     def select_persona(self, rs, phrase, kind, aux, aux2=None):
@@ -697,7 +699,6 @@ class CoreFrontend(AbstractFrontend):
         # Filter result to get only valid audience, if mailinglist is given
         if mailinglist:
             persona_ids = tuple(e['id'] for e in data)
-            personas = self.coreproxy.get_personas(rs, persona_ids)
             pol = const.MailinglistInteractionPolicy
             action = check(rs, "enum_subscriptionactions_or_None", aux2)
             if rs.errors:
@@ -705,12 +706,8 @@ class CoreFrontend(AbstractFrontend):
             if action == SubscriptionActions.add_subscriber:
                 allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
                                 pol.invitation_only}
-                # This does not remove pending and mod_unsubscribed states,
-                # as it wouldn't be trivial why they are not shown.
-                data = tuple(
-                    e for e in data
-                    if (self.mlproxy.get_interaction_policy_persona(
-                        rs, personas[e['id']], mailinglist) in allowed_pols))
+                data = self.mlproxy.check_interaction_policies(rs, persona_ids,
+                    mailinglist, data, allowed_pols)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:

@@ -81,8 +81,7 @@ class MlBackend(AbstractBackend):
         return (self.is_moderator(rs, mailinglist_id)
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
-    @access("ml")
-    def get_interaction_policy_persona(self, rs, persona, ml):
+    def _get_interaction_policy_persona(self, rs, persona, ml):
         """What may the user do with a mailinglist. Be aware, that this does
         not take unsubscribe overrides into account.
 
@@ -100,9 +99,6 @@ class MlBackend(AbstractBackend):
         :return: The applicable subscription policy for the user or None if the
             user is not in the audience.
         """
-        persona = affirm("persona", persona)
-        ml = affirm("mailinglist", ml)
-
         if not (rs.user.persona_id == persona['id']
                 or self.may_manage(rs, ml['id'])):
             raise PrivilegeError(n_("Not privileged."))
@@ -147,8 +143,19 @@ class MlBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         persona = self.core.get_persona(rs, persona_id)
 
-        return self.get_interaction_policy_persona(rs, persona, mailinglist)
+        return self._get_interaction_policy_persona(rs, persona, mailinglist)
 
+    @access("ml")
+    def check_interaction_policies(self, rs, persona_ids, ml, data, allowed_pols):
+        affirm("mailinglist", ml)
+        affirm_set("id", persona_ids)
+        affirm_set("enum_mailinglistinteractionpolicy", allowed_pols)
+
+        personas = self.core.get_personas(rs, persona_ids)
+        return tuple(
+            e for e in data
+            if (self._get_interaction_policy_persona(rs, personas[e['id']], ml)
+                in allowed_pols))
 
     @access("ml")
     def may_view(self, rs, ml, state=None):

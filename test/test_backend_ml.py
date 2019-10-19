@@ -73,7 +73,7 @@ class TestMlBackend(BackendTest):
                 'is_active': True,
                 'maxsize': 1024,
                 'mod_policy': 2,
-                'moderators': {2},
+                'moderators': {2, 7},
                 'registration_stati': [],
                 'sub_policy': 6,
                 'subject_prefix': '[kampf]',
