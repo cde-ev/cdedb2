@@ -46,12 +46,14 @@ Wesentlichen enthält der Export die folgenden Elemente::
       "kind": "partial",
       "timestamp": <ISO 8601 encoded timestamp>,
       "courses": {<numeric course id stringified>:
-                      <dict with course properties>}
-      "event": {<event attribute>: <associated value>}
+                      <dict with course properties>},
+      "event": {<event attribute>: <associated value>},
+      "lodgement_groups": {<numeric lodgement group id stringified>:
+                               <dict with lodgement group properties>},
       "lodgements": {<numeric lodgement id stringified>:
-                         <dict with lodgement properties>}
+                         <dict with lodgement properties>},
       "registrations": {<numeric registration id stringified>:
-                            <dict with registration properties>}
+                            <dict with registration properties>},
   }
 
 Dabei gibt ``CDEDB_EXPORT_EVENT_VERSION`` das verwendete Format an um
@@ -95,12 +97,9 @@ Hinweise
 
   In allen anderen Fällen sollte das mehrmalige Hochladen weitestgehend
   harmlos sein.
-* Der partielle Import macht keine Garantien über die Reihenfolge in der die
-  Änderungen ausgeführt werden. Es sollte also keine Abhängigkeiten
-  innerhalb eines Imports geben.
-* Es ist nicht möglich die für die Erstellung von Einträgen angegebenen
-  negativen IDs als Referenzen zu benutzen. Nicht nur wegen des
-  vorhergehenden Punkts, sondern ganz allgemein.
+* Die für die Erstellung von Einträgen angegebenen negativen IDs können
+  als Referenzen benutzt werden, z.B. um neu erstellte Unterkünfte direkt
+  mit Bewohnern zu versehen.
 * Bei der Erstellung von Einträgen müssen die meisten Attribute angegeben
   werden. Da es hier auch kein Konfliktpotential mit gleichzeitigen
   Änderungen gibt, empfiehlt es sich einfach alle anzugeben (möglicherweise
@@ -116,114 +115,9 @@ Beispiel
 --------
 
 Das folgende Beispiel bearbeitet, löscht und erschafft jeweils einen Eintrag
-aus jeder der Kategorien Kurs, Unterkunft und Anmeldung. Die verwendeten
+aus jeder der Kategorien Kurs, Unterkunft und Anmeldung. Außerdem wird eine
+neue Unterkunftgruppe angelegt. Die verwendeten
 nutzerdefinierten Felder müssen vorher definiert sein.
 
-::
-
-    {
-        "CDEDB_EXPORT_EVENT_VERSION": 4,
-        "id": 1,
-        "kind": "partial",
-        "timestamp": "2018-10-21T20:18:43.414427+00:00",
-        "courses": {
-            "1": {
-                "instructors": "Adams und Heinlein"
-            },
-            "2": null,
-            "-1": {
-                "segments": {
-                    "1": false,
-                    "3": true
-                },
-                "instructors": "The Flash",
-                "title": "Blitzkurs",
-                "min_size": null,
-                "fields": {
-                    "room": "Wintergarten"
-                },
-                "max_size": null,
-                "notes": null,
-                "shortname": "Blitz",
-                "nr": "\u03b6",
-                "description": "Ein Lichtstrahl traf uns"
-            }
-        },
-        "lodgements": {
-            "1": {
-                "fields": {
-                    "contamination": "medium"
-                }
-            },
-            "2": null,
-            "-1": {
-                "reserve": 2,
-                "capacity": 12,
-                "fields": {
-                    "contamination": "none"
-                },
-                "moniker": "Geheimkabinett",
-                "notes": "Einfach den unsichtbaren Schildern folgen."
-            }
-        },
-        "registrations": {
-            "1": {
-                "orga_notes": "Neueste Geruechte hier einfuegen",
-                "tracks": {
-                    "1": {
-                        "choices": [1, 4, 2]
-                    }
-                }
-            },
-            "2": null,
-            "-1": {
-                "fields": {
-                    "lodge": "egal"
-                },
-                "mixed_lodging": true,
-                "orga_notes": null,
-                "parts": {
-                    "3": {
-                        "lodgement_id": 1,
-                        "status": 2,
-                        "is_reserve": false
-                    },
-                    "2": {
-                        "lodgement_id": null,
-                        "status": 1,
-                        "is_reserve": false
-                    },
-                    "1": {
-                        "lodgement_id": null,
-                        "status": -1,
-                        "is_reserve": false
-                    }
-                },
-                "checkin": null,
-                "payment": null,
-                "list_consent": true,
-                "persona_id": 2,
-                "notes": null,
-                "parental_agreement": true,
-                "tracks": {
-                    "3": {
-                        "course_id": null,
-                        "course_instructor": null,
-                        "choices": [1, 4, 5]
-                    },
-                    "2": {
-                        "course_id": null,
-                        "course_instructor": null,
-                        "choices": [5, 4]
-                    },
-                    "1": {
-                        "course_id": null,
-                        "course_instructor": null,
-                        "choices": [1, 4]
-                    }
-                }
-            }
-        }
-    }
-
-
+.. literalinclude:: ../../test/ancillary_files/partial_event_import.json
+    :language: json
