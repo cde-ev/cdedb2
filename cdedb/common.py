@@ -1485,7 +1485,7 @@ INSTITUTION_FIELDS = ("id", "title", "moniker")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
-                     "tempus", "gallery")
+                     "tempus")
 
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
