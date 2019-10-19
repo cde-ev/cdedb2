@@ -126,7 +126,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscribed: None,
                 ss.mod_subscribed: info(n_("User already subscribed.")),
                 ss.mod_unsubscribed: warning(n_(
-                    "User has been blocked. You can use Subscription Details to"
+                    "User has been blocked. You can use Advanced Management to"
                     " change this.")),
                 ss.pending: warning(n_("User has pending subscription request.")),
             },
@@ -135,7 +135,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscribed: info(n_("User already unsubscribed.")),
                 ss.mod_subscribed: warning(n_(
                     "User cannot be removed, because of moderator override. You"
-                    " can use Subscription Details to change this.")),
+                    " can use Advanced Management to change this.")),
                 ss.mod_unsubscribed: info(n_("User already unsubscribed.")),
                 ss.pending: warning(n_("User has pending subscription request.")),
             },

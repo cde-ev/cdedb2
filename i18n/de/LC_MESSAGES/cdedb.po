@@ -16229,6 +16229,19 @@ msgstr ""
 msgid "Sender addresses that are not moderated."
 msgstr "Absender Adressen, die nicht moderiert werden."
 
+#: cdedb/subscription_aux.py:128
+msgid "User has been blocked. You can use Advanced Management to change this."
+msgstr ""
+"Der Nutzer wurde geblockt. Dies kannst du unter Erweiterte Verwaltung ändern."
+
+#: cdedb/subscription_aux.py:136
+msgid ""
+"User cannot be removed, because of moderator override. You can use Advanced "
+"Management to change this."
+msgstr ""
+"Der Nutzer kann nicht entfernt werden, da er fixiert ist. Dies kannst du "
+"unter Erweiterte Verwaltung ändern."
+
 #~ msgid ""
 #~ "If the event comprises multiple parts or multiple course tracks,\n"
 #~ "                        they have to be added later, using the “Event-"
