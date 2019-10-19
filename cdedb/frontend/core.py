@@ -1431,7 +1431,8 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin", modi={"POST"})
     def admin_send_password_reset_link(self, rs, persona_id):
         """Generate a password reset email for an arbitrary persona.
 
@@ -1440,6 +1441,8 @@ class CoreFrontend(AbstractFrontend):
         """
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise PrivilegeError(n_("Not a relative admin."))
         email = rs.ambience['persona']['username']
         success, message = self.coreproxy.make_reset_cookie(
             rs, email, timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
