@@ -50,7 +50,7 @@
         {% if ambience['event']['parts']|length > 1 %}
             <ul class="nav nav-tabs mosp" role="navigation">
                 <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
-                    {{ util.href(cdedblink('event/participant_list', {'part_id': None}), "Overview") }}
+                    {{ util.href(cdedblink('event/participant_list', {'part_id': None}), gettext("Overview")) }}
                 </li>
                 {% for p_id, p in ambience['event']['parts'].items() %}
                     <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
@@ -66,7 +66,7 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>{% trans -%}Given Name{%- endtrans %}</th>
+                        <th>{% trans -%}Given Names{%- endtrans %}</th>
                         <th>{% trans -%}Family Name{%- endtrans %}</th>
                         <th>{% trans -%}Email Address{%- endtrans %}</th>
                         <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
@@ -148,7 +148,7 @@
             </table>
         {% endif %}
         <p>
-            There are {{ registrations|length }} participants in total.
+            {% trans count=registrations|length -%}There are {{ count }} participants in total.{%- endtrans %}
         </p>
 
 
