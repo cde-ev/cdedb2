@@ -9,6 +9,8 @@
 
 # generated documentation files
 doc/build/**
+doc/source/emails/
+doc/source/Email_Templates.rst
 
 # local configuration
 cdedb/localconfig.py
