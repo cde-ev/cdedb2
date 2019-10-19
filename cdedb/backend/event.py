@@ -2975,6 +2975,8 @@ class EventBackend(AbstractBackend):
             used_lodgement_ids -= {None}
             available_lodgement_ids = set(all_current_data['lodgements']) | set(
                 key for key in data.get('lodgements', {}) if key < 0)
+            available_lodgement_ids -= set(
+                k for k, v in data.get('lodgements', {}).items() if v is None)
             if not used_lodgement_ids <= available_lodgement_ids:
                 raise ValueError(
                     "Referential integrity of lodgements violated.")
@@ -2990,6 +2992,8 @@ class EventBackend(AbstractBackend):
             used_course_ids -= {None}
             available_course_ids = set(all_current_data['courses']) | set(
                 key for key in data.get('courses', {}) if key < 0)
+            available_course_ids -= set(
+                k for k, v in data.get('courses', {}).items() if v is None)
             if not used_course_ids <= available_course_ids:
                 raise ValueError(
                     "Referential integrity of courses violated.")
