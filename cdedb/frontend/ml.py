@@ -8,7 +8,8 @@ import werkzeug
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
-    check_validation as check, mailinglist_guard, query_result_to_json)
+    check_validation as check, mailinglist_guard, query_result_to_json,
+    cdedbid_filter as cdedbid)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
@@ -410,23 +411,30 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def download_csv_subscription_states(self, rs, mailinglist_id):
         """Create CSV file with all subscribers and their subscription state"""
-        subscribers = self.mlproxy.get_subscription_states(rs, mailinglist_id)
+        subscribers_state = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id)
+        subscribers = self.coreproxy.get_personas(rs, subscribers_state.keys())
         address = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
-        columns = ['id', 'subscription state', 'address']
+        columns = ['db_id', 'given_names', 'family_name', 'subscription_state',
+                   'email', 'subscription_address']
         output = []
 
-        for subscriber in subscribers.keys():
+        for subscriber in subscribers:
             pair = {}
-            pair['id'] = subscriber
-            pair['subscription state'] = subscribers[subscriber]
-            if subscriber in address.keys() and address[subscriber] is not None:
-                pair['address'] = address[subscriber]
+            pair['db_id'] = cdedbid(subscriber)
+            pair['given_names'] = subscribers[subscriber]['given_names']
+            pair['family_name'] = subscribers[subscriber]['family_name']
+            pair['subscription_state'] = subscribers_state[subscriber].name
+            pair['email'] = subscribers[subscriber]['username']
+            if subscriber in address:
+                pair['subscription_address'] = address[subscriber]
             else:
-                pair['address'] = ""
+                pair['subscription_address'] = ""
+
             output.append(pair)
 
-        csv_data = csv_output(sorted(output, key=lambda c: c['id']),
+        csv_data = csv_output(sorted(output, key=lambda anid: name_key(anid)),
                               columns)
         file = self.send_csv_file(
             rs, data=csv_data, inline=False,

@@ -147,16 +147,18 @@
         {% endfor %}
     </ul>
 
-    {% call util.bootstrap_panel(title=gettext("Downloads"), icon="file", aclass="panel-default mosp") %}
+    {% call util.bootstrap_panel(title=gettext("Downloads"), icon="save-file", aclass="panel-default mosp") %}
         <div class="row">
             <div class="col-sm-4">
                 <div class="p">
-                    {{ util.href(cdedblink('ml/download_csv_subscription_states'), gettext("Overview"), icon='', aclass='btn btn-info') }}
+                    {{ util.href(cdedblink('ml/download_csv_subscription_states'), gettext("Overview"), icon='download', aclass='btn btn-info') }}
                 </div>
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans -%}A download file of the subscription state of every user related to this mailinglist.{%- endtrans %}
+                    {% trans link=util.href(docurl("Workflows", "mailinglist-management"), gettext("subscription state"), title=gettext("Summary of subscription states")) -%}
+                        A download csv file of all users associated with this mailinglist (including name, email address and {{ link }}).
+                    {%- endtrans %}
                 </p>
             </div>
         </div>
