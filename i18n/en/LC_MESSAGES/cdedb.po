@@ -13981,3 +13981,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/questionnaire_summary.tmpl:59
 msgid "Default Value"
 msgstr ""
+
+#: cdedb/i18n_additional.py:226
+msgid "is_meta_admin"
+msgstr "Meta-Admin"
