@@ -835,6 +835,9 @@ class CoreBackend(AbstractBackend):
 
         persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
 
+        # see also cdedb.frontend.templates.core.change_privileges
+        # and change_privileges in cdedb.frontend.core
+
         realms = {"cde", "event", "ml", "assembly"}
         for realm in realms:
             if not persona['is_{}_realm'.format(realm)]:

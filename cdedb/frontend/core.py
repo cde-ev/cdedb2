@@ -1058,9 +1058,48 @@ class CoreFrontend(AbstractFrontend):
             if locals()[key] != persona[key]:
                 data[key] = locals()[key]
 
+        # see also cdedb.frontend.templates.core.change_privileges
+        # and initialize_privilege_change in cdedb.backend.core
+
+        errors = []
+
+        if (any(k in data for k in
+                ["is_meta_admin", "is_core_admin", "is_cde_admin"])
+                and not rs.ambience['persona']['is_cde_realm']):
+            errors.append(n_(
+                "Cannot grant meta, core or CdE admin privileges to non CdE "
+                "users."))
+
+        if data.get('is_finance_admin'):
+            if (data.get('is_cde_admin') is False
+                    or (not rs.ambience['persona']['is_cde_admin']
+                        and not data.get('is_cde_admin'))):
+                errors.append(n_(
+                    "Cannot grant finance admin privileges to non CdE admins."))
+
+        if "is_ml_admin" in data and not rs.ambience['persona']['is_ml_realm']:
+            errors.append(n_(
+                "Cannot grant mailinglist admin privileges to non mailinglist "
+                "users."))
+
+        if ("is_event_admin" in data and
+                not rs.ambience['persona']['is_event_realm']):
+            errors.append(n_(
+                "Cannot grant event admin privileges to non event users."))
+
+        if ("is_assembly_admin" in data and
+                not rs.ambience['persona']['is_assembly_realm']):
+            errors.append(n_(
+                "Cannot grant assembly admin privileges to non assembly "
+                "users."))
+
         if "is_meta_admin" in data and data["persona_id"] == rs.user.persona_id:
-            rs.notify("error", n_("Cannot modify own meta admin privileges."))
-            return self.redirect_show_user(rs, persona_id)
+            errors.append(n_("Cannot modify own meta admin privileges."))
+
+        if errors:
+            for e in errors:
+                rs.notify("error", e)
+            return self.change_privileges_form(rs, persona_id)
 
         if admin_keys & data.keys():
             code = self.coreproxy.initialize_privilege_change(rs, data)
