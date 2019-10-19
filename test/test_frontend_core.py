@@ -57,7 +57,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Suchmaske")
         self.assertNonPresence("Search Mask")
 
-    @as_users("anton", "berta", "charly", "daniel", "emilia", "ferdinand",
+    @as_users("anton", "berta", "charly", "emilia", "ferdinand",
               "garcia", "inga", "janis", "kalif")
     def test_showuser(self, user):
         self.traverse({'href': '/core/self/show'})
@@ -706,18 +706,24 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Änderung abgelehnt.", "notifications")
 
     @as_users("anton")
-    def toggle_activity(self, user):
-        # TODO subtests
-        for k in ("berta", "charly", "emilia", "garcia", "inga", "janis",
-                  "kalif", "lisa", "martin"):
-            u = USER_DICT[k]
-            self.admin_view_profile(k)
-            f = self.response.forms['deactivatepersonaform']
-            self.submit(f)
-            self.assertPresence("Benutzer ist deaktiviert.", "notifications")
-            f = self.response.forms['activatepersonaform']
-            self.submit(f)
-            self.assertNonPresence("Benutzer ist deaktiviert.", "notifications")
+    def test_toggle_activity(self, user):
+        for i, u in enumerate(("berta", "charly", "daniel", "emilia", "garcia",
+                               "inga", "janis", "kalif", "lisa", "martin")):
+            with self.subTest(target=u):
+                self.admin_view_profile(u)
+                f = self.response.forms['activitytoggleform']
+                self.submit(f)
+                msg = "Benutzer ist deaktiviert."
+                if u in {"daniel"}:
+                    self.assertNonPresence(msg)
+                else:
+                    self.assertPresence(msg)
+                f = self.response.forms['activitytoggleform']
+                self.submit(f)
+                if u in {"daniel"}:
+                    self.assertPresence(msg)
+                else:
+                    self.assertNonPresence(msg)
 
     @as_users("anton", "berta")
     def test_get_foto(self, user):

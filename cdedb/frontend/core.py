@@ -699,7 +699,8 @@ class CoreFrontend(AbstractFrontend):
             pol = const.AudiencePolicy(mailinglist['audience_policy'])
             data = tuple(
                 e for e in data
-                if pol.check(extract_roles(personas[e['id']])))
+                if pol.check(extract_roles(
+                    personas[e['id']], introspection_only=True)))
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
