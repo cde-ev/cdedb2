@@ -158,7 +158,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn("subscribe-mod-form", self.response.forms)
         self.assertNotIn("subscribe-no-mod-form", self.response.forms)
 
-    @as_users("norbert")
+    @as_users("nina")
     def test_show_other_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},)
         self.assertTitle("Mailinglisten")
@@ -545,7 +545,7 @@ class TestMlFrontend(FrontendTest):
                             'janis@example.cde',
                             'kalif@example.cde',
                             'martin@example.cde',
-                            'norbert@example.cde'],
+                            'nina@example.cde'],
             'whitelist': ['honeypot@example.cde']}
         self.get("/ml/script/one?address=werbung@example.cde", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -615,7 +615,7 @@ class TestMlFrontend(FrontendTest):
                                        'janis@example.cde',
                                        'kalif@example.cde',
                                        'martin@example.cde',
-                                       'norbert@example.cde'],
+                                       'nina@example.cde'],
                        'whitelist': ['honeypot@example.cde',]}
         self.get("/ml/script/one/compat?address=werbung@example.cde",
                  headers=HEADERS)

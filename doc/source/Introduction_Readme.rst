@@ -64,7 +64,7 @@ There is a default data set for the development it contains some users
    kalif@example.cde       secret     assembly user                                    DB-11-6
    lisa                    secret     member with whacked data                         DB-12-4
    martin@example.cde      secret     second meta admin to confirm privilege changes   DB-13-2
-   norbert@example.cde     secret     mailinglist admin                                DB 14-0
+   nina@example.cde        secret     mailinglist admin and event user                 DB 14-0
   ======================= ========== ================================================ =========
 
 Random Thoughts

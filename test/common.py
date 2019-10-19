@@ -309,14 +309,14 @@ USER_DICT = {
         'given_names': "Martin",
         "family_name": "Meister",
     },
-    "norbert": {
+    "nina": {
         'id': 14,
         'DB-ID': "DB-14-0",
-        'username': 'norbert@example.cde',
+        'username': 'nina@example.cde',
         'password': "secret",
-        'display_name': "norbert",
-        'given_names': "norbert",
-        'family_name': "Nashorn",
+        'display_name': "nina",
+        'given_names': "nina",
+        'family_name': "Neubauer",
     },
     "olaf": {
         'id': 15,

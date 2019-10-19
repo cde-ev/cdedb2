@@ -125,7 +125,7 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
-    @as_users("garcia", "norbert")
+    @as_users("garcia", "nina")
     def test_selectpersona_ml_event(self, user):
         # Only event participants are shown
         # ml_admins are allowed to do this even if they are no orgas.
@@ -159,7 +159,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("garcia")
     def test_selectpersona_unprivileged_event(self, user):
         self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
-        expectation = (2, 14)
+        expectation = (2,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
@@ -550,7 +550,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Generalis")
         self.assertPresence("Meister")
         self.assertPresence("Olaf")
-        self.assertPresence("Nashorn")
+        self.assertPresence("Neubauer")
 
     def test_privilege_change(self):
         # Grant new admin privileges.

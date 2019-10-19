@@ -174,7 +174,7 @@ class TestMlBackend(BackendTest):
 
             self.assertEqual(expectation, result)
 
-    @as_users("norbert")
+    @as_users("nina")
     def test_overrides(self, user):
         overrides = self.ml.list_overrides(self.key)
         self.assertEqual(overrides, {5: 'Sozialistischer Kampfbrief'})
@@ -440,7 +440,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
                          code=1, state=SS.subscribed)
 
-    @as_users("anton", "ferdinand", "janis", "norbert")
+    @as_users("anton", "ferdinand", "janis", "nina")
     def test_opt_out(self, user):
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
@@ -533,7 +533,7 @@ class TestMlBackend(BackendTest):
             self.ml.write_subscription_states(self.key, mailinglist_id)
             self._check_state(user['id'], mailinglist_id, SS.subscribed)
 
-    @as_users('norbert')
+    @as_users('nina')
     def test_mandatory_two(self, user):
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
@@ -741,7 +741,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'],  ml_id, SA.subscribe,
                          code=1, state=SS.subscribed)
 
-    @as_users("anton", "norbert")
+    @as_users("anton", "nina")
     def test_bullshit_requests(self, user):
         # Can I remove people from lists they have not subscribed to?
         with self.assertRaises(SubscriptionError) as cm:
@@ -1134,7 +1134,7 @@ class TestMlBackend(BackendTest):
             11: 'kalif@example.cde',
             12: None,
             13: 'martin@example.cde',
-            14: 'norbert@example.cde',
+            14: 'nina@example.cde',
         }
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 2))
@@ -1156,7 +1156,7 @@ class TestMlBackend(BackendTest):
                        2: 'berta@example.cde',
                        3: 'charly@example.cde',
                        11: 'kalif@example.cde',
-                       14: 'norbert@example.cde'}
+                       14: 'nina@example.cde'}
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 5))
 
@@ -1548,7 +1548,7 @@ class TestMlBackend(BackendTest):
                             'janis@example.cde',
                             'kalif@example.cde',
                             'martin@example.cde',
-                            'norbert@example.cde'),
+                            'nina@example.cde'),
             'whitelist': {'honeypot@example.cde'}}
         self.assertEqual(
             expectation,
@@ -1622,7 +1622,7 @@ class TestMlBackend(BackendTest):
                                        'janis@example.cde',
                                        'kalif@example.cde',
                                        'martin@example.cde',
-                                       'norbert@example.cde'),
+                                       'nina@example.cde'),
                        'whitelist': ['honeypot@example.cde']}
         self.assertEqual(
             expectation,
