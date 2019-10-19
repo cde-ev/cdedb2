@@ -22,22 +22,22 @@
     </h1>
 {% endblock %}
 {% block content %}
-    {% call util.bootstrap_panel() %}
+    <p class="text-info">
+        {{ util.make_icon('info-sign') }}
         {% trans -%}
-            Note that every change can take up to 15min until effective.
+            Note that every change can take up to 15 minutes to take effect.
         {%- endtrans %}
-    {% endcall %}
-    {% call util.bootstrap_panel() %}
-        {% trans -%}
-            Note that only DB-Accounts can be moderators and subscribers.
-            Any email address can be added to the whitelist though.
-            The whitelist is accessible under Subscription Details.
-        {%- endtrans %}
-    {% endcall %}
+    </p>
 
     <div class="row">
         <div class="col-md-6">
             <h2>{% trans -%}Moderators{%- endtrans %} [{{ ambience['mailinglist']['moderators']|length }}]</h2>
+                <p class="text-muted">
+                {{ util.make_icon('info-sign') }}
+                    {% trans -%}
+                        Only users can be moderators.
+                    {%- endtrans %}
+                </p>
             <form action="{{ cdedblink('ml/add_moderator') }}" method="POST"
                   id="addmoderatorform" class="p">
                 {{ util.anti_csrf_token('ml/add_moderator') }}
@@ -83,6 +83,12 @@
 
         <div class="col-md-6">
             <h2>{% trans -%}Subscription Requests{%- endtrans %}</h2>
+                <p class="text-muted">
+                    {{ util.make_icon('info-sign') }}
+                    {% trans -%}
+                        Subscription Requests of other users to this mailinglist.
+                    {%- endtrans %}
+                </p>
             {# TODO Restyle #}
             {% if requests|length > 0 %}
                 <ul>
@@ -128,6 +134,12 @@
     </div>
     
     <h2>{% trans -%}Subscribers{%- endtrans %} [{{ subscribers|length }}]</h2>
+        <p class="text-muted">
+            {{ util.make_icon('info-sign') }}
+            {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) -%}
+                Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here. Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
+            {%- endtrans %}
+        </p>
     <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
           id="addsubscriberform" class="p">
         {{ util.anti_csrf_token('ml/add_subscriber') }}
