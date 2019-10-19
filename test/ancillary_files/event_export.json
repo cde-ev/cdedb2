@@ -1015,7 +1015,7 @@
             "orga_address": "aka@example.cde",
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",
             "id": 1,
-            "registration_hard_limit": "2220-10-30T00:00:00+00:00",
+            "registration_hard_limit": "2221-10-30T00:00:00+00:00",
             "reserve_field": 4,
             "registration_start": "2000-10-30T00:00:00+00:00",
             "registration_text": null,

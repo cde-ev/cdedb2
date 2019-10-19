@@ -191,7 +191,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn("addorgaform", self.response.forms)
         self.assertIn("removeorgaform7", self.response.forms)
 
-    @as_users("anton", "garcia")
+    @as_users("anton", "berta")
     def test_no_hard_limit(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/2/show'})
@@ -2312,7 +2312,7 @@ etc;anything else""", f['entries_2'].value)
                                                        'sortkey': 3,
                                                        'title': 'Arbeitssitzung (Zweite Hälfte)'}},
                                       'title': 'Zweite Hälfte'}},
-                      'registration_hard_limit': '2220-10-30T00:00:00+00:00',
+                      'registration_hard_limit': '2221-10-30T00:00:00+00:00',
                       'registration_soft_limit': '2200-10-30T00:00:00+00:00',
                       'registration_start': '2000-10-30T00:00:00+00:00',
                       'registration_text': None,
