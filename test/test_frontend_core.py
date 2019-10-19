@@ -546,6 +546,22 @@ class TestCoreFrontend(FrontendTest):
         for k, v in old_privileges.items():
             self.assertEqual(f[k].checked, v)
 
+    @as_users("anton")
+    def test_change_privileges_dependency_error(self, user):
+        new_admin = USER_DICT["berta"]
+        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
+        self.assertTitle("Privilegien ändern für {} {}".format(
+            new_admin["given_names"], new_admin["family_name"]))
+        f = self.response.forms['privilegechangeform']
+        f['is_finance_admin'] = True
+        f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
+        self.submit(f, check_notification=False)
+        self.assertPresence("Nur CdE Admins können Finanz Admin werden.",
+                            div='notifications')
+        f['is_cde_admin'] = True
+        f['notes'] = "Dann ist Berta jetzt eben CdE und Finanz Admin."
+        self.submit(f)
+
     def test_privilege_change_reject(self):
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
