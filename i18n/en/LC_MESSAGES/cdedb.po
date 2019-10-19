@@ -6696,6 +6696,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:659
 #: cdedb/frontend/templates/web/ml/management.tmpl:145
 #: cdedb/frontend/templates/web/ml/management.tmpl:143
+#: cdedb/frontend/templates/web/ml/management.tmpl:152
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr ""
 
@@ -6959,6 +6960,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base.tmpl:103
 #: cdedb/frontend/templates/web/ml/base.tmpl:55
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:154
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:169
 msgid "Overview"
 msgstr ""
 
@@ -7302,6 +7304,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:97
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:45
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:91
+#: cdedb/frontend/templates/web/ml/management.tmpl:55
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:101
 msgid "Add"
 msgstr ""
 
@@ -7413,6 +7417,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:165
 #: cdedb/frontend/templates/web/ml/management.tmpl:193
 #: cdedb/frontend/templates/web/ml/management.tmpl:190
+#: cdedb/frontend/templates/web/ml/management.tmpl:199
 msgid "Are you sure?"
 msgstr ""
 
@@ -7460,6 +7465,7 @@ msgstr "belongs to ballot"
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:157
 #: cdedb/frontend/templates/web/ml/management.tmpl:184
 #: cdedb/frontend/templates/web/ml/management.tmpl:181
+#: cdedb/frontend/templates/web/ml/management.tmpl:190
 msgid "Actions"
 msgstr ""
 
@@ -7502,6 +7508,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:656
 #: cdedb/frontend/templates/web/ml/management.tmpl:191
 #: cdedb/frontend/templates/web/ml/management.tmpl:188
+#: cdedb/frontend/templates/web/ml/management.tmpl:197
 msgid "Delete"
 msgstr ""
 
@@ -9976,6 +9983,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:106
 #: cdedb/frontend/templates/web/ml/management.tmpl:109
 #: cdedb/frontend/templates/web/ml/management.tmpl:107
+#: cdedb/frontend/templates/web/ml/management.tmpl:111
 msgid "Reject"
 msgstr ""
 
@@ -10987,6 +10995,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/downloads.tmpl:12
 #: cdedb/frontend/templates/web/event/downloads.tmpl:16
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:150
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:165
 msgid "Downloads"
 msgstr ""
 
@@ -13030,6 +13039,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:93
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:41
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:87
+#: cdedb/frontend/templates/web/ml/management.tmpl:51
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:97
 msgid "ID, name, email"
 msgstr ""
 
@@ -13525,6 +13536,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/management.tmpl:191
 #: cdedb/frontend/templates/web/ml/management.tmpl:172
 #: cdedb/frontend/templates/web/ml/management.tmpl:169
+#: cdedb/frontend/templates/web/ml/management.tmpl:178
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as subscriber"
 msgstr ""
@@ -13714,58 +13726,68 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:54
 #: cdedb/frontend/templates/web/ml/management.tmpl:40
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:41
+#: cdedb/frontend/templates/web/ml/management.tmpl:34
 msgid "Moderators"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:45
 #: cdedb/frontend/templates/web/ml/management.tmpl:47
+#: cdedb/frontend/templates/web/ml/management.tmpl:46
 msgid "ID of the new moderator"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:72
 #: cdedb/frontend/templates/web/ml/management.tmpl:74
+#: cdedb/frontend/templates/web/ml/management.tmpl:73
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as moderator"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:83
 #: cdedb/frontend/templates/web/ml/management.tmpl:85
+#: cdedb/frontend/templates/web/ml/management.tmpl:84
 msgid "Subscription Requests"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:108
 #: cdedb/frontend/templates/web/ml/management.tmpl:100
 #: cdedb/frontend/templates/web/ml/management.tmpl:99
+#: cdedb/frontend/templates/web/ml/management.tmpl:103
 msgid "Accept"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:115
 #: cdedb/frontend/templates/web/ml/management.tmpl:126
 #: cdedb/frontend/templates/web/ml/management.tmpl:123
+#: cdedb/frontend/templates/web/ml/management.tmpl:127
 msgid "There are currently no Subscription Requests pending."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:122
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:128
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:119
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:129
 msgid "Whitelist"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:129
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:135
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:126
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:141
 msgid "Email Address to whitelist"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:131
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:137
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:128
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:143
 msgid "Add Entry"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:147
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:153
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:144
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:159
 #, python-format
 msgid "Remove %s from Whitelist"
 msgstr ""
@@ -13773,18 +13795,21 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/management.tmpl:152
 #: cdedb/frontend/templates/web/ml/management.tmpl:133
 #: cdedb/frontend/templates/web/ml/management.tmpl:130
+#: cdedb/frontend/templates/web/ml/management.tmpl:134
 msgid "Subscribers"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:159
 #: cdedb/frontend/templates/web/ml/management.tmpl:140
 #: cdedb/frontend/templates/web/ml/management.tmpl:137
+#: cdedb/frontend/templates/web/ml/management.tmpl:146
 msgid "ID of the new Subscriber"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:168
 #: cdedb/frontend/templates/web/ml/management.tmpl:149
 #: cdedb/frontend/templates/web/ml/management.tmpl:147
+#: cdedb/frontend/templates/web/ml/management.tmpl:156
 msgid "Add Subscriber"
 msgstr ""
 
@@ -13798,6 +13823,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/management.tmpl:218
 #: cdedb/frontend/templates/web/ml/management.tmpl:199
 #: cdedb/frontend/templates/web/ml/management.tmpl:196
+#: cdedb/frontend/templates/web/ml/management.tmpl:205
 msgid ""
 "Deletes the mailinglist including description and all subscriber information."
 msgstr ""
@@ -13805,6 +13831,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/management.tmpl:224
 #: cdedb/frontend/templates/web/ml/management.tmpl:205
 #: cdedb/frontend/templates/web/ml/management.tmpl:202
+#: cdedb/frontend/templates/web/ml/management.tmpl:211
 msgid "The mailinglist will be permanently deleted."
 msgstr ""
 
@@ -14808,6 +14835,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:119
 #: cdedb/frontend/templates/web/ml/management.tmpl:116
+#: cdedb/frontend/templates/web/ml/management.tmpl:120
 msgid "Block"
 msgstr ""
 
@@ -14831,6 +14859,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:41
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:35
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:40
 msgid "ID of the new forced subscriber"
 msgstr ""
 
@@ -14842,16 +14871,19 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:81
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:74
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:79
 msgid "Blocked Users"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:88
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:81
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:91
 msgid "ID of the new blocked subscriber"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:115
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:109
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:119
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as blocked subscriber"
 msgstr ""
@@ -14907,18 +14939,82 @@ msgid "Active Mailinglists"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:159
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:174
 msgid "subscription state"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:159
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:174
 msgid "Summary of subscription states"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:159
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:174
 #, python-format
 msgid ""
 "A download csv file of all users associated with this mailinglist (including "
 "name, email address and %(link)s)."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/base.tmpl:10
+#: cdedb/frontend/templates/web/ml/management.tmpl:16
+msgid "Management"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/base.tmpl:12
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:16
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:20
+msgid "Advanced Management"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:10
+#, python-format
+msgid "%(title)s – Management"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:27
+msgid "Note that every change can take up to 15 minutes to take effect."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:36
+msgid "Only users can be moderators."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:86
+msgid "Subscription Requests of other users to this mailinglist."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:136
+msgid "advanced management"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/management.tmpl:136
+#, python-format
+msgid ""
+"Forced subscribers cannot be unsubscribed; blocked subscribers cannot be "
+"subscribed here. Use the %(link)s site instead. People who are already "
+"subscribed are not proposed for adding."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:10
+#, python-format
+msgid "%(title)s – Advanced Management"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:30
+msgid ""
+"Subscribed users who are protected from automatic unsubscription when "
+"loosing their means to acces the list."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:81
+msgid ""
+"Users who are blocked from subscribing and requesting subscription. They can "
+"see that they are blocked."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:131
+msgid "Mail addresses that are not moderated."
 msgstr ""
 
 #~ msgid " MlLogCodes.request_blocked"
