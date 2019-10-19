@@ -258,16 +258,20 @@ class TestMlFrontend(FrontendTest):
 
         self.traverse({"href": "ml/mailinglist/4/download"})
 
-        result = list(csv.DictReader(self.response.text.split("\n"),
-                                     delimiter=";", dialect=dialect))
+        result = list(csv.DictReader(self.response.body.decode('utf-8-sig')
+            .split("\n"), delimiter=";", dialect=dialect))
         all_rows = []
 
         for row in result:
-            line = row['\ufeffid'] + ";" + row['subscription state']
+            line = (row['db_id'] + ";" + row['given_names'] + ";" +
+                    row['family_name'] + ";" + row['subscription_state'] + ";" +
+                    row['email'] + ";" + row['subscription_address'])
             all_rows.append(line)
 
-        self.assertIn('9;SubscriptionStates.mod_subscribed', all_rows)
-        self.assertIn('5;SubscriptionStates.mod_unsubscribed', all_rows)
+        self.assertIn('DB-5-1;Emilia E.;Eventis;mod_unsubscribed;'
+                      'emilia@example.cde;', all_rows)
+        self.assertIn('DB-9-4;Inga;Iota;mod_subscribed;'
+                      'inga@example.cde;', all_rows)
 
         # remove the former added persona
         self.response = save
