@@ -2915,6 +2915,61 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, updated)
 
     @as_users("anton")
+    def test_partial_import_integrity(self, user):
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
+                as datafile:
+            orig_data = json.load(datafile)
+
+        base_data = {
+            k: orig_data[k] for k in ("id", "CDEDB_EXPORT_EVENT_VERSION",
+                                      "timestamp", "kind")
+        }
+
+        data = copy.deepcopy(base_data)
+        data["registrations"] = {
+            1: {
+                "tracks": {
+                    1: {
+                        "course_id": -1,
+                    },
+                },
+            },
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.partial_import_event(
+                self.key, data, dryrun=False)
+        self.assertIn("Referential integrity of courses violated.",
+                      cm.exception.args)
+
+        data = copy.deepcopy(base_data)
+        data["registrations"] = {
+            1: {
+                "parts": {
+                    1: {
+                        "lodgement_id": -1,
+                    },
+                },
+            },
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.partial_import_event(
+                self.key, data, dryrun=False)
+        self.assertIn("Referential integrity of lodgements violated.",
+                      cm.exception.args)
+
+        data = copy.deepcopy(base_data)
+        data["lodgements"] = {
+            1: {
+                "group_id": -1,
+            },
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.partial_import_event(
+                self.key, data, dryrun=False)
+        self.assertIn("Referential integrity of lodgement groups violated.",
+                      cm.exception.args)
+
+    @as_users("anton")
     def test_partial_import_event_twice(self, user):
         with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
                 as datafile:
