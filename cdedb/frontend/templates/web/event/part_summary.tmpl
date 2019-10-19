@@ -168,6 +168,13 @@
 {% endmacro %}
 
 {% block content %}
+    <p class="text-warning">{{ util.make_icon('warning-sign') }}
+        {% trans -%}
+            Event parts and course tracks can only be created or deleted if no
+            registrations are present yet. Course tracks can only be deleted, if
+            there are no courses associated with them.
+        {%- endtrans %}
+    </p>
     <form action="{{ cdedblink('event/part_summary') }}" method="POST" id="partsummaryform" class="form-horizontal">
         {{ util.anti_csrf_token('event/part_summary') }}
         <div id="drow-container">
