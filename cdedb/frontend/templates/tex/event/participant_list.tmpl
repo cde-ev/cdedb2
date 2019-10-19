@@ -81,7 +81,7 @@
                 <<% endif -%>>
                 <<% for t_id, t in ep['tracks']|dictsort('sortkey') -%>>
                     & % <<< t['shortname']|te >>>
-                    <<% if registration['parts'][t['part_id']]['status'] == enums['RegistrationPartStati'].participant -%>>
+                    <<% if registration['parts'][t['part_id']]['status'] == participant -%>>
                         <<% if registration['tracks'][t_id]['course_id'] -%>>
                             <<% if registration['tracks'][t_id]['course_instructor']
                                     == registration['tracks'][t_id]['course_id'] -%>>

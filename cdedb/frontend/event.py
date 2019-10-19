@@ -255,7 +255,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
-    def participant_list(self, rs, event_id):
+    @REQUESTdata(("part_id", "id_or_None"))
+    def participant_list(self, rs, event_id, part_id=None):
         """List participants of an event"""
         if not (event_id in rs.user.orga or self.is_admin(rs)):
             reg_list = self.eventproxy.list_registrations(
@@ -276,11 +277,20 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_event")
         else:
             list_consent = True
-        data = self._get_participant_list_data(rs, event_id)
+
+        if part_id:
+            part_ids = [part_id]
+        else:
+            part_ids = None
+        data = self._get_participant_list_data(rs, event_id, part_ids)
+        if not data:
+            return self.redirect(rs, "event/participant_list")
+        if len(rs.ambience['event']['parts']) == 1:
+            part_id = list(rs.ambience['event']['parts'])[0]
+        data['part_id'] = part_id
         data['list_consent'] = list_consent
         return self.render(rs, "participant_list", data)
 
-    @access("event")
     def _get_participant_list_data(self, rs, event_id, part_ids=None):
         """This is un-inlined so download_participant_list can use this
         as well."""
@@ -292,14 +302,16 @@ class EventFrontend(AbstractUserFrontend):
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
-            rs.notify("error", n_("Unknown Part."))
-            return self.redirect(rs, "event/downloads")
+            rs.notify("error", n_("Unknown part."))
+            return {}
         parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
 
+        participant = const.RegistrationPartStati.participant
         registrations = {
             k: v
             for k, v in registrations.items()
             if any(v['parts'][part_id]
+                   and v['parts'][part_id]['status'] == participant
                    for part_id in parts)}
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
@@ -2298,6 +2310,8 @@ class EventFrontend(AbstractUserFrontend):
         """Create list to send to all participants."""
 
         data = self._get_participant_list_data(rs, event_id, part_ids)
+        if not data:
+            return self.redirect(rs, "event/downloads")
         data['orientation'] = "landscape" if landscape else "portrait"
         data['orgas_only'] = orgas_only
         tex = self.fill_template(rs, "tex", "participant_list", data)

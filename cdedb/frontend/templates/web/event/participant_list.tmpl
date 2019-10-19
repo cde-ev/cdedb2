@@ -14,10 +14,26 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Participant List{%- endtrans %} [{{ ordered|length }}]
+        {% trans -%}Participant List{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
+
+
+{% macro list_courses(registration) %}
+    {% for track_id in parts[part_id]['tracks'] -%}
+        {% with course_id = registration['tracks'][track_id]['course_id'] %}
+            {% if course_id %}
+                {{ courses[course_id]['nr'] }}.&nbsp;{{ courses[course_id]['shortname'] }}
+            {% endif %}
+            {% if not loop.last %}
+                <br />
+            {% endif %}
+        {% endwith %}
+    {%- endfor %}
+{% endmacro %}
+
+
 {% block content %}
     {% if not ambience['event']['is_participant_list_visible'] %}
         <div class="alert alert-info" role="alert">
@@ -28,53 +44,114 @@
             </span>
         </div>
     {% endif %}
+
+
     {% if registrations and list_consent %}
-        <table class="table table-condensed">
-            <thead>
-                <tr>
-                    <th>{% trans -%}Given Name{%- endtrans %}</th>
-                    <th>{% trans -%}Family Name{%- endtrans %}</th>
-                    <th>{% trans -%}Email Address{%- endtrans %}</th>
-                    <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
-                    {% if ambience['event']['parts']|length > 1 %}
-                        <th>{% trans -%}Event Parts{%- endtrans %}</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-            {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
-                {% with registration = registrations[registration_id] %}
-                <tr>
-                    <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
-                    <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
-                    <td>{{ personas[registration['persona_id']]['username'] }}</td>
-                    <td>
-                        {{ personas[registration['persona_id']]['postal_code'] }}
-                        {{ personas[registration['persona_id']]['location'] }}
-                        {% if personas[registration['persona_id']]['country'] != "Deutschland" -%}
-                            {{- personas[registration['persona_id']]['country'] -}}
+        {% if ambience['event']['parts']|length > 1 %}
+            <ul class="nav nav-tabs mosp" role="navigation">
+                <li role="presentation" {% if part_id is none %}class="active" aria-current="page" {% endif %}>
+                    {{ util.href(cdedblink('event/participant_list', {'part_id': None}), "Overview") }}
+                </li>
+                {% for p_id, p in ambience['event']['parts'].items() %}
+                    <li role="presentation" {% if p_id == part_id %}class="active" aria-current="page" {% endif %}>
+                        {{ util.href(cdedblink('event/participant_list', {'part_id': p_id}), p['title']) }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+
+        {# This makes a list per part. If the event has only one part, part_id is set by the frontend on this part_id by default. #}
+        {% if part_id %}
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>{% trans -%}Given Name{%- endtrans %}</th>
+                        <th>{% trans -%}Family Name{%- endtrans %}</th>
+                        <th>{% trans -%}Email Address{%- endtrans %}</th>
+                        <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
+                        {% if parts[part_id]['tracks']|length > 1 %}
+                            <th>{% trans -%}Courses{%- endtrans %}</th>
+                        {% elif parts[part_id]['tracks'] %}
+                            <th>{% trans -%}Course{%- endtrans %}</th>
                         {% endif %}
-                    </td>
-                    {% if ambience['event']['parts']|length > 1 %}
-                    <td>
-                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin')
-                                if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant -%}
-                            {% if not loop.first %}
-                                {%- if loop.last %}
-                                    {% trans -%}and{%- endtrans %}
-                                {% else -%}
-                                    ,
-                                {% endif %}
-                            {%- endif %}
-                            {{ part['title'] }}
-                        {%- endfor %}
-                    </td>
-                {% endif %}
-                </tr>
-                {% endwith %}
-            {% endfor %}
-            </tbody>
-        </table>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
+                    {% with registration = registrations[registration_id] %}
+                    <tr>
+                        <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
+                        <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
+                        <td>{{ personas[registration['persona_id']]['username'] }}</td>
+                        <td>
+                            {{ personas[registration['persona_id']]['postal_code'] }}
+                            {{ personas[registration['persona_id']]['location'] }}
+                            {% if personas[registration['persona_id']]['country'] != "Deutschland" -%}
+                                {{- personas[registration['persona_id']]['country'] -}}
+                            {% endif %}
+                        </td>
+                        {% if parts[part_id]['tracks'] %}
+                            <td>
+                                {{ list_courses(registration) }}
+                            </td>
+                        {% endif %}
+                    </tr>
+                    {% endwith %}
+                {% endfor %}
+                </tbody>
+            </table>
+
+
+        {# this makes an overview over all event parts #}
+        {% else %}
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>{% trans -%}Given Name{%- endtrans %}</th>
+                        <th>{% trans -%}Family Name{%- endtrans %}</th>
+                        <th>{% trans -%}Email Address{%- endtrans %}</th>
+                        <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
+                        <th>{% trans -%}Event Parts{%- endtrans %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
+                    {% with registration = registrations[registration_id] %}
+                    <tr>
+                        <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
+                        <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
+                        <td>{{ personas[registration['persona_id']]['username'] }}</td>
+                        <td>
+                            {{ personas[registration['persona_id']]['postal_code'] }}
+                            {{ personas[registration['persona_id']]['location'] }}
+                            {% if personas[registration['persona_id']]['country'] != "Deutschland" -%}
+                                {{- personas[registration['persona_id']]['country'] -}}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') -%}
+                                {% if not loop.first %}
+                                    {%- if loop.last %}
+                                        {% trans -%}and{%- endtrans %}
+                                    {% else -%}
+                                        ,
+                                    {% endif %}
+                                {%- endif %}
+                                {{ part['title'] }}
+                            {%- endfor %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        <p>
+            There are {{ registrations|length }} participants in total.
+        </p>
+
+
     {% elif not list_consent %}
         <div class="alert alert-info" role="alert">
             {{ util.make_icon('info-sign') }}
@@ -86,6 +163,8 @@
                 {%- endtrans %}
             </span>
         </div>
+
+
     {% else %}
         {% trans -%}There are no participants yet.{%- endtrans %}
     {% endif %}
