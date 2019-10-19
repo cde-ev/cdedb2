@@ -103,6 +103,7 @@ class TestEventBackend(BackendTest):
         data['id'] = new_id
         data['offline_lock'] = False
         data['is_archived'] = False
+        data['is_participant_list_visible'] = False
         data['is_course_list_visible'] = False
         data['is_course_state_visible'] = False
         data['is_visible'] = False
@@ -1658,6 +1659,7 @@ class TestEventBackend(BackendTest):
                                  'id': 1,
                                  'institution': 1,
                                  'is_archived': False,
+                                 'is_participant_list_visible': False,
                                  'is_course_list_visible': True,
                                  'is_course_state_visible': False,
                                  'is_visible': True,
@@ -2340,6 +2342,7 @@ class TestEventBackend(BackendTest):
                       'iban': 'DE96370205000008068901',
                       'institution': 1,
                       'is_archived': False,
+                      'is_participant_list_visible': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,

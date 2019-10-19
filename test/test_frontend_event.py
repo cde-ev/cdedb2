@@ -2270,6 +2270,7 @@ etc;anything else""", f['entries_2'].value)
                       'iban': 'DE96370205000008068901',
                       'institution': 1,
                       'is_archived': False,
+                      'is_participant_list_visible': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,
