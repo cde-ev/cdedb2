@@ -21,7 +21,7 @@ from cdedb.frontend.common import (
     csv_output, query_result_to_json, enum_entries_filter, periodic)
 from cdedb.common import (
     n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
-    now, merge_dicts, ArchiveError, implied_realms,
+    now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
@@ -702,7 +702,7 @@ class CoreFrontend(AbstractFrontend):
             action = check(rs, "enum_subscriptionactions_or_None", aux2)
             if rs.errors:
                 return self.send_json(rs, {})
-            if action == const.SubscriptionActions.add_subscriber:
+            if action == SubscriptionActions.add_subscriber:
                 allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
                                 pol.invitation_only}
                 # This does not remove pending and mod_unsubscribed states,

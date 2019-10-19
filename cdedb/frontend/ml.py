@@ -12,7 +12,8 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, name_key, merge_dicts, ProxyShim, SubscriptionError, now)
+    n_, name_key, merge_dicts, ProxyShim, SubscriptionError,
+    SubscriptionActions, now)
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -519,7 +520,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.approve_request,
+            rs, SubscriptionActions.approve_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
@@ -531,7 +532,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.deny_request,
+            rs, SubscriptionActions.deny_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
@@ -543,7 +544,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.block_request,
+            rs, SubscriptionActions.block_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
@@ -555,7 +556,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.add_subscriber,
+            rs, SubscriptionActions.add_subscriber,
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
 
@@ -567,7 +568,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.remove_subscriber,
+            rs, SubscriptionActions.remove_subscriber,
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
 
@@ -579,7 +580,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.add_mod_subscriber,
+            rs, SubscriptionActions.add_mod_subscriber,
             mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -591,7 +592,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.remove_mod_subscriber,
+            rs, SubscriptionActions.remove_mod_subscriber,
             mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -603,7 +604,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.add_mod_unsubscriber,
+            rs, SubscriptionActions.add_mod_unsubscriber,
             mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -615,7 +616,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.remove_mod_unsubscriber,
+            rs, SubscriptionActions.remove_mod_unsubscriber,
             mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -625,7 +626,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.subscribe,
+            rs, SubscriptionActions.subscribe,
             mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -635,7 +636,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.request_subscription,
+            rs, SubscriptionActions.request_subscription,
             mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -645,7 +646,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.unsubscribe,
+            rs, SubscriptionActions.unsubscribe,
             mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -655,7 +656,7 @@ class MlFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, const.SubscriptionActions.cancel_request,
+            rs, SubscriptionActions.cancel_request,
             mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
