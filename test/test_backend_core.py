@@ -803,6 +803,20 @@ class TestCoreBackend(BackendTest):
     @as_users("anton")
     def test_changelog_meta(self, user):
         expectation = (
+            {'change_note': 'Deaktiviert, weil er seine Admin-Privilegien missbraucht.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 2,
+             'persona_id': 15,
+             'reviewed_by': None,
+             'submitted_by': 6},
+            {'change_note': 'Init.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 15,
+             'reviewed_by': None,
+             'submitted_by': 1},
             {'change_note': 'Init.',
              'change_status': 2,
              'ctime': nearly_now(),

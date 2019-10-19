@@ -1744,6 +1744,8 @@ class CoreBackend(AbstractBackend):
     def get_roles_multi(self, rs, ids):
         """Resolve ids into roles.
 
+        Returns an empty role set for inactive users.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: str}
@@ -1758,7 +1760,7 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     @singularize("get_realms_single")
     def get_realms_multi(self, rs, ids):
-        """Resolve ids into realms.
+        """Resolve persona ids into realms (only for active users).
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
@@ -1772,7 +1774,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def verify_personas(self, rs, ids, required_roles=None):
-        """Check wether certain ids map to actual personas.
+        """Check wether certain ids map to actual (active) personas.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]

@@ -113,7 +113,7 @@ class TestCoreFrontend(FrontendTest):
                            'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
         self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 11, 13)
+        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
@@ -512,12 +512,13 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
-        self.assertPresence("Ergebnis [5]")
+        self.assertPresence("Ergebnis [6]")
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Beispiel")
         self.assertPresence("Findus")
         self.assertPresence("Generalis")
         self.assertPresence("Meister")
+        self.assertPresence("Olaf")
 
     def test_privilege_change(self):
         # Grant new admin privileges.
@@ -715,13 +716,13 @@ class TestCoreFrontend(FrontendTest):
                 f = self.response.forms['activitytoggleform']
                 self.submit(f)
                 msg = "Benutzer ist deaktiviert."
-                if u in {"daniel"}:
+                if u in {"olaf"}:
                     self.assertNonPresence(msg)
                 else:
                     self.assertPresence(msg)
                 f = self.response.forms['activitytoggleform']
                 self.submit(f)
-                if u in {"daniel"}:
+                if u in {"olaf"}:
                     self.assertPresence(msg)
                 else:
                     self.assertNonPresence(msg)
