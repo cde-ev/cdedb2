@@ -7,17 +7,17 @@
 {% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Subscription Details
+    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Advanced Management
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
-    {{ util.breadcrumb_link(cdedblink("ml/management"), gettext("Subscription Details"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("ml/management"), gettext("Advanced Management"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Subscription Details{%- endtrans %}
+        {% trans -%}Advanced Management{%- endtrans %}
         <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}

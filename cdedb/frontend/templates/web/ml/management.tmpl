@@ -7,13 +7,13 @@
 {% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Manage
+    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Management
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
-    {{ util.breadcrumb_link(cdedblink("ml/management"), gettext("Manage"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("ml/management"), gettext("Management"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
