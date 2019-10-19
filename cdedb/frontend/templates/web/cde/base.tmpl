@@ -40,7 +40,7 @@
             </div>
         {% endif %}
 
-        {% if "cde" in user.roles %}
+        {% if "member" in user.roles %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar",
                         aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
@@ -49,13 +49,11 @@
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
                     {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="list-alt",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
-                    </div>
+                    </div>pa
                     <div class="list-group tear-down">
                 {% endif %}
-                {% if "member" in user.roles %}
-                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
-                            aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
-                {% endif %}
+                {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
+                        aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
             </div>
         {% endif %}
 

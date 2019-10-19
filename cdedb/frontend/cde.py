@@ -2281,7 +2281,7 @@ class CdEFrontend(AbstractUserFrontend):
                     participants[anid]['viewable'] = True
         return participants, personas, extra_participants
 
-    @access("cde")
+    @access("member")
     def show_past_event(self, rs, pevent_id):
         """Display concluded event."""
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
@@ -2303,7 +2303,7 @@ class CdEFrontend(AbstractUserFrontend):
             'personas': personas, 'institutions': institutions,
             'extra_participants': extra_participants})
 
-    @access("cde")
+    @access("member")
     def show_past_course(self, rs, pevent_id, pcourse_id):
         """Display concluded course."""
         participants, personas, extra_participants = self.process_participants(
@@ -2312,7 +2312,7 @@ class CdEFrontend(AbstractUserFrontend):
             'participants': participants, 'personas': personas,
             'extra_participants': extra_participants})
 
-    @access("cde")
+    @access("member")
     def list_past_events(self, rs):
         """List all concluded events."""
         events = self.pasteventproxy.list_past_events(rs)
