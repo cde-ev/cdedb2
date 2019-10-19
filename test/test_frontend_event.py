@@ -133,7 +133,63 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Everybody come!")
-        # TODO
+        self.assertPresence("aka@example.cde")
+        self.assertPresence("Orgas")
+        self.assertPresence("Garcia G. Generalis")
+
+    @as_users("berta", "charly")
+    def test_show_event_noorga(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        self.assertNonPresence("TestAka")
+        self.assertNonPresence("CdE-Konto IBAN")
+        self.assertNonPresence("Fragebogen aktiv")
+        self.assertNonPresence("Todoliste … just kidding ;)")
+        self.assertNonPresence("Kristallkugel-basiertes Kurszuteilungssystemm")
+
+        self.assertNotIn("quickregistrationform", self.response.forms)
+        self.assertNotIn("changeminorformform", self.response.forms)
+        self.assertNotIn("lockform", self.response.forms)
+        self.assertNotIn("seteventlogoform", self.response.forms)
+        self.assertNotIn("createorgalistform", self.response.forms)
+
+    @as_users("anton", "garcia")
+    def test_show_event_orga(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        self.assertPresence("TestAka")
+        self.assertPresence("CdE-Konto IBAN")
+        self.assertPresence("Fragebogen aktiv")
+        self.assertPresence("Todoliste … just kidding ;)")
+        self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem")
+
+        self.assertIn("quickregistrationform", self.response.forms)
+        self.assertIn("changeminorformform", self.response.forms)
+        self.assertIn("lockform", self.response.forms)
+
+    @as_users("berta", "garcia")
+    def test_show_event_noadmin(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        self.assertNotIn("createorgalistform", self.response.forms)
+        self.assertNotIn("addorgaform", self.response.forms)
+        self.assertNotIn("removeorgaform7", self.response.forms)
+
+    @as_users("anton")
+    def test_show_event_admin(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        self.assertIn("createorgalistform", self.response.forms)
+        self.assertIn("addorgaform", self.response.forms)
+        self.assertIn("removeorgaform7", self.response.forms)
 
     @as_users("anton", "berta", "emilia")
     def test_course_list(self, user):
