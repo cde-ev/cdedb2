@@ -1568,6 +1568,52 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?", f['notes'].value)
 
     @as_users("garcia")
+    def test_lodgement_groups(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/lodgement/overview'},
+                      {'href': '/event/event/1/lodgement/group/summary'})
+        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+
+        # First try with invalid (empty name)
+        f = self.response.forms["lodgementgroupsummaryform"]
+        self.assertEqual(f['moniker_1'].value, "Haupthaus")
+        f['create_-1'] = True
+        f['moniker_1'] = "Hauptgebäude"
+        f['delete_2'] = True
+        self.submit(f, check_notification=False)
+        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+        self.assertValidationError('moniker_-1', "Darf nicht leer sein.")
+
+        # Now, it should work
+        f = self.response.forms["lodgementgroupsummaryform"]
+        f['moniker_-1'] = "Zeltplatz"
+        f['create_-2'] = True
+        f['moniker_-2'] = "Altes Schloss"
+        self.submit(f)
+
+        # Check (non-)existence of groups in lodgement overview
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertPresence("Hauptgebäude")
+        self.assertPresence("Altes Schloss")
+        self.assertNonPresence("AußenWohnGruppe")
+        self.assertPresence("Warme Stube")
+        # Check correct unassignment of "Warme Stube"
+        self.traverse({'href': '/event/event/1/lodgement/1/change'})
+        f = self.response.forms['changelodgementform']
+        self.assertEqual(f['group_id'].value, "")
+
+        # Assign "Kellerverlies" to "Altes Schloss"
+        self.traverse({'href': '/event/event/1/lodgement/overview'},
+                      {'href': '/event/event/1/lodgement/3/change'})
+        f = self.response.forms['changelodgementform']
+        self.assertEqual(f['group_id'].value, "")
+        f['group_id'] = "4"  # Should be the "Altes Schloss"
+        self.submit(f)
+        self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
+        self.assertPresence("Altes Schloss")
+
+    @as_users("garcia")
     def test_field_set(self, user):
         self.get('/event/event/1/field/setselect?reg_ids=1,2')
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
