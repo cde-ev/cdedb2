@@ -2267,6 +2267,8 @@ class CdEFrontend(AbstractUserFrontend):
                 if not persona['is_searchable'] or not persona['is_member']:
                     del participants[anid]
                     extra_participants += 1
+        else:
+            extra_participants = len(participant_infos)
         # Flag linkable user profiles (own profile + all searchable profiles
         # + all (if we are admin))
         for anid in participants:
