@@ -3864,6 +3864,7 @@ class EventFrontend(AbstractUserFrontend):
 
         This also displays some issues where possibly errors occured.
         """
+        parts = rs.ambience['event']['parts']
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
@@ -3872,6 +3873,8 @@ class EventFrontend(AbstractUserFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
+
+        # Calculate inhabitants and reserve_inhabitant_nums
         inhabitants = self.calculate_groups(
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
         inhabitant_nums = {k: len(v) for k, v in inhabitants.items()}
@@ -3884,36 +3887,38 @@ class EventFrontend(AbstractUserFrontend):
             inhabitants)
         problems_condensed = {}
 
+        # Calculate inhabitant_sum and reserve_inhabitant_sum
         inhabitant_sum = {}
-        for part_id in rs.ambience['event']['parts']:
+        for part_id in parts:
             lodgement_sum = 0
             for lodgement_id in lodgement_ids:
                 lodgement_sum += inhabitant_nums[(lodgement_id, part_id)] - \
                                  reserve_inhabitant_nums[(lodgement_id, part_id)]
             inhabitant_sum[part_id] = lodgement_sum
-
         reserve_inhabitant_sum = {}
-        for part_id in rs.ambience['event']['parts']:
+        for part_id in parts:
             reserve_lodgement_sum = 0
             for lodgement_id in lodgement_ids:
                 reserve_lodgement_sum += reserve_inhabitant_nums[(lodgement_id, part_id)]
             reserve_inhabitant_sum[part_id] = reserve_lodgement_sum
 
+        # Calculate sum of lodgement capacities
         capacity_sum = 0
         reserve_sum = 0
-        for id, lodgement in xdictsort_filter(lodgements, 'moniker'):
+        for lodgement in lodgements.values():
             capacity_sum += lodgement['capacity']
             reserve_sum += lodgement['reserve']
 
-
+        # Calculate problems_condensed (worst problem)
         for lodgement_id, part_id in itertools.product(
-                lodgement_ids, rs.ambience['event']['parts'].keys()):
+                lodgement_ids, parts.keys()):
             problems_here = [p for p in problems
                              if p[1] == lodgement_id and p[2] == part_id]
             problems_condensed[(lodgement_id, part_id)] = (
                 max(p[4] for p in problems_here) if len(problems_here) else 0,
                 "; ".join(rs.gettext(p[0]) for p in problems_here),)
 
+        # Calculate groups
         grouped_lodgements = OrderedDict([
             (group_id, OrderedDict([
                 (lodgement_id, lodgement)
@@ -3925,6 +3930,19 @@ class EventFrontend(AbstractUserFrontend):
             in (xdictsort_filter(groups, 'moniker') + [(None, None)])
         ])
 
+        # Calculate group_inhabitants_sum and group_reserve_inhabitants_sum
+        group_inhabitants_sum = {
+            (group_id, part_id): sum(inhabitant_nums[(lodgement_id, part_id)]
+                                     for lodgement_id in group)
+            for part_id in parts
+            for group_id, group in grouped_lodgements.items()}
+        group_reserve_inhabitants_sum = {
+            (group_id, part_id):
+                sum(reserve_inhabitant_nums[(lodgement_id, part_id)]
+                    for lodgement_id in group)
+            for part_id in parts
+            for group_id, group in grouped_lodgements.items()}
+
         return self.render(rs, "lodgements", {
             'lodgements': lodgements,
             'groups': groups,
@@ -3932,8 +3950,10 @@ class EventFrontend(AbstractUserFrontend):
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitant_nums,
             'inhabitants_sum': inhabitant_sum,
+            'group_inhabitants_sum': group_inhabitants_sum,
             'reserve_inhabitants': reserve_inhabitant_nums,
             'reserve_inhabitants_sum': reserve_inhabitant_sum,
+            'group_reserve_inhabitants_sum': group_reserve_inhabitants_sum,
             'capacity_sum': capacity_sum,
             'reserve_sum': reserve_sum,
             'problems': problems_condensed,

@@ -28,8 +28,7 @@
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-            <th rowspan="2">{% trans -%}Lodgement Groups{%- endtrans %}</th>
-            <th rowspan="2">{% trans -%}Lodgement{%- endtrans %}</th>
+                <th rowspan="2" colspan="2">{% trans -%}Lodgement{%- endtrans %}</th>
                 {% if ambience['event']['parts']|length > 1 %}
                     <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">Inhabitants</th>
                 {% else %}
@@ -53,70 +52,66 @@
         </thead>
         <tbody>
             {% for group_id, sorted_lodgements in grouped_lodgements.items() %}
-                <tr>
-                    {% if group_id %}
-                        <td><strong>{{ groups[group_id]['moniker'] }}</strong></td>
-                    {% else %}
-                        <td>{% trans -%}Without Lodgement Group{%- endtrans %}</td>
-                    {% endif %}
-                    <td class="b-left"></td>
-                    {% for part, part_id in ambience['event']['parts']|xdictsort('part_begin') %}
-                        <td class="text-right {% if loop.first %}b-left{% endif %}">
-                        </td>
-                        <td class="text-right"></td>
-                    {% endfor %}
-                    <td class="b-left text-right"></td>
-                    <td class="text-right"></td>
-                    <td class="b-left">
-                        {% if group_id %}
-                        {{ util.href(cdedblink("event/change_lodgement_group_form", {'group_id': group_id}),
-                                     readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
-                                     title=gettext("Edit"))}}
-                        <form action="{{ cdedblink('event/delete_lodgement_group', {'group_id': group_id}) }}"
-                              method="POST" id="deletelodgementgroup{{ group_id }}" style="display: inline">
-                            {{ util.anti_csrf_token('event/delete_lodgement_group') }}
-                            {{ util.input_submit(value="", readonly=is_locked, title=gettext("Delete Group"),
-                                                 icon='trash', aclass='btn btn-xs btn-danger') }}
-                        </form>
-                        {% endif %}
-                </tr>
-            {% for lodgement_id, lodgement in sorted_lodgements.items() %}
-                <tr>
-                    <td></td>
-                    <td class="b-left">{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
-                                     lodgement['moniker']) }}</td>
-                    {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
-                    {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                        {% set problem = problems[(lodgement_id, part_id)] %}
-                        <td class="text-right {% if loop.first %} b-left{% endif %}
-                            {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}>
-                            {{ (inhabitants[(lodgement_id, part_id)] - reserve_inhabitants[(lodgement_id, part_id)]) }}
-                        </td>
-                        <td class="text-right {{ colors[problem[0]] }}"
-                            {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}>
-                            {% if reserve_inhabitants[(lodgement_id, part_id)] %}
-                                + {{ reserve_inhabitants[(lodgement_id, part_id)] }}
+                {% if grouped_lodgements|length > 1 %}
+                    <tr class="subheading">
+                        <td colspan="2">
+                            {% if group_id %}{{ groups[group_id]['moniker'] }}
+                            {% else %}
+                                <i>{% trans %}Ungrouped Lodgements{% endtrans %}</i>
                             {% endif %}
                         </td>
-                    {% endfor %}
-                    <td class="b-left text-right">{{ lodgement['capacity'] }}</td>
-                    <td class=" text-right">+ {{ lodgement['reserve'] }}</td>
-                    <td class="b-left">
-                        {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
-                                     readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
-                                     title=gettext("Edit")) }}
-                        {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
-                                     readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
-                                     title=gettext("Manage Inhabitants")) }}
-                    </td>
-                </tr>
-            {% endfor %}
+                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                            <td class="text-right">
+                                {{ (group_inhabitants_sum[(group_id, part_id)]
+                                    - group_reserve_inhabitants_sum[(group_id, part_id)]) }}
+                            </td>
+                            <td class="text-right">
+                                {% if group_reserve_inhabitants_sum[(group_id, part_id)] %}
+                                    + {{ group_reserve_inhabitants_sum[(group_id, part_id)] }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="text-right">X</td>
+                        <td class=" text-right">+ Y</td>
+                        <td class="">
+                    </tr>
+                {% endif %}
+                {% for lodgement_id, lodgement in sorted_lodgements.items() %}
+                    <tr>
+                        <td class="indent"></td>
+                        <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
+                                         lodgement['moniker']) }}</td>
+                        {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
+                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                            {% set problem = problems[(lodgement_id, part_id)] %}
+                            <td class="text-right {% if loop.first %} b-left{% endif %}
+                                {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}>
+                                {{ (inhabitants[(lodgement_id, part_id)] - reserve_inhabitants[(lodgement_id, part_id)]) }}
+                            </td>
+                            <td class="text-right {{ colors[problem[0]] }}"
+                                {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}>
+                                {% if reserve_inhabitants[(lodgement_id, part_id)] %}
+                                    + {{ reserve_inhabitants[(lodgement_id, part_id)] }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="b-left text-right">{{ lodgement['capacity'] }}</td>
+                        <td class=" text-right">+ {{ lodgement['reserve'] }}</td>
+                        <td class="b-left">
+                            {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
+                                         title=gettext("Edit")) }}
+                            {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
+                                         title=gettext("Manage Inhabitants")) }}
+                        </td>
+                    </tr>
+                {% endfor %}
             {% endfor %}
         </tbody>
         <tfoot>
-            <tr>
-                <td></td>
-                <td>&Sigma;</td>
+            <tr class="summary">
+                <th colspan="2">&Sigma;</th>
                 {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                     <td class="text-right {% if loop.first %} b-left{% endif %}">
                         {{ (inhabitants_sum[part_id] - reserve_inhabitants_sum[part_id]) }}
