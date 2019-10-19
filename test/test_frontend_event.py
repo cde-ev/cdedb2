@@ -1568,6 +1568,34 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?", f['notes'].value)
 
     @as_users("garcia")
+    def test_lodgement_capacities(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/lodgement/overview'})
+        self.assertTitle("Unterkünfte (Große Testakademie 2222)")
+
+        expectations = {
+            "group_inhabitants_3_1": "2",
+            "lodge_reserve_inhabitants_3_2": "1",
+            "group_capacity_1": "11",
+            "total_inhabitants_3": "2",
+            "total_reserve_capacity": "103",
+            "total_capacity": "16",
+        }
+
+        for k, v in expectations.items():
+            self.assertPresence(v, k)
+
+        self.traverse({'href': '/event/event/1/lodgement/1/change'})
+        f = self.response.forms['changelodgementform']
+        f['capacity'] = 42
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+
+        self.assertPresence("42", "group_capacity_2")
+        self.assertPresence("53", "total_capacity")
+
+    @as_users("garcia")
     def test_lodgement_groups(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
