@@ -40,6 +40,8 @@
                 <dd>
                     {% if ambience['lodgement']['group_id'] %}
                         {{ groups[ambience['lodgement']['group_id']]['moniker'] }}
+                    {% else %}
+                        —
                     {% endif %}
                 </dd>
             </dl>

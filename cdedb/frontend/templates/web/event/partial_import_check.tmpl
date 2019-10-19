@@ -278,7 +278,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
                                 <li>
                                     {{ lodgements[lodgement_id]['moniker'] }}{# -#}
-                                    {% if 'moniker' in course_diff %}/{{ course_diff['moniker'][1] }}{% endif %}
+                                    {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
                                     <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
                                     {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
                                 </li>
@@ -334,6 +334,51 @@ diff of the item and shows a table with all changed attributes, old and new valu
         </div>
     {% endif %}
 
+    {% if summary['changed_lodgement_groups'] or summary['new_lodgement_group_ids'] or summary['real_deleted_lodgement_group_ids'] %}
+        {% call util.bootstrap_panel(gettext("Lodgement Groups"), aclass='panel panel-info',
+                                     icon='th-large', anid='box-lodgement-groups') %}
+            <div class="row">
+                {% if summary['new_lodgement_group_ids'] %}
+                    <div class="col-md-4 text-success">
+                        <h5>{% trans %}Added{% endtrans %}</h5>
+                        <ul class="slim">
+                            {% for lodgement_group_id in summary['new_lodgement_group_ids'] %}
+                                <li>
+                                    {{ delta['lodgement_groups'][lodgement_group_id]['moniker'] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                {% if summary['changed_lodgement_groups'] %}
+                    <div class="col-md-4 text-warning">
+                        <h5>{% trans %}Changed{% endtrans %}</h5>
+                        <ul class="slim">
+                            {% for lodgement_group_id, lodgement_group_diff in summary['changed_lodgement_groups'].items() %}
+                                <li>
+                                    {{ lodgement_groups[lodgement_group_id]['moniker'] }}{# -#}
+                                    {% if 'moniker' in lodgement_group_diff %}/{{ lodgement_group_diff['moniker'][1] }}{% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                {% if summary['real_deleted_lodgement_group_ids'] %}
+                    <div class="col-md-4 text-danger">
+                        <h5>{% trans %}Deleted{% endtrans %}</h5>
+                        <ul class="slim">
+                            {% for lodgement_group_id in summary['real_deleted_lodgement_group_ids'] %}
+                                <li>
+                                    {{ lodgement_groups[lodgement_group_id]['moniker'] }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        {% endcall %}
+    {% endif %}
+
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         $('.diff-details').hide();
         $('.show-details')
@@ -357,7 +402,8 @@ diff of the item and shows a table with all changed attributes, old and new valu
 
     {% if not summary['changed_registratios'] and not summary['new_registration_ids'] and not summary['real_deleted_registration_ids']
             and not summary['changed_courses'] and not summary['new_course_ids'] and not summary['real_deleted_course_ids']
-            and not summary['changed_lodgements'] and not summary['new_lodgement_ids'] and not summary['real_deleted_lodgement_ids'] %}
+            and not summary['changed_lodgements'] and not summary['new_lodgement_ids'] and not summary['real_deleted_lodgement_ids']
+            and not summary['changed_lodgement_groups'] and not summary['new_lodgement_group_ids'] and not summary['real_deleted_lodgement_group_ids'] %}
         {% trans %}The input produced an empty diff. No changes are to be imported.{% endtrans %}
     {% endif %}
 

@@ -2559,6 +2559,8 @@ class EventFrontend(AbstractUserFrontend):
             rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         persona_ids = (
@@ -2663,6 +2665,16 @@ class EventFrontend(AbstractUserFrontend):
             'real_deleted_lodgement_ids': tuple(sorted(
                 id for id, val in delta.get('lodgements', {}).items()
                 if val is None and lodgements.get(id))),
+
+            'changed_lodgement_groups': {
+                id: flatten_recursive_delta(val, lodgement_groups[id])
+                for id, val in delta.get('lodgement_groups', {}).items()
+                if id > 0 and val},
+            'new_lodgement_group_ids': tuple(sorted(
+                id for id in delta.get('lodgement_groups', {}) if id < 0)),
+            'real_deleted_lodgement_group_ids': tuple(sorted(
+                id for id, val in delta.get('lodgement_groups', {}).items()
+                if val is None and lodgement_groups.get(id))),
         }
 
         changed_registration_fields = set()
@@ -2690,6 +2702,7 @@ class EventFrontend(AbstractUserFrontend):
             'delta': delta,
             'registrations': registrations,
             'lodgements': lodgements,
+            'lodgement_groups': lodgement_groups,
             'suspicious_lodgements': suspicious_lodgements,
             'courses': courses,
             'suspicious_courses': suspicious_courses,
