@@ -503,10 +503,11 @@ class TestCoreFrontend(FrontendTest):
         # Grant new admin privileges.
         self._approve_privilege_change(
             admin1, admin2, new_admin1, new_privileges1)
+        self.logout()
         self._approve_privilege_change(
             admin1, admin2, new_admin2, new_privileges2)
-        # Check results of Any Admin query.
         self.logout()
+        # Check results of Any Admin query.
         self.login(admin1)
         self.get('/core/search/user')
         save = self.response
