@@ -2998,7 +2998,8 @@ class EventBackend(AbstractBackend):
             total_delta = {}
             total_previous = {}
 
-            # Due to possible (future) dependencies the order shoul be like so:
+            # This needs to be processed in the following order:
+            # lodgements -> courses -> registrations.
             lmap = {}
             ldelta = {}
             lprevious = {}
@@ -3029,9 +3030,9 @@ class EventBackend(AbstractBackend):
                         ldelta[lodgement_id] = delta
                         lprevious[lodgement_id] = previous
                         if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            todo['id'] = lodgement_id
-                            self.set_lodgement(rs, todo)
+                            changed_lodgement = copy.deepcopy(delta)
+                            changed_lodgement['id'] = lodgement_id
+                            self.set_lodgement(rs, changed_lodgement)
             if ldelta:
                 total_delta['lodgements'] = ldelta
                 total_previous['lodgements'] = lprevious
@@ -3074,23 +3075,23 @@ class EventBackend(AbstractBackend):
                         cdelta[course_id] = delta
                         cprevious[course_id] = previous
                         if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            segments = todo.pop('segments', None)
+                            changed_course = copy.deepcopy(delta)
+                            segments = changed_course.pop('segments', None)
                             if segments:
                                 orig_seg = current['segments']
                                 new_segments = [
                                     x for x in event['tracks']
                                     if check_seg(x, segments, orig_seg)]
-                                todo['segments'] = new_segments
+                                changed_course['segments'] = new_segments
                                 orig_active = [
                                     s for s, a in current['segments'].items()
                                     if a]
                                 new_active = [
                                     x for x in event['tracks']
                                     if segments.get(x, x in orig_active)]
-                                todo['active_segments'] = new_active
-                            todo['id'] = course_id
-                            self.set_course(rs, todo)
+                                changed_course['active_segments'] = new_active
+                            changed_course['id'] = course_id
+                            self.set_course(rs, changed_course)
             if cdelta:
                 total_delta['courses'] = cdelta
                 total_previous['courses'] = cprevious
@@ -3135,8 +3136,8 @@ class EventBackend(AbstractBackend):
                         new['event_id'] = data['id']
                         for track in new['tracks'].values():
                             if track['course_id'] in cmap:
-                                old_id = track['course_id']
-                                track['course_id'] = cmap[old_id]
+                                tmp_id = track['course_id']
+                                track['course_id'] = cmap[tmp_id]
                             new_choices = [
                                 cmap.get(course_id, course_id)
                                 for course_id in track['choices']
@@ -3144,8 +3145,8 @@ class EventBackend(AbstractBackend):
                             track['choices'] = new_choices
                         for part in new['parts'].values():
                             if part['lodgement_id'] in lmap:
-                                old_id = part['lodgement_id']
-                                part['lodgement_id'] = lmap[old_id]
+                                tmp_id = part['lodgement_id']
+                                part['lodgement_id'] = lmap[tmp_id]
                         new_id = self.create_registration(rs, new)
                         rmap[registration_id] = new_id
                 else:
@@ -3154,27 +3155,27 @@ class EventBackend(AbstractBackend):
                         rdelta[registration_id] = delta
                         rprevious[registration_id] = previous
                         if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            if 'tracks' in todo:
-                                for track in todo['tracks'].values():
+                            changed_reg = copy.deepcopy(delta)
+                            if 'tracks' in changed_reg:
+                                for track in changed_reg['tracks'].values():
                                     if 'course_id' in track:
                                         if track['course_id'] in cmap:
-                                            old_id = track['course_id']
-                                            track['course_id'] = cmap[old_id]
+                                            tmp_id = track['course_id']
+                                            track['course_id'] = cmap[tmp_id]
                                     if 'choices' in track:
                                         new_choices = [
                                             cmap.get(course_id, course_id)
                                             for course_id in track['choices']
                                         ]
                                         track['choices'] = new_choices
-                            if 'parts' in todo:
-                                for part in todo['parts'].values():
+                            if 'parts' in changed_reg:
+                                for part in changed_reg['parts'].values():
                                     if 'lodgement_id' in part:
                                         if part['lodgement_id'] in lmap:
-                                            old_id = part['lodgement_id']
-                                            part['lodgement_id'] = lmap[old_id]
-                            todo['id'] = registration_id
-                            self.set_registration(rs, todo)
+                                            tmp_id = part['lodgement_id']
+                                            part['lodgement_id'] = lmap[tmp_id]
+                            changed_reg['id'] = registration_id
+                            self.set_registration(rs, changed_reg)
             if rdelta:
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious
