@@ -13,7 +13,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.common import cast_fields
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PartialImportError, CDEDB_EXPORT_EVENT_VERSION)
+    PERSONA_EVENT_FIELDS, PartialImportError, CDEDB_EXPORT_EVENT_VERSION, now)
 from cdedb.enums import ENUMS_DICT
 import cdedb.database.constants as const
 
@@ -520,6 +520,102 @@ class TestEventBackend(BackendTest):
             {"course_segments"})
         self.assertLess(0, self.event.delete_course(
             self.key, new_id, ("course_segments",)))
+
+    @as_users("garcia")
+    def test_course_choices_cascade(self, user):
+        # Set the status quo.
+        for course_id in (1, 2, 3, 4):
+            cdata = {
+                "id": course_id,
+                "segments": [1, 2, 3],
+                "active_segments": [1, 2, 3],
+            }
+            self.event.set_course(self.key, cdata)
+        for reg_id in (1, 2, 3, 4):
+            rdata = {
+                "id": reg_id,
+                "tracks": {
+                    1: {
+                        "choices": [1, 2, 3, 4],
+                    },
+                },
+                "parts": {
+                    1: {
+                        "status": const.RegistrationPartStati.participant,
+                    },
+                },
+            }
+            self.event.set_registration(self.key, rdata)
+
+        # Check that all for choices are present fpr registration 1.
+        full_export = self.event.export_event(self.key, event_id=1)
+        for course_choice in full_export["event.course_choices"].values():
+            del course_choice["id"]
+        expectations = [
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 1,
+                "rank": 0,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 2,
+                "rank": 1,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 3,
+                "rank": 2,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 4,
+                "rank": 3,
+            },
+        ]
+        for exp in expectations:
+            self.assertIn(exp, full_export["event.course_choices"].values())
+
+        # Delete Course 2.
+        cascade = self.event.delete_course_blockers(self.key, course_id=2)
+        self.event.delete_course(self.key, course_id=2, cascade=cascade)
+
+        # Check that the remaining three course choices have been moved up.
+        full_export = self.event.export_event(self.key, event_id=1)
+        for course_choice in full_export["event.course_choices"].values():
+            del course_choice["id"]
+        expectations = [
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 1,
+                "rank": 0,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 3,
+                "rank": 1,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 4,
+                "rank": 2,
+            },
+        ]
+        for exp in expectations:
+            self.assertIn(exp, full_export["event.course_choices"].values())
+
+        # Check that no additional or duplicate choices exist.
+        partial_export = self.event.partial_export_event(self.key, event_id=1)
+        self.assertEqual(
+            [1, 3, 4],
+            partial_export["registrations"][1]["tracks"][1]["choices"])
 
     @as_users("anton", "garcia")
     def test_visible_events(self, user):
