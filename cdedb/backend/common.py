@@ -320,6 +320,36 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         params = tuple(data[key] for key in keys)
         return unwrap(self.query_one(rs, query, params))
 
+    def sql_insert_many(self, rs, table, data):
+        """Generic SQL query to insert multiple datasets with the same keys.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :type rs: :py:class:`BackendRequestState`
+        :type table: str
+        :type data: {str: object}
+        :rtype: int
+        :returns: number of inserted rows
+        """
+
+        if not data:
+            return 0
+        keys = tuple(data[0].keys())
+        key_set = set(keys)
+        params = []
+        for entry in data:
+            if not entry.keys() == key_set:
+                raise ValueError(n_("Dict keys do not match."))
+            params.extend(entry[k] for k in keys)
+        query = "INSERT INTO {table} ({keys}) VALUES {value_list}"
+        # Create len(data) many row placeholders for len(keys) many values.
+        value_list = ", ".join(("({})".format(", ".join(("%s",)
+                                                        * len(keys))),)
+                               * len(data))
+        query = query.format(
+            table=table, keys=", ".join(keys), value_list=value_list)
+        return self.query_exec(rs, query, params)
+
     def sql_select(self, rs, table, columns, entities, entity_key="id"):
         """Generic SQL select query.
 
