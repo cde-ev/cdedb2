@@ -25,7 +25,7 @@ import psycopg2.extras
 import pytz
 import werkzeug.datastructures
 
-from cdedb.subscription_aux import (
+from cdedb.ml_subscription_aux import (
     SubscriptionError, SubscriptionInfo, SubscriptionWarning,
     SubscriptionActions)
 
