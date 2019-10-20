@@ -423,9 +423,14 @@ def _sequence(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :param _convert: is ignored since no useful default conversion is available
     :rtype: ([object] or None, [(str or None, exception)])
     """
+    if _convert:
+        try:
+            val = tuple(val)
+        except (ValueError, TypeError):
+            return None, [(argname,
+                           ValueError(n_("Invalid input for sequence.")))]
     if not isinstance(val, collections.abc.Sequence):
         return None, [(argname, TypeError(n_("Must be a sequence.")))]
     return val, []
