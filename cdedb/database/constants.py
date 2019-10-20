@@ -137,7 +137,6 @@ class SubscriptionStates(enum.IntEnum):
     #: The user is subscribed by virtue of being part of some group.
     implicit = 30
 
-    @property
     def is_subscribed(self):
         return self in self.subscribing_states()
 

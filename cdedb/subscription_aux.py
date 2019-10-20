@@ -225,7 +225,6 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.add_mod_unsubscriber,
         }
 
-    @property
     def is_unsubscribing(self):
         return self in self.unsubscribing_actions()
 
@@ -243,7 +242,6 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_mod_unsubscriber
         }
 
-    @property
     def is_managing(self):
         return self in self.managing_actions()
 

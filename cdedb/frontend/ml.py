@@ -230,7 +230,7 @@ class MlFrontend(AbstractUserFrontend):
             return werkzeug.exceptions.Forbidden()
 
         sub_address = None
-        if state and state.is_subscribed:
+        if state and state.is_subscribed():
             sub_address = self.mlproxy.get_subscription_address(
                 rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
 

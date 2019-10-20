@@ -58,8 +58,8 @@
         <p class="text-warning"><strong>{% trans -%}This mailinglist is inactive.{%- endtrans %}</strong></p>
     {% else %}
         {% call util.bootstrap_panel(title=gettext("Your Subscription"),
-                                     aclass=("panel-success" if state and state.is_subscribed else "panel-default")) %}
-                {% if state and state.is_subscribed %}
+                                     aclass=("panel-success" if state and state.is_subscribed() else "panel-default")) %}
+                {% if state and state.is_subscribed() %}
                     <p class="text-success"><strong>
                         {% trans -%}You are subscribed to this mailinglist.{%- endtrans %}
                     </strong></p>

@@ -171,7 +171,7 @@ class MlBackend(AbstractBackend):
         # TODO fetch the state here instead of passing it.
         audience_check = const.AudiencePolicy(
             ml["audience_policy"]).check(rs.user.roles)
-        is_subscribed = False if state is None else state.is_subscribed
+        is_subscribed = False if state is None else state.is_subscribed()
         return (audience_check or is_subscribed or self.is_admin(rs)
                 or ml["id"] in rs.user.moderator)
 
@@ -724,7 +724,7 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm("id", mailinglist_id)
         # Managing actions can only be done by moderators. Other options always
         # change your own subscription state.
-        if action.is_managing:
+        if action.is_managing():
             if not self.may_manage(rs, mailinglist_id):
                 raise PrivilegeError("Not privileged.")
             persona_id = affirm("id", persona_id)
@@ -777,7 +777,7 @@ class MlBackend(AbstractBackend):
         # It is not allowed to unsubscribe from mandatory lists.
         # This is not using get_interaction_policy, as even people with
         # moderator override may not unsubscribe
-        if action.is_unsubscribing:
+        if action.is_unsubscribing():
             sub_policy = self.get_mailinglist(rs, mailinglist_id)[
                 "sub_policy"]
             if sub_policy == const.MailinglistInteractionPolicy.mandatory:
