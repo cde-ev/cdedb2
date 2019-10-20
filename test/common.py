@@ -557,6 +557,42 @@ class FrontendTest(unittest.TestCase):
                       "\"{}\""
                       .format(fieldname))
 
+    def assertNoLink(self, href_pattern=None, tag='a', href_attr='href',
+                     content=None, verbose=False):
+        """Assert that no tag that matches specific criteria is found. Possible
+        criteria include:
+
+        * The tags href_attr matches the href_pattern (regex)
+        * The tags content matches the content (regex)
+
+        This is a ripoff of webtest.response._find_element, which is used by
+        traverse internally.
+        """
+        href_pat = webtest.utils.make_pattern(href_pattern)
+        content_pat = webtest.utils.make_pattern(content)
+
+        def printlog(s):
+            if verbose:
+                print(s)
+
+        for element in self.response.html.find_all(tag):
+            el_html = str(element)
+            el_content = element.decode_contents()
+            printlog('Element: %r' % el_html)
+            if not element.get(href_attr):
+                printlog('  Skipped: no %s attribute' % href_attr)
+                continue
+            if href_pat and not href_pat(element[href_attr]):
+                printlog("  Skipped: doesn't match href")
+                continue
+            if content_pat and not content_pat(el_content):
+                printlog("  Skipped: doesn't match description")
+                continue
+            printlog("  Link found")
+            raise AssertionError(
+                "{} tag with {} == {} and content \"{}\" has been found."
+                .format(tag, href_attr, element[href_attr], el_content))
+
 
 StoreTrace = collections.namedtuple("StoreTrace", ['cron', 'data'])
 MailTrace = collections.namedtuple(
