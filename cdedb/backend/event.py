@@ -1579,8 +1579,49 @@ class EventBackend(AbstractBackend):
                         ret *= self.sql_update(
                             rs, "event.registration_tracks", deletor)
                 if "course_choices" in cascade:
-                    ret *= self.sql_delete(rs, "event.course_choices",
-                                           blockers["course_choices"])
+                    self.logger.debug("\n"*5)
+                    # Get the data of the affected choices grouped by track.
+                    data = self.sql_select(
+                        rs, "event.course_choices",
+                        ("track_id", "registration_id"),
+                        blockers["course_choices"])
+                    data_by_tracks = {
+                        track_id: [e["registration_id"] for e in data
+                                   if e["track_id"] == track_id]
+                        for track_id in set(e["track_id"] for e in data)
+                    }
+
+                    # Delete choices of the deletable course.
+                    ret *= self.sql_delete(
+                        rs, "event.course_choices", blockers["course_choices"])
+
+                    # Construct list of inserts.
+                    choices = []
+                    for track_id, reg_ids in data_by_tracks.items():
+                        query = (
+                            "SELECT id, course_id, track_id, registration_id "
+                            "FROM event.course_choices "
+                            "WHERE track_id = {} AND registration_id = ANY(%s) "
+                            "ORDER BY registration_id, rank ASC ")
+                        choices.extend(self.query_all(
+                            rs, query.format(track_id), (reg_ids,)))
+
+                    deletion_ids = {e['id'] for e in choices}
+
+                    # Update the ranks and remove the ids from the insert data.
+                    i = 0
+                    current_id = None
+                    for row in choices:
+                        if current_id != row['registration_id']:
+                            current_id = row['registration_id']
+                            i = 0
+                        row['rank'] = i
+                        del row['id']
+                        i += 1
+
+                    self.sql_delete(rs, "event.course_choices", deletion_ids)
+                    self.sql_insert_many(rs, "event.course_choices", choices)
+
                 if "course_segments" in cascade:
                     ret *= self.sql_delete(rs, "event.course_segments",
                                            blockers["course_segments"])
