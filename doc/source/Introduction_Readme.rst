@@ -52,9 +52,9 @@ There is a default data set for the development it contains some users
    User                    Password   Notes                                            ID
   ======================= ========== ================================================ =========
    anton@example.cde       secret     admin with all privileges                        DB-1-9
-   berta@example.cde       secret     canonical example member                         DB-2-7
+   berta@example.cde       secret     canonical example member, moderator of lists     DB-2-7
    charly@example.cde      secret     member, but not searchable                       DB-3-5
-   daniel@example.cde      secret     former member                                    DB-4-3
+   daniel@example.cde      secret     former member (but not disabled)                 DB-4-3
    emilia@example.cde      secret     event user                                       DB-5-1
    ferdinand@example.cde   secret     admin in all realms, but not globally            DB-6-X
    garcia@example.cde      secret     orga of an event                                 DB-7-8
@@ -64,6 +64,7 @@ There is a default data set for the development it contains some users
    kalif@example.cde       secret     assembly user                                    DB-11-6
    lisa                    secret     member with whacked data                         DB-12-4
    martin@example.cde      secret     second meta admin to confirm privilege changes   DB-13-2
+   olaf@example.cde        secret     a disabled user (and member and CdE admin)       DB-15-9
   ======================= ========== ================================================ =========
 
 Random Thoughts
