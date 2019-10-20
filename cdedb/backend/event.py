@@ -1579,7 +1579,6 @@ class EventBackend(AbstractBackend):
                         ret *= self.sql_update(
                             rs, "event.registration_tracks", deletor)
                 if "course_choices" in cascade:
-                    self.logger.debug("\n"*5)
                     # Get the data of the affected choices grouped by track.
                     data = self.sql_select(
                         rs, "event.course_choices",
