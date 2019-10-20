@@ -1788,6 +1788,9 @@ _PAST_EVENT_COMMON_FIELDS = lambda: {
     'tempus': _date,
     'description': _str_or_None,
 }
+_PAST_EVENT_OPTIONAL_FIELDS = lambda: {
+    'gallery': _str_or_None
+}
 
 
 @_addvalidator
@@ -1807,10 +1810,11 @@ def _past_event(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = _PAST_EVENT_COMMON_FIELDS()
-        optional_fields = {}
+        optional_fields = _PAST_EVENT_OPTIONAL_FIELDS()
     else:
         mandatory_fields = {'id': _id}
-        optional_fields = _PAST_EVENT_COMMON_FIELDS()
+        optional_fields = dict(_PAST_EVENT_COMMON_FIELDS(),
+                               **_PAST_EVENT_OPTIONAL_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
 

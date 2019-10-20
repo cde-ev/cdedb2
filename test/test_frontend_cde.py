@@ -1241,6 +1241,29 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertPresence("Ringelpiez")
 
+    @as_users("anton", "berta", "charly", "ferdinand")
+    def test_show_past_event_gallery(self, user):
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.assertTitle("Vergangene Veranstaltungen")
+        self.traverse({'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        if user['id'] == 1:
+            self.assertPresence("As you are no participant of this past event")
+            self.assertPresence("only see this link because you are admin.")
+        else:
+            self.assertNonPresence("you are no participant of this past event")
+            self.assertNonPresence("only see this link because you are admin.")
+        self.assertPresence("https://pa14:secret@example.cde/pa14/")
+
+    @as_users("inga")
+    def test_show_past_event_no_gallery(self):
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.assertTitle("Vergangene Veranstaltungen")
+        self.traverse({'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        self.assertNonPresence("Mediensammlung")
+        self.assertNonPresence("https://pa14:secret@example.cde/pa14/")
+
     @as_users("anton")
     def test_change_past_event(self, user):
         self.traverse({'href': '/cde/$'},
@@ -1252,6 +1275,7 @@ class TestCdEFrontend(FrontendTest):
         f['title'] = "Link Academy"
         f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
+        f['gallery'] = "<https://zelda:hyrule@link.cde>"
         self.submit(f)
         self.assertTitle("Link Academy")
         self.assertPresence("Club der Ehemaligen")
@@ -1268,6 +1292,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "link"
         f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
+        f['gallery'] = "<https://zelda:hyrule@link.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         self.assertTitle("Link Academy II")
