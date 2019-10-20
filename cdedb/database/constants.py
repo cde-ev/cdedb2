@@ -11,7 +11,7 @@ import enum
 
 
 def n_(x):
-    """Clone of :cdedb.common:n_: for mariking translations."""
+    """Clone of :cdedb.common:n_: for marking translatable strings."""
     return x
 
 

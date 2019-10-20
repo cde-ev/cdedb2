@@ -3,7 +3,7 @@ from cdedb.database.constants import SubscriptionStates, MlLogCodes
 
 
 def n_(x):
-    """Clone of `cdedb.common.n_` used for maiking translations."""
+    """Clone of `cdedb.common.n_` used for marking translatable strings."""
     return x
 
 
