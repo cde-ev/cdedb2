@@ -1147,6 +1147,132 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("etc", f['transportation'].value)
         self.assertEqual("Bitte in ruhiger Lage.\nEcht.", f['lodge'].value)
 
+    def test_participant_list(self):
+        # first, check non-visibility for all participants
+        self.login(USER_DICT['emilia'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.get('/event/event/1/registration/list')
+        self.follow()
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Fehler! Die Teilnehmer Liste ist noch nicht "
+                            "veröffentlicht.", div='notifications')
+        self.logout()
+
+        # now, check visibility for orgas
+        self.login(USER_DICT['garcia'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': 'event/event/1/registration/list'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.assertPresence("Die Teilnehmerliste ist aktuell nur für Orgas und "
+                            "Admins sichtbar.")
+        self.assertPresence("Übersicht")
+        self.assertPresence("Administrator")
+        self.assertPresence("emilia@example.cde")
+        self.assertPresence("03205 Musterstadt")
+        self.assertNonPresence("Inga")
+        self.assertPresence("Veranstaltungsteile")
+        self.assertNonPresence("Kurs")
+
+        self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
+        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
+        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Kurs")
+        self.assertNonPresence("Veranstaltungsteile")
+
+
+        self.traverse({'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['courses_in_participant_list'].checked = True
+        self.submit(f)
+
+        self.traverse({'href': 'event/event/1/registration/list'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.assertPresence("Veranstaltungsteile")
+        self.assertNonPresence("Kurs")
+        self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
+        self.assertNonPresence("Veranstaltungsteile")
+        self.assertNonPresence("Kurs")
+        self.traverse({'href': r'event/event/1/registration/list\?part_id=2'})
+        self.assertNonPresence("Veranstaltungsteile")
+        self.assertPresence("Kurse")
+        self.traverse({'href': r'event/event/1/registration/list\?part_id=3'})
+        self.assertNonPresence("Veranstaltungsteile")
+        self.assertPresence("Kurs")
+        self.assertNonPresence("Kurse")
+        self.assertPresence("α. Heldentum")
+
+        # now, make participant list visible to participants
+        self.traverse({'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['is_participant_list_visible'].checked = True
+        self.submit(f)
+        self.logout()
+
+        # check visibility for participant with list consent
+        self.login(USER_DICT['emilia'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/list'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.assertNonPresence("Die Teilnehmerliste ist aktuell nur für Orgas "
+                               "und Admins sichtbar.")
+        self.assertPresence("Warmup")
+        self.assertPresence("Zweite Hälfte")
+        self.logout()
+
+        # check non-visibility for participant without list consent
+        self.login(USER_DICT['inga'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/list'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.assertPresence("Du kannst die Teilnehmerliste nicht sehen, da du "
+                            "nicht zugestimmt hast, deine Daten auf der "
+                            "Teilnehmerliste zur Verfügung zu stellen.")
+        self.assertNonPresence("Übersicht")
+        self.assertNonPresence("Zweite Hälfte")
+        self.assertNonPresence("Anton")
+        self.assertNonPresence("Stadt, Postleitzahl")
+
+    @as_users("berta")
+    def test_participant_list_event_with_one_part(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/2/show'},
+                      {'href': '/event/event/2/registration/list'})
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertPresence("Bisher gibt es keine Teilnehmer.")
+
+        # add a registration
+        self.traverse({'href': '/event/event/2/registration/query'},
+                      {'href': '/event/event/2/registration/add'})
+        self.assertTitle("Neue Anmeldung (CdE-Party 2050)")
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = "DB-1-9"
+        self.submit(f)
+
+        # now test participant list
+        self.traverse({'href': 'event/event/2/registration/list'})
+        self.assertPresence("Vorname")
+        self.assertPresence("E-Mail-Adresse")
+        self.assertNonPresence("Veranstaltungsteile")
+        self.assertNonPresence("Übersicht")
+        self.assertNonPresence("Party")
+
+        # at last, test url magic
+        self.get('/event/event/2/registration/list?part_id=5000')
+        self.follow()
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertPresence("Unbekannter Veranstaltungsteil",
+                            div='notifications')
+        self.get('/event/event/2/registration/list?part_id=4')
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertNonPresence("Unbekannter Veranstaltungsteil",
+                               div='notifications')
+
     @as_users("garcia")
     def test_batch_fee(self, user):
         self.traverse({'href': '/event/$'},
