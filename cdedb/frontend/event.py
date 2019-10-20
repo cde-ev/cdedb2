@@ -343,7 +343,7 @@ class EventFrontend(AbstractUserFrontend):
         "mail_text", "use_questionnaire", "notes", "lodge_field",
         "reserve_field", "is_visible", "is_course_list_visible",
         "is_course_state_visible", "is_participant_list_visible",
-        "course_room_field")
+        "courses_in_participant_list", "course_room_field")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""

@@ -70,9 +70,9 @@
                         <th>{% trans -%}Family Name{%- endtrans %}</th>
                         <th>{% trans -%}Email Address{%- endtrans %}</th>
                         <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
-                        {% if parts[part_id]['tracks']|length > 1 %}
+                        {% if parts[part_id]['tracks']|length > 1 and ambience['event']['courses_in_participant_list'] %}
                             <th>{% trans -%}Courses{%- endtrans %}</th>
-                        {% elif parts[part_id]['tracks'] %}
+                        {% elif parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
                             <th>{% trans -%}Course{%- endtrans %}</th>
                         {% endif %}
                     </tr>
@@ -91,7 +91,7 @@
                                 {{- personas[registration['persona_id']]['country'] -}}
                             {% endif %}
                         </td>
-                        {% if parts[part_id]['tracks'] %}
+                        {% if parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
                             <td>
                                 {{ list_courses(registration) }}
                             </td>
