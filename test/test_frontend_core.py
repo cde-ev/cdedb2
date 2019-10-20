@@ -710,7 +710,8 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton")
     def test_toggle_activity(self, user):
         for i, u in enumerate(("berta", "charly", "daniel", "emilia", "garcia",
-                               "inga", "janis", "kalif", "lisa", "martin")):
+                               "inga", "janis", "kalif", "lisa", "martin",
+                               "olaf")):
             with self.subTest(target=u):
                 self.admin_view_profile(u)
                 f = self.response.forms['activitytoggleform']
