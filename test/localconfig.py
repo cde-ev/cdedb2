@@ -2,6 +2,7 @@
 
 import pathlib
 
+CDEDB_TEST = True
 CDB_DATABASE_NAME = "cdb_test"
 SERVER_NAME_TEMPLATE = "test_{}_server"
 STORAGE_DIR = pathlib.Path("/tmp/cdedb-store/")

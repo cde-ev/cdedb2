@@ -55,6 +55,7 @@ class Application(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets, self.conf.DB_PORT)
+        # Construct a reduced Jinja environment for rendering error pages.
         # TODO With buster we can activate the trimming of the trans env
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
@@ -263,6 +264,11 @@ class Application(BaseApp):
                    "some false positive restrictions. Your limit will be "
                    "reset in the next days."))
         except Exception as e:
+            # Raise exceptions when in TEST environment to let the test runner
+            # catch them.
+            if self.conf.CDEDB_TEST:
+                raise
+
             # debug output if applicable
             if self.conf.CDEDB_DEV:
                 return Response(cgitb.html(sys.exc_info(), context=7),
