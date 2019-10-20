@@ -338,7 +338,9 @@ class CoreFrontend(AbstractFrontend):
             if is_orga and is_participant:
                 access_levels.add("event")
                 access_levels.add("orga")
-        # Mailinglist moderators see their subscribers
+        # Mailinglist moderators see all users related to their mailinglist.
+        # This excludes users with relation "unsubscribed", because they are not
+        # directly shown on the management sites.
         if ml_id:
             is_moderator = (
                     "ml_admin" in rs.user.roles
