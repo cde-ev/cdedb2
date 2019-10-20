@@ -273,7 +273,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.notify("warning", n_("No participant of event."))
                 return self.redirect(rs, "event/show_event")
             if not rs.ambience['event']['is_participant_list_visible']:
-                rs.notify("warning", n_("Participant list not published yet."))
+                rs.notify("error", n_("Participant list not published yet."))
                 return self.redirect(rs, "event/show_event")
         else:
             list_consent = True
