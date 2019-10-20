@@ -2283,11 +2283,19 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Dafür mit Frischluft.", "box-changed-lodgements")
         self.assertPresence("Geheimkabinett", "box-new-lodgements")
         self.assertPresence("Kellerverlies", "box-deleted-lodgements")
+        # Lodgement Groups
+        self.assertPresence("Geheime Etage", "list-new-lodgement-groups")
 
         # Do import
         f = self.response.forms["importexecuteform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
+
+        # Check that changes have acutally been applied (at least for some)
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertNonPresence("Kellerverlies")
+        self.assertPresence("Geheime Etage")
+        self.assertPresence("Geheimkabinett")
 
     @as_users("anton")
     def test_partial_import_interleaved(self, user):

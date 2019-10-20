@@ -341,7 +341,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 {% if summary['new_lodgement_group_ids'] %}
                     <div class="col-md-4 text-success">
                         <h5>{% trans %}Added{% endtrans %}</h5>
-                        <ul class="slim">
+                        <ul class="slim" id="list-new-lodgement-groups">
                             {% for lodgement_group_id in summary['new_lodgement_group_ids'] %}
                                 <li>
                                     {{ delta['lodgement_groups'][lodgement_group_id]['moniker'] }}
@@ -353,7 +353,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 {% if summary['changed_lodgement_groups'] %}
                     <div class="col-md-4 text-warning">
                         <h5>{% trans %}Changed{% endtrans %}</h5>
-                        <ul class="slim">
+                        <ul class="slim" id="list-changed-lodgement-groups">
                             {% for lodgement_group_id, lodgement_group_diff in summary['changed_lodgement_groups'].items() %}
                                 <li>
                                     {{ lodgement_groups[lodgement_group_id]['moniker'] }}{# -#}
@@ -366,7 +366,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 {% if summary['real_deleted_lodgement_group_ids'] %}
                     <div class="col-md-4 text-danger">
                         <h5>{% trans %}Deleted{% endtrans %}</h5>
-                        <ul class="slim">
+                        <ul class="slim" id="list-deleted-lodgement-groups">
                             {% for lodgement_group_id in summary['real_deleted_lodgement_group_ids'] %}
                                 <li>
                                     {{ lodgement_groups[lodgement_group_id]['moniker'] }}
