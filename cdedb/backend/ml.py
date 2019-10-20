@@ -862,29 +862,30 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml", "ml_script")
-    def get_subscription_states(self, rs, mailinglist_id, states=None):
+    @singularize("get_subscription_states", "mailinglist_ids", "mailinglist_id")
+    def get_many_subscription_states(self, rs, mailinglist_ids, states=None):
         """Get all users related to a given mailinglist and their sub state.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
+        :type mailinglist_ids: [int]
         :type states: [int] or None
         :rtype: {int: const.SubscriptionStates}
         :return: Dict mapping persona_ids to their subscription state for the
             given mailinglist. If states were given, limit this to personas with
             those states.
         """
-        mailinglist_id = affirm("id", mailinglist_id)
+        mailinglist_ids = affirm_set("id", mailinglist_ids)
         states = states or set()
         states = affirm_array("enum_subscriptionstates", states)
 
-        if not self.may_manage(rs, mailinglist_id):
+        if not all(self.may_manage(rs, ml_id) for ml_id in mailinglist_ids):
             raise PrivilegeError(n_("Not privileged."))
 
-        query = ("SELECT persona_id, subscription_state FROM "
+        query = ("SELECT mailinglist_id, persona_id, subscription_state FROM "
                  "ml.subscription_states")
 
-        constraints = ["mailinglist_id = %s"]
-        params = [mailinglist_id]
+        constraints = ["mailinglist_id = ANY(%s)"]
+        params = [mailinglist_ids]
 
         if states:
             constraints.append("subscription_state = ANY(%s)")
@@ -895,10 +896,10 @@ class MlBackend(AbstractBackend):
 
         data = self.query_all(rs, query, params)
 
-        ret = {
-            e["persona_id"]: const.SubscriptionStates(e["subscription_state"])
-            for e in data
-            }
+        ret = {ml_id: {} for ml_id in mailinglist_ids}
+        for e in data:
+            ret[e["mailinglist_id"]][e["persona_id"]] = \
+                const.SubscriptionStates(e["subscription_state"])
 
         return ret
 

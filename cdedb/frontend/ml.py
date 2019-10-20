@@ -143,10 +143,10 @@ class MlFrontend(AbstractUserFrontend):
             rs, rs.user.persona_id, states=sub_states)
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
-        for mailinglist_id in mailinglists:
-            subs = self.mlproxy.get_subscription_states(
-                rs, mailinglist_id, states=sub_states)
-            mailinglist_infos[mailinglist_id]['num_subscribers'] = len(subs)
+        subs = self.mlproxy.get_many_subscription_states(
+            rs, mailinglist_ids=mailinglists, states=sub_states)
+        for ml_id in subs:
+            mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
         return self.render(rs, "list_mailinglists", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos, 'events': events,
