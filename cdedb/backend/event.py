@@ -1757,7 +1757,9 @@ class EventBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
+        ret = {}
         with Atomizer(rs):
+            # Check associations.
             associated = self.sql_select(rs, "event.registrations",
                                          ("persona_id", "event_id"), ids)
             if not associated:
@@ -1768,15 +1770,18 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(events)
-            visible = list(const.RegistrationPartStati)
+            # Select appropriate stati filter.
+            stati = set(const.RegistrationPartStati)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
-                elif {rs.user.persona_id} >= personas:
-                    pass
-                else:
-                    visible = [const.RegistrationPartStati.participant.value]
+                elif not personas <= {rs.user.persona_id}:
+                    if not self.list_registrations(
+                            rs, event_id, rs.user.persona_id):
+                        raise PrivilegeError(n_(
+                            "Not registered for this event."))
+                    stati = {const.RegistrationPartStati.participant}
 
             ret = {e['id']: e for e in self.sql_select(
                 rs, "event.registrations", REGISTRATION_FIELDS, ids)}
@@ -1788,9 +1793,12 @@ class EventBackend(AbstractBackend):
                 assert ('parts' not in ret[anid])
                 ret[anid]['parts'] = {
                     e['part_id']: e
-                    if e['status'] in visible else {} for e in pdata
-                    if e['registration_id'] == anid
+                    for e in pdata if e['registration_id'] == anid
                 }
+                # Limit to registrations matching stati filter in any part.
+                if not any(e["status"] in stati for e in ret[anid]['parts']):
+                    del ret[anid]
+
             tdata = self.sql_select(
                 rs, "event.registration_tracks", REGISTRATION_TRACK_FIELDS, ids,
                 entity_key="registration_id")
