@@ -98,7 +98,7 @@
                             <span class="nowrap">
                                 <form action="{{ cdedblink('ml/approve_request') }}"
                                       method="POST"
-                                      id="acceptrequestform{{ request }}"
+                                      id="approverequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('ml/approve_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
@@ -106,7 +106,7 @@
                                 </form>
                                 <form action="{{ cdedblink('ml/deny_request') }}"
                                       method="POST"
-                                      id="rejectrequestform{{ request }}"
+                                      id="denyrequestform{{ request }}"
                                       style="display: inline;">
                                     {{ util.anti_csrf_token('ml/deny_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
