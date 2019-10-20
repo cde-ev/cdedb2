@@ -14928,11 +14928,9 @@ msgstr "Abonnieren"
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:173
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:163
 msgid ""
-"You cannot subscribe to this mailinglist, because you are not\n"
-"                                part of the configured audience."
+"You cannot subscribe to this mailinglist, because you have been blocked by the moderators."
 msgstr ""
-"Du kannst diese Mailingliste nicht abonnieren, da Du nicht Teil ihres "
-"Empfängerkreises bist."
+"Du kannst diese Mailingliste nicht abonnieren, da Du von ihren Moderatoren blockiert wurdest."
 
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:8
 msgid "Mailinglist-User Management"
