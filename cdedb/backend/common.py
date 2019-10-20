@@ -327,7 +327,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         :type rs: :py:class:`BackendRequestState`
         :type table: str
-        :type data: {str: object}
+        :type data: [{str: object}]
         :rtype: int
         :returns: number of inserted rows
         """
@@ -338,13 +338,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         key_set = set(keys)
         params = []
         for entry in data:
-            if not entry.keys() == key_set:
+            if entry.keys() != key_set:
                 raise ValueError(n_("Dict keys do not match."))
             params.extend(entry[k] for k in keys)
         query = "INSERT INTO {table} ({keys}) VALUES {value_list}"
         # Create len(data) many row placeholders for len(keys) many values.
-        value_list = ", ".join(("({})".format(", ".join(("%s",)
-                                                        * len(keys))),)
+        value_list = ", ".join(("({})".format(", ".join(("%s",) * len(keys))),)
                                * len(data))
         query = query.format(
             table=table, keys=", ".join(keys), value_list=value_list)
