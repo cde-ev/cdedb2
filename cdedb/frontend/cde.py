@@ -2262,13 +2262,14 @@ class CdEFrontend(AbstractUserFrontend):
             participants = OrderedDict(sorted(
                 participants.items(), key=lambda x: name_key(personas[x[0]])))
         # Delete unsearchable participants if we are not privileged
-        if participants and not privileged:
-            for anid, persona in personas.items():
-                if not persona['is_searchable'] or not persona['is_member']:
-                    del participants[anid]
-                    extra_participants += 1
-        else:
-            extra_participants = len(participant_infos)
+        if not privileged:
+            if participants:
+                for anid, persona in personas.items():
+                    if not persona['is_searchable'] or not persona['is_member']:
+                        del participants[anid]
+                        extra_participants += 1
+            else:
+                extra_participants = len(participant_infos)
         # Flag linkable user profiles (own profile + all searchable profiles
         # + all (if we are admin))
         for anid in participants:
