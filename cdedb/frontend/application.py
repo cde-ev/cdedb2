@@ -272,7 +272,7 @@ class Application(BaseApp):
             # debug output if applicable
             if self.conf.CDEDB_DEV:
                 return Response(cgitb.html(sys.exc_info(), context=7),
-                                mimetype="text/html")
+                                mimetype="text/html", status=500)
             # generic errors
             return self.make_error_page(
                 werkzeug.exceptions.InternalServerError(repr(e)),
