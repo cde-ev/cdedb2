@@ -1797,7 +1797,8 @@ class EventBackend(AbstractBackend):
                     for e in pdata if e['registration_id'] == anid
                 }
                 # Limit to registrations matching stati filter in any part.
-                if not any(e["status"] in stati for e in ret[anid]['parts']):
+                if not any(ret[anid]['parts'][e]['status'] in stati
+                           for e in ret[anid]['parts']):
                     del ret[anid]
 
             tdata = self.sql_select(
