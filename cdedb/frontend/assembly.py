@@ -10,13 +10,15 @@ import collections
 import datetime
 import time
 
+import werkzeug.exceptions
+
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
     check_validation as check, request_extractor, query_result_to_json)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, merge_dicts, unwrap, now, ProxyShim, PrivilegeError,
+    n_, merge_dicts, unwrap, now, ProxyShim,
     ASSEMBLY_BAR_MONIKER, name_key)
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -186,7 +188,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def show_assembly(self, rs, assembly_id):
         """Present an assembly."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
@@ -340,7 +342,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def list_attendees(self, rs, assembly_id):
         """Provide a list of who is/was present."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
         attendees = collections.OrderedDict(
             (e['id'], e) for e in sorted(
@@ -407,7 +409,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def list_ballots(self, rs, assembly_id):
         """View available ballots for an assembly."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
@@ -464,7 +466,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def get_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
         """Retrieve an attachment."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         path = (self.conf.STORAGE_DIR / "assembly_attachment"
                 / str(attachment_id))
         return self.send_file(rs, path=path, mimetype="application/pdf",
@@ -545,7 +547,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         votes).
         """
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
@@ -729,7 +731,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         votes).
         """
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
         candidates = tuple(e['moniker']
                            for e in ballot['candidates'].values())
@@ -780,7 +782,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def get_result(self, rs, assembly_id, ballot_id):
         """Download the tallied stats of a ballot."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if not rs.ambience['ballot']['is_tallied']:
             rs.notify("warning", n_("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)

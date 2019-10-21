@@ -21,7 +21,7 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
-    n_, glue, QuotaException, PrivilegeError, now,
+    n_, glue, QuotaException, now,
     roles_to_db_role, RequestState, User, extract_roles, ANTI_CSRF_TOKEN_NAME)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
