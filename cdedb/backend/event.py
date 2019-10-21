@@ -1791,7 +1791,7 @@ class EventBackend(AbstractBackend):
             pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS, ids,
                 entity_key="registration_id")
-            for anid in ret:
+            for anid in tuple(ret):
                 assert ('parts' not in ret[anid])
                 ret[anid]['parts'] = {
                     e['part_id']: e
