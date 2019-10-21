@@ -1602,6 +1602,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def list_registrations(self, rs, event_id, persona_id=None):
         """List all registrations of an event.
+
         If an ordinary event_user is requesting this, just participants of this
         event are returned and he himself must have the status 'participant'.
 

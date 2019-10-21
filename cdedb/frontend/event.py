@@ -74,9 +74,9 @@ class EventFrontend(AbstractUserFrontend):
                 if params['is_registered']:
                     registration = self.eventproxy.get_registration(rs,
                         unwrap(reg_list, keys=True))
-                    if any(registration['parts'][part]['status']
-                            == const.RegistrationPartStati.participant
-                            for part in registration['parts']):
+                    if any(part['status']
+                           == const.RegistrationPartStati.participant
+                           for part in registration['parts'].values()):
                         params['is_participant'] = True
             if rs.ambience['event'].get('is_archived'):
                 rs.notify("info", n_("This event has been archived."))

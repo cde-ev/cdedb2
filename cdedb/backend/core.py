@@ -1493,10 +1493,10 @@ class CoreBackend(AbstractBackend):
                      "LEFT OUTER JOIN event.registration_parts AS rparts "
                      "ON rparts.registration_id = regs.id "
                      "WHERE regs.event_id = %s AND rparts.status = %s")
-            status = const.RegistrationPartStati.participant
-            data = self.query_all(rs, query, (event_id, status))
-            all_participants = set([e['persona_id'] for e in data])
-            same_event = set([e for e in ret.keys()]) <= all_participants
+            stati = const.RegistrationPartStati
+            data = self.query_all(rs, query, (event_id, stati.participant))
+            all_participants = set(e['persona_id'] for e in data)
+            same_event = set(ret) <= all_participants
             if not (rs.user.persona_id in all_participants and same_event):
                 raise PrivilegeError(n_("Access to CdE data sets inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
