@@ -1474,8 +1474,10 @@ class CoreBackend(AbstractBackend):
         event_id = affirm("id_or_None", event_id)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_EVENT_FIELDS)
         # The event user view on a cde user contains lots of personal
-        # data. So we require the requesting user to be orga if (s)he
-        # wants to view it.
+        # data. So we require the requesting user to be orga (to get access to
+        # all event users who are related to their event) or 'participant'
+        # of the requested event (to get access to all event users who are also
+        # 'participant' at the same event).
         #
         # This is a bit of a transgression since we access the event
         # schema from the core backend, but we go for security instead of
@@ -1486,10 +1488,6 @@ class CoreBackend(AbstractBackend):
                 and not is_orga
                 and "event_admin" not in rs.user.roles
                 and (any(e['is_cde_realm'] for e in ret.values()))):
-            # To provide features like the online participant list without
-            # stripping off every security level, we enforce the requesting
-            # user to be participant to the same event as every user (s)he
-            # is requesting data from.
             query = ("SELECT DISTINCT regs.id, regs.persona_id "
                      "FROM event.registrations AS regs "
                      "LEFT OUTER JOIN event.registration_parts AS rparts "

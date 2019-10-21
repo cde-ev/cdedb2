@@ -1743,11 +1743,11 @@ class EventBackend(AbstractBackend):
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
 
-        All have to be from the same event. You must be orga to access
-        registrations which are not your own, or participant to access data from
-        other participants in exactly the parts where they are participants
-        (this is important for the online participant list).
-        Otherwise it will override to 'part_id' : {}.
+        All have to be from the same event.
+        You must be orga to get additional access to all registrations which are
+        not your own. If you are participant of the event, you get access to
+        data from other users, being also participant in the same event (this is
+        important for the online participant list).
         This includes the following additional data:
 
         * parts: per part data (like lodgement),

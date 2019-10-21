@@ -292,7 +292,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "participant_list", data)
 
     def _get_participant_list_data(self, rs, event_id, part_ids=None):
-        """This is un-inlined so download_participant_list can use this
+        """This provides data for download and online participant list.
+
+        This is un-inlined so download_participant_list can use this
         as well."""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
