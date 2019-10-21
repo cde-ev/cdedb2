@@ -1616,22 +1616,23 @@ class EventBackend(AbstractBackend):
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
         params = (event_id,)
-        is_participant_list_query = (persona_id != rs.user.persona_id
-                                     and not self.is_orga(rs, event_id=event_id)
-                                     and not self.is_admin(rs))
-        if is_participant_list_query:
+        # condition for limited access, f. e. for the online participant list
+        is_limited = (persona_id != rs.user.persona_id
+                      and not self.is_orga(rs, event_id=event_id)
+                      and not self.is_admin(rs))
+        if is_limited:
             query = ("SELECT DISTINCT regs.id, regs.persona_id "
                      "FROM event.registrations AS regs "
                      "LEFT OUTER JOIN event.registration_parts AS rparts "
                      "ON rparts.registration_id = regs.id "
                      "WHERE regs.event_id = %s AND rparts.status = %s")
             params += (const.RegistrationPartStati.participant,)
-        if persona_id and not is_participant_list_query:
+        if persona_id and not is_limited:
             query = glue(query, "AND persona_id = %s")
             params += (persona_id,)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e['persona_id'] for e in data}
-        if is_participant_list_query and rs.user.persona_id not in ret.values():
+        if is_limited and rs.user.persona_id not in ret.values():
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
