@@ -1774,8 +1774,10 @@ class EventBackend(AbstractBackend):
             event_id = unwrap(events)
             # Select appropriate stati filter.
             stati = set(const.RegistrationPartStati)
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+            # orgas and admins have full access to all data
+            is_privileged = (self.is_orga(rs, event_id=event_id)
+                             or self.is_admin(rs))
+            if not is_privileged:
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
                 elif not personas <= {rs.user.persona_id}:
@@ -1799,8 +1801,8 @@ class EventBackend(AbstractBackend):
                            for e in ret[anid]['parts'].values()):
                     del ret[anid]
             # Here comes the promised permission check
-            if all(reg['persona_id'] != rs.user.persona_id
-                   for reg in ret.values()):
+            if not is_privileged and all(reg['persona_id'] != rs.user.persona_id
+                                         for reg in ret.values()):
                 raise PrivilegeError(n_("No participant of event."))
 
             tdata = self.sql_select(
