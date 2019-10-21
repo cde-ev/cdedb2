@@ -1779,10 +1779,7 @@ class EventBackend(AbstractBackend):
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
                 elif not personas <= {rs.user.persona_id}:
-                    if not self.list_registrations(
-                            rs, event_id, rs.user.persona_id):
-                        raise PrivilegeError(n_(
-                            "Not registered for this event."))
+                    # Permission check is done later when we know more
                     stati = {const.RegistrationPartStati.participant}
 
             ret = {e['id']: e for e in self.sql_select(
@@ -1798,9 +1795,13 @@ class EventBackend(AbstractBackend):
                     for e in pdata if e['registration_id'] == anid
                 }
                 # Limit to registrations matching stati filter in any part.
-                if not any(ret[anid]['parts'][e]['status'] in stati
-                           for e in ret[anid]['parts']):
+                if not any(e['status'] in stati
+                           for e in ret[anid]['parts'].values()):
                     del ret[anid]
+            # Here comes the promised permission check
+            if all(reg['persona_id'] != rs.user.persona_id
+                   for reg in ret.values()):
+                raise PrivilegeError(n_("No participant of event."))
 
             tdata = self.sql_select(
                 rs, "event.registration_tracks", REGISTRATION_TRACK_FIELDS, ids,
