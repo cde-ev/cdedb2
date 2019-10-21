@@ -283,7 +283,7 @@ class EventFrontend(AbstractUserFrontend):
         else:
             part_ids = None
         data = self._get_participant_list_data(rs, event_id, part_ids)
-        if not data:
+        if data is None:
             return self.redirect(rs, "event/participant_list")
         if len(rs.ambience['event']['parts']) == 1:
             part_id = list(rs.ambience['event']['parts'])[0]
@@ -305,7 +305,7 @@ class EventFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
             rs.notify("error", n_("Unknown part."))
-            return {}
+            return None
         parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
 
         participant = const.RegistrationPartStati.participant
