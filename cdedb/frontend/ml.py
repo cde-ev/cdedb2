@@ -60,7 +60,7 @@ class MlFrontend(AbstractUserFrontend):
         policies = const.AudiencePolicy.applicable(rs.user.roles)
         mailinglists = self.mlproxy.list_mailinglists(
             rs, audience_policies=policies)
-        overrides = self.mlproxy.list_overrides(rs)
+        overrides = self.mlproxy.list_subscription_overrides(rs)
         mailinglists.update(overrides)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionStates.subscribing_states()

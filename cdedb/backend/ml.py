@@ -312,9 +312,11 @@ class MlBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("ml")
-    def list_overrides(self, rs, active_only=True):
-        """List all mailinglists where user has subscribe override
+    def list_subscription_overrides(self, rs, active_only=True):
+        """List all mailinglists where user has a subscription override.
 
+        This is needed because a user with a subscription override probably
+        has no means to access these lists via `list_mailinglists`.
         :type rs: :py:class:`cdedb.common.RequestState`
         :type active_only: bool
         :param active_only: Toggle wether inactive lists should be included.
