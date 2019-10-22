@@ -32,9 +32,9 @@
                         Subscribed users who are protected from automatic unsubscription when loosing their means to acces the list.
                     {%- endtrans %}
                 </p>
-            <form action="{{ cdedblink('ml/add_mod_subscriber') }}" method="POST"
+            <form action="{{ cdedblink('ml/add_subscription_override') }}" method="POST"
                   id="addmodsubscriberform" class="p">
-                {{ util.anti_csrf_token('ml/add_mod_subscriber') }}
+                {{ util.anti_csrf_token('ml/add_subscription_override') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
                     {{ util.input_text(name="modsubscriber_id", anid="input-add-forced", placeholder="DB-XXXX-X",
@@ -43,7 +43,7 @@
                         $('#input-add-forced').cdedbSearchPerson(
                             '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) + ('&aux2='|s) +
-                                (enums['SubscriptionActions'].add_mod_subscriber.value|string|e) }}', {{ mod_subscribed|list|json|s }},
+                                (enums['SubscriptionActions'].add_subscription_override.value|string|e) }}', {{ mod_subscribed|list|json|s }},
                             false, false, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
@@ -59,11 +59,11 @@
                     <li>
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
 
-                        <form action="{{ cdedblink('ml/remove_mod_subscriber') }}"
+                        <form action="{{ cdedblink('ml/remove_subscription_override') }}"
                               method="POST"
                               id="removemodsubscribeform{{ mod_subscribed }}"
                               style="display: inline;">
-                            {{ util.anti_csrf_token('ml/remove_mod_subscriber') }}
+                            {{ util.anti_csrf_token('ml/remove_subscription_override') }}
                             {{ util.input_hidden(name="modsubscriber_id", value=mod_subscribed) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
                                     title=gettext("Remove %(given_names)s %(family_name)s as forced subscriber")|format(
@@ -84,9 +84,9 @@
                         Users who are blocked from subscribing and requesting subscription. They can see that they are blocked.
                     {%- endtrans %}
                 </p>
-            <form action="{{ cdedblink('ml/add_mod_unsubscriber') }}" method="POST"
+            <form action="{{ cdedblink('ml/add_unsubscription_override') }}" method="POST"
                   id="addmodunsubscriberform" class="p">
-                {{ util.anti_csrf_token('ml/add_mod_unsubscriber') }}
+                {{ util.anti_csrf_token('ml/add_unsubscription_override') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
                     {{ util.input_text(name="modunsubscriber_id", anid="input-add-blocked", placeholder="DB-XXXX-X",
@@ -95,7 +95,7 @@
                         $('#input-add-blocked').cdedbSearchPerson(
                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) + ('&aux2='|s) +
-                                (enums['SubscriptionActions'].add_mod_unsubscriber.value|string|e) }}', {{ mod_unsubscribed|list|json|s }},
+                                (enums['SubscriptionActions'].add_unsubscription_override.value|string|e) }}', {{ mod_unsubscribed|list|json|s }},
                             false, false, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
@@ -111,11 +111,11 @@
                     <li>
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
 
-                        <form action="{{ cdedblink('ml/remove_mod_unsubscriber') }}"
+                        <form action="{{ cdedblink('ml/remove_unsubscription_override') }}"
                               method="POST"
                               id="removemodunsubscribeform{{ mod_unsubscribed }}"
                               style="display: inline;">
-                            {{ util.anti_csrf_token('ml/remove_mod_unsubscriber') }}
+                            {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                             {{ util.input_hidden(name="modunsubscriber_id", value=mod_unsubscribed) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
                                     title=gettext("Remove %(given_names)s %(family_name)s as blocked subscriber")|format(

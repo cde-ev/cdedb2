@@ -583,48 +583,48 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @REQUESTdata(("modsubscriber_id", "cdedbid"))
     @mailinglist_guard()
-    def add_mod_subscriber(self, rs, mailinglist_id, modsubscriber_id):
+    def add_subscription_override(self, rs, mailinglist_id, modsubscriber_id):
         """Administratively subscribe somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.add_mod_subscriber,
+            rs, SubscriptionActions.add_subscription_override,
             mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modsubscriber_id", "id"))
     @mailinglist_guard()
-    def remove_mod_subscriber(self, rs, mailinglist_id, modsubscriber_id):
+    def remove_subscription_override(self, rs, mailinglist_id, modsubscriber_id):
         """Administratively remove somebody with moderator override."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.remove_mod_subscriber,
+            rs, SubscriptionActions.remove_subscription_override,
             mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modunsubscriber_id", "cdedbid"))
     @mailinglist_guard()
-    def add_mod_unsubscriber(self, rs, mailinglist_id, modunsubscriber_id):
+    def add_unsubscription_override(self, rs, mailinglist_id, modunsubscriber_id):
         """Administratively block somebody."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.add_mod_unsubscriber,
+            rs, SubscriptionActions.add_unsubscription_override,
             mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modunsubscriber_id", "id"))
     @mailinglist_guard()
-    def remove_mod_unsubscriber(self, rs, mailinglist_id, modunsubscriber_id):
+    def remove_unsubscription_override(self, rs, mailinglist_id, modunsubscriber_id):
         """Administratively remove block."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.remove_mod_unsubscriber,
+            rs, SubscriptionActions.remove_unsubscription_override,
             mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
         return self.redirect(rs, "ml/show_subscription_details")
 

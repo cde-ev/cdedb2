@@ -62,21 +62,22 @@ class SubscriptionInfo(SubscriptionError):
 @enum.unique
 class SubscriptionActions(enum.IntEnum):
     """All possible actions a subscriber or moderator can take."""
-    subscribe = 1  #:
-    unsubscribe = 2  #:
-    request_subscription = 10  #:
-    cancel_request = 11  #:
-    approve_request = 12  #:
-    deny_request = 13  #:
-    block_request = 14  #:
-    add_subscriber = 20  #:
-    add_mod_subscriber = 21  #:
-    add_mod_unsubscriber = 22  #:
-    remove_subscriber = 30  #:
-    remove_mod_subscriber = 31  #:
-    remove_mod_unsubscriber = 32  #:
+    subscribe = 1  #: A user subscribing themselves to a mailinglist.
+    unsubscribe = 2  #: A user removing their subscription to a mailinglit.
+    request_subscription = 10  #: Requesting subscription to a mod-opt-in list.
+    cancel_request = 11  #: A user cancelling their subscription request.
+    approve_request = 12  #: A moderator approving a subscription request.
+    deny_request = 13  #: A moderator denying a subscription request.
+    block_request = 14  #: A moderator denying a request and blocking the user.
+    add_subscriber = 20  #: A moderator manually adding a subscriber.
+    add_subscription_override = 21  #: A moderator adding a fixed subscription.
+    add_unsubscription_override = 22  #: A moderator blocking a user.
+    remove_subscriber = 30  #: A moderator manually removing a subscribed user.
+    remove_subscription_override = 31  #: A mod removing a fixed subscription.
+    remove_unsubscription_override = 32  #: A moderator unblocking a user.
 
     def get_target_state(self):
+        """Get the target state associated with an action."""
         target_state = {
             SubscriptionActions.subscribe:
                 SubscriptionStates.subscribed,
@@ -94,20 +95,21 @@ class SubscriptionActions(enum.IntEnum):
                 SubscriptionStates.mod_unsubscribed,
             SubscriptionActions.add_subscriber:
                 SubscriptionStates.subscribed,
-            SubscriptionActions.add_mod_subscriber:
+            SubscriptionActions.add_subscription_override:
                 SubscriptionStates.mod_subscribed,
-            SubscriptionActions.add_mod_unsubscriber:
+            SubscriptionActions.add_unsubscription_override:
                 SubscriptionStates.mod_unsubscribed,
             SubscriptionActions.remove_subscriber:
                 SubscriptionStates.unsubscribed,
-            SubscriptionActions.remove_mod_subscriber:
+            SubscriptionActions.remove_subscription_override:
                 SubscriptionStates.subscribed,
-            SubscriptionActions.remove_mod_unsubscriber:
+            SubscriptionActions.remove_unsubscription_override:
                 SubscriptionStates.unsubscribed
         }
         return target_state.get(self)
 
     def get_log_code(self):
+        """Get the log code associated with performing an action."""
         log_code_map = {
             SubscriptionActions.subscribe:
                 MlLogCodes.subscribed,
@@ -125,21 +127,25 @@ class SubscriptionActions(enum.IntEnum):
                 MlLogCodes.request_blocked,
             SubscriptionActions.add_subscriber:
                 MlLogCodes.subscribed,
-            SubscriptionActions.add_mod_subscriber:
+            SubscriptionActions.add_subscription_override:
                 MlLogCodes.marked_override,
-            SubscriptionActions.add_mod_unsubscriber:
+            SubscriptionActions.add_unsubscription_override:
                 MlLogCodes.marked_blocked,
             SubscriptionActions.remove_subscriber:
                 MlLogCodes.unsubscribed,
-            SubscriptionActions.remove_mod_subscriber:
+            SubscriptionActions.remove_subscription_override:
                 MlLogCodes.subscribed,
-            SubscriptionActions.remove_mod_unsubscriber:
+            SubscriptionActions.remove_unsubscription_override:
                 MlLogCodes.unsubscribed,
         }
         return log_code_map.get(self)
 
     @staticmethod
     def error_matrix():
+        """This defines the logic of which state transitions are legal.
+
+        SubscriptionErrors defined in this matrix will be raised by the backend.
+        """
         ss = SubscriptionStates
         error = SubscriptionError
         warning = SubscriptionWarning
@@ -164,28 +170,28 @@ class SubscriptionActions(enum.IntEnum):
                 ss.mod_unsubscribed: info(n_("User already unsubscribed.")),
                 ss.pending: warning(n_("User has pending subscription request.")),
             },
-            SubscriptionActions.add_mod_subscriber: {
+            SubscriptionActions.add_subscription_override: {
                 ss.subscribed: None,
                 ss.unsubscribed: None,
                 ss.mod_subscribed: None,
                 ss.mod_unsubscribed: None,
                 ss.pending: warning(n_("User has pending subscription request.")),
             },
-            SubscriptionActions.remove_mod_subscriber: {
+            SubscriptionActions.remove_subscription_override: {
                 ss.subscribed: error(n_("User is not force-subscribed.")),
                 ss.unsubscribed: error(n_("User is not force-subscribed.")),
                 ss.mod_subscribed: None,
                 ss.mod_unsubscribed: error(n_("User is not force-subscribed.")),
                 ss.pending: error(n_("User is not force-subscribed.")),
             },
-            SubscriptionActions.add_mod_unsubscriber: {
+            SubscriptionActions.add_unsubscription_override: {
                 ss.subscribed: None,
                 ss.unsubscribed: None,
                 ss.mod_subscribed: None,
                 ss.mod_unsubscribed: None,
                 ss.pending: warning(n_("User has pending subscription request.")),
             },
-            SubscriptionActions.remove_mod_unsubscriber: {
+            SubscriptionActions.remove_unsubscription_override: {
                 ss.subscribed: error(n_("User is not force-unsubscribed.")),
                 ss.unsubscribed: error(n_("User is not force-unsubscribed.")),
                 ss.mod_subscribed: error(n_("User is not force-unsubscribed.")),
@@ -205,13 +211,16 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscribed: None,
                 ss.mod_subscribed: info(n_("You are already subscribed.")),
                 ss.mod_unsubscribed: error(
-                    n_("Can not change subscription because you are blocked.")),
+                    n_("Can not request subscription because you are blocked.")),
                 ss.pending: info(n_("You already requested subscription")),
             },
             SubscriptionActions.unsubscribe: {
                 ss.subscribed: None,
                 ss.unsubscribed: info(n_("You are already unsubscribed.")),
-                ss.mod_subscribed: None,  # This is on purpose.
+                # mod_subscribed should only block you from being unsubscribed
+                # by the cronjob. A user is still able to unsubscribe manually.
+                # (Unless the list is mandatory.
+                ss.mod_subscribed: None,
                 ss.mod_unsubscribed: info(n_("You are already unsubscribed.")),
                 ss.pending: info(n_("You are already unsubscribed.")),
             },
@@ -229,44 +238,48 @@ class SubscriptionActions(enum.IntEnum):
                 ss.mod_unsubscribed: error(n_("Not a pending subscription request.")),
                 ss.pending: None,
             },
-            SubscriptionActions.deny_request: {},
-            SubscriptionActions.block_request: {},
         }
+        # Approving, denying and blocking a request have the same error logic.
         matrix[SubscriptionActions.deny_request] =\
             matrix[SubscriptionActions.approve_request]
         matrix[SubscriptionActions.block_request] =\
             matrix[SubscriptionActions.approve_request]
 
         for row in matrix.keys():
+            # Implicit (un-)subscriptions behave identically.
             matrix[row][ss.implicit] = matrix[row][ss.subscribed]
             matrix[row][None] = matrix[row][ss.unsubscribed]
         return matrix
 
     @classmethod
     def unsubscribing_actions(cls):
+        """All actions that unsubscribe a user from a mailinglist."""
         return {
             SubscriptionActions.unsubscribe,
             SubscriptionActions.remove_subscriber,
-            SubscriptionActions.add_mod_unsubscriber,
+            SubscriptionActions.add_unsubscription_override,
         }
 
     def is_unsubscribing(self):
+        """Whether ot not an action unsubscribes a user."""
         return self in self.unsubscribing_actions()
 
     @classmethod
     def managing_actions(cls):
+        """All actions that require additional privileges."""
         return {
             SubscriptionActions.approve_request,
             SubscriptionActions.deny_request,
             SubscriptionActions.block_request,
             SubscriptionActions.add_subscriber,
-            SubscriptionActions.add_mod_subscriber,
-            SubscriptionActions.add_mod_unsubscriber,
+            SubscriptionActions.add_subscription_override,
+            SubscriptionActions.add_unsubscription_override,
             SubscriptionActions.remove_subscriber,
-            SubscriptionActions.remove_mod_subscriber,
-            SubscriptionActions.remove_mod_unsubscriber
+            SubscriptionActions.remove_subscription_override,
+            SubscriptionActions.remove_unsubscription_override
         }
 
     def is_managing(self):
+        """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
 
