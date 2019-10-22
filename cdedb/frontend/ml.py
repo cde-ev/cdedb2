@@ -721,7 +721,7 @@ class MlFrontend(AbstractUserFrontend):
         policy = const.MailinglistInteractionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         if policy == const.MailinglistInteractionPolicy.mandatory:
-            rs.notify("warning", n_("Disallowed to change address."))
+            rs.notify("error", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
         code = self.mlproxy.set_subscription_address(
