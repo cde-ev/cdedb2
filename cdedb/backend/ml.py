@@ -635,18 +635,20 @@ class MlBackend(AbstractBackend):
             raise PrivilegeError("Not privileged.")
 
         num = 0
-        for datum in data:
-            state = datum['subscription_state']
+        with Atomizer(rs):
+            query = ("INSERT INTO ml.subscription_states "
+                     "({keys}) VALUES {placeholders} "
+                     "ON CONFLICT (mailinglist_id, persona_id) DO UPDATE "
+                     "SET subscription_state = EXCLUDED.subscription_state")
+            keys = ("subscription_state", "mailinglist_id", "persona_id")
+            placeholders = ", ".join(("(%s, %s, %s)",) * len(data))
+            query = query.format(keys=", ".join(keys), placeholders=placeholders)
 
-            with Atomizer(rs):
-                query = ("INSERT INTO ml.subscription_states "
-                         "(subscription_state, mailinglist_id, persona_id) "
-                         "VALUES (%s, %s, %s) "
-                         "ON CONFLICT (mailinglist_id, persona_id) DO UPDATE "
-                         "SET subscription_state = EXCLUDED.subscription_state")
-                params = (state, datum['mailinglist_id'], datum['persona_id'])
+            params = []
+            for datum in data:
+                params.extend(datum[key] for key in keys)
 
-                num += self.query_exec(rs, query, params)
+            num += self.query_exec(rs, query, params)
 
         return num
 
