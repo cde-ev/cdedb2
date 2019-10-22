@@ -244,14 +244,14 @@ class TestMlBackend(BackendTest):
         SubscriptionError is raised. If kind is given, the error is verified
         to be of the specified kind."""
         if code is not None:
-            result = self.ml.subscription_action(
+            result = self.ml.do_subscription_action(
                 self.key, action, mailinglist_id=mailinglist_id,
                 persona_id=persona_id)
             self.assertEqual(result, code)
             action_state = action.get_target_state()
         else:
             with self.assertRaises(SubscriptionError) as cm:
-                self.ml.subscription_action(
+                self.ml.do_subscription_action(
                     self.key, action, mailinglist_id=mailinglist_id,
                     persona_id=persona_id)
             if kind is not None:
@@ -745,21 +745,21 @@ class TestMlBackend(BackendTest):
     def test_bullshit_requests(self, user):
         # Can I remove people from lists they have not subscribed to?
         with self.assertRaises(SubscriptionError) as cm:
-            self.ml.subscription_action(
+            self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=2, persona_id=6)
         self.assertIn("User already unsubscribed.", cm.exception.args)
         self._check_state(
             mailinglist_id=2, persona_id=6, expected_state=SS.unsubscribed)
 
         with self.assertRaises(SubscriptionError) as cm:
-            self.ml.subscription_action(
+            self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=3, persona_id=2)
         self.assertIn("User already unsubscribed.", cm.exception.args)
         self._check_state(
             mailinglist_id=3, persona_id=2, expected_state=SS.unsubscribed)
 
         with self.assertRaises(SubscriptionError) as cm:
-            self.ml.subscription_action(
+            self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=3, persona_id=3)
         self.assertIn("User already unsubscribed.", cm.exception.args)
         self._check_state(
@@ -775,11 +775,11 @@ class TestMlBackend(BackendTest):
                 SA.add_unsubscription_override, SA.remove_unsubscription_override}
             for action in moderator_actions:
                 with self.assertRaises(PrivilegeError):
-                    self.ml.subscription_action(
+                    self.ml.do_subscription_action(
                         self.key, action, mailinglist_id=ml_id,
                         persona_id=user_id)
             with self.assertRaises(PrivilegeError):
-                self.ml.subscription_action(
+                self.ml.do_subscription_action(
                     self.key, SA.approve_request, mailinglist_id=ml_id,
                     persona_id=user_id)
             # You had never the chance to actually change something anyway.
@@ -1310,7 +1310,7 @@ class TestMlBackend(BackendTest):
         }
         self.assertLess(
             0,
-            self.ml.subscription_action(self.key, SA.approve_request, **datum))
+            self.ml.do_subscription_action(self.key, SA.approve_request, **datum))
 
         self.login(USER_DICT['inga'])
         expectation = {
@@ -1365,7 +1365,7 @@ class TestMlBackend(BackendTest):
         }
         self.assertLess(
             0,
-            self.ml.subscription_action(self.key, SA.deny_request, **datum))
+            self.ml.do_subscription_action(self.key, SA.deny_request, **datum))
 
         self.login(USER_DICT['inga'])
         expectation = {
@@ -1400,7 +1400,7 @@ class TestMlBackend(BackendTest):
         }
         self.assertLess(
             0,
-            self.ml.subscription_action(self.key, SA.cancel_request, **datum))
+            self.ml.do_subscription_action(self.key, SA.cancel_request, **datum))
         expectation = None
         self.assertEqual(expectation,
                          self.ml.get_subscription(
@@ -1409,14 +1409,14 @@ class TestMlBackend(BackendTest):
     @as_users("anton")
     def test_log(self, user):
         # first generate some data
-        self.ml.subscription_action(self.key, SA.unsubscribe, 2, 1)
+        self.ml.do_subscription_action(self.key, SA.unsubscribe, 2, 1)
         datum = {
             'mailinglist_id': 4,
             'persona_id': 1,
             'email': 'devnull@example.cde',
         }
         self.ml.set_subscription_address(self.key, **datum)
-        self.ml.subscription_action(self.key, SA.add_subscriber, 7, 1)
+        self.ml.do_subscription_action(self.key, SA.add_subscriber, 7, 1)
         new_data = {
             'address': 'revolution@example.cde',
             'description': 'Vereinigt Euch',

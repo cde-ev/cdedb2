@@ -513,8 +513,9 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_subscription_details")
 
     def _subscription_action_handler(self, rs, action, **kwargs):
+        """Un-inlined code from all subscription action initiating endpoints."""
         try:
-            code = self.mlproxy.subscription_action(rs, action, **kwargs)
+            code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
         except SubscriptionError as se:
             rs.notify(se.kind, se.msg)
         else:

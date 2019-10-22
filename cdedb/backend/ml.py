@@ -709,7 +709,8 @@ class MlBackend(AbstractBackend):
         return self._remove_subscriptions(rs, [datum])
 
     @access("ml")
-    def subscription_action(self, rs, action, mailinglist_id, persona_id=None):
+    def do_subscription_action(self, rs, action, mailinglist_id,
+                               persona_id=None):
         """Provide a single entry point for all subscription actions.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -766,7 +767,7 @@ class MlBackend(AbstractBackend):
 
     def _check_transition_requirements(self, rs, action, mailinglist_id,
                                        persona_id):
-        """Un-inlined code from `subscription_action`.
+        """Un-inlined code from `do_subscription_action`.
 
         This has to be called with an atomized context.
         :type rs: :py:class:`cdedb.common.RequestState`
