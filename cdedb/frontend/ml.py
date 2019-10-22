@@ -411,30 +411,30 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def download_csv_subscription_states(self, rs, mailinglist_id):
         """Create CSV file with all subscribers and their subscription state"""
-        subscribers_state = self.mlproxy.get_subscription_states(
+        personas_state = self.mlproxy.get_subscription_states(
             rs, mailinglist_id)
-        subscribers = self.coreproxy.get_personas(rs, subscribers_state.keys())
-        address = self.mlproxy.get_subscription_addresses(
+        personas = self.coreproxy.get_personas(rs, personas_state.keys())
+        addresses = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
         columns = ['db_id', 'given_names', 'family_name', 'subscription_state',
                    'email', 'subscription_address']
         output = []
 
-        for subscriber in subscribers:
+        for persona in personas:
             pair = {}
-            pair['db_id'] = cdedbid(subscriber)
-            pair['given_names'] = subscribers[subscriber]['given_names']
-            pair['family_name'] = subscribers[subscriber]['family_name']
-            pair['subscription_state'] = subscribers_state[subscriber].name
-            pair['email'] = subscribers[subscriber]['username']
-            if subscriber in address:
-                pair['subscription_address'] = address[subscriber]
+            pair['db_id'] = cdedbid(persona)
+            pair['given_names'] = personas[persona]['given_names']
+            pair['family_name'] = personas[persona]['family_name']
+            pair['subscription_state'] = personas_state[persona].name
+            pair['email'] = personas[persona]['username']
+            if persona in addresses:
+                pair['subscription_address'] = addresses[persona]
             else:
                 pair['subscription_address'] = ""
 
             output.append(pair)
 
-        csv_data = csv_output(sorted(output, key=lambda anid: name_key(anid)),
+        csv_data = csv_output(sorted(output, key=lambda entry: name_key(entry)),
                               columns)
         file = self.send_csv_file(
             rs, data=csv_data, inline=False,
