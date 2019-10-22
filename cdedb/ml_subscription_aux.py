@@ -1,3 +1,28 @@
+"""This keeps a lot of the business logic for ml subscriptions together.
+
+These are be imported in `cdedb:common.py` and should be exported from there.
+
+`SubscriptionError` and it's subclasses are Exceptions expected to occurr in
+    the ml backend when handling subscriptions. They are cought in the frontend
+    and depending on the kind parameter different kinds of notifications are
+    displayed.
+
+`SubscriptionsActions` define the possible actions users, moderators and/or
+    admins may take to change the subscriptions of other users or themselves.
+
+    Every actions has exactly one intended target state (see
+    `cdedb.database.constants:SubscriptionsStates`) and exactly one log code.
+
+    In the `error_matrix` the consequences of performing a specific action
+    while being in a specific previous state are defined. `None` signifies
+    that the action is legal, otherwise a `SubscriptionError` (or a subclass)
+    is given, which is raised by the ml backend.
+
+    Some of these actions have additional properties, like being a
+    'unsubscribing action' or a 'managing action'. These are used to determine
+    the necessary privileges and/or legality for that action.
+"""
+
 import enum
 from cdedb.database.constants import SubscriptionStates, MlLogCodes
 
