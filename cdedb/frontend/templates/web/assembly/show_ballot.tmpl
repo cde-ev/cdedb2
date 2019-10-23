@@ -238,17 +238,31 @@
                 {% trans -%}You are not participating in this assembly.{%- endtrans %}
             {% elif not is_active and not voted %}
                 {% if not secret %}
-                    {% trans -%}The assembly concluded and the votes got encrypted.{%- endtrans %}
+                    <p>
+                        {{ util.make_icon('info-sign') }}
+                        {% trans -%}The assembly concluded and the votes got encrypted.{%- endtrans %}
+                        {% trans -%}To show your vote, enter the secret you were sent when registering for the assembly.{%- endtrans %}
+                    </p>
                 {% else %}
-                    {% trans -%}You did not vote or you entered an invalid secret.{%- endtrans %}
-                    <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform"
-                          method="POST" style="display: inline;">
-                        {{ util.anti_csrf_token("assembly/show_old_vote") }}
-                        {{ util.form_input_text(name="secret", label=gettext("Secret"), small=True,
-                                info=gettext("Enter the secret you were sent when registering for the assembly.")) }}
-                        {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="unlock") }}
-                    </form>
+                    <p>
+                        {{ util.make_icon('info-sign') }}
+                        {% trans -%}You did not vote or you entered an invalid secret.{%- endtrans %}
+                        {% trans -%}To show your vote, enter the secret you were sent when registering for the assembly.{%- endtrans %}
+                    </p>
                 {% endif %}
+                <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
+                    {{ util.anti_csrf_token("assembly/show_old_vote") }}
+                    <div class="input-group">
+                        <span class="input-group-addon"><label for="input-secret">
+                            {% trans %}Secret{% endtrans %}
+                        </label></span>
+                        {{ util.input_text(name="secret", anid="input-secret") }}
+                        <div class="input-group-btn">
+                            {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                        </div>
+                    </div>
+                    {{ util.output_errors('secret', wrapper=True) }}
+                </form>
             {% elif not voted %}
                 {% if ambience['ballot']['is_voting'] %}
                     {% trans -%}You have not voted yet.{%- endtrans %}
