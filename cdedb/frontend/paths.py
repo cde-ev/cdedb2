@@ -538,6 +538,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 sub('/ballot/<int:ballot_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_ballot"),
+                    rule("/show", methods=_POST,
+                         endpoint="show_old_vote"),
                     rule("/change", methods=_GET,
                          endpoint="change_ballot_form"),
                     rule("/change", methods=_POST,

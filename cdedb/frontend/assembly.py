@@ -533,8 +533,16 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "assembly/show_assembly")
 
+    @access("assembly", modi={"POST"})
+    @REQUESTdata(("secret", "str"))
+    def show_old_vote(self, rs, assembly_id, ballot_id, secret):
+        """Show a vote in a ballot of an old assembly by providing secret."""
+        if (rs.ambience["assembly"]["is_active"] or
+                not rs.ambience["ballot"]["is_tallied"] or rs.errors):
+            return self.show_ballot(rs, assembly_id, ballot_id)
+        return self.show_ballot(rs, assembly_id, ballot_id, secret.strip())
+
     @access("assembly")
-    @REQUESTdata(("secret", "str_or_None"))
     def show_ballot(self, rs, assembly_id, ballot_id, secret=None):
         """Present a ballot.
 
@@ -611,15 +619,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
         own_vote = None
         if attends:
-            if rs.errors:
+            try:
                 own_vote = self.assemblyproxy.get_vote(
-                    rs, ballot_id, secret=None)
-            else:
-                try:
-                    own_vote = self.assemblyproxy.get_vote(
-                        rs, ballot_id, secret=secret)
-                except ValueError:
-                    own_vote = None
+                    rs, ballot_id, secret=secret)
+            except ValueError:
+                own_vote = None
         merge_dicts(rs.values, {'vote': own_vote})
         split_vote = None
         if own_vote:
