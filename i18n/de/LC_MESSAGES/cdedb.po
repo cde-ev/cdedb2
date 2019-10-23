@@ -5528,8 +5528,8 @@ msgstr "Geheimnis"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:243
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:252
-msgid "Enter the secret you were sent when registering for the assembly."
-msgstr "Gib hier Dein persönliches Geheimnis ein, dass Dir beim Beginn der Versammlung mitgeteilt wurde."
+msgid "To show your vote, enter the secret you were sent when registering for the assembly."
+msgstr "Um Deine Stimme anzuzeigen, gib hier Dein persönliches Geheimnis ein, dass Dir beim Beginn der Versammlung mitgeteilt wurde."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:244
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:253
