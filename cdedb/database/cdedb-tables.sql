@@ -561,38 +561,40 @@ CREATE SCHEMA event;
 GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous;
 
 CREATE TABLE event.events (
-        id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL,
-        shortname               varchar NOT NULL,
+        id                          serial PRIMARY KEY,
+        title                       varchar NOT NULL,
+        shortname                   varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution             integer NOT NULL REFERENCES past_event.institutions(id),
-        description             varchar,
+        institution                 integer NOT NULL REFERENCES past_event.institutions(id),
+        description                 varchar,
         --
         -- cut for past_event.events (modulo column tempus)
         --
-        registration_start      timestamp WITH TIME ZONE,
+        registration_start          timestamp WITH TIME ZONE,
         -- official end of registration
-        registration_soft_limit timestamp WITH TIME ZONE,
+        registration_soft_limit     timestamp WITH TIME ZONE,
         -- actual end of registration, in between participants are
         -- automatically warned about registering late
-        registration_hard_limit timestamp WITH TIME ZONE,
-        iban                    varchar,
-        orga_address            varchar,
-        registration_text       varchar,
-        mail_text               varchar,
-        use_questionnaire       boolean NOT NULL DEFAULT False,
-        notes                   varchar,
-        offline_lock            boolean NOT NULL DEFAULT False,
-        is_visible              boolean NOT NULL DEFAULT False, -- this is purely cosmetical
-        is_course_list_visible  boolean NOT NULL DEFAULT False, -- this is purely cosmetical
+        registration_hard_limit     timestamp WITH TIME ZONE,
+        iban                        varchar,
+        orga_address                varchar,
+        registration_text           varchar,
+        mail_text                   varchar,
+        use_questionnaire           boolean NOT NULL DEFAULT False,
+        notes                       varchar,
+        offline_lock                boolean NOT NULL DEFAULT False,
+        is_visible                  boolean NOT NULL DEFAULT False, -- this is purely cosmetical
+        is_course_list_visible      boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         -- show cancelled courses in course list and restrict registration to active courses
-        is_course_state_visible boolean NOT NULL DEFAULT False,
-        is_archived             boolean NOT NULL DEFAULT False,
+        is_course_state_visible     boolean NOT NULL DEFAULT False,
+        is_participant_list_visible boolean NOT NULL DEFAULT False,
+        courses_in_participant_list boolean NOT NULL DEFAULT False,
+        is_archived                 boolean NOT NULL DEFAULT False,
         -- JSON field for lodgement preference functionality
-        lodge_field             integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         -- JSON field for reserve functionality
-        reserve_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field       integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        reserve_field               integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        course_room_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;

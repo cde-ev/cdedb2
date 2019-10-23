@@ -103,6 +103,8 @@ class TestEventBackend(BackendTest):
         data['id'] = new_id
         data['offline_lock'] = False
         data['is_archived'] = False
+        data['is_participant_list_visible'] = False
+        data['courses_in_participant_list'] = False
         data['is_course_list_visible'] = False
         data['is_course_state_visible'] = False
         data['is_visible'] = False
@@ -848,7 +850,7 @@ class TestEventBackend(BackendTest):
                 'fields': {'brings_balls': False,
                            'may_reserve': True,
                            'transportation': 'etc'},
-                'list_consent': True,
+                'list_consent': False,
                 'id': 4,
                 'mixed_lodging': False,
                 'orga_notes': None,
@@ -1754,6 +1756,8 @@ class TestEventBackend(BackendTest):
                                  'id': 1,
                                  'institution': 1,
                                  'is_archived': False,
+                                 'is_participant_list_visible': False,
+                                 'courses_in_participant_list': False,
                                  'is_course_list_visible': True,
                                  'is_course_state_visible': False,
                                  'is_visible': True,
@@ -2098,7 +2102,7 @@ class TestEventBackend(BackendTest):
                                         'fields': {'brings_balls': False,
                                                    'may_reserve': True,
                                                    'transportation': 'etc'},
-                                        'list_consent': True,
+                                        'list_consent': False,
                                         'id': 4,
                                         'mixed_lodging': False,
                                         'notes': None,
@@ -2436,6 +2440,8 @@ class TestEventBackend(BackendTest):
                       'iban': 'DE96370205000008068901',
                       'institution': 1,
                       'is_archived': False,
+                      'is_participant_list_visible': False,
+                      'courses_in_participant_list': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,
@@ -2646,7 +2652,7 @@ class TestEventBackend(BackendTest):
                                   'fields': {'brings_balls': False,
                                              'may_reserve': True,
                                              'transportation': 'etc'},
-                                  'list_consent': True,
+                                  'list_consent': False,
                                   'mixed_lodging': False,
                                   'notes': None,
                                   'orga_notes': None,

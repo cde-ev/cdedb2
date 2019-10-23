@@ -67,9 +67,17 @@ class EventFrontend(AbstractUserFrontend):
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
             if rs.user.persona_id:
-                params['is_registered'] = bool(
-                    self.eventproxy.list_registrations(
-                        rs, rs.ambience['event']['id'], rs.user.persona_id))
+                reg_list = self.eventproxy.list_registrations(
+                    rs, rs.ambience['event']['id'], rs.user.persona_id)
+                params['is_registered'] = bool(reg_list)
+                params['is_participant'] = False
+                if params['is_registered']:
+                    registration = self.eventproxy.get_registration(rs,
+                        unwrap(reg_list, keys=True))
+                    if any(part['status']
+                           == const.RegistrationPartStati.participant
+                           for part in registration['parts'].values()):
+                        params['is_participant'] = True
             if rs.ambience['event'].get('is_archived'):
                 rs.notify("info", n_("This event has been archived."))
         return super().render(rs, templatename, params=params)
@@ -247,6 +255,79 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
+    @REQUESTdata(("part_id", "id_or_None"))
+    def participant_list(self, rs, event_id, part_id=None):
+        """List participants of an event"""
+        if not (event_id in rs.user.orga or self.is_admin(rs)):
+            reg_list = self.eventproxy.list_registrations(
+                rs, event_id, persona_id=rs.user.persona_id)
+            if not reg_list:
+                rs.notify("warning", n_("Not registered for event."))
+                return self.redirect(rs, "event/show_event")
+            registration_id = unwrap(reg_list, keys=True)
+            registration = self.eventproxy.get_registration(rs, registration_id)
+            parts = registration['parts']
+            list_consent = registration['list_consent']
+            if all(parts[part]['status'] != const.RegistrationPartStati.participant
+                    for part in parts):
+                rs.notify("warning", n_("No participant of event."))
+                return self.redirect(rs, "event/show_event")
+            if not rs.ambience['event']['is_participant_list_visible']:
+                rs.notify("error", n_("Participant list not published yet."))
+                return self.redirect(rs, "event/show_event")
+        else:
+            list_consent = True
+
+        if part_id:
+            part_ids = [part_id]
+        else:
+            part_ids = None
+        data = self._get_participant_list_data(rs, event_id, part_ids)
+        if data is None:
+            return self.redirect(rs, "event/participant_list")
+        if len(rs.ambience['event']['parts']) == 1:
+            part_id = list(rs.ambience['event']['parts'])[0]
+        data['part_id'] = part_id
+        data['list_consent'] = list_consent
+        return self.render(rs, "participant_list", data)
+
+    def _get_participant_list_data(self, rs, event_id, part_ids=None):
+        """This provides data for download and online participant list.
+
+        This is un-inlined so download_participant_list can use this
+        as well."""
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+
+        if not part_ids:
+            part_ids = rs.ambience['event']['parts'].keys()
+        if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
+            rs.notify("error", n_("Unknown part."))
+            return None
+        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
+
+        participant = const.RegistrationPartStati.participant
+        registrations = {
+            k: v
+            for k, v in registrations.items()
+            if any(v['parts'][part_id]
+                   and v['parts'][part_id]['status'] == participant
+                   for part_id in parts)}
+        personas = self.coreproxy.get_event_users(
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
+        ordered = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
+        return {
+            'courses': courses, 'registrations': registrations,
+            'personas': personas, 'ordered': ordered, 'parts': parts,
+        }
+
+
+    @access("event")
     @event_guard()
     def change_event_form(self, rs, event_id):
         """Render form."""
@@ -263,7 +344,8 @@ class EventFrontend(AbstractUserFrontend):
         "registration_hard_limit", "iban", "orga_address", "registration_text",
         "mail_text", "use_questionnaire", "notes", "lodge_field",
         "reserve_field", "is_visible", "is_course_list_visible",
-        "is_course_state_visible", "course_room_field")
+        "is_course_state_visible", "is_participant_list_visible",
+        "courses_in_participant_list", "course_room_field")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -2228,38 +2310,13 @@ class EventFrontend(AbstractUserFrontend):
     def download_participant_list(self, rs, event_id, runs, landscape,
                                   orgas_only, part_ids=None):
         """Create list to send to all participants."""
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
 
-        if not part_ids:
-            part_ids = rs.ambience['event']['parts'].keys()
-        if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
-            rs.notify("error", n_("Unknown Part."))
+        data = self._get_participant_list_data(rs, event_id, part_ids)
+        if not data:
             return self.redirect(rs, "event/downloads")
-        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
-
-        registrations = {
-            k: v
-            for k, v in registrations.items()
-            if any(v['parts'][part_id]['status'] ==
-                   const.RegistrationPartStati.participant
-                   for part_id in parts)}
-        personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
-        reg_order = sorted(
-            registrations.keys(),
-            key=lambda anid: name_key(
-                personas[registrations[anid]['persona_id']]))
-        registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order)
-        tex = self.fill_template(rs, "tex", "participant_list", {
-            'courses': courses, 'registrations': registrations,
-            'personas': personas,
-            'orientation': "landscape" if landscape else "portrait",
-            'orgas_only': orgas_only, 'parts': parts,
-        })
+        data['orientation'] = "landscape" if landscape else "portrait"
+        data['orgas_only'] = orgas_only
+        tex = self.fill_template(rs, "tex", "participant_list", data)
         file = self.serve_latex_document(
             rs, tex, "{}_participant_list".format(
                 rs.ambience['event']['shortname']),

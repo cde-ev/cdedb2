@@ -169,7 +169,7 @@
             "event_id": 1,
             "checkin": null,
             "persona_id": 9,
-            "list_consent": true,
+            "list_consent": false,
             "fields": {
                 "brings_balls": false,
                 "may_reserve": true,
@@ -1020,6 +1020,8 @@
             "registration_start": "2000-10-30T00:00:00+00:00",
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
+            "is_participant_list_visible": false,
+            "courses_in_participant_list": false,
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "notes": "Todoliste ... just kidding ;)",
