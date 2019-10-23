@@ -233,28 +233,24 @@
 
         <h3>{% trans -%}Your Vote{%- endtrans %}</h3>
         <p>
+            {% set is_active = ambience["assembly"]["is_active"] %}
             {% if not attends %}
                 {% trans -%}You are not participating in this assembly.{%- endtrans %}
-            {% elif not ambience['assembly']['is_active'] and not secret %}
-                {% trans -%}The assembly concluded and the votes got encrypted.{%- endtrans %}
-                <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform"
-                      method="POST" style="display: inline;">
-                    {{ util.anti_csrf_token("assembly/show_old_vote") }}
-                    {{ util.form_input_text(name="secret", label=gettext("Secret"), small=True,
-                            info=gettext("Enter the secret you were sent when registering for the assembly.")) }}
-                    {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="unlock") }}
-                </form>
-            {% elif not voted %}
-                {% if secret %}
+            {% elif not is_active and not voted %}
+                {% if not secret %}
+                    {% trans -%}The assembly concluded and the votes got encrypted.{%- endtrans %}
+                {% else %}
                     {% trans -%}You did not vote or you entered an invalid secret.{%- endtrans %}
                     <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform"
                           method="POST" style="display: inline;">
                         {{ util.anti_csrf_token("assembly/show_old_vote") }}
-                        {{ util.form_input_text(name="secret", label=gettext("Secret"),
+                        {{ util.form_input_text(name="secret", label=gettext("Secret"), small=True,
                                 info=gettext("Enter the secret you were sent when registering for the assembly.")) }}
                         {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="unlock") }}
                     </form>
-                {% elif ambience['ballot']['is_voting'] %}
+                {% endif %}
+            {% elif not voted %}
+                {% if ambience['ballot']['is_voting'] %}
                     {% trans -%}You have not voted yet.{%- endtrans %}
                 {% else %}
                     {% trans -%}You did not vote.{%- endtrans %}
