@@ -438,6 +438,26 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('loginform', self.response.forms)
         self.assertLogin(other['display_name'])
 
+    @as_users("anton", "ferdinand")
+    def test_cde_admin_reset_password(self, user):
+        self.realm_admin_view_profile('berta', 'cde')
+        self.assertTitle("Bertålotta Beispiel")
+        f = self.response.forms['sendpasswordresetform']
+        self.submit(f)
+        self.assertPresence("E-Mail abgeschickt.", div='notifications')
+        self.assertTitle("Bertålotta Beispiel")
+
+
+    # TODO: Inline this after architecture/mailinglists is merged
+    # @as_users("ferdinand", "nina")
+    # def test_ml_admin_reset_password(self, user):
+    #    self.realm_admin_view_profile('janis', 'ml')
+    #    self.assertTitle("Janis Jalapeño")
+    #    f = self.response.forms['sendpasswordresetform']
+    #    self.submit(f)
+    #    self.assertPresence("E-Mail abgeschickt.")
+    #    self.assertTitle("Janis Jalapeño")
+
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
         # First test with current username
