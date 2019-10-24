@@ -501,8 +501,8 @@ CREATE TABLE past_event.events (
         --
         -- Note, that this is not present in event.events.
         tempus                  date NOT NULL,
-        -- The url of a photo gallery, if one exists.
-        gallery                 varchar
+        -- Information only visible to participants.
+        notes                   varchar
 );
 GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
 GRANT DELETE, INSERT ON past_event.events TO cdb_admin;

@@ -31,10 +31,10 @@
     </dl>
     
     {{ ambience['pevent']['description']|md }}
-    {% if ambience['pevent']['description'] and ambience['pevent']['gallery']%}
+    {% if ambience['pevent']['description'] and ambience['pevent']['notes']%}
     <hr />
     {% endif %}
-    {% if ambience['pevent']['gallery'] and (is_admin or is_participant) %}
+    {% if ambience['pevent']['notes'] and (is_admin or is_participant) %}
         {% if is_admin and not is_participant %}
             <p class="text-info">{{ util.make_icon('info-sign') }}
                 {% trans -%}
@@ -43,7 +43,7 @@
                 {%- endtrans %}
             </p>
         {% endif %}
-        {{ ambience['pevent']['gallery']|md }}
+        {{ ambience['pevent']['notes']|md }}
     {% endif %}
     {% if courses or is_admin %}
         <h2>{% trans -%}Courses{%- endtrans %}</h2>

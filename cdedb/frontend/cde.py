@@ -2344,7 +2344,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict("title", "shortname", "institution", "description",
-                     "tempus", "gallery")
+                     "tempus", "notes")
     def change_past_event(self, rs, pevent_id, data):
         """Modify a concluded event."""
         data['id'] = pevent_id
@@ -2365,7 +2365,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("courses", "str_or_None"))
     @REQUESTdatadict("title", "shortname", "institution", "description",
-                     "tempus", "gallery")
+                     "tempus", "notes")
     def create_past_event(self, rs, courses, data):
         """Add new concluded event."""
         data = check(rs, "past_event", data, creation=True)

@@ -149,6 +149,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_pevent_id'] = 1
         self.submit(f)
+        self.traverse({'href': '/core/persona/2/show'})
         self.assertTitle("Bertålotta Beispiel")
 
     @as_users("anton", "berta")
@@ -1256,7 +1257,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("https://pa14:secret@example.cde/pa14/")
 
     @as_users("inga")
-    def test_show_past_event_no_gallery(self):
+    def test_show_past_event_no_gallery(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'href': '/past/event/1/show'})
@@ -1275,7 +1276,7 @@ class TestCdEFrontend(FrontendTest):
         f['title'] = "Link Academy"
         f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
-        f['gallery'] = "<https://zelda:hyrule@link.cde>"
+        f['notes'] = "<https://zelda:hyrule@link.cde>"
         self.submit(f)
         self.assertTitle("Link Academy")
         self.assertPresence("Club der Ehemaligen")
@@ -1292,7 +1293,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "link"
         f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
-        f['gallery'] = "<https://zelda:hyrule@link.cde>"
+        f['notes'] = "<https://zelda:hyrule@link.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         self.assertTitle("Link Academy II")

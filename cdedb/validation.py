@@ -1789,7 +1789,7 @@ _PAST_EVENT_COMMON_FIELDS = lambda: {
     'description': _str_or_None,
 }
 _PAST_EVENT_OPTIONAL_FIELDS = lambda: {
-    'gallery': _str_or_None
+    'notes': _str_or_None
 }
 
 

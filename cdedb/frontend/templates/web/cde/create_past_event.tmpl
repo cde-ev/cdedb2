@@ -25,9 +25,11 @@
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="tempus", label=gettext("Cutoff date"), type="date", placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_textarea(name="gallery", label=gettext("Photo gallery"), placeholder="<https://user:pwd@example.cde>",
-                rows="2", info=gettext("Supports %(infolink)s. Link to photo gallery with http authentification information encoded.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Photo gallery"), rows="1",
+            info=gettext("Supports %(infolink)s. Link to photo gallery (e. g. <https://user:pwd@example.cde>) "
+                         "with http authentification information encoded.")|format(
+                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
+                         title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_textarea(name="courses", label=gettext("Courses"),
                                info=gettext('Enter one Course per line in the format: “%(number)s”;“%(title)s”;“%(desc)s”.')|
                                     format(number=gettext("Number"), title=gettext("Title"), desc=gettext("Description"))) }}
