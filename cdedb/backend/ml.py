@@ -82,15 +82,8 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     def _get_interaction_policy_persona(self, rs, persona, ml):
-        """What may the user do with a mailinglist. Be aware, that this does
-        not take unsubscribe overrides into account.
-
-        If the mailinglist is available to the caller, they should pass it,
-        otherwise it will be retrieved from the database.
-
-        The additional endpoint this function provides in comparison to
-        get_interaction_policy is only supposed to be used for
-        `cdedb.frontend.core.select_persona()`.
+        """Helper function for :py:meth:`get_interaction_policy` and
+        :py:meth:`filter_personas_by_policy`
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona: {str: object}
@@ -119,7 +112,12 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def get_interaction_policy(self, rs, persona_id, *, mailinglist=None,
                                mailinglist_id=None):
-        """
+        """What may the user do with a mailinglist. Be aware, that this does
+        not take unsubscribe overrides into account.
+
+        If the mailinglist is available to the caller, they should pass it,
+        otherwise it will be retrieved from the database.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
         :type mailinglist: {str: object}
@@ -146,11 +144,24 @@ class MlBackend(AbstractBackend):
         return self._get_interaction_policy_persona(rs, persona, mailinglist)
 
     @access("ml")
-    def check_interaction_policies(self, rs, persona_ids, ml, data, allowed_pols):
+    def filter_personas_by_policy(self, rs, ml, data, allowed_pols):
+        """
+        This additional endpoint to check for interaction policies is only
+        supposed to be used for `cdedb.frontend.core.select_persona()`, to
+        reduce the amount of necessarx database queries.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ml: {str: object}
+        :type data: [{str: object}]
+        :param data: Return of the persona select query
+        :type allowed_pols: {const.MailinglistInteractionPolicy}
+        :return: Tuple of peronas whose interaction policies are in allowe_pols
+        """
         affirm("mailinglist", ml)
-        affirm_set("id", persona_ids)
         affirm_set("enum_mailinglistinteractionpolicy", allowed_pols)
 
+        # persona_ids are validated inside get_personas
+        persona_ids = tuple(e['id'] for e in data)
         personas = self.core.get_personas(rs, persona_ids)
         return tuple(
             e for e in data

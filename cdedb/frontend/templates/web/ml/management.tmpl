@@ -150,7 +150,7 @@
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#input-add-subscriber').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
-                        (ambience['mailinglist']['id']|string|e) + ('&aux2='|s) +
+                        (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
                         (enums['SubscriptionActions'].add_subscriber.value|string|e) }}', {{ subscribers|list|json|s }},
                     false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
                 );

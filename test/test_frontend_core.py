@@ -129,29 +129,29 @@ class TestCoreFrontend(FrontendTest):
     def test_selectpersona_ml_event(self, user):
         # Only event participants are shown
         # ml_admins are allowed to do this even if they are no orgas.
-        self.get(
-            '/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=9&aux2=20')
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20')
         expectation = (1, 5, 7)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
-        self.get(
-            '/core/persona/select?kind=mod_ml_user&phrase=inga&aux=9&aux2=20')
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=inga&aux=9&variant=20')
         expectation = (9,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
     @as_users("berta")
     def test_selectpersona_ml_event_403(self, user):
-        self.get(
-            '/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=9&aux2=20',
-            status=403)
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20',
+                 status=403)
         self.assertTitle('403: Forbidden')
 
     @as_users("berta", "garcia")
     def test_selectpersona_ml_assembly(self, user):
         # Only assembly participants are shown
-        self.get(
-            '/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5&aux2=20')
+        self.get('/core/persona/select'
+                 '?kind=mod_ml_user&phrase=@exam&aux=5&variant=20')
         expectation = (1, 2, 9)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)

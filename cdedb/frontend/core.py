@@ -571,8 +571,8 @@ class CoreFrontend(AbstractFrontend):
     @event_usage
     @ml_usage
     @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
-                 ("aux2", "any"))
-    def select_persona(self, rs, phrase, kind, aux, aux2=None):
+                 ("variant", "non_negative_int_or_None"))
+    def select_persona(self, rs, phrase, kind, aux, variant=None):
         """Provide data for intelligent input fields.
 
         This searches for users by name so they can be easily selected
@@ -602,6 +602,14 @@ class CoreFrontend(AbstractFrontend):
         Required aux value based on the 'kind':
         * mod_ml_user: Id of the mailinglist you are moderator of
         * orga_event_user: Id of the event you are orga of
+
+        The variant parameter allows to supply an additional integer to
+        distinguish between different variants of a given search kind.
+        Usually, this will be an enum member marking the kind of action taken.
+
+        Possible variants based on the 'kind':
+        * mod_ml_user: Which action you are going to execute on this user.
+          A member of the SubscriptionActions enum.
         """
         if rs.errors:
             return self.send_json(rs, {})
@@ -700,16 +708,15 @@ class CoreFrontend(AbstractFrontend):
 
         # Filter result to get only valid audience, if mailinglist is given
         if mailinglist:
-            persona_ids = tuple(e['id'] for e in data)
             pol = const.MailinglistInteractionPolicy
-            action = check(rs, "enum_subscriptionactions_or_None", aux2)
+            action = check(rs, "enum_subscriptionactions_or_None", variant)
             if rs.errors:
                 return self.send_json(rs, {})
             if action == SubscriptionActions.add_subscriber:
                 allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
                                 pol.invitation_only}
-                data = self.mlproxy.check_interaction_policies(rs, persona_ids,
-                    mailinglist, data, allowed_pols)
+                data = self.mlproxy.filter_personas_by_policy(
+                    rs, mailinglist, data, allowed_pols)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
