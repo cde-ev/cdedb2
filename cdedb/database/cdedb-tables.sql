@@ -897,8 +897,8 @@ CREATE TABLE assembly.ballots (
         notes                   varchar
 );
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
-GRANT SELECT ON assembly.ballots TO cdb_persona;
-GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_persona;
+GRANT SELECT ON assembly.ballots TO cdb_member;
+GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_admin;
 
@@ -909,7 +909,7 @@ CREATE TABLE assembly.candidates (
         moniker                 varchar NOT NULL
 );
 CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, moniker);
-GRANT SELECT ON assembly.candidates TO cdb_persona;
+GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_admin;
 
@@ -920,8 +920,9 @@ CREATE TABLE assembly.attendees (
         secret                  varchar
 );
 CREATE UNIQUE INDEX idx_attendee_constraint ON assembly.attendees(persona_id, assembly_id);
-GRANT SELECT, INSERT, UPDATE ON assembly.attendees TO cdb_persona;
-GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_persona;
+GRANT SELECT, INSERT ON assembly.attendees TO cdb_member;
+GRANT UPDATE (secret) ON assembly.attendees TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_member;
 
 -- register who did already vote for what
 CREATE TABLE assembly.voter_register (
@@ -931,10 +932,10 @@ CREATE TABLE assembly.voter_register (
         has_voted               boolean NOT NULL DEFAULT False
 );
 CREATE UNIQUE INDEX idx_voter_constraint ON assembly.voter_register(persona_id, ballot_id);
-GRANT SELECT, INSERT ON assembly.voter_register TO cdb_persona;
-GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_persona;
+GRANT SELECT, INSERT ON assembly.voter_register TO cdb_member;
+GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_member;
 GRANT DELETE ON assembly.voter_register TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_persona;
+GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_member;
 
 CREATE TABLE assembly.votes (
         id                      serial PRIMARY KEY,
@@ -948,8 +949,8 @@ CREATE TABLE assembly.votes (
         hash                    varchar NOT NULL
 );
 CREATE INDEX idx_votes_ballot_id ON assembly.votes(ballot_id);
-GRANT SELECT, INSERT, UPDATE ON assembly.votes TO cdb_persona;
-GRANT SELECT, UPDATE ON assembly.votes_id_seq TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE ON assembly.votes TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.votes_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachments (
        id                       serial PRIMARY KEY,
@@ -962,7 +963,7 @@ CREATE TABLE assembly.attachments (
 );
 CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
 CREATE INDEX idx_attachments_ballot_id ON assembly.attachments(ballot_id);
-GRANT SELECT ON assembly.attachments TO cdb_persona;
+GRANT SELECT ON assembly.attachments TO cdb_member;
 GRANT INSERT, DELETE ON assembly.attachments TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_admin;
 
@@ -980,8 +981,8 @@ CREATE TABLE assembly.log (
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
 CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
 GRANT SELECT, DELETE ON assembly.log TO cdb_admin;
-GRANT INSERT ON assembly.log TO cdb_persona;
-GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_persona;
+GRANT INSERT ON assembly.log TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 
 ---
 --- SCHEMA ml
