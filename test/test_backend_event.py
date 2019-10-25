@@ -1383,7 +1383,7 @@ class TestEventBackend(BackendTest):
                                   'is_meta_admin': False,
                                   'is_archived': False,
                                   'is_assembly_admin': False,
-                                  'is_assembly_realm': True,
+                                  'is_assembly_realm': False,
                                   'is_cde_admin': False,
                                   'is_finance_admin': False,
                                   'is_cde_realm': False,

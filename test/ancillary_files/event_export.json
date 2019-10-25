@@ -953,7 +953,7 @@
             "birthday": "2012-06-02",
             "is_active": true,
             "address_supplement": null,
-            "is_assembly_realm": true,
+            "is_assembly_realm": false,
             "postal_code": "56767",
             "given_names": "Emilia E.",
             "is_ml_admin": false,
