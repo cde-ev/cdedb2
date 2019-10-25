@@ -84,6 +84,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("emilia")
     def test_event_profile_past_events(self, user):
         self.traverse({'href': '/core/self/show'})
+        self.assertPresence("PfingstAkademie 2014")
         try:
             self.traverse({'description': "PfingstAkademie 2014"})
         except IndexError as e:
