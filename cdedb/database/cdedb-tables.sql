@@ -468,9 +468,8 @@ CREATE TABLE cde.log (
 );
 CREATE INDEX idx_cde_log_code ON cde.log(code);
 CREATE INDEX idx_cde_log_persona_id ON cde.log(persona_id);
-GRANT SELECT, INSERT ON cde.log TO cdb_persona;
-GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_persona;
-GRANT DELETE ON cde.log TO cdb_admin;
+GRANT SELECT, INSERT, DELETE ON cde.log TO cdb_admin;
+GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_admin;
 
 ---
 --- SCHEMA past_event
