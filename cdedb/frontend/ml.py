@@ -373,7 +373,7 @@ class MlFrontend(AbstractUserFrontend):
                 key=lambda anid: name_key(personas[anid])))
         requests = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-             requests, key=lambda anid: name_key(personas[anid])))
+            requests, key=lambda anid: name_key(personas[anid])))
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits})
