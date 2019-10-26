@@ -237,23 +237,16 @@ class MlFrontend(AbstractUserFrontend):
         event = {}
         if ml['event_id']:
             event = self.eventproxy.get_event(rs, ml['event_id'])
-            is_registered = bool(self.eventproxy.list_registrations(
-                rs, event['id'], rs.user.persona_id))
             event['is_visible'] = (
-                    "event_admin" in rs.user.roles
-                    or rs.user.persona_id in event['orgas']
-                    or (event['is_open'] and event['is_visible'])
-                    or is_registered)
+                "event_admin" in rs.user.roles
+                or rs.user.persona_id in event['orgas']
+                or event['is_visible'])
 
         assembly = {}
         if ml['assembly_id']:
             assembly = self.assemblyproxy.get_assembly(rs, ml['assembly_id'])
-            is_attending = bool(self.assemblyproxy.does_attend(
-                rs, assembly_id=assembly['id']))
-            assembly['is_visible'] = (
-                    "assembly_admin" in rs.user.roles
-                    or "member" in rs.user.roles
-                    or is_attending)
+            assembly['is_visible'] = self.assemblyproxy.may_view(
+                rs, assembly['id'])
 
         interaction_policy = self.mlproxy.get_interaction_policy(
             rs, rs.user.persona_id, mailinglist=ml)
