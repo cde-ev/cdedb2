@@ -672,15 +672,8 @@ class MlFrontend(AbstractUserFrontend):
         """
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        is_subscribed = self.mlproxy.is_subscribed(
-            rs, rs.user.persona_id, mailinglist_id)
-        if not is_subscribed:
-            rs.notify("error", n_("Not subscribed."))
-            return self.redirect(rs, "ml/show_mailinglist")
-        policy = const.MailinglistInteractionPolicy(
-            rs.ambience['mailinglist']['sub_policy'])
-        if email and policy == const.MailinglistInteractionPolicy.mandatory:
-            rs.notify("warning", n_("Disallowed to change address."))
+        if not self._check_address_change_requirements(rs, mailinglist_id,
+                                                       bool(email)):
             return self.redirect(rs, "ml/show_mailinglist")
 
         known_addresses = self.mlproxy.get_persona_addresses(rs)
@@ -713,15 +706,8 @@ class MlFrontend(AbstractUserFrontend):
         """
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
-                                                   mailinglist_id)
-        if not is_subscribed:
-            rs.notify("error", n_("Not subscribed."))
-            return self.redirect(rs, "ml/show_mailinglist")
-        policy = const.MailinglistInteractionPolicy(
-            rs.ambience['mailinglist']['sub_policy'])
-        if policy == const.MailinglistInteractionPolicy.mandatory:
-            rs.notify("error", n_("Disallowed to change address."))
+        if not self._check_address_change_requirements(rs, mailinglist_id,
+                                                       False):
             return self.redirect(rs, "ml/show_mailinglist")
 
         code = self.mlproxy.set_subscription_address(
@@ -729,6 +715,24 @@ class MlFrontend(AbstractUserFrontend):
             email=email)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
+
+    def _check_address_change_requirements(self, rs, mailinglist_id, setting):
+        """Check if all conditions required to change a subscription adress
+        are fulfilled.
+
+        :rtype: bool
+        """
+        is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
+                                                   mailinglist_id)
+        if not is_subscribed:
+            rs.notify("error", n_("Not subscribed."))
+            return False
+        policy = const.MailinglistInteractionPolicy(
+            rs.ambience['mailinglist']['sub_policy'])
+        if setting and policy == const.MailinglistInteractionPolicy.mandatory:
+            rs.notify("error", n_("Disallowed to change address."))
+            return False
+        return True
 
     @periodic("subscription_request_remind")
     def subscription_request_remind(self, rs, store):
