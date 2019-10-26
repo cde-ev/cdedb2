@@ -304,8 +304,7 @@ class CoreFrontend(AbstractFrontend):
         access_levels = {"persona"}
         # Let users see themselves
         if persona_id == rs.user.persona_id:
-            access_levels.update(rs.user.roles)
-            access_levels.add("core")
+            access_levels.update(ALL_ACCESS_LEVELS)
         # Core admins see everything
         if "core_admin" in rs.user.roles:
             access_levels.update(ALL_ACCESS_LEVELS)
