@@ -1475,6 +1475,7 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors and not internal:
             # Clean errors prior to displaying a new form for the first step
             rs.errors = []
+            rs.notify("info", n_("Please try again."))
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
             "core/do_password_reset", "email", email)
