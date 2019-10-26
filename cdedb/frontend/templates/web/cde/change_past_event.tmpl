@@ -27,11 +27,18 @@
         {{ util.anti_csrf_token('cde/change_past_event') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
-        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort(by='value')) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"),
+                                  entries=institutions|dictsort(by='value')) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
+                                    title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="tempus", type="date", label=gettext("Cutoff date")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Photo gallery"), rows="1",
+            info=gettext("Supports %(infolink)s. Link to photo gallery (e. g. <https://user:pwd@example.cde>) "
+                         "with http authentification information encoded.")|format(
+                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
+                         title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("cde/show_past_event")) }}
     </form>
 {% endblock %}

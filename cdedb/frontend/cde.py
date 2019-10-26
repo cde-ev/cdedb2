@@ -2299,10 +2299,15 @@ class CdEFrontend(AbstractUserFrontend):
                 for pc_id in p['pcourse_ids']
                 if pc_id
             }
+        participant_infos = self.pasteventproxy.list_participants(
+            rs, pevent_id=pevent_id)
+        is_participant = any(anid == rs.user.persona_id
+                             for anid, _ in participant_infos.keys())
         return self.render(rs, "show_past_event", {
             'courses': courses, 'participants': participants,
             'personas': personas, 'institutions': institutions,
-            'extra_participants': extra_participants})
+            'extra_participants': extra_participants,
+            'is_participant': is_participant})
 
     @access("member")
     def show_past_course(self, rs, pevent_id, pcourse_id):
@@ -2339,7 +2344,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict("title", "shortname", "institution", "description",
-                     "tempus")
+                     "tempus", "notes")
     def change_past_event(self, rs, pevent_id, data):
         """Modify a concluded event."""
         data['id'] = pevent_id
@@ -2360,7 +2365,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("courses", "str_or_None"))
     @REQUESTdatadict("title", "shortname", "institution", "description",
-                     "tempus")
+                     "tempus", "notes")
     def create_past_event(self, rs, courses, data):
         """Add new concluded event."""
         data = check(rs, "past_event", data, creation=True)

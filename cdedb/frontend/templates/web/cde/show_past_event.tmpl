@@ -31,7 +31,20 @@
     </dl>
     
     {{ ambience['pevent']['description']|md }}
-
+    {% if ambience['pevent']['description'] and ambience['pevent']['notes']%}
+    <hr />
+    {% endif %}
+    {% if ambience['pevent']['notes'] and (is_admin or is_participant) %}
+        {% if is_admin and not is_participant %}
+            <p class="text-info">{{ util.make_icon('info-sign') }}
+                {% trans -%}
+                    As you are no participant of this past event, you can only
+                    see this link because you are admin.
+                {%- endtrans %}
+            </p>
+        {% endif %}
+        {{ ambience['pevent']['notes']|md }}
+    {% endif %}
     {% if courses or is_admin %}
         <h2>{% trans -%}Courses{%- endtrans %}</h2>
     {% endif %}
