@@ -96,7 +96,8 @@ class MlBackend(AbstractBackend):
                 or self.may_manage(rs, ml['id'])):
             raise PrivilegeError(n_("Not privileged."))
         audience_policy = const.AudiencePolicy(ml["audience_policy"])
-        if audience_policy.check(extract_roles(persona)):
+        if audience_policy.check(extract_roles(persona,
+                                               introspection_only=True)):
             # First, check if assembly link allows resubscribing.
             if ml['assembly_id'] and self.assembly.check_attends(
                     rs, persona['id'], ml['assembly_id']):
