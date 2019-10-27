@@ -85,15 +85,8 @@ class TestCoreFrontend(FrontendTest):
     def test_event_profile_past_events(self, user):
         self.traverse({'href': '/core/self/show'})
         self.assertPresence("PfingstAkademie 2014")
-        try:
-            self.traverse({'description': "PfingstAkademie 2014"})
-        except IndexError as e:
-            self.assertTrue(self, "No matching elements found" in str(e))
-        self.get('/core/self/show')
-        try:
-            self.traverse({'description': "Goethe zum Anfassen"})
-        except IndexError as e:
-            self.assertTrue(self, "No matching elements found" in str(e))
+        self.assertNoLink(content="PfingstAkademie 2014")
+        self.assertNoLink(content="Goethe zum Anfassen")
 
     @as_users("berta")
     def test_cppaymentinformation(self, user):
