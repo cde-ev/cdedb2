@@ -173,8 +173,14 @@ class MlFrontend(AbstractUserFrontend):
         "attachment_policy", "audience_policy", "subject_prefix", "maxsize",
         "is_active", "notes", "gateway", "event_id", "registration_stati",
         "assembly_id")
-    def create_mailinglist(self, rs, data):
+    @REQUESTdata(("moderator_ids", "str"))
+    def create_mailinglist(self, rs, data, moderator_ids):
         """Make a new list."""
+        if moderator_ids:
+            data["moderators"] = {
+                check(rs, "cdedbid", anid.strip(), "moderator_ids")
+                for anid in moderator_ids.split(",")
+                }
         data = check(rs, "mailinglist", data, creation=True)
         if rs.errors:
             return self.create_mailinglist_form(rs)
