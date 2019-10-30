@@ -4294,7 +4294,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = event['tracks']
         spec = copy.deepcopy(QUERY_SPECS['qview_registration'])
         # note that spec is an ordered dict and we should respect the order
-        for part_id in event['parts']:
+        for part_id, part in xdictsort_filter(event['parts'], 'part_begin'):
             spec["part{0}.status".format(part_id)] = "int"
             spec["part{0}.is_reserve".format(part_id)] = "bool"
             spec["part{0}.lodgement_id".format(part_id)] = "int"
@@ -4307,7 +4307,8 @@ class EventFrontend(AbstractUserFrontend):
                     temp = "lodgement{0}.xfield_{1}"
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[temp.format(part_id, f['field_name'])] = kind
-            for track_id in event['parts'][part_id]['tracks']:
+            ordered_tracks = xdictsort_filter(part['tracks'], 'sortkey')
+            for track_id, track in ordered_tracks:
                 spec["track{0}.is_course_instructor".format(track_id)] \
                     = "bool"
                 spec["track{0}.course_id".format(track_id)] = "int"
