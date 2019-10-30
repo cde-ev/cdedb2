@@ -170,8 +170,11 @@ class TestMlFrontend(FrontendTest):
         f['maxsize'] = 512
         f['is_active'].checked = True
         f['notes'] = "Noch mehr Gemunkel."
+        f['moderator_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
         self.assertTitle("Munkelwand")
+        self.assertPresence("Beispiel")
+        self.assertPresence("Garcia G. Generalis")
 
     @as_users("anton")
     def test_change_mailinglist(self, user):
@@ -533,7 +536,7 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("Mailinglisten-Log [0–6]")
+        self.assertTitle("Mailinglisten-Log [0–8]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
