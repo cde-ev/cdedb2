@@ -2834,7 +2834,11 @@ class TestEventBackend(BackendTest):
                            3: None},
             'registrations': {3: {'tracks': {3: {'course_id': -1,
                                                  'choices': [4, -1, 5]}}},
-                              4: None}}
+                              4: None,
+                              5: {'parts': {2: {'lodgement_id': -1}},
+                                  'tracks': {3: {'choices': [1, 4, 5, -1],
+                                                 'course_id': -1,
+                                                 'course_instructor': -1}}}}}
         self.assertEqual(expectation, delta)
 
     @as_users("anton")

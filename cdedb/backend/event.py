@@ -3139,9 +3139,11 @@ class EventBackend(AbstractBackend):
                         new = copy.deepcopy(new_registration)
                         new['event_id'] = data['id']
                         for track in new['tracks'].values():
-                            if track['course_id'] in cmap:
-                                tmp_id = track['course_id']
-                                track['course_id'] = cmap[tmp_id]
+                            keys = {'course_id', 'course_instructor'}
+                            for key in keys:
+                                if track[key] in cmap:
+                                    tmp_id = track[key]
+                                    track[key] = cmap[tmp_id]
                             new_choices = [
                                 cmap.get(course_id, course_id)
                                 for course_id in track['choices']
@@ -3162,10 +3164,12 @@ class EventBackend(AbstractBackend):
                             changed_reg = copy.deepcopy(delta)
                             if 'tracks' in changed_reg:
                                 for track in changed_reg['tracks'].values():
-                                    if 'course_id' in track:
-                                        if track['course_id'] in cmap:
-                                            tmp_id = track['course_id']
-                                            track['course_id'] = cmap[tmp_id]
+                                    keys = {'course_id', 'course_instructor'}
+                                    for key in keys:
+                                        if key in track:
+                                            if track[key] in cmap:
+                                                tmp_id = track[key]
+                                                track[key] = cmap[tmp_id]
                                     if 'choices' in track:
                                         new_choices = [
                                             cmap.get(course_id, course_id)

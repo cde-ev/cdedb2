@@ -188,7 +188,7 @@
 					"is_reserve": false
 				},
 				"2": {
-					"lodgement_id": null,
+					"lodgement_id": -1,
 					"status": 1,
 					"is_reserve": false
 				},
@@ -206,12 +206,13 @@
 			"parental_agreement": true,
 			"tracks": {
 				"3": {
-					"course_id": null,
-					"course_instructor": null,
+					"course_id": -1,
+					"course_instructor": -1,
 					"choices": [
 						1,
 						4,
-						5
+						5,
+						-1
 					]
 				},
 				"2": {
