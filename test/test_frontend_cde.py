@@ -1251,11 +1251,13 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
         if user['id'] == 1:
-            self.assertPresence("As you are no participant of this past event")
-            self.assertPresence("only see this link because you are admin.")
+            self.assertPresence(
+                "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
+                "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.")
         else:
-            self.assertNonPresence("you are no participant of this past event")
-            self.assertNonPresence("only see this link because you are admin.")
+            self.assertNonPresence(
+                "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
+                "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.")
         self.assertPresence("https://pa14:secret@example.cde/pa14/")
 
     @as_users("inga")
@@ -1280,11 +1282,11 @@ class TestCdEFrontend(FrontendTest):
         # Check list privacy
         # non-searchable non-participants can not see anything interesting
         if user['id'] == 7:
-            self.assertPresence("4 Participants")
+            self.assertPresence("4 Teilnehmer")
             self.assertNonPresence("Bertå")
             self.assertNonPresence("Ferdinand")
         else:
-            self.assertNonPresence("4 Participants")
+            self.assertNonPresence("4 Teilnehmer")
             self.assertPresence("Bertå")
             self.assertPresence("Ferdinand")
 
@@ -1306,7 +1308,8 @@ class TestCdEFrontend(FrontendTest):
         else:
             self.assertNonPresence("Charly")
             self.assertNonPresence("Emilia")
-            self.assertPresence("2 weitere")
+            if user['id'] not in {7}:
+                self.assertPresence("2 weitere")
 
         # links to non-searchable users are only displayed for admins
         if user['id'] == 1:
