@@ -190,7 +190,7 @@
                         {{ data['balance']|money(lang=lang) }} {% trans -%}and{%- endtrans %}
                         {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                 gettext("Direct Debit Authorization"), icon="euro",
-                                readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles) }}
+                                readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
                     </dd>
                 {% else %}
                     <dd>{{ data['balance']|money(lang=lang) }}</dd>
