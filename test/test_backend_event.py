@@ -2874,7 +2874,7 @@ class TestEventBackend(BackendTest):
                 temp = new.pop(key)
                 if isinstance(key, int) and key < 0:
                     new_key = CMAP[(hint, key)]
-                    old[new_key] = TMAP[hint]
+                    old[new_key] = copy.deepcopy(TMAP[hint])
                 else:
                     new_key = key
                 if new_key not in old:
