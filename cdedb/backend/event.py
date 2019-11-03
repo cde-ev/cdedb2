@@ -19,7 +19,8 @@ from cdedb.common import (
     LODGEMENT_FIELDS, COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim,
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
-    json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION)
+    json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
+    mixed_existence_sorter)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -3210,10 +3211,14 @@ class EventBackend(AbstractBackend):
             # This needs to be processed in the following order:
             # lodgement groups -> lodgements -> courses -> registrations.
 
+            # We handle these in the specific order of mixed_existence_sorter
+            mes = mixed_existence_sorter
+
             gmap = {}
             gdelta = {}
             gprevious = {}
-            for group_id, new_group in data.get('lodgement_groups', {}).items():
+            for group_id in mes(data.get('lodgement_groups', {}).keys()):
+                new_group = data['lodgement_groups'][group_id]
                 current = all_current_data['lodgement_groups'].get(group_id)
                 if group_id > 0 and current is None:
                     # group was deleted online in the meantime
@@ -3249,8 +3254,8 @@ class EventBackend(AbstractBackend):
             lmap = {}
             ldelta = {}
             lprevious = {}
-            for lodgement_id, new_lodgement in data.get('lodgements',
-                                                        {}).items():
+            for lodgement_id in mes(data.get('lodgements', {}).keys()):
+                new_lodgement = data['lodgements'][lodgement_id]
                 current = all_current_data['lodgements'].get(lodgement_id)
                 if lodgement_id > 0 and current is None:
                     # lodgement was deleted online in the meantime
@@ -3296,7 +3301,8 @@ class EventBackend(AbstractBackend):
             check_seg = lambda track_id, delta, original: (
                  (track_id in delta and delta[track_id] is not None)
                  or (track_id not in delta and track_id in original))
-            for course_id, new_course in data.get('courses', {}).items():
+            for course_id in mes(data.get('courses', {}).keys()):
+                new_course = data['courses'][course_id]
                 current = all_current_data['courses'].get(course_id)
                 if course_id > 0 and current is None:
                     # course was deleted online in the meantime
@@ -3359,7 +3365,8 @@ class EventBackend(AbstractBackend):
                 }
 
             data_regs = data.get('registrations', {})
-            for registration_id, new_registration in data_regs.items():
+            for registration_id in mes(data_regs.keys()):
+                new_registration = data_regs[registration_id]
                 if (registration_id < 0
                     and dup.get(new_registration.get('persona_id'))):
                     # the process got out of sync and the registration was
