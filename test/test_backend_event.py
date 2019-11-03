@@ -2847,7 +2847,8 @@ class TestEventBackend(BackendTest):
         CMAP = {
             ('courses', -1): 7,
             ('lodgement_groups', -1): 4,
-            ('lodgements', -1): 6,
+            ('lodgements', -1): 7,
+            ('lodgements', -2): 8,
             ('registrations', -1): 6,
         }
         TMAP = {
@@ -3009,6 +3010,12 @@ class TestEventBackend(BackendTest):
                                 'notes': 'Einfach den unsichtbaren Schildern folgen.',
                                 'group_id': -1,
                                 'reserve': 2},
+                           -2: {'capacity': 42,
+                                'fields': {'contamination': 'low'},
+                                'moniker': 'Handtuchraum',
+                                'notes': 'Hier gibt es Handtücher für jeden.',
+                                'group_id': None,
+                                'reserve': 0},
                            3: None,
                            4: {'group_id': -1}},
             'registrations': {3: {'tracks': {3: {'course_id': -1,

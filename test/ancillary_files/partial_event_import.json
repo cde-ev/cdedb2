@@ -87,6 +87,16 @@
 			"moniker": "Geheimkabinett",
 			"notes": "Einfach den unsichtbaren Schildern folgen.",
 			"group_id": -1
+		},
+		"-2": {
+			"reserve": 0,
+			"capacity": 42,
+			"fields": {
+				"contamination": "low"
+			},
+			"moniker": "Handtuchraum",
+			"notes": "Hier gibt es Handtücher für jeden.",
+			"group_id": null
 		}
 	},
 	"registrations": {
