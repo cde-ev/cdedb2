@@ -373,6 +373,11 @@ class CoreFrontend(AbstractFrontend):
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
+        if is_relative_admin:
+            # This is a bit involved to not contaminate the data dict
+            # with keys which are not applicable to the requested persona
+            total = self.coreproxy.get_total_persona(rs, persona_id)
+            data['notes'] = total['notes']
 
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
