@@ -369,8 +369,7 @@ class CoreFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_event_user(rs, persona_id))
         if "cde" in access_levels and "cde" in roles:
             data.update(self.coreproxy.get_cde_user(rs, persona_id))
-            if ("core" in access_levels and "member" in roles
-                    and "finance_admin" in rs.user.roles):
+            if "core" in access_levels and "member" in roles:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
