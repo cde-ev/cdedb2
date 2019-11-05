@@ -288,6 +288,15 @@ def _id(val, argname=None, *, _convert=True):
             errs.append((argname, ValueError(n_("Must be positive."))))
     return val, errs
 
+@_addvalidator
+def _partial_import_id(val, argname=None, *, _convert=True):
+    """A numeric id or a negative int as a placeholder."""
+    val, errs = _int(val, argname, _convert=_convert)
+    if not errs:
+        if val == 0:
+            val = None
+            errs.append((argname, ValueError(n_("Must not be zero."))))
+    return val, errs
 
 @_addvalidator
 def _float(val, argname=None, *, _convert=True):
@@ -2904,13 +2913,12 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    ## The following can use the normal validators since in this case
-    ## everything is unchanged
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():
             anid, e = _id(anid, 'parts', _convert=_convert)
-            part, ee = _registration_part(part, 'parts', _convert=_convert)
+            part, ee = _partial_registration_part(
+                part, 'parts', _convert=_convert)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
@@ -2921,7 +2929,8 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True):
         newtracks = {}
         for anid, track in val['tracks'].items():
             anid, e = _id(anid, 'tracks', _convert=_convert)
-            track, ee = _registration_track(track, 'tracks', _convert=_convert)
+            track, ee = _partial_registration_track(
+                track, 'tracks', _convert=_convert)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
@@ -2930,6 +2939,68 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True):
         val['tracks'] = newtracks
     ## the check of fields is delegated to _event_associated_fields
     return val, errs
+
+
+@_addvalidator
+def _partial_registration_part(val, argname=None, *, _convert=True):
+    """This validator has only optional fields. Normally we would have an
+    creation parameter and make stuff mandatory depending on that. But
+    from the data at hand it is impossible to decide when the creation
+    case is applicable.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "partial_registration_part"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    optional_fields = {
+        'status': _enum_registrationpartstati,
+        'lodgement_id': _partial_import_id_or_None,
+        'is_reserve': _bool,
+    }
+    return _examine_dictionary_fields(val, {}, optional_fields,
+                                      _convert=_convert)
+
+
+@_addvalidator
+def _partial_registration_track(val, argname=None, *, _convert=True):
+    """This validator has only optional fields. Normally we would have an
+    creation parameter and make stuff mandatory depending on that. But
+    from the data at hand it is impossible to decide when the creation
+    case is applicable.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "partial_registration_track"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    optional_fields = {
+        'course_id': _partial_import_id_or_None,
+        'course_instructor': _partial_import_id_or_None,
+        'choices': _iterable,
+    }
+    val, errs = _examine_dictionary_fields(val, {}, optional_fields,
+                                           _convert=_convert)
+    if 'choices' in val:
+        newchoices = []
+        for choice in val['choices']:
+            choice, e = _partial_import_id(choice, 'choices', _convert=_convert)
+            if e:
+                errs.extend(e)
+                break
+            else:
+                newchoices.append(choice)
+        val['choices'] = newchoices
+    return val, errs
+
 
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,

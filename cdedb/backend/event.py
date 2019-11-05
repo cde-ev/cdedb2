@@ -2967,82 +2967,44 @@ class EventBackend(AbstractBackend):
             if not all_part_ids <= set(event['parts']):
                 raise ValueError("Referential integrity of parts violated.")
 
-            all_lodgement_ids = {
+            used_lodgement_ids = {
                 part.get('lodgement_id')
                 for registration in data.get('registrations', {}).values()
                 if registration
                 for part in registration.get('parts', {}).values()}
-            all_lodgement_ids -= {None}
-            if not all_lodgement_ids <= set(all_current_data['lodgements']):
+            used_lodgement_ids -= {None}
+            available_lodgement_ids = set(all_current_data['lodgements']) | set(
+                key for key in data.get('lodgements', {}) if key < 0)
+            available_lodgement_ids -= set(
+                k for k, v in data.get('lodgements', {}).items() if v is None)
+            if not used_lodgement_ids <= available_lodgement_ids:
                 raise ValueError(
                     "Referential integrity of lodgements violated.")
 
-            all_course_ids = set()
-            for attribute in ('course_id', 'course_choices',
-                              'course_instructor'):
-                all_course_ids |= {
-                    track.get(attribute)
-                    for registration in data.get('registrations', {}).values()
-                    if registration
-                    for track in registration.get('tracks', {}).values()}
-            all_course_ids -= {None}
-            if not all_course_ids <= set(all_current_data['courses']):
+            used_course_ids = set()
+            for registration in data.get('registrations', {}).values():
+                if registration:
+                    for track in registration.get('tracks', {}).values():
+                        if track:
+                            used_course_ids |= set(track.get('choices', []))
+                            used_course_ids.add(track.get('course_id'))
+                            used_course_ids.add(track.get('course_instructor'))
+            used_course_ids -= {None}
+            available_course_ids = set(all_current_data['courses']) | set(
+                key for key in data.get('courses', {}) if key < 0)
+            available_course_ids -= set(
+                k for k, v in data.get('courses', {}).items() if v is None)
+            if not used_course_ids <= available_course_ids:
                 raise ValueError(
                     "Referential integrity of courses violated.")
 
             # go to work
             total_delta = {}
             total_previous = {}
-            rdelta = {}
-            rprevious = {}
 
-            dup = {
-                old_reg['persona_id']: old_reg['id']
-                for old_reg in old_registrations.values()
-            }
-
-            data_regs = data.get('registrations', {})
-            for registration_id, new_registration in data_regs.items():
-                if (registration_id < 0
-                        and dup.get(new_registration.get('persona_id'))):
-                    # the process got out of sync and the registration was
-                    # already created, so we fix this
-                    registration_id = dup[new_registration.get('persona_id')]
-                    del new_registration['persona_id']
-
-                current = all_current_data['registrations'].get(
-                    registration_id)
-                if registration_id > 0 and current is None:
-                    # registration was deleted online in the meantime
-                    rdelta[registration_id] = None
-                    rprevious[registration_id] = None
-                elif new_registration is None:
-                    rdelta[registration_id] = None
-                    rprevious[registration_id] = current
-                    if not dryrun:
-                        self.delete_registration(
-                            rs, registration_id, ("registration_parts",
-                                                  "registration_tracks",
-                                                  "course_choices"))
-                elif registration_id < 0:
-                    rdelta[registration_id] = new_registration
-                    rprevious[registration_id] = None
-                    if not dryrun:
-                        new = copy.deepcopy(new_registration)
-                        new['event_id'] = data['id']
-                        self.create_registration(rs, new)
-                else:
-                    delta, previous = dict_diff(current, new_registration)
-                    if delta:
-                        rdelta[registration_id] = delta
-                        rprevious[registration_id] = previous
-                        if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            todo['id'] = registration_id
-                            self.set_registration(rs, todo)
-            if rdelta:
-                total_delta['registrations'] = rdelta
-                total_previous['registrations'] = rprevious
+            # This needs to be processed in the following order:
+            # lodgements -> courses -> registrations.
+            lmap = {}
             ldelta = {}
             lprevious = {}
             for lodgement_id, new_lodgement in data.get('lodgements',
@@ -3064,19 +3026,22 @@ class EventBackend(AbstractBackend):
                     if not dryrun:
                         new = copy.deepcopy(new_lodgement)
                         new['event_id'] = data['id']
-                        self.create_lodgement(rs, new)
+                        new_id = self.create_lodgement(rs, new)
+                        lmap[lodgement_id] = new_id
                 else:
                     delta, previous = dict_diff(current, new_lodgement)
                     if delta:
                         ldelta[lodgement_id] = delta
                         lprevious[lodgement_id] = previous
                         if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            todo['id'] = lodgement_id
-                            self.set_lodgement(rs, todo)
+                            changed_lodgement = copy.deepcopy(delta)
+                            changed_lodgement['id'] = lodgement_id
+                            self.set_lodgement(rs, changed_lodgement)
             if ldelta:
                 total_delta['lodgements'] = ldelta
                 total_previous['lodgements'] = lprevious
+
+            cmap = {}
             cdelta = {}
             cprevious = {}
             check_seg = lambda track_id, delta, original: (
@@ -3106,33 +3071,122 @@ class EventBackend(AbstractBackend):
                         new['segments'] = list(segments.keys())
                         new['active_segments'] = [key for key in segments
                                                   if segments[key]]
-                        self.create_course(rs, new)
+                        new_id = self.create_course(rs, new)
+                        cmap[course_id] = new_id
                 else:
                     delta, previous = dict_diff(current, new_course)
                     if delta:
                         cdelta[course_id] = delta
                         cprevious[course_id] = previous
                         if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            segments = todo.pop('segments', None)
+                            changed_course = copy.deepcopy(delta)
+                            segments = changed_course.pop('segments', None)
                             if segments:
                                 orig_seg = current['segments']
                                 new_segments = [
                                     x for x in event['tracks']
                                     if check_seg(x, segments, orig_seg)]
-                                todo['segments'] = new_segments
+                                changed_course['segments'] = new_segments
                                 orig_active = [
                                     s for s, a in current['segments'].items()
                                     if a]
                                 new_active = [
                                     x for x in event['tracks']
                                     if segments.get(x, x in orig_active)]
-                                todo['active_segments'] = new_active
-                            todo['id'] = course_id
-                            self.set_course(rs, todo)
+                                changed_course['active_segments'] = new_active
+                            changed_course['id'] = course_id
+                            self.set_course(rs, changed_course)
             if cdelta:
                 total_delta['courses'] = cdelta
                 total_previous['courses'] = cprevious
+
+            rmap = {}
+            rdelta = {}
+            rprevious = {}
+
+            dup = {
+                old_reg['persona_id']: old_reg['id']
+                for old_reg in old_registrations.values()
+                }
+
+            data_regs = data.get('registrations', {})
+            for registration_id, new_registration in data_regs.items():
+                if (registration_id < 0
+                    and dup.get(new_registration.get('persona_id'))):
+                    # the process got out of sync and the registration was
+                    # already created, so we fix this
+                    registration_id = dup[new_registration.get('persona_id')]
+                    del new_registration['persona_id']
+
+                current = all_current_data['registrations'].get(
+                    registration_id)
+                if registration_id > 0 and current is None:
+                    # registration was deleted online in the meantime
+                    rdelta[registration_id] = None
+                    rprevious[registration_id] = None
+                elif new_registration is None:
+                    rdelta[registration_id] = None
+                    rprevious[registration_id] = current
+                    if not dryrun:
+                        self.delete_registration(
+                            rs, registration_id, ("registration_parts",
+                                                  "registration_tracks",
+                                                  "course_choices"))
+                elif registration_id < 0:
+                    rdelta[registration_id] = new_registration
+                    rprevious[registration_id] = None
+                    if not dryrun:
+                        new = copy.deepcopy(new_registration)
+                        new['event_id'] = data['id']
+                        for track in new['tracks'].values():
+                            keys = {'course_id', 'course_instructor'}
+                            for key in keys:
+                                if track[key] in cmap:
+                                    tmp_id = track[key]
+                                    track[key] = cmap[tmp_id]
+                            new_choices = [
+                                cmap.get(course_id, course_id)
+                                for course_id in track['choices']
+                            ]
+                            track['choices'] = new_choices
+                        for part in new['parts'].values():
+                            if part['lodgement_id'] in lmap:
+                                tmp_id = part['lodgement_id']
+                                part['lodgement_id'] = lmap[tmp_id]
+                        new_id = self.create_registration(rs, new)
+                        rmap[registration_id] = new_id
+                else:
+                    delta, previous = dict_diff(current, new_registration)
+                    if delta:
+                        rdelta[registration_id] = delta
+                        rprevious[registration_id] = previous
+                        if not dryrun:
+                            changed_reg = copy.deepcopy(delta)
+                            if 'tracks' in changed_reg:
+                                for track in changed_reg['tracks'].values():
+                                    keys = {'course_id', 'course_instructor'}
+                                    for key in keys:
+                                        if key in track:
+                                            if track[key] in cmap:
+                                                tmp_id = track[key]
+                                                track[key] = cmap[tmp_id]
+                                    if 'choices' in track:
+                                        new_choices = [
+                                            cmap.get(course_id, course_id)
+                                            for course_id in track['choices']
+                                        ]
+                                        track['choices'] = new_choices
+                            if 'parts' in changed_reg:
+                                for part in changed_reg['parts'].values():
+                                    if 'lodgement_id' in part:
+                                        if part['lodgement_id'] in lmap:
+                                            tmp_id = part['lodgement_id']
+                                            part['lodgement_id'] = lmap[tmp_id]
+                            changed_reg['id'] = registration_id
+                            self.set_registration(rs, changed_reg)
+            if rdelta:
+                total_delta['registrations'] = rdelta
+                total_previous['registrations'] = rprevious
 
             m = hashlib.sha512()
             m.update(json_serialize(total_previous, sort_keys=True).encode(

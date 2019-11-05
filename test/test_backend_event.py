@@ -2769,6 +2769,22 @@ class TestEventBackend(BackendTest):
                         del new[key]
                         if key in old:
                             del old[key]
+            for key in ('course_id', 'course_instructor', 'choices'):
+                if key in new:
+                    if isinstance(new[key], int):
+                        new[key] = CMAP.get(('courses', new[key]), new[key])
+                    elif isinstance(new[key], collections.abc.Sequence):
+                        new[key] = [CMAP.get(('courses', anid), anid)
+                                    for anid in new[key]]
+            for key in ('lodgement_id',):
+                if key in new:
+                    if isinstance(new[key], int):
+                        new[key] = CMAP.get(('lodgements', new[key]), new[key])
+            for key in ('group_id',):
+                if key in new:
+                    if isinstance(new[key], int):
+                        new[key] = CMAP.get(
+                            ('lodgement_groups', new[key]), new[key])
             old.update(new)
 
         recursive_update(expectation, delta)
@@ -2816,7 +2832,13 @@ class TestEventBackend(BackendTest):
                                 'notes': 'Einfach den unsichtbaren Schildern folgen.',
                                 'reserve': 2},
                            3: None},
-            'registrations': {4: None}}
+            'registrations': {3: {'tracks': {3: {'course_id': -1,
+                                                 'choices': [4, -1, 5]}}},
+                              4: None,
+                              5: {'parts': {2: {'lodgement_id': -1}},
+                                  'tracks': {3: {'choices': [1, 4, 5, -1],
+                                                 'course_id': -1,
+                                                 'course_instructor': -1}}}}}
         self.assertEqual(expectation, delta)
 
     @as_users("anton")
