@@ -2559,6 +2559,8 @@ class EventFrontend(AbstractUserFrontend):
             rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         persona_ids = (
@@ -2663,6 +2665,16 @@ class EventFrontend(AbstractUserFrontend):
             'real_deleted_lodgement_ids': tuple(sorted(
                 id for id, val in delta.get('lodgements', {}).items()
                 if val is None and lodgements.get(id))),
+
+            'changed_lodgement_groups': {
+                id: flatten_recursive_delta(val, lodgement_groups[id])
+                for id, val in delta.get('lodgement_groups', {}).items()
+                if id > 0 and val},
+            'new_lodgement_group_ids': tuple(sorted(
+                id for id in delta.get('lodgement_groups', {}) if id < 0)),
+            'real_deleted_lodgement_group_ids': tuple(sorted(
+                id for id, val in delta.get('lodgement_groups', {}).items()
+                if val is None and lodgement_groups.get(id))),
         }
 
         changed_registration_fields = set()
@@ -2690,6 +2702,7 @@ class EventFrontend(AbstractUserFrontend):
             'delta': delta,
             'registrations': registrations,
             'lodgements': lodgements,
+            'lodgement_groups': lodgement_groups,
             'suspicious_lodgements': suspicious_lodgements,
             'courses': courses,
             'suspicious_courses': suspicious_courses,
@@ -3864,12 +3877,17 @@ class EventFrontend(AbstractUserFrontend):
 
         This also displays some issues where possibly errors occured.
         """
+        parts = rs.ambience['event']['parts']
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
+
+        # Calculate inhabitants and reserve_inhabitant_nums
         inhabitants = self.calculate_groups(
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
         inhabitant_nums = {k: len(v) for k, v in inhabitants.items()}
@@ -3882,52 +3900,189 @@ class EventFrontend(AbstractUserFrontend):
             inhabitants)
         problems_condensed = {}
 
+        # Calculate inhabitant_sum and reserve_inhabitant_sum
         inhabitant_sum = {}
-        for part_id in rs.ambience['event']['parts']:
+        for part_id in parts:
             lodgement_sum = 0
             for lodgement_id in lodgement_ids:
                 lodgement_sum += inhabitant_nums[(lodgement_id, part_id)] - \
                                  reserve_inhabitant_nums[(lodgement_id, part_id)]
             inhabitant_sum[part_id] = lodgement_sum
-
         reserve_inhabitant_sum = {}
-        for part_id in rs.ambience['event']['parts']:
+        for part_id in parts:
             reserve_lodgement_sum = 0
             for lodgement_id in lodgement_ids:
                 reserve_lodgement_sum += reserve_inhabitant_nums[(lodgement_id, part_id)]
             reserve_inhabitant_sum[part_id] = reserve_lodgement_sum
 
+        # Calculate sum of lodgement capacities
         capacity_sum = 0
         reserve_sum = 0
-        for id, lodgement in xdictsort_filter(lodgements, 'moniker'):
+        for lodgement in lodgements.values():
             capacity_sum += lodgement['capacity']
             reserve_sum += lodgement['reserve']
 
-
+        # Calculate problems_condensed (worst problem)
         for lodgement_id, part_id in itertools.product(
-                lodgement_ids, rs.ambience['event']['parts'].keys()):
+                lodgement_ids, parts.keys()):
             problems_here = [p for p in problems
                              if p[1] == lodgement_id and p[2] == part_id]
             problems_condensed[(lodgement_id, part_id)] = (
                 max(p[4] for p in problems_here) if len(problems_here) else 0,
                 "; ".join(rs.gettext(p[0]) for p in problems_here),)
 
+        # Calculate groups
+        grouped_lodgements = OrderedDict([
+            (group_id, OrderedDict([
+                (lodgement_id, lodgement)
+                for lodgement_id, lodgement
+                in xdictsort_filter(lodgements, 'moniker')
+                if lodgement['group_id'] == group_id
+            ]))
+            for group_id, group
+            in (xdictsort_filter(groups, 'moniker') + [(None, None)])
+        ])
+
+        # Calculate group_inhabitants_sum, group_reserve_inhabitants_sum,
+        # group_capacity_sum and group_reserve_sum
+        group_inhabitants_sum = {
+            (group_id, part_id): sum(inhabitant_nums[(lodgement_id, part_id)]
+                                     for lodgement_id in group)
+            for part_id in parts
+            for group_id, group in grouped_lodgements.items()}
+        group_reserve_inhabitants_sum = {
+            (group_id, part_id):
+                sum(reserve_inhabitant_nums[(lodgement_id, part_id)]
+                    for lodgement_id in group)
+            for part_id in parts
+            for group_id, group in grouped_lodgements.items()}
+        group_capacity_sum = {
+            group_id: sum(lodgement['capacity'] for lodgement in group.values())
+            for group_id, group in grouped_lodgements.items()}
+        group_reserve_sum = {
+            group_id: sum(lodgement['reserve'] for lodgement in group.values())
+            for group_id, group in grouped_lodgements.items()}
+
         return self.render(rs, "lodgements", {
             'lodgements': lodgements,
+            'groups': groups,
+            'grouped_lodgements': grouped_lodgements,
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitant_nums,
             'inhabitants_sum': inhabitant_sum,
+            'group_inhabitants_sum': group_inhabitants_sum,
             'reserve_inhabitants': reserve_inhabitant_nums,
             'reserve_inhabitants_sum': reserve_inhabitant_sum,
+            'group_reserve_inhabitants_sum': group_reserve_inhabitants_sum,
+            'group_capacity_sum': group_capacity_sum,
+            'group_reserve_sum': group_reserve_sum,
             'capacity_sum': capacity_sum,
             'reserve_sum': reserve_sum,
             'problems': problems_condensed,
         })
 
     @access("event")
+    @event_guard(check_offline=True)
+    def lodgement_group_summary_form(self, rs, event_id):
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+
+        current = {
+            "{}_{}".format(key, group_id): value
+            for group_id, group in groups.items()
+            for key, value in group.items() if key != 'id'}
+        merge_dicts(rs.values, current)
+
+        return self.render(rs, "lodgement_group_summary", {
+            'lodgement_groups': groups})
+
+    @staticmethod
+    def process_lodgement_group_input(rs, groups, event_id):
+        """This handles input to configure the lodgement groups.
+
+        Since this covers a variable number of rows, we cannot do this
+        statically. This takes care of validation too.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type groups: [int]
+        :param groups: ids of existing groups
+        :type event_id: int
+        :param event_id: Id of the event to add new lodgement groups to
+        :rtype: {int: {str: object} or None}
+        """
+        # TODO This is nearly duplicate code with process_institution_input,
+        #   maybe, we can merge this into one common frontend function
+        delete_flags = request_extractor(
+            rs, (("delete_{}".format(group_id), "bool") for group_id in groups))
+        deletes = {group_id for group_id in groups if
+                   delete_flags['delete_{}'.format(group_id)]}
+        spec = {'moniker': "str"}
+        params = tuple(
+            ("{}_{}".format(key, group_id), value)
+            for group_id in groups
+            if group_id not in deletes
+            for key, value in spec.items())
+        data = request_extractor(rs, params)
+        ret = {
+            group_id: {key: data["{}_{}".format(key, group_id)]
+                       for key in spec}
+            for group_id in groups
+            if group_id not in deletes}
+        for group_id in groups:
+            if group_id in deletes:
+                ret[group_id] = None
+            else:
+                ret[group_id]['id'] = group_id
+        marker = 1
+        while marker < 2 ** 10:
+            will_create = unwrap(
+                request_extractor(rs, (("create_-{}".format(marker), "bool"),)))
+            if will_create:
+                params = tuple(
+                    ("{}_-{}".format(key, marker), value)
+                    for key, value in spec.items())
+                data = request_extractor(rs, params)
+                ret[-marker] = {
+                    key: data["{}_-{}".format(key, marker)]
+                    for key in spec}
+                ret[-marker]['event_id'] = event_id
+            else:
+                break
+            marker += 1
+        rs.values['create_last_index'] = marker - 1
+        return ret
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def lodgement_group_summary(self, rs, event_id):
+        """Manipulate groups of lodgements."""
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.process_lodgement_group_input(rs, group_ids.keys(),
+                                                    event_id)
+        if rs.errors:
+            return self.lodgement_group_summary_form(rs, event_id)
+        code = 1
+        for group_id, group in groups.items():
+            if group is None:
+                code *= self.eventproxy.delete_lodgement_group(
+                    rs, group_id, cascade=("lodgements",))
+            elif group_id < 0:
+                code *= self.eventproxy.create_lodgement_group(rs, group)
+            else:
+                with Atomizer(rs):
+                    current = self.eventproxy.get_lodgement_group(rs, group_id)
+                    # Do not update unchanged
+                    if current != group:
+                        code *= self.eventproxy.set_lodgement_group(rs, group)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/lodgement_group_summary")
+
+    @access("event")
     @event_guard()
     def show_lodgement(self, rs, event_id, lodgement_id):
         """Display details of one lodgement."""
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = {
             k: v
@@ -3951,16 +4106,18 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_lodgement", {
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
+            'groups': groups,
         })
 
     @access("event")
     @event_guard(check_offline=True)
     def create_lodgement_form(self, rs, event_id):
         """Render form."""
-        return self.render(rs, "create_lodgement")
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
+        return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "capacity", "reserve", "notes")
+    @REQUESTdatadict("moniker", "capacity", "reserve", "group_id", "notes")
     @event_guard(check_offline=True)
     def create_lodgement(self, rs, event_id, data):
         """Add a new lodgement."""
@@ -3987,14 +4144,15 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def change_lodgement_form(self, rs, event_id, lodgement_id):
         """Render form."""
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
         field_values = {
             "fields.{}".format(key): value
             for key, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
-        return self.render(rs, "change_lodgement")
+        return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "capacity", "reserve", "notes")
+    @REQUESTdatadict("moniker", "capacity", "reserve", "notes", "group_id")
     @event_guard(check_offline=True)
     def change_lodgement(self, rs, event_id, lodgement_id, data):
         """Alter the attributes of a lodgement.
@@ -4965,7 +5123,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
 
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
-        cascade = {"registrations", "courses", "lodgements",
+        cascade = {"registrations", "courses", "lodgement_groups", "lodgements",
                    "field_definitions", "course_tracks", "event_parts", "orgas",
                    "questionnaire", "log", "mailinglists"} & blockers.keys()
 

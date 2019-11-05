@@ -464,6 +464,17 @@ p.textbox {
     border: dashed 1px #888;
     font-style: italic;
 }
+.table>tbody>tr.subheading>td, .table>tbody>tr.subheading>th,
+.table>tbody>tr.subheading:hover>td, .table>tbody>tr.subheading:hover>th {
+    border-bottom: 1px solid #ddd;
+    background: #eee;
+    font-weight: bold;
+}
+.table>tbody>tr.summary>td, .table>tbody>tr.summary>th,
+.table>tfoot>tr.summary>td, .table>tfoot>tr.summary>th {
+    border-top: 3px double #888;
+    font-weight: bold;
+}
 
 /* query form */
 .queryform-fieldbox {

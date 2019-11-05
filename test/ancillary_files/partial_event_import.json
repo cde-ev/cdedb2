@@ -53,6 +53,11 @@
 	},
 	"timestamp": "2018-10-21T20:18:43.414427+00:00",
 	"id": 1,
+	"lodgement_groups": {
+		"-1": {
+			"moniker": "Geheime Etage"
+		}
+	},
 	"lodgements": {
 		"3": null,
 		"2": {
@@ -70,7 +75,8 @@
 			}
 		},
 		"4": {
-			"notes": "Wirklich eng."
+			"notes": "Wirklich eng.",
+			"group_id": -1
 		},
 		"-1": {
 			"reserve": 2,
@@ -79,7 +85,18 @@
 				"contamination": "none"
 			},
 			"moniker": "Geheimkabinett",
-			"notes": "Einfach den unsichtbaren Schildern folgen."
+			"notes": "Einfach den unsichtbaren Schildern folgen.",
+			"group_id": -1
+		},
+		"-2": {
+			"reserve": 0,
+			"capacity": 42,
+			"fields": {
+				"contamination": "low"
+			},
+			"moniker": "Handtuchraum",
+			"notes": "Hier gibt es Handtücher für jeden.",
+			"group_id": null
 		}
 	},
 	"registrations": {
@@ -233,5 +250,5 @@
 			}
 		}
 	},
-	"CDEDB_EXPORT_EVENT_VERSION": 5
+	"CDEDB_EXPORT_EVENT_VERSION": 6
 }

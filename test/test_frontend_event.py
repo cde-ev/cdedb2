@@ -1568,6 +1568,80 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?", f['notes'].value)
 
     @as_users("garcia")
+    def test_lodgement_capacities(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/lodgement/overview'})
+        self.assertTitle("Unterkünfte (Große Testakademie 2222)")
+
+        expectations = {
+            "group_inhabitants_3_1": "2",
+            "lodge_reserve_inhabitants_3_2": "1",
+            "group_capacity_1": "11",
+            "total_inhabitants_3": "2",
+            "total_reserve_capacity": "103",
+            "total_capacity": "16",
+        }
+
+        for k, v in expectations.items():
+            self.assertPresence(v, k)
+
+        self.traverse({'href': '/event/event/1/lodgement/1/change'})
+        f = self.response.forms['changelodgementform']
+        f['capacity'] = 42
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+
+        self.assertPresence("42", "group_capacity_2")
+        self.assertPresence("53", "total_capacity")
+
+    @as_users("garcia")
+    def test_lodgement_groups(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/lodgement/overview'},
+                      {'href': '/event/event/1/lodgement/group/summary'})
+        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+
+        # First try with invalid (empty name)
+        f = self.response.forms["lodgementgroupsummaryform"]
+        self.assertEqual(f['moniker_1'].value, "Haupthaus")
+        f['create_-1'] = True
+        f['moniker_1'] = "Hauptgebäude"
+        f['delete_2'] = True
+        self.submit(f, check_notification=False)
+        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+        self.assertValidationError('moniker_-1', "Darf nicht leer sein.")
+
+        # Now, it should work
+        f = self.response.forms["lodgementgroupsummaryform"]
+        f['moniker_-1'] = "Zeltplatz"
+        f['create_-2'] = True
+        f['moniker_-2'] = "Altes Schloss"
+        self.submit(f)
+
+        # Check (non-)existence of groups in lodgement overview
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertPresence("Hauptgebäude")
+        self.assertPresence("Altes Schloss")
+        self.assertNonPresence("AußenWohnGruppe")
+        self.assertPresence("Warme Stube")
+        # Check correct unassignment of "Warme Stube"
+        self.traverse({'href': '/event/event/1/lodgement/1/change'})
+        f = self.response.forms['changelodgementform']
+        self.assertEqual(f['group_id'].value, "")
+
+        # Assign "Kellerverlies" to "Altes Schloss"
+        self.traverse({'href': '/event/event/1/lodgement/overview'},
+                      {'href': '/event/event/1/lodgement/3/change'})
+        f = self.response.forms['changelodgementform']
+        self.assertEqual(f['group_id'].value, "")
+        f['group_id'] = "4"  # Should be the "Altes Schloss"
+        self.submit(f)
+        self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
+        self.assertPresence("Altes Schloss")
+
+    @as_users("garcia")
     def test_field_set(self, user):
         self.get('/event/event/1/field/setselect?reg_ids=1,2')
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
@@ -2209,11 +2283,19 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Dafür mit Frischluft.", "box-changed-lodgements")
         self.assertPresence("Geheimkabinett", "box-new-lodgements")
         self.assertPresence("Kellerverlies", "box-deleted-lodgements")
+        # Lodgement Groups
+        self.assertPresence("Geheime Etage", "list-new-lodgement-groups")
 
         # Do import
         f = self.response.forms["importexecuteform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
+
+        # Check that changes have acutally been applied (at least for some)
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertNonPresence("Kellerverlies")
+        self.assertPresence("Geheime Etage")
+        self.assertPresence("Geheimkabinett")
 
     @as_users("anton")
     def test_partial_import_interleaved(self, user):
@@ -2450,25 +2532,31 @@ etc;anything else""", f['entries_2'].value)
                       'use_questionnaire': False},
             'id': 1,
             'kind': 'partial',
+            'lodgement_groups': {'1': {'moniker': 'Haupthaus'},
+                                 '2': {'moniker': 'AußenWohnGruppe'}},
             'lodgements': {'1': {'capacity': 5,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Warme Stube',
                                  'notes': None,
+                                 'group_id': 2,
                                  'reserve': 1},
                            '2': {'capacity': 10,
                                  'fields': {'contamination': 'none'},
                                  'moniker': 'Kalte Kammer',
                                  'notes': 'Dafür mit Frischluft.',
+                                 'group_id': 1,
                                  'reserve': 2},
                            '3': {'capacity': 0,
                                  'fields': {'contamination': 'low'},
                                  'moniker': 'Kellerverlies',
                                  'notes': 'Nur für Notfälle.',
+                                 'group_id': None,
                                  'reserve': 100},
                            '4': {'capacity': 1,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Einzelzelle',
                                  'notes': None,
+                                 'group_id': 1,
                                  'reserve': 0}},
             'registrations': {'1': {'checkin': None,
                                     'fields': {'lodge': 'Die üblichen Verdächtigen :)'},

@@ -1422,7 +1422,7 @@ def roles_to_db_role(roles):
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-CDEDB_EXPORT_EVENT_VERSION = 5
+CDEDB_EXPORT_EVENT_VERSION = 6
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1533,9 +1533,12 @@ REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
 REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
                              "course_instructor")
 
+#: Fields of a lodgement group
+LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
+
 #: Fields of a lodgement entry (one house/room)
 LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
-                    "fields")
+                    "group_id", "fields")
 
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (

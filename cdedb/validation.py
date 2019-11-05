@@ -2420,12 +2420,43 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
                     (field, ValueError(n_("Entry not in definition list."))))
     return val, errs
 
+_LODGEMENT_GROUP_FIELDS = lambda: {
+    'moniker': _str,
+}
+
+
+@_addvalidator
+def _lodgement_group(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set for fitness for creation
+        of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "lodgement group"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = dict(_LODGEMENT_GROUP_FIELDS(), event_id=_id)
+        optional_fields = {}
+    else:
+        # no event_id, since the associated event should be fixed.
+        mandatory_fields = {'id': _id}
+        optional_fields = _LODGEMENT_GROUP_FIELDS()
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      _convert=_convert)
+
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
     'capacity': _non_negative_int,
     'reserve': _non_negative_int,
     'notes': _str_or_None,
+    'group_id': _id_or_None,
 }
 _LODGEMENT_OPTIONAL_FIELDS = {
     'fields': _mapping,
@@ -2614,6 +2645,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.log': _mapping,
         'event.orgas': _mapping,
         'event.field_definitions': _mapping,
+        'event.lodgement_groups': _mapping,
         'event.lodgements': _mapping,
         'event.registrations': _mapping,
         'event.registration_parts': _mapping,
@@ -2652,6 +2684,8 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.field_definitions': _augment_dict_validator(
             _event_field, {'id': _id, 'event_id': _id,
                            'field_name': _restrictive_identifier}),
+        'event.lodgement_groups': _augment_dict_validator(
+            _lodgement_group, {'event_id': _id}),
         'event.lodgements': _augment_dict_validator(
             _lodgement, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
@@ -2746,6 +2780,7 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
     }
     optional_fields = {
         'courses': _mapping,
+        'lodgement_groups': _mapping,
         'lodgements': _mapping,
         'registrations': _mapping,
     }
@@ -2755,9 +2790,13 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
         return val, errs
     if val['CDEDB_EXPORT_EVENT_VERSION'] != CDEDB_EXPORT_EVENT_VERSION:
         return None, [(argname, ValueError(n_("Schema version mismatch.")))]
-    for domain, validator in (('courses', _partial_course_or_None),
-                              ('lodgements', _partial_lodgement_or_None),
-                              ('registrations', _partial_registration_or_None)):
+    domain_validators = {
+        'courses': _partial_course_or_None,
+        'lodgement_groups': _partial_lodgement_group_or_None,
+        'lodgements': _partial_lodgement_or_None,
+        'registrations': _partial_registration_or_None,
+    }
+    for domain, validator in domain_validators.items():
         if domain not in val:
             continue
         new_dict = {}
@@ -2833,11 +2872,40 @@ def _partial_course(val, argname=None, *, creation=False, _convert=True):
     ## the check of fields is delegated to _event_associated_fields
     return val, errs
 
+_PARTIAL_LODGEMENT_GROUP_FIELDS = lambda: {
+    'moniker': _str,
+}
+@_addvalidator
+def _partial_lodgement_group(
+        val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "lodgement group"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
+        optional_fields = {}
+    else:
+        mandatory_fields = {}
+        optional_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      _convert=_convert)
+
 _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
     'capacity': _non_negative_int,
     'reserve': _non_negative_int,
     'notes': _str_or_None,
+    'group_id': _partial_import_id_or_None,
 }
 _PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
     'fields': _mapping,

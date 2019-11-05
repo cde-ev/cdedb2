@@ -342,6 +342,9 @@ class EventLogCodes(enum.IntEnum):
     event_locked = 60  #:
     event_unlocked = 61  #:
     event_partial_import = 62  #:
+    lodgement_group_created = 70  #:
+    lodgement_group_changed = 71  #:
+    lodgement_group_deleted = 72  #:
 
 
 @enum.unique
