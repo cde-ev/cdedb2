@@ -303,6 +303,9 @@ msgstr "Accountanfrage genehmigt"
 msgid "CoreLogCodes.genesis_rejected"
 msgstr "Accountanfrage abgelehnt"
 
+msgid "CoreLogCodes.genesis_deleted"
+msgstr "Accountanfrage gelöscht"
+
 #: cdedb/i18n_additional.py:53
 msgid "CoreLogCodes.privilege_change_pending"
 msgstr "Admin-Änderung angestoßen"

@@ -275,6 +275,7 @@ class CoreLogCodes(enum.IntEnum):
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
+    genesis_deleted = 23  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:

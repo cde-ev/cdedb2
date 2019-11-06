@@ -2169,6 +2169,7 @@ class CoreBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
+            case = self.genesis_get_case(rs, case_id)
             if cascade:
                 if "unconfirmed" in cascade:
                     raise ValueError(n_("Unable to cascade %(blocker)s."),
@@ -2179,6 +2180,10 @@ class CoreBackend(AbstractBackend):
 
             if not blockers:
                 ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)
+                if case["case_status"] == const.GenesisStati.unconfirmed:
+                    self.core_log(
+                        rs, const.CoreLogCodes.genesis_deleted,
+                        persona_id=None, additional_info=case["username"])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
