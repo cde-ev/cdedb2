@@ -392,16 +392,19 @@ class MlFrontend(AbstractUserFrontend):
             'moderators': moderators, 'explicits': explicits})
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("moderator_id", "cdedbid"))
+    @REQUESTdata(("moderator_ids", "str"))
     @mailinglist_guard()
-    def add_moderator(self, rs, mailinglist_id, moderator_id):
-        """Promote persona to moderator."""
+    def add_moderators(self, rs, mailinglist_id, moderator_ids):
+        """Promote personas to moderator."""
+        if moderator_ids:
+            moderator_ids = {check(rs, "cdedbid", anid.strip(), "moderator_ids")
+                             for anid in moderator_ids.split(",")}
         if rs.errors:
             return self.management(rs, mailinglist_id)
         data = {
             'id': mailinglist_id,
             'moderators': (set(rs.ambience['mailinglist']['moderators'])
-                           | {moderator_id}),
+                           | moderator_ids),
         }
         code = self.mlproxy.set_mailinglist(rs, data)
         self.notify_return_code(rs, code)

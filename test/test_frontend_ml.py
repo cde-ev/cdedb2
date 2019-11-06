@@ -107,16 +107,18 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch – Verwalten")
-        self.assertNonPresence("Inga Iota")
+        self.assertNonPresence("Inga Iota", div="moderator_list")
+        self.assertNonPresence("Anton Armin A. Administrator", div="moderator_list")
         f = self.response.forms['addmoderatorform']
-        f['moderator_id'] = "DB-9-4"
+        f['moderator_ids'] = "DB-9-4, DB-1-9"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwalten")
-        self.assertPresence("Inga Iota")
+        self.assertPresence("Inga Iota", div="moderator_list")
+        self.assertPresence("Anton Armin A. Administrator", div="moderator_list")
         f = self.response.forms['removemoderatorform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwalten")
-        self.assertNonPresence("Inga Iota")
+        self.assertNonPresence("Inga Iota", div="moderator_list")
         self.assertNonPresence("zelda@example.cde")
         f = self.response.forms['addwhitelistform']
         f['email'] = "zelda@example.cde"
@@ -536,17 +538,17 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("Mailinglisten-Log [0–8]")
+        self.assertTitle("Mailinglisten-Log [0–9]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Mailinglisten-Log [1–2]")
+        self.assertTitle("Mailinglisten-Log [1–3]")
 
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
-        self.assertTitle("Klatsch und Tratsch: Log [0–5]")
+        self.assertTitle("Klatsch und Tratsch: Log [0–6]")
