@@ -605,7 +605,10 @@ class CoreBackend(AbstractBackend):
         query = "SELECT MIN(id) FROM core.personas WHERE id > %s"
         if is_member:
             query = glue(query, "AND is_member = True")
-        return unwrap(self.query_one(rs, query, (persona_id,)))
+        tmp = self.query_one(rs, query, (persona_id,))
+        if not tmp:
+            return None
+        return unwrap(tmp)
 
     def commit_persona(self, rs, data, change_note):
         """Actually update a persona data set.
