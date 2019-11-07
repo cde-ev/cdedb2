@@ -2,6 +2,7 @@
 -- fix some serials (otherwise the test suite gets messed up)
 --
 ALTER SEQUENCE core.genesis_cases_id_seq RESTART WITH 1;
+ALTER SEQUENCE core.privilege_changes_id_seq RESTART WITH 1;
 ALTER SEQUENCE assembly.attachments_id_seq RESTART WITH 1;
 ALTER SEQUENCE cde.lastschrift_transactions_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.course_choices_id_seq RESTART WITH 1;

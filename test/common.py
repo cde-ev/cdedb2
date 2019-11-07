@@ -642,7 +642,7 @@ class CronTest(unittest.TestCase):
         cls.ml = CronBackendShim(cls.cron, cls.cron.core.mlproxy)
 
     def setUp(self):
-        subprocess.check_call(("make", "sample-data-test-shallow"),
+        subprocess.check_call(("make", "sql-test-shallow"),
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
         self.stores = []

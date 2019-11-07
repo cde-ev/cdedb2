@@ -1191,6 +1191,37 @@ class CoreFrontend(AbstractFrontend):
                                if ack else n_("Change rejected.")))
         return self.redirect(rs, "core/list_privilege_changes")
 
+    @periodic("privilege_change_remind", period=24)
+    def privilege_change_remind(self, rs, store):
+        """Cron job for privilege changes to review.
+
+        Send a reminder after four hours and then daily.
+        """
+        current = now()
+        ids = self.coreproxy.list_privilege_changes(
+            rs, stati=(const.PrivilegeChangeStati.pending,))
+        data = self.coreproxy.get_privilege_changes(rs, ids)
+        old = set(store.get('ids', [])) & set(data)
+        new = set(data) - set(old)
+        remind = False
+        if any(data[anid]['ctime'] + datetime.timedelta(hours=4) < current
+               for anid in new):
+            remind = True
+        if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
+            remind = True
+        if remind:
+            notify = (self.conf.META_ADMIN_ADDRESS,)
+            self.do_mail(
+                rs, "privilege_change_remind",
+                {'To': tuple(notify),
+                 'Subject': "Offene Änderungen von Admin-Privilegien"},
+                {'count': len(data)})
+            store = {
+                'tstamp': current.timestamp(),
+                'ids': list(data),
+            }
+        return store
+
     @access("core_admin")
     @REQUESTdata(("target_realm", "realm_or_None"))
     def promote_user_form(self, rs, persona_id, target_realm):
