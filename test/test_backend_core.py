@@ -395,6 +395,58 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
 
     @as_users("anton")
+    def test_genesis_deletion(self, user):
+        case_data = {
+            "family_name": "Zeruda-Hime",
+            "given_names": "Zelda",
+            "username": 'zelda@example.cde',
+            "realm": "ml",
+            "notes": "Some blah",
+        }
+        # Create the request anonymously.
+        case_id = self.core.genesis_request(None, case_data)
+        self.assertLess(0, case_id)
+
+        # Deletion is blocked, because link has not timed out yet.
+        blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
+        self.assertIn("unconfirmed", blockers)
+
+        # "unconfirmed" blocker cannot be cascaded.
+        with self.assertRaises(ValueError):
+            self.core.delete_genesis_case(self.key, case_id, cascade=blockers)
+
+        # Verify the request anonymously.
+        self.core.genesis_verify(None, case_id)
+
+        # Deletion is blocked, because it is being reviewed.
+        blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
+        self.assertIn("case_status", blockers)
+
+        # Reject the case.
+        modify_data = {
+            'id': case_id,
+            'reviewer': user['id'],
+            'case_status': const.GenesisStati.rejected,
+        }
+        self.core.genesis_modify_case(self.key, modify_data)
+
+        # Should be deletable now.
+        blockers = self.core.delete_genesis_case_blockers(self.key, case_id)
+        self.assertEqual({}, blockers)
+        self.assertLess(0, self.core.delete_genesis_case(self.key, case_id))
+
+        genesis_deleted = const.CoreLogCodes.genesis_deleted
+        log_entry_expectation = {
+            'additional_info': case_data['username'],
+            'code': genesis_deleted,
+            'ctime': nearly_now(),
+            'persona_id': None,
+            'submitted_by': user['id'],
+        }
+        log_entries = self.core.retrieve_log(self.key, codes=(genesis_deleted,))
+        self.assertIn(log_entry_expectation, log_entries)
+
+    @as_users("anton")
     def test_genesis_event(self, user):
         data = {
             'family_name': "Zeruda-Hime",
