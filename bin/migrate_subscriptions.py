@@ -75,7 +75,8 @@ with Atomizer(rs(DEFAULT_ID)):
     for datum in data:
         datum["subscription_state"] = const.SubscriptionStates.pending
 
-    ml._set_subscriptions(rs(DEFAULT_ID), data)
+    if data:
+        ml._set_subscriptions(rs(DEFAULT_ID), data)
 
     query = "DROP TABLE ml.subscription_requests"
 
@@ -89,6 +90,6 @@ with Atomizer(rs(DEFAULT_ID)):
 
         # Some debug output.
         pprint(ml_id)
-        pprint(ml.get_subscription_states(rs(DEFAULT_ID), ml_id))
-        pprint(list(filter(None, ml.get_subscription_addresses(
+        pprint(mlproxy.get_subscription_states(rs(DEFAULT_ID), ml_id))
+        pprint(list(filter(None, mlproxy.get_subscription_addresses(
             rs(DEFAULT_ID), ml_id, explicits_only=True).values())))
