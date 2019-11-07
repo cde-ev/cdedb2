@@ -54,7 +54,8 @@
         {% endif %}
 
         {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 or
-              'pending_changes' in dashboard and dashboard['pending_changes'] > 0 %}
+              'pending_changes' in dashboard and dashboard['pending_changes'] > 0 or
+              'privilege_changes' in dashboard and dashboard['privilege_changes'] > 0 %}
 
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Account Management"), aclass='panel-info', icon='check') %}
@@ -72,6 +73,16 @@
                         {% trans count=dashboard['pending_changes'],
                                  link=util.href(cdedblink('core/list_pending_changes'), gettext("Changes")) -%}
                         	There are currently {{ count }} {{ link }} to review.
+                        {%- endtrans %}
+                    </p>
+                {% endif %}
+
+                {% if 'privilege_changes' in dashboard and dashboard['privilege_changes'] > 0 %}
+                    <p>
+                        {% trans count=dashboard['privilege_changes'],
+                                 link=util.href(cdedblink('core/list_privilege_changes'),
+                                                gettext("Privilege Changes")) -%}
+                            There are currently {{ count }} {{ link }} to review.
                         {%- endtrans %}
                     </p>
                 {% endif %}

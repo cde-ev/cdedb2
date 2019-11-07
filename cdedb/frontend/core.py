@@ -101,6 +101,12 @@ class CoreFrontend(AbstractFrontend):
                 data = self.coreproxy.changelog_get_changes(
                     rs, stati=(const.MemberChangeStati.pending,))
                 dashboard['pending_changes'] = len(data)
+            # pending privilege changes
+            if "meta_admin" in rs.user.roles:
+                stati = (const.PrivilegeChangeStati.pending,)
+                data = self.coreproxy.list_privilege_changes(
+                    rs, stati=stati)
+                dashboard['privilege_changes'] = len(data)
             # events organized
             orga_info = self.eventproxy.orga_info(rs, rs.user.persona_id)
             if orga_info:
