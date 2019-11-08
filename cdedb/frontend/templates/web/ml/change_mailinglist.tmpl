@@ -31,7 +31,7 @@
         <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
             {{ util.anti_csrf_token('ml/change_mailinglist') }}
     {% else %}
-        <div id="changelistform">
+        <div id="changelistform" class="form-horizontal">
     {% endif %}
         <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
             {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=not is_admin) }}
