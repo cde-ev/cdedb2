@@ -351,7 +351,8 @@ class EventBackend(AbstractBackend):
         if query.scope == "qview_registration":
             event_id = affirm("id", event_id)
             if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+                    and not self.is_admin(rs)
+                    and not "ml_admin" in rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             # Fix for custom fields with uppercase letters so they do not
