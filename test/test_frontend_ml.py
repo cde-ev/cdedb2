@@ -5,6 +5,7 @@ import json
 import unittest
 import webtest
 
+import cdedb.database.constants as const
 from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
@@ -429,6 +430,48 @@ class TestMlFrontend(FrontendTest):
         f['subscriber_id'] = "DB-1-9"
         self.submit(f)
         self.assertPresence("Anton Armin A. Administrator")
+
+    def create_mailinglist(self, mdata):
+        self.traverse({'href': '/ml/'},
+                      {'href': '/ml/mailinglist/create'})
+        f = self.response.forms['createlistform']
+        for k, v in mdata.items():
+            f[k] = v
+        self.submit(f)
+        self.assertTitle(mdata['title'])
+
+    def test_event_mailinglist(self):
+        for i, u in enumerate(("emilia", "garcia", "inga", "nina")):
+            if i > 0:
+                self.setUp()
+            user = USER_DICT[u]
+            with self.subTest(user=u):
+                self.login(USER_DICT["anton"])
+                mdata = {
+                    'title': 'TestAkaList',
+                    'address': 'testaka@example.cde',
+                    'audience_policy': const.AudiencePolicy.require_event.value,
+                    'sub_policy': const.MailinglistInteractionPolicy.invitation_only.value,
+                    'event_id': "1",
+                    'moderator_ids': user['DB-ID'],
+                }
+                self.create_mailinglist(mdata)
+                self.traverse({'href': '/event/'},
+                              {'href': '/event/event/1/show'})
+                f = self.response.forms['addorgaform']
+                f['orga_id'] = user['DB-ID']
+                self.submit(f)
+                self.logout()
+                self.login(user)
+                self.traverse({'href': '/'})
+                self.traverse({'href': '/ml/mailinglist/12/show'})
+                self.traverse({'description': 'Verwaltung'})
+                self.assertTitle(mdata['title'] + " – Verwaltung")
+                f = self.response.forms['addsubscriberform']
+                f['subscriber_id'] = "DB-2-7"
+                self.submit(f)
+                f = self.response.forms['removesubscriberform2']
+                self.submit(f)
 
     @as_users("janis")
     def test_change_sub_address(self, user):
