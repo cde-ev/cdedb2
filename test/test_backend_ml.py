@@ -24,7 +24,7 @@ class TestMlBackend(BackendTest):
         new_data = self.core.get_ml_user(self.key, user['id'])
         self.assertEqual(data, new_data)
 
-    @as_users("anton")
+    @as_users("anton", "nina")
     def test_entity_mailinglist(self, user):
         expectation = {1: 'Verkündungen',
                        2: 'Werbung',
@@ -178,6 +178,29 @@ class TestMlBackend(BackendTest):
     def test_list_subscription_overrides(self, user):
         overrides = self.ml.list_subscription_overrides(self.key)
         self.assertEqual(overrides, {5: 'Sozialistischer Kampfbrief'})
+
+    @as_users("nina", "berta")
+    def test_moderator_set_mailinglist(self, user):
+        mailinglist_id = 7
+
+        mdata = {
+            'id': mailinglist_id,
+            'moderators': {2, 10, 1},
+            'whitelist': {'link@example.cde'},
+        }
+        expectation = self.ml.get_mailinglist(self.key, mailinglist_id)
+        expectation.update(mdata)
+
+        if user['id'] in {2}:
+            with self.assertRaises(PrivilegeError):
+                self.ml.set_mailinglist(self.key, mdata)
+            self.assertLess(0, self.ml.set_moderators(self.key, mdata['id'], mdata['moderators']))
+            self.assertLess(0, self.ml.set_whitelist(self.key, mdata['id'], mdata['whitelist']))
+        else:
+            self.assertLess(0, self.ml.set_mailinglist(self.key, mdata))
+
+        reality = self.ml.get_mailinglist(self.key, mailinglist_id)
+        self.assertEqual(expectation, reality)
 
     @as_users("anton", "berta")
     def test_subscriptions(self, user):
@@ -1450,12 +1473,6 @@ class TestMlBackend(BackendTest):
              'mailinglist_id': None,
              'persona_id': None,
              'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.list_created,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': None,
-             'submitted_by': 1},
             {'additional_info': 'che@example.cde',
              'code': const.MlLogCodes.whitelist_added,
              'ctime': nearly_now(),
@@ -1473,6 +1490,12 @@ class TestMlBackend(BackendTest):
              'ctime': nearly_now(),
              'mailinglist_id': new_id,
              'persona_id': 1,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': const.MlLogCodes.list_created,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': const.MlLogCodes.subscribed,
@@ -1500,7 +1523,7 @@ class TestMlBackend(BackendTest):
             expectation[2:5],
             self.ml.retrieve_log(self.key, mailinglist_id=new_id, start=1, stop=5))
         self.assertEqual(
-            expectation[3:5],
+            expectation[2:4],
             self.ml.retrieve_log(
                 self.key, codes=(const.MlLogCodes.moderator_added,)))
 

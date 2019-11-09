@@ -391,6 +391,98 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
+    def set_moderators(self, rs, mailinglist_id, moderator_ids):
+        """Set moderators of a mailinglist.
+
+        A complete set must be passed, which will spuerseed the current set.
+
+        Contrary to `set_mailinglist` this may be used by moderators.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type moderator_ids: {int}
+        :rtype: int
+        :returns: default return code
+        """
+        mailinglist_id = affirm("id", mailinglist_id)
+        moderator_ids = affirm_set("id", moderator_ids)
+
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError("Not privileged.")
+
+        ret = 1
+        with Atomizer(rs):
+            current = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+
+            existing = current['moderators']
+            new = moderator_ids - existing
+            deleted = existing - moderator_ids
+            if new:
+                for anid in new:
+                    new_mod = {
+                        'persona_id': anid,
+                        'mailinglist_id': mailinglist_id,
+                    }
+                    ret *= self.sql_insert(rs, "ml.moderators", new_mod)
+                    self.ml_log(rs, const.MlLogCodes.moderator_added,
+                                mailinglist_id, persona_id=anid)
+            if deleted:
+                query = glue(
+                    "DELETE FROM ml.moderators",
+                    "WHERE persona_id = ANY(%s) AND mailinglist_id = %s")
+                ret *= self.query_exec(rs, query, (deleted, mailinglist_id))
+                for anid in deleted:
+                    self.ml_log(rs, const.MlLogCodes.moderator_removed,
+                                mailinglist_id, persona_id=anid)
+        return ret
+
+    @access("ml")
+    def set_whitelist(self, rs, mailinglist_id, whitelist):
+        """Set whitelist of a mailinglist.
+
+        A complete set must be passed, which will spuerseed the current set.
+
+        Contrary to `set_mailinglist` this may be used by moderators.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type whitelist: {str}
+        :rtype: int
+        :returns: default return code
+        """
+        mailinglist_id = affirm("id", mailinglist_id)
+        whitelist = affirm_set("str", whitelist)
+
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError(n_("Not privileged."))
+
+        ret = 1
+        with Atomizer(rs):
+            current = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+
+            existing = current['whitelist']
+            new = whitelist - existing
+            deleted = existing - whitelist
+            if new:
+                for address in new:
+                    new_white = {
+                        'address': address,
+                        'mailinglist_id': mailinglist_id,
+                    }
+                    ret *= self.sql_insert(rs, "ml.whitelist", new_white)
+                    self.ml_log(rs, const.MlLogCodes.whitelist_added,
+                                mailinglist_id, additional_info=address)
+            if deleted:
+                query = glue(
+                    "DELETE FROM ml.whitelist",
+                    "WHERE address = ANY(%s) AND mailinglist_id = %s")
+                ret *= self.query_exec(rs, query, (deleted, mailinglist_id))
+                for address in deleted:
+                    self.ml_log(rs, const.MlLogCodes.whitelist_removed,
+                                mailinglist_id, additional_info=address)
+        return ret
+
+    @access("ml")
     def set_mailinglist(self, rs, data):
         """Update some keys of a mailinglist.
 
@@ -411,68 +503,25 @@ class MlBackend(AbstractBackend):
         :returns: default return code
         """
         data = affirm("mailinglist", data)
+
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_mailinglists(rs, (data['id'],)))
+            # Only allow modification of the mailinglist for admins.
+            if not self.is_relevant_admin(rs, mailinglist=current):
+                raise PrivilegeError(n_("Not privileged."))
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
-                # Only allow modification of the mailinglist for admins.
-                if not self.is_relevant_admin(rs, mailinglist=current):
-                    raise PrivilegeError(n_("Not privileged."))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
                 # Check if privileges allow new state of the mailinglist.
                 if not self.is_relevant_admin(rs, mailinglist_id=data['id']):
                     raise PrivilegeError("Not privileged to make this change.")
-            if 'moderators' in data:
-                # Allow setting moderators for moderators.
-                if not self.may_manage(rs, mailinglist_id=current['id']):
-                    raise PrivilegeError(n_("Not privileged."))
-                existing = current['moderators']
-                new = set(data['moderators']) - existing
-                deleted = existing - set(data['moderators'])
-                if new:
-                    for anid in new:
-                        new_mod = {
-                            'persona_id': anid,
-                            'mailinglist_id': data['id']
-                        }
-                        ret *= self.sql_insert(rs, "ml.moderators", new_mod)
-                        self.ml_log(rs, const.MlLogCodes.moderator_added,
-                                    data['id'], persona_id=anid)
-                if deleted:
-                    query = glue(
-                        "DELETE FROM ml.moderators",
-                        "WHERE persona_id = ANY(%s) AND mailinglist_id = %s")
-                    ret *= self.query_exec(rs, query, (deleted, data['id']))
-                    for anid in deleted:
-                        self.ml_log(rs, const.MlLogCodes.moderator_removed,
-                                    data['id'], persona_id=anid)
-            if 'whitelist' in data:
-                # Allow setting whitelist for moderators.
-                if not self.may_manage(rs, mailinglist_id=current['id']):
-                    raise PrivilegeError(n_("Not privileged."))
-                existing = current['whitelist']
-                new = set(data['whitelist']) - existing
-                deleted = existing - set(data['whitelist'])
-                if new:
-                    for address in new:
-                        new_white = {
-                            'address': address,
-                            'mailinglist_id': data['id'],
-                        }
-                        ret *= self.sql_insert(rs, "ml.whitelist", new_white)
-                        self.ml_log(rs, const.MlLogCodes.whitelist_added,
-                                    data['id'], additional_info=address)
-                if deleted:
-                    query = glue(
-                        "DELETE FROM ml.whitelist",
-                        "WHERE address = ANY(%s) AND mailinglist_id = %s")
-                    ret *= self.query_exec(rs, query, (deleted, data['id']))
-                    for address in deleted:
-                        self.ml_log(rs, const.MlLogCodes.whitelist_removed,
-                                    data['id'], additional_info=address)
+            if data.get('moderators'):
+                ret *= self.set_moderators(rs, data['id'], data['moderators'])
+            if data.get('whitelist'):
+                ret *= self.set_whitelist(rs, data['id'], data['whitelist'])
             policy = const.MailinglistInteractionPolicy
             if 'sub_policy' in data:
                 if current['sub_policy'] != data['sub_policy']:
@@ -505,14 +554,11 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
-            for aspect in ('moderators', 'whitelist'):
-                if aspect in data:
-                    adata = {
-                        'id': new_id,
-                        aspect: data[aspect],
-                    }
-                    self.set_mailinglist(rs, adata)
             self.ml_log(rs, const.MlLogCodes.list_created, new_id)
+            if data.get("moderators"):
+                self.set_moderators(rs, new_id, data["moderators"])
+            if data.get("whitelist"):
+                self.set_whitelist(rs, new_id, data["whitelist"])
             self.write_subscription_states(rs, new_id)
         return new_id
 

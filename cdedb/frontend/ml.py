@@ -449,12 +449,9 @@ class MlFrontend(AbstractUserFrontend):
                              for anid in moderator_ids.split(",")}
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        data = {
-            'id': mailinglist_id,
-            'moderators': (set(rs.ambience['mailinglist']['moderators'])
-                           | moderator_ids),
-        }
-        code = self.mlproxy.set_mailinglist(rs, data)
+
+        moderator_ids |= set(rs.ambience['mailinglist']['moderators'])
+        code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -469,12 +466,10 @@ class MlFrontend(AbstractUserFrontend):
             rs.notify("error",
                       n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
-        data = {
-            'id': mailinglist_id,
-            'moderators': (set(rs.ambience['mailinglist']['moderators'])
-                           - {moderator_id}),
-        }
-        code = self.mlproxy.set_mailinglist(rs, data)
+
+        moderator_ids = set(rs.ambience['mailinglist']['moderators'])
+        moderator_ids -= {moderator_id}
+        code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -485,11 +480,9 @@ class MlFrontend(AbstractUserFrontend):
         """Allow address to write to the list."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        data = {
-            'id': mailinglist_id,
-            'whitelist': set(rs.ambience['mailinglist']['whitelist']) | {email},
-        }
-        code = self.mlproxy.set_mailinglist(rs, data)
+
+        whitelist = set(rs.ambience['mailinglist']['whitelist']) | {email}
+        code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
@@ -500,11 +493,9 @@ class MlFrontend(AbstractUserFrontend):
         """Withdraw privilege of writing to list."""
         if rs.errors:
             return self.show_subscription_details(rs, mailinglist_id)
-        data = {
-            'id': mailinglist_id,
-            'whitelist': set(rs.ambience['mailinglist']['whitelist']) - {email},
-        }
-        code = self.mlproxy.set_mailinglist(rs, data)
+
+        whitelist = set(rs.ambience['mailinglist']['whitelist']) - {email}
+        code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_subscription_details")
 
