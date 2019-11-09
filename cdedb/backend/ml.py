@@ -17,7 +17,7 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,
     extract_roles, implying_realms, now, ProxyShim,
-    SubscriptionError, SubscriptionWarning, SubscriptionInfo,
+    SubscriptionError, SubscriptionInfo,
     SubscriptionActions)
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer

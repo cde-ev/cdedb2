@@ -47,12 +47,6 @@ class SubscriptionError(RuntimeError):
     pass
 
 
-class SubscriptionWarning(SubscriptionError):
-    """Exception for SubscriptionErrors with kind warning."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, kind="warning", **kwargs)
-
-
 class SubscriptionInfo(SubscriptionError):
     """Exception for SubscriptionErrors with kind info."""
     def __init__(self, *args, **kwargs):
@@ -148,7 +142,6 @@ class SubscriptionActions(enum.IntEnum):
         """
         ss = SubscriptionStates
         error = SubscriptionError
-        warning = SubscriptionWarning
         info = SubscriptionInfo
 
         matrix = {
@@ -156,26 +149,26 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscribed: info(n_("User already subscribed.")),
                 ss.unsubscribed: None,
                 ss.mod_subscribed: info(n_("User already subscribed.")),
-                ss.mod_unsubscribed: warning(n_(
+                ss.mod_unsubscribed: error(n_(
                     "User has been blocked. You can use Advanced Management to"
                     " change this.")),
-                ss.pending: warning(n_("User has pending subscription request.")),
+                ss.pending: error(n_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_subscriber: {
                 ss.subscribed: None,
                 ss.unsubscribed: info(n_("User already unsubscribed.")),
-                ss.mod_subscribed: warning(n_(
+                ss.mod_subscribed: error(n_(
                     "User cannot be removed, because of moderator override. You"
                     " can use Advanced Management to change this.")),
                 ss.mod_unsubscribed: info(n_("User already unsubscribed.")),
-                ss.pending: warning(n_("User has pending subscription request.")),
+                ss.pending: error(n_("User has pending subscription request.")),
             },
             SubscriptionActions.add_subscription_override: {
                 ss.subscribed: None,
                 ss.unsubscribed: None,
                 ss.mod_subscribed: None,
                 ss.mod_unsubscribed: None,
-                ss.pending: warning(n_("User has pending subscription request.")),
+                ss.pending: error(n_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_subscription_override: {
                 ss.subscribed: error(n_("User is not force-subscribed.")),
@@ -189,7 +182,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscribed: None,
                 ss.mod_subscribed: None,
                 ss.mod_unsubscribed: None,
-                ss.pending: warning(n_("User has pending subscription request.")),
+                ss.pending: error(n_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_unsubscription_override: {
                 ss.subscribed: error(n_("User is not force-unsubscribed.")),
@@ -219,16 +212,16 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscribed: info(n_("You are already unsubscribed.")),
                 # mod_subscribed should only block you from being unsubscribed
                 # by the cronjob. A user is still able to unsubscribe manually.
-                # (Unless the list is mandatory.
+                # (Unless the list is mandatory).
                 ss.mod_subscribed: None,
                 ss.mod_unsubscribed: info(n_("You are already unsubscribed.")),
                 ss.pending: info(n_("You are already unsubscribed.")),
             },
             SubscriptionActions.cancel_request: {
-                ss.subscribed: info(n_("No subscription requested.")),
-                ss.unsubscribed: info(n_("No subscription requested.")),
-                ss.mod_subscribed: info(n_("No subscription requested.")),
-                ss.mod_unsubscribed: info(n_("No subscription requested.")),
+                ss.subscribed: error(n_("No subscription requested.")),
+                ss.unsubscribed: error(n_("No subscription requested.")),
+                ss.mod_subscribed: error(n_("No subscription requested.")),
+                ss.mod_unsubscribed: error(n_("No subscription requested.")),
                 ss.pending: None,
             },
             SubscriptionActions.approve_request: {
@@ -238,12 +231,24 @@ class SubscriptionActions(enum.IntEnum):
                 ss.mod_unsubscribed: error(n_("Not a pending subscription request.")),
                 ss.pending: None,
             },
+            SubscriptionActions.deny_request: {
+                ss.subscribed: error(n_("Not a pending subscription request.")),
+                ss.unsubscribed: error(n_("Not a pending subscription request.")),
+                ss.mod_subscribed: error(n_("Not a pending subscription request.")),
+                ss.mod_unsubscribed: error(n_("Not a pending subscription request.")),
+                ss.pending: None,
+            },
+            SubscriptionActions.block_request: {
+                ss.subscribed: error(n_("Not a pending subscription request.")),
+                ss.unsubscribed: error(
+                    n_("Not a pending subscription request.")),
+                ss.mod_subscribed: error(
+                    n_("Not a pending subscription request.")),
+                ss.mod_unsubscribed: error(
+                    n_("Not a pending subscription request.")),
+                ss.pending: None,
+            },
         }
-        # Approving, denying and blocking a request have the same error logic.
-        matrix[SubscriptionActions.deny_request] =\
-            matrix[SubscriptionActions.approve_request]
-        matrix[SubscriptionActions.block_request] =\
-            matrix[SubscriptionActions.approve_request]
 
         for row in matrix.keys():
             # Implicit (un-)subscriptions behave identically.

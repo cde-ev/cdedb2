@@ -29,8 +29,7 @@ import werkzeug.datastructures
 # basically just uninlined to a separate file, semantically they are
 # imported here and should be imported from here otherwise.
 from cdedb.ml_subscription_aux import (
-    SubscriptionError, SubscriptionInfo, SubscriptionWarning,
-    SubscriptionActions)
+    SubscriptionError, SubscriptionInfo, SubscriptionActions)
 
 _LOGGER = logging.getLogger(__name__)
 

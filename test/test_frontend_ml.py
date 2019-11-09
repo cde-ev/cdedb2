@@ -474,7 +474,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_id'] = "DB-9-4"
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn("alert alert-danger", self.response.text)
         self.assertIn(
             "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
             self.response.text)
@@ -483,7 +483,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addmodsubscriberform']
         f['modsubscriber_id'] = "DB-9-4"
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn("alert alert-danger", self.response.text)
         self.assertIn(
             "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
             self.response.text)
@@ -491,7 +491,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addmodunsubscriberform']
         f['modunsubscriber_id'] = "DB-9-4"
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn("alert alert-danger", self.response.text)
         self.assertIn(
             "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
             self.response.text)
@@ -509,7 +509,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4/management'}, )
         f = self.response.forms['removesubscriberform1']
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn("alert alert-danger", self.response.text)
         self.assertIn(
             "Der Nutzer kann nicht entfernt werden, da er fixiert ist. "
             "Dies kannst du unter Erweiterte Verwaltung ändern.",
@@ -518,7 +518,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_id'] = "DB-10-8"
         self.submit(f, check_notification=False)
-        self.assertIn("alert alert-warning", self.response.text)
+        self.assertIn("alert alert-danger", self.response.text)
         self.assertIn("Der Nutzer wurde geblockt. "
                       "Dies kannst du unter Erweiterte Verwaltung ändern.",
                       self.response.text)

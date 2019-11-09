@@ -312,7 +312,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
                          code=None, state=SS.mod_unsubscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.mod_unsubscribed, kind="warning")
+                         code=None, state=SS.mod_unsubscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
                          code=None, state=SS.mod_unsubscribed, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
@@ -320,7 +320,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
                          code=1, state=SS.mod_subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.mod_subscribed, kind="warning")
+                         code=None, state=SS.mod_subscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
                          code=None, state=SS.mod_subscribed, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
@@ -429,12 +429,12 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.request_subscription,
                          code=1, state=SS.pending)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.pending, kind="warning")
+                         code=None, state=SS.pending, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=None, state=SS.pending, kind="warning")
+                         code=None, state=SS.pending, kind="error")
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_unsubscription_override,
-                         code=None, state=SS.pending, kind="warning")
+                         code=None, state=SS.pending, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.deny_request,
                          code=1, state=None)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
@@ -480,7 +480,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
                          code=None, state=SS.mod_unsubscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.mod_unsubscribed, kind="warning")
+                         code=None, state=SS.mod_unsubscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.remove_unsubscription_override,
                          code=1, state=SS.unsubscribed)
 
@@ -490,7 +490,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
                          code=1, state=SS.mod_subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.mod_subscribed, kind="warning")
+                         code=None, state=SS.mod_subscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
                          code=1, state=SS.unsubscribed)
 
