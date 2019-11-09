@@ -399,9 +399,12 @@ class QuotaException(RuntimeError):
 
 class PrivilegeError(RuntimeError):
     """
-    Exception for signalling missing privileges. This is thrown in the
-    backend and caught in :py:mod:`cdedb.frontend.application`. We use a
-    custom class so that we can distinguish it from other exceptions.
+    Exception for signalling missing privileges. This Exception is thrown by the
+    backend to indicate an unprivileged call to a backend function. However,
+    this situation should be prevented by privilege checks in the frontend.
+    Thus, we typically consider this Exception as an unexpected programming
+    error. In some cases the frontend may catch and handle the exception
+    instead of preventing it in the first place.
     """
     pass
 

@@ -13,6 +13,7 @@ import datetime
 import operator
 
 import magic
+import werkzeug.exceptions
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
@@ -298,7 +299,8 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
         if (rs.ambience['persona']['is_archived']
                 and "core_admin" not in rs.user.roles):
-            raise PrivilegeError(n_("Only admins may view archived datasets."))
+            raise werkzeug.exceptions.Forbidden(
+                n_("Only admins may view archived datasets."))
 
         is_relative_admin = self.coreproxy.is_relative_admin(rs, persona_id)
 
@@ -328,7 +330,7 @@ class CoreFrontend(AbstractFrontend):
         if "searchable" in rs.user.roles and quote_me:
             if (not rs.ambience['persona']['is_searchable']
                     and "cde_admin" not in access_levels):
-                raise PrivilegeError(n_(
+                raise werkzeug.exceptions.Forbidden(n_(
                     "Access to non-searchable member data."))
             access_levels.add("cde")
         # Orgas see their participants
@@ -446,7 +448,7 @@ class CoreFrontend(AbstractFrontend):
     def show_history(self, rs, persona_id):
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
-            raise PrivilegeError(n_("Not a relative admin."))
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
@@ -618,41 +620,41 @@ class CoreFrontend(AbstractFrontend):
                                 else self.conf.NUM_PREVIEW_PERSONAS)
         if kind == "admin_persona":
             if not {"core_admin", "cde_admin"} & rs.user.roles:
-                raise PrivilegeError(n_("Not privileged."))
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "past_event_user":
             if "cde_admin" not in rs.user.roles:
-                raise PrivilegeError(n_("Not privileged."))
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             if "assembly_admin" not in rs.user.roles:
-                raise PrivilegeError(n_("Not privileged."))
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_assembly_realm", QueryOperators.equal, True))
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
         elif kind == "ml_admin_user":
             if "ml_admin" not in rs.user.roles:
-                raise PrivilegeError(n_("Not privileged."))
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "mod_ml_user" and aux:
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
             if "ml_admin" not in rs.user.roles:
                 if rs.user.persona_id not in mailinglist['moderators']:
-                    raise PrivilegeError(n_("Not privileged."))
+                    raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "event_admin_user":
             if "event_admin" not in rs.user.roles:
-                raise PrivilegeError(n_("Not privileged."))
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "orga_event_user" and aux:
             event = self.eventproxy.get_event(rs, aux)
             if "event_admin" not in rs.user.roles:
                 if rs.user.persona_id not in event['orgas']:
-                    raise PrivilegeError(n_("Not privileged."))
+                    raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         else:
@@ -927,7 +929,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_change_user_form(self, rs, persona_id):
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
-            raise PrivilegeError(n_("Not a relative admin."))
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
@@ -954,7 +956,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_change_user(self, rs, persona_id, generation, change_note):
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
-            raise PrivilegeError(n_("Not a relative admin."))
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
 
         REALM_ATTRIBUTES = {
             'persona': {
@@ -1178,10 +1180,10 @@ class CoreFrontend(AbstractFrontend):
             case_status = const.PrivilegeChangeStati.approved
             if (case["is_meta_admin"] is not None
                 and case['persona_id'] == rs.user.persona_id):
-                raise PrivilegeError(
+                raise werkzeug.exceptions.Forbidden(
                     n_("Cannot modify own meta admin privileges."))
             if rs.user.persona_id == case["submitted_by"]:
-                raise PrivilegeError(
+                raise werkzeug.exceptions.Forbidden(
                     n_("Only a different admin than the submitter "
                        "may approve a privilege change."))
         code = self.coreproxy.finalize_privilege_change(
@@ -1342,7 +1344,7 @@ class CoreFrontend(AbstractFrontend):
     def set_foto_form(self, rs, persona_id):
         """Render form."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
@@ -1355,7 +1357,7 @@ class CoreFrontend(AbstractFrontend):
     def set_foto(self, rs, persona_id, foto, delete):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         foto = check(rs, 'profilepic_or_None', foto, "foto")
         if not foto and not delete:
             rs.errors.append(("foto", ValueError("Mustn't be empty.")))
@@ -1617,7 +1619,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_username_change_form(self, rs, persona_id):
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
-            raise PrivilegeError(n_("Not a relative admin."))
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
@@ -1630,7 +1632,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_username_change(self, rs, persona_id, new_username):
         """Change username without verification."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
-            raise PrivilegeError(n_("Not a relative admin."))
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         if rs.errors:
             return self.admin_username_change_form(rs, persona_id)
         code, message = self.coreproxy.change_username(
@@ -1648,7 +1650,7 @@ class CoreFrontend(AbstractFrontend):
     def toggle_activity(self, rs, persona_id, activity):
         """Enable/disable an account."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
-            raise PrivilegeError(n_("Not a relative admin."))
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         if rs.errors:
             # Redirect for encoded parameter
             return self.redirect_show_user(rs, persona_id)
@@ -1836,7 +1838,7 @@ class CoreFrontend(AbstractFrontend):
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         reviewer = None
         if case['reviewer']:
             reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
@@ -1849,7 +1851,7 @@ class CoreFrontend(AbstractFrontend):
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
@@ -1870,7 +1872,7 @@ class CoreFrontend(AbstractFrontend):
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
@@ -1890,7 +1892,7 @@ class CoreFrontend(AbstractFrontend):
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
-            raise PrivilegeError(n_("Not privileged."))
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
