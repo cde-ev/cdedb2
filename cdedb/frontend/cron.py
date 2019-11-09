@@ -111,7 +111,8 @@ class CronFrontend(BaseApp):
                 for hook in self.find_periodics(frontend):
                     if jobs and hook.cron['name'] not in jobs:
                         continue
-                    if base_state['period'] % hook.cron['period'] == 0:
+                    if (base_state['period'] % hook.cron['period'] == 0
+                            or self.conf.CDEDB_DEV):
                         rs.begin = now()
                         state = self.core.get_cron_store(rs, hook.cron['name'])
                         try:

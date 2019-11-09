@@ -38,18 +38,19 @@
                         Only users can be moderators.
                     {%- endtrans %}
                 </p>
-            <form action="{{ cdedblink('ml/add_moderator') }}" method="POST"
+            <form action="{{ cdedblink('ml/add_moderators') }}" method="POST"
                   id="addmoderatorform" class="p">
-                {{ util.anti_csrf_token('ml/add_moderator') }}
+                {{ util.anti_csrf_token('ml/add_moderators') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="moderator_id", anid="input-add-moderator", placeholder="DB-XXXX-X",
-                                       arialabel=gettext("ID of the new moderator")) }}
+                    {{ util.input_text(name="moderator_ids", anid="input-add-moderator",
+                                       placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                                       arialabel=gettext("IDs of the new moderators")) }}
                     <script type="text/javascript" nonce="{{ csp_nonce }}">
                         $('#input-add-moderator').cdedbSearchPerson(
                             '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
-                            false, false, "{{ gettext("ID, name, email") }}"
+                            false, true, "{{ gettext("ID, name, email") }}"
                         );
                     </script>
                     <div class="input-group-btn">
@@ -59,7 +60,7 @@
                 {{ util.output_errors('moderator_id', wrapper=True) }}
             </form>
 
-            <ul>
+            <ul id="moderator_list">
                 {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                     <li>
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}

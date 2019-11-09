@@ -44,19 +44,18 @@
         {% if not ambience['event']['registration_start'] is none %}
             <dt>{% trans -%}Registration{%- endtrans %}</dt>
             <dd>
-                {% if ambience['event']['registration_soft_limit'] is none and
-                        ambience['event']['registration_hard_limit'] is none %}
+                {% set soft_limit = ambience['event']['registration_soft_limit'] %}
+                {% set hard_limit = ambience['event']['registration_hard_limit'] %}
+                {% if soft_limit is none and hard_limit is none %}
                     {% trans date=ambience['event']['registration_start']|datetime(lang=lang)-%}
                     	starts {{ date }}
                     {%- endtrans %}
                 {% else %}
                     {{ ambience['event']['registration_start']|datetime(lang=lang) }}&#8239;–&#8239;
-                    {{- (ambience['event']['registration_hard_limit']
-                            if ambience['event']['registration_soft_limit'] is none
-                            else ambience['event']['registration_soft_limit'])|datetime(lang=lang) }}
-                    {% if (values['event_id'] in user.orga or is_admin) and
-                            ambience['event']['registration_hard_limit'] != ambience['event']['registration_hard_limit'] %}
-                        {% trans date=ambience['event']['registration_hard_limit']|datetime(lang=lang) -%}
+                    {{- hard_limit if soft_limit is none else soft_limit|datetime(lang=lang) }}
+                    {% if ((values['event_id'] in user.orga or is_admin)
+                        or now() > soft_limit) and soft_limit != hard_limit %}
+                        {% trans date=hard_limit|datetime(lang=lang) -%}
                         	(Late registrations until {{ date }})
                         {%- endtrans %}
                     {% endif %}

@@ -133,7 +133,85 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Everybody come!")
-        # TODO
+        self.assertPresence("aka@example.cde")
+        self.assertPresence("Orgas")
+        self.assertPresence("Garcia G. Generalis")
+
+    @as_users("berta", "charly")
+    def test_show_event_noorga(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        self.assertNonPresence("TestAka")
+        self.assertNonPresence("CdE-Konto IBAN")
+        self.assertNonPresence("Fragebogen aktiv")
+        self.assertNonPresence("Todoliste … just kidding ;)")
+        self.assertNonPresence("Kristallkugel-basiertes Kurszuteilungssystemm")
+
+        self.assertNotIn("quickregistrationform", self.response.forms)
+        self.assertNotIn("changeminorformform", self.response.forms)
+        self.assertNotIn("lockform", self.response.forms)
+        self.assertNotIn("seteventlogoform", self.response.forms)
+        self.assertNotIn("createorgalistform", self.response.forms)
+
+    @as_users("anton", "garcia")
+    def test_show_event_orga(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        self.assertPresence("TestAka")
+        self.assertPresence("CdE-Konto IBAN")
+        self.assertPresence("Fragebogen aktiv")
+        self.assertPresence("Todoliste … just kidding ;)")
+        self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem")
+
+        self.assertIn("quickregistrationform", self.response.forms)
+        self.assertIn("changeminorformform", self.response.forms)
+        self.assertIn("lockform", self.response.forms)
+
+    @as_users("berta", "garcia")
+    def test_show_event_noadmin(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        self.assertNotIn("createorgalistform", self.response.forms)
+        self.assertNotIn("addorgaform", self.response.forms)
+        self.assertNotIn("removeorgaform7", self.response.forms)
+
+    @as_users("anton")
+    def test_show_event_admin(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        self.assertIn("createorgalistform", self.response.forms)
+        self.assertIn("addorgaform", self.response.forms)
+        self.assertIn("removeorgaform7", self.response.forms)
+
+    @as_users("anton", "berta")
+    def test_no_hard_limit(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/2/show'})
+        self.assertTitle("CdE-Party 2050")
+        self.assertPresence("Let‘s have a party!")
+        self.assertNonPresence("Nachmeldungen bis")
+
+    @as_users("anton", "garcia")
+    def test_hard_limit_orga(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Nachmeldungen bis")
+
+    @as_users("charly", "emilia")
+    def test_hard_limit_noorga(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+        self.assertNonPresence("Nachmeldungen bis")
 
     @as_users("anton", "berta", "emilia")
     def test_course_list(self, user):
@@ -1069,6 +1147,132 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("etc", f['transportation'].value)
         self.assertEqual("Bitte in ruhiger Lage.\nEcht.", f['lodge'].value)
 
+    def test_participant_list(self):
+        # first, check non-visibility for all participants
+        self.login(USER_DICT['emilia'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'})
+        self.get('/event/event/1/registration/list')
+        self.follow()
+        self.assertTitle("Große Testakademie 2222")
+        self.assertPresence("Fehler! Die Teilnehmer Liste ist noch nicht "
+                            "veröffentlicht.", div='notifications')
+        self.logout()
+
+        # now, check visibility for orgas
+        self.login(USER_DICT['garcia'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': 'event/event/1/registration/list'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.assertPresence("Die Teilnehmerliste ist aktuell nur für Orgas und "
+                            "Admins sichtbar.")
+        self.assertPresence("Übersicht")
+        self.assertPresence("Administrator")
+        self.assertPresence("emilia@example.cde")
+        self.assertPresence("03205 Musterstadt")
+        self.assertNonPresence("Inga")
+        self.assertPresence("Veranstaltungsteile")
+        self.assertNonPresence("Kurs")
+
+        self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
+        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
+        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Kurs")
+        self.assertNonPresence("Veranstaltungsteile")
+
+
+        self.traverse({'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['courses_in_participant_list'].checked = True
+        self.submit(f)
+
+        self.traverse({'href': 'event/event/1/registration/list'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.assertPresence("Veranstaltungsteile")
+        self.assertNonPresence("Kurs")
+        self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
+        self.assertNonPresence("Veranstaltungsteile")
+        self.assertNonPresence("Kurs")
+        self.traverse({'href': r'event/event/1/registration/list\?part_id=2'})
+        self.assertNonPresence("Veranstaltungsteile")
+        self.assertPresence("Kurse")
+        self.traverse({'href': r'event/event/1/registration/list\?part_id=3'})
+        self.assertNonPresence("Veranstaltungsteile")
+        self.assertPresence("Kurs")
+        self.assertNonPresence("Kurse")
+        self.assertPresence("α. Heldentum")
+
+        # now, make participant list visible to participants
+        self.traverse({'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['is_participant_list_visible'].checked = True
+        self.submit(f)
+        self.logout()
+
+        # check visibility for participant with list consent
+        self.login(USER_DICT['emilia'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/list'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.assertNonPresence("Die Teilnehmerliste ist aktuell nur für Orgas "
+                               "und Admins sichtbar.")
+        self.assertPresence("Warmup")
+        self.assertPresence("Zweite Hälfte")
+        self.logout()
+
+        # check non-visibility for participant without list consent
+        self.login(USER_DICT['inga'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/list'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.assertPresence("Du kannst die Teilnehmerliste nicht sehen, da du "
+                            "nicht zugestimmt hast, deine Daten auf der "
+                            "Teilnehmerliste zur Verfügung zu stellen.")
+        self.assertNonPresence("Übersicht")
+        self.assertNonPresence("Zweite Hälfte")
+        self.assertNonPresence("Anton")
+        self.assertNonPresence("Stadt, Postleitzahl")
+
+    @as_users("berta")
+    def test_participant_list_event_with_one_part(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/2/show'},
+                      {'href': '/event/event/2/registration/list'})
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertPresence("Bisher gibt es keine Teilnehmer.")
+
+        # add a registration
+        self.traverse({'href': '/event/event/2/registration/query'},
+                      {'href': '/event/event/2/registration/add'})
+        self.assertTitle("Neue Anmeldung (CdE-Party 2050)")
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = "DB-1-9"
+        self.submit(f)
+
+        # now test participant list
+        self.traverse({'href': 'event/event/2/registration/list'})
+        self.assertPresence("Vorname")
+        self.assertPresence("E-Mail-Adresse")
+        self.assertNonPresence("Veranstaltungsteile")
+        self.assertNonPresence("Übersicht")
+        self.assertNonPresence("Party")
+
+        # at last, test url magic
+        self.get('/event/event/2/registration/list?part_id=5000')
+        self.follow()
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertPresence("Unbekannter Veranstaltungsteil",
+                            div='notifications')
+        self.get('/event/event/2/registration/list?part_id=4')
+        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.assertNonPresence("Unbekannter Veranstaltungsteil",
+                               div='notifications')
+
     @as_users("garcia")
     def test_batch_fee(self, user):
         self.traverse({'href': '/event/$'},
@@ -1362,6 +1566,80 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changelodgementform']
         self.assertEqual('20', f['reserve'].value)
         self.assertEqual("oder gleich unter dem Sternenhimmel?", f['notes'].value)
+
+    @as_users("garcia")
+    def test_lodgement_capacities(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/lodgement/overview'})
+        self.assertTitle("Unterkünfte (Große Testakademie 2222)")
+
+        expectations = {
+            "group_inhabitants_3_1": "2",
+            "lodge_reserve_inhabitants_3_2": "1",
+            "group_capacity_1": "11",
+            "total_inhabitants_3": "2",
+            "total_reserve_capacity": "103",
+            "total_capacity": "16",
+        }
+
+        for k, v in expectations.items():
+            self.assertPresence(v, k)
+
+        self.traverse({'href': '/event/event/1/lodgement/1/change'})
+        f = self.response.forms['changelodgementform']
+        f['capacity'] = 42
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+
+        self.assertPresence("42", "group_capacity_2")
+        self.assertPresence("53", "total_capacity")
+
+    @as_users("garcia")
+    def test_lodgement_groups(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/lodgement/overview'},
+                      {'href': '/event/event/1/lodgement/group/summary'})
+        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+
+        # First try with invalid (empty name)
+        f = self.response.forms["lodgementgroupsummaryform"]
+        self.assertEqual(f['moniker_1'].value, "Haupthaus")
+        f['create_-1'] = True
+        f['moniker_1'] = "Hauptgebäude"
+        f['delete_2'] = True
+        self.submit(f, check_notification=False)
+        self.assertTitle("Unterkunftgruppen (Große Testakademie 2222)")
+        self.assertValidationError('moniker_-1', "Darf nicht leer sein.")
+
+        # Now, it should work
+        f = self.response.forms["lodgementgroupsummaryform"]
+        f['moniker_-1'] = "Zeltplatz"
+        f['create_-2'] = True
+        f['moniker_-2'] = "Altes Schloss"
+        self.submit(f)
+
+        # Check (non-)existence of groups in lodgement overview
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertPresence("Hauptgebäude")
+        self.assertPresence("Altes Schloss")
+        self.assertNonPresence("AußenWohnGruppe")
+        self.assertPresence("Warme Stube")
+        # Check correct unassignment of "Warme Stube"
+        self.traverse({'href': '/event/event/1/lodgement/1/change'})
+        f = self.response.forms['changelodgementform']
+        self.assertEqual(f['group_id'].value, "")
+
+        # Assign "Kellerverlies" to "Altes Schloss"
+        self.traverse({'href': '/event/event/1/lodgement/overview'},
+                      {'href': '/event/event/1/lodgement/3/change'})
+        f = self.response.forms['changelodgementform']
+        self.assertEqual(f['group_id'].value, "")
+        f['group_id'] = "4"  # Should be the "Altes Schloss"
+        self.submit(f)
+        self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")
+        self.assertPresence("Altes Schloss")
 
     @as_users("garcia")
     def test_field_set(self, user):
@@ -2005,11 +2283,19 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Dafür mit Frischluft.", "box-changed-lodgements")
         self.assertPresence("Geheimkabinett", "box-new-lodgements")
         self.assertPresence("Kellerverlies", "box-deleted-lodgements")
+        # Lodgement Groups
+        self.assertPresence("Geheime Etage", "list-new-lodgement-groups")
 
         # Do import
         f = self.response.forms["importexecuteform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
+
+        # Check that changes have acutally been applied (at least for some)
+        self.traverse({'href': '/event/event/1/lodgement/overview'})
+        self.assertNonPresence("Kellerverlies")
+        self.assertPresence("Geheime Etage")
+        self.assertPresence("Geheimkabinett")
 
     @as_users("anton")
     def test_partial_import_interleaved(self, user):
@@ -2192,6 +2478,8 @@ etc;anything else""", f['entries_2'].value)
                       'iban': 'DE96370205000008068901',
                       'institution': 1,
                       'is_archived': False,
+                      'is_participant_list_visible': False,
+                      'courses_in_participant_list': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,
@@ -2234,7 +2522,7 @@ etc;anything else""", f['entries_2'].value)
                                                        'sortkey': 3,
                                                        'title': 'Arbeitssitzung (Zweite Hälfte)'}},
                                       'title': 'Zweite Hälfte'}},
-                      'registration_hard_limit': '2220-10-30T00:00:00+00:00',
+                      'registration_hard_limit': '2221-10-30T00:00:00+00:00',
                       'registration_soft_limit': '2200-10-30T00:00:00+00:00',
                       'registration_start': '2000-10-30T00:00:00+00:00',
                       'registration_text': None,
@@ -2244,25 +2532,31 @@ etc;anything else""", f['entries_2'].value)
                       'use_questionnaire': False},
             'id': 1,
             'kind': 'partial',
+            'lodgement_groups': {'1': {'moniker': 'Haupthaus'},
+                                 '2': {'moniker': 'AußenWohnGruppe'}},
             'lodgements': {'1': {'capacity': 5,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Warme Stube',
                                  'notes': None,
+                                 'group_id': 2,
                                  'reserve': 1},
                            '2': {'capacity': 10,
                                  'fields': {'contamination': 'none'},
                                  'moniker': 'Kalte Kammer',
                                  'notes': 'Dafür mit Frischluft.',
+                                 'group_id': 1,
                                  'reserve': 2},
                            '3': {'capacity': 0,
                                  'fields': {'contamination': 'low'},
                                  'moniker': 'Kellerverlies',
                                  'notes': 'Nur für Notfälle.',
+                                 'group_id': None,
                                  'reserve': 100},
                            '4': {'capacity': 1,
                                  'fields': {'contamination': 'high'},
                                  'moniker': 'Einzelzelle',
                                  'notes': None,
+                                 'group_id': 1,
                                  'reserve': 0}},
             'registrations': {'1': {'checkin': None,
                                     'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
@@ -2402,7 +2696,7 @@ etc;anything else""", f['entries_2'].value)
                                     'fields': {'brings_balls': False,
                                                'may_reserve': True,
                                                'transportation': 'etc'},
-                                    'list_consent': True,
+                                    'list_consent': False,
                                     'mixed_lodging': False,
                                     'notes': None,
                                     'orga_notes': None,

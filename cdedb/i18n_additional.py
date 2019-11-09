@@ -50,6 +50,7 @@ I18N_STRINGS = (
     n_("CoreLogCodes.genesis_request"),
     n_("CoreLogCodes.genesis_approved"),
     n_("CoreLogCodes.genesis_rejected"),
+    n_("CoreLogCodes.genesis_deleted"),
     n_("CoreLogCodes.privilege_change_pending"),
     n_("CoreLogCodes.privilege_change_approved"),
     n_("CoreLogCodes.privilege_change_rejected"),

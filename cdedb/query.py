@@ -181,7 +181,6 @@ QUERY_SPECS = {
             ("trial_member", "bool"),
             ("is_searchable", "bool"),
             ("decided_search", "bool"),
-            ("bub_search", "bool"),
             ("balance", "float"),
             ("is_ml_admin", "bool"),
             ("is_event_admin", "bool"),

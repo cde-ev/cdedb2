@@ -21,12 +21,14 @@
     <div class="p">
         {{ util.href(cdedblink("event/create_lodgement_form"), gettext("Add Lodgement"), readonly=is_locked,
                      aclass='btn btn-sm btn-success', icon='plus') }}
+        {{ util.href(cdedblink("event/lodgement_group_summary"), gettext("Manage Lodgement Groups"), readonly=is_locked,
+                     aclass='btn btn-sm btn-info', icon='th-large') }}
     </div>
 
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-            <th rowspan="2">{% trans -%}Lodgement{%- endtrans %}</th>
+                <th rowspan="2" colspan="2">{% trans -%}Lodgement{%- endtrans %}</th>
                 {% if ambience['event']['parts']|length > 1 %}
                     <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">Inhabitants</th>
                 {% else %}
@@ -49,50 +51,80 @@
             </tr>
         </thead>
         <tbody>
-            {% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %}
-                <tr>
-                    <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
-                                     lodgement['moniker']) }}</td>
-                    {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
-                    {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                        {% set problem = problems[(lodgement_id, part_id)] %}
-                        <td class="text-right {% if loop.first %} b-left{% endif %}
-                            {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}>
-                            {{ (inhabitants[(lodgement_id, part_id)] - reserve_inhabitants[(lodgement_id, part_id)]) }}
-                        </td>
-                        <td class="text-right {{ colors[problem[0]] }}"
-                            {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}>
-                            {% if reserve_inhabitants[(lodgement_id, part_id)] %}
-                                + {{ reserve_inhabitants[(lodgement_id, part_id)] }}
+            {% for group_id, sorted_lodgements in grouped_lodgements.items() %}
+                {% if grouped_lodgements|length > 1 %}
+                    <tr class="subheading">
+                        <td colspan="2">
+                            {% if group_id %}{{ groups[group_id]['moniker'] }}
+                            {% else %}
+                                <i>{% trans %}Ungrouped Lodgements{% endtrans %}</i>
                             {% endif %}
                         </td>
-                    {% endfor %}
-                    <td class="b-left text-right">{{ lodgement['capacity'] }}</td>
-                    <td class=" text-right">+ {{ lodgement['reserve'] }}</td>
-                    <td class="b-left">
-                        {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
-                                     readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
-                                     title=gettext("Edit")) }}
-                        {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
-                                     readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
-                                     title=gettext("Manage Inhabitants")) }}
-                    </td>
-                </tr>
+                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                            <td class="text-right" id="group_inhabitants_{{ part_id }}_{{ group_id }}">
+                                {{ (group_inhabitants_sum[(group_id, part_id)]
+                                    - group_reserve_inhabitants_sum[(group_id, part_id)]) }}
+                            </td>
+                            <td class="text-right" id="group_reserve_inhabitants_{{ part_id }}_{{ group_id }}">
+                                {% if group_reserve_inhabitants_sum[(group_id, part_id)] %}
+                                    + {{ group_reserve_inhabitants_sum[(group_id, part_id)] }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="text-right" id="group_capacity_{{ group_id }}">{{ group_capacity_sum[group_id] }}</td>
+                        <td class=" text-right" id="group_reserve_capacity_{{ group_id }}">+ {{ group_reserve_sum[group_id] }}</td>
+                        <td class="">
+                    </tr>
+                {% endif %}
+                {% for lodgement_id, lodgement in sorted_lodgements.items() %}
+                    <tr>
+                        <td class="indent"></td>
+                        <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
+                                         lodgement['moniker']) }}</td>
+                        {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
+                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                            {% set problem = problems[(lodgement_id, part_id)] %}
+                            <td class="text-right {% if loop.first %} b-left{% endif %}
+                                {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}
+                                id="lodge_inhabitants_{{ part_id }}_{{ lodgement_id }}">
+                                {{ (inhabitants[(lodgement_id, part_id)] - reserve_inhabitants[(lodgement_id, part_id)]) }}
+                            </td>
+                            <td class="text-right {{ colors[problem[0]] }}"
+                                {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}
+                                id="lodge_reserve_inhabitants_{{ part_id }}_{{ lodgement_id }}">
+                                {% if reserve_inhabitants[(lodgement_id, part_id)] %}
+                                    + {{ reserve_inhabitants[(lodgement_id, part_id)] }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="b-left text-right" id="lodge_capacity_{{ lodgement_id }}">{{ lodgement['capacity'] }}</td>
+                        <td class=" text-right" id="lodge_reserve_capacity{{ lodgement_id }}">+ {{ lodgement['reserve'] }}</td>
+                        <td class="b-left">
+                            {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
+                                         title=gettext("Edit")) }}
+                            {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
+                                         title=gettext("Manage Inhabitants")) }}
+                        </td>
+                    </tr>
+                {% endfor %}
             {% endfor %}
         </tbody>
         <tfoot>
-            <tr>
-                <td>&Sigma;</td>
+            <tr class="summary">
+                <th colspan="2">&Sigma;</th>
                 {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                    <td class="text-right {% if loop.first %} b-left{% endif %}">
+                    <td class="text-right {% if loop.first %} b-left{% endif %}"
+                        id="total_inhabitants_{{ part_id }}">
                         {{ (inhabitants_sum[part_id] - reserve_inhabitants_sum[part_id]) }}
                     </td>
-                    <td class="text-right">
+                    <td class="text-right" id="total_reserve_inhabitants_{{ part_id }}">
                         + {{ reserve_inhabitants_sum[part_id] }}
                     </td>
                 {% endfor %}
-                    <td class="b-left text-right">{{ capacity_sum }}</td>
-                    <td class=" text-right">+ {{ reserve_sum }}</td>
+                    <td class="b-left text-right" id="total_capacity">{{ capacity_sum }}</td>
+                    <td class=" text-right" id="total_reserve_capacity">+ {{ reserve_sum }}</td>
                      <td class="b-left"> </td>
             </tr>
         </tfoot>

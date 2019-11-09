@@ -1423,7 +1423,7 @@ def roles_to_db_role(roles):
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-CDEDB_EXPORT_EVENT_VERSION = 4
+CDEDB_EXPORT_EVENT_VERSION = 6
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1486,7 +1486,7 @@ INSTITUTION_FIELDS = ("id", "title", "moniker")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
-                     "tempus")
+                     "tempus", "notes")
 
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
@@ -1494,7 +1494,8 @@ EVENT_FIELDS = (
     "registration_start", "registration_soft_limit", "registration_hard_limit",
     "iban", "orga_address", "registration_text", "mail_text",
     "use_questionnaire", "notes", "offline_lock", "is_visible",
-    "is_course_list_visible", "is_course_state_visible", "is_archived",
+    "is_course_list_visible", "is_course_state_visible",
+    "is_participant_list_visible", "courses_in_participant_list", "is_archived",
     "lodge_field", "reserve_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
@@ -1533,9 +1534,12 @@ REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
 REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
                              "course_instructor")
 
+#: Fields of a lodgement group
+LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
+
 #: Fields of a lodgement entry (one house/room)
 LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
-                    "fields")
+                    "group_id", "fields")
 
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (

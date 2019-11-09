@@ -13,7 +13,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.common import cast_fields
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PartialImportError, CDEDB_EXPORT_EVENT_VERSION)
+    PERSONA_EVENT_FIELDS, PartialImportError, CDEDB_EXPORT_EVENT_VERSION, now)
 from cdedb.enums import ENUMS_DICT
 import cdedb.database.constants as const
 
@@ -103,6 +103,8 @@ class TestEventBackend(BackendTest):
         data['id'] = new_id
         data['offline_lock'] = False
         data['is_archived'] = False
+        data['is_participant_list_visible'] = False
+        data['courses_in_participant_list'] = False
         data['is_course_list_visible'] = False
         data['is_course_state_visible'] = False
         data['is_visible'] = False
@@ -278,12 +280,23 @@ class TestEventBackend(BackendTest):
         self.assertEqual(new_course, self.event.get_course(
             self.key, new_course_id))
 
+        new_group = {
+            'event_id': new_id,
+            'moniker': "Nebenan",
+        }
+        new_group_id = self.event.create_lodgement_group(self.key, new_group)
+        self.assertLess(0, new_group_id)
+        new_group['id'] = new_group_id
+        self.assertEqual(
+            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+
         new_lodgement = {
             'capacity': 42,
             'event_id': new_id,
             'moniker': 'Hyrule',
             'notes': "Notizen",
             'reserve': 11,
+            'group_id': new_group_id,
         }
         new_lodge_id = self.event.create_lodgement(self.key, new_lodgement)
         self.assertLess(0, new_lodge_id)
@@ -329,8 +342,8 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.delete_event(
             self.key, new_id,
             ("event_parts", "course_tracks", "field_definitions", "courses",
-             "orgas", "lodgements", "registrations", "questionnaire", "log",
-             "mailinglists")))
+             "orgas", "lodgement_groups", "lodgements", "registrations",
+             "questionnaire", "log", "mailinglists")))
 
     @as_users("anton")
     def test_aposteriori_track_creation(self, user):
@@ -520,6 +533,102 @@ class TestEventBackend(BackendTest):
             {"course_segments"})
         self.assertLess(0, self.event.delete_course(
             self.key, new_id, ("course_segments",)))
+
+    @as_users("garcia")
+    def test_course_choices_cascade(self, user):
+        # Set the status quo.
+        for course_id in (1, 2, 3, 4):
+            cdata = {
+                "id": course_id,
+                "segments": [1, 2, 3],
+                "active_segments": [1, 2, 3],
+            }
+            self.event.set_course(self.key, cdata)
+        for reg_id in (1, 2, 3, 4):
+            rdata = {
+                "id": reg_id,
+                "tracks": {
+                    1: {
+                        "choices": [1, 2, 3, 4],
+                    },
+                },
+                "parts": {
+                    1: {
+                        "status": const.RegistrationPartStati.participant,
+                    },
+                },
+            }
+            self.event.set_registration(self.key, rdata)
+
+        # Check that all for choices are present fpr registration 1.
+        full_export = self.event.export_event(self.key, event_id=1)
+        for course_choice in full_export["event.course_choices"].values():
+            del course_choice["id"]
+        expectations = [
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 1,
+                "rank": 0,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 2,
+                "rank": 1,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 3,
+                "rank": 2,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 4,
+                "rank": 3,
+            },
+        ]
+        for exp in expectations:
+            self.assertIn(exp, full_export["event.course_choices"].values())
+
+        # Delete Course 2.
+        cascade = self.event.delete_course_blockers(self.key, course_id=2)
+        self.event.delete_course(self.key, course_id=2, cascade=cascade)
+
+        # Check that the remaining three course choices have been moved up.
+        full_export = self.event.export_event(self.key, event_id=1)
+        for course_choice in full_export["event.course_choices"].values():
+            del course_choice["id"]
+        expectations = [
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 1,
+                "rank": 0,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 3,
+                "rank": 1,
+            },
+            {
+                "registration_id": 1,
+                "track_id": 1,
+                "course_id": 4,
+                "rank": 2,
+            },
+        ]
+        for exp in expectations:
+            self.assertIn(exp, full_export["event.course_choices"].values())
+
+        # Check that no additional or duplicate choices exist.
+        partial_export = self.event.partial_export_event(self.key, event_id=1)
+        self.assertEqual(
+            [1, 3, 4],
+            partial_export["registrations"][1]["tracks"][1]["choices"])
 
     @as_users("anton", "garcia")
     def test_visible_events(self, user):
@@ -752,7 +861,7 @@ class TestEventBackend(BackendTest):
                 'fields': {'brings_balls': False,
                            'may_reserve': True,
                            'transportation': 'etc'},
-                'list_consent': True,
+                'list_consent': False,
                 'id': 4,
                 'mixed_lodging': False,
                 'orga_notes': None,
@@ -923,16 +1032,89 @@ class TestEventBackend(BackendTest):
             self.key, event_id, course_id=1, position=ENUMS_DICT['CourseFilterPositions'].assigned))
 
     @as_users("anton", "garcia")
+    def test_entity_lodgement_group(self, user):
+        event_id = 1
+        expectation_list = {
+            1: "Haupthaus",
+            2: "AußenWohnGruppe",
+        }
+        group_ids = self.event.list_lodgement_groups(self.key, event_id)
+        self.assertEqual(expectation_list, group_ids)
+
+        expectation_groups = {
+            1: {
+                'id': 1,
+                'event_id': 1,
+                'moniker': "Haupthaus",
+            },
+            2: {
+                'id': 2,
+                'event_id': 1,
+                'moniker': "AußenWohnGruppe",
+            },
+        }
+        self.assertEqual(expectation_groups,
+                         self.event.get_lodgement_groups(self.key, group_ids))
+
+        new_group = {
+            'event_id': event_id,
+            'moniker': "Nebenan",
+        }
+        new_group_id = self.event.create_lodgement_group(self.key, new_group)
+        self.assertLess(0, new_group_id)
+        new_group['id'] = new_group_id
+        self.assertEqual(
+            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+        update = {
+            'id': new_group_id,
+            'moniker': "Auf der anderen Rheinseite",
+        }
+        self.assertLess(0, self.event.set_lodgement_group(self.key, update))
+        new_group.update(update)
+        self.assertEqual(
+            new_group, self.event.get_lodgement_group(self.key, new_group_id))
+
+        new_lodgement = {
+            'capacity': 42,
+            'event_id': 1,
+            'moniker': 'Hyrule',
+            'notes': "Notizen",
+            'reserve': 11,
+            'group_id': new_group_id,
+        }
+        new_lodgement_id = self.event.create_lodgement(self.key, new_lodgement)
+        self.assertLess(0, new_lodgement_id)
+        new_lodgement['id'] = new_lodgement_id
+        new_lodgement['fields'] = {}
+        self.assertEqual(
+            new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
+
+        expectation_list[new_group_id] = new_group['moniker']
+        self.assertEqual(expectation_list,
+                         self.event.list_lodgement_groups(self.key, event_id))
+        self.assertLess(
+            0, self.event.delete_lodgement_group(
+                self.key, new_group_id, ("lodgements",)))
+        del expectation_list[new_group_id]
+        self.assertEqual(expectation_list,
+                         self.event.list_lodgement_groups(self.key, event_id))
+
+        new_lodgement['group_id'] = None
+        self.assertEqual(
+            new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
+
+    @as_users("anton", "garcia")
     def test_entity_lodgement(self, user):
         event_id = 1
-        expectation = {
+        expectation_list = {
             1: 'Warme Stube',
             2: 'Kalte Kammer',
             3: 'Kellerverlies',
-            4: 'Einzelzelle'}
-        self.assertEqual(expectation,
+            4: 'Einzelzelle',
+        }
+        self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
-        expectation = {
+        expectation_get = {
             1: {
                 'capacity': 5,
                 'event_id': 1,
@@ -940,7 +1122,9 @@ class TestEventBackend(BackendTest):
                 'id': 1,
                 'moniker': 'Warme Stube',
                 'notes': None,
-                'reserve': 1},
+                'reserve': 1,
+                'group_id': 2,
+            },
             4: {
                 'capacity': 1,
                 'event_id': 1,
@@ -948,15 +1132,18 @@ class TestEventBackend(BackendTest):
                 'id': 4,
                 'moniker': 'Einzelzelle',
                 'notes': None,
-                'reserve': 0}
+                'reserve': 0,
+                'group_id': 1,
+            }
         }
-        self.assertEqual(expectation, self.event.get_lodgements(self.key, (1,4)))
+        self.assertEqual(expectation_get, self.event.get_lodgements(self.key, (1,4)))
         new = {
             'capacity': 42,
             'event_id': 1,
             'moniker': 'Hyrule',
             'notes': "Notizen",
-            'reserve': 11
+            'reserve': 11,
+            'group_id': None,
         }
         new_id = self.event.create_lodgement(self.key, new)
         self.assertLess(0, new_id)
@@ -971,17 +1158,18 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.set_lodgement(self.key, update))
         new.update(update)
         self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
-        expectation = {
+        expectation_list = {
             1: 'Warme Stube',
             2: 'Kalte Kammer',
             3: 'Kellerverlies',
             4: 'Einzelzelle',
-            new_id: 'Hyrule'}
-        self.assertEqual(expectation,
+            new_id: 'Hyrule',
+        }
+        self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
         self.assertLess(0, self.event.delete_lodgement(self.key, new_id))
-        del expectation[new_id]
-        self.assertEqual(expectation,
+        del expectation_list[new_id]
+        self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
 
     @as_users("berta", "emilia")
@@ -1285,7 +1473,7 @@ class TestEventBackend(BackendTest):
                                   'is_meta_admin': False,
                                   'is_archived': False,
                                   'is_assembly_admin': False,
-                                  'is_assembly_realm': True,
+                                  'is_assembly_realm': False,
                                   'is_cde_admin': False,
                                   'is_finance_admin': False,
                                   'is_cde_realm': False,
@@ -1658,6 +1846,8 @@ class TestEventBackend(BackendTest):
                                  'id': 1,
                                  'institution': 1,
                                  'is_archived': False,
+                                 'is_participant_list_visible': False,
+                                 'courses_in_participant_list': False,
                                  'is_course_list_visible': True,
                                  'is_course_state_visible': False,
                                  'is_visible': True,
@@ -1672,7 +1862,7 @@ class TestEventBackend(BackendTest):
                                  'notes': 'Todoliste ... just kidding ;)',
                                  'offline_lock': False,
                                  'orga_address': 'aka@example.cde',
-                                 'registration_hard_limit': datetime.datetime(2220, 10, 30, 0, 0, tzinfo=pytz.utc),
+                                 'registration_hard_limit': datetime.datetime(2221, 10, 30, 0, 0, tzinfo=pytz.utc),
                                  'registration_soft_limit': datetime.datetime(2200, 10, 30, 0, 0, tzinfo=pytz.utc),
                                  'registration_start': datetime.datetime(2000, 10, 30, 0, 0, tzinfo=pytz.utc),
                                  'reserve_field': 4,
@@ -1721,12 +1911,19 @@ class TestEventBackend(BackendTest):
                                             'field_name': 'contamination',
                                             'id': 6,
                                             'kind': 1}},
+            'event.lodgement_groups': {1: {'id': 1,
+                                           'event_id': 1,
+                                           'moniker': 'Haupthaus'},
+                                       2: {'id': 2,
+                                           'event_id': 1,
+                                           'moniker': 'AußenWohnGruppe'}},
             'event.lodgements': {1: {'capacity': 5,
                                      'event_id': 1,
                                      'fields': {'contamination': 'high'},
                                      'id': 1,
                                      'moniker': 'Warme Stube',
                                      'notes': None,
+                                     'group_id': 2,
                                      'reserve': 1},
                                  2: {'capacity': 10,
                                      'event_id': 1,
@@ -1734,6 +1931,7 @@ class TestEventBackend(BackendTest):
                                      'id': 2,
                                      'moniker': 'Kalte Kammer',
                                      'notes': 'Dafür mit Frischluft.',
+                                     'group_id': 1,
                                      'reserve': 2},
                                  3: {'capacity': 0,
                                      'event_id': 1,
@@ -1741,6 +1939,7 @@ class TestEventBackend(BackendTest):
                                      'id': 3,
                                      'moniker': 'Kellerverlies',
                                      'notes': 'Nur für Notfälle.',
+                                     'group_id': None,
                                      'reserve': 100},
                                  4: {'capacity': 1,
                                      'event_id': 1,
@@ -1748,6 +1947,7 @@ class TestEventBackend(BackendTest):
                                      'id': 4,
                                      'moniker': 'Einzelzelle',
                                      'notes': None,
+                                     'group_id': 1,
                                      'reserve': 0}},
             'event.log': {1: {'additional_info': None,
                               'code': 50,
@@ -2002,7 +2202,7 @@ class TestEventBackend(BackendTest):
                                         'fields': {'brings_balls': False,
                                                    'may_reserve': True,
                                                    'transportation': 'etc'},
-                                        'list_consent': True,
+                                        'list_consent': False,
                                         'id': 4,
                                         'mixed_lodging': False,
                                         'notes': None,
@@ -2047,6 +2247,12 @@ class TestEventBackend(BackendTest):
             'num_choices': 3,
             'min_choices': 2,
             'sortkey': 1}
+        ## lodgemnet groups
+        new_data['event.lodgement_groups'][5000] = {
+            'id': 5000,
+            'event_id': 1,
+            'moniker': 'Nebenan',
+        }
         ## lodgements
         new_data['event.lodgements'][6000] = {
             'capacity': 1,
@@ -2055,6 +2261,7 @@ class TestEventBackend(BackendTest):
             'id': 6000,
             'moniker': 'Matte im Orgabüro',
             'notes': None,
+            'group_id': 1,
             'reserve': 0}
         ## registration
         new_data['event.registrations'][1000] = {
@@ -2160,6 +2367,11 @@ class TestEventBackend(BackendTest):
             'min_choices': 2,
             'sortkey': 1,
             'title': 'Enlightnment'}
+        stored_data['event.lodgement_groups'][3] = {
+            'id': 3,
+            'event_id': 1,
+            'moniker': 'Nebenan',
+        }
         stored_data['event.lodgements'][5] = {
             'capacity': 1,
             'event_id': 1,
@@ -2167,6 +2379,7 @@ class TestEventBackend(BackendTest):
             'id': 5,
             'moniker': 'Matte im Orgabüro',
             'notes': None,
+            'group_id': 1,
             'reserve': 0}
         stored_data['event.registrations'][5] = {
             'checkin': None,
@@ -2340,6 +2553,8 @@ class TestEventBackend(BackendTest):
                       'iban': 'DE96370205000008068901',
                       'institution': 1,
                       'is_archived': False,
+                      'is_participant_list_visible': False,
+                      'courses_in_participant_list': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,
@@ -2382,7 +2597,7 @@ class TestEventBackend(BackendTest):
                                                    'sortkey': 3,
                                                    'title': 'Arbeitssitzung (Zweite Hälfte)'}},
                                     'title': 'Zweite Hälfte'}},
-                      'registration_hard_limit': datetime.datetime(2220, 10, 30, 0, 0, tzinfo=pytz.utc),
+                      'registration_hard_limit': datetime.datetime(2221, 10, 30, 0, 0, tzinfo=pytz.utc),
                       'registration_soft_limit': datetime.datetime(2200, 10, 30, 0, 0, tzinfo=pytz.utc),
                       'registration_start': datetime.datetime(2000, 10, 30, 0, 0, tzinfo=pytz.utc),
                       'registration_text': None,
@@ -2392,25 +2607,31 @@ class TestEventBackend(BackendTest):
                       'use_questionnaire': False},
             'id': 1,
             'kind': 'partial',
+            'lodgement_groups': {1: {'moniker': 'Haupthaus'},
+                                 2: {'moniker': 'AußenWohnGruppe'}},
             'lodgements': {1: {'capacity': 5,
                                'fields': {'contamination': 'high'},
                                'moniker': 'Warme Stube',
                                'notes': None,
+                               'group_id': 2,
                                'reserve': 1},
                            2: {'capacity': 10,
                                'fields': {'contamination': 'none'},
                                'moniker': 'Kalte Kammer',
                                'notes': 'Dafür mit Frischluft.',
+                               'group_id': 1,
                                'reserve': 2},
                            3: {'capacity': 0,
                                'fields': {'contamination': 'low'},
                                'moniker': 'Kellerverlies',
                                'notes': 'Nur für Notfälle.',
+                               'group_id': None,
                                'reserve': 100},
                            4: {'capacity': 1,
                                'fields': {'contamination': 'high'},
                                'moniker': 'Einzelzelle',
                                'notes': None,
+                               'group_id': 1,
                                'reserve': 0}},
             'registrations': {1: {'checkin': None,
                                   'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
@@ -2550,7 +2771,7 @@ class TestEventBackend(BackendTest):
                                   'fields': {'brings_balls': False,
                                              'may_reserve': True,
                                              'transportation': 'etc'},
-                                  'list_consent': True,
+                                  'list_consent': False,
                                   'mixed_lodging': False,
                                   'notes': None,
                                   'orga_notes': None,
@@ -2625,11 +2846,14 @@ class TestEventBackend(BackendTest):
 
         CMAP = {
             ('courses', -1): 7,
-            ('lodgements', -1): 6,
+            ('lodgement_groups', -1): 4,
+            ('lodgements', -1): 7,
+            ('lodgements', -2): 8,
             ('registrations', -1): 6,
         }
         TMAP = {
             'courses': {'segments': {}, 'fields': {}},
+            'lodgement_groups': {},
             'lodgements': {'fields': {}},
             'registrations': {'parts': {}, 'tracks': {}, 'fields': {}},
         }
@@ -2650,7 +2874,7 @@ class TestEventBackend(BackendTest):
                 temp = new.pop(key)
                 if isinstance(key, int) and key < 0:
                     new_key = CMAP[(hint, key)]
-                    old[new_key] = TMAP[hint]
+                    old[new_key] = copy.deepcopy(TMAP[hint])
                 else:
                     new_key = key
                 if new_key not in old:
@@ -2667,6 +2891,22 @@ class TestEventBackend(BackendTest):
                         del new[key]
                         if key in old:
                             del old[key]
+            for key in ('course_id', 'course_instructor', 'choices'):
+                if key in new:
+                    if isinstance(new[key], int):
+                        new[key] = CMAP.get(('courses', new[key]), new[key])
+                    elif isinstance(new[key], collections.abc.Sequence):
+                        new[key] = [CMAP.get(('courses', anid), anid)
+                                    for anid in new[key]]
+            for key in ('lodgement_id',):
+                if key in new:
+                    if isinstance(new[key], int):
+                        new[key] = CMAP.get(('lodgements', new[key]), new[key])
+            for key in ('group_id',):
+                if key in new:
+                    if isinstance(new[key], int):
+                        new[key] = CMAP.get(
+                            ('lodgement_groups', new[key]), new[key])
             old.update(new)
 
         recursive_update(expectation, delta)
@@ -2674,6 +2914,61 @@ class TestEventBackend(BackendTest):
         del updated['timestamp']
         del updated['registrations'][6]['persona']  # ignore additional info
         self.assertEqual(expectation, updated)
+
+    @as_users("anton")
+    def test_partial_import_integrity(self, user):
+        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
+                as datafile:
+            orig_data = json.load(datafile)
+
+        base_data = {
+            k: orig_data[k] for k in ("id", "CDEDB_EXPORT_EVENT_VERSION",
+                                      "timestamp", "kind")
+        }
+
+        data = copy.deepcopy(base_data)
+        data["registrations"] = {
+            1: {
+                "tracks": {
+                    1: {
+                        "course_id": -1,
+                    },
+                },
+            },
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.partial_import_event(
+                self.key, data, dryrun=False)
+        self.assertIn("Referential integrity of courses violated.",
+                      cm.exception.args)
+
+        data = copy.deepcopy(base_data)
+        data["registrations"] = {
+            1: {
+                "parts": {
+                    1: {
+                        "lodgement_id": -1,
+                    },
+                },
+            },
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.partial_import_event(
+                self.key, data, dryrun=False)
+        self.assertIn("Referential integrity of lodgements violated.",
+                      cm.exception.args)
+
+        data = copy.deepcopy(base_data)
+        data["lodgements"] = {
+            1: {
+                "group_id": -1,
+            },
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.partial_import_event(
+                self.key, data, dryrun=False)
+        self.assertIn("Referential integrity of lodgement groups violated.",
+                      cm.exception.args)
 
     @as_users("anton")
     def test_partial_import_event_twice(self, user):
@@ -2708,13 +3003,28 @@ class TestEventBackend(BackendTest):
                              'title': 'Blitzkurs'},
                         3: None,
                         4: {'segments': {1: None}}},
+            'lodgement_groups': {-1: {'moniker': 'Geheime Etage'}},
             'lodgements': {-1: {'capacity': 12,
                                 'fields': {'contamination': 'none'},
                                 'moniker': 'Geheimkabinett',
                                 'notes': 'Einfach den unsichtbaren Schildern folgen.',
+                                'group_id': -1,
                                 'reserve': 2},
-                           3: None},
-            'registrations': {4: None}}
+                           -2: {'capacity': 42,
+                                'fields': {'contamination': 'low'},
+                                'moniker': 'Handtuchraum',
+                                'notes': 'Hier gibt es Handtücher für jeden.',
+                                'group_id': None,
+                                'reserve': 0},
+                           3: None,
+                           4: {'group_id': -1}},
+            'registrations': {3: {'tracks': {3: {'course_id': -1,
+                                                 'choices': [4, -1, 5]}}},
+                              4: None,
+                              5: {'parts': {2: {'lodgement_id': -1}},
+                                  'tracks': {3: {'choices': [1, 4, 5, -1],
+                                                 'course_id': -1,
+                                                 'course_instructor': -1}}}}}
         self.assertEqual(expectation, delta)
 
     @as_users("anton")
@@ -2944,7 +3254,8 @@ class TestEventBackend(BackendTest):
             'event_id': 1,
             'moniker': 'Hyrule',
             'notes': "Notizen",
-            'reserve': 11
+            'reserve': 11,
+            'group_id': None,
         }
         new_id = self.event.create_lodgement(self.key, new)
         update = {

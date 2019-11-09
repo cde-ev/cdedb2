@@ -2,7 +2,7 @@ Hallo {{ data['display_name'] }}!
 
 {% if not data['is_member'] %}
 Dein Account für die CdE-Datenbank wurde erstellt. Unter [1]
-kannst Du Deine persönlichen Zugangsdaten abrufen.
+kannst Du Deine persönlichen Zugangsdaten erstellen.
 
 Liebe Grüße von der Verwaltung
 {% else %}
@@ -30,7 +30,7 @@ abläuft, wie Du dabei mitmachen kannst und wie es weiter geht, soll
 Dir diese Mail zeigen.
 
 Vieles wird über die Vereinsdatenbank organisiert. Unter [1]
-kannst Du Deine persönlichen Zugangsdaten zur CdE-Datenbank abrufen.
+kannst Du Deine persönlichen Zugangsdaten zur CdE-Datenbank erstellen.
 {% if not data['is_searchable'] %}
 Wenn Du Dich zum ersten Mal in unserer Datenbank anmeldest, kannst Du
 entscheiden, ob andere Ehemalige Deine Kontaktdaten einsehen dürfen oder
@@ -135,6 +135,8 @@ an die Mailingliste: Denn der CdE ist das, was Du daraus machst!
 
 {% if email and cookie %}
 [1] {{ cdedblink('core/do_password_reset_form', {'email': email, 'cookie': cookie}) }}
+    Der Link ist 48 Stunden gültig, danach führt er auf die allgemeine
+    Passwortrücksetzseite wo Du einen neuen Link erzeugen kannst.
 {% else %}
 [1] {{ cdedblink('core/reset_password_form') }}
 {% endif %}

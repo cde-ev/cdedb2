@@ -1460,27 +1460,44 @@ class CoreBackend(AbstractBackend):
 
     @access("event")
     @singularize("get_event_user")
-    def get_event_users(self, rs, ids):
+    def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
+        :type event_id: int or none
+        :param event_id: allows all users which are registered to this event
+            to query for other participants of the same event by their ids.
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
+        event_id = affirm("id_or_None", event_id)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_EVENT_FIELDS)
+        # The event user view on a cde user contains lots of personal
+        # data. So we require the requesting user to be orga (to get access to
+        # all event users who are related to their event) or 'participant'
+        # of the requested event (to get access to all event users who are also
+        # 'participant' at the same event).
+        #
+        # This is a bit of a transgression since we access the event
+        # schema from the core backend, but we go for security instead of
+        # correctness here.
+        orga = "SELECT event_id FROM event.orgas WHERE persona_id = %s"
+        is_orga = self.query_all(rs, orga, (rs.user.persona_id,))
         if (ids != {rs.user.persona_id}
+                and not is_orga
                 and "event_admin" not in rs.user.roles
                 and (any(e['is_cde_realm'] for e in ret.values()))):
-            # The event user view on a cde user contains lots of personal
-            # data. So we require the requesting user to be orga if (s)he
-            # wants to view it.
-            #
-            # This is a bit of a transgression since we access the event
-            # schema from the core backend, but we go for security instead of
-            # correctness here.
-            query = "SELECT event_id FROM event.orgas WHERE persona_id = %s"
-            if not self.query_all(rs, query, (rs.user.persona_id,)):
+            query = ("SELECT DISTINCT regs.id, regs.persona_id "
+                     "FROM event.registrations AS regs "
+                     "LEFT OUTER JOIN event.registration_parts AS rparts "
+                     "ON rparts.registration_id = regs.id "
+                     "WHERE regs.event_id = %s AND rparts.status = %s")
+            stati = const.RegistrationPartStati
+            data = self.query_all(rs, query, (event_id, stati.participant))
+            all_participants = set(e['persona_id'] for e in data)
+            same_event = set(ret) <= all_participants
+            if not (rs.user.persona_id in all_participants and same_event):
                 raise PrivilegeError(n_("Access to CdE data sets inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
@@ -2152,6 +2169,7 @@ class CoreBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
+            case = self.genesis_get_case(rs, case_id)
             if cascade:
                 if "unconfirmed" in cascade:
                     raise ValueError(n_("Unable to cascade %(blocker)s."),
@@ -2162,6 +2180,8 @@ class CoreBackend(AbstractBackend):
 
             if not blockers:
                 ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)
+                self.core_log(rs, const.CoreLogCodes.genesis_deleted,
+                              persona_id=None, additional_info=case["username"])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),

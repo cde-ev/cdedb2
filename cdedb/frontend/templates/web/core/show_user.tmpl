@@ -189,7 +189,8 @@
                     <dd>
                         {{ data['balance']|money(lang=lang) }} {% trans -%}and{%- endtrans %}
                         {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                gettext("Direct Debit Authorization"), icon="euro") }}
+                                gettext("Direct Debit Authorization"), icon="euro",
+                                readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
                     </dd>
                 {% else %}
                     <dd>{{ data['balance']|money(lang=lang) }}</dd>
@@ -318,7 +319,7 @@
                     <tr>
                         <td>
                             {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
-                                         pevent['event_name'], readonly='cde' not in user.roles) -}}
+                                         pevent['event_name'], readonly='member' not in user.roles) -}}
                         </td>
                         <td>
                             {% if pevent['is_orga'] %}

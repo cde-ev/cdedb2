@@ -710,6 +710,10 @@ class PastEventBackend(AbstractBackend):
         pevent = {k: v for k, v in event.items()
                   if k in PAST_EVENT_FIELDS}
         pevent['tempus'] = part['part_begin']
+        # The event field 'notes' has nothing to do with the past event
+        # field 'notes' -- the first is for orgas and the second for
+        # participants
+        pevent['notes'] = None
         if len(event['parts']) > 1:
             # Add part designation in case of events with multiple parts
             pevent['title'] += " ({})".format(part['title'])

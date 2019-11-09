@@ -254,6 +254,9 @@ _DEFAULTS = {
     # email for replies to assembly mails
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
 
+    # email for privilege changes
+    "META_ADMIN_ADDRESS": "admin@lists.cde-ev.de",
+
     # email for ballot tallies
     "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",
 

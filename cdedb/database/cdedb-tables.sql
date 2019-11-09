@@ -135,7 +135,9 @@ CREATE INDEX idx_personas_is_assembly_realm ON core.personas(is_assembly_realm);
 CREATE INDEX idx_personas_is_member ON core.personas(is_member);
 CREATE INDEX idx_personas_is_searchable ON core.personas(is_searchable);
 GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived) ON core.personas TO cdb_anonymous;
-GRANT SELECT, UPDATE ON core.personas TO cdb_persona; -- TODO maybe be more restrictive
+GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
+GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
+GRANT SELECT, UPDATE ON core.personas TO cdb_member; -- TODO maybe restrict notes to cdb_admin
 GRANT INSERT ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
 
@@ -494,13 +496,15 @@ CREATE TABLE past_event.events (
         title                   varchar NOT NULL,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution               integer NOT NULL REFERENCES past_event.institutions(id),
+        institution             integer NOT NULL REFERENCES past_event.institutions(id),
         description             varchar,
         -- any day of the event, used for ordering and determining the first
         -- event a persona participated in
         --
         -- Note, that this is not present in event.events.
-        tempus                  date NOT NULL
+        tempus                  date NOT NULL,
+        -- Information only visible to participants.
+        notes                   varchar
 );
 GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
 GRANT DELETE, INSERT ON past_event.events TO cdb_admin;
@@ -561,38 +565,40 @@ CREATE SCHEMA event;
 GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous;
 
 CREATE TABLE event.events (
-        id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL,
-        shortname               varchar NOT NULL,
+        id                          serial PRIMARY KEY,
+        title                       varchar NOT NULL,
+        shortname                   varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution             integer NOT NULL REFERENCES past_event.institutions(id),
-        description             varchar,
+        institution                 integer NOT NULL REFERENCES past_event.institutions(id),
+        description                 varchar,
         --
         -- cut for past_event.events (modulo column tempus)
         --
-        registration_start      timestamp WITH TIME ZONE,
+        registration_start          timestamp WITH TIME ZONE,
         -- official end of registration
-        registration_soft_limit timestamp WITH TIME ZONE,
+        registration_soft_limit     timestamp WITH TIME ZONE,
         -- actual end of registration, in between participants are
         -- automatically warned about registering late
-        registration_hard_limit timestamp WITH TIME ZONE,
-        iban                    varchar,
-        orga_address            varchar,
-        registration_text       varchar,
-        mail_text               varchar,
-        use_questionnaire       boolean NOT NULL DEFAULT False,
-        notes                   varchar,
-        offline_lock            boolean NOT NULL DEFAULT False,
-        is_visible              boolean NOT NULL DEFAULT False, -- this is purely cosmetical
-        is_course_list_visible  boolean NOT NULL DEFAULT False, -- this is purely cosmetical
+        registration_hard_limit     timestamp WITH TIME ZONE,
+        iban                        varchar,
+        orga_address                varchar,
+        registration_text           varchar,
+        mail_text                   varchar,
+        use_questionnaire           boolean NOT NULL DEFAULT False,
+        notes                       varchar,
+        offline_lock                boolean NOT NULL DEFAULT False,
+        is_visible                  boolean NOT NULL DEFAULT False, -- this is purely cosmetical
+        is_course_list_visible      boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         -- show cancelled courses in course list and restrict registration to active courses
-        is_course_state_visible boolean NOT NULL DEFAULT False,
-        is_archived             boolean NOT NULL DEFAULT False,
+        is_course_state_visible     boolean NOT NULL DEFAULT False,
+        is_participant_list_visible boolean NOT NULL DEFAULT False,
+        courses_in_participant_list boolean NOT NULL DEFAULT False,
+        is_archived                 boolean NOT NULL DEFAULT False,
         -- JSON field for lodgement preference functionality
-        lodge_field             integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         -- JSON field for reserve functionality
-        reserve_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field       integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        reserve_field               integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        course_room_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
@@ -702,6 +708,15 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON event.orgas TO cdb_persona;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_persona;
 GRANT SELECT ON event.orgas TO cdb_anonymous;
 
+CREATE TABLE event.lodgement_groups (
+        id                      serial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        moniker                 varchar NOT NULL
+);
+CREATE INDEX ids_lodgement_groups_event_id ON event.lodgement_groups(event_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgement_groups TO cdb_persona;
+GRANT SELECT, UPDATE ON event.lodgement_groups_id_seq TO cdb_persona;
+
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
@@ -710,6 +725,7 @@ CREATE TABLE event.lodgements (
         -- number of people which can be accommodated with reduced comfort
         reserve                 integer NOT NULL DEFAULT 0,
         notes                   varchar,
+        group_id                integer REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );

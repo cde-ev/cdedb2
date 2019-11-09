@@ -56,6 +56,13 @@
                                        if not (ambience['event']['registration_soft_limit']
                                                and now() >= ambience['event']['registration_soft_limit'])
                                        else "")) }}
+        {{ util.form_input_checkbox(name="is_participant_list_visible", label=gettext("Visibility of the Participant List"),
+                                info=gettext("If checked, a participant list containg name, email, postal code and city is "
+                                "shown to all participants.")) }}
+        {{ util.form_input_checkbox(name="courses_in_participant_list", label=gettext("Show Courses in the Participant List"),
+                                info=gettext("If checked, the above mentioned participants list also includes "
+                                "assigned courses. This option is only usefull, if “Visibility of the Participant "
+                                "List” is checked.")) }}
         {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local',
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),

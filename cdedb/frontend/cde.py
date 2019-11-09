@@ -2262,13 +2262,14 @@ class CdEFrontend(AbstractUserFrontend):
             participants = OrderedDict(sorted(
                 participants.items(), key=lambda x: name_key(personas[x[0]])))
         # Delete unsearchable participants if we are not privileged
-        if participants and not privileged:
-            for anid, persona in personas.items():
-                if not persona['is_searchable'] or not persona['is_member']:
-                    del participants[anid]
-                    extra_participants += 1
-        else:
-            extra_participants = len(participant_infos)
+        if not privileged:
+            if participants:
+                for anid, persona in personas.items():
+                    if not persona['is_searchable'] or not persona['is_member']:
+                        del participants[anid]
+                        extra_participants += 1
+            else:
+                extra_participants = len(participant_infos)
         # Flag linkable user profiles (own profile + all searchable profiles
         # + all (if we are admin))
         for anid in participants:
@@ -2298,10 +2299,15 @@ class CdEFrontend(AbstractUserFrontend):
                 for pc_id in p['pcourse_ids']
                 if pc_id
             }
+        participant_infos = self.pasteventproxy.list_participants(
+            rs, pevent_id=pevent_id)
+        is_participant = any(anid == rs.user.persona_id
+                             for anid, _ in participant_infos.keys())
         return self.render(rs, "show_past_event", {
             'courses': courses, 'participants': participants,
             'personas': personas, 'institutions': institutions,
-            'extra_participants': extra_participants})
+            'extra_participants': extra_participants,
+            'is_participant': is_participant})
 
     @access("member")
     def show_past_course(self, rs, pevent_id, pcourse_id):
@@ -2338,7 +2344,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict("title", "shortname", "institution", "description",
-                     "tempus")
+                     "tempus", "notes")
     def change_past_event(self, rs, pevent_id, data):
         """Modify a concluded event."""
         data['id'] = pevent_id
@@ -2359,7 +2365,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("courses", "str_or_None"))
     @REQUESTdatadict("title", "shortname", "institution", "description",
-                     "tempus")
+                     "tempus", "notes")
     def create_past_event(self, rs, courses, data):
         """Add new concluded event."""
         data = check(rs, "past_event", data, creation=True)

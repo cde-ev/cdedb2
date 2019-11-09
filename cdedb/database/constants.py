@@ -290,6 +290,7 @@ class CoreLogCodes(enum.IntEnum):
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
+    genesis_deleted = 23  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
@@ -357,6 +358,9 @@ class EventLogCodes(enum.IntEnum):
     event_locked = 60  #:
     event_unlocked = 61  #:
     event_partial_import = 62  #:
+    lodgement_group_created = 70  #:
+    lodgement_group_changed = 71  #:
+    lodgement_group_deleted = 72  #:
 
 
 @enum.unique

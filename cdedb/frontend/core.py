@@ -101,6 +101,12 @@ class CoreFrontend(AbstractFrontend):
                 data = self.coreproxy.changelog_get_changes(
                     rs, stati=(const.MemberChangeStati.pending,))
                 dashboard['pending_changes'] = len(data)
+            # pending privilege changes
+            if "meta_admin" in rs.user.roles:
+                stati = (const.PrivilegeChangeStati.pending,)
+                data = self.coreproxy.list_privilege_changes(
+                    rs, stati=stati)
+                dashboard['privilege_changes'] = len(data)
             # events organized
             orga_info = self.eventproxy.orga_info(rs, rs.user.persona_id)
             if orga_info:
@@ -306,8 +312,7 @@ class CoreFrontend(AbstractFrontend):
         access_levels = {"persona"}
         # Let users see themselves
         if persona_id == rs.user.persona_id:
-            access_levels.update(rs.user.roles)
-            access_levels.add("core")
+            access_levels.update(ALL_ACCESS_LEVELS)
         # Core admins see everything
         if "core_admin" in rs.user.roles:
             access_levels.update(ALL_ACCESS_LEVELS)
@@ -378,6 +383,11 @@ class CoreFrontend(AbstractFrontend):
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
+        if is_relative_admin:
+            # This is a bit involved to not contaminate the data dict
+            # with keys which are not applicable to the requested persona
+            total = self.coreproxy.get_total_persona(rs, persona_id)
+            data['notes'] = total['notes']
 
         # Cull unwanted data
         if (not ('is_cde_realm' in data and data['is_cde_realm'])
@@ -1197,6 +1207,37 @@ class CoreFrontend(AbstractFrontend):
                                if ack else n_("Change rejected.")))
         return self.redirect(rs, "core/list_privilege_changes")
 
+    @periodic("privilege_change_remind", period=24)
+    def privilege_change_remind(self, rs, store):
+        """Cron job for privilege changes to review.
+
+        Send a reminder after four hours and then daily.
+        """
+        current = now()
+        ids = self.coreproxy.list_privilege_changes(
+            rs, stati=(const.PrivilegeChangeStati.pending,))
+        data = self.coreproxy.get_privilege_changes(rs, ids)
+        old = set(store.get('ids', [])) & set(data)
+        new = set(data) - set(old)
+        remind = False
+        if any(data[anid]['ctime'] + datetime.timedelta(hours=4) < current
+               for anid in new):
+            remind = True
+        if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
+            remind = True
+        if remind:
+            notify = (self.conf.META_ADMIN_ADDRESS,)
+            self.do_mail(
+                rs, "privilege_change_remind",
+                {'To': tuple(notify),
+                 'Subject': "Offene Änderungen von Admin-Privilegien"},
+                {'count': len(data)})
+            store = {
+                'tstamp': current.timestamp(),
+                'ids': list(data),
+            }
+        return store
+
     @access("core_admin")
     @REQUESTdata(("target_realm", "realm_or_None"))
     def promote_user_form(self, rs, persona_id, target_realm):
@@ -1447,7 +1488,8 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin", modi={"POST"})
     def admin_send_password_reset_link(self, rs, persona_id):
         """Generate a password reset email for an arbitrary persona.
 
@@ -1456,6 +1498,8 @@ class CoreFrontend(AbstractFrontend):
         """
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise PrivilegeError(n_("Not a relative admin."))
         email = rs.ambience['persona']['username']
         success, message = self.coreproxy.make_reset_cookie(
             rs, email, timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
@@ -1489,6 +1533,7 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors and not internal:
             # Clean errors prior to displaying a new form for the first step
             rs.errors = []
+            rs.notify("info", n_("Please try again."))
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
             "core/do_password_reset", "email", email)

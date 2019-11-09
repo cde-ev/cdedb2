@@ -2,6 +2,7 @@
 -- fix some serials (otherwise the test suite gets messed up)
 --
 ALTER SEQUENCE core.genesis_cases_id_seq RESTART WITH 1;
+ALTER SEQUENCE core.privilege_changes_id_seq RESTART WITH 1;
 ALTER SEQUENCE assembly.attachments_id_seq RESTART WITH 1;
 ALTER SEQUENCE cde.lastschrift_transactions_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.course_choices_id_seq RESTART WITH 1;
@@ -20,7 +21,7 @@ INSERT INTO core.personas (id, username, is_active, notes, display_name, given_n
     (2, 'berta@example.cde', True, NULL, 'Bertå', 'Bertålotta', 'Beispiel', False, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Dr.', 'MdB', 1, date '1981-02-11', '+49 (5432) 987654321', '0163/123456789', 'bei Spielmanns', 'Im Garten 77', '34576', 'Utopia', NULL, 'Gemeinser', NULL, 'Strange Road 9 3/4', '8XA 45-$', 'Foreign City', 'Far Away', 'https://www.bundestag.cde', E'Alles\nUnd noch mehr', 'Jedermann', 'Überall', 'Immer', E'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen', 12.5, True, False, True, 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9', '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', E'berta@example.cde Dr. Bertålotta Bertå Beispiel Gemeinser MdB 1981-02-11 +49 (5432) 987654321 0163/123456789 Im Garten 77 bei Spielmanns 34576 Utopia  Strange Road 9 3/4  8XA 45-$ Foreign City Far Away https://www.bundestag.cde Alles\nUnd noch mehr Jedermann Überall Immer Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen'),
     (3, 'charly@example.cde', True, NULL, 'Charly', 'Charly C.', 'Clown', False, False, False, False, False, False, False, True, True, True, True, True, False, False, NULL, NULL, 10, date '1984-05-13', NULL, NULL, NULL, 'Am Zelt 1', '22969', 'Zirkusstadt', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ich bin ein "Künstler"; im weiteren Sinne.', 1, True, True, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'charly@example.cde  Charly C. Charly Clown   1984-05-13   Am Zelt 1  2345 Zirkusstadt'),
     (4, 'daniel@example.cde', True, NULL, 'Daniel', 'Daniel D.', 'Dino', False, False, False, False, False, False, False, True, True, True, True, False, False, False, NULL, NULL, 2, date '1963-02-19', NULL, NULL, NULL, 'Am Denkmal 91', '76543', 'Atlantis', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, False, False, True, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'daniel@example.cde  Daniel D. Daniel Dino   1963-02-19   Am Denkmal 91  76543 Atlantis'),
-    (5, 'emilia@example.cde', True, NULL, 'Emilia', 'Emilia E.', 'Eventis', False, False, False, False, False,  False, False, False, True, True, True, False, False, False, NULL, NULL, 1, date '2012-06-02', '+49 (5432) 555666777', NULL, NULL, 'Hohle Gasse 13', '56767', 'Wolkenkuckuksheim', 'Deutschland', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'emilia@example.cde Emilia Emilia E. Eventis 2012-06-02 +49 (5432) 555666777 Hohle Gasse 13 56767 Wolkenkuckuksheim Deutschland'),
+    (5, 'emilia@example.cde', True, NULL, 'Emilia', 'Emilia E.', 'Eventis', False, False, False, False, False,  False, False, False, True, True, False, False, False, False, NULL, NULL, 1, date '2012-06-02', '+49 (5432) 555666777', NULL, NULL, 'Hohle Gasse 13', '56767', 'Wolkenkuckuksheim', 'Deutschland', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'emilia@example.cde Emilia Emilia E. Eventis 2012-06-02 +49 (5432) 555666777 Hohle Gasse 13 56767 Wolkenkuckuksheim Deutschland'),
     (6, 'ferdinand@example.cde', True, NULL, 'Ferdinand', 'Ferdinand F.', 'Findus', False, False, True, True, True, True, True, True, True, True, True, True, True, False, NULL, NULL, 2, date '1988-01-01', NULL, NULL, NULL, 'Am Rathaus 1', '64354', 'Burokratia', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 22.2, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'ferdinand@example.cde  Ferdinand F. Ferdinand Findus   1988-01-01   Am Rathaus 1  64358 Burokratia'),
     (7, 'garcia@example.cde', True, NULL, 'Garcia', 'Garcia G.', 'Generalis', False, False, False, False, False, False, False, True, True, True, True, True, False, False, NULL, NULL, 1, date '1978-12-12', NULL, NULL, NULL, 'Bei der Wüste 39', '88484', 'Weltstadt', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3.3, False, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'garcia@example.cde Garcia Garcia G. Generalis 1978-12-12 Bei der Wüste 39 8888 Weltstadt'),
     (8, NULL, False, NULL, 'Hades', 'Hades', 'Hell', False, False, False, False, False, False, False, False, False, False, False, False, False, True, NULL, NULL, NULL, date '1977-11-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Κόλαση', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, False, False, False,  NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Hades Hades Hell Κόλαση 1977-11-10'),
@@ -36,7 +37,7 @@ INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change
     (2, NULL, now(), 1, 'Init.', 2, 2, 'berta@example.cde', True, NULL, False, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Bertå',  'Beispiel', 'Bertålotta', 'Dr.', 'MdB', 1, date '1981-02-11', '+49 (5432) 987654321', '0163/123456789', 'bei Spielmanns', 'Im Garten 77', '34576', 'Utopia', NULL, 'Gemeinser', NULL, 'Strange Road 9 3/4', '8XA 45-$', 'Foreign City', 'Far Away', 'https://www.bundestag.cde', E'Alles\nUnd noch mehr', 'Jedermann', 'Überall', 'Immer', E'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen', 12.5, True, False, True, 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9'),
     (1, NULL, now(), 1, 'Init.', 2, 3, 'charly@example.cde', True, NULL, False, False, False, False, False, False, False, True, True, True, True, True, False, False, 'Charly',  'Clown', 'Charly C.', NULL, NULL, 10, date '1984-05-13', NULL, NULL, NULL, 'Am Zelt 1', '22969', 'Zirkusstadt', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ich bin ein "Künstler"; im weiteren Sinne.', 1, True, True, False, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 4, 'daniel@example.cde', True, NULL, False, False, False, False, False, False, False, True, True, True, True, False, False, False, 'Daniel',  'Dino', 'Daniel D.', NULL, NULL, 2, date '1963-02-19', NULL, NULL, NULL, 'Am Denkmal 91', '76543', 'Atlantis', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, False, False, True, NULL),
-    (1, NULL, now(), 1, 'Init.', 2, 5, 'emilia@example.cde', True, NULL, False, False, False, False, False, False, False, False, True, True, True, False, False, False, 'Emilia', 'Eventis', 'Emilia E.', NULL, NULL, 1, date '2012-06-02', '+49 (5432) 555666777', NULL, NULL, 'Hohle Gasse 13', '56767', 'Wolkenkuckuksheim', 'Deutschland', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 5, 'emilia@example.cde', True, NULL, False, False, False, False, False, False, False, False, True, True, False, False, False, False, 'Emilia', 'Eventis', 'Emilia E.', NULL, NULL, 1, date '2012-06-02', '+49 (5432) 555666777', NULL, NULL, 'Hohle Gasse 13', '56767', 'Wolkenkuckuksheim', 'Deutschland', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 6, 'ferdinand@example.cde', True, NULL, False, False, True, True, True, True, True, True, True, True, True, True, True, False, 'Ferdinand',  'Findus', 'Ferdinand F.', NULL, NULL, 2, date '1988-01-01', NULL, NULL, NULL, 'Am Rathaus 1', '64354', 'Burokratia', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 22.2, True, False, False, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 7, 'garcia@example.cde', True, NULL, False, False, False, False, False, False, False, True, True, True, True, True, False, False, 'Garcia',  'Generalis', 'Garcia G.', NULL, NULL, 1, date '1978-12-12', NULL, NULL, NULL, 'Bei der Wüste 39', '88484', 'Weltstadt', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3.3, False, False, False, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 8, NULL, False, NULL, False, False, False, False, False, False, False, False, False, False, False, False, False, True, 'Hades',  'Hell', 'Hades', NULL, NULL, NULL, date '1977-11-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Κόλαση', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, False, False, False, NULL),
@@ -90,21 +91,23 @@ INSERT INTO cde.finance_log (code, submitted_by, persona_id, delta, new_balance,
 --
 INSERT INTO past_event.institutions(id, title, moniker) VALUES
     (1, 'Club der Ehemaligen', 'CdE');
-INSERT INTO past_event.events (id, title, shortname, institution, tempus, description) VALUES
-    (1, 'PfingstAkademie 2014', 'pa14', 1, date '2014-05-25', 'Great event!');
+INSERT INTO past_event.events (id, title, shortname, institution, tempus, notes, description) VALUES
+    (1, 'PfingstAkademie 2014', 'pa14', 1, date '2014-05-25', E'Mediensammlung\n:    <https://pa14:secret@example.cde/pa14/>', 'Great event!');
 INSERT INTO past_event.courses (id, pevent_id, nr, title, description) VALUES
     (1, 1, '1a', 'Swish -- und alles ist gut', 'Ringelpiez mit anfassen.'),
     (2, 1, 'Ω', 'Goethe zum Anfassen', 'Hier werden die Reime getanzt.');
 INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instructor, is_orga) VALUES
     (2, 1, 1, True, False),
-    (5, 1, 2, False, False);
+    (3, 1, NULL, False, False),
+    (5, 1, 2, False, False),
+    (6, 1, 2, False, True);
 
 --
 -- events
 --
-INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, iban, orga_address, mail_text, notes, offline_lock, lodge_field, reserve_field, course_room_field) VALUES
-    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96370205000008068901', 'aka@example.cde', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL, NULL),
-    (2, 'CdE-Party 2050', 1, 'Let''s have a party!', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96370205000008068901', '', '', 'Wird anstrengend …', False, NULL, NULL, NULL);
+INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, courses_in_participant_list, iban, orga_address, mail_text, notes, offline_lock, lodge_field, reserve_field, course_room_field) VALUES
+    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2221-10-30 01:00:00+01', True, True, False, 'DE96370205000008068901', 'aka@example.cde', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL, NULL),
+    (2, 'CdE-Party 2050', 1, 'Let''s have a party!', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, False, 'DE96370205000008068901', '', '', 'Wird anstrengend …', False, NULL, NULL, NULL);
 INSERT INTO event.event_parts (id, event_id, title, shortname, part_begin, part_end, fee) VALUES
     (1, 1, 'Warmup', 'Wu', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte', '1.H.', date '2222-11-01', date '2222-11-11', 123.00),
@@ -145,16 +148,19 @@ INSERT INTO event.orgas (persona_id, event_id) VALUES
     (7, 1),
     (1, 2),
     (2, 2);
-INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, fields) VALUES
-    (1, 1, 'Warme Stube', 5, 1, NULL, '{"contamination": "high"}'::jsonb),
-    (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.', '{"contamination": "none"}'::jsonb),
-    (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.', '{"contamination": "low"}'::jsonb),
-    (4, 1, 'Einzelzelle', 1, 0, NULL, '{"contamination": "high"}'::jsonb);
+INSERT INTO event.lodgement_groups (id, event_id, moniker) VALUES
+    (1, 1, 'Haupthaus'),
+    (2, 1, 'AußenWohnGruppe');
+INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, group_id, fields) VALUES
+    (1, 1, 'Warme Stube', 5, 1, NULL, 2, '{"contamination": "high"}'::jsonb),
+    (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.', 1, '{"contamination": "none"}'::jsonb),
+    (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.', NULL, '{"contamination": "low"}'::jsonb),
+    (4, 1, 'Einzelzelle', 1, 0, NULL, 1, '{"contamination": "high"}'::jsonb);
 INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, payment, parental_agreement, mixed_lodging, checkin, list_consent, fields) VALUES
     (1, 1, 1, NULL, NULL, NULL, True, True, NULL, True, '{"lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
     (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', True, True, NULL, True, '{"brings_balls": true, "transportation": "pedes"}'::jsonb),
     (3, 7, 1, NULL, NULL, date '2014-03-03', True, True, NULL, False, '{"transportation": "car"}'::jsonb),
-    (4, 9, 1, NULL, NULL, date '2014-04-04', False, False, NULL, True, '{"brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb);
+    (4, 9, 1, NULL, NULL, date '2014-04-04', False, False, NULL, False, '{"brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb);
 INSERT INTO event.registration_parts (registration_id, part_id, status, lodgement_id, is_reserve) VALUES
     (1, 1, -1, NULL, False),
     (1, 2, 1, NULL, False),
@@ -408,6 +414,7 @@ SELECT setval('event.event_parts_id_seq', 4);
 SELECT setval('event.course_tracks_id_seq', 3);
 SELECT setval('event.courses_id_seq', 5);
 SELECT setval('event.field_definitions_id_seq', 6);
+SELECT setval('event.lodgement_groups_id_seq', 2);
 SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
 SELECT setval('event.log_id_seq', 4);

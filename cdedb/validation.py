@@ -288,6 +288,15 @@ def _id(val, argname=None, *, _convert=True):
             errs.append((argname, ValueError(n_("Must be positive."))))
     return val, errs
 
+@_addvalidator
+def _partial_import_id(val, argname=None, *, _convert=True):
+    """A numeric id or a negative int as a placeholder."""
+    val, errs = _int(val, argname, _convert=_convert)
+    if not errs:
+        if val == 0:
+            val = None
+            errs.append((argname, ValueError(n_("Must not be zero."))))
+    return val, errs
 
 @_addvalidator
 def _float(val, argname=None, *, _convert=True):
@@ -1807,6 +1816,9 @@ _PAST_EVENT_COMMON_FIELDS = lambda: {
     'tempus': _date,
     'description': _str_or_None,
 }
+_PAST_EVENT_OPTIONAL_FIELDS = lambda: {
+    'notes': _str_or_None
+}
 
 
 @_addvalidator
@@ -1826,10 +1838,11 @@ def _past_event(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = _PAST_EVENT_COMMON_FIELDS()
-        optional_fields = {}
+        optional_fields = _PAST_EVENT_OPTIONAL_FIELDS()
     else:
         mandatory_fields = {'id': _id}
-        optional_fields = _PAST_EVENT_COMMON_FIELDS()
+        optional_fields = dict(_PAST_EVENT_COMMON_FIELDS(),
+                               **_PAST_EVENT_OPTIONAL_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
 
@@ -1850,6 +1863,8 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'registration_soft_limit': _datetime_or_None,
     'registration_hard_limit': _datetime_or_None,
     'notes': _str_or_None,
+    'is_participant_list_visible': _bool,
+    'courses_in_participant_list': _bool,
     'is_archived': _bool,
     'iban': _iban_or_None,
     'orgas': _iterable,
@@ -2424,12 +2439,43 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
                     (field, ValueError(n_("Entry not in definition list."))))
     return val, errs
 
+_LODGEMENT_GROUP_FIELDS = lambda: {
+    'moniker': _str,
+}
+
+
+@_addvalidator
+def _lodgement_group(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set for fitness for creation
+        of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "lodgement group"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = dict(_LODGEMENT_GROUP_FIELDS(), event_id=_id)
+        optional_fields = {}
+    else:
+        # no event_id, since the associated event should be fixed.
+        mandatory_fields = {'id': _id}
+        optional_fields = _LODGEMENT_GROUP_FIELDS()
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      _convert=_convert)
+
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
     'capacity': _non_negative_int,
     'reserve': _non_negative_int,
     'notes': _str_or_None,
+    'group_id': _id_or_None,
 }
 _LODGEMENT_OPTIONAL_FIELDS = {
     'fields': _mapping,
@@ -2618,6 +2664,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.log': _mapping,
         'event.orgas': _mapping,
         'event.field_definitions': _mapping,
+        'event.lodgement_groups': _mapping,
         'event.lodgements': _mapping,
         'event.registrations': _mapping,
         'event.registration_parts': _mapping,
@@ -2656,6 +2703,8 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.field_definitions': _augment_dict_validator(
             _event_field, {'id': _id, 'event_id': _id,
                            'field_name': _restrictive_identifier}),
+        'event.lodgement_groups': _augment_dict_validator(
+            _lodgement_group, {'event_id': _id}),
         'event.lodgements': _augment_dict_validator(
             _lodgement, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
@@ -2750,6 +2799,7 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
     }
     optional_fields = {
         'courses': _mapping,
+        'lodgement_groups': _mapping,
         'lodgements': _mapping,
         'registrations': _mapping,
     }
@@ -2759,9 +2809,13 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
         return val, errs
     if val['CDEDB_EXPORT_EVENT_VERSION'] != CDEDB_EXPORT_EVENT_VERSION:
         return None, [(argname, ValueError(n_("Schema version mismatch.")))]
-    for domain, validator in (('courses', _partial_course_or_None),
-                              ('lodgements', _partial_lodgement_or_None),
-                              ('registrations', _partial_registration_or_None)):
+    domain_validators = {
+        'courses': _partial_course_or_None,
+        'lodgement_groups': _partial_lodgement_group_or_None,
+        'lodgements': _partial_lodgement_or_None,
+        'registrations': _partial_registration_or_None,
+    }
+    for domain, validator in domain_validators.items():
         if domain not in val:
             continue
         new_dict = {}
@@ -2837,11 +2891,40 @@ def _partial_course(val, argname=None, *, creation=False, _convert=True):
     ## the check of fields is delegated to _event_associated_fields
     return val, errs
 
+_PARTIAL_LODGEMENT_GROUP_FIELDS = lambda: {
+    'moniker': _str,
+}
+@_addvalidator
+def _partial_lodgement_group(
+        val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "lodgement group"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
+        optional_fields = {}
+    else:
+        mandatory_fields = {}
+        optional_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      _convert=_convert)
+
 _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
     'capacity': _non_negative_int,
     'reserve': _non_negative_int,
     'notes': _str_or_None,
+    'group_id': _partial_import_id_or_None,
 }
 _PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
     'fields': _mapping,
@@ -2917,13 +3000,12 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    ## The following can use the normal validators since in this case
-    ## everything is unchanged
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():
             anid, e = _id(anid, 'parts', _convert=_convert)
-            part, ee = _registration_part(part, 'parts', _convert=_convert)
+            part, ee = _partial_registration_part(
+                part, 'parts', _convert=_convert)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
@@ -2934,7 +3016,8 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True):
         newtracks = {}
         for anid, track in val['tracks'].items():
             anid, e = _id(anid, 'tracks', _convert=_convert)
-            track, ee = _registration_track(track, 'tracks', _convert=_convert)
+            track, ee = _partial_registration_track(
+                track, 'tracks', _convert=_convert)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
@@ -2943,6 +3026,68 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True):
         val['tracks'] = newtracks
     ## the check of fields is delegated to _event_associated_fields
     return val, errs
+
+
+@_addvalidator
+def _partial_registration_part(val, argname=None, *, _convert=True):
+    """This validator has only optional fields. Normally we would have an
+    creation parameter and make stuff mandatory depending on that. But
+    from the data at hand it is impossible to decide when the creation
+    case is applicable.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "partial_registration_part"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    optional_fields = {
+        'status': _enum_registrationpartstati,
+        'lodgement_id': _partial_import_id_or_None,
+        'is_reserve': _bool,
+    }
+    return _examine_dictionary_fields(val, {}, optional_fields,
+                                      _convert=_convert)
+
+
+@_addvalidator
+def _partial_registration_track(val, argname=None, *, _convert=True):
+    """This validator has only optional fields. Normally we would have an
+    creation parameter and make stuff mandatory depending on that. But
+    from the data at hand it is impossible to decide when the creation
+    case is applicable.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "partial_registration_track"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    optional_fields = {
+        'course_id': _partial_import_id_or_None,
+        'course_instructor': _partial_import_id_or_None,
+        'choices': _iterable,
+    }
+    val, errs = _examine_dictionary_fields(val, {}, optional_fields,
+                                           _convert=_convert)
+    if 'choices' in val:
+        newchoices = []
+        for choice in val['choices']:
+            choice, e = _partial_import_id(choice, 'choices', _convert=_convert)
+            if e:
+                errs.extend(e)
+                break
+            else:
+                newchoices.append(choice)
+        val['choices'] = newchoices
+    return val, errs
+
 
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,

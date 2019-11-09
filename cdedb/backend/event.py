@@ -15,11 +15,12 @@ from cdedb.backend.common import (
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
-    COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
-    CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
-    REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms, json_serialize,
-    PartialImportError, CDEDB_EXPORT_EVENT_VERSION)
+    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_GROUP_FIELDS,
+    LODGEMENT_FIELDS, COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim,
+    PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
+    COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
+    json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
+    mixed_existence_sorter)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -1112,6 +1113,8 @@ class EventBackend(AbstractBackend):
                    blockers.
         * course_tracks: A course track of the event.
         * orgas: An orga of the event.
+        * lodgement_groups: A lodgement group associated with the event.
+                            This can have it's own blockers.
         * lodgements: A lodgement associated with the event. This can have
                       it's own blockers.
         * registrations: A registration associated with the event. This can
@@ -1156,6 +1159,12 @@ class EventBackend(AbstractBackend):
             rs, "event.orgas", ("id",), (event_id,), entity_key="event_id")
         if orgas:
             blockers["orgas"] = [e["id"] for e in orgas]
+
+        lodgement_groups = self.sql_select(
+            rs, "event.lodgement_groups", ("id",), (event_id,),
+            entity_key="event_id")
+        if lodgement_groups:
+            blockers["lodgement_groups"] = [e["id"] for e in lodgement_groups]
 
         lodgements = self.sql_select(
             rs, "event.lodgements", ("id",), (event_id,), entity_key="event_id")
@@ -1232,6 +1241,9 @@ class EventBackend(AbstractBackend):
                 if "lodgements" in cascade:
                     ret *= self.sql_delete(rs, "event.lodgements",
                                            blockers["lodgements"])
+                if "lodgement_groups" in cascade:
+                    ret *= self.sql_delete(rs, "event.lodgement_groups",
+                                           blockers["lodgement_groups"])
                 if "questionnaire" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.questionnaire_rows",
@@ -1579,8 +1591,48 @@ class EventBackend(AbstractBackend):
                         ret *= self.sql_update(
                             rs, "event.registration_tracks", deletor)
                 if "course_choices" in cascade:
-                    ret *= self.sql_delete(rs, "event.course_choices",
-                                           blockers["course_choices"])
+                    # Get the data of the affected choices grouped by track.
+                    data = self.sql_select(
+                        rs, "event.course_choices",
+                        ("track_id", "registration_id"),
+                        blockers["course_choices"])
+                    data_by_tracks = {
+                        track_id: [e["registration_id"] for e in data
+                                   if e["track_id"] == track_id]
+                        for track_id in set(e["track_id"] for e in data)
+                    }
+
+                    # Delete choices of the deletable course.
+                    ret *= self.sql_delete(
+                        rs, "event.course_choices", blockers["course_choices"])
+
+                    # Construct list of inserts.
+                    choices = []
+                    for track_id, reg_ids in data_by_tracks.items():
+                        query = (
+                            "SELECT id, course_id, track_id, registration_id "
+                            "FROM event.course_choices "
+                            "WHERE track_id = {} AND registration_id = ANY(%s) "
+                            "ORDER BY registration_id, rank ASC ")
+                        choices.extend(self.query_all(
+                            rs, query.format(track_id), (reg_ids,)))
+
+                    deletion_ids = {e['id'] for e in choices}
+
+                    # Update the ranks and remove the ids from the insert data.
+                    i = 0
+                    current_id = None
+                    for row in choices:
+                        if current_id != row['registration_id']:
+                            current_id = row['registration_id']
+                            i = 0
+                        row['rank'] = i
+                        del row['id']
+                        i += 1
+
+                    self.sql_delete(rs, "event.course_choices", deletion_ids)
+                    self.sql_insert_many(rs, "event.course_choices", choices)
+
                 if "course_segments" in cascade:
                     ret *= self.sql_delete(rs, "event.course_segments",
                                            blockers["course_segments"])
@@ -1603,6 +1655,9 @@ class EventBackend(AbstractBackend):
     def list_registrations(self, rs, event_id, persona_id=None):
         """List all registrations of an event.
 
+        If an ordinary event_user is requesting this, just participants of this
+        event are returned and he himself must have the status 'participant'.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :type persona_id: int or None
@@ -1611,19 +1666,29 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         persona_id = affirm("id_or_None", persona_id)
-        if not (persona_id == rs.user.persona_id
-                or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)
-                or "ml_admin" in rs.user.roles):
-            raise PrivilegeError(n_("Not privileged."))
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
         params = (event_id,)
-        if persona_id:
+        # condition for limited access, f. e. for the online participant list
+        is_limited = (persona_id != rs.user.persona_id
+                      and not self.is_orga(rs, event_id=event_id)
+                      and not self.is_admin(rs)
+                      and not "ml_admin" in rs.user.roles)
+        if is_limited:
+            query = ("SELECT DISTINCT regs.id, regs.persona_id "
+                     "FROM event.registrations AS regs "
+                     "LEFT OUTER JOIN event.registration_parts AS rparts "
+                     "ON rparts.registration_id = regs.id "
+                     "WHERE regs.event_id = %s AND rparts.status = %s")
+            params += (const.RegistrationPartStati.participant,)
+        if persona_id and not is_limited:
             query = glue(query, "AND persona_id = %s")
             params += (persona_id,)
         data = self.query_all(rs, query, params)
-        return {e['id']: e['persona_id'] for e in data}
+        ret = {e['id']: e['persona_id'] for e in data}
+        if is_limited and rs.user.persona_id not in ret.values():
+            raise PrivilegeError(n_("Not privileged."))
+        return ret
 
     @access("event")
     def check_registration_status(self, rs, persona_id, event_id, stati):
@@ -1767,9 +1832,12 @@ class EventBackend(AbstractBackend):
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
 
-        All have to be from the same event. You must be orga to access
-        registrations which are not your own. This includes the following
-        additional data:
+        All have to be from the same event.
+        You must be orga to get additional access to all registrations which are
+        not your own. If you are participant of the event, you get access to
+        data from other users, being also participant in the same event (this is
+        important for the online participant list).
+        This includes the following additional data:
 
         * parts: per part data (like lodgement),
         * tracks: per track data (like course choices)
@@ -1779,7 +1847,9 @@ class EventBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
+        ret = {}
         with Atomizer(rs):
+            # Check associations.
             associated = self.sql_select(rs, "event.registrations",
                                          ("persona_id", "event_id"), ids)
             if not associated:
@@ -1790,11 +1860,18 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Only registrations from exactly one event allowed."))
             event_id = unwrap(events)
-            if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)
-                    and not {rs.user.persona_id} >= personas
-                    and not "ml_admin" in rs.user.roles):
-                raise PrivilegeError(n_("Not privileged."))
+            # Select appropriate stati filter.
+            stati = set(const.RegistrationPartStati)
+            # orgas and admins have full access to all data
+            is_privileged = (self.is_orga(rs, event_id=event_id)
+                             or self.is_admin(rs)
+                             or "ml_admin" in rs.user.roles)
+            if not is_privileged:
+                if rs.user.persona_id not in personas:
+                    raise PrivilegeError(n_("Not privileged."))
+                elif not personas <= {rs.user.persona_id}:
+                    # Permission check is done later when we know more
+                    stati = {const.RegistrationPartStati.participant}
 
             ret = {e['id']: e for e in self.sql_select(
                 rs, "event.registrations", REGISTRATION_FIELDS, ids)}
@@ -1802,10 +1879,21 @@ class EventBackend(AbstractBackend):
             pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS, ids,
                 entity_key="registration_id")
-            for anid in ret:
+            for anid in tuple(ret):
                 assert ('parts' not in ret[anid])
-                ret[anid]['parts'] = {e['part_id']: e for e in pdata
-                                      if e['registration_id'] == anid}
+                ret[anid]['parts'] = {
+                    e['part_id']: e
+                    for e in pdata if e['registration_id'] == anid
+                }
+                # Limit to registrations matching stati filter in any part.
+                if not any(e['status'] in stati
+                           for e in ret[anid]['parts'].values()):
+                    del ret[anid]
+            # Here comes the promised permission check
+            if not is_privileged and all(reg['persona_id'] != rs.user.persona_id
+                                         for reg in ret.values()):
+                raise PrivilegeError(n_("No participant of event."))
+
             tdata = self.sql_select(
                 rs, "event.registration_tracks", REGISTRATION_TRACK_FIELDS, ids,
                 entity_key="registration_id")
@@ -2221,6 +2309,175 @@ class EventBackend(AbstractBackend):
         return num < self.conf.ORGA_ADD_LIMIT
 
     @access("event")
+    def list_lodgement_groups(self, rs, event_id):
+        """List all lodgement groups for an event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: {int: str}
+        :returns: dict mapping ids to names
+        """
+        event_id = affirm("id", event_id)
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
+        data = self.sql_select(rs, "event.lodgement_groups", ("id", "moniker"),
+                               (event_id,), entity_key="event_id")
+        return {e['id']: e['moniker'] for e in data}
+
+    @access("event")
+    @singularize("get_lodgement_group")
+    def get_lodgement_groups(self, rs, ids):
+        """Retrieve data for some lodgement groups.
+
+        All have to be from the same event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ids: [int]
+        :rtype: {int: {str: object}}
+        """
+        ids = affirm_set("id", ids)
+        with Atomizer(rs):
+            data = self.sql_select(
+                rs, "event.lodgement_groups", LODGEMENT_GROUP_FIELDS, ids)
+            if not data:
+                return {}
+            events = {e['event_id'] for e in data}
+            if len(events) > 1:
+                raise ValueError(n_(
+                    "Only lodgement groups from exactly one event allowed!"))
+            event_id = unwrap(events)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+        return {e['id']: e for e in data}
+
+    @access("event")
+    def set_lodgement_group(self, rs, data):
+        """Update some keys of a lodgement group.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: default return code
+        """
+        data = affirm("lodgement_group", data)
+        ret = 1
+        with Atomizer(rs):
+            current = unwrap(self.get_lodgement_groups(rs, (data['id'],)))
+            event_id, moniker = current['event_id'], current['moniker']
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+            self.assert_offline_lock(rs, event_id=event_id)
+
+            # Do the actual work:
+            ret *= self.sql_update(rs, "event.lodgement_groups", data)
+            self.event_log(
+                rs, const.EventLogCodes.lodgement_group_changed, event_id,
+                additional_info=moniker)
+
+        return ret
+
+    @access("event")
+    def create_lodgement_group(self, rs, data):
+        """Make a new lodgement group.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: the id of the new lodgement group
+        """
+        data = affirm("lodgement_group", data, creation=True)
+
+        if (not self.is_orga(rs, event_id=data['event_id'])
+                and not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=data['event_id'])
+        with Atomizer(rs):
+            new_id = self.sql_insert(rs, "event.lodgement_groups", data)
+            self.event_log(
+                rs, const.EventLogCodes.lodgement_group_created,
+                data['event_id'], additional_info=data['moniker'])
+        return new_id
+
+    @access("event")
+    def delete_lodgement_group_blockers(self, rs, group_id):
+        """Determine what keeps a lodgement group from being deleted.
+
+        Possible blockers:
+
+        * lodgements: A lodgement that is part of this lodgement group.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type group_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        group_id = affirm("id", group_id)
+        blockers = {}
+
+        lodgements = self.sql_select(
+            rs, "event.lodgements", ("id",), (group_id,),
+            entity_key="group_id")
+        if lodgements:
+            blockers["lodgements"] = [e["id"] for e in lodgements]
+
+        return blockers
+
+    @access("event")
+    def delete_lodgement_group(self, rs, group_id, cascade=None):
+        """Delete a lodgement group.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type group: int
+        :type cascade: bool
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        :rtype: int
+        :returns: default return code
+        """
+        group_id = affirm("id", group_id)
+        blockers = self.delete_lodgement_group_blockers(rs, group_id)
+        if not cascade:
+            cascade= set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "lodgement group",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        with Atomizer(rs):
+            if cascade:
+                if "lodgements" in cascade:
+                    with Silencer(rs):
+                        for lodgement_id in blockers["lodgements"]:
+                            deletor = {
+                                "id": lodgement_id,
+                                "group_id": None,
+                            }
+                            ret *= self.set_lodgement(rs, deletor)
+
+                blockers = self.delete_lodgement_group_blockers(rs, group_id)
+
+            if not blockers:
+                group = unwrap(self.get_lodgement_groups(rs, (group_id,)))
+                ret *= self.sql_delete_one(
+                    rs, "event.lodgement_groups", group_id)
+                self.event_log(rs, const.EventLogCodes.lodgement_group_deleted,
+                               event_id=group['event_id'],
+                               additional_info=group['moniker'])
+            else:
+                raise ValueError(
+                    n_("Deletion of %(type)s blocked by %(block)s."),
+                    {"type": "lodgement group", "block": blockers.keys()})
+        return ret
+
+    @access("event")
     def list_lodgements(self, rs, event_id):
         """List all lodgements for an event.
 
@@ -2372,9 +2629,8 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type lodgement_id: int
         :type cascade: bool
-        :param cascade: If False this function has the precondition, that no
-          dependent entities exist. If True these dependent entities are
-          excised as well.
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
         :rtype: int
         :returns: default return code
         """
@@ -2531,6 +2787,7 @@ class EventBackend(AbstractBackend):
                     'id', 'persona_id', 'event_id',)),
                 ('event.field_definitions', "event_id",
                  FIELD_DEFINITION_FIELDS),
+                ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
                 ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 ('event.registration_parts', "part_id",
@@ -2690,6 +2947,7 @@ class EventBackend(AbstractBackend):
                       ('event.course_segments', None),
                       ('event.orgas', None),
                       ('event.field_definitions', 'field_id'),
+                      ('event.lodgement_groups', 'group_id'),
                       ('event.lodgements', 'lodgement_id'),
                       ('event.registrations', 'registration_id'),
                       ('event.registration_parts', None),
@@ -2755,6 +3013,14 @@ class EventBackend(AbstractBackend):
                 course['segments'] = lookup[course_id]
                 course['fields'] = cast_fields(course['fields'], event['fields'])
             ret['courses'] = courses
+            # lodgement groups
+            lodgement_groups = list_to_dict(self.sql_select(
+                rs, 'event.lodgement_groups', LODGEMENT_GROUP_FIELDS,
+                (event_id,), entity_key='event_id'))
+            for lodgement_group in lodgement_groups.values():
+                del lodgement_group['id']
+                del lodgement_group['event_id']
+            ret['lodgement_groups'] = lodgement_groups
             # lodgements
             lodgements = list_to_dict(self.sql_select(
                 rs, 'event.lodgements', LODGEMENT_FIELDS, (event_id,),
@@ -2928,44 +3194,218 @@ class EventBackend(AbstractBackend):
             if not all_part_ids <= set(event['parts']):
                 raise ValueError("Referential integrity of parts violated.")
 
-            all_lodgement_ids = {
+            used_lodgement_group_ids = {
+                lodgement.get('group_id')
+                for lodgement in data.get('lodgements', {}).values()
+                if lodgement}
+            used_lodgement_group_ids -= {None}
+            available_lodgement_group_ids = set(
+                all_current_data['lodgement_groups'])
+            available_lodgement_group_ids |= set(
+                key for key in data.get('lodgement_groups', {}) if key < 0)
+            available_lodgement_group_ids -= set(
+                k for k, v in data.get('lodgement_groups', {}).items()
+                if v is None)
+            if not used_lodgement_group_ids <= available_lodgement_group_ids:
+                raise ValueError(
+                    n_("Referential integrity of lodgement groups violated."))
+
+            used_lodgement_ids = {
                 part.get('lodgement_id')
                 for registration in data.get('registrations', {}).values()
                 if registration
                 for part in registration.get('parts', {}).values()}
-            all_lodgement_ids -= {None}
-            if not all_lodgement_ids <= set(all_current_data['lodgements']):
+            used_lodgement_ids -= {None}
+            available_lodgement_ids = set(all_current_data['lodgements']) | set(
+                key for key in data.get('lodgements', {}) if key < 0)
+            available_lodgement_ids -= set(
+                k for k, v in data.get('lodgements', {}).items() if v is None)
+            if not used_lodgement_ids <= available_lodgement_ids:
                 raise ValueError(
                     "Referential integrity of lodgements violated.")
 
-            all_course_ids = set()
-            for attribute in ('course_id', 'course_choices',
-                              'course_instructor'):
-                all_course_ids |= {
-                    track.get(attribute)
-                    for registration in data.get('registrations', {}).values()
-                    if registration
-                    for track in registration.get('tracks', {}).values()}
-            all_course_ids -= {None}
-            if not all_course_ids <= set(all_current_data['courses']):
+            used_course_ids = set()
+            for registration in data.get('registrations', {}).values():
+                if registration:
+                    for track in registration.get('tracks', {}).values():
+                        if track:
+                            used_course_ids |= set(track.get('choices', []))
+                            used_course_ids.add(track.get('course_id'))
+                            used_course_ids.add(track.get('course_instructor'))
+            used_course_ids -= {None}
+            available_course_ids = set(all_current_data['courses']) | set(
+                key for key in data.get('courses', {}) if key < 0)
+            available_course_ids -= set(
+                k for k, v in data.get('courses', {}).items() if v is None)
+            if not used_course_ids <= available_course_ids:
                 raise ValueError(
                     "Referential integrity of courses violated.")
 
             # go to work
             total_delta = {}
             total_previous = {}
+
+            # This needs to be processed in the following order:
+            # lodgement groups -> lodgements -> courses -> registrations.
+
+            # We handle these in the specific order of mixed_existence_sorter
+            mes = mixed_existence_sorter
+
+            gmap = {}
+            gdelta = {}
+            gprevious = {}
+            for group_id in mes(data.get('lodgement_groups', {}).keys()):
+                new_group = data['lodgement_groups'][group_id]
+                current = all_current_data['lodgement_groups'].get(group_id)
+                if group_id > 0 and current is None:
+                    # group was deleted online in the meantime
+                    gdelta[group_id] = None
+                    gprevious[group_id] = None
+                elif new_group is None:
+                    gdelta[group_id] = None
+                    gprevious[group_id] = current
+                    if not dryrun:
+                        self.delete_lodgement_group(
+                            rs, group_id, ("lodgements",))
+                elif group_id < 0:
+                    gdelta[group_id] = new_group
+                    gprevious[group_id] = None
+                    if not dryrun:
+                        new = copy.deepcopy(new_group)
+                        new['event_id'] = data['id']
+                        new_id = self.create_lodgement_group(rs, new)
+                        gmap[group_id] = new_id
+                else:
+                    delta, previous = dict_diff(current, new_group)
+                    if delta:
+                        gdelta[group_id] = delta
+                        gprevious[group_id] = previous
+                        if not dryrun:
+                            todo = copy.deepcopy(delta)
+                            todo['id'] = group_id
+                            self.set_lodgement_group(rs, todo)
+            if gdelta:
+                total_delta['lodgement_groups'] = gdelta
+                total_previous['lodgement_groups'] = gprevious
+
+            lmap = {}
+            ldelta = {}
+            lprevious = {}
+            for lodgement_id in mes(data.get('lodgements', {}).keys()):
+                new_lodgement = data['lodgements'][lodgement_id]
+                current = all_current_data['lodgements'].get(lodgement_id)
+                if lodgement_id > 0 and current is None:
+                    # lodgement was deleted online in the meantime
+                    ldelta[lodgement_id] = None
+                    lprevious[lodgement_id] = None
+                elif new_lodgement is None:
+                    ldelta[lodgement_id] = None
+                    lprevious[lodgement_id] = current
+                    if not dryrun:
+                        self.delete_lodgement(
+                            rs, lodgement_id, ("inhabitants",))
+                elif lodgement_id < 0:
+                    ldelta[lodgement_id] = new_lodgement
+                    lprevious[lodgement_id] = None
+                    if not dryrun:
+                        new = copy.deepcopy(new_lodgement)
+                        new['event_id'] = data['id']
+                        if new['group_id'] in gmap:
+                            old_id = new['group_id']
+                            new['group_id'] = gmap[old_id]
+                        new_id = self.create_lodgement(rs, new)
+                        lmap[lodgement_id] = new_id
+                else:
+                    delta, previous = dict_diff(current, new_lodgement)
+                    if delta:
+                        ldelta[lodgement_id] = delta
+                        lprevious[lodgement_id] = previous
+                        if not dryrun:
+                            changed_lodgement = copy.deepcopy(delta)
+                            changed_lodgement['id'] = lodgement_id
+                            if 'group_id' in changed_lodgement:
+                                old_id = changed_lodgement['group_id']
+                                if old_id in gmap:
+                                    changed_lodgement['group_id'] = gmap[old_id]
+                            self.set_lodgement(rs, changed_lodgement)
+            if ldelta:
+                total_delta['lodgements'] = ldelta
+                total_previous['lodgements'] = lprevious
+
+            cmap = {}
+            cdelta = {}
+            cprevious = {}
+            check_seg = lambda track_id, delta, original: (
+                 (track_id in delta and delta[track_id] is not None)
+                 or (track_id not in delta and track_id in original))
+            for course_id in mes(data.get('courses', {}).keys()):
+                new_course = data['courses'][course_id]
+                current = all_current_data['courses'].get(course_id)
+                if course_id > 0 and current is None:
+                    # course was deleted online in the meantime
+                    cdelta[course_id] = None
+                    cprevious[course_id] = None
+                elif new_course is None:
+                    cdelta[course_id] = None
+                    cprevious[course_id] = current
+                    if not dryrun:
+                        # this will fail to delete a course with attendees
+                        self.delete_course(
+                            rs, course_id, ("instructors", "course_choices",
+                                            "course_segments"))
+                elif course_id < 0:
+                    cdelta[course_id] = new_course
+                    cprevious[course_id] = None
+                    if not dryrun:
+                        new = copy.deepcopy(new_course)
+                        new['event_id'] = data['id']
+                        segments = new.pop('segments')
+                        new['segments'] = list(segments.keys())
+                        new['active_segments'] = [key for key in segments
+                                                  if segments[key]]
+                        new_id = self.create_course(rs, new)
+                        cmap[course_id] = new_id
+                else:
+                    delta, previous = dict_diff(current, new_course)
+                    if delta:
+                        cdelta[course_id] = delta
+                        cprevious[course_id] = previous
+                        if not dryrun:
+                            changed_course = copy.deepcopy(delta)
+                            segments = changed_course.pop('segments', None)
+                            if segments:
+                                orig_seg = current['segments']
+                                new_segments = [
+                                    x for x in event['tracks']
+                                    if check_seg(x, segments, orig_seg)]
+                                changed_course['segments'] = new_segments
+                                orig_active = [
+                                    s for s, a in current['segments'].items()
+                                    if a]
+                                new_active = [
+                                    x for x in event['tracks']
+                                    if segments.get(x, x in orig_active)]
+                                changed_course['active_segments'] = new_active
+                            changed_course['id'] = course_id
+                            self.set_course(rs, changed_course)
+            if cdelta:
+                total_delta['courses'] = cdelta
+                total_previous['courses'] = cprevious
+
+            rmap = {}
             rdelta = {}
             rprevious = {}
 
             dup = {
                 old_reg['persona_id']: old_reg['id']
                 for old_reg in old_registrations.values()
-            }
+                }
 
             data_regs = data.get('registrations', {})
-            for registration_id, new_registration in data_regs.items():
+            for registration_id in mes(data_regs.keys()):
+                new_registration = data_regs[registration_id]
                 if (registration_id < 0
-                        and dup.get(new_registration.get('persona_id'))):
+                    and dup.get(new_registration.get('persona_id'))):
                     # the process got out of sync and the registration was
                     # already created, so we fix this
                     registration_id = dup[new_registration.get('persona_id')]
@@ -2991,109 +3431,55 @@ class EventBackend(AbstractBackend):
                     if not dryrun:
                         new = copy.deepcopy(new_registration)
                         new['event_id'] = data['id']
-                        self.create_registration(rs, new)
+                        for track in new['tracks'].values():
+                            keys = {'course_id', 'course_instructor'}
+                            for key in keys:
+                                if track[key] in cmap:
+                                    tmp_id = track[key]
+                                    track[key] = cmap[tmp_id]
+                            new_choices = [
+                                cmap.get(course_id, course_id)
+                                for course_id in track['choices']
+                            ]
+                            track['choices'] = new_choices
+                        for part in new['parts'].values():
+                            if part['lodgement_id'] in lmap:
+                                tmp_id = part['lodgement_id']
+                                part['lodgement_id'] = lmap[tmp_id]
+                        new_id = self.create_registration(rs, new)
+                        rmap[registration_id] = new_id
                 else:
                     delta, previous = dict_diff(current, new_registration)
                     if delta:
                         rdelta[registration_id] = delta
                         rprevious[registration_id] = previous
                         if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            todo['id'] = registration_id
-                            self.set_registration(rs, todo)
+                            changed_reg = copy.deepcopy(delta)
+                            if 'tracks' in changed_reg:
+                                for track in changed_reg['tracks'].values():
+                                    keys = {'course_id', 'course_instructor'}
+                                    for key in keys:
+                                        if key in track:
+                                            if track[key] in cmap:
+                                                tmp_id = track[key]
+                                                track[key] = cmap[tmp_id]
+                                    if 'choices' in track:
+                                        new_choices = [
+                                            cmap.get(course_id, course_id)
+                                            for course_id in track['choices']
+                                        ]
+                                        track['choices'] = new_choices
+                            if 'parts' in changed_reg:
+                                for part in changed_reg['parts'].values():
+                                    if 'lodgement_id' in part:
+                                        if part['lodgement_id'] in lmap:
+                                            tmp_id = part['lodgement_id']
+                                            part['lodgement_id'] = lmap[tmp_id]
+                            changed_reg['id'] = registration_id
+                            self.set_registration(rs, changed_reg)
             if rdelta:
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious
-            ldelta = {}
-            lprevious = {}
-            for lodgement_id, new_lodgement in data.get('lodgements',
-                                                        {}).items():
-                current = all_current_data['lodgements'].get(lodgement_id)
-                if lodgement_id > 0 and current is None:
-                    # lodgement was deleted online in the meantime
-                    ldelta[lodgement_id] = None
-                    lprevious[lodgement_id] = None
-                elif new_lodgement is None:
-                    ldelta[lodgement_id] = None
-                    lprevious[lodgement_id] = current
-                    if not dryrun:
-                        self.delete_lodgement(
-                            rs, lodgement_id, ("inhabitants",))
-                elif lodgement_id < 0:
-                    ldelta[lodgement_id] = new_lodgement
-                    lprevious[lodgement_id] = None
-                    if not dryrun:
-                        new = copy.deepcopy(new_lodgement)
-                        new['event_id'] = data['id']
-                        self.create_lodgement(rs, new)
-                else:
-                    delta, previous = dict_diff(current, new_lodgement)
-                    if delta:
-                        ldelta[lodgement_id] = delta
-                        lprevious[lodgement_id] = previous
-                        if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            todo['id'] = lodgement_id
-                            self.set_lodgement(rs, todo)
-            if ldelta:
-                total_delta['lodgements'] = ldelta
-                total_previous['lodgements'] = lprevious
-            cdelta = {}
-            cprevious = {}
-            check_seg = lambda track_id, delta, original: (
-                 (track_id in delta and delta[track_id] is not None)
-                 or (track_id not in delta and track_id in original))
-            for course_id, new_course in data.get('courses', {}).items():
-                current = all_current_data['courses'].get(course_id)
-                if course_id > 0 and current is None:
-                    # course was deleted online in the meantime
-                    cdelta[course_id] = None
-                    cprevious[course_id] = None
-                elif new_course is None:
-                    cdelta[course_id] = None
-                    cprevious[course_id] = current
-                    if not dryrun:
-                        # this will fail to delete a course with attendees
-                        self.delete_course(
-                            rs, course_id, ("instructors", "course_choices",
-                                            "course_segments"))
-                elif course_id < 0:
-                    cdelta[course_id] = new_course
-                    cprevious[course_id] = None
-                    if not dryrun:
-                        new = copy.deepcopy(new_course)
-                        new['event_id'] = data['id']
-                        segments = new.pop('segments')
-                        new['segments'] = list(segments.keys())
-                        new['active_segments'] = [key for key in segments
-                                                  if segments[key]]
-                        self.create_course(rs, new)
-                else:
-                    delta, previous = dict_diff(current, new_course)
-                    if delta:
-                        cdelta[course_id] = delta
-                        cprevious[course_id] = previous
-                        if not dryrun:
-                            todo = copy.deepcopy(delta)
-                            segments = todo.pop('segments', None)
-                            if segments:
-                                orig_seg = current['segments']
-                                new_segments = [
-                                    x for x in event['tracks']
-                                    if check_seg(x, segments, orig_seg)]
-                                todo['segments'] = new_segments
-                                orig_active = [
-                                    s for s, a in current['segments'].items()
-                                    if a]
-                                new_active = [
-                                    x for x in event['tracks']
-                                    if segments.get(x, x in orig_active)]
-                                todo['active_segments'] = new_active
-                            todo['id'] = course_id
-                            self.set_course(rs, todo)
-            if cdelta:
-                total_delta['courses'] = cdelta
-                total_previous['courses'] = cprevious
 
             m = hashlib.sha512()
             m.update(json_serialize(total_previous, sort_keys=True).encode(

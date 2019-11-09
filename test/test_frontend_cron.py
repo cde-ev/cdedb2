@@ -129,6 +129,19 @@ def subscription_request_template(**kwargs):
     return format_insert_sql("ml.subscription_states", data)
 
 
+def privilege_change_template(**kwargs):
+    defaults = {
+        'persona_id': 2,
+        'ctime': now(),
+        'submitted_by': 1,
+        'reviewer': None,
+        'status': const.PrivilegeChangeStati.pending,
+        'notes': "For testing",
+    }
+    data = {**defaults, **kwargs}
+    return format_insert_sql("core.privilege_changes", data)
+
+
 class TestCron(CronTest):
     def test_genesis_remind_empty(self):
         self.execute('genesis_remind')
@@ -254,3 +267,43 @@ class TestCron(CronTest):
     def test_subscription_request_remind_old(self):
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
+
+    def test_privilege_change_remind_empty(self):
+        self.execute('privilege_change_remind')
+        self.assertEqual([], [mail.template for mail in self.mails])
+
+    @prepsql(privilege_change_template(
+        is_cde_admin=True, ctime=now() - datetime.timedelta(hours=6)))
+    def test_privilege_change_remind_new(self):
+        self.execute('privilege_change_remind')
+        self.assertEqual(['privilege_change_remind'],
+                         [mail.template for mail in self.mails])
+
+    @prepsql(privilege_change_template(is_cde_admin=True))
+    def test_privilege_change_remind_newer(self):
+        self.execute('privilege_change_remind')
+        self.assertEqual([],
+                         [mail.template for mail in self.mails])
+
+    @prepsql(
+        privilege_change_template(is_cde_admin=True,
+                                  ctime=now() - datetime.timedelta(hours=6))
+        + cron_template(
+            moniker="privilege_change_remind",
+            store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
+                   "ids": [1]}))
+    def test_privilege_change_remind_old(self):
+        self.execute('privilege_change_remind')
+        self.assertEqual([],
+                         [mail.template for mail in self.mails])
+
+    @prepsql(
+        privilege_change_template(is_cde_admin=True,
+                                  ctime=now() - datetime.timedelta(hours=6))
+        + cron_template(
+            moniker="privilege_change_remind",
+            store={"tstamp": 1, "ids": [1]}))
+    def test_privilege_change_remind_older(self):
+        self.execute('privilege_change_remind')
+        self.assertEqual(['privilege_change_remind'],
+                         [mail.template for mail in self.mails])

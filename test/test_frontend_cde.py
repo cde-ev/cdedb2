@@ -149,6 +149,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_pevent_id'] = 1
         self.submit(f)
+        self.traverse({'href': '/core/persona/2/show'})
         self.assertTitle("Bertålotta Beispiel")
 
     @as_users("anton", "berta")
@@ -1223,23 +1224,119 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Monster Academy", f['title_1'].value)
         self.assertNotIn("title_2", f.fields)
 
-    @as_users("anton")
+    @as_users("anton", "berta")
     def test_list_past_events(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
 
-    @as_users("anton")
+    @as_users("charly", "inga")
     def test_show_past_event_course(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
+        self.assertPresence("Organisation")
         self.assertPresence("Great event!")
+        self.assertPresence("Swish -- und alles ist gut")
         self.traverse({'href': '/past/event/1/course/1/show'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertPresence("Ringelpiez")
+
+    @as_users("anton", "berta", "charly", "ferdinand")
+    def test_show_past_event_gallery(self, user):
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.assertTitle("Vergangene Veranstaltungen")
+        self.traverse({'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        if user['id'] == 1:
+            self.assertPresence(
+                "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
+                "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.")
+        else:
+            self.assertNonPresence(
+                "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
+                "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.")
+        self.assertPresence("https://pa14:secret@example.cde/pa14/")
+
+    @as_users("inga")
+    def test_show_past_event_no_gallery(self, user):
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.assertTitle("Vergangene Veranstaltungen")
+        self.traverse({'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        self.assertNonPresence("Mediensammlung")
+        self.assertNonPresence("https://pa14:secret@example.cde/pa14/")
+
+    @as_users("anton", "berta", "charly", "garcia", "inga")
+    def test_show_past_event_privacy(self, user):
+
+        def _traverse_back():
+            self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+            self.traverse({'href': '/past/event/1/show'})
+
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.traverse({'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        # Check list privacy
+        # non-searchable non-participants can not see anything interesting
+        if user['id'] == 7:
+            self.assertPresence("4 Teilnehmer")
+            self.assertNonPresence("Bertå")
+            self.assertNonPresence("Ferdinand")
+        else:
+            self.assertNonPresence("4 Teilnehmer")
+            self.assertPresence("Bertå")
+            self.assertPresence("Ferdinand")
+
+        # non-searchable users are only visible to admins and participants
+        if user['id'] in {1, 2, 3}:
+            # members and participants
+            self.assertPresence("Charly")
+            self.assertPresence("Emilia")
+            self.assertNonPresence("weitere")
+            # no links are displayed to non-searchable users
+            if user['id'] != 3:
+                # searchable member
+                self.traverse({'href': '/core/persona/6/show'})
+                _traverse_back()
+            else:
+                self.assertNoLink('/core/persona/2/show')
+                self.assertNoLink('/core/persona/5/show')
+                self.assertNoLink('/core/persona/6/show')
+        else:
+            self.assertNonPresence("Charly")
+            self.assertNonPresence("Emilia")
+            if user['id'] not in {7}:
+                self.assertPresence("2 weitere")
+
+        # links to non-searchable users are only displayed for admins
+        if user['id'] == 1:
+            # admin
+            self.traverse({'href': '/core/persona/3/show'})
+            _traverse_back()
+            self.traverse({'href': '/core/persona/5/show'})
+            _traverse_back()
+        else:
+            # normal members
+            self.assertNoLink('/core/persona/5/show')
+            if user['id'] != 3:
+                self.assertNoLink('/core/persona/3/show')
+
+    @as_users("daniel")
+    def test_show_past_event_unprivileged(self, user):
+        self.traverse({'href': '/cde/'})
+        self.assertNoLink('cde/past/event/list')
+        self.get("/cde/past/event/list", status=403)
+        self.get("/cde/past/event/1/show", status=403)
+
+    @as_users("berta", "charly")
+    def test_show_past_event_own_link(self, user):
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.traverse({'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        self.traverse({'href': '/core/persona/{}/show'.format(user['id'])})
 
     @as_users("anton")
     def test_change_past_event(self, user):
@@ -1252,6 +1349,7 @@ class TestCdEFrontend(FrontendTest):
         f['title'] = "Link Academy"
         f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
+        f['notes'] = "<https://zelda:hyrule@link.cde>"
         self.submit(f)
         self.assertTitle("Link Academy")
         self.assertPresence("Club der Ehemaligen")
@@ -1268,6 +1366,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "link"
         f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
+        f['notes'] = "<https://zelda:hyrule@link.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         self.assertTitle("Link Academy II")

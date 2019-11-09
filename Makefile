@@ -98,9 +98,11 @@ endif
 	sudo systemctl start pgbouncer
 
 sql-test:
+	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 	make sql-test-shallow
+	sudo systemctl start pgbouncer
 
 sql-test-shallow:
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql

@@ -67,9 +67,17 @@ class EventFrontend(AbstractUserFrontend):
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
             if rs.user.persona_id:
-                params['is_registered'] = bool(
-                    self.eventproxy.list_registrations(
-                        rs, rs.ambience['event']['id'], rs.user.persona_id))
+                reg_list = self.eventproxy.list_registrations(
+                    rs, rs.ambience['event']['id'], rs.user.persona_id)
+                params['is_registered'] = bool(reg_list)
+                params['is_participant'] = False
+                if params['is_registered']:
+                    registration = self.eventproxy.get_registration(rs,
+                        unwrap(reg_list, keys=True))
+                    if any(part['status']
+                           == const.RegistrationPartStati.participant
+                           for part in registration['parts'].values()):
+                        params['is_participant'] = True
             if rs.ambience['event'].get('is_archived'):
                 rs.notify("info", n_("This event has been archived."))
         return super().render(rs, templatename, params=params)
@@ -247,6 +255,79 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
+    @REQUESTdata(("part_id", "id_or_None"))
+    def participant_list(self, rs, event_id, part_id=None):
+        """List participants of an event"""
+        if not (event_id in rs.user.orga or self.is_admin(rs)):
+            reg_list = self.eventproxy.list_registrations(
+                rs, event_id, persona_id=rs.user.persona_id)
+            if not reg_list:
+                rs.notify("warning", n_("Not registered for event."))
+                return self.redirect(rs, "event/show_event")
+            registration_id = unwrap(reg_list, keys=True)
+            registration = self.eventproxy.get_registration(rs, registration_id)
+            parts = registration['parts']
+            list_consent = registration['list_consent']
+            if all(parts[part]['status'] != const.RegistrationPartStati.participant
+                    for part in parts):
+                rs.notify("warning", n_("No participant of event."))
+                return self.redirect(rs, "event/show_event")
+            if not rs.ambience['event']['is_participant_list_visible']:
+                rs.notify("error", n_("Participant list not published yet."))
+                return self.redirect(rs, "event/show_event")
+        else:
+            list_consent = True
+
+        if part_id:
+            part_ids = [part_id]
+        else:
+            part_ids = None
+        data = self._get_participant_list_data(rs, event_id, part_ids)
+        if data is None:
+            return self.redirect(rs, "event/participant_list")
+        if len(rs.ambience['event']['parts']) == 1:
+            part_id = list(rs.ambience['event']['parts'])[0]
+        data['part_id'] = part_id
+        data['list_consent'] = list_consent
+        return self.render(rs, "participant_list", data)
+
+    def _get_participant_list_data(self, rs, event_id, part_ids=None):
+        """This provides data for download and online participant list.
+
+        This is un-inlined so download_participant_list can use this
+        as well."""
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+
+        if not part_ids:
+            part_ids = rs.ambience['event']['parts'].keys()
+        if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
+            rs.notify("error", n_("Unknown part."))
+            return None
+        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
+
+        participant = const.RegistrationPartStati.participant
+        registrations = {
+            k: v
+            for k, v in registrations.items()
+            if any(v['parts'][part_id]
+                   and v['parts'][part_id]['status'] == participant
+                   for part_id in parts)}
+        personas = self.coreproxy.get_event_users(
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
+        ordered = sorted(
+            registrations.keys(),
+            key=lambda anid: name_key(
+                personas[registrations[anid]['persona_id']]))
+        return {
+            'courses': courses, 'registrations': registrations,
+            'personas': personas, 'ordered': ordered, 'parts': parts,
+        }
+
+
+    @access("event")
     @event_guard()
     def change_event_form(self, rs, event_id):
         """Render form."""
@@ -263,7 +344,8 @@ class EventFrontend(AbstractUserFrontend):
         "registration_hard_limit", "iban", "orga_address", "registration_text",
         "mail_text", "use_questionnaire", "notes", "lodge_field",
         "reserve_field", "is_visible", "is_course_list_visible",
-        "is_course_state_visible", "course_room_field")
+        "is_course_state_visible", "is_participant_list_visible",
+        "courses_in_participant_list", "course_room_field")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -2226,38 +2308,13 @@ class EventFrontend(AbstractUserFrontend):
     def download_participant_list(self, rs, event_id, runs, landscape,
                                   orgas_only, part_ids=None):
         """Create list to send to all participants."""
-        course_ids = self.eventproxy.list_db_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids)
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
 
-        if not part_ids:
-            part_ids = rs.ambience['event']['parts'].keys()
-        if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
-            rs.notify("error", n_("Unknown Part."))
+        data = self._get_participant_list_data(rs, event_id, part_ids)
+        if not data:
             return self.redirect(rs, "event/downloads")
-        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
-
-        registrations = {
-            k: v
-            for k, v in registrations.items()
-            if any(v['parts'][part_id]['status'] ==
-                   const.RegistrationPartStati.participant
-                   for part_id in parts)}
-        personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
-        reg_order = sorted(
-            registrations.keys(),
-            key=lambda anid: name_key(
-                personas[registrations[anid]['persona_id']]))
-        registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order)
-        tex = self.fill_template(rs, "tex", "participant_list", {
-            'courses': courses, 'registrations': registrations,
-            'personas': personas,
-            'orientation': "landscape" if landscape else "portrait",
-            'orgas_only': orgas_only, 'parts': parts,
-        })
+        data['orientation'] = "landscape" if landscape else "portrait"
+        data['orgas_only'] = orgas_only
+        tex = self.fill_template(rs, "tex", "participant_list", data)
         file = self.serve_latex_document(
             rs, tex, "{}_participant_list".format(
                 rs.ambience['event']['shortname']),
@@ -2500,6 +2557,8 @@ class EventFrontend(AbstractUserFrontend):
             rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         persona_ids = (
@@ -2604,6 +2663,16 @@ class EventFrontend(AbstractUserFrontend):
             'real_deleted_lodgement_ids': tuple(sorted(
                 id for id, val in delta.get('lodgements', {}).items()
                 if val is None and lodgements.get(id))),
+
+            'changed_lodgement_groups': {
+                id: flatten_recursive_delta(val, lodgement_groups[id])
+                for id, val in delta.get('lodgement_groups', {}).items()
+                if id > 0 and val},
+            'new_lodgement_group_ids': tuple(sorted(
+                id for id in delta.get('lodgement_groups', {}) if id < 0)),
+            'real_deleted_lodgement_group_ids': tuple(sorted(
+                id for id, val in delta.get('lodgement_groups', {}).items()
+                if val is None and lodgement_groups.get(id))),
         }
 
         changed_registration_fields = set()
@@ -2631,6 +2700,7 @@ class EventFrontend(AbstractUserFrontend):
             'delta': delta,
             'registrations': registrations,
             'lodgements': lodgements,
+            'lodgement_groups': lodgement_groups,
             'suspicious_lodgements': suspicious_lodgements,
             'courses': courses,
             'suspicious_courses': suspicious_courses,
@@ -3805,12 +3875,17 @@ class EventFrontend(AbstractUserFrontend):
 
         This also displays some issues where possibly errors occured.
         """
+        parts = rs.ambience['event']['parts']
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
+
+        # Calculate inhabitants and reserve_inhabitant_nums
         inhabitants = self.calculate_groups(
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
         inhabitant_nums = {k: len(v) for k, v in inhabitants.items()}
@@ -3823,52 +3898,189 @@ class EventFrontend(AbstractUserFrontend):
             inhabitants)
         problems_condensed = {}
 
+        # Calculate inhabitant_sum and reserve_inhabitant_sum
         inhabitant_sum = {}
-        for part_id in rs.ambience['event']['parts']:
+        for part_id in parts:
             lodgement_sum = 0
             for lodgement_id in lodgement_ids:
                 lodgement_sum += inhabitant_nums[(lodgement_id, part_id)] - \
                                  reserve_inhabitant_nums[(lodgement_id, part_id)]
             inhabitant_sum[part_id] = lodgement_sum
-
         reserve_inhabitant_sum = {}
-        for part_id in rs.ambience['event']['parts']:
+        for part_id in parts:
             reserve_lodgement_sum = 0
             for lodgement_id in lodgement_ids:
                 reserve_lodgement_sum += reserve_inhabitant_nums[(lodgement_id, part_id)]
             reserve_inhabitant_sum[part_id] = reserve_lodgement_sum
 
+        # Calculate sum of lodgement capacities
         capacity_sum = 0
         reserve_sum = 0
-        for id, lodgement in xdictsort_filter(lodgements, 'moniker'):
+        for lodgement in lodgements.values():
             capacity_sum += lodgement['capacity']
             reserve_sum += lodgement['reserve']
 
-
+        # Calculate problems_condensed (worst problem)
         for lodgement_id, part_id in itertools.product(
-                lodgement_ids, rs.ambience['event']['parts'].keys()):
+                lodgement_ids, parts.keys()):
             problems_here = [p for p in problems
                              if p[1] == lodgement_id and p[2] == part_id]
             problems_condensed[(lodgement_id, part_id)] = (
                 max(p[4] for p in problems_here) if len(problems_here) else 0,
                 "; ".join(rs.gettext(p[0]) for p in problems_here),)
 
+        # Calculate groups
+        grouped_lodgements = OrderedDict([
+            (group_id, OrderedDict([
+                (lodgement_id, lodgement)
+                for lodgement_id, lodgement
+                in xdictsort_filter(lodgements, 'moniker')
+                if lodgement['group_id'] == group_id
+            ]))
+            for group_id, group
+            in (xdictsort_filter(groups, 'moniker') + [(None, None)])
+        ])
+
+        # Calculate group_inhabitants_sum, group_reserve_inhabitants_sum,
+        # group_capacity_sum and group_reserve_sum
+        group_inhabitants_sum = {
+            (group_id, part_id): sum(inhabitant_nums[(lodgement_id, part_id)]
+                                     for lodgement_id in group)
+            for part_id in parts
+            for group_id, group in grouped_lodgements.items()}
+        group_reserve_inhabitants_sum = {
+            (group_id, part_id):
+                sum(reserve_inhabitant_nums[(lodgement_id, part_id)]
+                    for lodgement_id in group)
+            for part_id in parts
+            for group_id, group in grouped_lodgements.items()}
+        group_capacity_sum = {
+            group_id: sum(lodgement['capacity'] for lodgement in group.values())
+            for group_id, group in grouped_lodgements.items()}
+        group_reserve_sum = {
+            group_id: sum(lodgement['reserve'] for lodgement in group.values())
+            for group_id, group in grouped_lodgements.items()}
+
         return self.render(rs, "lodgements", {
             'lodgements': lodgements,
+            'groups': groups,
+            'grouped_lodgements': grouped_lodgements,
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitant_nums,
             'inhabitants_sum': inhabitant_sum,
+            'group_inhabitants_sum': group_inhabitants_sum,
             'reserve_inhabitants': reserve_inhabitant_nums,
             'reserve_inhabitants_sum': reserve_inhabitant_sum,
+            'group_reserve_inhabitants_sum': group_reserve_inhabitants_sum,
+            'group_capacity_sum': group_capacity_sum,
+            'group_reserve_sum': group_reserve_sum,
             'capacity_sum': capacity_sum,
             'reserve_sum': reserve_sum,
             'problems': problems_condensed,
         })
 
     @access("event")
+    @event_guard(check_offline=True)
+    def lodgement_group_summary_form(self, rs, event_id):
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+
+        current = {
+            "{}_{}".format(key, group_id): value
+            for group_id, group in groups.items()
+            for key, value in group.items() if key != 'id'}
+        merge_dicts(rs.values, current)
+
+        return self.render(rs, "lodgement_group_summary", {
+            'lodgement_groups': groups})
+
+    @staticmethod
+    def process_lodgement_group_input(rs, groups, event_id):
+        """This handles input to configure the lodgement groups.
+
+        Since this covers a variable number of rows, we cannot do this
+        statically. This takes care of validation too.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type groups: [int]
+        :param groups: ids of existing groups
+        :type event_id: int
+        :param event_id: Id of the event to add new lodgement groups to
+        :rtype: {int: {str: object} or None}
+        """
+        # TODO This is nearly duplicate code with process_institution_input,
+        #   maybe, we can merge this into one common frontend function
+        delete_flags = request_extractor(
+            rs, (("delete_{}".format(group_id), "bool") for group_id in groups))
+        deletes = {group_id for group_id in groups if
+                   delete_flags['delete_{}'.format(group_id)]}
+        spec = {'moniker': "str"}
+        params = tuple(
+            ("{}_{}".format(key, group_id), value)
+            for group_id in groups
+            if group_id not in deletes
+            for key, value in spec.items())
+        data = request_extractor(rs, params)
+        ret = {
+            group_id: {key: data["{}_{}".format(key, group_id)]
+                       for key in spec}
+            for group_id in groups
+            if group_id not in deletes}
+        for group_id in groups:
+            if group_id in deletes:
+                ret[group_id] = None
+            else:
+                ret[group_id]['id'] = group_id
+        marker = 1
+        while marker < 2 ** 10:
+            will_create = unwrap(
+                request_extractor(rs, (("create_-{}".format(marker), "bool"),)))
+            if will_create:
+                params = tuple(
+                    ("{}_-{}".format(key, marker), value)
+                    for key, value in spec.items())
+                data = request_extractor(rs, params)
+                ret[-marker] = {
+                    key: data["{}_-{}".format(key, marker)]
+                    for key in spec}
+                ret[-marker]['event_id'] = event_id
+            else:
+                break
+            marker += 1
+        rs.values['create_last_index'] = marker - 1
+        return ret
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def lodgement_group_summary(self, rs, event_id):
+        """Manipulate groups of lodgements."""
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.process_lodgement_group_input(rs, group_ids.keys(),
+                                                    event_id)
+        if rs.errors:
+            return self.lodgement_group_summary_form(rs, event_id)
+        code = 1
+        for group_id, group in groups.items():
+            if group is None:
+                code *= self.eventproxy.delete_lodgement_group(
+                    rs, group_id, cascade=("lodgements",))
+            elif group_id < 0:
+                code *= self.eventproxy.create_lodgement_group(rs, group)
+            else:
+                with Atomizer(rs):
+                    current = self.eventproxy.get_lodgement_group(rs, group_id)
+                    # Do not update unchanged
+                    if current != group:
+                        code *= self.eventproxy.set_lodgement_group(rs, group)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/lodgement_group_summary")
+
+    @access("event")
     @event_guard()
     def show_lodgement(self, rs, event_id, lodgement_id):
         """Display details of one lodgement."""
+        group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = {
             k: v
@@ -3892,16 +4104,18 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_lodgement", {
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
+            'groups': groups,
         })
 
     @access("event")
     @event_guard(check_offline=True)
     def create_lodgement_form(self, rs, event_id):
         """Render form."""
-        return self.render(rs, "create_lodgement")
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
+        return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "capacity", "reserve", "notes")
+    @REQUESTdatadict("moniker", "capacity", "reserve", "group_id", "notes")
     @event_guard(check_offline=True)
     def create_lodgement(self, rs, event_id, data):
         """Add a new lodgement."""
@@ -3928,14 +4142,15 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def change_lodgement_form(self, rs, event_id, lodgement_id):
         """Render form."""
+        groups = self.eventproxy.list_lodgement_groups(rs, event_id).items()
         field_values = {
             "fields.{}".format(key): value
             for key, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
-        return self.render(rs, "change_lodgement")
+        return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("moniker", "capacity", "reserve", "notes")
+    @REQUESTdatadict("moniker", "capacity", "reserve", "notes", "group_id")
     @event_guard(check_offline=True)
     def change_lodgement(self, rs, event_id, lodgement_id, data):
         """Alter the attributes of a lodgement.
@@ -4235,7 +4450,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = event['tracks']
         spec = copy.deepcopy(QUERY_SPECS['qview_registration'])
         # note that spec is an ordered dict and we should respect the order
-        for part_id in event['parts']:
+        for part_id, part in xdictsort_filter(event['parts'], 'part_begin'):
             spec["part{0}.status".format(part_id)] = "int"
             spec["part{0}.is_reserve".format(part_id)] = "bool"
             spec["part{0}.lodgement_id".format(part_id)] = "int"
@@ -4248,7 +4463,8 @@ class EventFrontend(AbstractUserFrontend):
                     temp = "lodgement{0}.xfield_{1}"
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[temp.format(part_id, f['field_name'])] = kind
-            for track_id in event['parts'][part_id]['tracks']:
+            ordered_tracks = xdictsort_filter(part['tracks'], 'sortkey')
+            for track_id, track in ordered_tracks:
                 spec["track{0}.is_course_instructor".format(track_id)] \
                     = "bool"
                 spec["track{0}.course_id".format(track_id)] = "int"
@@ -4905,7 +5121,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
 
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
-        cascade = {"registrations", "courses", "lodgements",
+        cascade = {"registrations", "courses", "lodgement_groups", "lodgements",
                    "field_definitions", "course_tracks", "event_parts", "orgas",
                    "questionnaire", "log", "mailinglists"} & blockers.keys()
 

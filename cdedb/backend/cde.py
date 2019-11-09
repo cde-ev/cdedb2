@@ -131,7 +131,7 @@ class CdEBackend(AbstractBackend):
         :returns: Mapping of lastschrift ids to granting persona.
         """
         persona_ids = affirm_set("id", persona_ids, allow_None=True)
-        if ("finance_admin" not in rs.user.roles
+        if (not ({"cde_admin", "core_admin"} & rs.user.roles)
             and (persona_ids is None
                  or any(p_id != rs.user.persona_id for p_id in persona_ids))):
             raise PrivilegeError(n_("Not privileged."))
@@ -163,7 +163,7 @@ class CdEBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
         if ("finance_admin" not in rs.user.roles
-            and any(e['persona_id'] != rs.user.persona_id for e in data)):
+                and any(e['persona_id'] != rs.user.persona_id for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 

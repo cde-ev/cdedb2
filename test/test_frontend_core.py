@@ -84,15 +84,9 @@ class TestCoreFrontend(FrontendTest):
     @as_users("emilia")
     def test_event_profile_past_events(self, user):
         self.traverse({'href': '/core/self/show'})
-        try:
-            self.traverse({'description': "PfingstAkademie 2014"})
-        except IndexError as e:
-            self.assertTrue(self, "No matching elements found" in str(e))
-        self.get('/core/self/show')
-        try:
-            self.traverse({'description': "Goethe zum Anfassen"})
-        except IndexError as e:
-            self.assertTrue(self, "No matching elements found" in str(e))
+        self.assertPresence("PfingstAkademie 2014")
+        self.assertNoLink(content="PfingstAkademie 2014")
+        self.assertNoLink(content="Goethe zum Anfassen")
 
     @as_users("berta")
     def test_cppaymentinformation(self, user):
@@ -469,6 +463,26 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('loginform', self.response.forms)
         self.assertLogin(other['display_name'])
 
+    @as_users("anton", "ferdinand")
+    def test_cde_admin_reset_password(self, user):
+        self.realm_admin_view_profile('berta', 'cde')
+        self.assertTitle("Bertålotta Beispiel")
+        f = self.response.forms['sendpasswordresetform']
+        self.submit(f)
+        self.assertPresence("E-Mail abgeschickt.", div='notifications')
+        self.assertTitle("Bertålotta Beispiel")
+
+
+    # TODO: Inline this after architecture/mailinglists is merged
+    # @as_users("ferdinand", "nina")
+    # def test_ml_admin_reset_password(self, user):
+    #    self.realm_admin_view_profile('janis', 'ml')
+    #    self.assertTitle("Janis Jalapeño")
+    #    f = self.response.forms['sendpasswordresetform']
+    #    self.submit(f)
+    #    self.assertPresence("E-Mail abgeschickt.")
+    #    self.assertTitle("Janis Jalapeño")
+
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
         # First test with current username
@@ -742,7 +756,8 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton")
     def test_toggle_activity(self, user):
         for i, u in enumerate(("berta", "charly", "daniel", "emilia", "garcia",
-                               "inga", "janis", "kalif", "lisa", "martin")):
+                               "inga", "janis", "kalif", "lisa", "martin",
+                               "olaf")):
             with self.subTest(target=u):
                 self.admin_view_profile(u)
                 f = self.response.forms['activitytoggleform']

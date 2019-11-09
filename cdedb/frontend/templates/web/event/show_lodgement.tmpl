@@ -36,6 +36,14 @@
                 <dd>{{ ambience['lodgement']['capacity'] }}</dd>
                 <dt>{% trans -%}Camping Mat Capacity{%- endtrans %}</dt>
                 <dd>{{ ambience['lodgement']['reserve'] }}</dd>
+                <dt>{% trans -%}Lodgement Group{%- endtrans %}</dt>
+                <dd>
+                    {% if ambience['lodgement']['group_id'] %}
+                        {{ groups[ambience['lodgement']['group_id']]['moniker'] }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </dd>
             </dl>
 
             <dl class="dl-horizontal">
