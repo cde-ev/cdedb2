@@ -49,6 +49,8 @@ class MlFrontend(AbstractUserFrontend):
         if "ml" in rs.user.roles:
             rs.user.moderator = self.mlproxy.moderator_info(rs,
                                                             rs.user.persona_id)
+        if "event" in rs.user.roles:
+            rs.user.orga = self.eventproxy.orga_info(rs, rs.user.persona_id)
 
     @classmethod
     def is_admin(cls, rs):
