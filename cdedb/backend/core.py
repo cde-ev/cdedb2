@@ -1486,7 +1486,8 @@ class CoreBackend(AbstractBackend):
         is_orga = self.query_all(rs, orga, (rs.user.persona_id,))
         if (ids != {rs.user.persona_id}
                 and not is_orga
-                and "event_admin" not in rs.user.roles
+                and not (rs.user.roles
+                         & {"event_admin", "cde_admin", "core_admin"})
                 and (any(e['is_cde_realm'] for e in ret.values()))):
             query = ("SELECT DISTINCT regs.id, regs.persona_id "
                      "FROM event.registrations AS regs "
