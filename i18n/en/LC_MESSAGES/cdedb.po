@@ -2096,7 +2096,7 @@ msgid "Failed."
 msgstr ""
 
 #: cdedb/backend/core.py:1502
-msgid "Access to CdE data sets inhibited."
+msgid "Access to persona data inhibited."
 msgstr ""
 
 #: cdedb/backend/core.py:1504

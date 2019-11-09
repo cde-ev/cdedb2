@@ -2116,8 +2116,8 @@ msgid "Failed."
 msgstr "Aktion fehlgeschlagen."
 
 #: cdedb/backend/core.py:1502
-msgid "Access to CdE data sets inhibited."
-msgstr "Zugriff auf CdE-Datensätze verhindert."
+msgid "Access to persona data inhibited."
+msgstr "Zugriff auf Personendaten verhindert."
 
 #: cdedb/backend/core.py:1504
 msgid "Not an event user."

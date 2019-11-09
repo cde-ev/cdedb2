@@ -806,6 +806,14 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(ValueError):
             self.core.initialize_privilege_change(self.key, data)
 
+    @as_users("garcia")
+    def test_non_participant_privacy(self, user):
+        with self.assertRaises(PrivilegeError) as cm:
+            self.core.get_event_users(self.key, (3,), 1)
+        self.assertIn("Access to persona data inhibited.",
+                      cm.exception.args)
+        self.core.get_event_users(self.key, (9,), 1)
+
     @as_users("anton")
     def test_log(self, user):
         ## first generate some data
