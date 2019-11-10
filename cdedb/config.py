@@ -198,6 +198,9 @@ _DEFAULTS = {
     # True for development instances
     "CDEDB_DEV": False,
 
+    # True when running within unit test environment
+    "CDEDB_TEST": False,
+
     # place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
 

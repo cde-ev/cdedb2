@@ -21,7 +21,7 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
-    n_, glue, QuotaException, PrivilegeError, now,
+    n_, glue, QuotaException, now,
     roles_to_db_role, RequestState, User, extract_roles, ANTI_CSRF_TOKEN_NAME)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
@@ -55,6 +55,7 @@ class Application(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets, self.conf.DB_PORT)
+        # Construct a reduced Jinja environment for rendering error pages.
         # TODO With buster we can activate the trimming of the trans env
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
@@ -242,10 +243,6 @@ class Application(BaseApp):
                 raise
         except werkzeug.routing.RequestRedirect as e:
             return e.get_response(request.environ)
-        except PrivilegeError as e:
-            # Convert permission errors from the backend to 403
-            return self.make_error_page(werkzeug.exceptions.Forbidden(e.args),
-                                        request)
         except werkzeug.exceptions.HTTPException as e:
             return self.make_error_page(e, request)
         except psycopg2.extensions.TransactionRollbackError as e:
@@ -267,10 +264,15 @@ class Application(BaseApp):
                    "some false positive restrictions. Your limit will be "
                    "reset in the next days."))
         except Exception as e:
+            # Raise exceptions when in TEST environment to let the test runner
+            # catch them.
+            if self.conf.CDEDB_TEST:
+                raise
+
             # debug output if applicable
             if self.conf.CDEDB_DEV:
                 return Response(cgitb.html(sys.exc_info(), context=7),
-                                mimetype="text/html")
+                                mimetype="text/html", status=500)
             # generic errors
             return self.make_error_page(
                 werkzeug.exceptions.InternalServerError(repr(e)),

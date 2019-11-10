@@ -30,10 +30,33 @@ class TestApplication(FrontendTest):
         with unittest.mock.patch('cdedb.frontend.core.CoreFrontend.index',
                                  new=hander_mock), \
             unittest.mock.patch.object(self.app.app.conf, 'CDEDB_DEV',
+                                       new=False), \
+            unittest.mock.patch.object(self.app.app.conf, 'CDEDB_TEST',
                                        new=False):
                 self.get('/', status=500)
                 self.assertTitle("500: Internal Server Error")
                 self.assertPresence("ValueError")
+
+    def test_error_catching(self):
+        """
+        This test checks that errors risen from within the CdEDB Python code
+        are correctly caught by the test framework. Otherwise we cannot rely
+        on the completness of our tests.
+        """
+        # Replace CoreFrontend.index() function with Mock that raises
+        # ValueError
+        hander_mock = unittest.mock.MagicMock(
+            side_effect=ValueError("a really unexpected exception"))
+        hander_mock.modi = {"GET", "HEAD"}
+
+        with unittest.mock.patch('cdedb.frontend.core.CoreFrontend.index',
+                                 new=hander_mock):
+            with self.assertRaises(ValueError,
+                                   msg="The test suite did not detect an "
+                                       "unexpected exception. Be careful with "
+                                       "the test results, as they may not "
+                                       "report all errors in the application."):
+                self.get('/', status='*')
 
     def test_basics(self):
         self.get("/")

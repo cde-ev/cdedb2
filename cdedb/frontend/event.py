@@ -22,7 +22,7 @@ import datetime
 
 import magic
 import psycopg2.extensions
-import werkzeug
+import werkzeug.exceptions
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
@@ -35,7 +35,7 @@ from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
-    DEFAULT_NUM_COURSE_CHOICES, PrivilegeError, mixed_existence_sorter)
+    DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -5169,7 +5169,7 @@ class EventFrontend(AbstractUserFrontend):
             event = self.eventproxy.get_event(rs, aux)
             if "event_admin" not in rs.user.roles:
                 if rs.user.persona_id not in event['orgas']:
-                    raise PrivilegeError(n_("Not privileged."))
+                    raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             if aux is None:
                 return self.send_json(rs, {})
         else:
