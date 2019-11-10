@@ -8750,10 +8750,21 @@ msgstr "Änderungen prüfen"
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:12
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:13
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:13
-#: cdedb/frontend/templates/web/core/index.tmpl:64
 #: cdedb/frontend/templates/web/core/base.tmpl:26
 msgid "Account Requests"
 msgstr "Accountanfragen"
+
+#: cdedb/frontend/templates/web/core/index.tmpl:64
+msgid "account request"
+msgid_plural "account requests"
+msgstr[0] "Accountanfrage"
+msgstr[1] "Accountanfragen"
+
+#: cdedb/frontend/templates/web/core/index.tmpl:91
+msgid "privilege change"
+msgid_plural "privilege changes"
+msgstr[0] "Admin-Änderung"
+msgstr[1] "Admin-Änderungen"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:33
 #: cdedb/frontend/templates/web/core/list_privilege_changes.tmpl:11
@@ -9138,10 +9149,17 @@ msgstr "Verwaltung"
 #: cdedb/frontend/templates/web/core/index.tmpl:63
 #: cdedb/frontend/templates/web/core/index.tmpl:72
 #, python-format
-msgid "There are currently %(count)s %(link)s to review."
-msgstr "Derzeit sind %(count)s %(link)s zu bearbeiten."
+msgid "There is currently %(count)s %(link)s to review."
+msgid_plural "There are currently %(count)s %(link)s to review."
+msgstr[0] "Derzeit ist %(count)s %(link)s zu bearbeiten."
+msgstr[1] "Derzeit sind %(count)s %(link)s zu bearbeiten."
 
 #: cdedb/frontend/templates/web/core/index.tmpl:73
+msgid "profile change"
+msgid_plural "profile changes"
+msgstr[0] "Profil-Änderung"
+msgstr[1] "Profil-Änderungen"
+
 #: cdedb/frontend/templates/web/core/show_history.tmpl:273
 msgid "Changes"
 msgstr "Änderungen"
@@ -9216,10 +9234,12 @@ msgstr "Statistik"
 msgid "Moderated Mailinglists"
 msgstr "Moderierte Mailinglisten"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:157
+#: cdedb/frontend/templates/web/core/index.tmpl:168
 #, python-format
-msgid "%(count)s Requests"
-msgstr "%(count)s Anfragen"
+msgid "%(count)s Request"
+msgid_plural "%(count)s Requests"
+msgstr[0] "%(count)s Anfrage"
+msgstr[1] "%(count)s Anfragen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:168
 #: cdedb/frontend/templates/web/event/index.tmpl:13

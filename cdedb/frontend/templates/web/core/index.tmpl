@@ -62,7 +62,11 @@
                 {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 %}
                     <p>
                         {% trans count=dashboard['genesis_cases'],
-                                 link=util.href(cdedblink('core/genesis_list_cases'), gettext("Account Requests")) -%}
+                                 link=util.href(cdedblink('core/genesis_list_cases'),
+                                                ngettext("account request", "account requests",
+                                                         dashboard['genesis_cases'])) -%}
+                        	There is currently {{ count }} {{ link }} to review.
+                        {%- pluralize -%}
                         	There are currently {{ count }} {{ link }} to review.
                         {%- endtrans %}
                     </p>
@@ -71,8 +75,11 @@
                 {% if 'pending_changes' in dashboard and dashboard['pending_changes'] > 0 %}
                     <p>
                         {% trans count=dashboard['pending_changes'],
-                                 link=util.href(cdedblink('core/list_pending_changes'), gettext("Changes")) -%}
-                        	There are currently {{ count }} {{ link }} to review.
+                                 link=util.href(cdedblink('core/list_pending_changes'),
+                                                ngettext("profile change", "profile changes", dashboard['pending_changes'])) -%}
+                        	There is currently {{ count }} {{ link }} to review.
+                        {%- pluralize -%}
+                            There are currently {{ count }} {{ link }} to review.
                         {%- endtrans %}
                     </p>
                 {% endif %}
@@ -81,7 +88,10 @@
                     <p>
                         {% trans count=dashboard['privilege_changes'],
                                  link=util.href(cdedblink('core/list_privilege_changes'),
-                                                gettext("Privilege Changes")) -%}
+                                                ngettext("privilege change", "privilege changes",
+                                                        dashboard['privilege_changes'])) -%}
+                            There is currently {{ count }} {{ link }} to review.
+                        {%- pluralize -%}
                             There are currently {{ count }} {{ link }} to review.
                         {%- endtrans %}
                     </p>
@@ -165,7 +175,9 @@
                             {% if mailinglist['requests'] %}
                                 <br />
                                 {{ util.href(cdedblink('ml/management', {'mailinglist_id' : mailinglist_id}),
-                                             gettext("%(count)s Requests")|format(count=mailinglist['requests'])) }}
+                                             ngettext("%(count)s Request", "%(count)s Requests",
+                                                      mailinglist['requests'])
+                                                 |format(count=mailinglist['requests'])) }}
                             {% endif %}
                         </li>
                     {% endfor %}
