@@ -897,21 +897,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             errorsdict.setdefault(key, []).append(value)
         # here come the always accessible things promised above
 
-        def safe_gettext(*args, **kwargs):
-            return safe_filter(rs.gettext(*args, **kwargs))
-
-        def safe_ngettext(*args, **kwargs):
-            return safe_filter(rs.ngettext(*args, **kwargs))
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
-            'safe_gettext': safe_gettext,
             'gettext': rs.gettext,
             'is_admin': self.is_admin(rs),
             'lang': rs.lang,
-            'safe_ngettext': safe_ngettext,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
             'original_request': rs.request,
