@@ -7050,6 +7050,10 @@ msgstr ""
 msgid "The Participant will be removed from this Course."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:22
+msgid "Dokuteam Addresslist"
+msgstr ""
+
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:40
 msgid ""
 "As you are no participant of this past event, you can only\n"

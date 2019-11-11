@@ -373,6 +373,15 @@ _DEFAULTS = {
 
     # dict where the values are dicts mapping titles to queries for "speed
     # dialing"
+    "BASE_QUERIES": {
+        "base_doku_address_query": Query(
+            "qview_past_event_user", QUERY_SPECS['qview_past_event_user'],
+            ("personas.id", "given_names", "family_name", "address",
+             "address_supplement", "postal_code", "location", "country"),
+            [],
+            (("family_name", True), ("given_names", True),
+             ("personas.id", True))),
+    },
     "DEFAULT_QUERIES": {
         "qview_cde_user": {
             n_("00_query_cde_user_all"): Query(

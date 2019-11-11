@@ -706,6 +706,15 @@ class CdEBackend(AbstractBackend):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
                 query.spec["is_{}_realm".format(realm)] = "bool"
+        elif query.scope == "qview_past_event_user":
+            if not self.is_admin(rs):
+                raise PrivilegeError(n_("Admin only."))
+            query.constraints.append(
+                ("is_event_realm", QueryOperators.equal, True))
+            query.constraints.append(
+                ("is_archived", QueryOperators.equal, False))
+            query.spec['is_event_realm'] = "bool"
+            query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

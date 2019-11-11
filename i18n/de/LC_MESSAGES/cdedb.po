@@ -7314,6 +7314,10 @@ msgstr ""
 msgid "Add Course"
 msgstr "Kurs hinzufügen"
 
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:22
+msgid "Dokuteam Addresslist"
+msgstr "Dokuteam-Adressliste"
+
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:72
 msgid "Add Participant <u>without</u> Course"
 msgstr "Teilnehmer <u>ohne</u> Kurs hinzufügen"

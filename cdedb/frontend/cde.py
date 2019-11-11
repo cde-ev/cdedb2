@@ -2282,6 +2282,28 @@ class CdEFrontend(AbstractUserFrontend):
                     participants[anid]['viewable'] = True
         return participants, personas, extra_participants
 
+    @access("cde_admin")
+    def download_past_event_participantlist(self, rs, pevent_id):
+        """Provide a download of a participant list for a past event."""
+        query = self.conf.BASE_QUERIES["base_doku_address_query"]
+        query.constraints += (("pevent_id", QueryOperators.equal,
+                                           pevent_id),)
+
+        events = self.pasteventproxy.list_past_events(rs)
+        choices = {
+            'gender': OrderedDict(
+                enum_entries_filter(const.Genders, rs.default_gettext))
+        }
+
+        result = self.cdeproxy.submit_general_query(rs, query)
+        fields = []
+        for csvfield in query.fields_of_interest:
+            fields.extend(csvfield.split(','))
+        csv_data = csv_output(result, fields, substitutions=choices)
+        return self.send_csv_file(
+            rs, data=csv_data, inline=False,
+            filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
+
     @access("member")
     def show_past_event(self, rs, pevent_id):
         """Display concluded event."""
@@ -2307,7 +2329,8 @@ class CdEFrontend(AbstractUserFrontend):
             'courses': courses, 'participants': participants,
             'personas': personas, 'institutions': institutions,
             'extra_participants': extra_participants,
-            'is_participant': is_participant})
+            'is_participant': is_participant,
+        })
 
     @access("member")
     def show_past_course(self, rs, pevent_id, pcourse_id):

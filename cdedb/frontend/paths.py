@@ -227,6 +227,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 sub('/event/<int:pevent_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_past_event"),
+                    rule("/download", methods=_GET,
+                         endpoint="download_past_event_participantlist"),
                     rule("/change", methods=_GET,
                          endpoint="change_past_event_form"),
                     rule("/change", methods=_POST,
