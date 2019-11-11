@@ -562,7 +562,7 @@ class TestAssemblyFrontend(FrontendTest):
             "Du hast für die folgenden Kandidaten gestimmt:")
         f = self.response.forms['showoldvoteform']
         f['secret'] = secret
-        self.submit(f)
+        self.submit(f, check_notification=False)
         self.assertNonPresence("Die Versammlung wurde beendet und die "
                                "Stimmen sind nun verschlüsselt.")
         self.assertPresence(
