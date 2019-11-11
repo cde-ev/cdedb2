@@ -42,8 +42,8 @@ i18n-compile:
 	pybabel compile -d ./i18n/ -l en -D cdedb
 
 sample-data:
-	make storage
-	make sql
+	make storage > /dev/null
+	make sql > /dev/null
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 
 sample-data-test:
