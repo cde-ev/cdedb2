@@ -16,6 +16,7 @@ I18N_STRINGS = (
     n_("AssemblyLogCodes.assembly_created"),
     n_("AssemblyLogCodes.assembly_changed"),
     n_("AssemblyLogCodes.assembly_concluded"),
+    n_("AssemblyLogCodes.assembly_deleted"),
     n_("AssemblyLogCodes.ballot_created"),
     n_("AssemblyLogCodes.ballot_changed"),
     n_("AssemblyLogCodes.ballot_deleted"),
