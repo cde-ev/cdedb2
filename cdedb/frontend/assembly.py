@@ -619,13 +619,16 @@ class AssemblyFrontend(AbstractUserFrontend):
             result['losers'] = losers
             result['counts'] = None  # Will be used for classical voting
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
+        has_voted = False
         own_vote = None
         if attends:
-            try:
-                own_vote = self.assemblyproxy.get_vote(
-                    rs, ballot_id, secret=secret)
-            except ValueError:
-                own_vote = None
+            has_voted = self.assemblyproxy.has_voted(rs, ballot_id)
+            if has_voted:
+                try:
+                    own_vote = self.assemblyproxy.get_vote(
+                        rs, ballot_id, secret=secret)
+                except ValueError:
+                    own_vote = None
         merge_dicts(rs.values, {'vote': own_vote})
         split_vote = None
         if own_vote:
@@ -671,10 +674,10 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         return self.render(rs, "show_ballot", {
             'attachments': attachments, 'split_vote': split_vote,
-            'voted': own_vote, 'result': result, 'candidates': candidates,
+            'own_vote': own_vote, 'result': result, 'candidates': candidates,
             'attends': attends, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
-            'secret': secret,
+            'secret': secret, 'has_voted': has_voted,
         })
 
     @access("assembly_admin")
