@@ -946,6 +946,27 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
+    def has_voted(self, rs, ballot_id):
+        """Look up whether the user has voted in a ballot.
+
+        It is only allowed to call this if we attend the ballot.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ballot_id: int
+        :rtype: bool
+        """
+        ballot_id = affirm("id", ballot_id)
+
+        if not self.check_attendance(rs, ballot_id=ballot_id):
+            raise PrivilegeError(n_("Must attend the ballot."))
+
+        query = glue("SELECT has_voted FROM assembly.voter_register",
+                     "WHERE ballot_id = %s and persona_id = %s")
+        has_voted = unwrap(
+            self.query_one(rs, query, (ballot_id, rs.user.persona_id)))
+        return has_voted
+
+    @access("assembly")
     def get_vote(self, rs, ballot_id, secret):
         """Look up a vote.
 
@@ -970,10 +991,7 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Must attend the ballot."))
 
         with Atomizer(rs):
-            query = glue("SELECT has_voted FROM assembly.voter_register",
-                         "WHERE ballot_id = %s and persona_id = %s")
-            has_voted = unwrap(
-                self.query_one(rs, query, (ballot_id, rs.user.persona_id)))
+            has_voted = self.has_voted(rs, ballot_id)
             if not has_voted:
                 return None
             if secret is None:
