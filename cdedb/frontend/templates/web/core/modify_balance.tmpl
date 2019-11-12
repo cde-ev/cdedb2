@@ -1,0 +1,33 @@
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] -%}
+    	Modify Balance for {{ given_names }} {{ family_name }}
+    {%- endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+{{ super() }}
+{{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
+                                                                                  ambience['persona']['family_name']),
+        icon="user") }}
+{{ util.breadcrumb_link(cdedblink("core/modify_balance_form"), gettext("Modify Balance"), active="True") }}
+{% endblock %}
+{% block content %}
+    <p>
+        {{ util.make_icon("info-sign") }}
+        {% trans -%}Here you can manually correct the balance of a member. This should only be used to correct a previous mistake when updating balance.{%- endtrans %}
+    </p>
+
+    <form action="{{ cdedblink('core/modify_balance') }}" method="POST" id="modifybalanceform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/modify_balance') }}
+        <div>
+            {{ util.form_input_text(name="new_balance", label=gettext("New Balance"), type="number",
+                    attributes='min="0" step="0.01"'|s, small=True, defaultvalue=old_balance) }}
+            {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"), small=True) }}
+            {{ util.form_input_submit(value=gettext("Save"), small=True,
+                    cancellink=show_user_link(ambience['persona']['id'])) }}
+        </div>
+    </form>
+
+    {# TODO Archivierung einfuegen #}
+{% endblock %}

@@ -93,6 +93,7 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.increase_balance"),
     n_("FinanceLogCodes.deduct_membership_fee"),
     n_("FinanceLogCodes.end_trial_membership"),
+    n_("FinanceLogCodes.manual_balance_correction"),
     n_("FinanceLogCodes.grant_lastschrift"),
     n_("FinanceLogCodes.revoke_lastschrift"),
     n_("FinanceLogCodes.modify_lastschrift"),

@@ -185,22 +185,20 @@
                 </dd>
 
                 <dt>{% trans -%}Balance{%- endtrans %}</dt>
-                {% if data['has_lastschrift'] %}
                     <dd>
-                        {{ data['balance']|money(lang=lang) }} {% trans -%}and{%- endtrans %}
-                        {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                gettext("Direct Debit Authorization"), icon="euro",
-                                readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
-                    </dd>
-                {% else %}
-                    <dd>{{ data['balance']|money(lang=lang) }}</dd>
-                    {% if 'cde_admin' in user.roles %}
-                        <dd>
+                        {{ data['balance']|money(lang=lang) }}
+                        {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pencil",
+                                     aclass="btn btn-xs btn-warning") }}
+                        {% if data['has_lastschrift'] %}
+                            {% trans -%}and{%- endtrans %}
+                            {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                    gettext("Direct Debit Authorization"), icon="euro",
+                                    readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
+                        {% elif "finance_admin" in user.roles %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("New Direct Debit Authorization …"), icon="euro") }}
-                        </dd>
-                    {% endif %}
-                {% endif %}
+                        {% endif %}
+                    </dd>
 
                 {% if data['is_member'] %}
                     <dt>{% trans -%}Searchability{%- endtrans %}</dt>
