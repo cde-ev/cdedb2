@@ -144,7 +144,7 @@ def work(args):
 
     print("Remove inappropriate admin flags from all users")
     for persona in data['core.personas'].values():
-        bits = ("is_admin", "is_assembly_admin", "is_ml_admin")
+        bits = ("is_meta_admin", "is_assembly_admin", "is_ml_admin")
         for bit in bits:
             persona[bit] = False
 
