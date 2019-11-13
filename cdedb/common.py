@@ -99,7 +99,7 @@ class RequestState:
         self.notifications = notifications
         self.urls = mapadapter
         self.requestargs = requestargs
-        self.errors = errors
+        self._errors = errors
         if not isinstance(values, werkzeug.datastructures.MultiDict):
             values = werkzeug.datastructures.MultiDict(values)
         self.values = values
@@ -119,6 +119,10 @@ class RequestState:
         self.is_quiet = False
         # Is true, if the application detected an invalid (or no) CSRF token
         self.csrf_alert = False
+        # Used for validation enforcement, set to False if a validator
+        # is executed and then to True with the corresponding methods
+        # of this class
+        self.validation_appraised = None
 
     def notify(self, ntype, message, params=None):
         """Store a notification for later delivery to the user.
@@ -133,6 +137,65 @@ class RequestState:
                              {'t': ntype})
         params = params or {}
         self.notifications.append((ntype, message, params))
+
+    def append_validation_error(self, error):
+        """Register a new  error.
+
+        The important side-effect is the activation of the validation
+        tracking, that causes the application to throw an error if the
+        validation result is not checked.
+
+        However in general the method extend_validation_errors()
+        should be preferred since it activates the validation tracking
+        even if no errors are present.
+
+        :type error: (str, Exception)
+        """
+        self.validation_appraised = False
+        self._errors.append(error)
+
+    def extend_validation_errors(self, errors):
+        """Register a new (maybe empty) set of errors.
+
+        The important side-effect is the activation of the validation
+        tracking, that causes the application to throw an error if the
+        validation result is not checked.
+
+        :type errors: [(str, Exception)]
+        """
+        self.validation_appraised = False
+        self._errors.extend(errors)
+
+    def has_validation_errors(self):
+        """Check whether validation errors exists.
+
+        This (or its companion function) must be called in the
+        lifetime of a request. Otherwise the application will throw an
+        error.
+
+        :rtype: bool
+        """
+        self.validation_appraised = True
+        return bool(self._errors)
+
+    def ignore_validation_errors(self):
+        """Explicitly mark validation errors as irrelevant.
+
+        This (or its companion function) must be called in the
+        lifetime of a request. Otherwise the application will throw an
+        error.
+        """
+        self.validation_appraised = True
+
+    def retrieve_validation_errors(self):
+        """Take a look at the queued validation errors.
+
+        This does not cause the validation tracking to register a
+        successful check.
+
+        :rtype: [(str, Exception)]
+        """
+        return self._errors
 
 
 class User:

@@ -248,7 +248,10 @@ class Application(BaseApp):
                 user.moderator = moderator
 
                 try:
-                    return handler(rs, **args)
+                    ret = handler(rs, **args)
+                    if rs.validation_appraised is False:
+                        raise RuntimeError("Input validation forgotten.")
+                    return ret
                 finally:
                     rs._conn.commit()
                     rs._conn.close()
