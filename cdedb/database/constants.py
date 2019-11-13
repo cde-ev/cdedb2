@@ -370,7 +370,7 @@ class AssemblyLogCodes(enum.IntEnum):
     assembly_created = 1  #:
     assembly_changed = 2  #:
     assembly_concluded = 3  #:
-    assembly_deleted = 4 #:
+    assembly_deleted = 4  #:
     ballot_created = 10  #:
     ballot_changed = 11  #:
     ballot_deleted = 12  #:

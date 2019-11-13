@@ -231,14 +231,16 @@ INSERT INTO event.log (ctime, code, submitted_by, event_id, persona_id, addition
 -- assembly
 --
 INSERT INTO assembly.assemblies (id, title, description, mail_address, signup_end) VALUES
-    (1, 'Internationaler Kongress', 'Proletarier aller Länder vereinigt Euch!', 'kongress@example.cde', date '2111-11-11');
+    (1, 'Internationaler Kongress', 'Proletarier aller Länder vereinigt Euch!', 'kongress@example.cde', date '2111-11-11'),
+    (2, 'Kanonische Beispielversammlung', 'Wenigstens darauf können wir uns einigen.', NULL, '2222-02-22');
 
 INSERT INTO assembly.ballots (id, assembly_id, title, description, vote_begin, vote_end, vote_extension_end, extended, use_bar, quorum, votes, is_tallied, notes) VALUES
     (1, 1, 'Antwort auf die letzte aller Fragen', 'Nach dem Leben, dem Universum und dem ganzen Rest.', timestamp with time zone '2002-02-22 22:22:22.222222+02', timestamp with time zone '2002-02-23 22:22:22.222222+02', now(), True, True, 2, NULL, False, NULL),
     (2, 1, 'Farbe des Logos', 'Ulitmativ letzte Entscheidung', timestamp with time zone '2222-02-02 22:22:22.222222+02', timestamp with time zone '2222-02-03 22:22:22.222222+02', NULL, NULL, False, 0, NULL, False, 'Nochmal alle auf diese wichtige Entscheidung hinweisen.'),
     (3, 1, 'Bester Hof', 'total objektiv', timestamp with time zone '2000-02-10 22:22:22.222222+02', timestamp with time zone '2222-02-11 22:22:22.222222+02', NULL, NULL, True, 0, 1, False, NULL),
     (4, 1, 'Akademie-Nachtisch', 'denkt an die Frutaner', now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, True, 0, 2, False, NULL),
-    (5, 1, 'Lieblingszahl', NULL, now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, False, 0, NULL, False, NULL);
+    (5, 1, 'Lieblingszahl', NULL, now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, False, 0, NULL, False, NULL),
+    (6, 2, 'Test-Abstimmung – bitte ignorieren', NULL, timestamp with time zone '2000-01-01 00:00:00.000000+02', timestamp with time zone '2000-02-02 00:00:00.000000+02', NULL, NULL, False, 0, 1, False, NULL);
 
 INSERT INTO assembly.candidates (id, ballot_id, description, moniker) VALUES
     (2, 1, 'Ich', '1'),
@@ -373,6 +375,6 @@ SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
 SELECT setval('event.log_id_seq', 4);
 SELECT setval('ml.mailinglists_id_seq', 10);
-SELECT setval('assembly.assemblies_id_seq', 1);
-SELECT setval('assembly.ballots_id_seq', 5);
+SELECT setval('assembly.assemblies_id_seq', 2);
+SELECT setval('assembly.ballots_id_seq', 6);
 SELECT setval('assembly.candidates_id_seq', 27);

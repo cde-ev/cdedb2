@@ -40,11 +40,21 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("anton")
     def test_entity_assembly(self, user):
-        expectation = {1: {
-            'id': 1,
-            'is_active': True,
-            'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
-            'title': 'Internationaler Kongress'}}
+        expectation = {
+            1: {
+                'id': 1,
+                'is_active': True,
+                'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
+                'title': 'Internationaler Kongress'
+            },
+            2: {
+                'id': 2,
+                'is_active': True,
+                'signup_end': datetime.datetime(2222, 2, 22, 0, 0,tzinfo=pytz.utc),
+                'title': 'Kanonische Beispielversammlung'
+            }
+
+        }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
         expectation = {
             'description': 'Proletarier aller Länder vereinigt Euch!',
@@ -72,17 +82,17 @@ class TestAssemblyBackend(BackendTest):
             'signup_end': now(),
             'title': 'Außerordentliche Mitgliederversammlung'
         }
-        self.assertEqual(2, self.assembly.create_assembly(self.key, data))
+        new_id = self.assembly.create_assembly(self.key, data)
         expectation = data
-        expectation['id'] = 2
+        expectation['id'] = new_id
         expectation['mail_address'] = None
         expectation['is_active'] = True
         self.assertEqual(expectation, self.assembly.get_assembly(
-            self.key, 2))
+            self.key, new_id))
 
         self.assertLess(0, self.assembly.delete_assembly(
-            self.key, 2, ("ballots", "attendees", "attachments", "log",
-                          "mailinglists")))
+            self.key, new_id, ("ballots", "attendees", "attachments", "log",
+                               "mailinglists")))
 
     @as_users("anton")
     def test_ticket_176(self, user):
@@ -92,8 +102,8 @@ class TestAssemblyBackend(BackendTest):
             'signup_end': now(),
             'title': 'Außerordentliche Mitgliederversammlung'
         }
-        self.assertEqual(2, self.assembly.create_assembly(self.key, data))
-        self.assertLess(0, self.assembly.conclude_assembly(self.key, 2))
+        new_id = self.assembly.create_assembly(self.key, data)
+        self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @as_users("anton")
     def test_entity_ballot(self, user):
@@ -269,7 +279,7 @@ class TestAssemblyBackend(BackendTest):
             3: 'Bester Hof',
             4: 'Akademie-Nachtisch',
             5: 'Lieblingszahl',
-            6: 'Verstehen wir Spaß'}
+            new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
 
     def test_extension(self):
@@ -432,8 +442,8 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("anton")
     @prepsql("""INSERT INTO assembly.assemblies
-        (id, title, description, mail_address, signup_end) VALUES
-        (2, 'Umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
+        (title, description, mail_address, signup_end) VALUES
+        ('Umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
          date '2111-11-11');""")
     def test_prepsql(self, user):
         expectation = {
@@ -441,6 +451,9 @@ class TestAssemblyBackend(BackendTest):
                 'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
                 'title': 'Internationaler Kongress'},
             2: {'id': 2, 'is_active': True,
+                'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
+                'title': 'Kanonische Beispielversammlung'},
+            3: {'id': 3, 'is_active': True,
                 'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
                 'title': 'Umfrage'}
         }
@@ -448,76 +461,76 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("anton")
     def test_log(self, user):
-        ## first generate some data
+        # first generate some data
         self.test_entity_assembly()
         self.test_vote()
         self.test_entity_ballot()
 
-        ## now check it
+        # now check it
         expectation = (
             {'additional_info': 'Farbe des Logos',
              'assembly_id': 1,
-             'code': 12,
+             'code': const.AssemblyLogCodes.ballot_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Verstehen wir Spaß',
              'assembly_id': 1,
-             'code': 10,
+             'code': const.AssemblyLogCodes.ballot_created,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Verstehen wir Spaß',
              'assembly_id': 1,
-             'code': 11,
+             'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'n',
              'assembly_id': 1,
-             'code': 20,
+             'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'j',
              'assembly_id': 1,
-             'code': 20,
+             'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'gelb',
              'assembly_id': 1,
-             'code': 22,
+             'code': const.AssemblyLogCodes.candidate_removed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'rot',
              'assembly_id': 1,
-             'code': 21,
+             'code': const.AssemblyLogCodes.candidate_updated,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'aqua',
              'assembly_id': 1,
-             'code': 20,
+             'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Farbe des Logos',
              'assembly_id': 1,
-             'code': 11,
+             'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': "Außerordentliche Mitgliederversammlung",
              'assembly_id': None,
-             'code': 4,
+             'code': const.AssemblyLogCodes.assembly_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'assembly_id': 1,
-             'code': 2,
+             'code': const.AssemblyLogCodes.assembly_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1})

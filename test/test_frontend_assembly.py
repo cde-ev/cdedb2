@@ -11,6 +11,53 @@ from cdedb.query import QueryOperators
 
 
 class TestAssemblyFrontend(FrontendTest):
+    # Helper functions:
+
+    def _create_assembly(self, adata=None):
+        if not adata:
+            adata = {
+                'title': 'Drittes CdE-Konzil',
+                'signup_end': "2222-4-1 00:00:00",
+                'description': "Wir werden alle Häretiker exkommunizieren.",
+                'notes': "Nur ein Aprilscherz",
+            }
+        self.traverse({'description': 'Versammlungen'},
+                      {'description': 'Versammlung anlegen'})
+        self.assertTitle("Versammlung anlegen")
+        f = self.response.forms['createassemblyform']
+        for k, v in adata.items():
+            f[k] = v
+        self.submit(f)
+        self.assertTitle(adata['title'])
+
+    def _signup(self):
+        f = self.response.forms['signupform']
+        self.submit(f)
+        self.assertNotIn('signupform', self.response.forms)
+        mail = self.fetch_mail()[0]
+        text = mail.get_body().get_content()
+        secret = text.split(
+            "Versammlung lautet", 1)[1].split("ohne Leerzeichen.", 1)[0].strip()
+        return secret
+
+    def _create_ballot(self, bdata, candidates=None, atitle=None):
+        self.traverse({"description": "Abstimmungen"},
+                      {"description": "Abstimmung anlegen"})
+        f = self.response.forms["createballotform"]
+        for k, v in bdata.items():
+            f[k] = v
+        self.submit(f)
+        if atitle:
+            self.assertTitle("{} ({})".format(bdata['title'], atitle))
+        self.traverse({"description": "Abstimmungen"},
+                      {"description": bdata['title']})
+        if candidates:
+            f = self.response.forms["addcandidateform"]
+            for candidate in candidates:
+                for k, v in candidate.items():
+                    f[k] = v
+                self.submit(f)
+
     @as_users("anton", "berta", "kalif")
     def test_index(self, user):
         self.traverse({'href': '/assembly/'})
@@ -109,23 +156,13 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_assembly(self, user):
-        self.traverse({'href': '/assembly/$'},
-                      {'href': '/assembly/create'},)
-        self.assertTitle("Versammlung anlegen")
-        f = self.response.forms['createassemblyform']
-        f['title'] = 'Drittes CdE-Konzil'
-        f['signup_end'] = "2222-4-1 00:00:00"
-        f['description'] = "Wir werden alle Häretiker exkommunizieren."
-        f['notes'] = "Nur ein Aprilscherz"
-        self.submit(f)
-        self.assertTitle("Drittes CdE-Konzil")
+        self._create_assembly()
         self.assertPresence("Häretiker")
         self.assertPresence("Aprilscherz")
 
     @as_users("anton")
     def test_delete_assembly(self, user):
-        self.logout()
-        self.test_create_assembly()
+        self._create_assembly()
         f = self.response.forms['deleteassemblyform']
         f['ack_delete'].checked = True
         self.submit(f)
@@ -144,23 +181,13 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton", "ferdinand")
     def test_external_signup(self, user):
-        self.traverse({'href': '/assembly/$'},
-                      {'href': '/assembly/create'},)
-        f = self.response.forms['createassemblyform']
-        f['title'] = 'Drittes CdE-Konzil'
-        f['signup_end'] = "2222-4-1 00:00:00"
-        f['description'] = "Wir werden alle Häretiker exkommunizieren."
-        f['notes'] = "Nur ein Aprilscherz"
-        self.submit(f)
-        self.assertTitle('Drittes CdE-Konzil')
-        self.traverse({'href': '/assembly/2/attendees'})
+        self._create_assembly()
         self.assertNonPresence("Kalif")
-        self.traverse({'href': '/assembly/2/attendees'})
+        self.traverse({'description': 'Teilnehmer'})
         f = self.response.forms['addattendeeform']
         f['persona_id'] = "DB-11-6"
         self.submit(f)
         self.assertTitle('Anwesenheitsliste (Drittes CdE-Konzil)')
-        self.traverse({'href': '/assembly/2/attendees'})
         self.assertPresence("Kalif")
 
     @as_users("kalif")
@@ -178,36 +205,32 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_conclude_assembly(self, user):
-        self.logout()
-        self.test_create_assembly()
-        self.traverse({'href': '/assembly/$'},
-                      {'href': '/assembly/2/show'},)
-        self.assertTitle("Drittes CdE-Konzil")
+        self._create_assembly()
         f = self.response.forms['signupform']
         self.submit(f)
-        self.traverse({'href': '/assembly/2/show'},
-                      {'href': '/assembly/2/change'},)
+        self.traverse({'description': 'Konfiguration'})
         f = self.response.forms['changeassemblyform']
         f['signup_end'] = "2002-4-1 00:00:00"
         self.submit(f)
-        self.traverse({'href': '/assembly/2/ballot/list'},
-                      {'href': '/assembly/2/ballot/create'},)
-        f = self.response.forms['createballotform']
-        f['title'] = 'Maximale Länge der Satzung'
-        f['description'] = "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will."
-        future = now() + datetime.timedelta(seconds=.5)
-        farfuture = now() + datetime.timedelta(seconds=1)
-        f['vote_begin'] = future.isoformat()
-        f['vote_end'] = farfuture.isoformat()
-        f['quorum'] = "0"
-        f['votes'] = ""
-        f['notes'] = "Kein Aprilscherz!"
-        self.submit(f)
+
+        wait_time = 0.5
+        future = now() + datetime.timedelta(seconds=wait_time)
+        farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
+        bdata = {
+            'title': 'Maximale Länge der Satzung',
+            'description': "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will.",
+            'vote_begin': future.isoformat(),
+            'vote_end': farfuture.isoformat(),
+            'quorum': "0",
+            'votes': "",
+            'notes': "Kein Aprilscherz!",
+        }
+        self._create_ballot(bdata, candidates=None)
         self.assertTitle("Maximale Länge der Satzung (Drittes CdE-Konzil)")
-        time.sleep(1)
-        self.traverse({'href': '/assembly/2/ballot/list'},
+        time.sleep(2 * wait_time)
+        self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Maximale Länge der Satzung'},
-                      {'href': '/assembly/2/show'},)
+                      {'description': 'Drittes CdE-Konzil'},)
         self.assertTitle("Drittes CdE-Konzil")
         f = self.response.forms['concludeassemblyform']
         f['ack_conclude'].checked = True
@@ -243,23 +266,23 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_entity_ballot_simple(self, user):
-        self.traverse({'href': '/assembly/$'},
-                      {'href': '/assembly/1/show'},
-                      {'href': '/assembly/1/ballot/list'},)
+        self.traverse({'description': 'Versammlungen$'},
+                      {'description': 'Internationaler Kongress'},
+                      {'description': 'Abstimmungen'},)
         self.assertTitle("Internationaler Kongress – Abstimmungen")
         self.assertNonPresence("Maximale Länge der Satzung")
-        self.traverse({'href': '/assembly/1/ballot/create'},)
-        f = self.response.forms['createballotform']
-        f['title'] = 'Maximale Länge der Satzung'
-        f['description'] = "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will."
-        f['vote_begin'] = "2222-4-1 00:00:00"
-        f['vote_end'] = "2222-5-1 00:00:00"
-        f['quorum'] = "0"
-        f['votes'] = ""
-        f['notes'] = "Kein Aprilscherz!"
-        self.submit(f)
-        self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
-        self.traverse({'href': '/assembly/1/ballot/6/change'},)
+        bdata = {
+            'title': 'Maximale Länge der Satzung',
+            'description': "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will.",
+            'vote_begin': "2222-4-1 00:00:00",
+            'vote_end': "2222-5-1 00:00:00",
+            'quorum': "0",
+            'votes': "",
+            'notes': "Kein Aprilscherz!",
+
+        }
+        self._create_ballot(bdata, atitle="Internationaler Kongress")
+        self.traverse({'description': 'Bearbeiten'},)
         f = self.response.forms['changeballotform']
         self.assertEqual("Kein Aprilscherz!", f['notes'].value)
         f['notes'] = "April, April!"
@@ -267,20 +290,18 @@ class TestAssemblyFrontend(FrontendTest):
         f['vote_end'] = "2222-4-1 00:00:01"
         self.submit(f)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
-        self.traverse({'href': '/assembly/1/ballot/6/change'},)
+        self.traverse({'description': 'Bearbeiten'},)
         f = self.response.forms['changeballotform']
         self.assertEqual("April, April!", f['notes'].value)
-        self.traverse({'href': '/assembly/1/show'},
-                      {'href': '/assembly/1/ballot/list'},)
+        self.traverse({'description': 'Abstimmungen'},)
         self.assertTitle("Internationaler Kongress – Abstimmungen")
         self.assertPresence("Maximale Länge der Satzung")
-        self.traverse({'href': '/assembly/1/ballot/6/show'},)
+        self.traverse({'description': 'Maximale Länge der Satzung'},)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
         f = self.response.forms['deleteballotform']
         f['ack_delete'].checked = True
         self.submit(f)
-        self.traverse({'href': '/assembly/1/show'},
-                      {'href': '/assembly/1/ballot/list'},)
+        self.traverse({'description': 'Abstimmungen'},)
         self.assertTitle("Internationaler Kongress – Abstimmungen")
         self.assertNonPresence("Maximale Länge der Satzung")
 
@@ -500,66 +521,81 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertNonPresence("Dunkelaquamarin")
 
+    @as_users
+    def test_has_voted(self, user):
+        self.traverse({'description': 'Versammlungen'},
+                      {'description': 'Drittes CdE-Konzil'},
+                      {'description': 'Abstimmungen'},
+                      {'description': 'Test-Abstimmung – bitte ignorieren'})
+
+        self.assertPresence("Du nimmst nicht an der Versammlung teil.")
+        self.assertNonPresence("Du hast nicht abgestimmt.")
+
+        self.traverse({'description': 'Übersicht'})
+        secret = self._signup()
+        self.traverse({'description': 'Abstimmungen'},
+                      {'description': 'Test-Abstimmung – bitte ignorieren'})
+
+        self.assertNonPresence("Du nimmst nicht an der Versammlung teil.")
+        self.assertPresence("Du hast nicht abgestimmt.")
+
     @as_users("anton")
     def test_provide_secret(self, user):
-        # Create new assembly.
         self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Versammlung anlegen'})
-        f = self.response.forms["createassemblyform"]
-        f['title'] = 'Drittes CdE-Konzil'
-        f['signup_end'] = "2222-4-1 00:00:00"
-        f['description'] = "Wir werden alle Häretiker exkommunizieren."
-        f['notes'] = "Nur ein Aprilscherz"
-        self.submit(f)
-        self.assertTitle("Drittes CdE-Konzil")
-        f = self.response.forms['signupform']
-        self.submit(f)
-        mail = self.fetch_mail()[0]
-        text = mail.get_body().get_content()
-        secret = text.split(
-            "Versammlung lautet", 1)[1].split("ohne Leerzeichen.", 1)[0].strip()
-        self.traverse({"description": "Abstimmungen"},
-                      {"description": "Abstimmung anlegen"})
-        f = self.response.forms["createballotform"]
-        f['title'] = 'Maximale Länge der Verfassung'
+                      {'description': 'Kanonische Beispielversammlung'})
+        secret = self._signup()
+        # Create new ballot.
         wait_time = 2
         future = now() + datetime.timedelta(seconds=wait_time)
-        farfuture = now() + datetime.timedelta(seconds=2*wait_time)
-        f['vote_begin'] = future.isoformat()
-        f['vote_end'] = farfuture.isoformat()
-        f['quorum'] = "0"
-        f['votes'] = "1"
-        self.submit(f)
-        f = self.response.forms["addcandidateform"]
-        f['moniker'] = "ja"
-        f['description'] = "Ja"
-        self.submit(f)
-        f['moniker'] = "nein"
-        f['description'] = "Nein"
-        self.submit(f)
+        farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
+        bdata = {
+            'title': 'Maximale Länge der Verfassung',
+            'vote_begin': future.isoformat(),
+            'vote_end': farfuture.isoformat(),
+            'quorum': "0",
+            'votes': "1",
+        }
+        candidates = [
+            {'moniker': 'ja', 'description': 'Ja'},
+            {'moniker': 'nein', 'description': 'Nein'},
+        ]
+        self._create_ballot(bdata, candidates)
+
+        # Wait for voting to start then cast own vote.
         time.sleep(wait_time)
         self.traverse({'description': 'Abstimmungen'},
-                      {'description': 'Maximale Länge der Verfassung'})
+                      {'description': bdata['title']})
         f = self.response.forms["voteform"]
         f["vote"] = "ja"
         self.submit(f)
+
+        # Check tally and own vote.
         time.sleep(wait_time)
         self.traverse({'description': 'Abstimmungen'},
-                      {'description': 'Maximale Länge der Verfassung'})
+                      {'description': bdata['title']})
         self.assertPresence(
             "Du hast für die folgenden Kandidaten gestimmt: Ja")
-        self.traverse({'description': 'Versammlungs-Übersicht'},
-                      {'description': 'Drittes CdE-Konzil'})
-        self.assertTitle("Drittes CdE-Konzil")
+
+        self.traverse({'description': 'Abstimmungen'},
+                      {'description': 'Test-Abstimmung – bitte ignorieren'})
+        self.assertPresence("Du hast nicht abgestimmt.")
+
+        # Conclude assembly.
+        self.traverse({'description': 'Kanonische Beispielversammlung'})
+        self.assertTitle("Kanonische Beispielversammlung")
         f = self.response.forms['concludeassemblyform']
         f['ack_conclude'].checked = True
         self.submit(f)
+
+        # Own vote should be hidden now.
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Maximale Länge der Verfassung'})
         self.assertPresence("Die Versammlung wurde beendet und die "
                             "Stimmen sind nun verschlüsselt.")
         self.assertNonPresence(
             "Du hast für die folgenden Kandidaten gestimmt:")
+
+        # Provide the secret to retrieve the vote.
         f = self.response.forms['showoldvoteform']
         f['secret'] = secret
         self.submit(f, check_notification=False)
@@ -569,11 +605,11 @@ class TestAssemblyFrontend(FrontendTest):
             "Du hast für die folgenden Kandidaten gestimmt: Ja")
 
     def test_log(self):
-        ## First: generate data
+        # First: generate data
         self.test_entity_ballot_simple()
         self.logout()
         self.test_conclude_assembly()
-        ## test_tally_and_get_result
+        # test_tally_and_get_result
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},
@@ -582,7 +618,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.test_extend()
         self.logout()
 
-        ## Now check it
+        # Now check it
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/log'})
