@@ -875,6 +875,17 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Der Benutzer ist archiviert.")
 
     @as_users("anton")
+    def test_modify_balance(self, user):
+        self.admin_view_profile('ferdinand')
+        self.assertPresence("Guthaben 22,20 €")
+        self.traverse({'description': 'Guthaben anpassen'})
+        self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        f = self.response.forms['modifybalanceform']
+        f['new_balance'] = 15.66
+        self.submit(f)
+        self.assertPresence("Guthaben 15,66 €")
+
+    @as_users("anton")
     def test_meta_info(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/meta'})
