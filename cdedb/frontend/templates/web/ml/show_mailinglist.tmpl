@@ -4,8 +4,11 @@
 {% block title %}{{ ambience['mailinglist']['title'] }}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope",
-        active=True) }}
+    {% if not ambience['is_active'] %}
+        {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'],
+                            icon="envelope", active=True) }}
 {% endblock %}
 {% block content %}
     {% if ambience['mailinglist']['event_id'] %}
