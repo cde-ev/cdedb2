@@ -1344,7 +1344,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("new_balance", "non_negative_decimal"),
-                 ("change_note", "str_or_None"))
+                 ("change_note", "str"))
     def modify_balance(self, rs, persona_id, new_balance, change_note):
         """Set the new balance."""
         old_balance = self.coreproxy.get_cde_user(rs, persona_id)['balance']
