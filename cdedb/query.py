@@ -220,7 +220,6 @@ QUERY_SPECS = {
             ("display_name", "str"),
             ("title", "str"),
             ("name_supplement", "str"),
-            ("gender", "int"),
             ("birthday", "date"),
             ("telephone", "str"),
             ("mobile", "str"),
