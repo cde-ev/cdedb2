@@ -1336,6 +1336,9 @@ class CoreFrontend(AbstractFrontend):
     @access("finance_admin")
     def modify_balance_form(self, rs, persona_id):
         """Serve form to manually modify a personas balance."""
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", n_("Persona is archived."))
+            return self.redirect_show_user(rs, persona_id)
         old_balance = self.coreproxy.get_cde_user(rs, persona_id)['balance']
         return self.render(rs, "modify_balance", {'old_balance': old_balance})
 
@@ -1343,9 +1346,15 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("new_balance", "non_negative_decimal"),
                  ("change_note", "str_or_None"))
     def modify_balance(self, rs, persona_id, new_balance, change_note):
+        """Set the new balance."""
         old_balance = self.coreproxy.get_cde_user(rs, persona_id)['balance']
         if old_balance == new_balance:
-            rs.notify("info", n_("New balance identical to old balance."))
+            rs.errors.append(("new_balance", ValueError(
+                n_("New balance identical to old balance."))))
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", n_("Persona is archived."))
+            return self.redirect_show_user(rs, persona_id)
+        if rs.errors:
             return self.redirect_show_user(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
