@@ -86,10 +86,10 @@
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
                 <h4>{% trans -%}Ballot Files{%- endtrans %}</h4>
-                    {% for ballot_id, ballot in ballots|xdictsort('title', pad=True) %}
+                    {% for ballot_id, ballot in ballots|xdictsort('title') %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
-                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|xdictsort('title', pad=True) %}
+                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|xdictsort('title') %}
                                     <li>
                                         {{ util.href(cdedblink("assembly/get_attachment",
                                                      {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
