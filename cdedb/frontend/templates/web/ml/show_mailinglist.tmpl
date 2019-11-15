@@ -142,7 +142,7 @@
                             {{ util.input_submit(value=gettext("Cancel request"), aclass="btn btn-sm btn-danger",
                                     icon="remove") }}
                         </form>
-                    {% elif state != enums['SubscriptionStates'].mod_unsubscribed %}
+                    {% elif state != enums['SubscriptionStates'].unsubscription_override %}
                         <p><strong>
                             {% trans -%}You are not currently subscribed to this mailinglist.{%- endtrans %}
                         </strong></p>

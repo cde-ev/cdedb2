@@ -383,24 +383,25 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def show_subscription_details(self, rs, mailinglist_id):
         """Render form."""
-        mod_subscribed = self.mlproxy.get_subscription_states(
+        subscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
-            states=(const.SubscriptionStates.mod_subscribed,))
-        mod_unsubscribed = self.mlproxy.get_subscription_states(
+            states=(const.SubscriptionStates.subscription_override,))
+        unsubscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
-            states=(const.SubscriptionStates.mod_unsubscribed,))
+            states=(const.SubscriptionStates.unsubscription_override,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
-                       | set(mod_subscribed.keys()) | set(mod_unsubscribed))
+                       | set(subscription_overrides.keys())
+                       | set(unsubscription_overrides.keys()))
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        mod_subscribed = collections.OrderedDict(
+        subscription_overrides = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-                mod_subscribed, key=lambda anid: name_key(personas[anid])))
-        mod_unsubscribed = collections.OrderedDict(
+                subscription_overrides, key=lambda anid: name_key(personas[anid])))
+        unsubscription_overrides = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-                mod_unsubscribed, key=lambda anid: name_key(personas[anid])))
+                unsubscription_overrides, key=lambda anid: name_key(personas[anid])))
         return self.render(rs, "show_subscription_details", {
-            'mod_subscribed': mod_subscribed,
-            'mod_unsubscribed': mod_unsubscribed})
+            'subscription_overrides': subscription_overrides,
+            'unsubscription_overrides': unsubscription_overrides})
 
     @access("ml")
     @mailinglist_guard()

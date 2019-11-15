@@ -129,9 +129,9 @@ class SubscriptionStates(enum.IntEnum):
     #: The user is explicitly unsubscribed (usually from an Opt-Out list).
     unsubscribed = 2
     #: The user was explicitly added by a moderator.
-    mod_subscribed = 10
+    subscription_override = 10
     #: The user was explicitly removed/blocked by a moderator.
-    mod_unsubscribed = 11
+    unsubscription_override = 11
     #: The user has requested a subscription to the mailinglist.
     pending = 20
     #: The user is subscribed by virtue of being part of some group.
@@ -143,7 +143,7 @@ class SubscriptionStates(enum.IntEnum):
     @classmethod
     def subscribing_states(cls):
         return {SubscriptionStates.subscribed,
-                SubscriptionStates.mod_subscribed,
+                SubscriptionStates.subscription_override,
                 SubscriptionStates.implicit}
 
 
@@ -413,8 +413,8 @@ class MlLogCodes(enum.IntEnum):
     subscribed = 21  #: SubscriptionStates.subscribed
     subscription_changed = 22  #: This is now used for address changes.
     unsubscribed = 23  #: SubscriptionStates.unsubscribed
-    marked_override = 24  #: SubscriptionStates.mod_subscribed
-    marked_blocked = 25  #: SubscriptionStates.mod_unsubscribed
+    marked_override = 24  #: SubscriptionStates.subscription_override
+    marked_blocked = 25  #: SubscriptionStates.unsubscription_override
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:

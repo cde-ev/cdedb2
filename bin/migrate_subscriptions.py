@@ -33,7 +33,7 @@ with Atomizer(rs(DEFAULT_ID)):
     # This covers every possible case, because both these bools cannot be NULL.
     ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.subscribed, True, False))
     ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.unsubscribed, False, False))
-    ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.mod_subscribed, True, True))
+    ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.subscription_override, True, True))
     ml.query_exec(rs(DEFAULT_ID), query, (const.SubscriptionStates.unsubscribed, False, True))
 
     query = ("ALTER TABLE ml.subscription_states "

@@ -331,23 +331,23 @@ class TestMlBackend(BackendTest):
         # This does some basic override testing.
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_unsubscription_override,
-                         code=1, state=SS.mod_unsubscribed)
+                         code=1, state=SS.unsubscription_override)
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=SS.mod_unsubscribed, kind="error")
+                         code=None, state=SS.unsubscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.mod_unsubscribed, kind="error")
+                         code=None, state=SS.unsubscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=None, state=SS.mod_unsubscribed, kind="info")
+                         code=None, state=SS.unsubscription_override, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.mod_unsubscribed, kind="info")
+                         code=None, state=SS.unsubscription_override, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=1, state=SS.mod_subscribed)
+                         code=1, state=SS.subscription_override)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.mod_subscribed, kind="error")
+                         code=None, state=SS.subscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=SS.mod_subscribed, kind="info")
+                         code=None, state=SS.subscription_override, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.mod_subscribed, kind="info")
+                         code=None, state=SS.subscription_override, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
                          code=1, state=SS.unsubscribed)
         self._change_sub(user['id'], mailinglist_id,
@@ -381,13 +381,13 @@ class TestMlBackend(BackendTest):
                          code=1, state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_unsubscription_override,
-                         code=1, state=SS.mod_unsubscribed)
+                         code=1, state=SS.unsubscription_override)
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_unsubscription_override,
                          code=1, state=SS.unsubscribed)
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_subscription_override,
-                         code=1, state=SS.mod_subscribed)
+                         code=1, state=SS.subscription_override)
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_subscription_override,
                          code=1, state=SS.subscribed)
@@ -438,10 +438,10 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.request_subscription,
                          code=1, state=SS.pending)
         self._change_sub(user['id'], mailinglist_id, SA.block_request,
-                         code=1, state=SS.mod_unsubscribed)
+                         code=1, state=SS.unsubscription_override)
         self._change_sub(user['id'], mailinglist_id,
                          SA.request_subscription,
-                         code=None, state=SS.mod_unsubscribed, kind="error")
+                         code=None, state=SS.unsubscription_override, kind="error")
 
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_unsubscription_override,
@@ -499,11 +499,11 @@ class TestMlBackend(BackendTest):
 
         # Test blocks
         self._change_sub(user['id'], mailinglist_id, SA.add_unsubscription_override,
-                         code=1, state=SS.mod_unsubscribed)
+                         code=1, state=SS.unsubscription_override)
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=SS.mod_unsubscribed, kind="error")
+                         code=None, state=SS.unsubscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.mod_unsubscribed, kind="error")
+                         code=None, state=SS.unsubscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.remove_unsubscription_override,
                          code=1, state=SS.unsubscribed)
 
@@ -511,9 +511,9 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
                          code=1, state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=1, state=SS.mod_subscribed)
+                         code=1, state=SS.subscription_override)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.mod_subscribed, kind="error")
+                         code=None, state=SS.subscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
                          code=1, state=SS.unsubscribed)
 
@@ -542,8 +542,8 @@ class TestMlBackend(BackendTest):
 
         # Force subscription
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=1, state=SS.mod_subscribed)
-        _try_unsubscribe(SS.mod_subscribed)
+                         code=1, state=SS.subscription_override)
+        _try_unsubscribe(SS.subscription_override)
 
         # Remove forced subscription
         self._change_sub(user['id'], mailinglist_id,
@@ -571,17 +571,17 @@ class TestMlBackend(BackendTest):
 
         # Force subscription
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=1, state=SS.mod_subscribed)
+                         code=1, state=SS.subscription_override)
 
         # Cron testing
         self.ml.write_subscription_states(self.key, mailinglist_id)
-        self._check_state(user['id'], mailinglist_id, SS.mod_subscribed)
+        self._check_state(user['id'], mailinglist_id, SS.subscription_override)
 
         # It is impossible to unsubscribe normally
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=None, state=SS.mod_subscribed, kind="error")
+                         code=None, state=SS.subscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.mod_subscribed, kind="error")
+                         code=None, state=SS.subscription_override, kind="error")
 
         # Remove subscription
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscription_override,
@@ -664,10 +664,10 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
-            3: SS.mod_subscribed,
-            9: SS.mod_unsubscribed,
+            3: SS.subscription_override,
+            9: SS.unsubscription_override,
             11: SS.implicit,
-            14: SS.mod_subscribed,
+            14: SS.subscription_override,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -690,9 +690,9 @@ class TestMlBackend(BackendTest):
         self.ml.set_mailinglist(self.key, mdata)
 
         expectation = {
-            3: SS.mod_subscribed,
-            9: SS.mod_unsubscribed,
-            14: SS.mod_subscribed,
+            3: SS.subscription_override,
+            9: SS.unsubscription_override,
+            14: SS.subscription_override,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -721,7 +721,7 @@ class TestMlBackend(BackendTest):
             2: SS.implicit,
             3: SS.subscribed,
             4: SS.unsubscribed,
-            9: SS.mod_unsubscribed,
+            9: SS.unsubscription_override,
             11: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
@@ -748,7 +748,7 @@ class TestMlBackend(BackendTest):
             1: SS.subscribed,
             3: SS.subscribed,
             4: SS.unsubscribed,
-            9: SS.mod_unsubscribed,
+            9: SS.unsubscription_override,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -878,7 +878,7 @@ class TestMlBackend(BackendTest):
             {
                 'mailinglist_id': mailinglist_id,
                 'persona_id': persona_id,
-                'subscription_state': SS.mod_subscribed,
+                'subscription_state': SS.subscription_override,
             }
             for persona_id in [4]
         ]
@@ -887,7 +887,7 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.subscribed,
             3: SS.subscribed,
-            4: SS.mod_subscribed,
+            4: SS.subscription_override,
             5: SS.subscribed,
             6: SS.pending,
             9: SS.subscribed,
@@ -901,7 +901,7 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.subscribed,
             3: SS.subscribed,
-            4: SS.mod_subscribed,
+            4: SS.subscription_override,
             6: SS.pending,
             9: SS.subscribed,
         }
@@ -940,10 +940,10 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
-            3: SS.mod_subscribed,
-            9: SS.mod_unsubscribed,
+            3: SS.subscription_override,
+            9: SS.unsubscription_override,
             11: SS.implicit,
-            14: SS.mod_subscribed,
+            14: SS.subscription_override,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -954,10 +954,10 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
-            3: SS.mod_subscribed,
-            9: SS.mod_unsubscribed,
+            3: SS.subscription_override,
+            9: SS.unsubscription_override,
             11: SS.implicit,
-            14: SS.mod_subscribed,
+            14: SS.subscription_override,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -1021,12 +1021,12 @@ class TestMlBackend(BackendTest):
             {
                 'mailinglist_id': new_id,
                 'persona_id': 4,
-                'subscription_state': SS.mod_unsubscribed,
+                'subscription_state': SS.unsubscription_override,
             },
             {
                 'mailinglist_id': new_id,
                 'persona_id': 7,
-                'subscription_state': SS.mod_unsubscribed,
+                'subscription_state': SS.unsubscription_override,
             },
             {
                 'mailinglist_id': new_id,
@@ -1040,9 +1040,9 @@ class TestMlBackend(BackendTest):
             1: SS.implicit,
             2: SS.unsubscribed,
             3: SS.implicit,
-            4: SS.mod_unsubscribed,
+            4: SS.unsubscription_override,
             6: SS.implicit,
-            7: SS.mod_unsubscribed,
+            7: SS.unsubscription_override,
             9: SS.implicit,
             12: SS.pending,
             13: SS.implicit,
@@ -1291,9 +1291,9 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
-            5: SS.mod_unsubscribed,
+            5: SS.unsubscription_override,
             9: SS.implicit,
-            11: SS.mod_unsubscribed,
+            11: SS.unsubscription_override,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1319,9 +1319,9 @@ class TestMlBackend(BackendTest):
             1: SS.implicit,
             2: SS.unsubscribed,
             4: SS.pending,
-            5: SS.mod_unsubscribed,
+            5: SS.unsubscription_override,
             9: SS.unsubscribed,
-            11: SS.mod_unsubscribed,
+            11: SS.unsubscription_override,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1340,9 +1340,9 @@ class TestMlBackend(BackendTest):
             1: SS.implicit,
             2: SS.unsubscribed,
             4: SS.subscribed,
-            5: SS.mod_unsubscribed,
+            5: SS.unsubscription_override,
             9: SS.unsubscribed,
-            11: SS.mod_unsubscribed,
+            11: SS.unsubscription_override,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1357,9 +1357,9 @@ class TestMlBackend(BackendTest):
             1: SS.implicit,
             2: SS.unsubscribed,
             4: SS.unsubscribed,
-            5: SS.mod_unsubscribed,
+            5: SS.unsubscription_override,
             9: SS.unsubscribed,
-            11: SS.mod_unsubscribed
+            11: SS.unsubscription_override
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1374,9 +1374,9 @@ class TestMlBackend(BackendTest):
             1: SS.implicit,
             2: SS.unsubscribed,
             4: SS.pending,
-            5: SS.mod_unsubscribed,
+            5: SS.unsubscription_override,
             9: SS.unsubscribed,
-            11: SS.mod_unsubscribed,
+            11: SS.unsubscription_override,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1394,9 +1394,9 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.implicit,
             2: SS.unsubscribed,
-            5: SS.mod_unsubscribed,
+            5: SS.unsubscription_override,
             9: SS.unsubscribed,
-            11: SS.mod_unsubscribed,
+            11: SS.unsubscription_override,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))

@@ -272,9 +272,9 @@ class TestMlFrontend(FrontendTest):
                     row['email'] + ";" + row['subscription_address'])
             all_rows.append(line)
 
-        self.assertIn('DB-5-1;Emilia E.;Eventis;mod_unsubscribed;'
+        self.assertIn('DB-5-1;Emilia E.;Eventis;unsubscription_override;'
                       'emilia@example.cde;', all_rows)
-        self.assertIn('DB-9-4;Inga;Iota;mod_subscribed;'
+        self.assertIn('DB-9-4;Inga;Iota;subscription_override;'
                       'inga@example.cde;', all_rows)
 
         # remove the former added persona

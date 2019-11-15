@@ -338,7 +338,7 @@ class MlBackend(AbstractBackend):
         active_only = affirm("bool", active_only)
 
         with Atomizer(rs):
-            override_states = {const.SubscriptionStates.mod_subscribed}
+            override_states = {const.SubscriptionStates.subscription_override}
             overrides = self.get_user_subscriptions(
                 rs, rs.user.persona_id, states=override_states)
             params = []
@@ -1242,8 +1242,8 @@ class MlBackend(AbstractBackend):
         old_subscriber_states = {const.SubscriptionStates.implicit,
                                  const.SubscriptionStates.subscribed}
         # States of current subscriptions we may not touch.
-        protected_states = {const.SubscriptionStates.mod_subscribed,
-                            const.SubscriptionStates.mod_unsubscribed,
+        protected_states = {const.SubscriptionStates.subscription_override,
+                            const.SubscriptionStates.unsubscription_override,
                             const.SubscriptionStates.unsubscribed}
 
         ret = 1
