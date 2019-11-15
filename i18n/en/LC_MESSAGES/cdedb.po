@@ -469,6 +469,10 @@ msgstr "Membership fee deducted"
 msgid "FinanceLogCodes.end_trial_membership"
 msgstr "End of Trialmembership"
 
+#: cdedb/i18n_additional.py:95 cdedb/i18n_additional.py:90
+msgid "FinanceLogCodes.manual_balance_correction"
+msgstr "Manual Balance Correction"
+
 #: cdedb/i18n_additional.py:96 cdedb/i18n_additional.py:91
 msgid "FinanceLogCodes.grant_lastschrift"
 msgstr "Direct Debit Authorization granted"

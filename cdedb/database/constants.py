@@ -297,6 +297,7 @@ class FinanceLogCodes(enum.IntEnum):
     increase_balance = 10  #:
     deduct_membership_fee = 11  #:
     end_trial_membership = 12  #:
+    manual_balance_correction = 13  #:
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:

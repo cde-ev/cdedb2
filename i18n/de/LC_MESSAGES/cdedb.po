@@ -469,6 +469,10 @@ msgstr "Beitrag abgezogen"
 msgid "FinanceLogCodes.end_trial_membership"
 msgstr "Ende der Probemitgliedschaft"
 
+#: cdedb/i18n_additional.py:95 cdedb/i18n_additional.py:90
+msgid "FinanceLogCodes.manual_balance_correction"
+msgstr "Manuelle Guthabenkorrektur"
+
 #: cdedb/i18n_additional.py:96 cdedb/i18n_additional.py:91
 msgid "FinanceLogCodes.grant_lastschrift"
 msgstr "Einzugsermächtigung erteilt"
@@ -12567,3 +12571,29 @@ msgstr "%(count)s Anfragen"
 msgid "ID of the new moderator"
 msgstr "ID des neuen Moderators"
 
+#: cdedb/frontend/core.py:1348
+msgid "New balance identical to old balance."
+msgstr "Neues Guthaben identisch zu altem Guthaben."
+
+#: cdedb/frontend/templates/web/core/modify_balance.tmpl:4
+#, python-format
+msgid "Modify Balance for %(given_names)s %(family_name)s"
+msgstr "Guthaben anpassen für %(given_names)s %(family_name)s"
+
+#: cdedb/frontend/templates/web/core/modify_balance.tmpl:13
+#: cdedb/frontend/templates/web/core/show_user.tmpl:190
+msgid "Modify Balance"
+msgstr "Guthaben anpassen"
+
+#: cdedb/frontend/templates/web/core/modify_balance.tmpl:18
+msgid ""
+"Here you can manually correct the balance of a member. This should only "
+"be used to correct a previous mistake when updating balance."
+msgstr ""
+"Hier kannst Du das Guthaben eines Mitglieds manuell korrigieren. Diese "
+"Funktion sollte nur benutzt werden um fehlerhafte Buchungen zu "
+"korrigieren."
+
+#: cdedb/frontend/templates/web/core/modify_balance.tmpl:24
+msgid "New Balance"
+msgstr "Neues Guthaben"
