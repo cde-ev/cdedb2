@@ -882,6 +882,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
         f = self.response.forms['modifybalanceform']
         f['new_balance'] = 15.66
+        f['change_note'] = 'deduct stolen cookies'
         self.submit(f)
         self.assertPresence("Guthaben 15,66 €")
 
