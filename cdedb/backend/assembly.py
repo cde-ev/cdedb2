@@ -334,7 +334,9 @@ class AssemblyBackend(AbstractBackend):
             params = (is_active,)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e for e in data}
-        if "member" not in rs.user.roles:
+        if "assembly" not in rs.user.roles:
+            ret = {}
+        elif "member" not in rs.user.roles:
             ret = {k: v for k, v in ret.items()
                    if self.check_attendance(rs, assembly_id=k)}
         return ret
