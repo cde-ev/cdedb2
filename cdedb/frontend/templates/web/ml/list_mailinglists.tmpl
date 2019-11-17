@@ -13,7 +13,7 @@
     <div class="row list-group-item{% if not ml['is_active'] %} list-group-item-muted{% endif %}">
         {# {{ util.deko_checkbox(mailinglist_id in subscriptions) }} #}
         <div class="col-sm-3">
-            {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
+            {{ util.href(cdedblink("ml/management", {'mailinglist_id': mailinglist_id}), title) }}
             {% if mailinglist_id in subscriptions %}
                 {{ util.make_icon('ok-sign', title=gettext("subscribed")) }}
             {% endif %}<br />
@@ -38,20 +38,20 @@
             {% endif %}
         </div>
         <div class="col-sm-5 small">
-            {% if ml['sub_policy'] == enums['SubscriptionPolicy'].mandatory %}
+            {% if ml['sub_policy'] == enums['MailinglistInteractionPolicy'].mandatory %}
                 {% trans -%}mandatory{%- endtrans %}
-            {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].opt_out %}
+            {% elif ml['sub_policy'] == enums['MailinglistInteractionPolicy'].opt_out %}
                 {% trans -%}Opt-Out{%- endtrans %}
-            {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].opt_in %}
+            {% elif ml['sub_policy'] == enums['MailinglistInteractionPolicy'].opt_in %}
                 {% trans -%}Opt-In{%- endtrans %}
-            {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].moderated_opt_in %}
+            {% elif ml['sub_policy'] == enums['MailinglistInteractionPolicy'].moderated_opt_in %}
                 {% trans -%}moderated Opt-In{%- endtrans %}
-            {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].invitation_only %}
+            {% elif ml['sub_policy'] == enums['MailinglistInteractionPolicy'].invitation_only %}
                 {% trans -%}Invitation only{%- endtrans %}
             {% endif %}
 
-            {% if ml['sub_policy'] in (enums['SubscriptionPolicy'].moderated_opt_in,
-                                       enums['SubscriptionPolicy'].invitation_only) %}
+            {% if ml['sub_policy'] in (enums['MailinglistInteractionPolicy'].moderated_opt_in,
+                                       enums['MailinglistInteractionPolicy'].invitation_only) %}
                 {% if ml['event_id'] %}
                     {% trans link=util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
                             events[ml['event_id']], icon='blackboard') -%}
@@ -61,11 +61,6 @@
                     {% trans link=util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
                             assemblies[ml['assembly_id']]['title'], icon='bullhorn') -%}
                         or {{ link }} (Opt-Out)
-                    {%- endtrans %}
-                {% elif ml['gateway'] %}
-                    {% trans link=util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': ml['gateway']}),
-                            mailinglist_infos[ml['gateway']]['title'], icon='envelope') -%}
-                        or {{ link }} (Opt-In)
                     {%- endtrans %}
                 {% endif %}
             {% endif %}

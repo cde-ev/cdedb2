@@ -995,7 +995,7 @@ CREATE TABLE ml.mailinglists (
         title                   varchar NOT NULL,
         address                 varchar UNIQUE NOT NULL,
         description             varchar,
-        -- see cdedb.database.constants.SubscriptionPolicy
+        -- see cdedb.database.constants.MailinglistInteractionPolicy
         sub_policy              integer NOT NULL,
         -- see cdedb.database.constants.ModerationPolicy
         mod_policy              integer NOT NULL,
@@ -1009,10 +1009,8 @@ CREATE TABLE ml.mailinglists (
         is_active               boolean NOT NULL,
         notes                   varchar,
         -- Define a list X as gateway for this list, that is everybody
-        -- subscribed to X may subscribe to this list (only usefull with a
+        -- subscribed to X may subscribe to this list (only useful with a
         -- restrictive subscription policy).
-        --
-        -- Main use case is the Aktivenforums list.
         gateway                 integer REFERENCES ml.mailinglists(id),
         -- event awareness
         -- event_id is not NULL if associated to an event
@@ -1043,23 +1041,21 @@ CREATE TABLE ml.subscription_states (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
-        address                 varchar,
-        is_subscribed           boolean NOT NULL,
-        -- may subscribe even if not in audience
-        is_override             boolean NOT NULL DEFAULT False
+        subscription_state      integer NOT NULL
 );
 CREATE UNIQUE INDEX idx_subscription_constraint ON ml.subscription_states(mailinglist_id, persona_id);
-GRANT SELECT, INSERT, UPDATE ON ml.subscription_states TO cdb_persona;
-GRANT DELETE ON ml.subscription_states TO cdb_admin;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_states TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.subscription_states_id_seq TO cdb_persona;
 
-CREATE TABLE ml.subscription_requests (
-        id                      serial PRIMARY KEY,
+CREATE TABLE ml.subscription_addresses (
+        id                      serial PRIMARY KEY ,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
-        persona_id              integer NOT NULL REFERENCES core.personas(id)
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        address                 varchar NOT NULL
 );
-GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_requests TO cdb_persona;
-GRANT SELECT, UPDATE ON ml.subscription_requests_id_seq TO cdb_persona;
+CREATE UNIQUE INDEX idx_subscription_address_constraint ON ml.subscription_addresses(mailinglist_id, persona_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_addresses TO cdb_persona;
+GRANT SELECT, UPDATE ON ml.subscription_addresses_id_seq TO cdb_persona;
 
 CREATE TABLE ml.whitelist (
         id                      serial PRIMARY KEY,

@@ -9,9 +9,12 @@
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
-{{ util.breadcrumb_link(cdedblink("ml/change_mailinglist"), gettext("Configuration"), active=True) }}
+    {{ super() }}
+    {% if not ambience['is_active'] %}
+        {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/change_mailinglist"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -52,7 +55,7 @@
             {{ util.form_input_select(name="audience_policy", label=gettext("Audience"), readonly=not is_admin,
                     entries=enums['AudiencePolicy']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="sub_policy", label=gettext("Subscription"), readonly=not is_admin,
-                    entries=enums['SubscriptionPolicy']|enum_entries(processing=gettext)) }}
+                    entries=enums['MailinglistInteractionPolicy']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=sorted_events,
                     readonly=not is_admin,
                     info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
@@ -62,9 +65,6 @@
             {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="", readonly=not is_admin,
                     entries=sorted_assemblies,
                     info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
-            {{ util.form_input_select(name="gateway", label=gettext("Gateway"), nulloption="", readonly=not is_admin,
-                    entries=sorted_mailinglists,
-                    info=gettext("Subscribers of this list can always subscribe. (Opt-In)")) }}
 
         <h4 class="heading-underline">{% trans -%}Mails{%- endtrans %}</h4>
             {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix"), readonly=not is_admin) }}

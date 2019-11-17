@@ -21,8 +21,6 @@
         <div class="p">
             {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
-            {{ util.href(cdedblink("ml/global_check_states"), gettext("Global Consistency-Check"), icon="check",
-                    aclass="btn btn-sm btn-info") }}
         </div>
     {% endif %}
     <p>
@@ -36,7 +34,8 @@
         {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if mailinglist_infos[mailinglist_id]['audience_policy'] not in (
                     enums['AudiencePolicy'].require_assembly,
-                    enums['AudiencePolicy'].require_event) %}
+                    enums['AudiencePolicy'].require_event)
+                    and not mailinglist_id in overrides %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
@@ -58,6 +57,14 @@
             {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_assembly %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if overrides %}
+    <h3>{% trans -%}Other Mailinglists{%- endtrans %}</h3>
+    <ul class="styleless">
+        {% for mailinglist_id, title in overrides|dictsort(False, 'value') %}
+            {{ format_entry(mailinglist_id, title) }}
         {% endfor %}
     </ul>
     {% endif %}

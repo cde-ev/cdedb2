@@ -77,6 +77,23 @@ class AssemblyBackend(AbstractBackend):
             rs, assembly_id=assembly_id, ballot_id=ballot_id,
             persona_id=persona_id)
 
+    @access("persona")
+    def may_view(self, rs, assembly_id, persona_id=None):
+        """Variant of `may_assemble` with input validation. To be used by
+         frontends to find out if assembly is visible.
+
+         :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type persona_id: int or None
+        :param persona_id: If not provided the current user is used.
+        :rtype: bool
+
+        """
+        assembly_id = affirm("id", assembly_id)
+        persona_id = affirm("id_or_None", persona_id)
+        return self.may_assemble(rs, assembly_id=assembly_id,
+                                 persona_id=persona_id)
+
     @staticmethod
     def encrypt_vote(salt, secret, vote):
         """Compute a cryptographically secure hash from a vote.
@@ -254,6 +271,26 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm("id_or_None", ballot_id)
         return self.check_attendance(rs, assembly_id=assembly_id,
                                      ballot_id=ballot_id)
+
+    @access("assembly")
+    def check_attends(self, rs, persona_id, assembly_id):
+        """Check whether a user attends an assembly.
+
+        This is mostly used for checking mailinglist eligibility.
+
+        As assembly attendees are public to all assembly users, this does not
+        check for any privileges,
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :type assembly_id: int
+        :rtype: bool
+        """
+        persona_id = affirm("id", persona_id)
+        assembly_id = affirm("id", assembly_id)
+
+        return self.check_attendance(
+            rs, assembly_id=assembly_id, persona_id=persona_id)
 
     @access("assembly")
     def list_attendees(self, rs, assembly_id):

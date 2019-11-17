@@ -9,7 +9,10 @@ their symbolic names provided by this module should be used.
 
 import enum
 
-from cdedb.common import n_
+
+def n_(x):
+    """Clone of :cdedb.common:n_: for marking translatable strings."""
+    return x
 
 
 @enum.unique
@@ -119,7 +122,33 @@ class PrivilegeChangeStati(enum.IntEnum):
 
 
 @enum.unique
-class SubscriptionPolicy(enum.IntEnum):
+class SubscriptionStates(enum.IntEnum):
+    """Define the possible relations between user and mailinglist."""
+    #: The user is explicitly subscribed.
+    subscribed = 1
+    #: The user is explicitly unsubscribed (usually from an Opt-Out list).
+    unsubscribed = 2
+    #: The user was explicitly added by a moderator.
+    subscription_override = 10
+    #: The user was explicitly removed/blocked by a moderator.
+    unsubscription_override = 11
+    #: The user has requested a subscription to the mailinglist.
+    pending = 20
+    #: The user is subscribed by virtue of being part of some group.
+    implicit = 30
+
+    def is_subscribed(self):
+        return self in self.subscribing_states()
+
+    @classmethod
+    def subscribing_states(cls):
+        return {SubscriptionStates.subscribed,
+                SubscriptionStates.subscription_override,
+                SubscriptionStates.implicit}
+
+
+@enum.unique
+class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: everybody is subscribed (think CdE-all)
     mandatory = 1
@@ -129,30 +158,16 @@ class SubscriptionPolicy(enum.IntEnum):
     moderated_opt_in = 4
     #: nobody may subscribe by themselves
     invitation_only = 5
+    #: only implicit subscribers allowed
+    implicits_only = 6
 
-    def is_additive(self):
-        """Differentiate between additive and subtractive mailing lists.
-
-        Additive means, that only explicit subscriptions are on the list,
-        while subtractive means, that only explicit unsubscriptions are not
-        on the list.
-
-        :rtype: bool
-        """
-        return self in (SubscriptionPolicy.opt_in,
-                        SubscriptionPolicy.moderated_opt_in,
-                        SubscriptionPolicy.invitation_only)
-
-    def privileged_transition(self, new_state):
-        """Most of the time subscribing or unsubscribing is simply allowed,
-        but in some cases you must be privileged to do it.
+    def is_implicit(self):
+        """Short-hand for
+        policy == const.MailinglistInteractionPolicy.implicits_only
 
         :rtype: bool
         """
-        if new_state:
-            return self == SubscriptionPolicy.invitation_only
-        else:
-            return self == SubscriptionPolicy.mandatory
+        return self == MailinglistInteractionPolicy.implicits_only
 
 
 @enum.unique
@@ -395,12 +410,14 @@ class MlLogCodes(enum.IntEnum):
     moderator_removed = 11  #:
     whitelist_added = 12  #:
     whitelist_removed = 13  #:
-    subscription_requested = 20  #:
-    subscribed = 21  #:
-    subscription_changed = 22  #:
-    unsubscribed = 23  #:
-    marked_override = 24  #:
+    subscription_requested = 20  #: SubscriptionStates.subscription_requested
+    subscribed = 21  #: SubscriptionStates.subscribed
+    subscription_changed = 22  #: This is now used for address changes.
+    unsubscribed = 23  #: SubscriptionStates.unsubscribed
+    marked_override = 24  #: SubscriptionStates.subscription_override
+    marked_blocked = 25  #: SubscriptionStates.unsubscription_override
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:
+    request_blocked = 33  #:
     email_trouble = 40  #:

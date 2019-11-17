@@ -1278,7 +1278,7 @@ class CoreBackend(AbstractBackend):
             #
             self.sql_delete(rs, "ml.subscription_states", (persona_id,),
                             "persona_id")
-            self.sql_delete(rs, "ml.subscription_requests", (persona_id,),
+            self.sql_delete(rs, "ml.subscription_addresses", (persona_id,),
                             "persona_id")
             self.sql_delete(rs, "ml.moderators", (persona_id,), "persona_id")
             #

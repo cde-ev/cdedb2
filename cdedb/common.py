@@ -25,6 +25,12 @@ import psycopg2.extras
 import pytz
 import werkzeug.datastructures
 
+# The following imports are not actually used here. However as they are
+# basically just uninlined to a separate file, semantically they are
+# imported here and should be imported from here otherwise.
+from cdedb.ml_subscription_aux import (
+    SubscriptionError, SubscriptionInfo, SubscriptionActions)
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -183,8 +189,11 @@ def do_singularization(fun):
             param = args[0]
             args = ((param,),) + args[1:]
         data = fun(rs, *args, **kwargs)
-        # raises KeyError if the requested thing does not exist
-        return data[param]
+        if hint['passthrough']:
+            return data
+        else:
+            # raises KeyError if the requested thing does not exist
+            return data[param]
 
     new_fun.__name__ = hint['singular_function_name']
     return new_fun
@@ -965,15 +974,6 @@ class CourseChoiceToolActions(enum.IntEnum):
     assign_auto = -5  #: somewhat intelligent algorithm
 
 
-@enum.unique
-class SubscriptionStates(enum.IntEnum):
-    """Relation to a mailing list.
-    """
-    unsubscribed = 1  #:
-    subscribed = 2  #:
-    requested = 10  #: A subscription request is waiting for moderation.
-
-
 def mixed_existence_sorter(iterable):
     """Iterate over a set of indices in the relevant way.
 
@@ -1547,13 +1547,8 @@ LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
 MAILINGLIST_FIELDS = (
     "id", "title", "address", "description", "sub_policy", "mod_policy",
     "notes", "attachment_policy", "audience_policy", "subject_prefix",
-    "maxsize", "is_active", "gateway", "event_id", "registration_stati",
+    "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
-
-#: Fields of a mailing list subscription
-MAILINGLIST_SUBSCRIPTION_FIELDS = (
-    "id", "mailinglist_id", "persona_id", "address", "is_subscribed",
-    "is_override")
 
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "description", "mail_address", "signup_end",

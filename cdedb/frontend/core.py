@@ -22,7 +22,7 @@ from cdedb.frontend.common import (
     csv_output, query_result_to_json, enum_entries_filter, periodic)
 from cdedb.common import (
     n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
-    now, merge_dicts, ArchiveError, implied_realms,
+    now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
@@ -128,8 +128,10 @@ class CoreFrontend(AbstractFrontend):
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
+                sub_request = const.SubscriptionStates.pending
                 for mailinglist_id, mailinglist in moderator.items():
-                    requests = self.mlproxy.list_requests(rs, mailinglist_id)
+                    requests = self.mlproxy.get_subscription_states(
+                        rs, mailinglist_id, states=(sub_request,))
                     mailinglist['requests'] = len(requests)
                 dashboard['moderator'] = moderator
             # visible and open events
@@ -343,17 +345,19 @@ class CoreFrontend(AbstractFrontend):
             if is_orga and is_participant:
                 access_levels.add("event")
                 access_levels.add("orga")
-        # Mailinglist moderators see their subscribers
+        # Mailinglist moderators see all users related to their mailinglist.
+        # This excludes users with relation "unsubscribed", because they are not
+        # directly shown on the management sites.
         if ml_id:
             is_moderator = (
                     "ml_admin" in rs.user.roles
                     or ml_id in self.mlproxy.moderator_info(
                         rs, rs.user.persona_id))
             if is_moderator:
-                is_subscriber = self.mlproxy.is_subscribed(
-                    rs, persona_id, ml_id)
-                is_pending = persona_id in self.mlproxy.list_requests(rs, ml_id)
-                if is_subscriber or is_pending:
+                relevant_stati = [s for s in const.SubscriptionStates
+                                  if s != const.SubscriptionStates.unsubscribed]
+                if persona_id in self.mlproxy.get_subscription_states(
+                        rs, ml_id, states=relevant_stati):
                     access_levels.add("ml")
                     # the moderator access level currently does nothing, but we
                     # add it anyway to be less confusing
@@ -576,9 +580,12 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
-    def select_persona(self, rs, phrase, kind, aux):
-        """Provide data for inteligent input fields.
+    @event_usage
+    @ml_usage
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
+                 ("variant", "non_negative_int_or_None"))
+    def select_persona(self, rs, phrase, kind, aux, variant=None):
+        """Provide data for intelligent input fields.
 
         This searches for users by name so they can be easily selected
         without entering their numerical ids. This is for example
@@ -607,6 +614,14 @@ class CoreFrontend(AbstractFrontend):
         Required aux value based on the 'kind':
         * mod_ml_user: Id of the mailinglist you are moderator of
         * orga_event_user: Id of the event you are orga of
+
+        The variant parameter allows to supply an additional integer to
+        distinguish between different variants of a given search kind.
+        Usually, this will be an enum member marking the kind of action taken.
+
+        Possible variants based on the 'kind':
+        * mod_ml_user: Which action you are going to execute on this user.
+          A member of the SubscriptionActions enum.
         """
         if rs.errors:
             return self.send_json(rs, {})
@@ -640,9 +655,8 @@ class CoreFrontend(AbstractFrontend):
                 ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "mod_ml_user" and aux:
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
-            if "ml_admin" not in rs.user.roles:
-                if rs.user.persona_id not in mailinglist['moderators']:
-                    raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            if not self.mlproxy.may_manage(rs, aux):
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
         elif kind == "event_admin_user":
@@ -706,13 +720,15 @@ class CoreFrontend(AbstractFrontend):
 
         # Filter result to get only valid audience, if mailinglist is given
         if mailinglist:
-            persona_ids = tuple(e['id'] for e in data)
-            personas = self.coreproxy.get_personas(rs, persona_ids)
-            pol = const.AudiencePolicy(mailinglist['audience_policy'])
-            data = tuple(
-                e for e in data
-                if pol.check(extract_roles(
-                    personas[e['id']], introspection_only=True)))
+            pol = const.MailinglistInteractionPolicy
+            action = check(rs, "enum_subscriptionactions_or_None", variant)
+            if rs.errors:
+                return self.send_json(rs, {})
+            if action == SubscriptionActions.add_subscriber:
+                allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
+                                pol.invitation_only}
+                data = self.mlproxy.filter_personas_by_policy(
+                    rs, mailinglist, data, allowed_pols)
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:

@@ -1,6 +1,6 @@
 (function($){
     $.fn.cdedbChangeMailinglist = function() {
-        var names = ['audience_policy','event_id','assembly_id','gateway'];
+        var names = ['audience_policy','event_id','assembly_id'];
         var fields = {};
         for (var i = 0; i < names.length; i++) {
             fields[names[i]] = $(this).find('[name="'+ names[i] +'"]');
@@ -12,19 +12,15 @@
          * Should be called on every update of one of the selectboxes defined in 'names'.
          */
         function update_view() {
-            // Calculate visibility of event/assembly/gateway select boxes
+            // Calculate visibility of event/assembly select boxes
             var visible = {
                 'event_id':     (fields['audience_policy'].val() == 1 && fields['assembly_id'].val() == ''
-                                    || fields['audience_policy'].val() == 3)
-                                && fields['gateway'].val() == '',
+                                    || fields['audience_policy'].val() == 3),
                 'assembly_id':  (fields['audience_policy'].val() == 1 && fields['event_id'].val() == ''
                                     || fields['audience_policy'].val() == 2)
-                                && fields['gateway'].val() == '',
-                'gateway':      fields['event_id'].val() == ''
-                                    && fields['assembly_id'].val() == ''
             };
 
-            // Change visibility of event/assembly/gateway select boxes and clear boxes
+            // Change visibility of event/assembly select boxes and clear boxes
             for (var i in visible) {
                 if (visible[i]) {
                     fields[i].closest('.form-group').show();

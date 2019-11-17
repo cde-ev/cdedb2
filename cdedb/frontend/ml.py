@@ -3,25 +3,22 @@
 """Services for the ml realm."""
 
 import copy
-import itertools
 import collections
 import werkzeug
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
-    check_validation as check, mailinglist_guard, query_result_to_json)
+    check_validation as check, mailinglist_guard, query_result_to_json,
+    cdedbid_filter as cdedbid)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, name_key, merge_dicts, unwrap, ProxyShim, SubscriptionStates,
-    json_serialize, now)
-from cdedb.database.connection import Atomizer
+    n_, name_key, merge_dicts, ProxyShim, SubscriptionError,
+    SubscriptionActions, now)
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
-from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
-from cdedb.database import DATABASE_ROLES
 from cdedb.config import SecretsConfig
 
 
@@ -34,7 +31,6 @@ class MlFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.cdeproxy = ProxyShim(CdEBackend(configpath))
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.mlproxy = ProxyShim(MlBackend(configpath))
         self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
@@ -53,22 +49,28 @@ class MlFrontend(AbstractUserFrontend):
         if "ml" in rs.user.roles:
             rs.user.moderator = self.mlproxy.moderator_info(rs,
                                                             rs.user.persona_id)
+        if "event" in rs.user.roles:
+            rs.user.orga = self.eventproxy.orga_info(rs, rs.user.persona_id)
 
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    @access("persona")
+    @access("ml")
     def index(self, rs):
         """Render start page."""
         policies = const.AudiencePolicy.applicable(rs.user.roles)
         mailinglists = self.mlproxy.list_mailinglists(
             rs, audience_policies=policies)
+        overrides = self.mlproxy.list_subscription_overrides(rs)
+        mailinglists.update(overrides)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
-        subscriptions = self.mlproxy.subscriptions(
-            rs, rs.user.persona_id, lists=mailinglists.keys())
+        sub_states = const.SubscriptionStates.subscribing_states()
+        subscriptions = self.mlproxy.get_user_subscriptions(
+            rs, rs.user.persona_id, states=sub_states)
         return self.render(rs, "index", {
-            'mailinglists': mailinglists, 'subscriptions': subscriptions,
+            'mailinglists': mailinglists, 'overrides': overrides,
+            'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
 
     @access("ml_admin")
@@ -138,13 +140,15 @@ class MlFrontend(AbstractUserFrontend):
         """Show all mailinglists."""
         mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
-        subscriptions = self.mlproxy.subscriptions(
-            rs, rs.user.persona_id, lists=mailinglists.keys())
+        sub_states = const.SubscriptionStates.subscribing_states()
+        subscriptions = self.mlproxy.get_user_subscriptions(
+            rs, rs.user.persona_id, states=sub_states)
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
-        for mailinglist_id in mailinglists:
-            subs = self.mlproxy.subscribers(rs, mailinglist_id)
-            mailinglist_infos[mailinglist_id]['num_subscribers'] = len(subs)
+        subs = self.mlproxy.get_many_subscription_states(
+            rs, mailinglist_ids=mailinglists, states=sub_states)
+        for ml_id in subs:
+            mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
         return self.render(rs, "list_mailinglists", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos, 'events': events,
@@ -171,7 +175,7 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
         "attachment_policy", "audience_policy", "subject_prefix", "maxsize",
-        "is_active", "notes", "gateway", "event_id", "registration_stati",
+        "is_active", "notes", "event_id", "registration_stati",
         "assembly_id")
     @REQUESTdata(("moderator_ids", "str"))
     def create_mailinglist(self, rs, data, moderator_ids):
@@ -226,78 +230,58 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml")
     def show_mailinglist(self, rs, mailinglist_id):
         """Details of a list."""
-        state = unwrap(self.mlproxy.lookup_subscription_states(
-            rs, [rs.user.persona_id], [mailinglist_id]))
-        is_subscribed = state == SubscriptionStates.subscribed
-        is_pending = state == SubscriptionStates.requested
-        sub_address = None
-        if is_subscribed:
-            sub_address = unwrap(self.mlproxy.subscriptions(
-                rs, rs.user.persona_id, (mailinglist_id,)))
-        audience_check = const.AudiencePolicy(
-            rs.ambience['mailinglist']['audience_policy']).check(rs.user.roles)
-        if not (audience_check or is_subscribed or self.is_admin(rs)
-                or mailinglist_id in rs.user.moderator):
+        ml = rs.ambience['mailinglist']
+        state = self.mlproxy.get_subscription(
+            rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
+
+        if not self.mlproxy.may_view(rs, ml, state):
             return werkzeug.exceptions.Forbidden()
-        gateway = {}
-        if rs.ambience['mailinglist']['gateway']:
-            gateway = self.mlproxy.get_mailinglist(
-                rs, rs.ambience['mailinglist']['gateway'])
+
+        sub_address = None
+        if state and state.is_subscribed():
+            sub_address = self.mlproxy.get_subscription_address(
+                rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
+
         event = {}
-        if rs.ambience['mailinglist']['event_id']:
-            event = self.eventproxy.get_event(
-                rs, rs.ambience['mailinglist']['event_id'])
+        if ml['event_id']:
+            event = self.eventproxy.get_event(rs, ml['event_id'])
             event['is_visible'] = (
-                    "event_admin" in rs.user.roles or
-                    rs.user.persona_id in event['orgas'] or
-                    (event['is_open'] and event['is_visible']) or
-                    bool(self.eventproxy.list_registrations(
-                        rs, event['id'], rs.user.persona_id)))
+                "event_admin" in rs.user.roles
+                or rs.user.persona_id in event['orgas']
+                or event['is_visible'])
+
         assembly = {}
-        if rs.ambience['mailinglist']['assembly_id']:
-            assembly = self.assemblyproxy.get_assembly(
-                rs, rs.ambience['mailinglist']['assembly_id'])
-            assembly['is_visible'] = (
-                    "assembly_admin" in rs.user.roles or
-                    assembly['is_active'] or
-                    bool(self.assemblyproxy.does_attend(
-                        rs, assembly_id=assembly['id'])))
-        policy = const.SubscriptionPolicy(
-            rs.ambience['mailinglist']['sub_policy'])
-        may_toggle = not policy.privileged_transition(not is_subscribed)
-        if not is_subscribed and gateway and self.mlproxy.is_subscribed(
-                rs, rs.user.persona_id, rs.ambience['mailinglist']['gateway']):
-            may_toggle = True
-        personas = self.coreproxy.get_personas(
-            rs, rs.ambience['mailinglist']['moderators'])
+        if ml['assembly_id']:
+            assembly = self.assemblyproxy.get_assembly(rs, ml['assembly_id'])
+            assembly['is_visible'] = self.assemblyproxy.may_view(
+                rs, assembly['id'])
+
+        interaction_policy = self.mlproxy.get_interaction_policy(
+            rs, rs.user.persona_id, mailinglist=ml)
+        personas = self.coreproxy.get_personas(rs, ml['moderators'])
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
                 personas, key=lambda anid: name_key(personas[anid])))
+
         return self.render(rs, "show_mailinglist", {
-            'sub_address': sub_address, 'is_subscribed': is_subscribed,
-            'gateway': gateway, 'event': event, 'assembly': assembly,
-            'may_toggle': may_toggle, 'moderators': moderators,
-            'pending': is_pending})
+            'sub_address': sub_address, 'state': state,
+            'interaction_policy': interaction_policy, 'event': event,
+            'assembly': assembly, 'moderators': moderators})
 
     @access("ml")
     @mailinglist_guard()
     def change_mailinglist_form(self, rs, mailinglist_id):
         """Render form."""
-        mailinglists = self.mlproxy.list_mailinglists(rs)
-        sorted_mailinglists = sorted([(k, v) for k, v in mailinglists.items()],
-                                     key=lambda x: x[1])
         events = self.eventproxy.list_db_events(rs)
-        sorted_events = sorted([(k, v) for k, v in events.items()],
-                               key=lambda x: x[1])
+        sorted_events = sorted(events.items(), key=lambda x: x[1])
         assemblies = self.assemblyproxy.list_assemblies(rs)
-        sorted_assemblies = sorted([(k, v["title"]) for k, v in assemblies.items()],
-                                   key=lambda x: x[1])
+        sorted_assemblies = sorted(
+            ((k, v["title"])for k, v in assemblies.items()), key=lambda x: x[1])
         merge_dicts(rs.values, rs.ambience['mailinglist'])
         if not self.is_admin(rs):
             rs.notify("info",
                       n_("Only Admins may change mailinglist configuration."))
         return self.render(rs, "change_mailinglist", {
-            'sorted_mailinglists': sorted_mailinglists,
             'sorted_events': sorted_events,
             'sorted_assemblies': sorted_assemblies})
 
@@ -307,7 +291,7 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
         "notes", "attachment_policy", "subject_prefix", "maxsize",
-        "is_active", "gateway", "event_id", "assembly_id")
+        "is_active", "event_id", "assembly_id")
     def change_mailinglist(self, rs, mailinglist_id, audience_policy,
                            registration_stati, data):
         """Modify simple attributes of mailinglists."""
@@ -331,8 +315,8 @@ class MlFrontend(AbstractUserFrontend):
             return self.management(rs, mailinglist_id)
 
         code = self.mlproxy.delete_mailinglist(
-            rs, mailinglist_id, cascade={"gateway", "subscriptions", "log",
-                                         "requests", "whitelist", "moderators"})
+            rs, mailinglist_id, cascade={"subscriptions", "log", "addresses",
+                                         "whitelist", "moderators"})
 
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/list_mailinglists")
@@ -370,10 +354,14 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def management(self, rs, mailinglist_id):
         """Render form."""
-        subscribers = self.mlproxy.subscribers(rs, mailinglist_id)
-        explicits = self.mlproxy.subscribers(
+        sub_states = const.SubscriptionStates.subscribing_states()
+        subscribers = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id, states=sub_states)
+        explicits = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
-        requests = self.mlproxy.list_requests(rs, mailinglist_id)
+        explicits = {k: v for (k, v) in explicits.items() if v is not None}
+        requests = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id, states=(const.SubscriptionStates.pending,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -391,6 +379,69 @@ class MlFrontend(AbstractUserFrontend):
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits})
 
+    @access("ml")
+    @mailinglist_guard()
+    def show_subscription_details(self, rs, mailinglist_id):
+        """Render form."""
+        subscription_overrides = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id,
+            states=(const.SubscriptionStates.subscription_override,))
+        unsubscription_overrides = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id,
+            states=(const.SubscriptionStates.unsubscription_override,))
+        persona_ids = (set(rs.ambience['mailinglist']['moderators'])
+                       | set(subscription_overrides.keys())
+                       | set(unsubscription_overrides.keys()))
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+        subscription_overrides = collections.OrderedDict(
+            (anid, personas[anid]) for anid in sorted(
+                subscription_overrides, key=lambda anid: name_key(personas[anid])))
+        unsubscription_overrides = collections.OrderedDict(
+            (anid, personas[anid]) for anid in sorted(
+                unsubscription_overrides, key=lambda anid: name_key(personas[anid])))
+        return self.render(rs, "show_subscription_details", {
+            'subscription_overrides': subscription_overrides,
+            'unsubscription_overrides': unsubscription_overrides})
+
+    @access("ml")
+    @mailinglist_guard()
+    def download_csv_subscription_states(self, rs, mailinglist_id):
+        """Create CSV file with all subscribers and their subscription state"""
+        personas_state = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id)
+        personas = self.coreproxy.get_personas(rs, personas_state.keys())
+        addresses = self.mlproxy.get_subscription_addresses(
+            rs, mailinglist_id, explicits_only=True)
+        columns = ['db_id', 'given_names', 'family_name', 'subscription_state',
+                   'email', 'subscription_address']
+        output = []
+
+        for persona in personas:
+            pair = {}
+            pair['db_id'] = cdedbid(persona)
+            pair['given_names'] = personas[persona]['given_names']
+            pair['family_name'] = personas[persona]['family_name']
+            pair['subscription_state'] = personas_state[persona].name
+            pair['email'] = personas[persona]['username']
+            if persona in addresses:
+                pair['subscription_address'] = addresses[persona]
+            else:
+                pair['subscription_address'] = ""
+
+            output.append(pair)
+
+        csv_data = csv_output(sorted(output, key=lambda entry: name_key(entry)),
+                              columns)
+        file = self.send_csv_file(
+            rs, data=csv_data, inline=False,
+            filename="{}_subscription_states.csv".format(
+                rs.ambience['mailinglist']['title']))
+        if file:
+            return file
+        else:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "ml/management")
+
     @access("ml", modi={"POST"})
     @REQUESTdata(("moderator_ids", "str"))
     @mailinglist_guard()
@@ -401,12 +452,9 @@ class MlFrontend(AbstractUserFrontend):
                              for anid in moderator_ids.split(",")}
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        data = {
-            'id': mailinglist_id,
-            'moderators': (set(rs.ambience['mailinglist']['moderators'])
-                           | moderator_ids),
-        }
-        code = self.mlproxy.set_mailinglist(rs, data)
+
+        moderator_ids |= set(rs.ambience['mailinglist']['moderators'])
+        code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -421,12 +469,10 @@ class MlFrontend(AbstractUserFrontend):
             rs.notify("error",
                       n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
-        data = {
-            'id': mailinglist_id,
-            'moderators': (set(rs.ambience['mailinglist']['moderators'])
-                           - {moderator_id}),
-        }
-        code = self.mlproxy.set_mailinglist(rs, data)
+
+        moderator_ids = set(rs.ambience['mailinglist']['moderators'])
+        moderator_ids -= {moderator_id}
+        code = self.mlproxy.set_moderators(rs, mailinglist_id, moderator_ids)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -436,14 +482,12 @@ class MlFrontend(AbstractUserFrontend):
     def add_whitelist(self, rs, mailinglist_id, email):
         """Allow address to write to the list."""
         if rs.errors:
-            return self.management(rs, mailinglist_id)
-        data = {
-            'id': mailinglist_id,
-            'whitelist': set(rs.ambience['mailinglist']['whitelist']) | {email},
-        }
-        code = self.mlproxy.set_mailinglist(rs, data)
+            return self.show_subscription_details(rs, mailinglist_id)
+
+        whitelist = set(rs.ambience['mailinglist']['whitelist']) | {email}
+        code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "ml/management")
+        return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("email", "email"))
@@ -451,24 +495,56 @@ class MlFrontend(AbstractUserFrontend):
     def remove_whitelist(self, rs, mailinglist_id, email):
         """Withdraw privilege of writing to list."""
         if rs.errors:
-            return self.management(rs, mailinglist_id)
-        data = {
-            'id': mailinglist_id,
-            'whitelist': set(rs.ambience['mailinglist']['whitelist']) - {email},
-        }
-        code = self.mlproxy.set_mailinglist(rs, data)
+            return self.show_subscription_details(rs, mailinglist_id)
+
+        whitelist = set(rs.ambience['mailinglist']['whitelist']) - {email}
+        code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "ml/management")
+        return self.redirect(rs, "ml/show_subscription_details")
+
+    def _subscription_action_handler(self, rs, action, **kwargs):
+        """Un-inlined code from all subscription action initiating endpoints."""
+        try:
+            code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
+        except SubscriptionError as se:
+            rs.notify(se.kind, se.msg)
+        else:
+            self.notify_return_code(rs, code)
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("persona_id", "id"), ("ack", "bool"))
+    @REQUESTdata(("persona_id", "id"))
     @mailinglist_guard()
-    def decide_request(self, rs, mailinglist_id, persona_id, ack):
+    def approve_request(self, rs, mailinglist_id, persona_id):
         """Evaluate whether to admit subscribers."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        code = self.mlproxy.decide_request(rs, mailinglist_id, persona_id, ack)
-        self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.approve_request,
+            mailinglist_id=mailinglist_id, persona_id=persona_id)
+        return self.redirect(rs, "ml/management")
+
+    @access("ml", modi={"POST"})
+    @REQUESTdata(("persona_id", "id"))
+    @mailinglist_guard()
+    def deny_request(self, rs, mailinglist_id, persona_id):
+        """Evaluate whether to admit subscribers."""
+        if rs.errors:
+            return self.management(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.deny_request,
+            mailinglist_id=mailinglist_id, persona_id=persona_id)
+        return self.redirect(rs, "ml/management")
+
+    @access("ml", modi={"POST"})
+    @REQUESTdata(("persona_id", "id"))
+    @mailinglist_guard()
+    def block_request(self, rs, mailinglist_id, persona_id):
+        """Evaluate whether to admit subscribers."""
+        if rs.errors:
+            return self.management(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.block_request,
+            mailinglist_id=mailinglist_id, persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -478,9 +554,9 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively subscribe somebody."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        code = self.mlproxy.change_subscription_state(
-            rs, mailinglist_id, subscriber_id, subscribe=True)
-        self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.add_subscriber,
+            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -490,39 +566,97 @@ class MlFrontend(AbstractUserFrontend):
         """Administratively unsubscribe somebody."""
         if rs.errors:
             return self.management(rs, mailinglist_id)
-        code = self.mlproxy.change_subscription_state(
-            rs, mailinglist_id, subscriber_id, subscribe=False)
-        self.notify_return_code(rs, code)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.remove_subscriber,
+            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_ids", "int_csv_list"), ("ack_delete", "bool"))
+    @REQUESTdata(("modsubscriber_id", "cdedbid"))
     @mailinglist_guard()
-    def remove_subscribers(self, rs, mailinglist_id, subscriber_ids,
-                           ack_delete):
-        """Administratively unsubscribe many people."""
-        if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
+    def add_subscription_override(self, rs, mailinglist_id, modsubscriber_id):
+        """Administratively subscribe somebody with moderator override."""
         if rs.errors:
-            return self.management(rs, mailinglist_id)
-        with Atomizer(rs):
-            code = 1
-            for subscriber_id in subscriber_ids:
-                code *= self.mlproxy.change_subscription_state(
-                    rs, mailinglist_id, subscriber_id, subscribe=False)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "ml/management")
+            return self.show_subscription_details(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.add_subscription_override,
+            mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
+        return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscribe", "bool"))
-    def subscribe_or_unsubscribe(self, rs, mailinglist_id, subscribe):
-        """Change own subscription state."""
+    @REQUESTdata(("modsubscriber_id", "id"))
+    @mailinglist_guard()
+    def remove_subscription_override(self, rs, mailinglist_id, modsubscriber_id):
+        """Administratively remove somebody with moderator override."""
+        if rs.errors:
+            return self.show_subscription_details(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.remove_subscription_override,
+            mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
+        return self.redirect(rs, "ml/show_subscription_details")
+
+    @access("ml", modi={"POST"})
+    @REQUESTdata(("modunsubscriber_id", "cdedbid"))
+    @mailinglist_guard()
+    def add_unsubscription_override(self, rs, mailinglist_id, modunsubscriber_id):
+        """Administratively block somebody."""
+        if rs.errors:
+            return self.show_subscription_details(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.add_unsubscription_override,
+            mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
+        return self.redirect(rs, "ml/show_subscription_details")
+
+    @access("ml", modi={"POST"})
+    @REQUESTdata(("modunsubscriber_id", "id"))
+    @mailinglist_guard()
+    def remove_unsubscription_override(self, rs, mailinglist_id, modunsubscriber_id):
+        """Administratively remove block."""
+        if rs.errors:
+            return self.show_subscription_details(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.remove_unsubscription_override,
+            mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
+        return self.redirect(rs, "ml/show_subscription_details")
+
+    @access("ml", modi={"POST"})
+    def subscribe(self, rs, mailinglist_id):
+        """Change own subscription state to subscribed or pending."""
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        code = self.mlproxy.change_subscription_state(
-            rs, mailinglist_id, rs.user.persona_id, subscribe)
-        self.notify_return_code(
-            rs, code, pending=n_("Subscription request awaits moderation."))
+        self._subscription_action_handler(
+            rs, SubscriptionActions.subscribe,
+            mailinglist_id=mailinglist_id)
+        return self.redirect(rs, "ml/show_mailinglist")
+
+    @access("ml", modi={"POST"})
+    def request_subscription(self, rs, mailinglist_id):
+        """Change own subscription state to subscribed or pending."""
+        if rs.errors:
+            return self.show_mailinglist(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.request_subscription,
+            mailinglist_id=mailinglist_id)
+        return self.redirect(rs, "ml/show_mailinglist")
+
+    @access("ml", modi={"POST"})
+    def unsubscribe(self, rs, mailinglist_id):
+        """Change own subscription state to unsubscribed."""
+        if rs.errors:
+            return self.show_mailinglist(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.unsubscribe,
+            mailinglist_id=mailinglist_id)
+        return self.redirect(rs, "ml/show_mailinglist")
+
+    @access("ml", modi={"POST"})
+    def cancel_subscription(self, rs, mailinglist_id):
+        """Cancel subscription request."""
+        if rs.errors:
+            return self.show_mailinglist(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.cancel_request,
+            mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -534,23 +668,20 @@ class MlFrontend(AbstractUserFrontend):
         """
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
-        is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
-                                                   mailinglist_id)
-        if not is_subscribed:
-            rs.notify("error", n_("Not subscribed."))
-            return self.redirect(rs, "ml/show_mailinglist")
-        policy = const.SubscriptionPolicy(
-            rs.ambience['mailinglist']['sub_policy'])
-        may_toggle = not policy.privileged_transition(False)
-        if email and not may_toggle:
-            rs.notify("warning", n_("Disallowed to change address."))
+        if not self._check_address_change_requirements(rs, mailinglist_id,
+                                                       bool(email)):
             return self.redirect(rs, "ml/show_mailinglist")
 
-        subscriptions = self.mlproxy.subscriptions(rs, rs.user.persona_id)
-        if not email or email in subscriptions.values():
-            code = self.mlproxy.change_subscription_state(
-                rs, mailinglist_id, rs.user.persona_id, subscribe=True,
-                address=email)
+        known_addresses = self.mlproxy.get_persona_addresses(rs)
+        if not email:
+            code = self.mlproxy.remove_subscription_address(
+                rs, mailinglist_id=mailinglist_id,
+                persona_id=rs.user.persona_id)
+            self.notify_return_code(rs, code)
+        elif email in known_addresses:
+            code = self.mlproxy.set_subscription_address(
+                rs, mailinglist_id=mailinglist_id,
+                persona_id=rs.user.persona_id, email=email)
             self.notify_return_code(rs, code)
         else:
             self.do_mail(
@@ -571,23 +702,33 @@ class MlFrontend(AbstractUserFrontend):
         """
         if rs.errors:
             return self.show_mailinglist(rs, mailinglist_id)
+        if not self._check_address_change_requirements(rs, mailinglist_id,
+                                                       False):
+            return self.redirect(rs, "ml/show_mailinglist")
+
+        code = self.mlproxy.set_subscription_address(
+            rs, mailinglist_id=mailinglist_id, persona_id=rs.user.persona_id,
+            email=email)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "ml/show_mailinglist")
+
+    def _check_address_change_requirements(self, rs, mailinglist_id, setting):
+        """Check if all conditions required to change a subscription adress
+        are fulfilled.
+
+        :rtype: bool
+        """
         is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
                                                    mailinglist_id)
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
-            return self.redirect(rs, "ml/show_mailinglist")
-        policy = const.SubscriptionPolicy(
+            return False
+        policy = const.MailinglistInteractionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
-        may_toggle = not policy.privileged_transition(False)
-        if not may_toggle:
-            rs.notify("warning", n_("Disallowed to change address."))
-            return self.redirect(rs, "ml/show_mailinglist")
-
-        code = self.mlproxy.change_subscription_state(
-            rs, mailinglist_id, rs.user.persona_id, subscribe=True,
-            address=email)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "ml/show_mailinglist")
+        if setting and policy == const.MailinglistInteractionPolicy.mandatory:
+            rs.notify("error", n_("Disallowed to change address."))
+            return False
+        return True
 
     @periodic("subscription_request_remind")
     def subscription_request_remind(self, rs, store):
@@ -595,7 +736,8 @@ class MlFrontend(AbstractUserFrontend):
         ml_ids = self.mlproxy.list_mailinglists(rs)
         current = now().timestamp()
         for ml_id in ml_ids:
-            requests = self.mlproxy.list_requests(rs, ml_id)
+            states = {const.SubscriptionStates.pending}
+            requests = self.mlproxy.get_subscription_states(rs, ml_id, states)
 
             ml_store = store.get(str(ml_id))
             if ml_store is None:
@@ -620,47 +762,15 @@ class MlFrontend(AbstractUserFrontend):
             store[str(ml_id)] = ml_store
         return store
 
-    @access("ml")
-    @mailinglist_guard()
-    def check_states(self, rs, mailinglist_id):
-        """Test all explicit subscriptions for consistency with audience."""
-        problems = self.mlproxy.check_states_single(rs, mailinglist_id)
-        overrides = tuple(e['persona_id'] for e in problems if e['is_override'])
-        problems = tuple(e['persona_id'] for e in problems
-                         if not e['is_override'])
-        personas = self.coreproxy.get_personas(rs, problems + overrides)
-        return self.render(rs, "check_states", {
-            'problems': problems, 'overrides': overrides, 'personas': personas})
+    @periodic("write_subscription_states")
+    def write_subscription_states(self, rs, store):
+        """Write the current state of implicit subscribers to the database."""
+        mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-    @access("ml_admin")
-    def global_check_states(self, rs):
-        """Test all explicit subscriptions for consistency with audience."""
-        mailinglists = self.mlproxy.list_mailinglists(rs)
-        problems = self.mlproxy.check_states(rs, tuple(mailinglists.keys()))
-        overrides = {
-            ml_id: tuple(e['persona_id'] for e in probs if e['is_override'])
-            for ml_id, probs in problems.items()}
-        problems = {
-            ml_id: tuple(e['persona_id'] for e in probs if not e['is_override'])
-            for ml_id, probs in problems.items()}
-        persona_ids = {x for l in itertools.chain(overrides.values(),
-                                                  problems.values())
-                       for x in l}
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-        return self.render(rs, "global_check_states", {
-            'problems': problems, 'overrides': overrides, 'personas': personas,
-            'mailinglists': mailinglists})
+        for ml_id in mailinglist_ids:
+            self.mlproxy.write_subscription_states(rs, ml_id)
 
-    @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "id"))
-    @mailinglist_guard()
-    def mark_override(self, rs, mailinglist_id, subscriber_id):
-        """Allow a subscription even though not in audience."""
-        if rs.errors:
-            return self.check_states(rs, mailinglist_id)
-        code = self.mlproxy.mark_override(rs, mailinglist_id, subscriber_id)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "ml/check_states")
+        return store
 
     @access("ml_script")
     def export_overview(self, rs):

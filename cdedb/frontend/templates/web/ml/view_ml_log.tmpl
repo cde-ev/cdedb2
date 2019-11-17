@@ -14,9 +14,12 @@
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
-{{ util.breadcrumb_link(cdedblink("ml/view_ml_log"), gettext("Log"), active=True) }}
+    {{ super() }}
+    {% if not ambience['is_active'] %}
+        {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/view_ml_log"), gettext("Log"), active=True) }}
 {% endblock %}
 {% block content %}
     {% if log %}

@@ -427,6 +427,25 @@ def _iterable(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
+def _sequence(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: ([object] or None, [(str or None, exception)])
+    """
+    if _convert:
+        try:
+            val = tuple(val)
+        except (ValueError, TypeError):
+            return None, [(argname,
+                           ValueError(n_("Invalid input for sequence.")))]
+    if not isinstance(val, collections.abc.Sequence):
+        return None, [(argname, TypeError(n_("Must be a sequence.")))]
+    return val, []
+
+
+@_addvalidator
 def _bool(val, argname=None, *, _convert=True):
     """
     :type val: object
@@ -3074,14 +3093,13 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
     'address': _email,
     'description': _str_or_None,
-    'sub_policy': _enum_subscriptionpolicy,
+    'sub_policy': _enum_mailinglistinteractionpolicy,
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
     'audience_policy': _enum_audiencepolicy,
     'subject_prefix': _str_or_None,
     'maxsize': _int_or_None,
     'is_active': _bool,
-    'gateway': _id_or_None,
     'event_id': _id_or_None,
     'registration_stati': _iterable,
     'assembly_id': _id_or_None,
@@ -3119,12 +3137,10 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    specials = sum(1 for x in (val.get('gateway'), val.get('event_id'),
+    specials = sum(1 for x in (val.get('event_id'),
                                val.get('assembly_id')) if x)
     if specials > 1:
-        error = ValueError(n_("Only one allowed of gateway, event_id and "
-                              "assembly_id."))
-        errs.append(('gateway', error))
+        error = ValueError(n_("Only one allowed of event_id and assembly_id."))
         errs.append(('event_id', error))
         errs.append(('assembly_id', error))
     apol = ENUMS_DICT['AudiencePolicy']
@@ -3150,6 +3166,63 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                     newarray.append(v)
             val[key] = newarray
     return val, errs
+
+
+_SUBSCRIPTION_ID_FIELDS = {
+    'mailinglist_id': _id,
+    'persona_id': _id,
+}
+
+_SUBSCRIPTION_STATE_FIELDS = lambda: {
+    'subscription_state': _enum_subscriptionstates,
+}
+
+_SUBSCRIPTION_ADDRESS_FIELDS = {
+    'address': _email,
+}
+
+
+@_addvalidator
+def _subscription_identifier(val, argname=None, *, _convert=True):
+    argname = argname or "subscription identifier"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
+    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+
+
+@_addvalidator
+def _subscription_state(val, argname=None, *, _convert=True):
+    argname = argname or "subscription state"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
+    mandatory_fields.update(_SUBSCRIPTION_STATE_FIELDS())
+    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+
+
+@_addvalidator
+def _subscription_address(val, argname=None, *, _convert=True):
+    argname = argname or "subscription address"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
+    mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
+    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+
+
+@_addvalidator
+def _subscription_request_resolution(val, argname=None, *, _convert=True):
+    argname = argname or "subscription request resolution"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
+    mandatory_fields.update(_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS())
+    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
 
 
 _ASSEMBLY_COMMON_FIELDS = lambda: {

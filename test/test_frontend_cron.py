@@ -122,9 +122,11 @@ def cron_template(**kwargs):
 
 
 def subscription_request_template(**kwargs):
-    defaults = {}
+    defaults = {
+        'subscription_state': const.SubscriptionStates.pending
+    }
     data = {**defaults, **kwargs}
-    return format_insert_sql("ml.subscription_requests", data)
+    return format_insert_sql("ml.subscription_states", data)
 
 
 def privilege_change_template(**kwargs):
@@ -238,28 +240,30 @@ class TestCron(CronTest):
         self.assertEqual(["changelog_requests_pending"],
                          [mail.template for mail in self.mails])
 
+    @prepsql("DELETE FROM ml.subscription_states WHERE subscription_state = "
+             "{};".format(const.SubscriptionStates.pending))
     def test_subscription_request_remind_empty(self):
         self.execute('subscription_request_remind')
+        self.assertEqual([], [mail.template for mail in self.mails])
 
-    @prepsql(subscription_request_template(persona_id=3, mailinglist_id=4))
     def test_subscription_request_remind_new(self):
+        # Mailinglist 7 has pending subscription for persona 6
         self.execute('subscription_request_remind')
         self.assertEqual(["subscription_request_remind"],
                          [mail.template for mail in self.mails])
 
     @prepsql(subscription_request_template(persona_id=3, mailinglist_id=4)
              + subscription_request_template(persona_id=5, mailinglist_id=4)
-             + subscription_request_template(persona_id=3, mailinglist_id=5)
+             + subscription_request_template(persona_id=2, mailinglist_id=7)
              + subscription_request_template(persona_id=3, mailinglist_id=8))
     def test_subscription_request_remind_multiple(self):
         self.execute('subscription_request_remind')
         self.assertEqual(["subscription_request_remind"] * 3,
                          [mail.template for mail in self.mails])
 
-    @prepsql(subscription_request_template(persona_id=3, mailinglist_id=4)
-             + cron_template(moniker="subscription_request_remind",
-                             store={4: {'persona_ids': [3],
-                                        'tstamp': now().timestamp()}}))
+    @prepsql(cron_template(moniker="subscription_request_remind",
+                           store={7: {'persona_ids': [6],
+                                      'tstamp': now().timestamp()}}))
     def test_subscription_request_remind_old(self):
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])

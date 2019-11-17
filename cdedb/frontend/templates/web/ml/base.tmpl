@@ -7,8 +7,10 @@
             {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), gettext("Overview"),
                     icon="triangle-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
             {% if data['id'] in user.moderator or is_admin %}
-                {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Manage"),
+                {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Management"),
                         aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
+                {{ util.href(cdedblink("ml/show_subscription_details", {'mailinglist_id': data['id']}), gettext("Advanced Management"),
+                        aclass="list-group-item", icon="wrench", active=(sidenav_active == 'ml_details')) }}
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
                         gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
@@ -39,7 +41,7 @@
         <h4>Mailinglisten</h4>
         <div class="list-group tear-down">
             {% if is_admin %}
-                {{ util.href(cdedblink("ml/index"), gettext("Active Malinglists"), icon="triangle-right",
+                {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="triangle-right",
                         aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists"), icon="cog",
                         aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}

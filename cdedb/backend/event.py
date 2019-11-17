@@ -351,7 +351,8 @@ class EventBackend(AbstractBackend):
         if query.scope == "qview_registration":
             event_id = affirm("id", event_id)
             if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+                    and not self.is_admin(rs)
+                    and not "ml_admin" in rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             # Fix for custom fields with uppercase letters so they do not
@@ -1672,7 +1673,8 @@ class EventBackend(AbstractBackend):
         # condition for limited access, f. e. for the online participant list
         is_limited = (persona_id != rs.user.persona_id
                       and not self.is_orga(rs, event_id=event_id)
-                      and not self.is_admin(rs))
+                      and not self.is_admin(rs)
+                      and not "ml_admin" in rs.user.roles)
         if is_limited:
             query = ("SELECT DISTINCT regs.id, regs.persona_id "
                      "FROM event.registrations AS regs "
@@ -1688,6 +1690,41 @@ class EventBackend(AbstractBackend):
         if is_limited and rs.user.persona_id not in ret.values():
             raise PrivilegeError(n_("Not privileged."))
         return ret
+
+    @access("event")
+    def check_registration_status(self, rs, persona_id, event_id, stati):
+        """Check if any status for a given event matches one of the given stati.
+
+        If stati is empty check is_orga instead.
+        This is mostly used to determine mailinglist eligibility.
+
+        A user may do this for themselves, an orga for their event and an
+        admin for every user.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :type event_id: int
+        :type stati: [const.RegistrationPartStati
+        :rtype: bool
+        """
+        event_id = affirm("id", event_id)
+        stati = affirm_set("enum_registrationpartstati", stati)
+        if not (persona_id == rs.user.persona_id
+                or self.is_orga(rs, event_id=event_id)
+                or self.is_admin(rs)
+                or "ml_admin" in rs.user.roles):
+            raise PrivilegeError(n_("Not privileged."))
+
+        if not stati:
+            return self.is_orga(rs, event_id=event_id)
+
+        registration_ids = self.list_registrations(
+            rs, event_id, persona_id)
+        if not registration_ids:
+            return False
+        reg_id = unwrap(registration_ids, keys=True)
+        reg = self.get_registration(rs, reg_id)
+        return any(part['status'] in stati for part in reg['parts'].values())
 
     @access("event")
     def get_registration_map(self, rs, event_ids):
@@ -1828,7 +1865,8 @@ class EventBackend(AbstractBackend):
             stati = set(const.RegistrationPartStati)
             # orgas and admins have full access to all data
             is_privileged = (self.is_orga(rs, event_id=event_id)
-                             or self.is_admin(rs))
+                             or self.is_admin(rs)
+                             or "ml_admin" in rs.user.roles)
             if not is_privileged:
                 if rs.user.persona_id not in personas:
                     raise PrivilegeError(n_("Not privileged."))
