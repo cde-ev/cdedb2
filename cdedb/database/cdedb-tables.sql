@@ -1048,7 +1048,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_states TO cdb_persona;
 GRANT SELECT, UPDATE ON ml.subscription_states_id_seq TO cdb_persona;
 
 CREATE TABLE ml.subscription_addresses (
-        id                      serial PRIMARY KEY ,
+        id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         address                 varchar NOT NULL
