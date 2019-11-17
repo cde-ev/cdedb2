@@ -146,10 +146,12 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def filter_personas_by_policy(self, rs, ml, data, allowed_pols):
-        """
-        This additional endpoint to check for interaction policies is only
-        supposed to be used for `cdedb.frontend.core.select_persona()`, to
-        reduce the amount of necessarx database queries.
+        """Restrict persona sample to eligibles.
+
+        This additional endpoint checking for interaction policies is
+        supposed to only be used for
+        `cdedb.frontend.core.select_persona()`, to reduce the amount
+        of necessary database queries.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ml: {str: object}
@@ -394,7 +396,7 @@ class MlBackend(AbstractBackend):
     def set_moderators(self, rs, mailinglist_id, moderator_ids):
         """Set moderators of a mailinglist.
 
-        A complete set must be passed, which will spuerseed the current set.
+        A complete set must be passed, which will superseed the current set.
 
         Contrary to `set_mailinglist` this may be used by moderators.
 
@@ -440,7 +442,7 @@ class MlBackend(AbstractBackend):
     def set_whitelist(self, rs, mailinglist_id, whitelist):
         """Set whitelist of a mailinglist.
 
-        A complete set must be passed, which will spuerseed the current set.
+        A complete set must be passed, which will superseed the current set.
 
         Contrary to `set_mailinglist` this may be used by moderators.
 

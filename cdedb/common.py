@@ -25,9 +25,9 @@ import psycopg2.extras
 import pytz
 import werkzeug.datastructures
 
-# The following imports are not actually used here. However as they are
-# basically just uninlined to a separate file, semantically they are
-# imported here and should be imported from here otherwise.
+# The following imports are only for re-export. They are not used
+# here. All other uses should import them from here and not their
+# original source which is basically just uninlined code.
 from cdedb.ml_subscription_aux import (
     SubscriptionError, SubscriptionInfo, SubscriptionActions)
 

@@ -1,6 +1,6 @@
 """This keeps a lot of the business logic for ml subscriptions together.
 
-These are be imported in `cdedb:common.py` and should be exported from there.
+These are be imported in `cdedb:common.py` and should be imported from there.
 
 `SubscriptionError` and it's subclasses are Exceptions expected to occurr in
     the ml backend when handling subscriptions. They are cought in the frontend
