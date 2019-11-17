@@ -486,8 +486,8 @@ CREATE TABLE past_event.institutions (
         title                   varchar NOT NULL,
         moniker                 varchar NOT NULL
 );
-GRANT SELECT, UPDATE ON past_event.institutions TO cdb_persona;
-GRANT INSERT, DELETE ON past_event.institutions TO cdb_admin;
+GRANT SELECT ON past_event.institutions TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.institutions_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.events (
@@ -505,8 +505,9 @@ CREATE TABLE past_event.events (
         -- Information only visible to participants.
         notes                   varchar
 );
-GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
-GRANT DELETE, INSERT ON past_event.events TO cdb_admin;
+GRANT SELECT (id, title, shortname, tempus) ON past_event.events TO cdb_persona;
+GRANT SELECT ON past_event.events to cdb_member;
+GRANT UPDATE, DELETE, INSERT ON past_event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.courses (
@@ -550,9 +551,8 @@ CREATE TABLE past_event.log (
 );
 CREATE INDEX idx_past_event_log_code ON past_event.log(code);
 CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
-GRANT SELECT, INSERT ON past_event.log TO cdb_persona;
-GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_persona;
-GRANT DELETE ON past_event.log TO cdb_admin;
+GRANT SELECT, INSERT, DELETE ON past_event.log TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
 
 ---
 --- SCHEMA event
