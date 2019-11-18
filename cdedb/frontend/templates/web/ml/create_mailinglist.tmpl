@@ -40,6 +40,8 @@
                 entries=enums['AudiencePolicy']|enum_entries(processing=gettext)) }}
         {{ util.form_input_select(name="sub_policy", label=gettext("Subscription"),
                 entries=enums['MailinglistInteractionPolicy']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"),
+                entries=enums['MailinglistTypes']|enum_entries(processing=gettext)) }}
         {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=sorted_events,
                 info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
         {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
