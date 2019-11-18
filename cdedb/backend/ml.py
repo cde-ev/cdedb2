@@ -22,6 +22,7 @@ from cdedb.common import (
 from cdedb.query import QueryOperators, Query
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
 
 
 class MlBackend(AbstractBackend):
@@ -37,6 +38,17 @@ class MlBackend(AbstractBackend):
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)
+
+    @access("ml")
+    def get_ml_type(self, rs, mailinglist_id):
+        mailinglist_id = affirm("id", mailinglist_id)
+        data = self.sql_select_one(
+            rs, "ml.mailinglists", ("type",), mailinglist_id)
+        if not data:
+            raise ValueError(n_("Unknown mailinglist_id."))
+        if not data["type"]:
+            return None
+        return ml_type.type_map[const.MailinglistTypes(data["type"])]
 
     @access("ml")
     def is_relevant_admin(self, rs, *, mailinglist=None, mailinglist_id=None):
