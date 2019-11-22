@@ -122,6 +122,9 @@ endif
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql
 	sudo systemctl start pgbouncer
 
+cron:
+	sudo -u www-data /cdedb2/bin/cron_execute.py
+
 lint:
 	@echo ""
 	@echo "================================================================================"
