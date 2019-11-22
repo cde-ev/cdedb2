@@ -2221,16 +2221,17 @@ class CoreBackend(AbstractBackend):
 
         """
         case_id = affirm("id", case_id)
-        query = glue("UPDATE core.genesis_cases SET case_status = %s",
-                     "WHERE id = %s AND case_status = %s")
-        params = (const.GenesisStati.to_review, case_id,
-                  const.GenesisStati.unconfirmed)
-        ret = self.query_exec(rs, query, params)
-        realm = None
-        if ret > 0:
-            realm = unwrap(self.sql_select_one(
-                rs, "core.genesis_cases", ("realm",), case_id))
-        return ret, realm
+        case = unwrap(self.genesis_get_cases(rs, (case_id,)))
+        with Atomizer(rs):
+            query = glue("UPDATE core.genesis_cases SET case_status = %s",
+                         "WHERE id = %s AND case_status = %s")
+            params = (const.GenesisStati.to_review, case_id,
+                      const.GenesisStati.unconfirmed)
+            ret = self.query_exec(rs, query, params)
+            self.core_log(
+                rs, const.CoreLogCodes.genesis_verified, persona_id=None,
+                additional_info=case["username"])
+        return ret, case["realm"]
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
