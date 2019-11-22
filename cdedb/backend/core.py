@@ -631,8 +631,6 @@ class CoreBackend(AbstractBackend):
                 'fulltext': fulltext
             }
             self.sql_update(rs, "core.personas", fulltext_update)
-            self.core_log(rs, const.CoreLogCodes.persona_change, data['id'],
-                          additional_info=change_note)
         return num
 
     @internal_access("persona")
