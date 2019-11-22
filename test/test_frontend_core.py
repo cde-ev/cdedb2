@@ -6,6 +6,8 @@ import webtest
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.query import QueryOperators
 
+import cdedb.database.constants as const
+
 
 class TestCoreFrontend(FrontendTest):
     def test_login(self):
@@ -515,7 +517,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertLogin(user['display_name'])
 
     def test_admin_username_change(self):
-        new_username = "zelda@example.cde"
+        new_username = "bertalotta@example.cde"
         anton = USER_DICT['anton']
         self.get('/')
         self.login(anton)
@@ -1288,12 +1290,25 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl.")
 
     def test_log(self):
-        ## First: generate data
-        self.test_set_foto()
+        # First: generate data
+        self.test_genesis_event()
+        self.logout()
+        self.test_nontrivial_promotion()
+        self.logout()
+        self.test_admin_username_change()
         self.logout()
 
-        ## Now check it
+        # Now check it
         self.login(USER_DICT['anton'])
-        self.traverse({'description': 'Index', 'href': '^/d?b?/?$'},
+        self.traverse({'description': 'Index'},
                       {'href': '/core/log'})
-        self.assertTitle("Account-Log [0–0]")
+        self.assertTitle("Account-Log [0–7]")
+        f = self.response.forms["logshowform"]
+        f["codes"] = [const.CoreLogCodes.genesis_verified.value,
+                      const.CoreLogCodes.realm_change.value,
+                      const.CoreLogCodes.username_change.value]
+        self.submit(f)
+        self.assertPresence("Bereiche geändert.")
+        self.assertPresence("zelda@example.cde")
+        self.assertPresence("bertalotta@example.cde")
+        self.assertTitle("Account-Log [0–2]")
