@@ -10421,6 +10421,9 @@ msgstr "Namenschilder"
 msgid "LaTeX"
 msgstr "LaTeX"
 
+msgid "LaTeX compilation failed. Try downloading the source files and compiling them manually."
+msgstr "Der LaTeX-Code konnte nicht kompiliert werden. Du kannst die Quelldateien herunterladen und versuchen sie manuell zu kompilieren."
+
 #: cdedb/frontend/templates/web/event/downloads.tmpl:26
 #: cdedb/frontend/templates/web/event/downloads.tmpl:31
 #: cdedb/frontend/templates/web/event/downloads.tmpl:36

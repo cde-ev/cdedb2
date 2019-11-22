@@ -1262,7 +1262,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
             rs.notify(
-                "error", n_("Latex compilation failed. Try downloading the "
+                "error", n_("LaTeX compilation failed. Try downloading the "
                             "source files and compiling them manually."))
         return pdf_path
 
