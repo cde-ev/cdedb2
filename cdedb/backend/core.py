@@ -786,7 +786,7 @@ class CoreBackend(AbstractBackend):
                 else:
                     data['balance'] = tmp['balance']
             self.core_log(
-                rs, const.CdeLogCodes.realm_change, data['id'],
+                rs, const.CoreLogCodes.realm_change, data['id'],
                 additional_info="Bereiche geändert.")
             return self.set_persona(
                 rs, data, may_wait=False,
@@ -1430,10 +1430,10 @@ class CoreBackend(AbstractBackend):
                 if self.set_persona(
                         rs, new, change_note=change_note, may_wait=False,
                         allow_specials=("username",)):
+                    self.core_log(
+                        rs, const.CoreLogCodes.username_change, persona_id,
+                        additional_info=new_username)
                     return True, new_username
-                self.core_log(
-                    rs, const.CoreLogCodes.username_change, persona_id,
-                    additional_info=new_username)
         return False, n_("Failed.")
 
     @access("persona")
@@ -2224,7 +2224,8 @@ class CoreBackend(AbstractBackend):
 
         """
         case_id = affirm("id", case_id)
-        case = unwrap(self.genesis_get_cases(rs, (case_id,)))
+        data = self.sql_select_one(
+            rs, "core.genesis_cases", ("realm", "username"), case_id)
         with Atomizer(rs):
             query = glue("UPDATE core.genesis_cases SET case_status = %s",
                          "WHERE id = %s AND case_status = %s")
@@ -2233,8 +2234,8 @@ class CoreBackend(AbstractBackend):
             ret = self.query_exec(rs, query, params)
             self.core_log(
                 rs, const.CoreLogCodes.genesis_verified, persona_id=None,
-                additional_info=case["username"])
-        return ret, case["realm"]
+                additional_info=data["username"])
+        return ret, data["realm"]
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
