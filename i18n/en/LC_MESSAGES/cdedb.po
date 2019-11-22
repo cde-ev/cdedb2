@@ -695,6 +695,9 @@ msgstr "Request cancelled"
 msgid "MlLogCodes.request_blocked"
 msgstr "Request blocked"
 
+msgid "MlLogCodes.cron_removed"
+msgstr "Automatically unsubscribed"
+
 #: cdedb/i18n_additional.py:161
 msgid "ModerationPolicy.unmoderated"
 msgstr "Everyone may write"

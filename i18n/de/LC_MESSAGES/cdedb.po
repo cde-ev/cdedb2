@@ -695,6 +695,9 @@ msgstr "Abonnementantrag zurückgezogen"
 msgid "MlLogCodes.request_blocked"
 msgstr "Abonnementantrag geblockt"
 
+msgid "MlLogCodes.cron_removed"
+msgstr "Automatisch abbestellt"
+
 #: cdedb/i18n_additional.py:161
 msgid "ModerationPolicy.unmoderated"
 msgstr "Alle dürfen schreiben"
