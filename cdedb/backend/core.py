@@ -1431,6 +1431,9 @@ class CoreBackend(AbstractBackend):
                         rs, new, change_note=change_note, may_wait=False,
                         allow_specials=("username",)):
                     return True, new_username
+                self.core_log(
+                    rs, const.CoreLogCodes.username_change, persona_id,
+                    additional_info=new_username)
         return False, n_("Failed.")
 
     @access("persona")
