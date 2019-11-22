@@ -311,6 +311,9 @@ msgstr "Accountanfrage abgelehnt"
 msgid "CoreLogCodes.genesis_deleted"
 msgstr "Accountanfrage gelöscht"
 
+msgid "CoreLogCodes.genesis_verified"
+msgstr "Accountanfrage bestätigt"
+
 #: cdedb/i18n_additional.py:55
 msgid "CoreLogCodes.privilege_change_pending"
 msgstr "Admin-Änderung angestoßen"
@@ -322,6 +325,12 @@ msgstr "Admin-Änderung bestätigt"
 #: cdedb/i18n_additional.py:57
 msgid "CoreLogCodes.privilege_change_rejected"
 msgstr "Admin-Änderung abgelehnt"
+
+msgid "CoreLogCodes.realm_change"
+msgstr "Bereiche geändert"
+
+msgid "CoreLogCodes.username_change"
+msgstr "E-Mail-Adresse geändert"
 
 #: cdedb/i18n_additional.py:59
 msgid "EventLogCodes.event_created"

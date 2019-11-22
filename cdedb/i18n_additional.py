@@ -52,9 +52,12 @@ I18N_STRINGS = (
     n_("CoreLogCodes.genesis_approved"),
     n_("CoreLogCodes.genesis_rejected"),
     n_("CoreLogCodes.genesis_deleted"),
+    n_("CoreLogCodes.genesis_verified"),
     n_("CoreLogCodes.privilege_change_pending"),
     n_("CoreLogCodes.privilege_change_approved"),
     n_("CoreLogCodes.privilege_change_rejected"),
+    n_("CoreLogCodes.realm_change"),
+    n_("CoreLogCodes.username_change"),
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),
