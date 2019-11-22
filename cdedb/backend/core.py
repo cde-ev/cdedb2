@@ -785,6 +785,9 @@ class CoreBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
+            self.core_log(
+                rs, const.CdeLogCodes.realm_change, data['id'],
+                additional_info="Bereiche geändert.")
             return self.set_persona(
                 rs, data, may_wait=False,
                 change_note="Bereiche geändert.",

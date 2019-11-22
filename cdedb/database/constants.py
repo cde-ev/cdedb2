@@ -294,6 +294,7 @@ class CoreLogCodes(enum.IntEnum):
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
+    realm_change = 40  #:
 
 
 @enum.unique
