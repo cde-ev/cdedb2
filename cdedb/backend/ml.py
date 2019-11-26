@@ -34,6 +34,7 @@ class MlBackend(AbstractBackend):
         super().__init__(configpath)
         self.event = ProxyShim(EventBackend(configpath), internal=True)
         self.assembly = ProxyShim(AssemblyBackend(configpath), internal=True)
+        ml_type.initialize_backends(self.core, self.event, self.assembly)
 
     @classmethod
     def is_admin(cls, rs):

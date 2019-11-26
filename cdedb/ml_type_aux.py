@@ -1,18 +1,12 @@
 import enum
 from collections import OrderedDict
 
-from cdedb.backend.assembly import AssemblyBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.event import EventBackend
 from cdedb.common import extract_roles, PrivilegeError, n_, unwrap
 from cdedb.query import Query, QueryOperators, QUERY_SPECS
 import cdedb.validation as validate
 import cdedb.database.constants as const
 from cdedb.database.constants import (
     MailinglistTypes, MailinglistInteractionPolicy)
-
-configpath = "/etc/cdedb-application-config.py"
 
 
 class Domain(enum.IntEnum):
@@ -105,7 +99,8 @@ class GeneralMailinglist:
     def __init__(self):
         raise RuntimeError()
 
-    core = CoreBackend(configpath)
+    # This will be set later.
+    core = None
 
     sortkey = MailinglistGroup.other
 
@@ -207,7 +202,7 @@ class CdEMailinglist(GeneralMailinglist):
         * A reference to the CdE-Backend which could at some point be needed
         to retrieve relevant information.
     """
-    # cde = CdEBackend(configpath)
+    # cde = None
 
     sortkey = MailinglistGroup.cde
     viewer_roles = {"cde"}
@@ -222,7 +217,8 @@ class EventMailinglist(GeneralMailinglist):
         * A reference to the Event-Backend needed to check registration and
         orga information.
     """
-    event = EventBackend(configpath)
+    # This will be set later
+    event = None
 
     sortkey = MailinglistGroup.event
     domain = Domain.aka
@@ -238,7 +234,8 @@ class AssemblyMailinglist(GeneralMailinglist):
         * A reference to the Assembly-Backend needed to retrieve attendee
         information.
     """
-    assembly = AssemblyBackend(configpath)
+    # This will be set later
+    assembly = None
 
     sortkey = MailinglistGroup.assembly
     viewer_roles = {"assembly"}
@@ -421,3 +418,10 @@ type_map = {
     MailinglistTypes.semi_public: SemiPublicMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
+
+
+def initialize_backends(core, event, assembly):
+    """Helper to initialize the appropriate backends for Mailinglisttypes."""
+    GeneralMailinglist.core = core
+    EventMailinglist.event = event
+    AssemblyMailinglist.assembly = assembly
