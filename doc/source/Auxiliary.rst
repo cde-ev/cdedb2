@@ -16,13 +16,13 @@ cdedb.common
    :members:
 
 cdedb.query
-------------
+-----------
 
 .. automodule:: cdedb.query
    :members:
 
 cdedb.enums
-------------
+-----------
 
 .. automodule:: cdedb.enums
    :members:
@@ -34,4 +34,16 @@ The annotations below are a bit flakey, because of the way the validators
 are created.
 
 .. automodule:: cdedb.validation
+   :members:
+
+cdedb.ml_subscription_aux
+-------------------------
+
+.. automodule:: cdedb.ml_subscription_aux
+   :members:
+
+cdedb.ml_type_aux
+-----------------
+
+.. automodule:: cdedb.ml_type_aux
    :members:

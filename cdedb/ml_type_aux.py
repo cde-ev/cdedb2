@@ -36,8 +36,6 @@ class MailinglistGroup(enum.IntEnum):
 
 class AllMembersImplicitMeta:
     """Metaclass for all mailinglists with members as implicit subscribers."""
-    is_implicit = True
-
     @classmethod
     def get_implicit_subscribers(cls, rs, mailinglist):
         query = "SELECT id from core.personas WHERE is_member = True"
@@ -76,25 +74,19 @@ class GeneralMailinglist:
     """Base class for all mailinglist types.
 
     Class attributes:
-    * `core`
-        * A reference to the Core Backend needed to extract user information.
-    * `sortkey`
-        * Determines where mailinglists of this type are grouped.
-    * `domain`
-        * Determines the domain of the mailinglist.
-    * `viewer_roles`
-        * Determines who may view the mailinglist. See `may_view()` for details.
-    * `relevant_admins`
-        * Determines who may administrate the mailinglist. See
-        `is_relevant_admin()` for details.
-    * `role_map`
-        * An ordered Dict to determines mailinglist interactions in a
-        hierarchical way for trivial mailinglist types.
-    * `is_implicit`
-        * Whether or not mailinglists of this type have implicit subscribers.
-    * `validation_fields`
-        * A dict of additional fields to be considered during validation for
-        mailinglists of this type.
+
+    * `core`: A reference to the Core Backend needed to extract user information.
+    * `sortkey`: Determines where mailinglists of this type are grouped.
+    * `domain`: Determines the domain of the mailinglist.
+    * `viewer_roles`: Determines who may view the mailinglist.
+      See `may_view()` for details.
+    * `relevant_admins`: Determines who may administrate the mailinglist. See
+      `is_relevant_admin()` for details.
+    * `role_map`: An ordered Dict to determines mailinglist interactions in a
+      hierarchical way for trivial mailinglist types.
+    * `validation_fields`: A dict of additional fields to be considered
+      during validation for mailinglists of this type.
+
     """
     def __init__(self):
         raise RuntimeError()
@@ -116,9 +108,9 @@ class GeneralMailinglist:
         attribute, so that `ml_admin` may always view all mailinglists.
 
         Relevant class attributes:
-        * `viewer_roles`
-          * A set of roles other than `ml_admin` which allows a user to
-            view a mailinglist. The semantics are similar to `@access`.
+
+        - `viewer_roles`: A set of roles other than `ml_admin` which allows
+          a user to view a mailinglist. The semantics are similar to `@access`.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: bool
@@ -135,9 +127,10 @@ class GeneralMailinglist:
         attribute, so that `ml_admin` may always administrate all mailinglists.
 
         Relevant class attributes:
-        * `relevant_admin`
-          * A set of roles other than `ml_admin` which allows a user to
-            administrate a mailinglist. The semantics are similar to `@access`.
+
+        - `relevant_admin`: A set of roles other than `ml_admin` which allows
+          a user to administrate a mailinglist. The semantics are similar to
+          `@access`.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: bool
@@ -177,9 +170,6 @@ class GeneralMailinglist:
         else:
             return None
 
-    # TODO do we actually need this?
-    is_implicit = False
-
     @classmethod
     def get_implicit_subscribers(cls, rs, mailinglist):
         """Retrieve a set of personas, which should be subscribers.
@@ -198,9 +188,10 @@ class CdEMailinglist(GeneralMailinglist):
     """Base class for CdE-Mailinglists.
 
     Relevant Attributes:
-    * `cde`
-        * A reference to the CdE-Backend which could at some point be needed
-        to retrieve relevant information.
+
+    * `cde`: A reference to the CdE-Backend which could at some point be needed
+      to retrieve relevant information.
+
     """
     # cde = None
 
@@ -213,9 +204,10 @@ class EventMailinglist(GeneralMailinglist):
     """Base class for Event-Mailinglists.
 
     Relevant Attributes:
-    * `event`
-        * A reference to the Event-Backend needed to check registration and
-        orga information.
+
+    * `event`: A reference to the Event-Backend needed to check registration and
+      orga information.
+
     """
     # This will be set later
     event = None
@@ -230,9 +222,10 @@ class AssemblyMailinglist(GeneralMailinglist):
     """Base class for Assembly-Mailinglists.
 
     Relevant Attributes:
-    * `assembly`
-        * A reference to the Assembly-Backend needed to retrieve attendee
-        information.
+
+    * `assembly`: A reference to the Assembly-Backend needed to retrieve attendee
+      information.
+
     """
     # This will be set later
     assembly = None
@@ -289,6 +282,11 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
     @classmethod
     def get_interaction_policy(cls, rs, mailinglist, persona_id=None):
+        """Determine the MIP of the user or a persona with a mailinglist.
+
+        For the `EventOrgaMailinglist` this basically means opt-in for all
+        implicit subscribers. See `get_impicit_subscribers`.
+        """
         assert type_map[mailinglist["type"]] == cls
 
         if not persona_id:
@@ -301,10 +299,13 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         else:
             return None
 
-    is_implicit = True
-
     @classmethod
     def get_implicit_subscribers(cls, rs, mailinglist):
+        """Get a list of people that should be on this mailinglist.
+
+        For the `EventAssociatedMailinglist` this means registrations with
+        one of the configured stati in any part.
+        """
         assert type_map[mailinglist["type"]] == cls
 
         event = unwrap(cls.event.get_events(rs, (mailinglist["event_id"],)))
@@ -329,6 +330,12 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
     @classmethod
     def get_interaction_policy(cls, rs, mailinglist, persona_id=None):
+        """Determine the MIP of the user or a persona with a mailinglist.
+
+        For the `EventOrgaMailinglist` this means opt-in for orgas only.
+        """
+        assert type_map[mailinglist["ml_type"]] == cls
+
         if not persona_id:
             persona_id = rs.user.persona_id
 
@@ -349,8 +356,6 @@ class EventOrgaLegacyMailinglist(EventOrgaMailinglist):
 
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
                                     AssemblyMailinglist):
-    is_implicit = True
-
     @classmethod
     def get_implicit_subscribers(cls, rs, mailinglist):
         """Get a list of people that should be on this mailinglist.
