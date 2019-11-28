@@ -14,13 +14,15 @@ class Domain(enum.IntEnum):
     aka = 2
 
     def __str__(self):
-        domain_map = {
-            Domain.lists: "lists.cde-ev.de",
-            Domain.aka: "aka.cde-ev.de",
-        }
         if self not in domain_map:
             raise NotImplementedError(n_("This domain is not supported."))
         return domain_map[self]
+
+
+domain_map = {
+    Domain.lists: "lists.cde-ev.de",
+    Domain.aka: "aka.cde-ev.de",
+}
 
 
 class MailinglistGroup(enum.IntEnum):
