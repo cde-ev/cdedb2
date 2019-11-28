@@ -2224,14 +2224,15 @@ class CoreBackend(AbstractBackend):
 
         """
         case_id = affirm("id", case_id)
-        data = self.sql_select_one(
-            rs, "core.genesis_cases", ("realm", "username"), case_id)
         with Atomizer(rs):
             query = glue("UPDATE core.genesis_cases SET case_status = %s",
                          "WHERE id = %s AND case_status = %s")
             params = (const.GenesisStati.to_review, case_id,
                       const.GenesisStati.unconfirmed)
             ret = self.query_exec(rs, query, params)
+
+            data = self.sql_select_one(
+                rs, "core.genesis_cases", ("realm", "username"), case_id)
             self.core_log(
                 rs, const.CoreLogCodes.genesis_verified, persona_id=None,
                 additional_info=data["username"])
