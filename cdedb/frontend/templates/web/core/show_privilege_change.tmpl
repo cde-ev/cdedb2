@@ -44,7 +44,7 @@
         <p class="textbox">{{ case["notes"] }}</p>
     {% endif %}
 
-    {% if case["submitted_by"] != user.persona_id and (case["is_meta_admin"] is not none or case["persona_id"] != user.persona_id) %}
+    {% if case["submitted_by"] != user.persona_id and (case["is_meta_admin"] is none or case["persona_id"] != user.persona_id) %}
         <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="ackprivilegechangeform" style="display: inline;">
             {{ util.anti_csrf_token('core/decide_privilege_change') }}
             {{ util.input_hidden(name="ack", value="True") }}
