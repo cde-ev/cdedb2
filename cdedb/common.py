@@ -1476,6 +1476,13 @@ GENESIS_CASE_FIELDS = (
     "address", "postal_code", "location", "country",
     "realm", "notes", "case_status", "reviewer")
 
+realm_specific_genesis_fields = {
+    "ml": tuple(),
+    "event": ("gender", "birthday", "telephone", "mobile",
+              "address_supplement", "address", "postal_code", "location",
+              "country"),
+}
+
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
     "id", "ctime", "ftime", "persona_id", "submitted_by", "status",

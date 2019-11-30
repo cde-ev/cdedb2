@@ -48,7 +48,7 @@ import zxcvbn
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
-    CDEDB_EXPORT_EVENT_VERSION)
+    CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields)
 from cdedb.database.constants import FieldDatatypes
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
@@ -1229,7 +1229,7 @@ _GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
     'case_status': _enum_genesisstati,
     'reviewer': _id,
 }
-_GENESIS_CASE_EVENT_FIELDS = lambda: {
+_GENESIS_CASE_ADDITIONAL_FIELDS = lambda: {
     'gender': _enum_genders,
     'birthday': _birthday,
     'telephone': _phone_or_None,
@@ -1240,7 +1240,6 @@ _GENESIS_CASE_EVENT_FIELDS = lambda: {
     'location': _str,
     'country': _str_or_None,
 }
-_GENESIS_CASE_ML_FIELDS = lambda: {}
 
 
 @_addvalidator
@@ -1260,32 +1259,30 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     additional_fields = {}
     if 'realm' in val:
-        if val['realm'] == "cde":
-            errs.append(
-                ('realm', ValueError(n_("CdE not supported for genesis."))))
-        elif val['realm'] == "assembly":
-            errs.append(('realm',
-                         ValueError(n_("Assembly not supported for genesis."))))
-        elif val['realm'] == "ml":
-            additional_fields = _GENESIS_CASE_ML_FIELDS()
-        elif val['realm'] == "event":
-            additional_fields = _GENESIS_CASE_EVENT_FIELDS()
+        if val['realm'] not in realm_specific_genesis_fields:
+            errs.append(('realm', ValueError(n_(
+                "This realm is not supported for genesis."))))
         else:
-            errs.append(('realm', ValueError(n_("Invalid target realm."))))
+            additional_fields = {
+                k: v for k, v in _GENESIS_CASE_ADDITIONAL_FIELDS().items()
+                if k in realm_specific_genesis_fields[val['realm']]}
+    else:
+        additional_fields = {}
 
     if creation:
         mandatory_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                 **additional_fields)
-        optional_fields = dict(_GENESIS_CASE_OPTIONAL_FIELDS())
+        optional_fields = {}
     else:
         mandatory_fields = {'id': _id}
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                **_GENESIS_CASE_OPTIONAL_FIELDS(),
                                **additional_fields)
 
-    val = {k: v for k, v in val.items() if k in mandatory_fields or k in optional_fields}
+    # allow_superflous=True will result in superfluous keys being removed.
     val, e = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        allow_superfluous=True)
     errs.extend(e)
     if errs:
         return val, errs

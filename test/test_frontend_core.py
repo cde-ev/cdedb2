@@ -1316,6 +1316,25 @@ class TestCoreFrontend(FrontendTest):
         f['family_name'] = "Zeruda"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda")
+
+        self.traverse({'description': 'Bearbeiten'})
+        f = self.response.forms['genesismodifyform']
+        f['realm'] = "event"
+        f['gender'] = "1"
+        f['birthday'] = "5.6.1987"
+        f['address'] = "An der Eiche"
+        f['postal_code'] = "12345"
+        f['location'] = "Marcuria"
+        f['country'] = "Arkadien"
+        self.submit(f)
+        self.assertPresence("An der Eiche")
+        self.assertPresence("Arkadien")
+
+        self.traverse({'description': 'Bearbeiten'})
+        f = self.response.forms['genesismodifyform']
+        f['birthday'] = "5.6.1987"
+        self.submit(f)
+        self.assertTitle("Accountanfrage von Zelda Zeruda")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
 
