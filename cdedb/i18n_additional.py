@@ -160,6 +160,7 @@ I18N_STRINGS = (
     n_("MlLogCodes.request_denied"),
     n_("MlLogCodes.request_cancelled"),
     n_("MlLogCodes.request_blocked"),
+    n_("MlLogCodes.cron_removed")
 
     n_("ModerationPolicy.unmoderated"),
     n_("ModerationPolicy.non_subscribers"),

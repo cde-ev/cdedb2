@@ -908,6 +908,19 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
+        # Check that this has been logged
+        log_entry = {
+            'additional_info': None,
+            'code': const.MlLogCodes.cron_removed,
+            'ctime': nearly_now(),
+            'mailinglist_id': mailinglist_id,
+            'persona_id': 5,
+            'submitted_by': user['id']
+        }
+        self.assertIn(
+            log_entry, self.ml.retrieve_log(
+                self.key, mailinglist_id=mailinglist_id))
+
         # Now test lists with implicit subscribers.
         # First for events.
         mailinglist_id = 9

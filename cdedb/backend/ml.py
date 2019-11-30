@@ -1272,15 +1272,9 @@ class MlBackend(AbstractBackend):
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona['id'],
                     }
-                    # This should maybe log (with a specific log code)
-                    # when a person with an explicit subscription is kicked
-                    # because a list is Opt-out, as this is can happen
-                    # accidentaly and is not easy revertable:
-                    # * if an opt-in list is changed to an opt-out list and the
-                    #   persona is no implicit subscriber
-                    # * if someone is kicked from a mailinglist he explicitly
-                    #   was subscribed to (not that important, can only happen
-                    #   by misusing add_subscription)
+                    # Log this to prevent confusion especially for team lists
+                    self.ml_log(rs, const.MlLogCodes.cron_removed,
+                                mailinglist_id, persona_id=persona['id'])
                     delete.append(datum)
 
             # Remove those who may not stay subscribed.
