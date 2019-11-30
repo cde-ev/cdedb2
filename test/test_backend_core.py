@@ -7,7 +7,8 @@ import decimal
 import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now)
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now, merge_dicts)
+from cdedb.validation import (_PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION)
 
 PERSONA_TEMPLATE = {
     'username': "zelda@example.cde",
@@ -117,6 +118,21 @@ class TestCoreBackend(BackendTest):
         newuser['username'] = newaddress
         self.login(newuser)
         self.assertTrue(self.key)
+
+    @as_users("anton")
+    def test_admin_change_username(self, user):
+        persona_id = 2
+        newaddress = "newaddress@example.cde"
+        ret, _ = self.core.change_username(self.key, persona_id, newaddress, password=None)
+        self.assertTrue(ret)
+        log_entry = {
+            'ctime': nearly_now(),
+            'persona_id': persona_id,
+            'code': const.CoreLogCodes.username_change,
+            'submitted_by': user['id'],
+            'additional_info': newaddress,
+        }
+        self.assertIn(log_entry, self.core.retrieve_log(self.key))
 
     @as_users("anton", "berta")
     def test_set_foto(self, user):
@@ -309,7 +325,6 @@ class TestCoreBackend(BackendTest):
         })
         self.assertEqual(data, new_data)
 
-
     @as_users("anton")
     def test_create_assembly_user(self, user):
         data = copy.deepcopy(PERSONA_TEMPLATE)
@@ -367,6 +382,33 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
         })
         self.assertEqual(data, new_data)
+
+    @as_users("anton")
+    def test_change_realm(self, user):
+        persona_id = 5
+        data = {
+            'id': 5,
+            'is_cde_realm': True,
+            'is_assembly_realm': True,
+        }
+        persona = self.core.get_total_persona(self.key, persona_id)
+        reference = _PERSONA_CDE_CREATION()
+        for key in tuple(persona):
+            if key not in reference and key != 'id':
+                del persona[key]
+            if key in ('trial_member', 'decided_search', 'bub_search'):
+                if persona[key] is None:
+                    persona[key] = False
+        merge_dicts(data, persona)
+        self.assertLess(0, self.core.change_persona_realms(self.key, data))
+        log_entry = {
+            'ctime': nearly_now(),
+            'code': const.CoreLogCodes.realm_change,
+            'persona_id': persona_id,
+            'submitted_by': user['id'],
+            'additional_info': 'Bereiche geändert.'
+        }
+        self.assertIn(log_entry, self.core.retrieve_log(self.key))
 
     @as_users("anton")
     def test_meta_info(self, user):
@@ -726,14 +768,6 @@ class TestCoreBackend(BackendTest):
 
         self.login(admin1)
         core_log_expectation = (
-            # Modifying the admin bits.
-            {
-                'additional_info': "Änderung eingetragen.",
-                'code': const.CoreLogCodes.persona_change.value,
-                'ctime': nearly_now(),
-                'persona_id': new_admin["id"],
-                'submitted_by': admin2["id"],
-            },
             # Finalizing the privilege process.
             {
                 'additional_info': "Änderung der Admin-Privilegien bestätigt.",

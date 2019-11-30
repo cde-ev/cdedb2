@@ -309,7 +309,10 @@ msgstr "Account Request rejected"
 
 #: cdedb/i18n_additional.py:54
 msgid "CoreLogCodes.genesis_deleted"
-msgstr ""
+msgstr "Account Request deleted"
+
+msgid "CoreLogCodes.genesis_verified"
+msgstr "Accountanfrage verified"
 
 #: cdedb/i18n_additional.py:55
 msgid "CoreLogCodes.privilege_change_pending"
@@ -322,6 +325,12 @@ msgstr "Privilege Change approved"
 #: cdedb/i18n_additional.py:57
 msgid "CoreLogCodes.privilege_change_rejected"
 msgstr "Privilege change rejected"
+
+msgid "CoreLogCodes.realm_change"
+msgstr "Realms changed"
+
+msgid "CoreLogCodes.username_change"
+msgstr "Email changed"
 
 #: cdedb/i18n_additional.py:59
 msgid "EventLogCodes.event_created"

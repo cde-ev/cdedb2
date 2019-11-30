@@ -634,8 +634,6 @@ class CoreBackend(AbstractBackend):
                 'fulltext': fulltext
             }
             self.sql_update(rs, "core.personas", fulltext_update)
-            self.core_log(rs, const.CoreLogCodes.persona_change, data['id'],
-                          additional_info=change_note)
         return num
 
     @internal_access("persona")
@@ -790,6 +788,9 @@ class CoreBackend(AbstractBackend):
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
+            self.core_log(
+                rs, const.CoreLogCodes.realm_change, data['id'],
+                additional_info="Bereiche geändert.")
             return self.set_persona(
                 rs, data, may_wait=False,
                 change_note="Bereiche geändert.",
@@ -1432,6 +1433,9 @@ class CoreBackend(AbstractBackend):
                 if self.set_persona(
                         rs, new, change_note=change_note, may_wait=False,
                         allow_specials=("username",)):
+                    self.core_log(
+                        rs, const.CoreLogCodes.username_change, persona_id,
+                        additional_info=new_username)
                     return True, new_username
         return False, n_("Failed.")
 
@@ -2223,16 +2227,19 @@ class CoreBackend(AbstractBackend):
 
         """
         case_id = affirm("id", case_id)
-        query = glue("UPDATE core.genesis_cases SET case_status = %s",
-                     "WHERE id = %s AND case_status = %s")
-        params = (const.GenesisStati.to_review, case_id,
-                  const.GenesisStati.unconfirmed)
-        ret = self.query_exec(rs, query, params)
-        realm = None
-        if ret > 0:
-            realm = unwrap(self.sql_select_one(
-                rs, "core.genesis_cases", ("realm",), case_id))
-        return ret, realm
+        with Atomizer(rs):
+            query = glue("UPDATE core.genesis_cases SET case_status = %s",
+                         "WHERE id = %s AND case_status = %s")
+            params = (const.GenesisStati.to_review, case_id,
+                      const.GenesisStati.unconfirmed)
+            ret = self.query_exec(rs, query, params)
+
+            data = self.sql_select_one(
+                rs, "core.genesis_cases", ("realm", "username"), case_id)
+            self.core_log(
+                rs, const.CoreLogCodes.genesis_verified, persona_id=None,
+                additional_info=data["username"])
+        return ret, data["realm"]
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")

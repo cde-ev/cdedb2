@@ -291,9 +291,12 @@ class CoreLogCodes(enum.IntEnum):
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
     genesis_deleted = 23  #:
+    genesis_verified = 24  #:
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
+    realm_change = 40  #:
+    username_change = 50  #:
 
 
 @enum.unique
