@@ -1284,10 +1284,40 @@ class TestCoreFrontend(FrontendTest):
         f['realm'] = "event"
         f['gender'] = "1"
         f['birthday'] = "5.6.1987"
+        f['address'] = "An der Eiche"
         f['postal_code'] = "Z-12345"
         f['location'] = "Marcuria"
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl.")
+
+    def test_genesis_modify(self):
+        self.get('/')
+        self.traverse({'href': '/core/genesis/request'})
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "ml"
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = self.fetch_link(mail)
+        self.get(link)
+        self.follow()
+
+        admin = USER_DICT["anton"]
+        self.login(admin)
+        self.traverse({'description': 'Accountanfragen'},
+                      {'description': 'Details'})
+        self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
+        self.traverse({'description': 'Bearbeiten'})
+        f = self.response.forms['genesismodifyform']
+        f['family_name'] = "Zeruda"
+        self.submit(f)
+        self.assertTitle("Accountanfrage von Zelda Zeruda")
+        f = self.response.forms['genesiseventapprovalform']
+        self.submit(f)
 
     def test_log(self):
         # First: generate data
