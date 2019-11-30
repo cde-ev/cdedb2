@@ -1716,7 +1716,10 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
 
         if not stati:
-            return self.is_orga(rs, event_id=event_id)
+            query = ("SELECT persona_id from event.orgas "
+                     "WHERE persona_id = %s AND event_id = %s")
+            params = (persona_id, event_id)
+            return bool(self.query_all(rs, query, params))
 
         registration_ids = self.list_registrations(
             rs, event_id, persona_id)

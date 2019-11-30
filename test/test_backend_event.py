@@ -3027,6 +3027,28 @@ class TestEventBackend(BackendTest):
                                                  'course_instructor': -1}}}}}
         self.assertEqual(expectation, delta)
 
+    @as_users("anton", "garcia")
+    def test_check_registration_status(self, user):
+        event_id = 1
+
+        # Check for Orga status.
+        self.assertTrue(self.event.check_registration_status(self.key, 7, event_id, []))
+        self.assertFalse(self.event.check_registration_status(self.key, 1, event_id, []))
+        self.assertFalse(self.event.check_registration_status(self.key, 3, event_id, []))
+
+        # Check for participant status
+        stati = [const.RegistrationPartStati.participant]
+        self.assertTrue(self.event.check_registration_status(self.key, 1, event_id, stati))
+        self.assertFalse(self.event.check_registration_status(self.key, 3, event_id, stati))
+        self.assertTrue(self.event.check_registration_status(self.key, 5, event_id, stati))
+        self.assertTrue(self.event.check_registration_status(self.key, 9, event_id, stati))
+
+        # Check for waitlist status
+        stati = [const.RegistrationPartStati.waitlist]
+        self.assertFalse(self.event.check_registration_status(self.key, 1, event_id, stati))
+        self.assertTrue(self.event.check_registration_status(self.key, 5, event_id, stati))
+        self.assertFalse(self.event.check_registration_status(self.key, 9, event_id, stati))
+
     @as_users("anton")
     def test_log(self, user):
         # first generate some data
