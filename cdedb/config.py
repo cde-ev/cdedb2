@@ -263,6 +263,13 @@ _DEFAULTS = {
     # email for ballot tallies
     "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",
 
+    # mailman REST API host
+    "MAILMAN_HOST": "localhost:8001",
+    # mailman REST API user
+    "MAILMAN_USER": "restadmin",
+    # user for mailman to retrieve templates
+    "MAILMAN_BASIC_AUTH_USER": "mailman",
+
     # logs
     "CORE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-core.log"),
     "CDE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cde.log"),
@@ -493,6 +500,12 @@ _SECRECTS_DEFAULTS = {
 
     # key to use by mailing list software for authentification
     "ML_SCRIPT_KEY": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
+
+    # mailman REST API password
+    "MAILMAN_PASSWORD": "secret",
+
+    # password for mailman to retrieve templates
+    "MAILMAN_BASIC_AUTH_PASSWORD": "secret",
 }
 
 

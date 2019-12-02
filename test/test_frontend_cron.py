@@ -5,6 +5,7 @@ import datetime
 import decimal
 import json
 import numbers
+import unittest.mock
 
 import cdedb.database.constants as const
 from cdedb.common import now
@@ -307,3 +308,130 @@ class TestCron(CronTest):
         self.execute('privilege_change_remind')
         self.assertEqual(['privilege_change_remind'],
                          [mail.template for mail in self.mails])
+
+    @unittest.mock.patch("mailmanclient.Client")
+    def test_mailman_sync(self, client_class):
+        #
+        # Prepare
+        #
+        class SaveDict(dict):
+            def save(self):
+                pass
+
+        base_settings = {
+            'send_welcome_message': False,
+            'subscription_policy': 'moderate',
+            'unsubscription_policy': 'moderate',
+            'archive_policy': 'private',
+            'filter_content': True,
+            'convert_html_to_plaintext': True,
+            'dmarc_mitigations': 'wrap_message',
+            'dmarc_mitigate_unconditionally': False,
+            'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
+            'administrivia': True,
+            'member_roster_visibility': 'moderators',
+            'advertised': True,
+        }
+        mm_lists = {
+            'zombie': unittest.mock.MagicMock(
+                fqdn_listname='zombie@example.cde'),
+            'announce': unittest.mock.MagicMock(
+                fqdn_listname='announce@example.cde',
+                settings=SaveDict(
+                    **base_settings,
+                    **{'display_name': "Announce name",
+                       'description': "Announce description",
+                       'info': "Announce info",
+                       'subject_prefix': "[ann]",
+                       'max_message_size': 1024,
+                       'default_member_action': 'hold',
+                       'default_nonmember_action': 'hold',}
+                )),
+            'witz': unittest.mock.MagicMock(
+                fqdn_listname='witz@example.cde',
+                settings=SaveDict(
+                    **base_settings,
+                    **{'display_name': "Witz name",
+                       'description': "Witz description",
+                       'info': "Witz info",
+                       'subject_prefix': "[witz]",
+                       'max_message_size': 512,
+                       'default_member_action': 'hold',
+                       'default_nonmember_action': 'hold',}
+                )),
+            'klatsch': unittest.mock.MagicMock(),
+            'aktivenforum': unittest.mock.MagicMock(),
+            'wait': unittest.mock.MagicMock(),
+            'participants': unittest.mock.MagicMock(),
+            'kongress': unittest.mock.MagicMock(),
+            'werbung': unittest.mock.MagicMock(),
+            'aka': unittest.mock.MagicMock(),
+            'opt': unittest.mock.MagicMock(),
+        }
+
+        client = client_class.return_value
+        client.lists = [mm_lists['announce'], mm_lists['witz'],
+                        mm_lists['zombie']]
+        client.get_domain.return_value.create_list.side_effect = mm_lists.get
+        mm_lists['witz'].members = [
+            unittest.mock.MagicMock(address='janis-spam@example.cde'),
+            unittest.mock.MagicMock(address='undead@example.cde')]
+
+        #
+        # Run
+        #
+        self.execute('mailman_sync')
+
+        #
+        # Check
+        #
+        umcall = unittest.mock.call
+        # Creation
+        self.assertEqual(
+            list(sorted(
+                client.get_domain.return_value.create_list.call_args_list)),
+            list(sorted([umcall('wait'),
+                         umcall('klatsch'),
+                         umcall('aka'),
+                         umcall('opt'),
+                         umcall('werbung'),
+                         umcall('aktivenforum'),
+                         umcall('kongress'),
+                         umcall('participants'),])))
+        # Meta update
+        expectation = {
+            'advertised': True,
+            'default_member_action': 'accept',
+            'default_nonmember_action': 'hold',
+            'display_name': 'Witz des Tages',
+            'info': 'Einer geht noch ...',
+            'max_message_size': 2048,
+            'subject_prefix': '[witz]',
+        }
+        for key, value in expectation.items():
+            self.assertEqual(mm_lists['witz'].settings[key], value)
+        self.assertEqual(mm_lists['werbung'].set_template.call_count, 1)
+        # Subscriber update
+        self.assertEqual(
+            mm_lists['witz'].subscribe.call_args_list,
+            [umcall('new-anton@example.cde',
+                    display_name='Anton Armin A. Administrator',
+                    pre_approved=True, pre_confirmed=True, pre_verified=True)])
+        self.assertEqual(
+            mm_lists['witz'].mass_unsubscribe.call_args_list,
+            [umcall({'undead@example.cde'})])
+        self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 3)
+        # Moderator update
+        self.assertEqual(
+            mm_lists['aka'].add_moderator.call_args_list,
+            [umcall('garcia@example.cde', display_name='Garcia G. Generalis')])
+        # Whitelist update
+        self.assertEqual(
+            list(sorted(mm_lists['aktivenforum'].add_role.call_args_list)),
+            list(sorted([umcall('nonmember', 'captiankirk@example.cde'),
+                         umcall('nonmember', 'aliens@example.cde'),
+                         umcall('nonmember', 'drwho@example.cde')])))
+
+        # Deletion
+        self.assertEqual(client.delete_list.call_args_list,
+                         [umcall('zombie@example.cde')])
