@@ -12570,3 +12570,8 @@ msgstr "%(count)s Anfragen"
 msgid "ID of the new moderator"
 msgstr "ID des neuen Moderators"
 
+msgid "Form could not be created. Please refrain from using special characters if possible."
+msgstr "Formular konnte nicht erstellt werden. Bitte wenn möglich Sonderzeichen vermeiden."
+
+msgid "LaTeX compiliation failed. This might be due to special characters."
+msgstr "Der LaTeX-Code konnte nicht kompiliert werden. Das liegt wahrscheinlich an nicht unterstützten Sonderzeichen."
