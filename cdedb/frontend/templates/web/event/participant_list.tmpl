@@ -25,9 +25,9 @@
         {% with course_id = registration['tracks'][track_id]['course_id'] %}
             {% if course_id %}
                 {{ courses[course_id]['nr'] }}.&nbsp;{{ courses[course_id]['shortname'] }}
-            {% endif %}
-            {% if not loop.last %}
-                <br />
+                {% if not loop.last %}
+                    <br />
+                {% endif %}
             {% endif %}
         {% endwith %}
     {%- endfor %}
