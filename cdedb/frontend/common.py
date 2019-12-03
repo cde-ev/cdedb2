@@ -1243,7 +1243,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def save_compile(self, rs, target_file, cwd, runs):
+    def safe_compile(self, rs, target_file, cwd, runs):
 
         if target_file.endswith('.tex'):
             pdf_file = "{}.pdf".format(target_file[:-4])
@@ -1282,7 +1282,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             with tempfile.NamedTemporaryFile(dir=tmp_dir) as tmp_file:
                 tmp_file.write(data.encode('utf8'))
                 tmp_file.flush()
-                path = self.save_compile(rs, tmp_file.name, tmp_dir, runs=runs)
+                path = self.safe_compile(rs, tmp_file.name, tmp_dir, runs=runs)
                 if path.exists():
                     with open("{}.pdf".format(tmp_file.name), 'rb') as pdf:
                         return pdf.read()
@@ -1370,7 +1370,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 pdf_file = "{}.pdf".format(tex_file_name[:-4])
             else:
                 pdf_file = "{}.pdf".format(tex_file_name)
-            path = self.save_compile(
+            path = self.safe_compile(
                 rs, tex_file_name, cwd=str(work_dir), runs=runs)
             if path.exists():
                 return self.send_file(
