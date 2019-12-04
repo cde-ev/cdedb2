@@ -5163,7 +5163,7 @@ class EventFrontend(AbstractUserFrontend):
         search_additions = []
         event = None
         num_preview_personas = (self.conf.NUM_PREVIEW_PERSONAS_CORE_ADMIN
-                                if {"core_admin", "admin"} & rs.user.roles
+                                if {"core_admin", "meta_admin"} & rs.user.roles
                                 else self.conf.NUM_PREVIEW_PERSONAS)
         if kind == "orga_registration":
             event = self.eventproxy.get_event(rs, aux)

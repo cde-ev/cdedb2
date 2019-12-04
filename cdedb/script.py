@@ -33,7 +33,7 @@ class User:
         self.roles = {
             "anonymous", "persona", "cde", "event", "ml", "assembly",
             "cde_admin", "event_admin", "ml_admin", "assembly_admin",
-            "core_admin", "admin", "member", "searchable"}
+            "core_admin", "meta_admin", "member", "searchable"}
         self.orga = set()
         self.moderator = set()
         self.username = None
