@@ -268,7 +268,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         For the `EventOrgaMailinglist` this basically means opt-in for all
         implicit subscribers. See `get_impicit_subscribers`.
         """
-        assert type_map[mailinglist["type"]] == cls
+        assert type_map[mailinglist["ml_type"]] == cls
 
         if not persona_id:
             persona_id = rs.user.persona_id
@@ -287,7 +287,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         For the `EventAssociatedMailinglist` this means registrations with
         one of the configured stati in any part.
         """
-        assert type_map[mailinglist["type"]] == cls
+        assert type_map[mailinglist["ml_type"]] == cls
 
         event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
 
@@ -344,7 +344,7 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
         For the `AssemblyAssociatedMailinglist` this means the attendees of the
         linked assembly.
         """
-        assert type_map[mailinglist["type"]] == cls
+        assert type_map[mailinglist["ml_type"]] == cls
         return bc.assembly.list_attendees(rs, ml["assembly_id"])
 
 
