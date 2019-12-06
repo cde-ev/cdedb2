@@ -1728,7 +1728,8 @@ class CdEFrontend(AbstractUserFrontend):
             errormsg = n_("LaTeX compiliation failed. "
                           "This might be due to special characters.")
             pdf = self.serve_complex_latex_document(
-                rs, tmp_dir, 'workdir', "lastschrift_receipt.tex")
+                rs, tmp_dir, 'workdir', "lastschrift_receipt.tex",
+                errormsg=errormsg)
             if pdf:
                 return pdf
             else:
