@@ -1248,6 +1248,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         This catches exepctions during compilation and displays a more helpful
         error message instead.
+
+        :type rs: :py:class:`RequestState`
+        :type target_file: str
+        :param target_file: name of the file to compile.
+        :type cwd: :py:class:`pathlib.Path`
+        :param cwd: Path of the target file.
+        :param runs: number of times LaTeX is run (for references etc.)
+        :type errormsg: str or None
+        :param errormsg: Error message to display when compilation fails.
+            Defaults to error message for event downloads.
+        :rtype: :py:class:`pathlib.Path`
+        :returns: Path to the compiled pdf.
         """
         if target_file.endswith('.tex'):
             pdf_file = "{}.pdf".format(target_file[:-4])
