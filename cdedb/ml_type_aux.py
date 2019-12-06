@@ -9,6 +9,13 @@ from cdedb.database.constants import (
     MailinglistTypes, MailinglistInteractionPolicy)
 
 
+class BackendContainer:
+    def __init__(self, *, core=None, event=None, assembly=None):
+        self.core = core
+        self.event = event
+        self.assembly = assembly
+
+
 class Domain(enum.IntEnum):
     lists = 1
     aka = 2
@@ -39,9 +46,9 @@ class MailinglistGroup(enum.IntEnum):
 class AllMembersImplicitMeta:
     """Metaclass for all mailinglists with members as implicit subscribers."""
     @classmethod
-    def get_implicit_subscribers(cls, rs, mailinglist):
+    def get_implicit_subscribers(cls, rs, bc, mailinglist):
         query = "SELECT id from core.personas WHERE is_member = True"
-        data = cls.core.query_all(rs, query, params=tuple())
+        data = bc.core.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
 
@@ -77,7 +84,6 @@ class GeneralMailinglist:
 
     Class attributes:
 
-    * `core`: A reference to the Core Backend needed to extract user information.
     * `sortkey`: Determines where mailinglists of this type are grouped.
     * `domain`: Determines the domain of the mailinglist.
     * `viewer_roles`: Determines who may view the mailinglist.
@@ -92,9 +98,6 @@ class GeneralMailinglist:
     """
     def __init__(self):
         raise RuntimeError()
-
-    # This will be set later.
-    core = None
 
     sortkey = MailinglistGroup.other
 
@@ -142,7 +145,7 @@ class GeneralMailinglist:
     role_map = OrderedDict()
 
     @classmethod
-    def get_interaction_policy(cls, rs, mailinglist, persona_id=None):
+    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -155,6 +158,7 @@ class GeneralMailinglist:
         methods of the MailinglistBackend.
 
         :type rs: :py:class:`cdedb.common.RequestState`
+        :type bc: :py:class:`BackendContainer`
         :type mailinglist: {str: object}
         :type persona_id: int
         :rtype: :py:class`const.MailinglistInteractionPolicy` or None
@@ -164,7 +168,7 @@ class GeneralMailinglist:
 
         # No permission check here.
 
-        persona = unwrap(cls.core.get_personas(rs, (persona_id,)))
+        persona = unwrap(bc.core.get_personas(rs, (persona_id,)))
         roles = extract_roles(persona, introspection_only=True)
         for role, pol in role_map.items():
             if role in roles:
@@ -173,10 +177,11 @@ class GeneralMailinglist:
             return None
 
     @classmethod
-    def get_implicit_subscribers(cls, rs, mailinglist):
+    def get_implicit_subscribers(cls, rs, bc, mailinglist):
         """Retrieve a set of personas, which should be subscribers.
 
         :type rs: :py:class:`cdedb.common.RequestState`
+        :type bc: :py:class:`BackendContainer`
         :type mailinglist: {str: object}
         :rtype: {int}
         """
@@ -187,15 +192,7 @@ class GeneralMailinglist:
 
 
 class CdEMailinglist(GeneralMailinglist):
-    """Base class for CdE-Mailinglists.
-
-    Relevant Attributes:
-
-    * `cde`: A reference to the CdE-Backend which could at some point be needed
-      to retrieve relevant information.
-
-    """
-    # cde = None
+    """Base class for CdE-Mailinglists."""
 
     sortkey = MailinglistGroup.cde
     viewer_roles = {"cde"}
@@ -203,16 +200,7 @@ class CdEMailinglist(GeneralMailinglist):
 
 
 class EventMailinglist(GeneralMailinglist):
-    """Base class for Event-Mailinglists.
-
-    Relevant Attributes:
-
-    * `event`: A reference to the Event-Backend needed to check registration and
-      orga information.
-
-    """
-    # This will be set later
-    event = None
+    """Base class for Event-Mailinglists."""
 
     sortkey = MailinglistGroup.event
     domain = Domain.aka
@@ -221,16 +209,7 @@ class EventMailinglist(GeneralMailinglist):
 
 
 class AssemblyMailinglist(GeneralMailinglist):
-    """Base class for Assembly-Mailinglists.
-
-    Relevant Attributes:
-
-    * `assembly`: A reference to the Assembly-Backend needed to retrieve attendee
-      information.
-
-    """
-    # This will be set later
-    assembly = None
+    """Base class for Assembly-Mailinglists."""
 
     sortkey = MailinglistGroup.assembly
     viewer_roles = {"assembly"}
@@ -283,7 +262,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
 
     @classmethod
-    def get_interaction_policy(cls, rs, mailinglist, persona_id=None):
+    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this basically means opt-in for all
@@ -294,7 +273,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if not persona_id:
             persona_id = rs.user.persona_id
 
-        if cls.event.check_registration_status(
+        if bc.event.check_registration_status(
                 rs, persona_id, mailinglist['event_id'],
                 mailinglist['registration_stati']):
             return MailinglistInteractionPolicy.implicits_only
@@ -302,7 +281,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             return None
 
     @classmethod
-    def get_implicit_subscribers(cls, rs, mailinglist):
+    def get_implicit_subscribers(cls, rs, bc, mailinglist):
         """Get a list of people that should be on this mailinglist.
 
         For the `EventAssociatedMailinglist` this means registrations with
@@ -310,7 +289,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         """
         assert type_map[mailinglist["type"]] == cls
 
-        event = unwrap(cls.event.get_events(rs, (mailinglist["event_id"],)))
+        event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
 
         status_column = ",".join(
             "part{}.status".format(part_id) for part_id in event["parts"])
@@ -321,7 +300,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             constraints=((status_column, QueryOperators.oneof,
                           ml["registration_stati"]),),
             order=tuple())
-        data = cls.event.submit_general_query(
+        data = bc.event.submit_general_query(
             rs, query, event_id=event["id"])
 
         return {e["persona.id"] for e in data}
@@ -331,7 +310,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.orga
 
     @classmethod
-    def get_interaction_policy(cls, rs, mailinglist, persona_id=None):
+    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this means opt-in for orgas only.
@@ -341,7 +320,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         if not persona_id:
             persona_id = rs.user.persona_id
 
-        event = unwrap(cls.event.get_events(rs, (mailinglist["event_id"],)))
+        event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
         if persona_id in event["orgas"]:
             return const.MailinglistInteractionPolicy.opt_in
         else:
@@ -359,17 +338,14 @@ class EventOrgaLegacyMailinglist(EventOrgaMailinglist):
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
                                     AssemblyMailinglist):
     @classmethod
-    def get_implicit_subscribers(cls, rs, mailinglist):
+    def get_implicit_subscribers(cls, rs, bc, mailinglist):
         """Get a list of people that should be on this mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means the attendees of the
         linked assembly.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist: {str: object}
         """
         assert type_map[mailinglist["type"]] == cls
-        return cls.assembly.list_attendees(rs, ml["assembly_id"])
+        return bc.assembly.list_attendees(rs, ml["assembly_id"])
 
 
 class AssemblyOptInMailinglist(AssemblyMailinglist):
@@ -425,10 +401,3 @@ type_map = {
     MailinglistTypes.semi_public: SemiPublicMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
-
-
-def initialize_backends(core, event, assembly):
-    """Helper to initialize the appropriate backends for Mailinglisttypes."""
-    GeneralMailinglist.core = core
-    EventMailinglist.event = event
-    AssemblyMailinglist.assembly = assembly
