@@ -134,10 +134,6 @@ class EventBackend(AbstractBackend):
     additional actions available."""
     realm = "event"
 
-    def __init__(self, configpath):
-        super().__init__(configpath)
-        self.cde = ProxyShim(CdEBackend(configpath), internal=True)
-
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)
