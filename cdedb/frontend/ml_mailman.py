@@ -44,8 +44,13 @@ def ext_mailman_connect(self):
 
 
 def ext_mailman_sync_list_meta(self, rs, mailman, db_list, mm_list):
+    prefix = ""
+    if db_list['subject_prefix']:
+        prefix = "[{}] ".format(db_list['subject_prefix'])
     desired_settings = {
         'send_welcome_message': False,
+        # block the usage of the self-service facilities which should
+        # not be used to prevent synchronisation issues
         'subscription_policy': 'moderate',
         'unsubscription_policy': 'moderate',
         'archive_policy': 'private',
@@ -60,7 +65,7 @@ def ext_mailman_sync_list_meta(self, rs, mailman, db_list, mm_list):
         'display_name': db_list['title'],
         'description': db_list['title'],
         'info': db_list['description'],
-        'subject_prefix': db_list['subject_prefix'],
+        'subject_prefix': prefix,
         'max_message_size': db_list['maxsize'],
         'default_member_action': POLICY_MEMBER_CONVERT[db_list['mod_policy']],
         'default_nonmember_action': POLICY_OTHER_CONVERT[
