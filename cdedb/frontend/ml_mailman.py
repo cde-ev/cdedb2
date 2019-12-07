@@ -115,8 +115,7 @@ def ext_mailman_sync_list_meta(self, rs, mailman, db_list, mm_list):
 def ext_mailman_sync_list_subs(self, rs, mailman, db_list, mm_list):
     SS = const.SubscriptionStates
     persona_ids = set(self.mlproxy.get_subscription_states(
-        rs, db_list['id'],
-        states=(SS.subscribed, SS.subscription_override, SS.implicit)))
+        rs, db_list['id'], states=SS.subscribing_states()))
     db_addresses = self.mlproxy.get_subscription_addresses(
         rs, db_list['id'], persona_ids)
     personas = self.coreproxy.get_personas(rs, persona_ids)
