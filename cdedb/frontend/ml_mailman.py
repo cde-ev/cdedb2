@@ -88,9 +88,9 @@ def ext_mailman_sync_list_meta(self, rs, mailman, db_list, mm_list):
 
     desired_templates = {
         'list:member:regular:footer': (
-            "Dies ist eine Mailingliste des CdE e.V. --"
-            " zur Verwaltung Deines Abonnements besuche die Datenbank"
-            " (https://db.cde-ev.de/db/)"),
+            "Dies ist eine Mailingliste des CdE e.V.\n"
+            "Zur Abo-Verwaltung benutze die Datenbank"
+            " (https://db.cde-ev.de/db/ml/)"),
     }
     store_path = self.conf.STORAGE_DIR / 'mailman_templates'
     for name, text in desired_templates.items():
