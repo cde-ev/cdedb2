@@ -34,14 +34,14 @@ _DOMAIN_STR_MAP = {
 
 
 class MailinglistGroup(enum.IntEnum):
-    other = enum.auto()
-    cde = enum.auto()
-    event = enum.auto()
-    assembly = enum.auto()
-    team = enum.auto()
-    event_associated = enum.auto()
-    orga = enum.auto()
-    cdelokal = enum.auto()
+    other = 1
+    cde = 2
+    team = 3
+    event = 10
+    orga = 11
+    event_associated = 12
+    assembly = 20
+    cdelokal = 30
 
 
 class AllMembersImplicitMeta:
