@@ -28,7 +28,8 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
-    xdictsort_filter, enum_entries_filter, safe_filter, cdedburl)
+    xdictsort_filter, enum_entries_filter, safe_filter, cdedburl,
+    CustomCSVDialect)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -1969,9 +1970,7 @@ class EventFrontend(AbstractUserFrontend):
 
         fields = ('amount', 'id', 'family_name', 'given_names', 'date')
         reader = csv.DictReader(
-            fee_data_lines, fieldnames=fields, delimiter=';',
-            quoting=csv.QUOTE_MINIMAL, quotechar='"', doublequote=False,
-            escapechar='\\')
+            fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect)
         data = []
         lineno = 0
         for raw_entry in reader:

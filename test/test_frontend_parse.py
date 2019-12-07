@@ -11,6 +11,7 @@ from cdedb.frontend.parse_statement import (
     STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_GIVEN_NAMES_UNKNOWN,
     Transaction, TransactionType, Accounts, STATEMENT_INPUT_DATEFORMAT,
     ConfidenceLevel, STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY)
+from cdedb.frontend.common import CustomCSVDialect
 from datetime import datetime
 
 
@@ -127,8 +128,8 @@ class TestParseFrontend(FrontendTest):
         f = save.forms["event_fees"]
         self.submit(f, check_notification=False)
         result = list(csv.DictReader(self.response.text.split("\n"),
-                                     delimiter=";",
-                                     fieldnames=EVENT_FEE_FIELDS))
+                                     fieldnames=EVENT_FEE_FIELDS,
+                                     dialect=CustomCSVDialect))
 
         self.check_dict(
             result[0],
@@ -169,16 +170,16 @@ class TestParseFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         # Should be equal to event_fees.csv
         self.assertEqual(list(csv.DictReader(self.response.text.split("\n"),
-                                             delimiter=";",
-                                             fieldnames=EVENT_FEE_FIELDS)),
+                                             fieldnames=EVENT_FEE_FIELDS,
+                                             dialect=CustomCSVDialect)),
                          result)
 
         # check membership_fees.csv
         f = save.forms["membership_fees"]
         self.submit(f, check_notification=False)
         result = list(csv.DictReader(self.response.text.split("\n"),
-                                     delimiter=";",
-                                     fieldnames=MEMBERSHIP_FEE_FIELDS))
+                                     fieldnames=MEMBERSHIP_FEE_FIELDS,
+                                     dialect=CustomCSVDialect))
 
         self.check_dict(
             result[0],
@@ -202,8 +203,9 @@ class TestParseFrontend(FrontendTest):
         # check other_transactions
         f = save.forms["other_transactions"]
         self.submit(f, check_notification=False)
+        # This csv file has a fieldnames line.
         result = list(csv.DictReader(self.response.text.split("\n"),
-                                     delimiter=";"))
+                                     dialect=CustomCSVDialect))
 
         self.check_dict(
             result[0],
@@ -278,8 +280,8 @@ class TestParseFrontend(FrontendTest):
         f = save.forms["transactions_8068900"]
         self.submit(f, check_notification=False)
         result = list(csv.DictReader(self.response.text.split("\n"),
-                                     delimiter=";",
-                                     fieldnames=ACCOUNT_FIELDS))
+                                     fieldnames=ACCOUNT_FIELDS,
+                                     dialect=CustomCSVDialect))
         self.check_dict(
             result[0],
             date="26.12.2018",
@@ -358,8 +360,8 @@ class TestParseFrontend(FrontendTest):
         f = save.forms["transactions_8068901"]
         self.submit(f, check_notification=False)
         result = list(csv.DictReader(self.response.text.split("\n"),
-                                     delimiter=";",
-                                     fieldnames=ACCOUNT_FIELDS))
+                                     fieldnames=ACCOUNT_FIELDS,
+                                     dialect=CustomCSVDialect))
 
         self.check_dict(
             result[0],
