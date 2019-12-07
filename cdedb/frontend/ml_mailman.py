@@ -188,6 +188,11 @@ def ext_mailman_sync(self, rs, store):
     This has an @periodic decorator in the frontend.
     """
     mailman = self.mailman_connect()
+    try:
+        _ = mailman.system # cause the client to connect
+    except Exception as e: # sadly this throws a host of different exceptions
+        self.logger.exception("Mailman client connection failed!")
+        return store
     db_lists = self.mlproxy.get_mailinglists(
         rs, self.mlproxy.list_mailinglists(rs))
     db_lists = {l['address']: l for l in db_lists.values()}
