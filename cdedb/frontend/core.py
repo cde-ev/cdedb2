@@ -1743,11 +1743,6 @@ class CoreFrontend(AbstractFrontend):
                 rs.errors.append(
                     ("gender", ValueError(n_(
                         "Must specify gender for event realm."))))
-        # We have to force a None here since the template should not have a
-        # null option for event cases and the validator for ml users
-        # requires this
-        elif data.get('realm') == "ml":
-            data['gender'] = None
         if rs.errors:
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):

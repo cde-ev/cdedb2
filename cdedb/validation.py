@@ -48,7 +48,7 @@ import zxcvbn
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
-    CDEDB_EXPORT_EVENT_VERSION)
+    CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields)
 from cdedb.database.constants import FieldDatatypes
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
@@ -1229,18 +1229,7 @@ _GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
     'case_status': _enum_genesisstati,
     'reviewer': _id,
 }
-_GENESIS_CASE_LENIENT_FIELDS = lambda: {
-    'gender': _enum_genders_or_None,
-    'birthday': _birthday_or_None,
-    'telephone': _phone_or_None,
-    'mobile': _phone_or_None,
-    'address_supplement': _str_or_None,
-    'address': _str_or_None,
-    'postal_code': _printable_ascii_or_None,
-    'location': _str_or_None,
-    'country': _str_or_None,
-}
-_GENESIS_CASE_STRICT_FIELDS = lambda: {
+_GENESIS_CASE_ADDITIONAL_FIELDS = lambda: {
     'gender': _enum_genders,
     'birthday': _birthday,
     'telephone': _phone_or_None,
@@ -1268,46 +1257,43 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
+    additional_fields = {}
+    if 'realm' in val:
+        if val['realm'] not in realm_specific_genesis_fields:
+            errs.append(('realm', ValueError(n_(
+                "This realm is not supported for genesis."))))
+        else:
+            additional_fields = {
+                k: v for k, v in _GENESIS_CASE_ADDITIONAL_FIELDS().items()
+                if k in realm_specific_genesis_fields[val['realm']]}
+    else:
+        additional_fields = {}
+
     if creation:
-        mandatory_fields = _GENESIS_CASE_COMMON_FIELDS()
-        optional_fields = dict(_GENESIS_CASE_OPTIONAL_FIELDS(),
-                               **_GENESIS_CASE_LENIENT_FIELDS())
+        mandatory_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
+                                **additional_fields)
+        optional_fields = {}
     else:
         mandatory_fields = {'id': _id}
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                **_GENESIS_CASE_OPTIONAL_FIELDS(),
-                               **_GENESIS_CASE_LENIENT_FIELDS())
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+                               **additional_fields)
+
+    # allow_superflous=True will result in superfluous keys being removed.
+    val, e = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        allow_superfluous=True)
+    errs.extend(e)
     if errs:
         return val, errs
 
+    # TODO this is duplicate code from _persona, maybe generalize this.
     if ((not val.get('country') or val.get('country') == "Deutschland")
             and val.get('postal_code')):
         postal_code, e = _german_postal_code(
             val['postal_code'], 'postal_code', _convert=_convert)
         val['postal_code'] = postal_code
         errs.extend(e)
-
-    if 'realm' in val:
-        if val['realm'] == "cde":
-            errs.append(
-                ('realm', ValueError(n_("CdE not supported for genesis."))))
-        if val['realm'] == "assembly":
-            errs.append(('realm',
-                         ValueError(n_("Assembly not supported for genesis."))))
-        elif val['realm'] == "ml":
-            pass
-        elif val['realm'] == "event":
-            if creation:
-                interesting = _GENESIS_CASE_STRICT_FIELDS()
-                uninteresting = dict(_GENESIS_CASE_COMMON_FIELDS(),
-                                     **_GENESIS_CASE_OPTIONAL_FIELDS())
-                val, e = _examine_dictionary_fields(
-                    val, interesting, uninteresting, _convert=_convert)
-                errs.extend(e)
-        else:
-            errs.append(('realm', ValueError(n_("Invalid target realm."))))
 
     return val, errs
 
