@@ -1243,14 +1243,58 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def latex_compile(self, data, runs=2):
+    def safe_compile(self, rs, target_file, cwd, runs, errormsg):
+        """Helper to compile latex documents in a safe way.
+
+        This catches exepctions during compilation and displays a more helpful
+        error message instead.
+
+        :type rs: :py:class:`RequestState`
+        :type target_file: str
+        :param target_file: name of the file to compile.
+        :type cwd: :py:class:`pathlib.Path`
+        :param cwd: Path of the target file.
+        :param runs: number of times LaTeX is run (for references etc.)
+        :type errormsg: str or None
+        :param errormsg: Error message to display when compilation fails.
+            Defaults to error message for event downloads.
+        :rtype: :py:class:`pathlib.Path`
+        :returns: Path to the compiled pdf.
+        """
+        if target_file.endswith('.tex'):
+            pdf_file = "{}.pdf".format(target_file[:-4])
+        else:
+            pdf_file = "{}.pdf".format(target_file)
+        pdf_path = pathlib.Path(cwd, pdf_file)
+
+        args = ("pdflatex", "-interaction", "batchmode", target_file)
+        self.logger.info("Invoking {}".format(args))
+        try:
+            for _ in range(runs):
+                subprocess.check_call(args, stdout=subprocess.DEVNULL, cwd=cwd)
+        except subprocess.CalledProcessError as e:
+            if pdf_path.exists():
+                self.logger.debug("Deleting corrupted file {}".format(pdf_path))
+                pdf_path.unlink()
+            self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            errormsg = errormsg or n_(
+                "LaTeX compilation failed. Try downloading the "
+                "source files and compiling them manually.")
+            rs.notify("error", errormsg)
+        return pdf_path
+
+    def latex_compile(self, rs, data, runs=2, errormsg=None):
         """Run LaTeX on the provided document.
 
         This takes care of the necessary temporary files.
 
+        :type rs: :py:class:`RequestState`
         :type data: str
         :type runs: int
         :param runs: number of times LaTeX is run (for references etc.)
+        :type errormsg: str or None
+        :param errormsg: Error message to display when compilation fails.
+            Defaults to error message for event downloads.
         :rtype: bytes
         :returns: the compiled document as blob
         """
@@ -1258,20 +1302,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             with tempfile.NamedTemporaryFile(dir=tmp_dir) as tmp_file:
                 tmp_file.write(data.encode('utf8'))
                 tmp_file.flush()
-                args = ("pdflatex", "-interaction", "batchmode", tmp_file.name)
-                for _ in range(runs):
-                    self.logger.info("Invoking {}".format(args))
-                    subprocess.check_call(args, stdout=subprocess.DEVNULL,
-                                          cwd=tmp_dir)
-                path = pathlib.Path("{}.pdf".format(tmp_file.name))
-                self.logger.debug(path)
+                path = self.safe_compile(
+                    rs, tmp_file.name, tmp_dir, runs=runs, errormsg=errormsg)
                 if path.exists():
-                    with open("{}.pdf".format(tmp_file.name), 'rb') as pdf:
+                    with open(path, 'rb') as pdf:
                         return pdf.read()
                 else:
                     return None
 
-    def serve_latex_document(self, rs, data, filename, runs=2):
+    def serve_latex_document(self, rs, data, filename, runs=2, errormsg=None):
         """Generate a response from a LaTeX document.
 
         This takes care of the necessary temporary files.
@@ -1284,6 +1323,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type runs: int
         :param runs: Number of times LaTeX is run (for references etc.). If this
           is zero, we serve the source tex file, instead of the compiled pdf.
+        :type errormsg: str or None
+        :param errormsg: Error message to display when compilation fails.
+            Defaults to error message for event downloads.
         :rtype: werkzeug.Response
         """
         if not runs:
@@ -1291,7 +1333,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs, data=data, inline=False,
                 filename="{}.tex".format(filename))
         else:
-            pdf = self.latex_compile(data, runs=runs)
+            pdf = self.latex_compile(rs, data, runs=runs, errormsg=errormsg)
             if not pdf:
                 return None
             return self.send_file(
@@ -1299,7 +1341,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 filename="{}.pdf".format(filename))
 
     def serve_complex_latex_document(self, rs, tmp_dir, work_dir_name,
-                                     tex_file_name, runs=2):
+                                     tex_file_name, runs=2, errormsg=None):
         """Generate a response from a LaTeX document.
 
         In contrast to :py:meth:`serve_latex_document` this expects that the
@@ -1330,6 +1372,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           is zero, we serve the source tex file, instead of the compiled
           pdf. More specifically we serve a gzipped tar archive containing
           the working directory.
+        :type errormsg: str or None
+        :param errormsg: Error message to display when compilation fails.
+            Defaults to error message for event downloads.
         :rtype: werkzeug.Response
         """
         if not runs:
@@ -1352,13 +1397,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 pdf_file = "{}.pdf".format(tex_file_name[:-4])
             else:
                 pdf_file = "{}.pdf".format(tex_file_name)
-            args = ("pdflatex", "-interaction", "batchmode",
-                    str(work_dir / tex_file_name))
-            for _ in range(runs):
-                self.logger.info("Invoking {}".format(args))
-                subprocess.check_call(args, stdout=subprocess.DEVNULL,
-                                      cwd=str(work_dir))
-            path = work_dir / pdf_file
+            path = self.safe_compile(
+                rs, tex_file_name, cwd=str(work_dir), runs=runs,
+                errormsg=errormsg)
             if path.exists():
                 return self.send_file(
                     rs, mimetype="application/pdf",

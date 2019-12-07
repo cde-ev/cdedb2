@@ -434,7 +434,11 @@ class FrontendTest(unittest.TestCase):
         for link in links:
             if 'index' not in link:
                 link['index'] = 0
-            self.response = self.response.click(**link)
+            try:
+                self.response = self.response.click(**link)
+            except IndexError as e:
+                e.args += ('Error during traversal of {}'.format(link),)
+                raise
             self.follow()
             self.basic_validate(verbose=verbose)
 

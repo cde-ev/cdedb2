@@ -1725,8 +1725,17 @@ class CdEFrontend(AbstractUserFrontend):
                 f.write(tex)
             logo_src = self.conf.REPOSITORY_PATH / "misc/cde-logo.jpg"
             shutil_copy(logo_src, work_dir / "cde-logo.jpg")
-            return self.serve_complex_latex_document(
-                rs, tmp_dir, 'workdir', "lastschrift_receipt.tex")
+            errormsg = n_("LaTeX compiliation failed. "
+                          "This might be due to special characters.")
+            pdf = self.serve_complex_latex_document(
+                rs, tmp_dir, 'workdir', "lastschrift_receipt.tex",
+                errormsg=errormsg)
+            if pdf:
+                return pdf
+            else:
+                return self.redirect(
+                    rs, "cde/lastschrift_show",
+                    {"persona_id": rs.ambience['lastschrift']['persona_id']})
 
     @access("anonymous")
     def lastschrift_subscription_form_fill(self, rs):
@@ -1779,8 +1788,14 @@ class CdEFrontend(AbstractUserFrontend):
         meta_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_subscription_form",
                                  {'meta_info': meta_info, 'data': data})
-        return self.serve_latex_document(rs, tex,
-                                         "lastschrift_subscription_form")
+        errormsg = n_("Form could not be created. Please refrain from using "
+                      "special characters if possible.")
+        pdf = self.serve_latex_document(
+            rs, tex, "lastschrift_subscription_form", errormsg=errormsg)
+        if pdf:
+            return pdf
+        else:
+            return self.redirect(rs, "cde/lastschrift_subscription_form_fill")
 
     @access("anonymous")
     def i25p_index(self, rs):
