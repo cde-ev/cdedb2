@@ -21,12 +21,13 @@ class Domain(enum.IntEnum):
     aka = 2
 
     def __str__(self):
-        if self not in domain_map:
+        if self not in _DOMAIN_STR_MAP:
             raise NotImplementedError(n_("This domain is not supported."))
         return domain_map[self]
 
 
-domain_map = {
+# Instead of importing this, call str() on a Domain.
+_DOMAIN_STR_MAP = {
     Domain.lists: "lists.cde-ev.de",
     Domain.aka: "aka.cde-ev.de",
 }
