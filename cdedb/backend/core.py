@@ -591,6 +591,19 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select(rs, "core.personas", columns, ids)
         return {d['id']: d for d in data}
 
+    @internal_access("ml")
+    def list_current_members(self, rs):
+        """Helper to list all current members.
+
+        Used to determine subscribers of mandatory/opt-out member mailinglists.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {int}
+        """
+        query = "SELECT id from core.personas WHERE is_member = True"
+        data = bc.core.query_all(rs, query, params=tuple())
+        return {e["id"] for e in data}
+
     @access("core_admin")
     def next_persona(self, rs, persona_id, is_member=True):
         """Look up the following persona.

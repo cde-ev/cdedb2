@@ -48,9 +48,7 @@ class AllMembersImplicitMeta:
     """Metaclass for all mailinglists with members as implicit subscribers."""
     @classmethod
     def get_implicit_subscribers(cls, rs, bc, mailinglist):
-        query = "SELECT id from core.personas WHERE is_member = True"
-        data = bc.core.query_all(rs, query, params=tuple())
-        return {e["id"] for e in data}
+        return bc.core.list_current_members(rs)
 
 
 class AssemblyAssociatedMeta:
