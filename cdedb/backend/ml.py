@@ -880,7 +880,7 @@ class MlBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         email = affirm("email", email)
 
-        if persona_id != rs.user.persona_id:
+        if not self.is_admin(rs) and persona_id != rs.user.persona_id:
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
@@ -911,7 +911,7 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm("id", mailinglist_id)
         persona_id = affirm("id", persona_id)
 
-        if persona_id != rs.user.persona_id:
+        if not self.is_admin(rs) and persona_id != rs.user.persona_id:
             raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):

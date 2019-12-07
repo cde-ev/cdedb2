@@ -22,6 +22,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.event import EventBackend
+from cdedb.common import ProxyShim
 from cdedb.database.connection import IrradiatedConnection
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -98,22 +99,22 @@ def setup(persona_id, dbuser, dbpassword, check_system_user=True):
     return rs
 
 def make_backend(realm):
-    """Instantiate backend objects.
+    """Instantiate backend objects and wrap them in proxy shims.
 
     :type realm: str
     :param realm: selects backend to return
     :returns: a new backend
     """
     if realm == "core":
-        return CoreBackend("/etc/cdedb-application-config.py")
+        return ProxyShim(CoreBackend("/etc/cdedb-application-config.py"))
     if realm == "cde":
-        return CdEBackend("/etc/cdedb-application-config.py")
+        return ProxyShim(CdEBackend("/etc/cdedb-application-config.py"))
     if realm == "past_event":
-        return PastEventBackend("/etc/cdedb-application-config.py")
+        return ProxyShim(PastEventBackend("/etc/cdedb-application-config.py"))
     if realm == "ml":
-        return MlBackend("/etc/cdedb-application-config.py")
+        return ProxyShim(MlBackend("/etc/cdedb-application-config.py"))
     if realm == "assembly":
-        return AssemblyBackend("/etc/cdedb-application-config.py")
+        return ProxyShim(AssemblyBackend("/etc/cdedb-application-config.py"))
     if realm == "event":
-        return EventBackend("/etc/cdedb-application-config.py")
+        return ProxyShim(EventBackend("/etc/cdedb-application-config.py"))
     raise ValueError("Unrecognized realm")
