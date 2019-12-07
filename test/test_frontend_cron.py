@@ -406,7 +406,7 @@ class TestCron(CronTest):
             'display_name': 'Witz des Tages',
             'info': 'Einer geht noch ...',
             'max_message_size': 2048,
-            'subject_prefix': '[witz]',
+            'subject_prefix': '[[witz]] ',
         }
         for key, value in expectation.items():
             self.assertEqual(mm_lists['witz'].settings[key], value)
