@@ -35,7 +35,7 @@ from cdedb.frontend.common import (
     make_postal_address, make_transaction_subject, query_result_to_json,
     enum_entries_filter, money_filter, REQUESTfile)
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
+from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.cde import CdEBackend
@@ -2282,6 +2282,26 @@ class CdEFrontend(AbstractUserFrontend):
                     participants[anid]['viewable'] = True
         return participants, personas, extra_participants
 
+    @access("cde_admin")
+    def download_past_event_participantlist(self, rs, pevent_id):
+        """Provide a download of a participant list for a past event."""
+        query = Query(
+            "qview_past_event_user", QUERY_SPECS['qview_past_event_user'],
+            ("personas.id", "given_names", "family_name", "address",
+             "address_supplement", "postal_code", "location", "country"),
+            [("pevent_id", QueryOperators.equal, pevent_id),],
+            (("family_name", True), ("given_names", True),
+             ("personas.id", True)))
+
+        result = self.cdeproxy.submit_general_query(rs, query)
+        fields = []
+        for csvfield in query.fields_of_interest:
+            fields.extend(csvfield.split(','))
+        csv_data = csv_output(result, fields)
+        return self.send_csv_file(
+            rs, data=csv_data, inline=False,
+            filename="{}.csv".format(rs.ambience["pevent"]["shortname"]))
+
     @access("member")
     def show_past_event(self, rs, pevent_id):
         """Display concluded event."""
@@ -2307,7 +2327,8 @@ class CdEFrontend(AbstractUserFrontend):
             'courses': courses, 'participants': participants,
             'personas': personas, 'institutions': institutions,
             'extra_participants': extra_participants,
-            'is_participant': is_participant})
+            'is_participant': is_participant,
+        })
 
     @access("member")
     def show_past_course(self, rs, pevent_id, pcourse_id):

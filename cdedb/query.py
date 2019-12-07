@@ -211,6 +211,26 @@ QUERY_SPECS = {
             ("pevent_id", "id"),
             ("notes", "str"),
         ]),
+    "qview_past_event_user":
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("username", "str"),
+            ("display_name", "str"),
+            ("title", "str"),
+            ("name_supplement", "str"),
+            ("birthday", "date"),
+            ("telephone", "str"),
+            ("mobile", "str"),
+            ("address", "str"),
+            ("address_supplement", "str"),
+            ("postal_code", "str"),
+            ("location", "str"),
+            ("country", "str"),
+            ("pevent_id", "id"),
+            ("pcourse_id", "id"),
+        ]),
     "qview_event_user":
         collections.OrderedDict([
             ("personas.id", "id"),
@@ -342,6 +362,10 @@ QUERY_VIEWS = {
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
+    "qview_past_event_user": glue(
+        "core.personas",
+        "LEFT OUTER JOIN past_event.participants",
+        "ON personas.id = participants.persona_id"),
     "qview_event_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
@@ -368,6 +392,7 @@ QUERY_VIEWS = {
 QUERY_PRIMARIES = {
     "qview_cde_member": "personas.id",
     "qview_cde_user": "personas.id",
+    "qview_past_event_user": "personas.id",
     "qview_event_user": "personas.id",
     "qview_registration": "reg.id",
     "qview_quick_registration": "registrations.id",

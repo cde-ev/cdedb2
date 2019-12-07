@@ -1338,6 +1338,35 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.traverse({'href': '/core/persona/{}/show'.format(user['id'])})
 
+    @as_users("ferdinand")
+    def test_past_event_addresslist(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/list'},
+                      {'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        self.assertPresence("Bertålotta Beispiel")
+        self.assertPresence("Charly C. Clown")
+        self.assertPresence("Emilia E. Eventis")
+        self.assertPresence("Ferdinand F. Findus")
+
+        save = self.response
+        self.response = save.click(href='/cde/past/event/1/download',
+                                   description='Dokuteam-Adressliste')
+
+        class dialect(csv.Dialect):
+            delimiter = ';'
+            quotechar = '"'
+            doublequote = False
+            escapechar = '\\'
+            lineterminator = '\n'
+            quoting = csv.QUOTE_MINIMAL
+
+        result = list(csv.DictReader(self.response.text.split('\n'),
+                                     dialect=dialect))
+        given_names = {e["given_names"] for e in result}
+        expectation = {"Bertålotta", "Charly C.", "Emilia E.", "Ferdinand F."}
+        self.assertEqual(expectation, given_names)
+
     @as_users("anton")
     def test_change_past_event(self, user):
         self.traverse({'href': '/cde/$'},
