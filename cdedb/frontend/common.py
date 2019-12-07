@@ -20,6 +20,7 @@ import email.mime.image
 import email.mime.multipart
 import email.mime.text
 import functools
+import inspect
 import io
 import json
 import logging
@@ -29,6 +30,7 @@ import smtplib
 import subprocess
 import tempfile
 import threading
+import types
 import urllib.parse
 
 import markdown
@@ -820,6 +822,33 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         return
 
+    def _republish(self, shard, name, method):
+        """Uninlined code from republish() to avoid late binding."""
+        @functools.wraps(method)
+        def new_meth(obj, rs, *args, **kwargs):
+            method(rs, *args, **kwargs)
+        for attr in ('access_list', 'modi', 'check_anti_csrf', 'cron'):
+            if hasattr(method, attr):
+                setattr(new_meth, attr, getattr(method, attr))
+        # Keep a copy of the originating shard, so we
+        # introspect the source of each published method
+        new_meth.origin = shard
+        setattr(self, name, types.MethodType(new_meth, self))
+
+    def republish(self, shard):
+        """Republish the functionality of a frontend shard.
+
+        This way any user of the frontend can be unaware of the
+        internal split into shards.
+
+        :type shard: AbstractFrontendShard
+        """
+        for name, method in inspect.getmembers(shard, inspect.ismethod):
+            if hasattr(method, 'access_list') or hasattr(method, 'cron'):
+                if hasattr(self, name):
+                    raise RuntimeError("Method already exists", name)
+                self._republish(shard, name, method)
+
     @classmethod
     @abc.abstractmethod
     def is_admin(cls, rs):
@@ -1368,6 +1397,25 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 return None
 
 
+class AbstractFrontendShard(metaclass=abc.ABCMeta):
+    """Common base class for all frontend shards.
+
+    These are used to split mostly independent functionality from a
+    frontend into a separate unit.
+
+    The frontend is then responsible to make the functionality of the
+    shard accessible to its users without leaking the implementation
+    details. For this purpose the method
+    `AbstractFrontend.republish()` is used.
+    """
+    def __init__(self, parent, *args, **kwargs):
+        """
+        :type parent: AbstractFrontend
+        """
+        super().__init__(*args, **kwargs)
+        self.parent = parent
+
+
 class Worker(threading.Thread):
     """Customization wrapper around ``threading.Thread``.
 
@@ -1524,7 +1572,7 @@ def access(*roles, modi=None, check_anti_csrf=None):
 
     def decorator(fun):
         @functools.wraps(fun)
-        def new_fun(obj, rs, *args, **kwargs):
+        def new_meth(obj, rs, *args, **kwargs):
             if rs.user.roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
@@ -1545,13 +1593,13 @@ def access(*roles, modi=None, check_anti_csrf=None):
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        new_fun.access_list = access_list
-        new_fun.modi = modi
-        new_fun.check_anti_csrf =\
+        new_meth.access_list = access_list
+        new_meth.modi = modi
+        new_meth.check_anti_csrf =\
             (check_anti_csrf
              if check_anti_csrf is not None
              else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
-        return new_fun
+        return new_meth
 
     return decorator
 
@@ -1690,7 +1738,7 @@ def REQUESTdata(*spec):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_fun(obj, rs, *args, **kwargs):
+        def new_meth(obj, rs, *args, **kwargs):
             for name, argtype in spec:
                 if name not in kwargs:
                     if argtype.startswith('[') and argtype.endswith(']'):
@@ -1725,7 +1773,7 @@ def REQUESTdata(*spec):
                         kwargs[name] = check_validation(rs, argtype, val, name)
             return fun(obj, rs, *args, **kwargs)
 
-        return new_fun
+        return new_meth
 
     return wrap
 
@@ -1754,7 +1802,7 @@ def REQUESTdatadict(*proto_spec):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_fun(obj, rs, *args, **kwargs):
+        def new_meth(obj, rs, *args, **kwargs):
             data = {}
             for name, argtype in spec:
                 if argtype == "str":
@@ -1768,7 +1816,7 @@ def REQUESTdatadict(*proto_spec):
                 rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
 
-        return new_fun
+        return new_meth
 
     return wrap
 
@@ -1840,14 +1888,14 @@ def REQUESTfile(*args):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_fun(obj, rs, *args2, **kwargs):
+        def new_meth(obj, rs, *args2, **kwargs):
             for name in args:
                 if name not in kwargs:
                     kwargs[name] = rs.request.files.get(name, None)
                 rs.values[name] = kwargs[name]
             return fun(obj, rs, *args2, **kwargs)
 
-        return new_fun
+        return new_meth
 
     return wrap
 
@@ -1905,7 +1953,7 @@ def event_guard(argname="event_id", check_offline=False):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_fun(obj, rs, *args, **kwargs):
+        def new_meth(obj, rs, *args, **kwargs):
             if argname in kwargs:
                 arg = kwargs[argname]
             else:
@@ -1920,7 +1968,7 @@ def event_guard(argname="event_id", check_offline=False):
                         rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
 
-        return new_fun
+        return new_meth
 
     return wrap
 
@@ -1937,7 +1985,7 @@ def mailinglist_guard(argname="mailinglist_id"):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_fun(obj, rs, *args, **kwargs):
+        def new_meth(obj, rs, *args, **kwargs):
             if argname in kwargs:
                 arg = kwargs[argname]
             else:
@@ -1948,7 +1996,7 @@ def mailinglist_guard(argname="mailinglist_id"):
                     "moderators."))
             return fun(obj, rs, *args, **kwargs)
 
-        return new_fun
+        return new_meth
 
     return wrap
 
