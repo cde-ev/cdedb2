@@ -22,11 +22,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.config import SecretsConfig
-from cdedb.frontend.ml_mailman import (
-    ext_mailman_connect, ext_mailman_sync_list_meta,
-    ext_mailman_sync_list_subs, ext_mailman_sync_list_mods,
-    ext_mailman_sync_list_whites, ext_mailman_sync_list,
-    ext_mailman_sync)
+from cdedb.frontend.ml_mailman import MailmanShard
 
 
 class MlFrontend(AbstractUserFrontend):
@@ -47,6 +43,9 @@ class MlFrontend(AbstractUserFrontend):
             url, user, secrets.MAILMAN_PASSWORD)
         self.mailman_template_password = (
             lambda: secrets.MAILMAN_BASIC_AUTH_PASSWORD)
+        self.shards = [MailmanShard(self)]
+        for shard in self.shards:
+            self.republish(shard)
 
     def finalize_session(self, rs, connpool, auxilliary=False):
         super().finalize_session(rs, connpool, auxilliary=auxilliary)
@@ -832,15 +831,3 @@ class MlFrontend(AbstractUserFrontend):
             return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
         return self.send_json(rs, self.mlproxy.oldstyle_bounce(rs, address,
                                                                error))
-
-    # Mailman functionality imported from ml_mailman
-    mailman_connect = ext_mailman_connect
-    mailman_sync_list_meta = ext_mailman_sync_list_meta
-    mailman_sync_list_subs = ext_mailman_sync_list_subs
-    mailman_sync_list_mods = ext_mailman_sync_list_mods
-    mailman_sync_list_whites = ext_mailman_sync_list_whites
-    mailman_sync_list = ext_mailman_sync_list
-
-    @periodic("mailman_sync")
-    def mailman_sync(self, rs, store):
-        return ext_mailman_sync(self, rs, store)
