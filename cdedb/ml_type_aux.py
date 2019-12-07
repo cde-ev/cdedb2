@@ -90,7 +90,7 @@ class GeneralMailinglist:
       See `may_view()` for details.
     * `relevant_admins`: Determines who may administrate the mailinglist. See
       `is_relevant_admin()` for details.
-    * `role_map`: An ordered Dict to determines mailinglist interactions in a
+    * `role_map`: An ordered Dict to determine mailinglist interactions in a
       hierarchical way for trivial mailinglist types.
     * `validation_fields`: A dict of additional fields to be considered
       during validation for mailinglists of this type.
@@ -109,7 +109,7 @@ class GeneralMailinglist:
     def may_view(cls, rs):
         """Determine whether the user may view a mailinglist.
 
-        Instead of overriding this, you should set the `viwer_roles`
+        Instead of overriding this, you should set the `viewer_roles`
         attribute, so that `ml_admin` may always view all mailinglists.
 
         Relevant class attributes:
@@ -126,14 +126,14 @@ class GeneralMailinglist:
 
     @classmethod
     def is_relevant_admin(cls, rs):
-        """Determine if the user is a allowed to administrate a mailinglist.
+        """Determine if the user is allowed to administrate a mailinglist.
 
         Instead of overriding this, you should set the `relevant_admins`
         attribute, so that `ml_admin` may always administrate all mailinglists.
 
         Relevant class attributes:
 
-        - `relevant_admin`: A set of roles other than `ml_admin` which allows
+        - `relevant_admins`: A set of roles other than `ml_admin` which allows
           a user to administrate a mailinglist. The semantics are similar to
           `@access`.
 
