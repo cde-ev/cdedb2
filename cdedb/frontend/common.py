@@ -806,7 +806,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.shards = [shardcls(self) for shardcls in self.used_shards]
         for shard in self.shards:
             self.republish(shard)
-            
 
     @abc.abstractmethod
     def finalize_session(self, rs, connpool, auxilliary=False):
@@ -1578,7 +1577,7 @@ def access(*roles, modi=None, check_anti_csrf=None):
 
     def decorator(fun):
         @functools.wraps(fun)
-        def new_meth(obj, rs, *args, **kwargs):
+        def new_fun(obj, rs, *args, **kwargs):
             if rs.user.roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
@@ -1599,13 +1598,13 @@ def access(*roles, modi=None, check_anti_csrf=None):
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        new_meth.access_list = access_list
-        new_meth.modi = modi
-        new_meth.check_anti_csrf =\
+        new_fun.access_list = access_list
+        new_fun.modi = modi
+        new_fun.check_anti_csrf =\
             (check_anti_csrf
              if check_anti_csrf is not None
              else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
-        return new_meth
+        return new_fun
 
     return decorator
 
@@ -1744,7 +1743,7 @@ def REQUESTdata(*spec):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_meth(obj, rs, *args, **kwargs):
+        def new_fun(obj, rs, *args, **kwargs):
             for name, argtype in spec:
                 if name not in kwargs:
                     if argtype.startswith('[') and argtype.endswith(']'):
@@ -1779,7 +1778,7 @@ def REQUESTdata(*spec):
                         kwargs[name] = check_validation(rs, argtype, val, name)
             return fun(obj, rs, *args, **kwargs)
 
-        return new_meth
+        return new_fun
 
     return wrap
 
@@ -1808,7 +1807,7 @@ def REQUESTdatadict(*proto_spec):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_meth(obj, rs, *args, **kwargs):
+        def new_fun(obj, rs, *args, **kwargs):
             data = {}
             for name, argtype in spec:
                 if argtype == "str":
@@ -1822,7 +1821,7 @@ def REQUESTdatadict(*proto_spec):
                 rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
 
-        return new_meth
+        return new_fun
 
     return wrap
 
@@ -1894,14 +1893,14 @@ def REQUESTfile(*args):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_meth(obj, rs, *args2, **kwargs):
+        def new_fun(obj, rs, *args2, **kwargs):
             for name in args:
                 if name not in kwargs:
                     kwargs[name] = rs.request.files.get(name, None)
                 rs.values[name] = kwargs[name]
             return fun(obj, rs, *args2, **kwargs)
 
-        return new_meth
+        return new_fun
 
     return wrap
 
@@ -1959,7 +1958,7 @@ def event_guard(argname="event_id", check_offline=False):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_meth(obj, rs, *args, **kwargs):
+        def new_fun(obj, rs, *args, **kwargs):
             if argname in kwargs:
                 arg = kwargs[argname]
             else:
@@ -1974,7 +1973,7 @@ def event_guard(argname="event_id", check_offline=False):
                         rs.gettext("This event is locked for offline usage."))
             return fun(obj, rs, *args, **kwargs)
 
-        return new_meth
+        return new_fun
 
     return wrap
 
@@ -1991,7 +1990,7 @@ def mailinglist_guard(argname="mailinglist_id"):
 
     def wrap(fun):
         @functools.wraps(fun)
-        def new_meth(obj, rs, *args, **kwargs):
+        def new_fun(obj, rs, *args, **kwargs):
             if argname in kwargs:
                 arg = kwargs[argname]
             else:
@@ -2002,7 +2001,7 @@ def mailinglist_guard(argname="mailinglist_id"):
                     "moderators."))
             return fun(obj, rs, *args, **kwargs)
 
-        return new_meth
+        return new_fun
 
     return wrap
 
