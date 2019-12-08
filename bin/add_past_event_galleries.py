@@ -6,15 +6,17 @@ sys.path.insert(0, "/cdedb2/")
 
 from cdedb.script import setup, make_backend
 
-DEFAULT_ID = 1
-dry_run = True
+# Configuration
 
-rs = setup(persona_id=DEFAULT_ID, dbuser="cdb_admin",
-           dbpassword="9876543210abcdefghijklmnopqrst", )
+dry_run = True
+rs = setup(persona_id=-1, dbuser="cdb_admin",
+           dbpassword="9876543210abcdefghijklmnopqrst")
+input_path = "/cdedb2/bin/fotogalerien-logins.csv"
+
+# Execution
 
 past_event = make_backend("past_event")
 
-input_path = "bin/fotogalerien-logins.csv"
 with open(input_path, "r") as infile:
     reader = csv.DictReader(infile, fieldnames=("title", "link"), delimiter=",")
     data = list(reader)
