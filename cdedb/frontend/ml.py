@@ -4,6 +4,8 @@
 
 import copy
 import collections
+
+import mailmanclient
 import werkzeug
 
 from cdedb.frontend.common import (
@@ -20,11 +22,14 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.config import SecretsConfig
+from cdedb.frontend.ml_mailman import MailmanShard
 
 
 class MlFrontend(AbstractUserFrontend):
     """Manage mailing lists which will be run by an external software."""
     realm = "ml"
+    used_shards = [MailmanShard]
+
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_ml_user,
     }
@@ -36,6 +41,10 @@ class MlFrontend(AbstractUserFrontend):
         self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
         secrets = SecretsConfig(configpath)
         self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+        self.mailman_create_client = lambda url, user: mailmanclient.Client(
+            url, user, secrets.MAILMAN_PASSWORD)
+        self.mailman_template_password = (
+            lambda: secrets.MAILMAN_BASIC_AUTH_PASSWORD)
 
     def finalize_session(self, rs, connpool, auxilliary=False):
         super().finalize_session(rs, connpool, auxilliary=auxilliary)

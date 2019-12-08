@@ -20,6 +20,7 @@ import email.mime.image
 import email.mime.multipart
 import email.mime.text
 import functools
+import inspect
 import io
 import json
 import logging
@@ -29,6 +30,7 @@ import smtplib
 import subprocess
 import tempfile
 import threading
+import types
 import urllib.parse
 
 import markdown
@@ -757,6 +759,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
     realm = None
+    #: to be overridden by children
+    used_shards = []
 
     def __init__(self, configpath, *args, **kwargs):
         """
@@ -799,6 +803,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
         )
+        self.shards = [shardcls(self) for shardcls in self.used_shards]
+        for shard in self.shards:
+            self.republish(shard)
 
     @abc.abstractmethod
     def finalize_session(self, rs, connpool, auxilliary=False):
@@ -819,6 +826,33 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :rtype: None
         """
         return
+
+    def _republish(self, shard, name, method):
+        """Uninlined code from republish() to avoid late binding."""
+        @functools.wraps(method)
+        def new_meth(obj, rs, *args, **kwargs):
+            method(rs, *args, **kwargs)
+        for attr in ('access_list', 'modi', 'check_anti_csrf', 'cron'):
+            if hasattr(method, attr):
+                setattr(new_meth, attr, getattr(method, attr))
+        # Keep a copy of the originating shard, so we
+        # introspect the source of each published method
+        new_meth.origin = shard
+        setattr(self, name, types.MethodType(new_meth, self))
+
+    def republish(self, shard):
+        """Republish the functionality of a frontend shard.
+
+        This way any user of the frontend can be unaware of the
+        internal split into shards.
+
+        :type shard: AbstractFrontendShard
+        """
+        for name, method in inspect.getmembers(shard, inspect.ismethod):
+            if hasattr(method, 'access_list') or hasattr(method, 'cron'):
+                if hasattr(self, name):
+                    raise RuntimeError("Method already exists", name)
+                self._republish(shard, name, method)
 
     @classmethod
     @abc.abstractmethod
@@ -1407,6 +1441,25 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     filename=pdf_file)
             else:
                 return None
+
+
+class AbstractFrontendShard(metaclass=abc.ABCMeta):
+    """Common base class for all frontend shards.
+
+    These are used to split mostly independent functionality from a
+    frontend into a separate unit.
+
+    The frontend is then responsible to make the functionality of the
+    shard accessible to its users without leaking the implementation
+    details. For this purpose the method
+    `AbstractFrontend.republish()` is used.
+    """
+    def __init__(self, parent, *args, **kwargs):
+        """
+        :type parent: AbstractFrontend
+        """
+        super().__init__(*args, **kwargs)
+        self.parent = parent
 
 
 class Worker(threading.Thread):
