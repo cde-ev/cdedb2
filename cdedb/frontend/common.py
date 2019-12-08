@@ -759,6 +759,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
     realm = None
+    #: to be overridden by children
+    used_shards = []
 
     def __init__(self, configpath, *args, **kwargs):
         """
@@ -801,6 +803,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
         )
+        self.shards = [shardcls(self) for shardcls in self.used_shards]
+        for shard in self.shards:
+            self.republish(shard)
+            
 
     @abc.abstractmethod
     def finalize_session(self, rs, connpool, auxilliary=False):

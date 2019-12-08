@@ -28,6 +28,8 @@ from cdedb.frontend.ml_mailman import MailmanShard
 class MlFrontend(AbstractUserFrontend):
     """Manage mailing lists which will be run by an external software."""
     realm = "ml"
+    used_shards = [MailmanShard]
+
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_ml_user,
     }
@@ -43,9 +45,6 @@ class MlFrontend(AbstractUserFrontend):
             url, user, secrets.MAILMAN_PASSWORD)
         self.mailman_template_password = (
             lambda: secrets.MAILMAN_BASIC_AUTH_PASSWORD)
-        self.shards = [MailmanShard(self)]
-        for shard in self.shards:
-            self.republish(shard)
 
     def finalize_session(self, rs, connpool, auxilliary=False):
         super().finalize_session(rs, connpool, auxilliary=auxilliary)
