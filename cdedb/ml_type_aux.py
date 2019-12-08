@@ -312,7 +312,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
         """Determine the MIP of the user or a persona with a mailinglist.
 
-        For the `EventOrgaMailinglist` this means opt-in for orgas only.
+        For the `EventOrgaMailinglist` this means opt-out for orgas only.
         """
         assert type_map[mailinglist["ml_type"]] == cls
 
@@ -321,9 +321,20 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
         if persona_id in event["orgas"]:
-            return const.MailinglistInteractionPolicy.opt_in
+            return const.MailinglistInteractionPolicy.opt_out
         else:
             return None
+
+    @classmethod
+    def get_implicit_subscribers(cls, rs, bc, mailinglist):
+        """Get a list of personas that should be on this mailinglist.
+
+        For the `EventOrgaMailinglist` this means the event's orgas.
+        """
+        assert type_map[mailinglist["ml_type"]] == cls
+
+        event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
+        return event["orgas"]
 
 
 class EventAssociatedLegacyMailinglist(EventAssociatedMailinglist):
