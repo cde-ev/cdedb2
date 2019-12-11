@@ -50,7 +50,7 @@ class MlBackend(AbstractBackend):
             raise ValueError(n_("Unknown mailinglist_id."))
         if not data["ml_type"]:
             return None
-        return ml_type.type_map[const.MailinglistTypes(data["ml_type"])]
+        return ml_type.TYPE_MAP[const.MailinglistTypes(data["ml_type"])]
 
     @access("ml")
     def is_relevant_admin(self, rs, *, mailinglist=None, mailinglist_id=None):
