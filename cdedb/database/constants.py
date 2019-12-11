@@ -148,6 +148,32 @@ class SubscriptionStates(enum.IntEnum):
 
 
 @enum.unique
+class MailinglistTypes(enum.IntEnum):
+    member_mandatory = 1
+    member_opt_out = 2
+    member_opt_in = 3
+    member_moderated_opt_in = 4
+    member_invitation_only = 5
+
+    team = 10
+    restricted_team = 11
+
+    event_associated = 20
+    event_orga = 21
+    event_associated_legacy = 22
+    event_orga_legacy = 23
+
+    assembly_associated = 30
+    assembly_opt_in = 31
+
+    general_opt_in = 40
+
+    semi_public = 50
+
+    cdelokal = 60
+
+
+@enum.unique
 class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: everybody is subscribed (think CdE-all)
