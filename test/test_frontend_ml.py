@@ -7,6 +7,7 @@ import webtest
 
 import cdedb.database.constants as const
 from test.common import as_users, USER_DICT, FrontendTest
+from cdedb.frontend.common import CustomCSVDialect
 
 from cdedb.query import QueryOperators
 
@@ -221,14 +222,6 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton", "berta", "ferdinand")
     def test_advanced_management(self, user):
-        class dialect(csv.Dialect):
-            delimiter = ';'
-            quotechar = '"'
-            doublequote = False
-            escapechar = '\\'
-            lineterminator = '\n'
-            quoting = csv.QUOTE_MINIMAL
-
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management/advanced'})
@@ -262,8 +255,9 @@ class TestMlFrontend(FrontendTest):
 
         self.traverse({"href": "ml/mailinglist/4/download"})
 
-        result = list(csv.DictReader(self.response.body.decode('utf-8-sig')
-            .split("\n"), delimiter=";", dialect=dialect))
+        result = list(csv.DictReader(
+            self.response.body.decode('utf-8-sig').split("\n"),
+            dialect=CustomCSVDialect))
         all_rows = []
 
         for row in result:

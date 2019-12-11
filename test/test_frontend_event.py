@@ -10,6 +10,7 @@ from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.query import QueryOperators
 from cdedb.common import now, CDEDB_EXPORT_EVENT_VERSION
+from cdedb.frontend.common import CustomCSVDialect
 import cdedb.database.constants as const
 
 
@@ -2040,13 +2041,6 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_download_csv(self, user):
-        class dialect(csv.Dialect):
-            delimiter = ';'
-            quotechar = '"'
-            doublequote = False
-            escapechar = '\\'
-            lineterminator = '\n'
-            quoting = csv.QUOTE_MINIMAL
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2055,7 +2049,7 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/csv_registrations')
 
         result = list(csv.DictReader(self.response.text.split('\n'),
-                                     dialect=dialect))
+                                     dialect=CustomCSVDialect))
         self.assertIn('2222-01-01', tuple(row['persona.birthday']
                                           for row in result))
         self.assertIn('high', tuple(row['lodgement3.xfield_contamination']
@@ -2065,7 +2059,7 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/csv_courses')
 
         result = list(csv.DictReader(self.response.text.split('\n'),
-                                     dialect=dialect))
+                                     dialect=CustomCSVDialect))
         self.assertIn('ToFi & Co', tuple(row['instructors'] for row in result))
         self.assertIn('cancelled', tuple(row['track2'] for row in result))
         self.assertIn('Seminarraum 42', tuple(row['fields.room']
@@ -2073,7 +2067,7 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/csv_lodgements')
 
         result = list(csv.DictReader(self.response.text.split('\n'),
-                                     dialect=dialect))
+                                     dialect=CustomCSVDialect))
         self.assertIn('100', tuple(row['reserve'] for row in result))
         self.assertIn('low', tuple(row['fields.contamination']
                                    for row in result))

@@ -33,7 +33,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
-    enum_entries_filter, money_filter, REQUESTfile)
+    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 from cdedb.backend.event import EventBackend
@@ -663,9 +663,7 @@ class CdEFrontend(AbstractUserFrontend):
             'address', 'postal_code', 'location', 'country', 'telephone',
             'mobile', 'username', 'birthday')
         reader = csv.DictReader(
-            accountlines, fieldnames=fields, delimiter=';',
-            quoting=csv.QUOTE_MINIMAL, quotechar='"', doublequote=False,
-            escapechar='\\')
+            accountlines, fieldnames=fields, dialect=CustomCSVDialect)
         data = []
         lineno = 0
         for raw_entry in reader:
@@ -814,6 +812,7 @@ class CdEFrontend(AbstractUserFrontend):
         event_names = {e["title"]: (get_event_name_pattern(e), e["shortname"])
                        for e in events.values()}
 
+        # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";",
                                 quotechar='"',
                                 fieldnames=STATEMENT_CSV_FIELDS,
@@ -1151,9 +1150,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.money_transfers_form(rs)
         fields = ('amount', 'persona_id', 'family_name', 'given_names', 'note')
         reader = csv.DictReader(
-            transferlines, fieldnames=fields, delimiter=';',
-            quoting=csv.QUOTE_MINIMAL, quotechar='"', doublequote=False,
-            escapechar='\\')
+            transferlines, fieldnames=fields, dialect=CustomCSVDialect)
         data = []
         lineno = 0
         for raw_entry in reader:
@@ -2410,8 +2407,7 @@ class CdEFrontend(AbstractUserFrontend):
             courselines = courses.split('\n')
             reader = csv.DictReader(
                 courselines, fieldnames=("nr", "title", "description"),
-                delimiter=';', quoting=csv.QUOTE_MINIMAL,
-                quotechar='"', doublequote=False, escapechar='\\')
+                dialect=CustomCSVDialect)
             lineno = 0
             for entry in reader:
                 lineno += 1

@@ -2157,6 +2157,15 @@ def make_transaction_subject(persona):
                                asciificator(persona['given_names']))
 
 
+class CustomCSVDialect(csv.Dialect):
+    delimiter = ';'
+    quoting = csv.QUOTE_MINIMAL
+    quotechar = '"'
+    doublequote = True
+    lineterminator = '\n'
+    escapechar = None
+
+
 def csv_output(data, fields, writeheader=True, replace_newlines=False,
                substitutions=None):
     """Generate a csv representation of the passed data.
@@ -2177,8 +2186,7 @@ def csv_output(data, fields, writeheader=True, replace_newlines=False,
     substitutions = substitutions or {}
     outfile = io.StringIO()
     writer = csv.DictWriter(
-        outfile, fields, delimiter=';', quoting=csv.QUOTE_MINIMAL,
-        quotechar='"', doublequote=True, lineterminator='\n')
+        outfile, fields, dialect=CustomCSVDialect)
     if writeheader:
         writer.writeheader()
     for original in data:
