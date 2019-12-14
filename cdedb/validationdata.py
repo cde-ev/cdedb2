@@ -7967,7 +7967,7 @@ FREQUENCY_LISTS = {
         "koerperliche,mindscouts,yoghi,vortrug,irmenach,"
         "saxonnex,agashe,tullius,fässern,vielfältige,"
         "werbekampagnen,mengers,zwoelfter"
-    ).split(",")
+    ).split(","),
     "cde_words": (
         "cde,datenbank,db,aka,akademie,schueler,sommer,pfingst,"
         "winter,musik,junior,multi,naka,anmeldung,beginn,adress,"
@@ -7986,5 +7986,5 @@ FREQUENCY_LISTS = {
         "telegram,gruppenmama,freund,freude,verrückt,verrueckt,"
         "hochbegabt,mensch,müde,muede,übermüdet,uebermuedet,"
         "interesse,interessiert"
-    ).split(",")
+    ).split(","),
 }
