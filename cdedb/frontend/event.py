@@ -907,6 +907,7 @@ class EventFrontend(AbstractUserFrontend):
                 'assembly_id': None,
                 'notes': None,
                 'moderators': event['orgas'],
+                'ml_type': const.MailinglistTypes.event_orga,
             }
             return orga_ml_data
         else:
@@ -931,6 +932,7 @@ class EventFrontend(AbstractUserFrontend):
                 'assembly_id': None,
                 'notes': None,
                 'moderators': event['orgas'],
+                'ml_type': const.MailinglistTypes.event_associated,
             }
             return participant_ml_data
 
