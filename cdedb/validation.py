@@ -3083,7 +3083,7 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
     'audience_policy': _enum_audiencepolicy,
-    'ml_type': _enum_mailinglisttypes_or_None,
+    'ml_type': _enum_mailinglisttypes,
     'subject_prefix': _str_or_None,
     'maxsize': _int_or_None,
     'is_active': _bool,

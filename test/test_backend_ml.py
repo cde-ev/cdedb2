@@ -55,7 +55,7 @@ class TestMlBackend(BackendTest):
                 'id': 3,
                 'is_active': True,
                 'maxsize': 2048,
-                'ml_type': None,
+                'ml_type': 40,
                 'mod_policy': 2,
                 'moderators': {2, 3, 10},
                 'registration_stati': [],
@@ -73,7 +73,7 @@ class TestMlBackend(BackendTest):
                 'id': 5,
                 'is_active': True,
                 'maxsize': 1024,
-                'ml_type': None,
+                'ml_type': 30,
                 'mod_policy': 2,
                 'moderators': {2, 7},
                 'registration_stati': [],
@@ -91,7 +91,7 @@ class TestMlBackend(BackendTest):
                 'id': 7,
                 'is_active': True,
                 'maxsize': 1024,
-                'ml_type': None,
+                'ml_type': 3,
                 'mod_policy': 2,
                 'moderators': {2, 10},
                 'registration_stati': [],
@@ -154,7 +154,7 @@ class TestMlBackend(BackendTest):
                 'fidel@example.cde',
                 'che@example.cde',
             },
-            'ml_type': None,
+            'ml_type': 5,
         }
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.assertLess(0, new_id)
@@ -1001,7 +1001,7 @@ class TestMlBackend(BackendTest):
                 'fidel@example.cde',
                 'che@example.cde',
             },
-            'ml_type': None
+            'ml_type': 5
         }
         new_id = self.ml.create_mailinglist(self.key, mdata)
 
@@ -1107,7 +1107,7 @@ class TestMlBackend(BackendTest):
             'subject_prefix': 'orga',
             'title': 'Orgateam',
             'notes': None,
-            'ml_type': None,
+            'ml_type': 21,
         }
         new_id = self.ml.create_mailinglist(self.key, mdata)
 
@@ -1478,7 +1478,7 @@ class TestMlBackend(BackendTest):
             'whitelist': {
                 'che@example.cde',
             },
-            'ml_type': None,
+            'ml_type': 5,
         }
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.ml.delete_mailinglist(

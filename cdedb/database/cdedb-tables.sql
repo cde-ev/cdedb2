@@ -1004,7 +1004,7 @@ CREATE TABLE ml.mailinglists (
         -- see cdedb.database.constants.AudiencePolicy
         audience_policy         integer NOT NULL,
         -- see cdedb.database.constants.MailinglistTypes
-        ml_type                 integer DEFAULT NULL,
+        ml_type                 integer NOT NULL,
         subject_prefix          varchar,
         -- in kB
         maxsize                 integer,
