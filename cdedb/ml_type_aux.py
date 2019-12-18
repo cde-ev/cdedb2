@@ -38,8 +38,6 @@ class MailinglistGroup(enum.IntEnum):
     cde = 2
     team = 3
     event = 10
-    orga = 11
-    event_associated = 12
     assembly = 20
     cdelokal = 30
 
@@ -306,7 +304,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
 
 class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
-    sortkey = MailinglistGroup.orga
+    sortkey = MailinglistGroup.event
 
     @classmethod
     def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
