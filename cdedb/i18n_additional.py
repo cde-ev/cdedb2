@@ -228,6 +228,32 @@ I18N_STRINGS = (
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
 
+    n_("MailinglistGroup.other")
+    n_("MailinglistGroup.cde"),
+    n_("MailinglistGroup.team"),
+    n_("MailinglistGroup.event"),
+    n_("MailinglistGroup.orga"),
+    n_("MailinglistGroup.event_associated"),
+    n_("MailinglistGroup.assembly"),
+    n_("MailinglistGroup.cdelokal"),
+
+    n_("MailinglistTypes.member_mandatory"),
+    n_("MailinglistTypes.member_opt_out"),
+    n_("MailinglistTypes.member_opt_in"),
+    n_("MailinglistTypes.member_moderated_opt_in"),
+    n_("MailinglistTypes.member_invitation_only"),
+    n_("MailinglistTypes.team"),
+    n_("MailinglistTypes.restricted_team"),
+    n_("MailinglistTypes.event_associated"),
+    n_("MailinglistTypes.event_orga"),
+    n_("MailinglistTypes.event_associated_legacy"),
+    n_("MailinglistTypes.event_orga_legacy"),
+    n_("MailinglistTypes.assembly_associated"),
+    n_("MailinglistTypes.assembly_opt_in"),
+    n_("MailinglistTypes.general_opt_in"),
+    n_("MailinglistTypes.semi_public"),
+    n_("MailinglistTypes.cdelokal"),
+
     #
     # Validation errors
     #
