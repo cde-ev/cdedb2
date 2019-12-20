@@ -9,7 +9,7 @@ REPODIR=/home/cdedb/cdedb2/
 AUTOBUILDDIR=/home/cdedb/cdedb2/related/auto-build/
 WWWDIR=/var/www/austausch/html/cdedb2/images/
 
-QEMUOPTIONS="-nographic -m 512M -net nic,model=virtio -net user"
+QEMUOPTIONS="-nographic -m 1G -net nic,model=virtio -net user"
 
 # get the most current state of the repository
 cd $REPODIR
