@@ -1495,25 +1495,20 @@ class CoreBackend(AbstractBackend):
         if (ids != {rs.user.persona_id}
                 and not (rs.user.roles
                          & {"event_admin", "cde_admin", "core_admin"})):
-            if is_orga:
-                query = ("SELECT DISTINCT regs.id, regs.persona_id "
-                         "FROM event.registrations AS regs "
-                         "LEFT OUTER JOIN event.registration_parts AS rparts "
-                         "ON rparts.registration_id = regs.id "
-                         "WHERE regs.event_id = %s")
-                data = self.query_all(rs, query, (event_id,))
-            else:
-                query = ("SELECT DISTINCT regs.id, regs.persona_id "
-                         "FROM event.registrations AS regs "
-                         "LEFT OUTER JOIN event.registration_parts AS rparts "
-                         "ON rparts.registration_id = regs.id "
-                         "WHERE regs.event_id = %s AND rparts.status = %s")
-                stati = const.RegistrationPartStati
-                data = self.query_all(rs, query, (event_id, stati.participant))
+            query = ("SELECT DISTINCT regs.id, regs.persona_id "
+                     "FROM event.registrations AS regs "
+                     "LEFT OUTER JOIN event.registration_parts AS rparts "
+                     "ON rparts.registration_id = regs.id "
+                     "WHERE regs.event_id = %s")
+            params = (event_id,)
+            if not is_orga:
+                query += " AND rparts.status = %s"
+                params += (const.RegistrationPartStati.participant,)
+            data = self.query_all(rs, query, params)
             all_users_inscope = set(e['persona_id'] for e in data)
             same_event = set(ret) <= all_users_inscope
             if not (same_event and (is_orga or
-                                     rs.user.persona_id in all_users_inscope)):
+                                    rs.user.persona_id in all_users_inscope)):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
