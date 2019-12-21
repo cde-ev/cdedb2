@@ -601,7 +601,7 @@ class CoreBackend(AbstractBackend):
         :rtype: {int}
         """
         query = "SELECT id from core.personas WHERE is_member = True"
-        data = bc.core.query_all(rs, query, params=tuple())
+        data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
     @access("core_admin")
