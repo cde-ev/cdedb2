@@ -3109,7 +3109,7 @@ class EventBackend(AbstractBackend):
             # personas
             persona_ids = tuple(reg['persona_id']
                                 for reg in backup_registrations.values())
-            personas = self.core.get_event_users(rs, persona_ids)
+            personas = self.core.get_event_users(rs, persona_ids, event_id)
             for reg_id, registration in ret['registrations'].items():
                 persona = personas[backup_registrations[reg_id]['persona_id']]
                 persona['is_orga'] = persona['id'] in event['orgas']

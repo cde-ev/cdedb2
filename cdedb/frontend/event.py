@@ -1148,7 +1148,7 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         stati = const.RegistrationPartStati
         get_age = lambda u, p: determine_age_class(
             u['birthday'], rs.ambience['event']['parts'][p['part_id']]['part_begin'])
@@ -1417,7 +1417,7 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         stati = const.RegistrationPartStati
 
         # Get number of attendees per course
@@ -1655,7 +1655,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
-            reg['persona_id'] for reg in registrations.values()))
+            reg['persona_id'] for reg in registrations.values()), event_id)
         courses = None
         if assign_action.enum == CourseChoiceToolActions.assign_auto:
             course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -2030,7 +2030,7 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
-            reg['persona_id'] for reg in registrations.values()))
+            reg['persona_id'] for reg in registrations.values()), event_id)
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
@@ -2138,7 +2138,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
-            reg['persona_id'] for reg in registrations.values()))
+            reg['persona_id'] for reg in registrations.values()), event_id)
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
@@ -2200,7 +2200,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         for p_id, p in personas.items():
             p['age'] = determine_age_class(
                 p['birthday'], rs.ambience['event']['begin'])
@@ -2567,7 +2567,7 @@ class EventFrontend(AbstractUserFrontend):
              | {e.get('persona_id')
                 for e in data.get('registrations', {}).values() if e})
             - {None})
-        personas = self.coreproxy.get_event_users(rs, persona_ids)
+        personas = self.coreproxy.get_event_users(rs, persona_ids, event_id)
 
         # Second invoke partial import
         try:
@@ -2804,7 +2804,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.ambience['event']['is_archived']:
             rs.notify("error", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'],
             event['begin'])
@@ -2944,7 +2944,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.register_form(rs, event_id)
         registration['event_id'] = event_id
         registration['persona_id'] = rs.user.persona_id
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         minor_form_present = (
@@ -2984,7 +2984,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         registration_id = unwrap(reg_list, keys=True)
         registration = self.eventproxy.get_registration(rs, registration_id)
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -3025,7 +3025,7 @@ class EventFrontend(AbstractUserFrontend):
         if self.is_locked(rs.ambience['event']):
             rs.notify("warning", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -3087,7 +3087,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.amend_registration_form(rs, event_id)
 
         registration['id'] = registration_id
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
+        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         registration['mixed_lodging'] = (registration['mixed_lodging']
@@ -3322,7 +3322,7 @@ class EventFrontend(AbstractUserFrontend):
     def show_registration(self, rs, event_id, registration_id):
         """Display all information pertaining to one registration."""
         persona = self.coreproxy.get_event_user(
-            rs, rs.ambience['registration']['persona_id'])
+            rs, rs.ambience['registration']['persona_id'], event_id)
         age = determine_age_class(
             persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -3350,7 +3350,8 @@ class EventFrontend(AbstractUserFrontend):
         concurrent changes (e.g. the Check-in)"""
         tracks = rs.ambience['event']['tracks']
         registration = rs.ambience['registration']
-        persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
+        persona = self.coreproxy.get_event_user(rs, registration['persona_id'],
+                                                event_id)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
@@ -3636,7 +3637,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, 'event/registration_query')
 
         personas = self.coreproxy.get_event_users(
-            rs, (r['persona_id'] for r in registrations.values()))
+            rs, (r['persona_id'] for r in registrations.values()), event_id)
         for reg_id, reg in registrations.items():
             reg['gender'] = personas[reg['persona_id']]['gender']
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -3884,7 +3885,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
 
         # Calculate inhabitants and reserve_inhabitant_nums
         inhabitants = self.calculate_groups(
@@ -4090,7 +4091,7 @@ class EventFrontend(AbstractUserFrontend):
             if any(part['lodgement_id'] == lodgement_id
                    for part in v['parts'].values())}
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         inhabitants = self.calculate_groups(
             (lodgement_id,), rs.ambience['event'], registrations,
             key="lodgement_id", personas=personas)
@@ -4880,7 +4881,7 @@ class EventFrontend(AbstractUserFrontend):
             if (not v['checkin']
                 and any(there(v, id) for id in rs.ambience['event']['parts']))}
         personas = self.coreproxy.get_event_users(rs, tuple(
-            reg['persona_id'] for reg in registrations.values()))
+            reg['persona_id'] for reg in registrations.values()), event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         for registration in registrations.values():

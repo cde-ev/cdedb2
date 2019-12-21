@@ -1483,6 +1483,10 @@ class CoreBackend(AbstractBackend):
     def get_event_users(self, rs, ids, event_id=None):
         """Get an event view on some data sets.
 
+        This is allowed for admins and for yourself in any case. Orgas can also
+        query users registered for one of their events; other event users can
+        query participants of events they participate themselves.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :type event_id: int or none
@@ -1502,24 +1506,30 @@ class CoreBackend(AbstractBackend):
         # This is a bit of a transgression since we access the event
         # schema from the core backend, but we go for security instead of
         # correctness here.
-        orga = "SELECT event_id FROM event.orgas WHERE persona_id = %s"
-        is_orga = self.query_all(rs, orga, (rs.user.persona_id,))
+        if event_id:
+            orga = ("SELECT event_id FROM event.orgas WHERE persona_id = %s"
+                    "AND event_id = %s")
+            is_orga = self.query_all(rs, orga, (rs.user.persona_id, event_id))
+        else:
+            is_orga = False
         if (ids != {rs.user.persona_id}
-                and not is_orga
                 and not (rs.user.roles
-                         & {"event_admin", "cde_admin", "core_admin"})
-                and (any(e['is_cde_realm'] for e in ret.values()))):
+                         & {"event_admin", "cde_admin", "core_admin"})):
             query = ("SELECT DISTINCT regs.id, regs.persona_id "
                      "FROM event.registrations AS regs "
                      "LEFT OUTER JOIN event.registration_parts AS rparts "
                      "ON rparts.registration_id = regs.id "
-                     "WHERE regs.event_id = %s AND rparts.status = %s")
-            stati = const.RegistrationPartStati
-            data = self.query_all(rs, query, (event_id, stati.participant))
-            all_participants = set(e['persona_id'] for e in data)
-            same_event = set(ret) <= all_participants
-            if not (rs.user.persona_id in all_participants and same_event):
-                raise PrivilegeError(n_("Access to CdE data sets inhibited."))
+                     "WHERE regs.event_id = %s")
+            params = (event_id,)
+            if not is_orga:
+                query += " AND rparts.status = %s"
+                params += (const.RegistrationPartStati.participant,)
+            data = self.query_all(rs, query, params)
+            all_users_inscope = set(e['persona_id'] for e in data)
+            same_event = set(ret) <= all_users_inscope
+            if not (same_event and (is_orga or
+                                    rs.user.persona_id in all_users_inscope)):
+                raise PrivilegeError(n_("Access to persona data inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
             raise RuntimeError(n_("Not an event user."))
         return ret
