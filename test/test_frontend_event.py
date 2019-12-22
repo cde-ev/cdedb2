@@ -1400,6 +1400,40 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
 
     @as_users("garcia")
+    def test_multiedit_wa1920(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'})
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        # Fake JS link redirection
+        self.get("/event/event/1/registration/multiedit?reg_ids=1,2,3,4")
+        self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(False, f['enable_track2.course_id'].checked)
+        self.submit(f)
+        self.traverse({'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/3/show'},
+                      {'href': '/event/event/1/registration/3/change'})
+        self.assertTitle("Anmeldung von Garcia G. Generalis bearbeiten (Große Testakademie 2222)")
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual("2", f['track2.course_id'].value)
+
+    @as_users("garcia")
+    def test_show_registration(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'})
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.traverse({'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/2/show'})
+        self.assertTitle("\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
+        self.assertPresence("56767 Wolkenkuckuksheim")
+        self.assertPresence("Einzelzelle")
+        self.assertPresence("α. Heldentum")
+        self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
+
+    @as_users("garcia")
     def test_change_registration(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
