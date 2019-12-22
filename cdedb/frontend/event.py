@@ -3671,9 +3671,9 @@ class EventFrontend(AbstractUserFrontend):
                 for key, value in representative['tracks'][track_id].items():
                     if all(r['tracks'][track_id][key] == value for r in
                            registrations.values()):
-                        reg_values['track{}.{}'.format(part_id, key)] = value
+                        reg_values['track{}.{}'.format(track_id, key)] = value
                         reg_values[
-                            'enable_track{}.{}'.format(part_id, key)] = True
+                            'enable_track{}.{}'.format(track_id, key)] = True
 
         for field_id in rs.ambience['event']['fields']:
             key = rs.ambience['event']['fields'][field_id]['field_name']
