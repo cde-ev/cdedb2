@@ -1420,20 +1420,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("2", f['track2.course_id'].value)
 
     @as_users("garcia")
-    def test_show_registration(self, user):
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/query'})
-        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
-        self.traverse({'description': 'Alle Anmeldungen'},
-                      {'href': '/event/event/1/registration/2/show'})
-        self.assertTitle("\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
-        self.assertPresence("56767 Wolkenkuckuksheim")
-        self.assertPresence("Einzelzelle")
-        self.assertPresence("α. Heldentum")
-        self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
-
-    @as_users("garcia")
     def test_change_registration(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
