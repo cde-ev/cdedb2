@@ -1508,18 +1508,18 @@ class CoreBackend(AbstractBackend):
         # correctness here.
         if event_id:
             orga = ("SELECT event_id FROM event.orgas WHERE persona_id = %s"
-                    "AND event_id = %s")
+                    " AND event_id = %s")
             is_orga = self.query_all(rs, orga, (rs.user.persona_id, event_id))
         else:
             is_orga = False
         if (ids != {rs.user.persona_id}
                 and not (rs.user.roles
                          & {"event_admin", "cde_admin", "core_admin"})):
-            query = ("SELECT DISTINCT regs.id, regs.persona_id "
-                     "FROM event.registrations AS regs "
-                     "LEFT OUTER JOIN event.registration_parts AS rparts "
-                     "ON rparts.registration_id = regs.id "
-                     "WHERE regs.event_id = %s")
+            query = ("SELECT DISTINCT regs.id, regs.persona_id"
+                     " FROM event.registrations AS regs"
+                     " LEFT OUTER JOIN event.registration_parts AS rparts"
+                     " ON rparts.registration_id = regs.id"
+                     " WHERE regs.event_id = %s")
             params = (event_id,)
             if not is_orga:
                 query += " AND rparts.status = %s"
