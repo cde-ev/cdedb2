@@ -11620,6 +11620,10 @@ msgid "Open Registrations"
 msgstr "Offene Anmeldungen"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:26
+msgid "All minors"
+msgstr "Alle Minderjährigen"
+
+#: cdedb/frontend/templates/web/event/stats.tmpl:26
 msgid "U18"
 msgstr "U18"
 
