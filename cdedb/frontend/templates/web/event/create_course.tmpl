@@ -40,7 +40,7 @@
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
             {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
-                                          entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title')) }}
+                                          entries=ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track)|dict_entries('id', 'title')) }}
         {% endif %}
 
         <h4 class="heading-underline">{% trans -%}Status{%- endtrans %}</h4>
@@ -49,7 +49,7 @@
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
         <h4 class="heading-underline">{% trans -%}Fields{%- endtrans %}</h4>
-        {% for field_id, field in ambience['event']['fields']|xdictsort('field_name')
+        {% for field_id, field in ambience['event']['fields']|keydictsort(ENTITY_SORTKEYS.event_field)
                 if field['association'] == enums['FieldAssociations'].course %}
             {{ util.form_event_field_input(field) }}
         {% else %}

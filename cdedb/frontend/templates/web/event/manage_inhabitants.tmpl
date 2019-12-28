@@ -27,7 +27,7 @@
     <form action="{{ cdedblink('event/manage_inhabitants') }}" method="POST" id="manageinhabitantsform">
         {{ util.anti_csrf_token('event/manage_inhabitants') }}
         <div class="row">
-            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+            {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(part['title'] if ambience['event']['parts']|length > 1
                                                                       else gettext("Assigned Inhabitants")),

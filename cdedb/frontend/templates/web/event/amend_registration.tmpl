@@ -44,7 +44,7 @@
                 "I agree that my data, including my name, address and my email, may be sent "
                 "to other participants of this event beforehand.")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", readonly=readonly) }}
-        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') if track_id in involved_tracks and track['num_choices'] %}
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) if track_id in involved_tracks and track['num_choices'] %}
             {% set course_list = course_choices[track_id] %}
             <h4>
                 {% trans -%}Course Choices{%- endtrans %}
@@ -53,7 +53,7 @@
                 {% endif %}
             </h4>
 
-            {% set course_entries = courses|xdictsort('nr', pad=True)
+            {% set course_entries = courses|keydictsort(ENTITY_SORTKEYS.course)
                                     |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
             {% for i in range(track['num_choices']) %}
                 {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="",

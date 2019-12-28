@@ -144,7 +144,7 @@
                     </tr>
                 </thead>
                 <tbody class="drow-container1 course-tracks-container" data-outerid0="{{ part_id }}">
-                    {% for track_id, title in tracks|xdictsort('sortkey') %}
+                    {% for track_id, title in tracks|keydictsort(ENTITY_SORTKEYS.course_track) %}
                         {{ print_track(part_id, track_id, aclass='drow-row1') }}
                     {% endfor%}
                     {# Items that were added by the user but failed validation. They are still new and have no official id. #}
@@ -179,7 +179,7 @@
         {{ util.anti_csrf_token('event/part_summary') }}
         <div id="drow-container">
             {# Old items, already stored in the database #}
-            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+            {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
                 {{ print_part(part_id, part_id not in referenced_parts and not has_registrations,
                               tracks=part['tracks'], aclass='drow-row') }}
             {% endfor %}

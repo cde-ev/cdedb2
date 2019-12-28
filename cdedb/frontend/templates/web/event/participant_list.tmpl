@@ -130,7 +130,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin')
+                            {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part)
                                    if registration['parts'][part_id]['status'] == enums['RegistrationPartStati']['participant'] -%}
                                 {% if not loop.first %}
                                     {%- if loop.last %}

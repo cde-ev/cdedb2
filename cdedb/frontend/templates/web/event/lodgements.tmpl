@@ -39,7 +39,7 @@
             </tr>
             <tr>
                 {% if ambience['event']['parts']|length > 1 %}
-                    {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                    {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
                         <th class="text-right{% if loop.first %} b-left{% endif %}">
                             {{ part['title'] }}
                         </th>
@@ -60,7 +60,7 @@
                                 <i>{% trans %}Ungrouped Lodgements{% endtrans %}</i>
                             {% endif %}
                         </td>
-                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                        {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
                             <td class="text-right" id="group_inhabitants_{{ part_id }}_{{ group_id }}">
                                 {{ (group_inhabitants_sum[(group_id, part_id)]
                                     - group_reserve_inhabitants_sum[(group_id, part_id)]) }}
@@ -82,7 +82,7 @@
                         <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
                                          lodgement['moniker']) }}</td>
                         {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
-                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                        {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
                             {% set problem = problems[(lodgement_id, part_id)] %}
                             <td class="text-right {% if loop.first %} b-left{% endif %}
                                 {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1]) }}"{% endif %}
@@ -114,7 +114,7 @@
         <tfoot>
             <tr class="summary">
                 <th colspan="2">&Sigma;</th>
-                {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
                     <td class="text-right {% if loop.first %} b-left{% endif %}"
                         id="total_inhabitants_{{ part_id }}">
                         {{ (inhabitants_sum[part_id] - reserve_inhabitants_sum[part_id]) }}

@@ -89,7 +89,7 @@
         <h4 class="heading-underline">{% trans -%}Special Purpose Custom Fields{%- endtrans %}</h4>
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
+        {%- for field_id, field in ambience['event']['fields']|keydictsort(ENTITY_SORTKEYS.event_field)
                 if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
@@ -99,7 +99,7 @@
                                   "download. Fieldtype: Text")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
+        {%- for field_id, field in ambience['event']['fields']|keydictsort(ENTITY_SORTKEYS.event_field)
                 if field['kind'] == enums['FieldDatatypes'].bool and field['association'] == enums['FieldAssociations'].registration %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
@@ -109,7 +109,7 @@
                                   "lodgement puzzle download. Fieldtype: Yes/No")) }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|xdictsort('field_name')
+        {%- for field_id, field in ambience['event']['fields']|keydictsort(ENTITY_SORTKEYS.event_field)
                 if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].course %}
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}

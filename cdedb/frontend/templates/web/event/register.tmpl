@@ -87,13 +87,13 @@
 
         {% if ambience['event']['parts']|length > 1 %}
             {{ util.form_input_checkboxes(name="parts", label=gettext("Event-Parts"),
-                                          entries=ambience['event']['parts']|xdictsort('part_begin')
+                                          entries=ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part)
                                               |dict_entries('id', 'title')) }}
         {% elif ambience['event']['parts']|length == 1 %}
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
-        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
             {% set course_list = course_choices[track_id] %}
             {% if track['num_choices'] %}
                 <div id="course_choice_container-{{ track_id }}" class="course_choice_container"
@@ -107,7 +107,7 @@
                         {% endif %}
                     </h4>
 
-                    {% set course_entries = courses|xdictsort('nr', pad=True)
+                    {% set course_entries = courses|keydictsort(ENTITY_SORTKEYS.course)
                                             |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
                     {% for i in range(track['num_choices']) %}
                         {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="",
