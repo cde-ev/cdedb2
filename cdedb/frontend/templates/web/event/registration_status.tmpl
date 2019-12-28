@@ -27,6 +27,7 @@
         </div>
     {% endif %}
     {% if not registration['payment'] %}
+    {% if ambience['event']['iban'] %}
         <h3 class="heading-underline">{% trans -%}Bank Transfer{%- endtrans %}</h3>
         <p>
             {% trans fee=fee|money(lang=lang) -%}
@@ -64,13 +65,21 @@
                 </tr>
             </tbody>
         </table>
+    {% else %}
+        <h3 class="heading-underline">{% trans -%}Payment{%- endtrans %}</h3>
+        <p>
+            {% trans -%}
+                The orgas will tell you separately how to pay your fee of {{ fee }}€.
+            {%- endtrans %}
+        </p>
+    {% endif %}
     {% endif %}
 
     {% if age.is_minor() and not registration['parental_agreement'] %}
         <h3 class="heading-underline">{% trans -%}Parental Consent{%- endtrans %}</h3>
         <p>
             {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("here"), icon='file') -%}
-            	You need to send the parental consent form to the Orgas. You can find the form {{ link }}.
+                You need to send the parental consent form to the Orgas. You can find the form {{ link }}.
             {%- endtrans %}
         </p>
     {% endif %}
