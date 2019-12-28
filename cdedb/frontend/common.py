@@ -50,7 +50,7 @@ from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter)
+    decode_parameter, ENTITY_SORTKEYS)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -645,6 +645,17 @@ def xdictsort_filter(value, attribute, pad=False, reverse=False):
     return sorted(value.items(), key=key, reverse=reverse)
 
 
+def keydictsort_filter(value, sortkey, reverse=False):
+    """
+
+    :type value: {object: dict}
+    :type sortkey: callable
+    :type reverse: bool
+    :rtype: [(object, dict)]
+    """
+    return sorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
+
+
 def enum_entries_filter(enum, processing=None, raw=False):
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
@@ -752,6 +763,7 @@ JINJA_FILTERS = {
     'enum_entries': enum_entries_filter,
     'dict_entries': dict_entries_filter,
     'xdict_entries': xdict_entries_filter,
+    'keydictsort': keydictsort_filter,
 }
 
 
@@ -790,6 +802,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
             'GIT_COMMIT': self.conf.GIT_COMMIT,
             'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
+            'ENTITY_SORTKEYS': ENTITY_SORTKEYS,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,

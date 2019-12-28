@@ -457,7 +457,7 @@ def name_key(entry):
 
 
 def event_key(event):
-    return (e['begin'], e['end'], e['title'], e['id'])
+    return (event['begin'], event['end'], event['title'], event['id'])
 
 
 def course_key(course):
@@ -481,6 +481,10 @@ def course_track_key(course_track):
     return (course_track['sortkey'], course_track['id'])
 
 
+def event_field_key(event_field):
+    return (event_field['field_name'], event_field['id'])
+
+
 ENTITY_SORTKEYS = {
     "persona": name_key,
     "event": event_key,
@@ -489,6 +493,7 @@ ENTITY_SORTKEYS = {
     "lodgement_group": lodgement_group_key,
     "event_part": event_part_key,
     "course_track": course_track_key,
+    "event_field": event_field_key,
 }
 
 
