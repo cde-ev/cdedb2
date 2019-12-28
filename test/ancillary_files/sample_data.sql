@@ -31,7 +31,12 @@ INSERT INTO core.personas (id, username, is_active, notes, display_name, given_n
     (12, NULL, True, NULL, 'Lisa', 'Lisa', 'Lost', False, False, False, False, False, False, False, True, True, True, True, True, True, False, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Lisa Lost Lisa'),
     (13, 'martin@example.cde', True, NULL, 'Martin', 'Martin', 'Meister', True, False, False, False, False, False, False, True, True, True, True, True, False, False, NULL, NULL, 2, '2019-07-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 25, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'martin@example.cde Martin Meister 2019-07-10'),
     (14, 'nina@example.cde', True, NULL, 'Nina', 'Nina', 'Neubauer', False, False, False, False, False, True, False, False, True, True, False, False, False, False, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,  NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', E'nina@example.cde Nina Nina Neubauer'),
-    (15, 'olaf@example.cde', False, 'Aktuell deaktiviert weil er seine Admin-Rechte missbraucht, um Benutzer in ihrem Profil zu Rickrollen.', 'Olaf', 'Olaf', 'Olafson', False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'olaf@example.cde Olaf Olafson 1979-07-06');
+    (15, 'olaf@example.cde', False, 'Aktuell deaktiviert weil er seine Admin-Rechte missbraucht, um Benutzer in ihrem Profil zu Rickrollen.', 'Olaf', 'Olaf', 'Olafson', False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Prof.', NULL, 2, date '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'olaf@example.cde Olaf Olafson 1979-07-06'),
+    (22, 'vera@example.cde', True, NULL, 'Vera', 'Vera', 'Verwaltung', False, True, True, False, False, False, False, True, True, True, True, True, True, False, NULL, NULL, 1, date '1989-11-09', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 26.77, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'vera@example.cde  Vera Vera Verwaltung  1989-11-09'),
+    (23, 'werner@example.cde', True, NULL, 'Werner', 'Werner', 'Wahlleitung', False, False, False, False, False, False, True, True, True, True, True, True, True, False, 'Dr. med.', NULL, 2, date '2001-09-11', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10.04, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'werner@example.cde  Dr. med. Werner Wahlleitung  2001-09-11'),
+    (27, 'annika@example.cde', True, NULL, 'Annika', 'Annika', 'Akademieteam', False, False, False, False, True, False, False, True, True, True, True, True, True, False, NULL, NULL, 1, date '1966-04-17', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 417, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'annika@example.cde  Annika Annika Akademieteam  1966-04-17'),
+    (32, 'farin@example.cde', True, NULL, 'Farin', 'Farin', 'Finanzvorstand', False, True, True, True, True, True, True, True, True, True, True, True, True, False, NULL, NULL, 2, date '1963-10-27', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ich Fahr in Urlaub!', 56, True, False, False, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'farin@example.cde  Farin Farin Finanzvorstand  1963-10-27  Ich Fahr in Urlaub!'),
+    (100, 'akira@example.cde', True, NULL, 'Akira', 'Akira', 'Abukara', True, True, True, True, True, True, True, True, True, True, True, True, True, False, NULL, NULL, 10, date '2019-12-28', '+81 (314) 159263', NULL, NULL, 'Kasumigaseki 1-3-2', '100-8798', 'Tokyo', 'Japan', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3.14, True, False, True, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'akira@example.cde  Akira Akira Abukara  2019-12-28  +81 (314) 159263  Kasumigaseki 1-3-2  100-8798  Tokyo  Japan');
 INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change_note, change_status, persona_id, username, is_active, notes, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, display_name, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, balance, decided_search, trial_member, bub_search, foto) VALUES
     (1, NULL, now(), 1, 'Init.', 2, 1, 'anton@example.cde', True, NULL, True, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Anton', 'Administrator', 'Anton Armin A.', NULL, NULL, 2, date '1991-03-30', '+49 (234) 98765', NULL, NULL, 'Auf der Düne 42', '03205', 'Musterstadt', NULL, NULL, NULL, 'Unter dem Hügel 23', '22335', 'Hintertupfingen', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 17.5, True, False, True, NULL),
     (2, NULL, now(), 1, 'Init.', 2, 2, 'berta@example.cde', True, NULL, False, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Bertå',  'Beispiel', 'Bertålotta', 'Dr.', 'MdB', 1, date '1981-02-11', '+49 (5432) 987654321', '0163/123456789', 'bei Spielmanns', 'Im Garten 77', '34576', 'Utopia', NULL, 'Gemeinser', NULL, 'Strange Road 9 3/4', '8XA 45-$', 'Foreign City', 'Far Away', 'https://www.bundestag.cde', E'Alles\nUnd noch mehr', 'Jedermann', 'Überall', 'Immer', E'Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen', 12.5, True, False, True, 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9'),
@@ -48,7 +53,12 @@ INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change
     (1, NULL, now(), 1, 'Init.', 2, 13, 'martin@example.cde', True, NULL, True, False, False, False, False, False, False, True, True, True, True, True, False, False, 'Martin', 'Meister', 'Martin', NULL, NULL, 2, '2019-07-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 25, True, False, False, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 14, 'nina@example.cde', True, NULL, False, False, False, False, False, True, False, False, True, True, False, False, False, False, 'Nina', 'Neubauer', 'Nina', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 15, 'olaf@example.cde', True, NULL, False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Olaf', 'Olaf', 'Olafson', 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL),
-    (6, NULL, now(), 2, 'Deaktiviert, weil er seine Admin-Privilegien missbraucht.', 2, 15, 'olaf@example.cde', False, 'Aktuell deaktiviert weil er seine Admin-Rechte missbraucht, um Benutzer in ihrem Profil zu Rickrollen.', False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Olaf', 'Olaf', 'Olafson', 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL);
+    (6, NULL, now(), 2, 'Deaktiviert, weil er seine Admin-Privilegien missbraucht.', 2, 15, 'olaf@example.cde', False, 'Aktuell deaktiviert weil er seine Admin-Rechte missbraucht, um Benutzer in ihrem Profil zu Rickrollen.', False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Olaf', 'Olaf', 'Olafson', 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 22, 'vera@example.cde', True, NULL, False, True, True, False, False, False, False, True, True, True, True, True, True, False, 'Vera', 'Vera', 'Verwaltung', NULL, NULL, 1, date '1989-11-09', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 26.77, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 23, 'werner@example.cde', True, NULL, False, False, False, False, False, False, True, True, True, True, True, True, True, False, 'Werner', 'Werner', 'Wahlleitung', 'Dr. med.', NULL, 2, date '2001-09-11', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10.04, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 27, 'annika@example.cde', True, NULL, False, False, False, False, True, False, False, True, True, True, True, True, True, False, 'Annika', 'Annika', 'Akademieteam', NULL, NULL, 1, date '1966-04-17', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 417, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 32, 'farin@example.cde', True, NULL, False, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Farin', 'Farin', 'Finanzvorstand', NULL, NULL, 2, date '1963-10-27', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ich Fahr in Urlaub!', 56, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 100, 'akira@example.cde', True, NULL, True, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Akira', 'Akira', 'Abukara', NULL, NULL, 10, date '2019-12-28', '+81 (314) 159263', NULL, NULL, 'Kasumigaseki 1-3-2', '100-8798', 'Tokyo', 'Japan', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3.14, True, False, True, NULL);
 INSERT INTO core.meta_info (info) VALUES
     ('{"Finanzvorstand_Vorname": "Bertålotta",
        "Finanzvorstand_Name": "Bertålotta Beispiel",
@@ -100,7 +110,8 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
     (2, 1, 1, True, False),
     (3, 1, NULL, False, False),
     (5, 1, 2, False, False),
-    (6, 1, 2, False, True);
+    (6, 1, 2, False, True),
+    (100, 1, 2, False, False);
 
 --
 -- events
@@ -147,7 +158,8 @@ INSERT INTO event.course_segments (course_id, track_id, is_active) VALUES
 INSERT INTO event.orgas (persona_id, event_id) VALUES
     (7, 1),
     (1, 2),
-    (2, 2);
+    (2, 2),
+    (100, 2);
 INSERT INTO event.lodgement_groups (id, event_id, moniker) VALUES
     (1, 1, 'Haupthaus'),
     (2, 1, 'AußenWohnGruppe');
@@ -160,7 +172,8 @@ INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, pa
     (1, 1, 1, NULL, NULL, NULL, True, True, NULL, True, '{"lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
     (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', True, True, NULL, True, '{"brings_balls": true, "transportation": "pedes"}'::jsonb),
     (3, 7, 1, NULL, NULL, date '2014-03-03', True, True, NULL, False, '{"transportation": "car"}'::jsonb),
-    (4, 9, 1, NULL, NULL, date '2014-04-04', False, False, NULL, False, '{"brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb);
+    (4, 9, 1, NULL, NULL, date '2014-04-04', False, False, NULL, False, '{"brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb),
+    (5, 100, 1, NULL, NULL, NULL, True, False, NULL, True, '{"transportation": "pedes"}'::jsonb);
 INSERT INTO event.registration_parts (registration_id, part_id, status, lodgement_id, is_reserve) VALUES
     (1, 1, -1, NULL, False),
     (1, 2, 1, NULL, False),
@@ -173,7 +186,10 @@ INSERT INTO event.registration_parts (registration_id, part_id, status, lodgemen
     (3, 3, 2, 2, False),
     (4, 1, 6, NULL, False),
     (4, 2, 5, NULL, False),
-    (4, 3, 2, 2, True);
+    (4, 3, 2, 2, True),
+    (5, 1, 2, 4, False),
+    (5, 2, 2, 4, False),
+    (5, 3, 2, 1, False);
 INSERT INTO event.registration_tracks (registration_id, track_id, course_id, course_instructor) VALUES
     (1, 1, NULL, NULL),
     (1, 2, NULL, NULL),
@@ -186,7 +202,10 @@ INSERT INTO event.registration_tracks (registration_id, track_id, course_id, cou
     (3, 3, NULL, NULL),
     (4, 1, NULL, NULL),
     (4, 2, NULL, NULL),
-    (4, 3, 1, NULL);
+    (4, 3, 1, NULL),
+    (5, 1, NULL, NULL),
+    (5, 2, 2, NULL),
+    (5, 3, 1, NULL);
 INSERT INTO event.course_choices (registration_id, track_id, course_id, rank) VALUES
     (1, 1, 1, 0),
     (1, 1, 3, 1),
@@ -215,7 +234,14 @@ INSERT INTO event.course_choices (registration_id, track_id, course_id, rank) VA
     (4, 1, 5, 3),
     (4, 2, 4, 0),
     (4, 3, 1, 0),
-    (4, 3, 2, 1);
+    (4, 3, 2, 1),
+    (5, 1, 1, 0),
+    (5, 1, 5, 1),
+    (5, 1, 4, 2),
+    (5, 1, 2, 3),
+    (5, 2, 2, 0),
+    (5, 3, 1, 0),
+    (5, 3, 4, 1);
 INSERT INTO event.questionnaire_rows (event_id, field_id, pos, title, info, input_size, readonly, default_value) VALUES
     (1, NULL, 0, 'Unterüberschrift', 'mit Text darunter', NULL, NULL, NULL),
     (1, 1, 1, 'Bälle', 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.', NULL, False, 'True'),
@@ -274,7 +300,8 @@ INSERT INTO assembly.attendees (assembly_id, persona_id, secret) VALUES
     (1, 1, 'aoeuidhtns'),
     (1, 2, 'snthdiueoa'),
     (1, 9, 'asonetuhid'),
-    (1, 11, 'bxronkxeud');
+    (1, 11, 'bxronkxeud'),
+    (1, 100, 'sefnasdfiw');
 
 INSERT INTO assembly.voter_register (persona_id, ballot_id, has_voted) VALUES
     (1, 1, True),
@@ -321,6 +348,11 @@ INSERT INTO ml.mailinglists (id, title, address, description, ml_type, sub_polic
     (10, 'Warte-Liste', 'wait@example.cde', NULL, 20, 6, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL),
     (11, 'Kampfbrief-Kommentare', 'opt@example.cde', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], 1);
 
+INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
+    (3, 10, 'janis-spam@example.cde'),
+    (3, 1, 'new-anton@example.cde'),
+    (4, 6, 'ferdinand-unterhaltung@example.cde');
+
 INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_state) VALUES
     (1, 1, 30),
     (1, 2, 30),
@@ -330,6 +362,11 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (1, 9, 30),
     (1, 12, 30),
     (1, 13, 30),
+    (1, 22, 30),
+    (1, 23, 30),
+    (1, 27, 30),
+    (1, 32, 30),
+    (1, 100, 30),
     (2, 1, 30),
     (2, 2, 30),
     (2, 3, 30),
@@ -343,18 +380,25 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (2, 12, 30),
     (2, 13, 30),
     (2, 14, 1),
+    (2, 22, 30),
+    (2, 23, 30),
+    (2, 27, 30),
+    (2, 32, 30),
+    (2, 100, 30),
     (3, 1, 1),
     (3, 2, 2),
     (3, 10, 1),
     (4, 1, 1),
     (4, 2, 1),
     (4, 10, 1),
+    (4, 100, 1),
     (5, 1, 30),
     (5, 2, 30),
     (5, 3, 10),
     (5, 9, 11),
     (5, 11, 30),
     (5, 14, 10),
+    (5, 100, 10),
     (6, 1, 1),
     (6, 2, 1),
     (7, 1, 2),
@@ -365,18 +409,15 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (9, 5, 2),
     (9, 7, 1),
     (9, 9, 30),
+    (9, 100, 30),
     (10, 5, 30),
     (11, 1, 11),
     (11, 2, 30),
     (11, 3, 1),
     (11, 4, 2),
     (11, 9, 11),
-    (11, 11, 30);
-
-INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
-    (3, 10, 'janis-spam@example.cde'),
-    (3, 1, 'new-anton@example.cde'),
-    (4, 6, 'ferdinand-unterhaltung@example.cde');
+    (11, 11, 30),
+    (11, 100, 11);
 
 INSERT INTO ml.whitelist (mailinglist_id, address) VALUES
     (2, 'honeypot@example.cde'),
@@ -393,6 +434,7 @@ INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES
     (3, 3),
     (3, 10),
     (4, 2),
+    (4, 100),
     (5, 2),
     (5, 7),
     (6, 2),
