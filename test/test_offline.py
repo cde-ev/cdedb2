@@ -13,6 +13,10 @@ class TestOffline(FrontendTest):
     def test_offline_vm(self):
         base = pathlib.Path(__file__).parent.parent
         configpath = self.app.app.conf._configpath
+        user = {
+            'username': "garcia@example.cde",
+            'password': "notthenormalpassword",
+        }
         subprocess.run(
             ['sudo', '-u', 'cdb', 'psql', '-U', 'cdb', '-d', 'cdb_test',
              '-f', 'test/ancillary_files/clean_data.sql'],
@@ -32,14 +36,13 @@ class TestOffline(FrontendTest):
                 'wsgi.url_scheme': 'https'})
             self.app.reset()
 
-            user = {
-                'username': "garcia@example.cde",
-                'password': "notthenormalpassword",
-            }
+            # Test that it's running
             self.get('/')
             self.assertPresence(
                 'Dies ist eine Offline-Instanz der CdE-Datenbank')
             self.login(user)
+
+            # Basic event functionality
             self.traverse({'href': '/event/'},
                           {'href': '/event/1/show'})
             self.assertTitle("Große Testakademie 2222")
@@ -49,6 +52,10 @@ class TestOffline(FrontendTest):
                           {'description': 'Alle Anmeldungen'})
             self.assertPresence('Ergebnis [4]')
             self.assertPresence('Inga')
+
+            # Additional tests can be added here.
+            # Due to the expensive setup of this test these should not
+            # be split out.
         finally:
             subprocess.run(
                 ["sed", "-i", "-e", "s/CDEDB_DEV = False/CDEDB_DEV = True/",
