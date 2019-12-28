@@ -12,7 +12,7 @@ Prerequisites
 
 We need some dependencies:
 
-* python (at least 3.4, for subtests)
+* python (at least 3.6)
 * PostgreSQL (at least 9.4, for jsonb)
 * Apache (with mod_wsgi)
 * git
@@ -28,14 +28,17 @@ Further we depend on a number of python packages:
 * babel
 * docutils
 * jinja2
+* markdown
+* bleach
 * pytz
 * python-magic
 * python-imaging-library (more specifically pillow)
-* bleach
+* zxcvbn
 
 At last there are some recommended dependencies:
 
 * sphinx (for building the documentation)
+* guzzle-sphinx-theme (a documentation theme)
 * webtest (for tests, at least 2.0.17 for handling of multiple elements with the same name)
 * pgbouncer (otherwise database performance may be degraded)
 * fail2ban (for preventing brute-force attacks)
