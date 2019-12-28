@@ -1030,6 +1030,12 @@ class CoreFrontend(AbstractFrontend):
             persona_ids |= set(adminlist)
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
+        for admin in admins:
+            admins[admin] = sorted(
+                admins[admin],
+                key=lambda persona_id: name_key(personas[persona_id])
+            )
+
         return self.render(
             rs, "view_admins", {"admins": admins, 'personas': personas})
 
