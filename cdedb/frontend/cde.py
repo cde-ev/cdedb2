@@ -549,7 +549,7 @@ class CdEFrontend(AbstractUserFrontend):
                 persona_id, is_instructor=False, is_orga=False)
         return ret
 
-    
+
     def perform_batch_admission(self, rs, data, trial_membership, consent,
                                 sendmail):
         """Resolve all entries in the batch admission form.
@@ -747,7 +747,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
-        
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object} or None
         :type problems: list(str) or None
@@ -783,7 +783,7 @@ class CdEFrontend(AbstractUserFrontend):
         used on further validation.
 
         This uses POST because the expected data is too large for GET.
-        
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type statement: str or None
         :type statement_file: file or None
@@ -953,7 +953,7 @@ class CdEFrontend(AbstractUserFrontend):
     def parse_download(self, rs, data, filename):
         """
         Provide data as CSV-Download with the given filename.
-        
+
         This uses POST, because the expected filesize is too large for GET.
         """
         if rs.errors:
@@ -2352,20 +2352,36 @@ class CdEFrontend(AbstractUserFrontend):
             'extra_participants': extra_participants})
 
     @access("member")
-    def list_past_events(self, rs):
+    @REQUESTdata(("institution_id", "id_or_None"))
+    def list_past_events(self, rs, institution_id=None):
         """List all concluded events."""
         events = self.pasteventproxy.list_past_events(rs)
         stats = self.pasteventproxy.past_event_stats(rs)
+        institution_ids = self.pasteventproxy.list_institutions(rs)
+        if institution_id and institution_id not in institution_ids:
+            rs.notify("error", n_("Unknown institution."))
+            return self.redirect(rs, "cde/list_past_events")
+
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
+
         # Generate (reverse) chronologically sorted list of past event ids
-        stats_sorter = sorted(stats.keys(), key=lambda x: events[x])
+        stats_sorter = sorted(stats, key=lambda x: events[x])
         stats_sorter.sort(key=lambda x: stats[x]['tempus'], reverse=True)
         # Bunch past events by years
         # Using idea from http://stackoverflow.com/a/8983196
         years = {}
         for anid in stats_sorter:
+            if institution_id and stats[anid]['institution_id'] != institution_id:
+                continue
             years.setdefault(stats[anid]['tempus'].year, []).append(anid)
+
         return self.render(rs, "list_past_events", {
-            'events': events, 'stats': stats, 'years': years})
+            'events': events,
+            'stats': stats,
+            'years': years,
+            'institutions': institutions,
+            'institution_id': institution_id,
+        })
 
     @access("cde_admin")
     def change_past_event_form(self, rs, pevent_id):
