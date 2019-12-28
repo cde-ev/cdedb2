@@ -164,7 +164,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("2 Mitglieder gefunden")
         self.assertPresence("Anton")
         self.assertPresence("Bertålotta")
-       
+
     @as_users("anton", "berta")
     def test_member_search_zip(self, user):
         self.get("/cde/search/member")
@@ -175,7 +175,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Anton Armin A. Administrator")
         self.assertPresence("Inga Iota")
-        
+
         f = self.response.forms["membersearchform"]
         f['postal_lower'] = 60000
         f['postal_upper'] = ""
@@ -183,7 +183,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Bertålotta Beispiel")
         self.assertPresence("Ferdinand F. Findus")
-        
+
         f = self.response.forms["membersearchform"]
         f['postal_lower'] = 10000
         f['postal_upper'] = 20000
@@ -629,7 +629,7 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_subscription_form(self, user):
         self.get("/cde/lastschrift/form/download")
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-        
+
     def test_lastschrift_subscription_form_anonymous(self):
         self.get("/cde/lastschrift/form/download")
         self.assertTrue(self.response.body.startswith(b"%PDF"))
@@ -652,7 +652,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['filllastschriftform']
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-    
+
     @as_users("anton")
     def test_lastschrift_subscription_form_fill_fail(self, user):
         self.traverse({'href': '/cde'},
@@ -909,7 +909,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Willy Brandt")
         self.assertPresence("Gerhard Schröder")
         self.assertPresence("Angela Merkel")
-    
+
     @as_users("anton")
     def test_money_transfers(self, user):
         self.traverse({'href': '/cde/$'},
@@ -1252,6 +1252,16 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
+        self.assertPresence("Übersicht")
+        self.assertPresence("CdE")
+        self.assertPresence("DdE")
+        self.traverse({'description': '^CdE$'}, verbose=True)
+        self.assertPresence("PfingstAkademie")
+        self.assertNonPresence("Geburtstagsfete")
+        self.assertNonPresence("2019")
+        self.traverse({'description': '^DdE$'})
+        self.assertNonPresence("PfingstAkademie")
+        self.assertPresence("Geburtstagsfete")
 
     @as_users("charly", "inga")
     def test_show_past_event_course(self, user):

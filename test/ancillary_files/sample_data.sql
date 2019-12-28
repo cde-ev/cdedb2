@@ -90,9 +90,11 @@ INSERT INTO cde.finance_log (code, submitted_by, persona_id, delta, new_balance,
 -- past_events
 --
 INSERT INTO past_event.institutions(id, title, moniker) VALUES
-    (1, 'Club der Ehemaligen', 'CdE');
+    (1, 'Club der Ehemaligen', 'CdE'),
+    (2, 'Disco des Ehemaligen', 'DdE');
 INSERT INTO past_event.events (id, title, shortname, institution, tempus, notes, description) VALUES
-    (1, 'PfingstAkademie 2014', 'pa14', 1, date '2014-05-25', E'Mediensammlung\n:    <https://pa14:secret@example.cde/pa14/>', 'Great event!');
+    (1, 'PfingstAkademie 2014', 'pa14', 1, date '2014-05-25', E'Mediensammlung\n:    <https://pa14:secret@example.cde/pa14/>', 'Great event!'),
+    (2, 'Geburtstagsfete', 'gebi', 2, date '2019-07-26', NULL, NULL);
 INSERT INTO past_event.courses (id, pevent_id, nr, title, description) VALUES
     (1, 1, '1a', 'Swish -- und alles ist gut', 'Ringelpiez mit anfassen.'),
     (2, 1, 'Ω', 'Goethe zum Anfassen', 'Hier werden die Reime getanzt.');
