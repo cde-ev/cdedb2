@@ -276,7 +276,6 @@ class TestAssemblyFrontend(FrontendTest):
             'description': "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will.",
             'vote_begin': "2222-4-1 00:00:00",
             'vote_end': "2222-5-1 00:00:00",
-            'quorum': "0",
             'votes': "",
             'notes': "Kein Aprilscherz!",
 

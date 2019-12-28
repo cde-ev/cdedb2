@@ -103,7 +103,7 @@
         {% if dashboard['orga'] %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='blackboard', aclass='panel-warning') %}
-                <ul class="slim mosp">
+                <ul class="slim spaced">
                     {% for event_id, event in dashboard['orga']|xdictsort('begin') %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
@@ -167,7 +167,7 @@
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
                                          aclass='panel-warning') %}
-                <ul class="slim mosp">
+                <ul class="slim spaced">
                     {% for mailinglist_id, mailinglist in dashboard['moderator']|xdictsort('title') %}
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
@@ -190,7 +190,7 @@
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Current Events"), icon='blackboard',
                                          aclass='panel-success') %}
-                <ul class="slim mosp">
+                <ul class="slim spaced">
                     {% for event_id, event in dashboard['events']|xdictsort('begin') %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
@@ -242,7 +242,7 @@
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Current Assemblies"), icon='bullhorn',
                                          aclass='panel-success') %}
-                <ul class="slim mosp">
+                <ul class="slim spaced">
                     {% for assembly_id, assembly in dashboard['assemblies']|xdictsort('signup_end') %}
                         <li>
                             {{ util.href(cdedblink('assembly/show_assembly', {'assembly_id': assembly_id}),

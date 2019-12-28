@@ -112,7 +112,7 @@ def work(args):
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data["CDEDB_EXPORT_EVENT_VERSION"] != 4:
+    if data["CDEDB_EXPORT_EVENT_VERSION"] != 6:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -167,9 +167,9 @@ def work(args):
     tables = (
         'core.personas', 'event.events', 'event.event_parts',
         'event.courses', 'event.course_tracks', 'event.course_segments',
-        'event.orgas', 'event.field_definitions', 'event.lodgements',
-        'event.registrations', 'event.registration_parts',
-        'event.registration_tracks',
+        'event.orgas', 'event.field_definitions', 'event.lodgement_groups',
+        'event.lodgements', 'event.registrations',
+        'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log')
     with conn as con:
         with con.cursor() as cur:
