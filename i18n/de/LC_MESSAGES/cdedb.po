@@ -13542,3 +13542,6 @@ msgid "LaTeX compiliation failed. This might be due to special characters."
 msgstr ""
 "Der LaTeX-Code konnte nicht kompiliert werden. Das liegt wahrscheinlich an "
 "nicht unterstützten Sonderzeichen."
+
+msgid "Nothing changed."
+msgstr "Keine Änderungen."

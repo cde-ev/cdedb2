@@ -411,6 +411,41 @@ class TestCoreBackend(BackendTest):
         self.assertIn(log_entry, self.core.retrieve_log(self.key))
 
     @as_users("anton")
+    def test_change_persona_balance(self, user):
+        log_code = const.FinanceLogCodes.manual_balance_correction
+        # Test non-members
+        with self.assertRaises(RuntimeError) as cm:
+            self.core.change_persona_balance(self.key, 5, '23.45', log_code)
+        self.assertEqual(str(cm.exception),
+            "Tried to credit balance to non-cde person.")
+
+        def persona_finances(rs, persona_id):
+            return self.core.retrieve_persona(
+                rs, persona_id, ("balance", "trial_member"))
+
+        persona_id = 2
+        persona = persona_finances(self.key, persona_id)
+        # Test no changes
+        self.assertFalse(self.core.change_persona_balance(
+            self.key, persona_id, persona['balance'], log_code))
+        # Test change balance
+        self.assertGreater(self.core.change_persona_balance(
+            self.key, persona_id, '23.45', log_code), 0)
+        persona['balance'] = decimal.Decimal('23.45')
+        self.assertDictEqual(persona_finances(self.key, persona_id), persona)
+        # Test change trial membership
+        self.assertGreater(self.core.change_persona_balance(
+            self.key, persona_id, '23.45', log_code, trial_member=True), 0)
+        persona['trial_member'] = True
+        self.assertDictEqual(persona_finances(self.key, persona_id), persona)
+        # Test change balance and trial membership
+        self.assertGreater(self.core.change_persona_balance(
+            self.key, persona_id, '34.56', log_code, trial_member=False), 0)
+        persona['balance'] = decimal.Decimal('34.56')
+        persona['trial_member'] = False
+        self.assertDictEqual(persona_finances(self.key, persona_id), persona)
+
+    @as_users("anton")
     def test_meta_info(self, user):
         expectation = {
             'CdE_Konto_BIC': 'BFSWDE33XXX',

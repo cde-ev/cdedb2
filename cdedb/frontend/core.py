@@ -1355,27 +1355,34 @@ class CoreFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        old_balance = self.coreproxy.get_cde_user(rs, persona_id)['balance']
-        return self.render(rs, "modify_balance", {'old_balance': old_balance})
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        old_balance = persona['balance']
+        trial_member = persona['trial_member']
+        return self.render(
+            rs, "modify_balance",
+            {'old_balance': old_balance, 'trial_member': trial_member})
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("new_balance", "non_negative_decimal"),
+                 ("trial_member", "bool"),
                  ("change_note", "str"))
-    def modify_balance(self, rs, persona_id, new_balance, change_note):
+    def modify_balance(self, rs, persona_id, new_balance, trial_member,
+                       change_note):
         """Set the new balance."""
-        old_balance = self.coreproxy.get_cde_user(rs, persona_id)['balance']
-        if old_balance == new_balance:
-            rs.errors.append(("new_balance", ValueError(
-                n_("New balance identical to old balance."))))
+        persona = self.coreproxy.get_cde_user(rs, persona_id)
+        if (persona['balance'] == new_balance
+                and persona['trial_member'] == trial_member):
+            rs.notify("warning", n_("Nothing changed."))
+            return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         if rs.errors:
-            return self.redirect_show_user(rs, persona_id)
+            return self.modify_balance_form(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
             const.FinanceLogCodes.manual_balance_correction,
-            change_note)
+            change_note=change_note, trial_member=trial_member)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 

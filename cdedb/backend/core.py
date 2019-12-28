@@ -1034,7 +1034,7 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin")
     def change_persona_balance(self, rs, persona_id, balance, log_code,
-                               change_note=None):
+                               change_note=None, trial_member=None):
         """Special modification function for monetary aspects.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -1042,29 +1042,36 @@ class CoreBackend(AbstractBackend):
         :type balance: decimal
         :type log_code: :py:class:`cdedb.database.constants.FinanceLogCodes`.
         :type change_note: str or None
+        :type trial_member: bool or None
         :rtype: int
         :returns: default return code
         """
         persona_id = affirm("id", persona_id)
         balance = affirm("non_negative_decimal", balance)
         log_code = affirm("enum_financelogcodes", log_code)
+        trial_member = affirm("bool_or_None", trial_member)
         change_note = affirm("str_or_None", change_note)
         update = {
             'id': persona_id,
-            'balance': balance,
         }
         with Atomizer(rs):
             current = unwrap(self.retrieve_personas(
-                rs, (persona_id,), ("balance", "is_cde_realm")))
+                rs, (persona_id,), ("balance", "is_cde_realm", "trial_member")))
             if not current['is_cde_realm']:
                 raise RuntimeError(
                     n_("Tried to credit balance to non-cde person."))
             if current['balance'] != balance:
+                update['balance'] = balance
+            if trial_member is not None:
+                if current['trial_member'] != trial_member:
+                    update['trial_member'] = trial_member
+            if 'balance' in update or 'trial_member' in update:
                 ret = self.set_persona(
                     rs, update, may_wait=False, change_note=change_note,
                     allow_specials=("finance",))
-                self.finance_log(rs, log_code, persona_id,
-                                 balance - current['balance'], balance)
+                if 'balance' in update:
+                    self.finance_log(rs, log_code, persona_id,
+                                     balance - current['balance'], balance)
                 return ret
             else:
                 return 0
