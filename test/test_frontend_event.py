@@ -1085,6 +1085,27 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
 
+    @as_users("anton")
+    def test_registration_status(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/status'})
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
+        self.assertPresence("573,99 €")
+        self.assertNonPresence("Warteliste")
+        self.assertPresence("α. Planetenretten für Anfänger")
+        self.assertPresence("β. Lustigsein für Fortgeschrittene")
+        self.assertPresence("Ich stimme zu, dass meine Daten")
+        self.traverse({'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['iban'] = ""
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/status'})
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
+
     def test_register_no_registraion_end(self):
         # Remove registration end (soft and hard) from Große Testakademie 2222
         self.login(USER_DICT['garcia'])
