@@ -434,6 +434,15 @@ class PartialImportError(RuntimeError):
     pass
 
 
+def pad(value):
+    """Pad strings to sort numerically.
+
+    :type value: object
+    :rtype: str
+    """
+    return ('' if value is None else str(value)).rjust(42, '\0')
+
+
 # TODO decide whether we sort by first or last name
 def name_key(entry):
     """Create a sorting key associated to a persona dataset.
@@ -445,6 +454,42 @@ def name_key(entry):
     :rtype: str
     """
     return (entry['family_name'] + " " + entry['given_names']).lower()
+
+
+def event_key(event):
+    return (e['begin'], e['end'], e['title'], e['id'])
+
+
+def course_key(course):
+    return (pad(course['nr']), course['shortname'], course['id'])
+
+
+def lodgement_key(lodgement):
+    return (lodgement['moniker'], lodgement['id'])
+
+
+def lodgement_group_key(lodgement_group):
+    return (lodgement_group['moniker'], lodgement_group['id'])
+
+
+def event_part_key(event_part):
+    return (event_part['part_begin'], event_part['part_end'],
+            event_part['shortname'], event_part['id'])
+
+
+def course_track_key(course_track):
+    return (course_track['sortkey'], course_track['id'])
+
+
+ENTITY_SORTKEYS = {
+    "persona": name_key,
+    "event": event_key,
+    "course": course_key,
+    "lodgement": lodgement_key,
+    "lodgement_group": lodgement_group_key,
+    "event_part": event_part_key,
+    "course_track": course_track_key,
+}
 
 
 def compute_checkdigit(value):
