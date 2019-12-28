@@ -133,7 +133,8 @@ class CoreFrontend(AbstractFrontend):
                     requests = self.mlproxy.get_subscription_states(
                         rs, mailinglist_id, states=(sub_request,))
                     mailinglist['requests'] = len(requests)
-                dashboard['moderator'] = moderator
+                dashboard['moderator'] = {k: v for k, v in moderator.items()
+                                          if v['is_active']}
             # visible and open events
             if "event" in rs.user.roles:
                 event_ids = self.eventproxy.list_db_events(

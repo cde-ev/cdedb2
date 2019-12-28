@@ -24,11 +24,3 @@ EVENT_BACKEND_LOG = "/log/cdedb-backend-event.log"
 PAST_EVENT_BACKEND_LOG = "/log/cdedb-backend-past-event.log"
 ML_BACKEND_LOG = "/log/cdedb-backend-ml.log"
 ASSEMBLY_BACKEND_LOG = "/log/cdedb-backend-assembly.log"
-
-try:
-    import cdedb.testconfig
-    CONSOLE_LOG_LEVEL = cdedb.testconfig.CONSOLE_LOG_LEVEL
-    GLOBAL_LOG = cdedb.testconfig.GLOBAL_LOG
-    DB_PORT = cdedb.testconfig.DB_PORT
-except ImportError:
-    pass

@@ -1163,10 +1163,9 @@ class EventFrontend(AbstractUserFrontend):
                     and r['payment']))),
             ('participant', (lambda e, r, p: (
                     p['status'] == stati.participant))),
-            (' u18', (lambda e, r, p: (
+            (' all minors', (lambda e, r, p: (
                     (p['status'] == stati.participant)
-                    and (get_age(personas[r['persona_id']], p)
-                         == AgeClasses.u18)))),
+                    and (get_age(personas[r['persona_id']], p).is_minor())))),
             (' u16', (lambda e, r, p: (
                     (p['status'] == stati.participant)
                     and (get_age(personas[r['persona_id']], p)
@@ -1305,6 +1304,10 @@ class EventFrontend(AbstractUserFrontend):
                  stati.applied.value),
                 ("reg.payment", QueryOperators.nonempty, None),),
             'participant': lambda e, p, t: (participant_filter(p),),
+            ' all minors': lambda e, p, t: (
+                participant_filter(p),
+                ("persona.birthday", QueryOperators.greater,
+                 (deduct_years(p['part_begin'], 18)))),
             ' u18': lambda e, p, t: (
                 participant_filter(p),
                 ("persona.birthday", QueryOperators.between,
