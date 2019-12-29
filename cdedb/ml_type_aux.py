@@ -34,12 +34,12 @@ _DOMAIN_STR_MAP = {
 
 
 class MailinglistGroup(enum.IntEnum):
-    other = 1
     cde = 2
     team = 3
     event = 10
     assembly = 20
     cdelokal = 30
+    other = 1
 
 
 class AllMembersImplicitMeta:
