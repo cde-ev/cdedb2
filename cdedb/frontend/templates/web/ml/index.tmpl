@@ -29,6 +29,17 @@
         {%- endtrans %}
     </p>
 
+    {% for group in groups %}
+        {% if mailinglists[group] %}
+            <h3>{{ gettext(group|string) }}</h3>
+            <ul class="styleless">
+                {% for mailinglist_id, title in mailinglists[group]|dictsort(False, 'value') %}
+                    {{ format_entry(mailinglist_id, title) }}
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endfor %}
+    {#
     <h3>{% trans -%}General Mailinglists{%- endtrans %}</h3>
     <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
@@ -68,4 +79,5 @@
         {% endfor %}
     </ul>
     {% endif %}
+#}
 {% endblock %}
