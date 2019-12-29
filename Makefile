@@ -151,25 +151,33 @@ check:
 	make i18n-compile
 	make sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || true
+	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	${PYTHONBIN} -m test.main ${TESTPATTERN}
+	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 single-check:
 	make i18n-compile
 	make sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || true
+	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	${PYTHONBIN} -m unittest ${TESTPATTERN}
+	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 new-single-check:
 	make i18n-compile
 	make sample-data-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || true
+	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	${PYTHONBIN} -m test.singular "${TESTNAME}" "${TESTFILE}"
+	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 xss-check:
 	make sample-data-test &>/dev/null
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql &>/dev/null
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql &>/dev/null
+	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	python3 -m bin.escape_fuzzing 2>/dev/null
+	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 quick-check:
 	${PYTHONBIN} -c "from cdedb.frontend.application import Application ; Application(\"`pwd`/test/localconfig.py\")" > /dev/null
