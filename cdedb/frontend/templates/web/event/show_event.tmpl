@@ -89,7 +89,7 @@
         </dl>
     {% endif %}
 
-    
+
     {% if values['event_id'] in user.orga or is_admin %}
         {% if ambience['event']['notes'] %}
             {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
@@ -97,7 +97,7 @@
                 {{ ambience['event']['notes']|md }}
             {% endcall %}
         {% endif %}
-        
+
         {% if ambience['event']['registration_text'] %}
             {% call util.bootstrap_panel(title=gettext("Registration page free text"), icon="log-in",
                                          aclass="panel-default panel-condensed") %}
@@ -136,20 +136,20 @@
                     </script>
                 {% endcall %}
             </div>
-        
+
             {% if is_admin %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title="Orgas", icon='user') %}
                     <ul>
                         {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                            <li>
+                            <li class="hide-hover-container clearfix-after">
                                 {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
                                 <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
-                                        id="removeorgaform{{ anid }}" style="display: inline;">
+                                        id="removeorgaform{{ anid }}" class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('event/remove_orga') }}
                                     {{ util.input_hidden(name="orga_id", value=anid) }}
                                     {{ util.input_submit(value="", readonly=is_locked, title=gettext("Remove Orga"),
-                                                         icon='minus', aclass='btn btn-xs btn-danger') }}
+                                                         icon='minus', aclass='btn btn-xs btn-danger list-button-float') }}
                                 </form>
                             </li>
                         {% endfor %}
@@ -177,7 +177,7 @@
                     {% endcall %}
                 </div>
             {% endif %}
-            
+
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}
                     <p>
@@ -219,7 +219,7 @@
                     </form>
                 {% endcall %}
             </div>
-            
+
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download', aclass='panel-danger') %}
                     {% if ambience['event']['offline_lock'] != CDEDB_OFFLINE_DEPLOYMENT %}

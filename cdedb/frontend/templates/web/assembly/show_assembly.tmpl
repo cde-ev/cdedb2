@@ -63,7 +63,7 @@
                                             class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-float-button", icon="trash",
+                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash",
                                                 title=gettext("Delete File")) }}
                                     </form>
                                     <script type="text/javascript" nonce="{{ csp_nonce }}">
