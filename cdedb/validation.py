@@ -393,7 +393,7 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True):
     :rtype: (str or None, [(str or None, exception)])
     """
     val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert)
-    if val is not None and not val.strip():
+    if val is not None and not val:
         errs.append((argname, ValueError(n_("Mustn’t be empty."))))
     return val, errs
 
