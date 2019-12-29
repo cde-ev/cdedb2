@@ -475,6 +475,14 @@ p.textbox {
     border-top: 3px double #888;
     font-weight: bold;
 }
+/* White footer links */
+#footer a {
+    text-decoration: underline;
+    color: inherit;
+}
+#footer a:hover, #footer a:focus, #footer a.btn {
+    text-decoration: none;
+}
 
 /* query form */
 .queryform-fieldbox {
