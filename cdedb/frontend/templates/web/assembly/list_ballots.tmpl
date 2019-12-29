@@ -23,10 +23,10 @@
                                            (gettext("Current Ballots"), current, True),
                                            (gettext("Past Ballots"), done, False)) %}
         {% if sample %}
-        <h3> {{ heading }} </h3>
+        <h3>{{ heading }}</h3>
         <ul>
             {% for ballot_id, ballot in sample|xdictsort("title") %}
-                <li>
+                <li {% if is_admin and now() < ballot['vote_begin'] %}style="max-width: 60%;" class="hide-hover-container"{% endif %}>
                     {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title']) }}
                     {% if ballot_id in votes and show_state %}
                         ({% if votes[ballot_id] -%}
@@ -41,7 +41,7 @@
                     {% endif %}
                     {% if is_admin and now() < ballot['vote_begin'] %}
                         {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
-                                     aclass="btn btn-xs btn-warning", icon="pencil") }}
+                                    aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="pencil") }}
                     {% endif %}
                 </li>
             {% endfor %}

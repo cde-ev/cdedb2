@@ -44,7 +44,7 @@
             {{ ambience['assembly']['notes']|md }}
         {% endcall %}
     {% endif %}
-    
+
     {% if attachments or is_admin or has_ballot_attachments %}
         {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         <div class="row">
@@ -53,17 +53,17 @@
                     <h4>{% trans -%}General Files{%- endtrans %}</h4>
                     <ul class="slim">
                         {% for attachment_id, attachment in attachments|xdictsort("title") %}
-                            <li>
+                            <li class="hide-hover-container clearfix-after">
                                 {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                         attachment['title']) }}
                                 {% if is_admin %}
                                     <form action="{{ cdedblink('assembly/remove_attachment',
                                                                {'attachment_id': attachment_id}) }}"
                                             method="POST" id="removeattachmentform{{ attachment_id }}",
-                                            style="display: inline;">
+                                            class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
+                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-float-button", icon="trash",
                                                 title=gettext("Delete File")) }}
                                     </form>
                                     <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -82,7 +82,7 @@
                     {% endif %}
                 </div>
             {% endif %}
-            
+
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
                 <h4>{% trans -%}Ballot Files{%- endtrans %}</h4>
@@ -169,5 +169,5 @@
             </script>
         {% endif %}
     {% endif %}
-    
+
 {% endblock %}
