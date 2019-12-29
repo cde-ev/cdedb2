@@ -29,14 +29,16 @@ from cdedb.frontend.common import (
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     xdictsort_filter, enum_entries_filter, safe_filter, cdedburl,
-    CustomCSVDialect)
+    CustomCSVDialect, keydictsort_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
-    DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter)
+    DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, event_key, course_key,
+    lodgement_key, lodgement_group_key, course_track_key, event_part_key,
+    event_field_key)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
@@ -2087,8 +2089,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         event = rs.ambience['event']
         tracks = event['tracks']
-        tracks_sorted = sorted(tracks.keys(),
-                                key=lambda x: tracks[x]['sortkey'])
+        tracks_sorted = [e['id'] for e in sorted(tracks.values(),
+                                                 key=course_track_key)]
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
@@ -2196,8 +2198,8 @@ class EventFrontend(AbstractUserFrontend):
     def download_course_lists(self, rs, event_id, runs):
         """Create lists to post to course rooms."""
         tracks = rs.ambience['event']['tracks']
-        tracks_sorted = sorted(tracks.keys(),
-                               key=lambda x: tracks[x]['sortkey'])
+        tracks_sorted = [e['id'] for e in sorted(tracks.values(),
+                                                 key=course_track_key)]
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -2336,7 +2338,8 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tracks = rs.ambience['event']['tracks']
-        tracks_sorted = sorted(tracks, key=lambda id: tracks[id]['sortkey'])
+        tracks_sorted = [e['id'] for e in sorted(tracks.values(),
+                                                 key=course_track_key)]
         tex = self.fill_template(rs, "tex", "expuls", {'courses': courses,
                                                        'tracks': tracks_sorted})
         file = self.send_file(
@@ -2361,7 +2364,7 @@ class EventFrontend(AbstractUserFrontend):
                        if field['association'] ==
                        const.FieldAssociations.course)
         for part in sorted(rs.ambience['event']['parts'].values(),
-                           key=lambda x: x['part_begin']):
+                           key=event_part_key):
             columns.extend('track{}'.format(track_id)
                            for track_id in part['tracks'])
 
@@ -2375,7 +2378,7 @@ class EventFrontend(AbstractUserFrontend):
                     course['fields'].get(field['field_name'], '')
                 for field in rs.ambience['event']['fields'].values()
                 if field['association'] == const.FieldAssociations.course})
-        csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
+        csv_data = csv_output(sorted(courses.values(), key=course_key),
                               columns)
         file = self.send_csv_file(
             rs, data=csv_data, inline=False, filename="{}_courses.csv".format(
@@ -2404,8 +2407,7 @@ class EventFrontend(AbstractUserFrontend):
                     lodgement['fields'].get(field['field_name'], '')
                 for field in rs.ambience['event']['fields'].values()
                 if field['association'] == const.FieldAssociations.lodgement})
-        csv_data = csv_output(sorted(lodgements.values(),
-                                     key=lambda c: c['id']),
+        csv_data = csv_output(sorted(lodgements.values(), key=lodgement_key),
                               columns)
         file = self.send_csv_file(
             rs, data=csv_data, inline=False,
@@ -2822,7 +2824,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in xdictsort_filter(courses, 'nr', pad=True)
+                       in keydictsort_filter(courses, course_key)
                        if track_id in course['active_segments']
                            or (not event['is_course_state_visible']
                                and track_id in course['segments'])]
@@ -3036,7 +3038,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in xdictsort_filter(courses, 'nr', pad=True)
+                       in keydictsort_filter(courses, course_key)
                        if track_id in course['active_segments']
                            or (not event['is_course_state_visible']
                                and track_id in course['segments'])]
@@ -3360,7 +3362,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in xdictsort_filter(courses, 'nr', pad=True)
+                       in keydictsort_filter(courses, course_key)
                        if track_id in course['segments']]
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -3549,7 +3551,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in xdictsort_filter(courses, 'nr', pad=True)
+                       in keydictsort_filter(courses, course_key)
                        if track_id in course['active_segments']]
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -3648,7 +3650,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in xdictsort_filter(courses, 'nr', pad=True)
+                       in keydictsort_filter(courses, course_key)
                        if track_id in course['segments']]
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -3939,11 +3941,11 @@ class EventFrontend(AbstractUserFrontend):
             (group_id, OrderedDict([
                 (lodgement_id, lodgement)
                 for lodgement_id, lodgement
-                in xdictsort_filter(lodgements, 'moniker')
+                in keydictsort_filter(lodgements, lodgement_key)
                 if lodgement['group_id'] == group_id
             ]))
             for group_id, group
-            in (xdictsort_filter(groups, 'moniker') + [(None, None)])
+            in (keydictsort_filter(groups, lodgement_group_key) + [(None, None)])
         ])
 
         # Calculate group_inhabitants_sum, group_reserve_inhabitants_sum,
@@ -4455,7 +4457,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = event['tracks']
         spec = copy.deepcopy(QUERY_SPECS['qview_registration'])
         # note that spec is an ordered dict and we should respect the order
-        for part_id, part in xdictsort_filter(event['parts'], 'part_begin'):
+        for part_id, part in keydictsort_filter(event['parts'], event_part_key):
             spec["part{0}.status".format(part_id)] = "int"
             spec["part{0}.is_reserve".format(part_id)] = "bool"
             spec["part{0}.lodgement_id".format(part_id)] = "int"
@@ -4463,12 +4465,13 @@ class EventFrontend(AbstractUserFrontend):
             spec["lodgement{0}.moniker".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in sorted(event['fields'].values(),
-                            key=lambda f: f['field_name']):
+                            key=event_field_key):
                 if f['association'] == const.FieldAssociations.lodgement:
                     temp = "lodgement{0}.xfield_{1}"
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[temp.format(part_id, f['field_name'])] = kind
-            ordered_tracks = xdictsort_filter(part['tracks'], 'sortkey')
+            ordered_tracks = keydictsort_filter(
+                part['tracks'], course_track_key)
             for track_id, track in ordered_tracks:
                 spec["track{0}.is_course_instructor".format(track_id)] \
                     = "bool"
@@ -4481,7 +4484,7 @@ class EventFrontend(AbstractUserFrontend):
                     spec["{1}{0}.shortname".format(track_id, temp)] = "str"
                     spec["{1}{0}.notes".format(track_id, temp)] = "str"
                     for f in sorted(event['fields'].values(),
-                                    key=lambda f: f['field_name']):
+                                    key=event_field_key):
                         if f['association'] == const.FieldAssociations.course:
                             key = "{1}{0}.xfield_{2}".format(
                                 track_id, temp, f['field_name'])
@@ -4500,8 +4503,7 @@ class EventFrontend(AbstractUserFrontend):
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
                           for part_id in event['parts'])] = "str"
-            for f in sorted(event['fields'].values(),
-                            key=lambda f: f['field_name']):
+            for f in sorted(event['fields'].values(), key=event_field_key):
                 if f['association'] == const.FieldAssociations.lodgement:
                     key = ",".join(
                         "lodgement{0}.xfield_{1}".format(
@@ -4527,16 +4529,14 @@ class EventFrontend(AbstractUserFrontend):
                               for track_id in tracks)] = "str"
                 spec[",".join("{1}{0}.notes".format(track_id, temp)
                               for track_id in tracks)] = "str"
-                for f in sorted(event['fields'].values(),
-                                key=lambda f: f['field_name']):
+                for f in sorted(event['fields'].values(), key=event_field_key):
                     if f['association'] == const.FieldAssociations.course:
                         key = ",".join("{1}{0}.xfield_{2}".format(
                             track_id, temp, f['field_name'])
                                        for track_id in tracks)
                         kind = const.FieldDatatypes(f['kind']).name
                         spec[key] = kind
-        for f in sorted(event['fields'].values(),
-                        key=lambda f: f['field_name']):
+        for f in sorted(event['fields'].values(), key=event_field_key):
             if f['association'] == const.FieldAssociations.registration:
                 kind = const.FieldDatatypes(f['kind']).name
                 spec["reg_fields.xfield_{}".format(f['field_name'])] = kind
@@ -4568,10 +4568,12 @@ class EventFrontend(AbstractUserFrontend):
 
         course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
         course_choices = OrderedDict(
-            sorted((c["id"], course_identifier(c)) for c in courses.values()))
+            (c_id, course_identifier(c))
+            for c_id, c in keydictsort_filter(courses, course_key))
         lodge_identifier = lambda l: l["moniker"]
         lodgement_choices = OrderedDict(
-            sorted((l["id"], lodge_identifier(l)) for l in lodgements.values()))
+            (l_id, lodge_identifier(l))
+            for l_id, l in keydictsort_filter(lodgements, lodgement_key))
         # First we construct the choices
         choices = {
             # Genders enum
