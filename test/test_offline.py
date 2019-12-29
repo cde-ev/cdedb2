@@ -57,10 +57,5 @@ class TestOffline(FrontendTest):
             # Due to the expensive setup of this test these should not
             # be split out.
         finally:
-            subprocess.run(
-                ["sed", "-i", "-e", "s/CDEDB_DEV = False/CDEDB_DEV = True/",
-                 str(configpath)], check=True)
-            subprocess.run(
-                ["sed", "-i", "-e", "s/CDEDB_OFFLINE_DEPLOYMENT = True//",
-                 str(configpath)], check=True)
+            subprocess.run(["git", "checkout", str(configpath)], check=True)
             subprocess.run(["make", "reload"], check=True, cwd=base)
