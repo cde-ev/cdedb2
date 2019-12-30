@@ -23,7 +23,7 @@
     {{ generic.user_search_mask("core", ("pevent_id",)) }}
 
     {% if values['is_search'] %}
-        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
         {{ generic.user_search_result(result, "core") }}
     {% endif %}
 {% endblock %}
