@@ -1910,10 +1910,15 @@ class EventFrontend(AbstractUserFrontend):
         try:
             with Atomizer(rs):
                 count = 0
+                all_reg_ids = {datum['registration_id'] for datum in data}
+                all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
                 for index, datum in enumerate(data):
+                    reg_id = datum['registration_id']
                     update = {
-                        'id': datum['registration_id'],
+                        'id': reg_id,
                         'payment': datum['date'],
+                        'amount_paid': all_regs[reg_id]['amount_paid']
+                                       + datum['amount'],
                     }
                     count += self.eventproxy.set_registration(rs, update)
         except psycopg2.extensions.TransactionRollbackError:

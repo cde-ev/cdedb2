@@ -1330,12 +1330,14 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/1/show'})
         self.assertTitle("Anmeldung von Anton Armin A. Administrator (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 01.04.2018")
+        self.assertPresence("Bereits bezahlter Betrag 573,99 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 04.01.2018")
+        self.assertPresence("Bereits bezahlter Betrag 461,49 €")
 
     @as_users("garcia")
     def test_registration_query(self, user):
