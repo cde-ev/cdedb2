@@ -137,7 +137,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  icon='user', anid='box-changed-registrations') %}
                         <ul class="slim">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
-                                <li>
+                                <li class="clearfix-after">
                                     <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
                                     {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
                                     {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
@@ -206,7 +206,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  anid='box-changed-courses') %}
                         <ul class="slim">
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
-                                <li>
+                                <li class="clearfix-after">
                                     {{ courses[course_id]['nr'] }}.{# -#}
                                     {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
                                     {{ courses[course_id]['shortname'] }}{# -#}
@@ -276,7 +276,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  anid='box-changed-lodgements') %}
                         <ul class="slim">
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
-                                <li>
+                                <li class="clearfix-after">
                                     {{ lodgements[lodgement_id]['moniker'] }}{# -#}
                                     {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
                                     <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
