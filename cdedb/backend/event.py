@@ -2280,6 +2280,47 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
+    def calculate_fees(self, rs, ids):
+        """Calculate the total fee for a registration.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ids: [int]
+        :rtype: {int: decimal.Decimal}
+        """
+        ids = affirm_set("id", ids)
+
+        ret = {}
+        with Atomizer(rs):
+            associated = self.sql_select(rs, "event.registrations",
+                                         ("event_id",), ids)
+            if not associated:
+                return {}
+            events = {e['event_id'] for e in associated}
+            if len(events) > 1:
+                raise ValueError(n_(
+                    "Only registrations from exactly one event allowed."))
+
+            event_id = unwrap(events)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+
+            regs = self.get_registrations(rs, ids)
+            event = self.get_event(rs, event_id)
+            relevant_stati = (const.RegistrationPartStati.applied,
+                              const.RegistrationPartStati.waitlist,
+                              const.RegistrationPartStati.participant,)
+
+            ret = {
+                reg_id: sum(event['parts'][part_id]['fee']
+                            for part_id, part in reg['parts'].items()
+                            if part['status'] in relevant_stati)
+                for reg_id, reg in regs.items()
+                }
+        return ret
+
+
+    @access("event")
     def check_orga_addition_limit(self, rs, event_id):
         """Implement a rate limiting check for orgas adding persons.
 
