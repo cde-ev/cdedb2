@@ -1,0 +1,359 @@
+{% import "web/util.tmpl" as util with context %}
+
+{# Classical voting: Presentation of candidates #}
+{% macro show_classical_candidates(edit_mode) -%}
+    <h3>{% trans -%}Candidates{%- endtrans %}</h3>
+    <ul>
+        {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('description', pad=True) %}
+            <li>
+                {{ candidate['description'] }}
+                {% if edit_mode %}
+                    <form action="{{ cdedblink('assembly/remove_candidate',
+                                               {'candidate_id': candidate_id}) }}"
+                            method="POST" id="removecandidateform{{ candidate_id }}"
+                            style="display: inline;" class="remove-candiate-form">
+                        {{ util.anti_csrf_token('assembly/remove_candidate') }}
+                        {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
+                                             title=gettext("Remove Candidate")) }}
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+    {% if edit_mode %}
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
+            $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The candidate will be removed.") }}");
+        </script>
+    {% endif %}
+{%- endmacro %}
+
+{# Classical voting: Voting form #}
+{% macro show_classical_voting() -%}
+    <h3>{% trans -%}Ballot{%- endtrans %}</h3>
+    <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
+        {{ util.anti_csrf_token('assembly/vote') }}
+        {% if ambience['ballot']['votes'] > 1 %}
+            {{ util.form_input_static(value=gettext("You have %(votes)s votes.")|
+                                            format(votes=ambience['ballot']['votes']), small=True) }}
+        {% endif %}
+        {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
+                                      entries=ambience['ballot']['candidates']|xdictsort('description', pad=True)|dict_entries('moniker', 'description'),
+                                      radio=(ambience['ballot']['votes'] == 1), small=True) }}
+        {% if ambience['ballot']['use_bar'] %}
+            {{ util.form_input_checkboxes(
+                "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER, gettext("Against all Candidates"))],
+                small=True, radio=(ambience['ballot']['votes'] == 1),
+                info=gettext("With this option you reject all candidates. "
+                             "If this gets a majority the board may take additional measures.")) }}
+        {% endif %}
+        {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
+    </form>
+    <script type="text/javascript" nonce="{{ csp_nonce }}">
+        {% if ambience['ballot']['votes'] > 1 %}
+            $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_MONIKER }}');
+        {% endif %}
+        $('#voteform').cdedbProtectChanges();
+    </script>
+    
+    <div class="form-horizontal">
+        <div class="form-group">
+            <div class="col-sm-2 control-label">
+                <strong>{% trans -%}Additional Options{%- endtrans %}</strong>
+            </div>
+            <div class="col-sm-10">
+                <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
+                        style="display: inline;">
+                    {{ util.anti_csrf_token('assembly/vote') }}
+                    {{ util.input_hidden(name="vote", value="special: abstain") }}
+                    {{ util.input_submit(value=gettext("Abstain"), icon="stop") }}
+                </form>
+            </div>
+        </div>
+    </div>
+{%- endmacro %}
+
+{# Preferential voting: Presentation of candidates #}
+{% macro show_preferential_candidates(edit_mode) -%}
+    <h3>{% trans -%}Candidates{%- endtrans %}</h3>
+    <ul>
+        {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('description', pad=True) %}
+            <li>
+                {{ candidate['description'] }}
+                {% if attends or edit_mode %}
+                    <span class="label label-primary"><span class="sr-only">{% trans -%}Short: {%- endtrans %}</span>
+                        {{ candidate['moniker'] }}
+                    </span>
+                {% endif %}
+                {% if edit_mode
+                        and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
+                    <form action="{{ cdedblink('assembly/remove_candidate',
+                                               {'candidate_id': candidate_id}) }}"
+                          method="POST" id="removecandidateform{{ candidate_id }}" style="display: inline;"
+                          class="remove-candiate-form">
+                        {{ util.anti_csrf_token('assembly/remove_candidate') }}
+                        {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
+                                             title=gettext("Remove Candidate")) }}
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+    {% if edit_mode %}
+        <script type="text/javascript" nonce="{{ csp_nonce }}">
+            $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The candidate will be removed.") }}");
+        </script>
+    {% endif %}
+{%- endmacro %}
+
+{% macro show_manual_for_text_preferential_voting() -%}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+        <p>
+            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
+                This vote is a preferential vote. You can arrange the candidates in the field above
+                according to your personal preference. The preferences of all participants will be
+                evaluated using the {{ link }}, to determine the winner.
+            {%- endtrans %}
+        </p>
+        <p>
+            {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
+                To enter your preferencelist, use the shortnames given in the list of candidates and the
+                {{ gt }} and {{ eq }} characters. Use the greater-than character {{ gt }}
+                to give the candidates left of the character higher preference than those on the right.
+                Use the equals character to give two candidates the same preference. You need to have all
+                candidates in your preferencelist.
+            {%- endtrans %}
+        </p>
+        {% if ambience['ballot']['use_bar'] %}
+            <p>
+                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
+                    Additionally you need to use the rejection bar {{ abm }} in your preferencelist.
+                    Use it in your preferencelist like you would a candidate. Put all
+                    candidates you deem suitable higher than {{ abm }} and all
+                    candidates you reject lower, i. e. to the right of {{ abm }}.
+                    Should no candidate win against the bar, the board may take additional measures.
+                {%- endtrans %}
+            </p>
+        {% endif %}
+        <p>
+            <strong>{% trans -%}Examples{%- endtrans %}:</strong>
+            {% trans -%}
+                Take the following examplatory candidate list:
+            {%- endtrans %}
+        </p>
+        <ul>
+            <li>{% trans -%}Luke Skywalker, short: [Luke]{%- endtrans %}</li>
+            <li>{% trans -%}Princess Leia Organa of Alderaan, short: [Leia]{%- endtrans %}</li>
+            <li>{% trans -%}Han Solo, short: [Han]{%- endtrans %}</li>
+            <li>{% trans -%}Obi-Wan “Ben” Kenobi, short: [ObiWan]{%- endtrans %}</li>
+        </ul>
+        <p>
+            {% trans -%}Your Vote could look like this:{%- endtrans %}
+        </p>
+        {% if ambience['ballot']['use_bar'] %}
+            <ul>
+                <li>{% trans -%}
+                        You deem all candidates suitable, but you like Leia the best,
+                        with no difference between the other candidates.
+                    {%- endtrans %}<br />
+                    <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}</code></li>
+                <li>{% trans -%}
+                        You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke
+                        and you absolutely can’t stand Han Solo.
+                    {%- endtrans %}<br />
+                    <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}&gt;Luke&gt;Han</code></li>
+                <li>{% trans -%}
+                        You want to vote for Luke and if he doesn’t make it, you think Obi-Wan should.
+                        You don’t have an opinion about the others.
+                    {%- endtrans %}<br />
+                    <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}=Han=Leia</code></li>
+                <li>{% trans -%}
+                        You want to completely abstain.
+                    {%- endtrans %}<br />
+                    <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER }}</code></li>
+            </ul>
+        {% else %}
+            <ul>
+                <li>{% trans -%}
+                        You like Leia the most, but you see no difference between the others.
+                    {%- endtrans %}<br />
+                    <code>Leia&gt;Luke=Han=ObiWan</code></li>
+                <li>{% trans -%}
+                        You deem Leia and Obi-Wan (equally) suitable, Luke less so and Han Solo not at all.
+                    {%- endtrans %}<br />
+                    <code>Leia=ObiWan&gt;Luke&gt;Han</code></li>
+                <li>{% trans -%}
+                        You want to vote for Luke and if he doesn’t make it, you think Obi-Wan should.
+                        You don’t have an opinion about the others.
+                    {%- endtrans %}<br />
+                    <code>Luke&gt;ObiWan&gt;Han=Leia</code></li>
+                <li>{% trans -%}
+                        You want to completely abstain.
+                    {%- endtrans %}<br />
+                    <code>Luke=ObiWan=Han=Leia</code></li>
+            </ul>
+        {% endif %}
+    {% endcall %}
+{%- endmacro %}
+
+{% macro show_manual_for_js_preferential_voting() -%}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+        <p>
+            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
+                This vote is a preferential vote. You can arrange the candidates in the field above
+                according to your personal preference. The preferences of all participants will be
+                evaluated using the {{ link }}, to determine the winner.
+            {%- endtrans %}
+        </p>
+        <p>
+            {% trans -%}
+                To arrange the candidates, move them into one of the shaded boxes. The higher up the box,
+                the higher your preference for that candidate. Candidates within the same box will be
+                evaluated with the same preference. Move a candidate between two boxes to create a new box.
+            {%- endtrans %}
+        </p>
+        <p>
+            {% trans tab="<kbd>%(key)s</kbd>"|s|format(key=gettext("TAB")),
+                     enter="<kbd>%(key)s</kbd>"|s|format(key=gettext("ENTER")),
+                     space="<kbd>%(key)s</kbd>"|s|format(key=gettext("Space")) -%}
+                There are three ways of moving candidates: Drag’n’Drop them into a different box or
+                click on a candidate and then on a box. Or you can select a candidate with {{ tab }},
+                confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
+                and confirm the selection with {{ enter }} or {{ space }}.
+            {%- endtrans %}
+        </p>
+        {% if ambience['ballot']['use_bar'] %}
+            <p>
+                {% trans -%}
+                    One of the boxes is marked as “Neutral”. Please place candidates cou deem suitable
+                    above this box (they will be highlighted in green) and candidates you want to reject
+                    below this box (they will be highlighted in red). Should all candidates be rejected,
+                    the board may take additional measures.
+                {%- endtrans %}
+            </p>
+            <p>
+                {% trans -%}To abstain, place all candidates in the neutral box.{%- endtrans %}
+            </p>
+        {% else %}
+            <p>
+                {% trans -%}To abstain, place all candidates in the same box.{%- endtrans %}
+            </p>
+        {% endif %}
+    {% endcall %}
+{%- endmacro %}
+
+{# Preferential voting: Voting form #}
+{% macro show_preferential_voting() -%}
+    <h3>{% trans -%}Ballot{%- endtrans %}</h3>
+
+    {# Tab controls to switch to javascript preferential voting form #}
+    <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
+        <li role="presentation" class="active">
+            <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab"
+               id="tablink-textform">
+                {{ util.make_icon('console') }} {% trans -%}Text-based Voting{%- endtrans %}
+            </a>
+        </li>
+        <li role="presentation">
+            <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
+                    id="tablink-jsform">
+                {{ util.make_icon('flash') }} {% trans -%}Interactive Voting{%- endtrans %}
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        {# Text based preferential voting form #}
+        <div role="tabpanel" class="tab-pane active" id="tab-textform">
+            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform"
+                    class="form-horizontal">
+                {{ util.anti_csrf_token('assembly/vote') }}
+                {{ util.form_input_text(name="vote", label=gettext("Preferencelist"), small=True,
+                                        anid='input-preferencelist') }}
+                {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
+            </form>
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                $('#voteform').cdedbProtectChanges();
+            </script>
+            {{ show_manual_for_text_preferential_voting() }}
+        </div>
+
+        {# Javascript preferential voting form #}
+        <div role="tabpanel" class="tab-pane" id="tab-jsform">
+            <p class="sr-only">
+                {% trans -%}
+                    This is the interactive voting form. It is inconvenient to used with a keyboard only.
+                    Use the link above to switch to the text-based form.
+                {%- endtrans %}
+            </p>
+            <div class="prefvote_container" id="prefvote_container">
+                <div class="indicator">
+                    {% trans -%}Incr. Preference{%- endtrans %} →
+                </div>
+            </div>
+            <div class="p clearfix">
+                <button class="btn btn-primary" id="button-jsvote">
+                    {{ util.make_icon('ok') }} {% trans -%}Vote{%- endtrans %}
+                </button>
+            </div>
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                /* Show tabs */
+                $('#tablist-formselect').show();
+                /* Initialize JS Fancy form */
+                $('#prefvote_container').cdedbPrefVote(
+                    {{ ambience['ballot']['candidates']|xdictsort('description', pad=True)|json|s }},
+                    {{ "'"|s+ASSEMBLY_BAR_MONIKER+"'"|s if ambience['ballot']['use_bar'] else "null" }},
+                    $('#input-preferencelist'),
+                    {{ {'bar_name': gettext('neutral'),
+                        'box': gettext('Box {0}'),
+                        'box_highest': gettext('Box {0}: highest priority'),
+                        'box_lowest': gettext('Box {0}: lowest priority'),
+                        'spacer': gettext('Between box {0} and {1}'),
+                        'spacer_highest': gettext('Above box with highest priority'),
+                        'spacer_lowest': gettext('Below box with lowest priority'),
+                        }|json|s }}
+                );
+                /* Register callback to refresh fancy form every time the tab is shown.
+                 * Additionally register handlers to set or reset 'prefvote_nojs' cookie. */
+                $('#tablink-jsform')
+                    .on('show.bs.tab',
+                        $('#prefvote_container').data('cdedbPrefVote').readPreferenceList)
+                    .on('shown.bs.tab',
+                        function(){eraseCookie('prefvote_nojs');});
+                $('#tablink-textform')
+                    .on('shown.bs.tab',
+                        function(){createCookie('prefvote_nojs','true',10*365);});
+                /* Show the tab */
+                if (!readCookie('prefvote_nojs')) {
+                    $('#tablink-jsform').tab('show');
+                }
+                $('#button-jsvote').click(function(){
+                    $('#prefvote_container').data('cdedbPrefVote').writeBackPreferenceList();
+                    $('#voteform').submit();
+                });
+            </script>
+            {{ show_manual_for_js_preferential_voting() }}
+        </div>
+    </div>
+{%- endmacro %}
+
+{% macro add_candidate_form() -%}
+    {% call util.bootstrap_panel(aclass="panel-success panel-condensed", title=gettext("Add Candidate"),
+            icon='plus') %}
+        <form action="{{ cdedblink('assembly/add_candidate') }}" method="POST" id="addcandidateform" class="row">
+            {{ util.anti_csrf_token('assembly/add_candidate') }}
+            <div class="col-md-3 {% if 'moniker' in errors %}has-error{% endif %}">
+                {{ util.input_text(name="moniker", placeholder=gettext("Shortname"), aclass="form-control input-sm",
+                                   arialabel=gettext("Shortname")) }}
+                {{ util.output_errors("moniker") }}
+            </div>
+            <div class="col-md-6 {% if 'description' in errors %}has-error{% endif %}">
+                {{ util.input_text(name="description", placeholder=gettext("Description"),
+                                   aclass="form-control input-sm", arialabel=gettext("Description")) }}
+                {{ util.output_errors("description") }}
+            </div>
+            <div class="col-md-3">
+                {{ util.input_submit(value=gettext("Add"), aclass="btn btn-primary btn-sm") }}
+            </div>
+        </form>
+    {% endcall %}
+{%- endmacro %}

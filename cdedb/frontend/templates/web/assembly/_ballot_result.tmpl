@@ -1,4 +1,4 @@
-{% macro show_result(result) -%}
+{% macro show_result() -%}
     <h3>{% trans -%}Result{%- endtrans %}</h3>
     {% if result['winners'] %}
         <ol>
@@ -63,42 +63,37 @@
     {% endif %}
 {%- endmacro %}
 
-{% macro show_summary(result) -%}
-    <h4>{% trans -%}Summary{%- endtrans %}</h4>
-    {% if not ambience['ballot']['votes'] %}
-        <pre style="max-width: 500px;">{{ result['result'] }}</pre>
+{% macro show_summary() -%}
+    <pre style="max-width: 500px;">{{ result['result'] }}</pre>
 
-        {# info box for preferential votes #}
-        {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+    {# info box for preferential votes #}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+        <p>
+            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s -%}
+                This vote was a preferential vote. Voters arranged the candidates according to their preference.
+                The preferences of all participants were evaluated using the {{ link }},
+                to determine the winner.
+            {%- endtrans %}
+        </p>
+        <p>
+            {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
+                The summary shows the combined preference list of all participant.
+                The greater-than character {{ gt }} means that the candidate, represented by their
+                shortname, on the left has higher overall preference than the one on the right.
+                The equals character {{ eq }} means that two or more candidates have the same overall
+                preference across all participants.
+            {%- endtrans %}
+        </p>
+        {% if ambience['ballot']['use_bar'] %}
             <p>
-                {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s -%}
-                    This vote was a preferential vote. Voters arranged the candidates according to their preference.
-                    The preferences of all participants were evaluated using the {{ link }},
-                    to determine the winner.
+                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
+                    Additionally the moniker {{ abm }} shows where in the rejection bar was ranked in the
+                    overall preference list.
+                    Should no candidate have won against the bar, the board may take additional measures.
                 {%- endtrans %}
             </p>
-            <p>
-                {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
-                    The summary shows the combined preference list of all participant.
-                    The greater-than character {{ gt }} means that the candidate, represented by their
-                    shortname, on the left has higher overall preference than the one on the right.
-                    The equals character {{ eq }} means that two or more candidates have the same overall
-                    preference across all participants.
-                {%- endtrans %}
-            </p>
-            {% if ambience['ballot']['use_bar'] %}
-                <p>
-                    {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
-                        Additionally the moniker {{ abm }} shows where in the rejection bar was ranked in the
-                        overall preference list.
-                        Should no candidate have won against the bar, the board may take additional measures.
-                    {%- endtrans %}
-                </p>
-            {% endif %}
-        {% endcall %}
-    {% endif %}
-    
-    <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
+        {% endif %}
+    {% endcall %}
 {%- endmacro %}
 
 {% macro show_own_vote() -%}
@@ -163,84 +158,4 @@
             {%- endtrans -%}
         {% endif %}
     </p>
-{%- endmacro %}
-
-{% macro show_status() -%}
-<dl class="dl-horizontal">
-    <dt>{% trans -%}Voting Period{%- endtrans %}</dt>
-        <dd>
-            {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
-                     end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
-            From {{ begin }} until {{ end }}.
-            {%- endtrans %}
-            {% if ambience['ballot']['extended'] is none %}
-                {% if ambience['ballot']['quorum'] %}
-                    <br />
-                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
-                             quorum=ambience['ballot']['quorum'] -%}
-                    Extension until {{ extension }} if {{ quorum }} votes are not reached.
-                    {%- endtrans %}
-                {% endif %}
-            {% else %}
-                {% if ambience['ballot']['extended'] %}
-                    <br />
-                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
-                             quorum=ambience['ballot']['quorum'] -%}
-                    Extended until {{ extension }} because {{ quorum }} votes were not reached.
-                    {%- endtrans %}
-                {% elif ambience['ballot']['quorum'] %}
-                    <br />
-                    {% trans quorum=anbience['ballot']['quorum'] -%}
-                    No extension neccessary, because {{ quorum }} votes were reached.
-                    {%- endtrans %}
-                {% endif %}
-            {% endif %}
-        </dd>
-        <dt>{% trans -%}Status{%- endtrans %}</dt>
-        <dd>
-            {% if now() < ambience['ballot']['vote_begin'] %}
-                <strong>{% trans -%}This ballot has not yet begun.{%- endtrans %}</strong><br />
-                {% trans -%}Admins can still make changes to description, files and candidates.{%- endtrans %}
-                {% if is_admin %}
-                    {% trans -%}
-                        All CdE-Members and external assembly participants can already
-                        see this ballot and all associated information.
-                    {%- endtrans %}
-                {% endif %}
-            {% elif ambience['ballot']['is_tallied'] %}
-                <strong>{% trans -%}This ballot has been concluded.{%- endtrans %}</strong><br />
-                {% trans -%}You can see the results below.{%- endtrans %}
-            {% elif not attends %}
-                {% trans -%}
-                    You are not participating in this assembly, therefore you cannot vote in this ballot.
-                {%- endtrans %}
-            {% elif ambience['ballot']['is_voting'] %}
-                <strong>{% trans -%}This ballot is currently open for voting.{%- endtrans %}</strong><br />
-                {% if own_vote %}
-                    {% if split_vote|length == 1 %}
-                        <span class='text-warning'>{% trans -%}You have abstained.{%- endtrans %}</span>
-                        {% trans -%}You can make your choice below, during the voting period.{%- endtrans %}
-                    {% else %}
-                        <span class='text-success'>{% trans -%}You already voted.{%- endtrans %}</span>
-                        {% trans -%}
-                            You can check your vote below and change it
-                            before the end of the voting period.
-                        {%- endtrans %}
-                    {% endif %}
-                {% endif %}
-            {% endif %}
-        </dd>
-    </dl>
-
-    {% if is_admin and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
-            {{ ambience['ballot']['notes']|md }}
-        {% endcall %}
-    {% endif %}
-{%- endmacro %}
-
-{% macro show_tailled_ballot(result) -%}
-    {{ show_result(result) }}
-    {{ show_summary(result) }}
-    {{ show_own_vote() }}
 {%- endmacro %}

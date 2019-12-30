@@ -1,9 +1,9 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% from "web/assembly/ballot_status.tmpl" import show_status, show_tailled_ballot with context %}
-{% from "web/assembly/ballot_candidates.tmpl" import show_candidates with context %}
-{% from "web/assembly/ballot_admin.tmpl" import administrate_ballot, delete_ballot, show_attachments with context %}
+{% import "web/assembly/_ballot_meta.tmpl" as ballot_meta with context %}
+{% import "web/assembly/_ballot_result.tmpl" as ballot_result with context %}
+{% import "web/assembly/_ballot_voting.tmpl" as ballot_voting with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_voting.js') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }}){% endblock %}
@@ -19,41 +19,65 @@
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up",
                             active=True) }}
 {% endblock %}
-{% macro show_navigation(prev_ballot, next_ballot) -%}
-    <nav>
-        <ul class="pager">
-            {% if prev_ballot %}
-                <li class="previous">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": prev_ballot["id"]}),
-                         '<span aria-hidden="true">&larr;</span> '|s + gettext("Previous Ballot"), title=prev_ballot["title"]) }}</li>
-            {% endif %}
-            {%  if next_ballot %}
-                <li class="next">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": next_ballot["id"]}),
-                         gettext("Next Ballot") + ' <span aria-hidden="true">&rarr;</span>'|s, title=next_ballot["title"]) }}</li>
-            {% endif %}
-        </ul>
-    </nav>
-{%- endmacro %}
 {% block content %}
     {% set edit_mode = is_admin and now() < ambience['ballot']['vote_begin'] %}
 
     {# Admin modification options (delete and edit) #}
     {% if edit_mode %}
-       {{ administrate_ballot() }}
+        <div class="p">
+            {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="pencil",
+                    aclass="btn btn-sm btn-warning") }}
+            {% if CDEDB_DEV %}
+                <form action="{{ cdedblink("assembly/ballot_start_voting") }}" method="POST"
+                      id="startvotingform" style="display: inline;">
+                    {{ util.anti_csrf_token("assembly/ballot_start_voting") }}
+                    {{ util.input_submit(value=gettext("Start Voting"), aclass="btn btn-sm btn-success",
+                            icon="check") }}
+                </form>
+            {% endif %}
+        </div>
     {% endif %}
-    
-    {{ show_status() }}
+
+    {{ ballot_meta.show_status() }}
 
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
-        {{ show_tailled_ballot(result) }}
+        {{ ballot_result.show_result() }}
+        
+        <h4>{% trans -%}Summary{%- endtrans %}</h4>
+        {% if not ambience['ballot']['votes'] %}
+            {{ ballot_result.show_summary() }}
+        {% endif %}
+        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
+        
+        {{ ballot_result.show_own_vote() }}
     {% else %}
-        {{ show_candidates(edit_mode) }}
+        {% if edit_mode %}
+            {{ ballot_voting.add_candidate_form() }}
+        {% endif %}
+
+        {# Classical voting, not tallied #}
+        {% if ambience['ballot']['votes'] %}
+            {% if ambience['ballot']['is_voting'] and attends %}
+                {{ ballot_voting.show_classical_voting() }}
+            {% else %}
+                {{ ballot_voting.show_classical_candidates(edit_mode) }}
+            {% endif %}
+        {% else %}
+            {{ ballot_voting.show_preferential_candidates(edit_mode) }}
+            {% if ambience['ballot']['is_voting'] and attends %}
+                {{ ballot_voting.show_preferential_voting() }}
+            {% endif %}
+        {% endif %}
     {% endif %}
 
-    {{ show_attachments(attachments, edit_mode) }}
-    {{ show_navigation(prev_ballot, next_ballot) }}
+
+    {% if attachments or edit_mode %}
+        {{ ballot_meta.show_attachments(edit_mode) }}
+    {% endif %}
+    {{ ballot_meta.show_navigation() }}
     
     {% if edit_mode %}
-        {{ delete_ballot() }}  
+        {{ ballot_meta.ballot_action_panel() }}
     {% endif %}
 {% endblock %}
