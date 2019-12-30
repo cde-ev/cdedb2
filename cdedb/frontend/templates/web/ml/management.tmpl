@@ -65,16 +65,16 @@
 
             <ul id="moderator_list">
                 {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
-                    <li>
+                    <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                         {% if is_admin or moderator != user.persona_id %}
                             <form action="{{ cdedblink('ml/remove_moderator') }}"
                                   method="POST"
                                   id="removemoderatorform{{ moderator }}"
-                                  style="display: inline;">
+                                  class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_moderator') }}
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
-                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                         title=gettext("Remove %(given_names)s %(family_name)s as moderator")|format(
                                             given_names=persona['given_names'],
                                             family_name=persona['family_name'])) }}
@@ -97,33 +97,36 @@
             {% if requests|length > 0 %}
                 <ul>
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
-                        <li>
+                        <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                             <span class="nowrap">
+                                {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
                                 <form action="{{ cdedblink('ml/approve_request') }}"
                                       method="POST"
                                       id="approverequestform{{ request }}"
-                                      style="display: inline;">
+                                      class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/approve_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="ok", value=gettext("Accept"), aclass="btn btn-xs btn-success") }}
+                                    {{ util.input_submit(icon="ok", value=gettext("Accept"),
+                                        aclass="btn btn-xs btn-success list-button-float") }}
                                 </form>
                                 <form action="{{ cdedblink('ml/deny_request') }}"
                                       method="POST"
                                       id="denyrequestform{{ request }}"
-                                      style="display: inline;">
+                                      class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/deny_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
                                     {{ util.input_submit(icon="remove", value=gettext("Reject"),
-                                        aclass="btn btn-xs btn-danger") }}
+                                        aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
                                 <form action="{{ cdedblink('ml/block_request') }}"
                                       method="POST"
                                       id="blockrequestform{{ request }}"
-                                      style="display: inline;">
+                                      class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/block_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="ban-circle", value=gettext("Block"), aclass="btn btn-xs btn-danger") }}
+                                    {{ util.input_submit(icon="ban-circle", value=gettext("Block"),
+                                        aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
                             </span>
                         </li>
@@ -136,12 +139,13 @@
             {% endif %}
         </div>
     </div>
-    
+
     <h2>{% trans -%}Subscribers{%- endtrans %} [{{ subscribers|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-sign') }}
             {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) -%}
-                Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here. Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
+                Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here.
+                Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
             {%- endtrans %}
         </p>
     <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
@@ -172,16 +176,16 @@
             <div class="col-sm-{{ col_width }}">
                 <ul class="nosp slim">
                     {% for subscriber in list %}
-                        <li>
+                        <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id']) }}
                             {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
                             <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                   method="POST"
                                   id="removesubscriberform{{ subscriber }}"
-                                  style="display: inline;">
+                                  class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_subscriber') }}
                                 {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
-                                {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger",
+                                {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                         title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
                                             given_names=subscribers[subscriber]['given_names'],
                                             family_name=subscribers[subscriber]['family_name'])) }}
@@ -199,7 +203,7 @@
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('ml/delete_mailinglist') }}" method="POST" id="deletemlform"
-                                style="display: inline;">
+                            class="display-inline">
                             {{ util.anti_csrf_token('ml/delete_mailinglist') }}
                             {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
                                                  aclass="btn btn-danger", icon="trash") }}

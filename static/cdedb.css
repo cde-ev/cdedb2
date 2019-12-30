@@ -746,8 +746,8 @@ tr.drow-delete>td, tr.drow-delete1>td {
 }
 .prefvote_spacer:focus:after, .prefvote_stage:focus:after {
     content: "";
-    width: 0; 
-    height: 0; 
+    width: 0;
+    height: 0;
     border-top: 8px solid transparent;
     border-bottom: 8px solid transparent;
     border-left: 8px solid #ccc;
@@ -997,4 +997,18 @@ ul.styleless {
 }
 .hide-hover-container:hover .hide-hover, .hide-hover:focus {
     opacity: 1;
+}
+
+.list-button-float {
+    float: right;
+}
+
+.clearfix-after::after {
+    content: '';
+    clear: right;
+    display: block;
+}
+
+.display-inline {
+    display: inline;
 }

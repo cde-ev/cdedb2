@@ -23,29 +23,33 @@
                                            (gettext("Current Ballots"), current, True),
                                            (gettext("Past Ballots"), done, False)) %}
         {% if sample %}
-        <h3> {{ heading }} </h3>
-        <ul>
-            {% for ballot_id, ballot in sample|xdictsort("title") %}
-                <li>
-                    {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title']) }}
-                    {% if ballot_id in votes and show_state %}
-                        ({% if votes[ballot_id] -%}
-                            {% if ">" in votes[ballot_id] -%}
-                                <span class="text-success">{{ util.make_icon('check') }} {{ gettext("Already voted") }}</span>
-                            {%- else -%}
-                                <span class="text-warning">{{ util.make_icon('unchecked') }} {{ gettext("Abstained") }}</span>
-                            {%- endif -%}
-                        {% else -%}
-                            <span class="text-danger">{{ gettext("Not yet voted") }}</span>
-                        {%- endif -%})
-                    {% endif %}
-                    {% if is_admin and now() < ballot['vote_begin'] %}
-                        {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
-                                     aclass="btn btn-xs btn-warning", icon="pencil") }}
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
+        <h3>{{ heading }}</h3>
+        <div class="row">
+            <div class="col-md-8">
+                <ul>
+                    {% for ballot_id, ballot in sample|xdictsort("title") %}
+                        <li class="hide-hover-container">
+                            {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title']) }}
+                            {% if ballot_id in votes and show_state %}
+                                ({% if votes[ballot_id] -%}
+                                    {% if ">" in votes[ballot_id] -%}
+                                        <span class="text-success">{{ util.make_icon('check') }} {{ gettext("Already voted") }}</span>
+                                    {%- else -%}
+                                        <span class="text-warning">{{ util.make_icon('unchecked') }} {{ gettext("Abstained") }}</span>
+                                    {%- endif -%}
+                                {% else -%}
+                                    <span class="text-danger">{{ gettext("Not yet voted") }}</span>
+                                {%- endif -%})
+                            {% endif %}
+                            {% if is_admin and now() < ballot['vote_begin'] %}
+                                {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
+                                            aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="pencil") }}
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
         {% endif %}
     {% endfor %}
 {% endblock %}

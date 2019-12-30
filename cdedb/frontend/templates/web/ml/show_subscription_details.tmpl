@@ -59,16 +59,16 @@
 
             <ul>
                 {% for subscription_override, persona in subscription_overrides.items() %} {# This is already sorted. #}
-                    <li>
+                    <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
 
                         <form action="{{ cdedblink('ml/remove_subscription_override') }}"
                               method="POST"
                               id="removemodsubscribeform{{ subscription_override }}"
-                              style="display: inline;">
+                              class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_subscription_override') }}
                             {{ util.input_hidden(name="modsubscriber_id", value=subscription_override) }}
-                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                     title=gettext("Remove %(given_names)s %(family_name)s as forced subscriber")|format(
                                         given_names=persona['given_names'],
                                         family_name=persona['family_name'])) }}
@@ -111,16 +111,16 @@
 
             <ul>
                 {% for unsubscription_override, persona in unsubscription_overrides.items() %} {# This is already sorted. #}
-                    <li>
+                    <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
 
                         <form action="{{ cdedblink('ml/remove_unsubscription_override') }}"
                               method="POST"
                               id="removemodunsubscribeform{{ unsubscription_override }}"
-                              style="display: inline;">
+                              style="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                             {{ util.input_hidden(name="modunsubscriber_id", value=unsubscription_override) }}
-                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                     title=gettext("Remove %(given_names)s %(family_name)s as blocked subscriber")|format(
                                         given_names=persona['given_names'],
                                         family_name=persona['family_name'])) }}
@@ -130,7 +130,7 @@
             </ul>
         </div>
     </div>
-    
+
     <h2>{% trans -%}Whitelist{%- endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-sign') }}
@@ -151,22 +151,26 @@
         </div>
         {{ util.output_errors('email', wrapper=True) }}
     </form>
-    <ul>
-        {% for email in ambience['mailinglist']['whitelist']|sort %}
-            <li>
-                {{ email }}
-                <form action="{{ cdedblink('ml/remove_whitelist') }}"
-                      method="POST"
-                      id="removewhitelistform{{ loop.index }}"
-                      style="display: inline;">
-                    {{ util.anti_csrf_token('ml/remove_whitelist') }}
-                    {{ util.input_hidden(name="email", value=email) }}
-                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="minus",
-                            title=gettext("Remove %s from Whitelist")|format(email)) }}
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
+    <div class="row">
+        <div class="col-md-6">
+            <ul>
+                {% for email in ambience['mailinglist']['whitelist']|sort %}
+                    <li class="hide-hover-container clearfix-after">
+                        {{ email }}
+                        <form action="{{ cdedblink('ml/remove_whitelist') }}"
+                            method="POST"
+                            id="removewhitelistform{{ loop.index }}"
+                            class="hide-hover display-inline">
+                            {{ util.anti_csrf_token('ml/remove_whitelist') }}
+                            {{ util.input_hidden(name="email", value=email) }}
+                            {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                    title=gettext("Remove %s from Whitelist")|format(email)) }}
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 
     {% call util.bootstrap_panel(title=gettext("Downloads"), icon="save-file", aclass="panel-default mosp") %}
         <div class="row">
