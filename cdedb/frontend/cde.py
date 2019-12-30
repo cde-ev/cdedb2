@@ -552,7 +552,7 @@ class CdEFrontend(AbstractUserFrontend):
                 persona_id, is_instructor=False, is_orga=False)
         return ret
 
-    
+
     def perform_batch_admission(self, rs, data, trial_membership, consent,
                                 sendmail):
         """Resolve all entries in the batch admission form.
@@ -750,7 +750,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
-        
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object} or None
         :type problems: list(str) or None
@@ -786,7 +786,7 @@ class CdEFrontend(AbstractUserFrontend):
         used on further validation.
 
         This uses POST because the expected data is too large for GET.
-        
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type statement: str or None
         :type statement_file: file or None
@@ -956,7 +956,7 @@ class CdEFrontend(AbstractUserFrontend):
     def parse_download(self, rs, data, filename):
         """
         Provide data as CSV-Download with the given filename.
-        
+
         This uses POST, because the expected filesize is too large for GET.
         """
         if rs.errors:
@@ -2358,6 +2358,10 @@ class CdEFrontend(AbstractUserFrontend):
     def list_past_events(self, rs):
         """List all concluded events."""
         events = self.pasteventproxy.list_past_events(rs)
+        shortnames = {
+            pevent_id: value['shortname']
+            for pevent_id, value in self.pasteventproxy.get_past_events(rs, events).items()
+        }
         stats = self.pasteventproxy.past_event_stats(rs)
         # Generate (reverse) chronologically sorted list of past event ids
         stats_sorter = sorted(stats.keys(), key=lambda x: events[x])
@@ -2368,7 +2372,7 @@ class CdEFrontend(AbstractUserFrontend):
         for anid in stats_sorter:
             years.setdefault(stats[anid]['tempus'].year, []).append(anid)
         return self.render(rs, "list_past_events", {
-            'events': events, 'stats': stats, 'years': years})
+            'events': events, 'shortnames': shortnames, 'stats': stats, 'years': years})
 
     @access("cde_admin")
     def change_past_event_form(self, rs, pevent_id):
