@@ -184,6 +184,33 @@ class AssemblyFrontend(AbstractUserFrontend):
             'log': log, 'personas': personas,
             'assemblies': assemblies, 'all_assemblies': all_assemblies})
 
+    @access("assembly_admin")
+    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("submitted_by", "cdedbid_or_None"),
+                 ("additional_info", "str_or_None"),
+                 ("start", "non_negative_int_or_None"),
+                 ("stop", "non_negative_int_or_None"),
+                 ("time_start", "datetime_or_None"),
+                 ("time_stop", "datetime_or_None"))
+    def view_assembly_log(self, rs, codes, assembly_id, start, stop, persona_id,
+                 submitted_by, additional_info, time_start, time_stop):
+        """View activities."""
+        start = start or 0
+        stop = stop or 50
+        # no validation since the input stays valid, even if some options
+        # are lost
+        log = self.assemblyproxy.retrieve_log(
+            rs, codes, assembly_id, start, stop, persona_id=persona_id,
+            submitted_by=submitted_by, additional_info=additional_info,
+            time_start=time_start, time_stop=time_stop)
+        personas = (
+                {entry['submitted_by'] for entry in log if
+                 entry['submitted_by']}
+                | {entry['persona_id'] for entry in log if entry['persona_id']})
+        personas = self.coreproxy.get_personas(rs, personas)
+        return self.render(rs, "view_assembly_log", {
+            'log': log, 'personas': personas})
+
     @access("assembly")
     def show_assembly(self, rs, assembly_id):
         """Present an assembly."""

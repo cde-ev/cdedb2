@@ -8,6 +8,7 @@ from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.common import ASSEMBLY_BAR_MONIKER, now
 from cdedb.query import QueryOperators
+import cdedb.database.constants as const
 
 
 class TestAssemblyFrontend(FrontendTest):
@@ -521,17 +522,17 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertNonPresence("Dunkelaquamarin")
 
-    @as_users
+    @as_users("anton")
     def test_has_voted(self, user):
         self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Drittes CdE-Konzil'},
+                      {'description': 'Kanonische Beispielversammlung'},
                       {'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
 
         self.assertPresence("Du nimmst nicht an der Versammlung teil.")
         self.assertNonPresence("Du hast nicht abgestimmt.")
 
-        self.traverse({'description': 'Übersicht'})
+        self.traverse({'description': 'Kanonische Beispielversammlung'})
         secret = self._signup()
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
@@ -624,7 +625,13 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/log'})
         self.assertTitle("\nVersammlungs-Log [0–14]\n")
         f = self.response.forms['logshowform']
-        f['codes'] = [0, 1, 2, 10, 11, 12, 14]
+        codes = [const.AssemblyLogCodes.assembly_created.value,
+                 const.AssemblyLogCodes.assembly_changed.value,
+                 const.AssemblyLogCodes.ballot_created.value,
+                 const.AssemblyLogCodes.ballot_changed.value,
+                 const.AssemblyLogCodes.ballot_deleted.value,
+                 const.AssemblyLogCodes.ballot_tallied.value]
+        f['codes'] = codes
         f['assembly_id'] = 1
         f['start'] = 1
         f['stop'] = 10
@@ -632,6 +639,13 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("\nVersammlungs-Log [1–6]\n")
 
         self.traverse({'href': '/assembly/$'},
-                      {'href': '/assembly/1/show'},
-                      {'href': '/assembly/log.*1'})
-        self.assertTitle("\nVersammlungs-Log [0–7]\n")
+                      {'description': 'Drittes CdE-Konzil'},
+                      {'description': 'Log'})
+        self.assertTitle("\nDrittes CdE-Konzil: Log [0–6]\n")
+
+        f = self.response.forms['logshowform']
+        f['codes'] = codes
+        f['start'] = 1
+        f['stop'] = 10
+        self.submit(f)
+        self.assertTitle("\nDrittes CdE-Konzil: Log [1–4]\n")
