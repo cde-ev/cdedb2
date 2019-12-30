@@ -154,19 +154,22 @@ class BaseApp(metaclass=abc.ABCMeta):
         nparams = json.loads(remainder[length + 2:])
         return ntype, nmessage, nparams
 
-    def redirect(self, rs, target, params=None):
+    def redirect(self, rs, target, params=None, anchor=None):
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
 
         :type rs: :py:class:`RequestState`
         :type target: str
         :type params: {str: object}
+        :type anchor: str or None
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
         if rs.errors and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
         url = cdedburl(rs, target, params, force_external=True)
+        if anchor is not None:
+            url += "#" + anchor
         ret = basic_redirect(rs, url)
         if rs.notifications:
             notifications = [self.encode_notification(ntype, nmessage, nparams)

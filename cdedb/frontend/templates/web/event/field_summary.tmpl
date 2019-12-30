@@ -123,6 +123,7 @@
             {{ print_field(-values.get('create_last_index', 0) - 1, None, False, 'drow-prototype', newrow=True) }}
         </div>
 
+        {{ util.input_hidden("active_tab", anid="input_active_tab") }}
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
                 {{ util.make_icon('plus') }} {% trans -%}Add Field{%- endtrans %}
@@ -135,6 +136,33 @@
         $('#associations_tabcontent').children('.tab-pane').not(':eq(0)').removeClass('active');
         $('#fieldsummaryform').find('h3').hide();
         $('#associations_tablist').css('display', 'block').tab();
+        var $input_active_tab = $('#input_active_tab');
+        $('#associations_tablist a')
+            /* Handler to update 'active_tab' hidden input for returning to current tab after submitting */
+            .on('show.bs.tab', function() {
+                $input_active_tab.val($(this).attr('href').substr(1));
+            })
+            /* Restore tab from anchor link or 'active_tab' hidden input */
+            .each(function() {
+                if (window.location.hash === $(this).attr('href')
+                        || window.location.hash ===
+                            ($(this).attr('href').slice(0, 1) + "tab:" + $(this).attr('href').substr(1))
+                        || $input_active_tab.val() === $(this).attr('href').substr(1)) {
+                    $(this).tab('show');
+                    return false;
+                }
+            })
+            /* Show warning signs for validation errors in tabs */
+            .each(function() {
+                if ($($(this).attr('href')).find('.has-error').length > 0) {
+                    $(this)
+                        .append("&emsp;")
+                        .append($('<span class="text-danger">' +
+                            '<span class="glyphicon glyphicon-warning-sign"></span></span>'));
+                }
+            });
+
+        /* Enable DynamicRow Javascript */
         $('#fieldsummaryform').cdedbDynamicRow({
             addButton: $('#drow-addbutton'),
             delButtonTitle: "{{ gettext("Remove Field") }}",

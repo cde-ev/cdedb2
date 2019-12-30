@@ -863,7 +863,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def field_summary(self, rs, event_id):
+    @REQUESTdata(('active_tab', 'str_or_None'))
+    def field_summary(self, rs, event_id, active_tab):
         """Manipulate the fields of an event."""
         fields = self.process_field_input(
             rs, rs.ambience['event']['fields'])
@@ -879,7 +880,9 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/field_summary_form")
+        return self.redirect(rs, "event/field_summary_form",
+                             anchor=(("tab:" + active_tab)
+                                     if active_tab is not None else None))
 
     @staticmethod
     def _get_mailinglist_setter(event, orgalist=False, address_only=False):
