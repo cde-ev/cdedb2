@@ -643,6 +643,7 @@ class TestEventBackend(BackendTest):
     @as_users("emilia")
     def test_registration_participant(self, user):
         expectation = {
+            'amount_paid': decimal.Decimal(0),
             'checkin': None,
             'event_id': 1,
             'fields': {'brings_balls': True, 'transportation': 'pedes'},
@@ -705,6 +706,7 @@ class TestEventBackend(BackendTest):
     @as_users("berta")
     def test_registering(self, user):
         new_reg = {
+            'amount_paid': decimal.Decimal("42.00"),
             'checkin': None,
             'event_id': 1,
             'list_consent': True,
@@ -768,7 +770,8 @@ class TestEventBackend(BackendTest):
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100},
                          self.event.list_registrations(self.key, event_id))
         expectation = {
-            1: {'checkin': None,
+            1: {'amount_paid': decimal.Decimal(0),
+                'checkin': None,
                 'event_id': 1,
                 'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
                 'list_consent': True,
@@ -812,7 +815,8 @@ class TestEventBackend(BackendTest):
                 'payment': None,
                 'persona_id': 1,
                 'real_persona_id': None},
-            2: {'checkin': None,
+            2: {'amount_paid': decimal.Decimal(0),
+                'checkin': None,
                 'event_id': 1,
                 'fields': {'brings_balls': True, 'transportation': 'pedes'},
                 'list_consent': True,
@@ -856,7 +860,8 @@ class TestEventBackend(BackendTest):
                 'payment': datetime.date(2014, 2, 2),
                 'persona_id': 5,
                 'real_persona_id': None},
-            4: {'checkin': None,
+            4: {'amount_paid': decimal.Decimal(0),
+                'checkin': None,
                 'event_id': 1,
                 'fields': {'brings_balls': False,
                            'may_reserve': True,
@@ -947,6 +952,7 @@ class TestEventBackend(BackendTest):
         data = self.event.get_registrations(self.key, (1, 2, 4))
         self.assertEqual(expectation, data)
         new_reg = {
+            'amount_paid': decimal.Decimal(0),
             'checkin': None,
             'event_id': event_id,
             'list_consent': True,
@@ -2302,7 +2308,8 @@ class TestEventBackend(BackendTest):
                                         'parental_agreement': True,
                                         'payment': None,
                                         'persona_id': 1,
-                                        'real_persona_id': None},
+                                        'real_persona_id': None,
+                                        'amount_paid': decimal.Decimal(0)},
                                     2: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'brings_balls': True,
@@ -2316,7 +2323,8 @@ class TestEventBackend(BackendTest):
                                         'parental_agreement': True,
                                         'payment': datetime.date(2014, 2, 2),
                                         'persona_id': 5,
-                                        'real_persona_id': None},
+                                        'real_persona_id': None,
+                                        'amount_paid': decimal.Decimal(0)},
                                     3: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'transportation': 'car'},
@@ -2328,7 +2336,8 @@ class TestEventBackend(BackendTest):
                                         'parental_agreement': True,
                                         'payment': datetime.date(2014, 3, 3),
                                         'persona_id': 7,
-                                        'real_persona_id': None},
+                                        'real_persona_id': None,
+                                        'amount_paid': decimal.Decimal(0)},
                                     4: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'brings_balls': False,
@@ -2342,7 +2351,8 @@ class TestEventBackend(BackendTest):
                                         'parental_agreement': False,
                                         'payment': datetime.date(2014, 4, 4),
                                         'persona_id': 9,
-                                        'real_persona_id': None},
+                                        'real_persona_id': None,
+                                        'amount_paid': decimal.Decimal(0)},
                                     5: {
                                         'checkin': None,
                                         'event_id': 1,
@@ -2355,7 +2365,8 @@ class TestEventBackend(BackendTest):
                                         'parental_agreement': True,
                                         'payment': None,
                                         'persona_id': 100,
-                                        'real_persona_id': None}},
+                                        'real_persona_id': None,
+                                        'amount_paid': decimal.Decimal(0)}},
             'id': 1,
             'kind': 'full',
             'timestamp': nearly_now()
@@ -2422,7 +2433,8 @@ class TestEventBackend(BackendTest):
             'parental_agreement': True,
             'payment': None,
             'persona_id': 2000,
-            'real_persona_id': 2}
+            'real_persona_id': 2,
+            'amount_paid': decimal.Decimal(42)}
         ## registration parts
         new_data['event.registration_parts'][5000] = {
             'id': 5000,
@@ -2539,7 +2551,8 @@ class TestEventBackend(BackendTest):
             'parental_agreement': True,
             'payment': None,
             'persona_id': 2,
-            'real_persona_id': None}
+            'real_persona_id': None,
+            'amount_paid': decimal.Decimal(42)}
         stored_data['event.registration_parts'][16] = {
             'id': 16,
             'is_reserve': False,
@@ -2778,7 +2791,8 @@ class TestEventBackend(BackendTest):
                                'notes': None,
                                'group_id': 1,
                                'reserve': 0}},
-            'registrations': {1: {'checkin': None,
+            'registrations': {1: {'amount_paid': decimal.Decimal(0),
+                                  'checkin': None,
                                   'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
                                   'list_consent': True,
                                   'mixed_lodging': True,
@@ -2822,7 +2836,8 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [1, 4],
                                                  'course_id': None,
                                                  'course_instructor': None}}},
-                              2: {'checkin': None,
+                              2: {'amount_paid': decimal.Decimal(0),
+                                  'checkin': None,
                                   'fields': {'brings_balls': True,
                                              'transportation': 'pedes'},
                                   'list_consent': True,
@@ -2868,7 +2883,8 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [4, 2],
                                                  'course_id': 1,
                                                  'course_instructor': 1}}},
-                              3: {'checkin': None,
+                              3: {'amount_paid': decimal.Decimal(0),
+                                  'checkin': None,
                                   'fields': {'transportation': 'car'},
                                   'list_consent': False,
                                   'mixed_lodging': True,
@@ -2912,7 +2928,8 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [2, 4],
                                                  'course_id': None,
                                                  'course_instructor': None}}},
-                              4: {'checkin': None,
+                              4: {'amount_paid': decimal.Decimal(0),
+                                  'checkin': None,
                                   'fields': {'brings_balls': False,
                                              'may_reserve': True,
                                              'transportation': 'etc'},
@@ -2958,7 +2975,8 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [1, 2],
                                                  'course_id': 1,
                                                  'course_instructor': None}}},
-                              5: {'checkin': None,
+                              5: {'amount_paid': decimal.Decimal(0),
+                                  'checkin': None,
                                   'fields': {'transportation': 'pedes'},
                                   'list_consent': True,
                                   'mixed_lodging': False,
@@ -3104,6 +3122,7 @@ class TestEventBackend(BackendTest):
         del expectation['timestamp']
         del updated['timestamp']
         del updated['registrations'][1002]['persona']  # ignore additional info
+        updated['registrations'][6]['amount_paid'] = str(updated['registrations'][1002]['amount_paid'])
         self.assertEqual(expectation, updated)
 
     @as_users("anton")

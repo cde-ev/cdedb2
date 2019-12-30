@@ -747,6 +747,7 @@ CREATE TABLE event.registrations (
         notes                   varchar,
         orga_notes              varchar DEFAULT NULL,
         payment                 date DEFAULT NULL,
+        amount_paid             numeric(7,2) NOT NULL DEFAULT 0,
         -- parental consent for minors (defaults to True for non-minors)
         parental_agreement      boolean NOT NULL DEFAULT False,
         mixed_lodging           boolean NOT NULL,

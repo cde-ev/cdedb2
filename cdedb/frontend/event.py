@@ -3441,9 +3441,10 @@ class EventFrontend(AbstractUserFrontend):
         tracks = event['tracks']
         reg_params = (
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
-            ("reg.payment", "date_or_None"), ("reg.parental_agreement", "bool"),
-            ("reg.mixed_lodging", "bool"), ("reg.checkin", "datetime_or_None"),
-            ("reg.list_consent", "bool"))
+            ("reg.payment", "date_or_None"),
+            ("reg.amount_paid", "non_negative_decimal"),
+            ("reg.parental_agreement", "bool"), ("reg.mixed_lodging", "bool"),
+            ("reg.checkin", "datetime_or_None"), ("reg.list_consent", "bool"),)
         part_params = []
         for part_id in event['parts']:
             part_params.extend((

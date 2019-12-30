@@ -133,6 +133,7 @@
     },
     "event.registrations": {
         "2": {
+            "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 5,
@@ -150,6 +151,7 @@
             "real_persona_id": null
         },
         "1": {
+            "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 1,
@@ -166,6 +168,7 @@
             "real_persona_id": null
         },
         "3": {
+            "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 7,
@@ -182,6 +185,7 @@
             "real_persona_id": null
         },
         "4": {
+            "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 9,

@@ -279,6 +279,7 @@ QUERY_SPECS = {
             ("persona.location", "str"),
             ("persona.country", "str"),
             ("reg.payment", "date"),
+            ("reg.amount_paid", "float"),
             ("reg.parental_agreement", "bool"),
             ("reg.mixed_lodging", "bool"),
             ("reg.list_consent", "bool"),
