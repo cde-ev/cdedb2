@@ -3867,13 +3867,14 @@ class EventFrontend(AbstractUserFrontend):
                         not registrations[reg_id]['mixed_lodging']
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
-                if any(personas[registrations[reg_id]['persona_id']]['gender']
-                       in (const.Genders.other, const.Genders.not_specified)
-                       for reg_id in group):
+                complex_gender_people = tuple(
+                    reg_id
+                    for reg_id in group
+                    if personas[registrations[reg_id]['persona_id']]['gender']
+                        in (const.Genders.other, const.Genders.not_specified))
+                if complex_gender_people:
                     ret.append((n_("Non-Binary Participant."), lodgement_id,
-                                part_id,
-                                tuple(reg_id for reg_id in group), 1))
-
+                                part_id, complex_gender_people, 1))
         return ret
 
     @access("event")
