@@ -31,7 +31,7 @@
             {% for pevent_id in year_events %}
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
-                    ({{ stats[pevent_id]['institution_moniker'] }})
+                    {% if not institution_id %}({{ stats[pevent_id]['institution_moniker'] }}){% endif %}
                     {% if is_admin %}
                         <small class="text-muted nowrap">
                             {% trans count=stats[pevent_id]['courses'] -%}
