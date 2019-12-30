@@ -35,7 +35,7 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("charly")
     def test_list_attendees(self, user):
-        expectation = {1, 2, 9, 11}
+        expectation = {1, 2, 9, 11, 100}
         self.assertEqual(expectation, self.assembly.list_attendees(self.key, 1))
 
     @as_users("anton")
@@ -235,8 +235,8 @@ class TestAssemblyBackend(BackendTest):
         expectation['candidates'][6]['description'] = data['candidates'][6]['description']
         expectation['candidates'][6]['moniker'] = data['candidates'][6]['moniker']
         del expectation['candidates'][7]
-        expectation['candidates'][28] = {
-            'id': 28,
+        expectation['candidates'][1001] = {
+            'id': 1001,
             'ballot_id': 2,
             'description': 'Aquamarin',
             'moniker': 'aqua'}
@@ -261,14 +261,14 @@ class TestAssemblyBackend(BackendTest):
             'extended': None,
             'id': new_id,
             'is_tallied': False,
-            'candidates': {29: {'ballot_id': new_id,
-                                'description': 'Ja',
-                                'id': 29,
-                                'moniker': 'j'},
-                           30: {'ballot_id': new_id,
-                                'description': 'Nein',
-                                'id': 30,
-                                'moniker': 'n'},},
+            'candidates': {1002: {'ballot_id': new_id,
+                                  'description': 'Ja',
+                                  'id': 1002,
+                                  'moniker': 'j'},
+                           1003: {'ballot_id': new_id,
+                                  'description': 'Nein',
+                                  'id': 1003,
+                                  'moniker': 'n'},},
         })
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
 
@@ -453,9 +453,9 @@ class TestAssemblyBackend(BackendTest):
             2: {'id': 2, 'is_active': True,
                 'signup_end': datetime.datetime(2222, 2, 22, 0, 0, tzinfo=pytz.utc),
                 'title': 'Kanonische Beispielversammlung'},
-            3: {'id': 3, 'is_active': True,
-                'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
-                'title': 'Umfrage'}
+            1001: {'id': 1001, 'is_active': True,
+                   'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
+                   'title': 'Umfrage'}
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 

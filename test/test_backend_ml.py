@@ -604,6 +604,7 @@ class TestMlBackend(BackendTest):
             5: SS.unsubscribed,
             7: SS.subscribed,
             9: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -628,6 +629,7 @@ class TestMlBackend(BackendTest):
             5: SS.unsubscribed,
             7: SS.subscribed,
             9: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -672,6 +674,7 @@ class TestMlBackend(BackendTest):
             9: SS.unsubscription_override,
             11: SS.implicit,
             14: SS.subscription_override,
+            100: SS.subscription_override,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -697,6 +700,7 @@ class TestMlBackend(BackendTest):
             3: SS.subscription_override,
             9: SS.unsubscription_override,
             14: SS.subscription_override,
+            100: SS.subscription_override,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -727,6 +731,7 @@ class TestMlBackend(BackendTest):
             4: SS.unsubscribed,
             9: SS.unsubscription_override,
             11: SS.implicit,
+            100: SS.unsubscription_override,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -753,6 +758,7 @@ class TestMlBackend(BackendTest):
             3: SS.subscribed,
             4: SS.unsubscribed,
             9: SS.unsubscription_override,
+            100: SS.unsubscription_override,
         }
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
@@ -935,6 +941,7 @@ class TestMlBackend(BackendTest):
             5: SS.unsubscribed,
             7: SS.subscribed,
             9: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -947,6 +954,7 @@ class TestMlBackend(BackendTest):
             5: SS.unsubscribed,
             7: SS.subscribed,
             9: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -961,6 +969,7 @@ class TestMlBackend(BackendTest):
             9: SS.unsubscription_override,
             11: SS.implicit,
             14: SS.subscription_override,
+            100: SS.subscription_override,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -975,6 +984,7 @@ class TestMlBackend(BackendTest):
             9: SS.unsubscription_override,
             11: SS.implicit,
             14: SS.subscription_override,
+            100: SS.subscription_override,
         }
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
@@ -1024,6 +1034,11 @@ class TestMlBackend(BackendTest):
             9: SS.implicit,
             12: SS.implicit,
             13: SS.implicit,
+            22: SS.implicit,
+            23: SS.implicit,
+            27: SS.implicit,
+            32: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
@@ -1064,6 +1079,11 @@ class TestMlBackend(BackendTest):
             9: SS.implicit,
             12: SS.pending,
             13: SS.implicit,
+            22: SS.implicit,
+            23: SS.implicit,
+            27: SS.implicit,
+            32: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
@@ -1085,6 +1105,11 @@ class TestMlBackend(BackendTest):
             9: SS.implicit,
             12: SS.implicit,
             13: SS.implicit,
+            22: SS.implicit,
+            23: SS.implicit,
+            27: SS.implicit,
+            32: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
@@ -1114,6 +1139,7 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
@@ -1158,6 +1184,7 @@ class TestMlBackend(BackendTest):
             2: SS.implicit,
             9: SS.implicit,
             11: SS.implicit,
+            100: SS.implicit,
         }
         result = self.ml.get_subscription_states(self.key, new_id)
         self.assertEqual(expectation, result)
@@ -1177,6 +1204,12 @@ class TestMlBackend(BackendTest):
             12: None,
             13: 'martin@example.cde',
             14: 'nina@example.cde',
+            22: 'vera@example.cde',
+            23: 'werner@example.cde',
+            27: 'annika@example.cde',
+            32: 'farin@example.cde',
+            100: 'akira@example.cde'
+        ,
         }
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 2))
@@ -1198,7 +1231,8 @@ class TestMlBackend(BackendTest):
                        2: 'berta@example.cde',
                        3: 'charly@example.cde',
                        11: 'kalif@example.cde',
-                       14: 'nina@example.cde'}
+                       14: 'nina@example.cde',
+                       100: 'akira@example.cde'}
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 5))
 
@@ -1209,7 +1243,8 @@ class TestMlBackend(BackendTest):
                              self.ml.get_subscription_addresses(self.key, 8))
             expectation = {1: 'anton@example.cde',
                            7: 'garcia@example.cde',
-                           9: 'inga@example.cde'}
+                           9: 'inga@example.cde',
+                           100: 'akira@example.cde'}
             self.assertEqual(expectation,
                              self.ml.get_subscription_addresses(self.key, 9))
             expectation = {5: 'emilia@example.cde'}
@@ -1591,7 +1626,12 @@ class TestMlBackend(BackendTest):
                             'janis@example.cde',
                             'kalif@example.cde',
                             'martin@example.cde',
-                            'nina@example.cde'),
+                            'nina@example.cde',
+                            'vera@example.cde',
+                            'werner@example.cde',
+                            'annika@example.cde',
+                            'farin@example.cde',
+                            'akira@example.cde'),
             'whitelist': {'honeypot@example.cde'}}
         self.assertEqual(
             expectation,
@@ -1665,7 +1705,12 @@ class TestMlBackend(BackendTest):
                                        'janis@example.cde',
                                        'kalif@example.cde',
                                        'martin@example.cde',
-                                       'nina@example.cde'),
+                                       'nina@example.cde',
+                                       'vera@example.cde',
+                                       'werner@example.cde',
+                                       'annika@example.cde',
+                                       'farin@example.cde',
+                                       'akira@example.cde'),
                        'whitelist': ['honeypot@example.cde']}
         self.assertEqual(
             expectation,

@@ -1672,7 +1672,7 @@ GERMAN_POSTAL_CODES = {
     "99974", "99976", "99986", "99988", "99991", "99994", "99996", "99998",
 }
 
-# IBANs have different lengths depensing on the country.
+# IBANs have different lengths depending on the country.
 #
 # We only include Country Codes of Countries that fully support SEPA,
 # since we can only issue direct debits to these countries anyways.
