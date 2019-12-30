@@ -448,21 +448,21 @@ INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES
 -- fix serials (we gave explicit ids since want to have total control over
 -- them so we reference the correct things in the test suite)
 --
-SELECT setval('core.personas_id_seq', 15);
-SELECT setval('cde.lastschrift_id_seq', 2);
-SELECT setval('past_event.events_id_seq', 1);
-SELECT setval('past_event.courses_id_seq', 2);
-SELECT setval('past_event.institutions_id_seq', 1);
-SELECT setval('event.events_id_seq', 2);
-SELECT setval('event.event_parts_id_seq', 4);
-SELECT setval('event.course_tracks_id_seq', 3);
-SELECT setval('event.courses_id_seq', 5);
-SELECT setval('event.field_definitions_id_seq', 6);
-SELECT setval('event.lodgement_groups_id_seq', 2);
-SELECT setval('event.lodgements_id_seq', 4);
-SELECT setval('event.registrations_id_seq', 4);
-SELECT setval('event.log_id_seq', 4);
-SELECT setval('ml.mailinglists_id_seq', 11);
-SELECT setval('assembly.assemblies_id_seq', 2);
-SELECT setval('assembly.ballots_id_seq', 6);
-SELECT setval('assembly.candidates_id_seq', 27);
+SELECT setval('core.personas_id_seq', 1000);
+SELECT setval('cde.lastschrift_id_seq', 1000);
+SELECT setval('past_event.events_id_seq', 1000);
+SELECT setval('past_event.courses_id_seq', 1000);
+SELECT setval('past_event.institutions_id_seq', 1000);
+SELECT setval('event.events_id_seq', 1000);
+SELECT setval('event.event_parts_id_seq', 1000);
+SELECT setval('event.course_tracks_id_seq', 1000);
+SELECT setval('event.courses_id_seq', 1000);
+SELECT setval('event.field_definitions_id_seq', 1000);
+SELECT setval('event.lodgement_groups_id_seq', 1000);
+SELECT setval('event.lodgements_id_seq', 1000);
+SELECT setval('event.registrations_id_seq', 1000);
+SELECT setval('event.log_id_seq', 1000);
+SELECT setval('ml.mailinglists_id_seq', 1000);
+SELECT setval('assembly.assemblies_id_seq', 1000);
+SELECT setval('assembly.ballots_id_seq', 1000);
+SELECT setval('assembly.candidates_id_seq', 1000);
