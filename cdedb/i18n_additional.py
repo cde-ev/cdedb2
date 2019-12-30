@@ -228,7 +228,7 @@ I18N_STRINGS = (
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
 
-    n_("MailinglistGroup.other")
+    n_("MailinglistGroup.other"),
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
     n_("MailinglistGroup.event"),

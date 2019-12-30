@@ -167,6 +167,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Allgemeine Mailinglisten")
         self.assertPresence("Andere Mailinglisten")
         self.assertPresence("Sozialistischer Kampfbrief")
+        self.assertNonPresence("Aktivenforum 2001")
 
     @as_users("anton")
     def test_list_all_mailinglist(self, user):

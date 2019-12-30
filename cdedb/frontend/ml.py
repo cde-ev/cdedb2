@@ -24,6 +24,7 @@ from cdedb.backend.ml import MlBackend
 from cdedb.config import SecretsConfig
 from cdedb.frontend.ml_mailman import MailmanShard
 
+from cdedb.ml_type_aux import MailinglistGroup
 
 class MlFrontend(AbstractUserFrontend):
     """Manage mailing lists which will be run by an external software."""
@@ -71,14 +72,18 @@ class MlFrontend(AbstractUserFrontend):
         policies = const.AudiencePolicy.applicable(rs.user.roles)
         mailinglists = self.mlproxy.list_mailinglists(
             rs, audience_policies=policies)
-        overrides = self.mlproxy.list_subscription_overrides(rs)
-        mailinglists.update(overrides)
+        mailinglists.update(self.mlproxy.list_subscription_overrides(rs))
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=sub_states)
+        grouped = collections.defaultdict(dict)
+        for mailinglist_id, title in mailinglists.items():
+            group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
+            grouped[group_id][mailinglist_id] = title
         return self.render(rs, "index", {
-            'mailinglists': mailinglists, 'overrides': overrides,
+            'groups': MailinglistGroup,
+            'mailinglists': grouped,
             'subscriptions': subscriptions,
             'mailinglist_infos': mailinglist_infos})
 

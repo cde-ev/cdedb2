@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""Configuration for test runs.
+
+This is the configuration used during test runs.
+"""
+
 import pathlib
 
 CDEDB_TEST = True
@@ -21,6 +26,3 @@ ML_FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend-ml.log")
 ML_BACKEND_LOG = pathlib.Path("/tmp/test-cdedb-backend-ml.log")
 ASSEMBLY_FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend-assembly.log")
 ASSEMBLY_BACKEND_LOG = pathlib.Path("/tmp/test-cdedb-backend-assembly.log")
-GLOBAL_LOG = pathlib.Path("/tmp/test-cdedb.log")
-CONSOLE_LOG_LEVEL = None
-DB_PORT = 6432
