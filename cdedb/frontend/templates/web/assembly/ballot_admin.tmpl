@@ -1,18 +1,3 @@
-{% macro administrate_ballot() -%}
-  <div class="p">
-      {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="pencil",
-              aclass="btn btn-sm btn-warning") }}
-      {% if CDEDB_DEV %}
-          <form action="{{ cdedblink("assembly/ballot_start_voting") }}" method="POST"
-                id="startvotingform" style="display: inline;">
-              {{ util.anti_csrf_token("assembly/ballot_start_voting") }}
-              {{ util.input_submit(value=gettext("Start Voting"), aclass="btn btn-sm btn-success",
-                      icon="check") }}
-          </form>
-      {% endif %}
-  </div>
-{%- endmacro %}
-
 {# Admin modification options (delete and edit) #}
 {% macro administrate_ballot() -%}
     <div class="p">
@@ -29,7 +14,6 @@
     </div>
 {%- endmacro %}
 
-    
 {% macro delete_ballot() -%}
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
         <div class="row">
