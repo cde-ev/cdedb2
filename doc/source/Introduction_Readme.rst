@@ -48,9 +48,9 @@ Sample Data
 There is a default data set for the development it contains some users
 (according to the table below).
 
-  ======================= ========== ================================================ =========
+  ======================= ========== ================================================ ==========
    User                    Password   Notes                                            ID
-  ======================= ========== ================================================ =========
+  ======================= ========== ================================================ ==========
    anton@example.cde       secret     admin with all privileges                        DB-1-9
    berta@example.cde       secret     canonical example member, moderator of lists     DB-2-7
    charly@example.cde      secret     member, but not searchable                       DB-3-5
@@ -70,8 +70,8 @@ There is a default data set for the development it contains some users
    werner@example.cde      secret     Member, corresponding to Wahlleitung             DB-23-X
    annika@example.cde      secret     Member, corresponding to Akademieteam            DB-27-2
    farin@example.cde       secret     Member, corresponding to Finanzvorstand          DB-32-9
-   akira@example.cde       secret     equal to anton - to test sorting                 DB-100-7
-  ======================= ========== ================================================ =========
+   akira@example.cde       secret     equal to Anton - to test sorting                 DB-100-7
+  ======================= ========== ================================================ ==========
 
 Random Thoughts
 ---------------
