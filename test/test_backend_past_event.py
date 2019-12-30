@@ -109,7 +109,9 @@ class TestPastEventBackend(BackendTest):
                        (5, 2): {'pcourse_id': 2, 'is_instructor': False,
                                 'is_orga': False, 'persona_id': 5},
                        (6, 2): {'pcourse_id': 2, 'is_instructor': False,
-                                'is_orga': True, 'persona_id': 6}}
+                                'is_orga': True, 'persona_id': 6},
+                       (100, 2): {'pcourse_id': 2, 'is_instructor': False,
+                                'is_orga': False, 'persona_id': 100}}
 
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
@@ -202,13 +204,13 @@ class TestPastEventBackend(BackendTest):
                        {'additional_info': None,
                         'code': 2,
                         'ctime': nearly_now(),
-                        'pevent_id': 2,
+                        'pevent_id': 1001,
                         'persona_id': None,
                         'submitted_by': 1},
                        {'additional_info': None,
                         'code': 1,
                         'ctime': nearly_now(),
-                        'pevent_id': 2,
+                        'pevent_id': 1001,
                         'persona_id': None,
                         'submitted_by': 1})
         self.assertEqual(expectation, self.pastevent.retrieve_past_log(self.key))
@@ -243,7 +245,7 @@ class TestPastEventBackend(BackendTest):
             key=lambda d: d['tempus'])
         expectation = {
             'description': 'Everybody come!',
-            'id': 2,
+            'id': 1001,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Warmup)',
             'shortname': "TestAka (Wu)",
@@ -252,7 +254,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation, pevent_data[0])
         expectation = {
             'description': 'Everybody come!',
-            'id': 3,
+            'id': 1002,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Erste Hälfte)',
             'shortname': "TestAka (1.H.)",
@@ -261,7 +263,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation, pevent_data[1])
         expectation = {
             'description': 'Everybody come!',
-            'id': 4,
+            'id': 1003,
             'institution': 1,
             'title': 'Große Testakademie 2222 (Zweite Hälfte)',
             'shortname': "TestAka (2.H.)",
@@ -284,10 +286,13 @@ class TestPastEventBackend(BackendTest):
             set(self.pastevent.list_past_courses(
                 self.key, pevent_data[2]['id']).values()))
         expectation = {
-            (7, 9): {'pcourse_id': 9,
-                     'is_instructor': False,
-                     'is_orga': True,
-                     'persona_id': 7}}
+            (7, 1007): {'pcourse_id': 1007,
+                        'is_instructor': False,
+                        'is_orga': True,
+                        'persona_id': 7},
+            (100, 1007): {'is_instructor': False,
+                          'is_orga': False,
+                          'pcourse_id': 1007,
+                          'persona_id': 100}}
         self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pcourse_id=9))
-
+                         self.pastevent.list_participants(self.key, pcourse_id=1007))

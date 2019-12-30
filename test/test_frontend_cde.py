@@ -185,7 +185,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Ferdinand F. Findus")
         
         f = self.response.forms["membersearchform"]
-        f['postal_lower'] = 10000
+        f['postal_lower'] = 10100
         f['postal_upper'] = 20000
         self.submit(f)
         self.assertTitle("Inga Iota")
@@ -569,7 +569,7 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile('charly')
         self.traverse({'href': '/cde/user/3/lastschrift'})
         self.assertPresence("Keine aktive Einzugsermächtigung")
-        self.traverse({'href': '/cde/user/3/lastschrift/create'})
+        self.traverse({'description': 'Anlegen'})
         self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
         f = self.response.forms['createlastschriftform']
         f['amount'] = "123.45"
@@ -578,7 +578,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Einzugsermächtigung Charly C. Clown")
         self.assertIn("revokeform", self.response.forms)
-        self.traverse({'href': '/cde/lastschrift/3/change'})
+        self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changelastschriftform']
         self.assertEqual("123.45", f['amount'].value)
         self.assertEqual("grosze Siebte: Take on me", f['notes'].value)
@@ -1097,7 +1097,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
-        self.assertPresence("Derzeit haben 2 Mitglieder ein zu niedriges Guthaben")
+        self.assertPresence("Derzeit haben 3 Mitglieder ein zu niedriges Guthaben")
 
         f = self.response.forms['ejectform']
         self.submit(f)
@@ -1220,7 +1220,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_institutions(self, user):
-        self.traverse({'href': '/cde/$'}, {'href': '/past/institution/summary'})
+        self.traverse({'href': '/cde/$'}, {'description': 'Organisationen verwalten'})
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
@@ -1232,20 +1232,20 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
-        self.assertEqual("Bildung und Begabung", f['title_2'].value)
+        self.assertEqual("Bildung und Begabung", f['title_1001'].value)
         f['title_1'] = "Monster Academy"
         f['moniker_1'] = "MA"
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
-        self.assertEqual("Bildung und Begabung", f['title_2'].value)
-        f['delete_2'].checked = True
+        self.assertEqual("Bildung und Begabung", f['title_1001'].value)
+        f['delete_1001'].checked = True
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
-        self.assertNotIn("title_2", f.fields)
+        self.assertNotIn("title_1001", f.fields)
 
     @as_users("anton", "berta")
     def test_list_past_events(self, user):
@@ -1305,11 +1305,11 @@ class TestCdEFrontend(FrontendTest):
         # Check list privacy
         # non-searchable non-participants can not see anything interesting
         if user['id'] == 7:
-            self.assertPresence("4 Teilnehmer")
+            self.assertPresence("5 Teilnehmer")
             self.assertNonPresence("Bertå")
             self.assertNonPresence("Ferdinand")
         else:
-            self.assertNonPresence("4 Teilnehmer")
+            self.assertNonPresence("5 Teilnehmer")
             self.assertPresence("Bertå")
             self.assertPresence("Ferdinand")
 
@@ -1371,6 +1371,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Charly C. Clown")
         self.assertPresence("Emilia E. Eventis")
         self.assertPresence("Ferdinand F. Findus")
+        self.assertPresence("Akira Abukara")
 
         save = self.response
         self.response = save.click(href='/cde/past/event/1/download',
@@ -1387,7 +1388,9 @@ class TestCdEFrontend(FrontendTest):
         result = list(csv.DictReader(self.response.text.split('\n'),
                                      dialect=dialect))
         given_names = {e["given_names"] for e in result}
-        expectation = {"Bertålotta", "Charly C.", "Emilia E.", "Ferdinand F."}
+        expectation = {
+            "Bertålotta", "Charly C.", "Emilia E.", "Ferdinand F.", "Akira"
+        }
         self.assertEqual(expectation, given_names)
 
     @as_users("anton")
@@ -1593,7 +1596,7 @@ class TestCdEFrontend(FrontendTest):
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/core/changelog/view'})
-        self.assertTitle("Nutzerdaten-Log [0–15]")
+        self.assertTitle("Nutzerdaten-Log [0–20]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)

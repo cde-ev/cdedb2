@@ -458,7 +458,7 @@ class TestMlFrontend(FrontendTest):
                 self.logout()
                 self.login(user)
                 self.traverse({'href': '/'})
-                self.traverse({'href': '/ml/mailinglist/12/show'})
+                self.traverse({'href': '/ml/mailinglist/1001/show'})
                 self.traverse({'description': 'Verwaltung'})
                 self.assertTitle(mdata['title'] + " – Verwaltung")
                 f = self.response.forms['addsubscriberform']
@@ -592,7 +592,12 @@ class TestMlFrontend(FrontendTest):
                             'janis@example.cde',
                             'kalif@example.cde',
                             'martin@example.cde',
-                            'nina@example.cde'],
+                            'nina@example.cde',
+                            'vera@example.cde',
+                            'werner@example.cde',
+                            'annika@example.cde',
+                            'farin@example.cde',
+                            'akira@example.cde'],
             'whitelist': ['honeypot@example.cde']}
         self.get("/ml/script/one?address=werbung@example.cde", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -662,7 +667,12 @@ class TestMlFrontend(FrontendTest):
                                        'janis@example.cde',
                                        'kalif@example.cde',
                                        'martin@example.cde',
-                                       'nina@example.cde'],
+                                       'nina@example.cde',
+                                       'vera@example.cde',
+                                       'werner@example.cde',
+                                       'annika@example.cde',
+                                       'farin@example.cde',
+                                       'akira@example.cde'],
                        'whitelist': ['honeypot@example.cde',]}
         self.get("/ml/script/one/compat?address=werbung@example.cde",
                  headers=HEADERS)
