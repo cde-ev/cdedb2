@@ -305,8 +305,7 @@ class EventFrontend(AbstractUserFrontend):
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
-            rs.notify("error", n_("Unknown part."))
-            return None
+            raise werkzeug.exception.NotFound(n_("Invalid part id."))
         parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
 
         participant = const.RegistrationPartStati.participant
@@ -3229,7 +3228,7 @@ class EventFrontend(AbstractUserFrontend):
              msg = n_("Must not duplicate field.")
              return (lambda d: not d[key1] or d[key1] != d[key2],
                      (key1, ValueError(msg)))
-         
+
         def valid_field_constraint(idx):
              key = "field_id_{}".format(idx)
              return (lambda d: not d[key] or d[key] in reg_fields,
@@ -3238,7 +3237,7 @@ class EventFrontend(AbstractUserFrontend):
             None, (duplicate_constraint(idx1, idx2)
                    for idx1 in indices for idx2 in indices)))
         constraints += tuple(valid_field_constraint(idx) for idx in indices)
-                            
+
         params = tuple(("{}_{}".format(key, i), value)
                        for i in indices for key, value in spec.items())
         data = request_extractor(rs, params, constraints)

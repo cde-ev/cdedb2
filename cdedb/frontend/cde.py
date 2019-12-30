@@ -2359,8 +2359,7 @@ class CdEFrontend(AbstractUserFrontend):
         stats = self.pasteventproxy.past_event_stats(rs)
         institution_ids = self.pasteventproxy.list_institutions(rs)
         if institution_id and institution_id not in institution_ids:
-            rs.notify("error", n_("Unknown institution."))
-            return self.redirect(rs, "cde/list_past_events")
+            raise werkzeug.exceptions.NotFound(n_("Invalid institution id."))
 
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
 
