@@ -197,10 +197,11 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/1/attendees'})
         self.assertTitle("Anwesenheitsliste (Internationaler Kongress)")
         self.assertPresence("Anton")
+        self.assertPresence("Akira")
         self.assertPresence("Bertålotta")
         self.assertPresence("Kalif")
         self.assertPresence("Inga")
-        self.assertPresence("Insgesamt 4 Anwesende.")
+        self.assertPresence("Insgesamt 5 Anwesende.")
         self.assertNonPresence("Charly")
 
     @as_users("anton")
@@ -515,7 +516,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertPresence("Dunkelaquamarin")
-        f = self.response.forms['removecandidateform28']
+        f = self.response.forms['removecandidateform1001']
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertNonPresence("Dunkelaquamarin")

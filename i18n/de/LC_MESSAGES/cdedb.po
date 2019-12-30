@@ -11161,6 +11161,11 @@ msgstr "BCC-E-Mail an alle"
 msgid "Send Mail to all registrations listed below as BCC."
 msgstr "E-Mail an alle unten aufgeführten Anmeldungen als BCC senden."
 
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:91
+msgid "Email button is only available, if the email field is shown."
+msgstr ""
+"E-Mail-Button ist nur verfügbar, wenn das E-Mail-Feld angezeigt wird."
+
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:5
 #, python-format
 msgid "Your Registration (%(title)s)"
