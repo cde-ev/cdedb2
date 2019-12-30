@@ -13,14 +13,25 @@
                     aclass="btn btn-success btn-sm", icon="plus") }}
         </div>
     {% endif %}
-    
+
+    <ul class="nav nav-tabs mosp" role="navigation">
+        <li role="presentation" {% if institution_id is none %}class="active" aria-current="page" {% endif %}>
+            {{ util.href(cdedblink('cde/list_past_events', {'institution_id': None}), gettext("Overview")) }}
+        </li>
+        {% for i_id, i in institutions.items() %}
+            <li role="presentation" {% if i_id == institution_id %}class="active" aria-current="page" {% endif %}>
+                {{ util.href(cdedblink('cde/list_past_events', {'institution_id': i_id}), i['moniker']) }}
+            </li>
+        {% endfor %}
+    </ul>
+
     {% for year, year_events in years|dictsort|reverse %}
         <h4 class="heading-underline">{{ year }}</h4>
         <ul>
             {% for pevent_id in year_events %}
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
-                    ({{ stats[pevent_id]['institution_moniker'] }})&emsp;
+                    {% if not institution_id %}({{ stats[pevent_id]['institution_moniker'] }}){% endif %}
                     {% if is_admin %}
                         <small class="text-muted nowrap">
                             {% trans count=stats[pevent_id]['courses'] -%}
