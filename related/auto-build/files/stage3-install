@@ -34,6 +34,8 @@ sudo -u cdedb echo '        textconv = i18n/git-diff-filter-po.sh' >> /cdedb2/.g
 sudo -u cdedb echo '[merge "pomerge"]' >> /cdedb2/.git/config
 sudo -u cdedb echo '        name = Gettext merge driver' >> /cdedb2/.git/config
 sudo -u cdedb echo '        driver = i18n/git-merge-po.sh %O %A %B' >> /cdedb2/.git/config
+sudo -u cdedb echo '[pull]' >> /cdedb2/.git/config
+sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
 sudo -u cdedb echo '' >> /cdedb2/.git/info/attributes
 sudo -u cdedb echo '*.po diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
 sudo -u cdedb echo '*.pot diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
