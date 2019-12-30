@@ -13,13 +13,14 @@
                 {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), gettext("Ballots"),
                         aclass="list-group-item", icon="thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
 
-            {% if is_admin and ambience['assembly']['is_active'] %}
-                {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),
-                        aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
+            {% if is_admin %}
+                {% if ambience['assembly']['is_active'] %}
+                    {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),
+                            aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
+                {% endif %}
+                    {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
+                            aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
             {% endif %}
-
-            {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
-                    aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
         </div>
 {% endmacro %}
 
