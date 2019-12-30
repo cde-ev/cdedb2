@@ -1037,6 +1037,10 @@ class EventFrontend(AbstractUserFrontend):
                                          "course_segments"}
             params['logo_present'] = (self.conf.STORAGE_DIR / "course_logo" /
                                       str(course_id)).exists()
+            instructors = self.coreproxy.get_personas(
+                    rs, {r['persona_id'] for r in registrations.values()
+                        if any([t['course_instructor'] == 1 for t in r['tracks'].values()])})
+            params['instructor_emails'] = [p['username'] for p in instructors.values()]
         return self.render(rs, "show_course", params)
 
     @access("event")
