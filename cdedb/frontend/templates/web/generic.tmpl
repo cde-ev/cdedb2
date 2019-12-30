@@ -96,7 +96,7 @@
     {{ user_search_mask(realm) }}
 
     {% if values['is_search'] %}
-        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
         {{ user_search_result(result, realm) }}
     {% endif %}
 {% endmacro %}
@@ -161,7 +161,7 @@
             {% else %}
                 {% set target=cdedblink('{}/user_search'.format(realm)) %}
             {% endif %}
-            {{ format_query(spec, TITLES, choices, target, selection_blacklist=selection_blacklist,
+            {{ format_query(spec, TITLES, choices, target + '#query-results', selection_blacklist=selection_blacklist,
                             selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
 
     {% endwith %}
@@ -467,7 +467,7 @@
                     <ul>
                         {% for query in list %}
                             <li>
-                                {{ util.href(cdedblink(target, queries[query]|querytoparams),
+                                {{ util.href(cdedblink(target, queries[query]|querytoparams) + '#query-results',
                                         gettext(query), aclass="default-query") }}
                             </li>
                         {% endfor %}

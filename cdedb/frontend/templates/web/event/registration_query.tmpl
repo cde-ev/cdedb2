@@ -66,11 +66,11 @@
             "ctime.creation_time": gettext("Registration Time"),
             "mtime.modification_time": gettext("Last Modification Time"),}) %}
 
-    {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query'),
+    {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query') + '#query-results',
                             selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
     {% if values['is_search'] %}
-        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
         <!-- Additional buttons for the registration_query -->
 
         {% if "persona.username" in query.fields_of_interest %}
