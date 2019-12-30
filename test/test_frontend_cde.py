@@ -214,6 +214,17 @@ class TestCdEFrontend(FrontendTest):
 
         self.assertIn("Bad response: 403 FORBIDDEN", exc.exception.args[0])
 
+    @as_users("inga")
+    def test_member_profile_gender_privacy(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/member'})
+        self.assertTitle("CdE-Mitglied suchen")
+        f = self.response.forms['membersearchform']
+        f['qval_family_name,birth_name'] = "Beispiel"
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.assertNonPresence("weiblich")
+
     @as_users("anton")
     def test_user_search(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})

@@ -379,7 +379,7 @@ class CoreFrontend(AbstractFrontend):
         if "assembly" in access_levels and "assembly" in roles:
             data.update(self.coreproxy.get_assembly_user(rs, persona_id))
         if "event" in access_levels and "event" in roles:
-            data.update(self.coreproxy.get_event_user(rs, persona_id))
+            data.update(self.coreproxy.get_event_user(rs, persona_id, event_id))
         if "cde" in access_levels and "cde" in roles:
             data.update(self.coreproxy.get_cde_user(rs, persona_id))
             if "core" in access_levels and "member" in roles:
@@ -406,7 +406,7 @@ class CoreFrontend(AbstractFrontend):
                     "is_assembly_admin", "is_cde_realm", "is_event_realm",
                     "is_ml_realm", "is_assembly_realm", "is_archived"])
             if "orga" not in access_levels and not is_relative_admin:
-                masks.append("is_member")
+                masks.extend(["is_member", "gender"])
             for key in masks:
                 if key in data:
                     del data[key]

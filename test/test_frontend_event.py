@@ -1561,6 +1561,21 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Anton Armin A.")
 
     @as_users("garcia")
+    def test_profile_link(self, user):
+        # Test if I can view the profile of searchable members
+        self.get('/event/event/1/registration/5/show')
+        self.traverse({'description': 'DB-100-7'})
+        # Test privacy: that I can see exactly the information I should see
+        self.assertTitle("Akira Abukara")
+        self.assertPresence("Geschlecht")
+        self.assertPresence("sonstiges")
+        # self.assertPresence("Mitgliedschaft")
+        self.assertNonPresence("Sichtbarkeit")
+        self.assertPresence("28.12.2019")
+        self.assertPresence("100-8798 Tokyo")
+        self.assertNonPresence("Ich bin ein „Künstler“; im weiteren Sinne.")
+
+    @as_users("garcia")
     def test_lodgements(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
