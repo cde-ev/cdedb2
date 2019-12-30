@@ -151,22 +151,26 @@
         </div>
         {{ util.output_errors('email', wrapper=True) }}
     </form>
-    <ul>
-        {% for email in ambience['mailinglist']['whitelist']|sort %}
-            <li class="hide-hover-container clearfix-after">
-                {{ email }}
-                <form action="{{ cdedblink('ml/remove_whitelist') }}"
-                      method="POST"
-                      id="removewhitelistform{{ loop.index }}"
-                      class="hide-hover display-inline">
-                    {{ util.anti_csrf_token('ml/remove_whitelist') }}
-                    {{ util.input_hidden(name="email", value=email) }}
-                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
-                            title=gettext("Remove %s from Whitelist")|format(email)) }}
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
+    <div class="row">
+        <div class="col-md-6">
+            <ul>
+                {% for email in ambience['mailinglist']['whitelist']|sort %}
+                    <li class="hide-hover-container clearfix-after">
+                        {{ email }}
+                        <form action="{{ cdedblink('ml/remove_whitelist') }}"
+                            method="POST"
+                            id="removewhitelistform{{ loop.index }}"
+                            class="hide-hover display-inline">
+                            {{ util.anti_csrf_token('ml/remove_whitelist') }}
+                            {{ util.input_hidden(name="email", value=email) }}
+                            {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                    title=gettext("Remove %s from Whitelist")|format(email)) }}
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 
     {% call util.bootstrap_panel(title=gettext("Downloads"), icon="save-file", aclass="panel-default mosp") %}
         <div class="row">
