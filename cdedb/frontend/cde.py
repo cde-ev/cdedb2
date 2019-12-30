@@ -174,11 +174,14 @@ class CdEFrontend(AbstractUserFrontend):
         pl = rs.values['postal_lower'] = rs.request.values.get('postal_lower')
         pu = rs.values['postal_upper'] = rs.request.values.get('postal_upper')
         if pl and pu:
-            defaults['qval_postal_code,postal_code2'] = "{:0<5} {:0<5}".format(pl, pu)
+            defaults['qval_postal_code,postal_code2'] = "{:0<5} {:0<5}".format(
+                pl, pu)
         elif pl:
-            defaults['qval_postal_code,postal_code2'] = "{:0<5} 99999".format(pl)
+            defaults['qval_postal_code,postal_code2'] = "{:0<5} 99999".format(
+                pl)
         elif pu:
-            defaults['qval_postal_code,postal_code2'] = "0000 {:0<5}".format(pu)
+            defaults['qval_postal_code,postal_code2'] = "00000 {:0<5}".format(
+                pu)
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
