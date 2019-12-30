@@ -1295,7 +1295,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/batchfee'})
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] ="""
+        f['fee_data'] = """
 570.99;DB-1-9;Admin;Anton;01.04.18
 461.49;DB-5-1;Eventis;Emilia;01.04.18
 570.99;DB-11-6;K;Kalif;01.04.18
@@ -1304,20 +1304,24 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("Kein Account mit ID 666 gefunden.")
         f = self.response.forms['batchfeesform']
+        f['full_payment'].checked = True
         f['fee_data'] = """
-573.99;DB-1-9;Admin;Anton;01.04.18
+573.98;DB-1-9;Admin;Anton;01.04.18
 461.49;DB-5-1;Eventis;Emilia;04.01.18
+451.00;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
         f = self.response.forms['batchfeesform']
         f['force'].checked = True
         f['send_notifications'].checked = True
         self.submit(f, check_notification=False)
+        self.assertPresence("Nicht genug Geld", "line1_warnings")
+        self.assertPresence("Zu viel Geld", "line3_warnings")
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
         mails = self.fetch_mail()
-        self.assertEqual(2, len(mails))
+        self.assertEqual(3, len(mails))
         for mail in mails:
             text = mail.get_body().get_content()
             self.assertIn(
@@ -1329,8 +1333,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/1/show'})
         self.assertTitle("Anmeldung von Anton Armin A. Administrator (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 01.04.2018")
-        self.assertPresence("Bereits bezahlter Betrag 573,99 €")
+        self.assertPresence("Teilnehmerbeitrag ausstehend")
+        self.assertPresence("Bereits bezahlter Betrag 573,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
@@ -1338,6 +1342,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 04.01.2018")
         self.assertPresence("Bereits bezahlter Betrag 461,49 €")
+        self.traverse({'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/4/show'})
+        self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
+        self.assertPresence("Bezahlt am 30.12.2019")
+        self.assertPresence("Bereits bezahlter Betrag 451,00 €")
 
     @as_users("garcia")
     def test_registration_query(self, user):

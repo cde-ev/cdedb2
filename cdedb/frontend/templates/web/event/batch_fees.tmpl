@@ -24,6 +24,7 @@
         {{ util.input_hidden(name="checksum") }}
         {{ util.form_input_checkbox(name="force", horizontal=False, label=gettext("Ignore Warnings")) }}
         {{ util.form_input_checkbox(name="send_notifications", horizontal=False, label=gettext("Send Notifications")) }}
+        {{ util.form_input_checkbox(name="full_payment", horizontal=False, label=gettext("Set payment date for full payments only."), defaultvalue="True") }}
         {{ util.form_input_file(name="fee_data_file", horizontal=False, label=gettext("Transfers")) }}
         {{ util.form_input_textarea(name="fee_data", horizontal=False, rows="10",
                                     anid="input-data") }}
@@ -57,8 +58,9 @@
                 {%- endtrans %}
             </strong>
             <div class="batch-line-body">
-                {% if dataset['problems'] or dataset['warnings'] %}
+                {% if dataset['problems'] or dataset['warnings'] or dataset['infos'] %}
                     <ul class="list-unstyled">
+                        <div id="line{{ dataset['lineno'] }}_problems">
                         {% for key, problem in dataset['problems'] %}
                             <li class="text-danger">
                                 {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
@@ -71,6 +73,8 @@
                                 {{ util.format_error(problem) }}
                             </li>
                         {% endfor %}
+                        </div>
+                        <div id="line{{ dataset['lineno'] }}_warnings">
                         {% for key, warning in dataset['warnings'] %}
                             <li class="text-warning">
                                 {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
@@ -83,6 +87,21 @@
                                 {{ util.format_error(warning) }}
                             </li>
                         {% endfor %}
+                        </div>
+                        <div id="line{{ dataset['lineno'] }}_infos">
+                        {% for key, info in dataset['infos'] %}
+                            <li class="text-info">
+                                {{ util.make_icon('info-sign', title=gettext("Info")) }}
+                                {% if key %}
+                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
+                                        data-col="{{ csvfields.get(key, -1) }}">
+                                        {{ key -}}
+                                    </em>:
+                                {% endif %}
+                                {{ util.format_error(info) }}
+                            </li>
+                        {% endfor %}
+                        </div>
                     </ul>
                 {% endif %}
             </div>
