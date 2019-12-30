@@ -138,7 +138,8 @@ class EventBackend(AbstractBackend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    def is_orga(self, rs, *, event_id=None, course_id=None):
+    def is_orga(self, rs, *, event_id=None, course_id=None,
+                registration_id=None):
         """Check for orga privileges as specified in the event.orgas table.
 
         Exactly one of the inputs has to be provided.
@@ -146,15 +147,21 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int or None
         :type course_id: int or None
+        :type registration_id: int or None
         :rtype: bool
         """
-        if event_id is None and course_id is None:
+        num_inputs = sum(1 for anid in (event_id, course_id, registration_id)
+                         if anid is not None)
+        if num_inputs < 1:
             raise ValueError(n_("No input specified."))
-        if event_id is not None and course_id is not None:
+        if num_inputs > 1:
             raise ValueError(n_("Too many inputs specified."))
         if course_id is not None:
-            event_id = unwrap(self.sql_select_one(rs, "event.courses",
-                                                  ("event_id",), course_id))
+            event_id = unwrap(self.sql_select_one(
+                rs, "event.courses", ("event_id",), course_id))
+        elif registration_id is not None:
+            event_id = unwrap(self.sql_select_one(
+                rs, "event.registrations", ("event_id",), registration_id))
         return event_id in rs.user.orga
 
     @access("event")
