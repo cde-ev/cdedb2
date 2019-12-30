@@ -26,7 +26,7 @@
         <h3>{{ heading }}</h3>
         <ul>
             {% for ballot_id, ballot in sample|xdictsort("title") %}
-                <li {% if is_admin and now() < ballot['vote_begin'] %}style="max-width: 60%;" class="hide-hover-container"{% endif %}>
+                <li style="max-width: 60%;" class="hide-hover-container">
                     {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title']) }}
                     {% if ballot_id in votes and show_state %}
                         ({% if votes[ballot_id] -%}
