@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 
-"""Configuration for test runs. Has to be included via
-``cdedb.localconfig``."""
+"""Global configuration for test runs.
+
+Has to be included via ``cdedb.localconfig``.
+
+Normally all configuration for test runs should be done via
+``test.localconfig``, but in that way it's not possible to override
+settings in the BasicConfig which is done via this file.
+"""
 
 import pathlib
 

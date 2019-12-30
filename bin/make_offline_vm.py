@@ -108,11 +108,13 @@ def update_event(cur, event):
 
 
 def work(args):
+    db_name = 'cdb_test' if args.test else 'cdb'
+    
     print("Loading exported event")
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data["CDEDB_EXPORT_EVENT_VERSION"] != 4:
+    if data["CDEDB_EXPORT_EVENT_VERSION"] != 6:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -124,12 +126,13 @@ def work(args):
         data['event.events'][str(data['id'])]['offline_lock'] = True
 
     print("Clean current instance")
-    if input("Are you sure (type uppercase YES)? ").strip() != "YES":
-        print("Aborting.")
-        sys.exit()
+    if not args.test:
+        if input("Are you sure (type uppercase YES)? ").strip() != "YES":
+            print("Aborting.")
+            sys.exit()
     clean_script = args.repopath / "test/ancillary_files/clean_data.sql"
     subprocess.run(
-        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-f",
+        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", db_name, "-f",
          str(clean_script)], stderr=subprocess.DEVNULL, check=True)
 
     print("Make orgas into admins")
@@ -151,7 +154,7 @@ def work(args):
     print("Prepare database.")
     # Fix uneditable table
     subprocess.run(
-        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
+        ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", db_name, "-c",
          """GRANT SELECT, INSERT, UPDATE ON core.meta_info TO cdb_anonymous;
             GRANT SELECT, UPDATE ON core.meta_info_id_seq TO cdb_anonymous;
             INSERT INTO core.meta_info (info) VALUES ('{}'::jsonb);"""],
@@ -159,7 +162,7 @@ def work(args):
 
     print("Connect to database")
     connection_string = "dbname={} user={} password={} port={}".format(
-        'cdb', 'cdb_admin', '9876543210abcdefghijklmnopqrst', 5432)
+        db_name, 'cdb_admin', '9876543210abcdefghijklmnopqrst', 5432)
     conn = psycopg2.connect(connection_string,
                             cursor_factory=psycopg2.extras.RealDictCursor)
     conn.set_client_encoding("UTF8")
@@ -167,9 +170,9 @@ def work(args):
     tables = (
         'core.personas', 'event.events', 'event.event_parts',
         'event.courses', 'event.course_tracks', 'event.course_segments',
-        'event.orgas', 'event.field_definitions', 'event.lodgements',
-        'event.registrations', 'event.registration_parts',
-        'event.registration_tracks',
+        'event.orgas', 'event.field_definitions', 'event.lodgement_groups',
+        'event.lodgements', 'event.registrations',
+        'event.registration_parts', 'event.registration_tracks',
         'event.course_choices', 'event.questionnaire_rows', 'event.log')
     with conn as con:
         with con.cursor() as cur:
@@ -209,7 +212,10 @@ def work(args):
         print("Everything in place.")
 
     print("Enabling offline mode")
-    config_path = args.repopath / "cdedb/localconfig.py"
+    if args.test:
+        config_path = args.repopath / "test/localconfig.py"
+    else:
+        config_path = args.repopath / "cdedb/localconfig.py"
     subprocess.run(
         ["sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
          str(config_path)], check=True)
@@ -226,6 +232,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Prepare for offline usage.')
     parser.add_argument('data_path', help="Path to exported event data")
+    parser.add_argument('-t', '--test', action="store_true",
+                        help="Operate on test database")
     args = parser.parse_args()
 
     # detemine repo path

@@ -59,6 +59,37 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Suchmaske")
         self.assertNonPresence("Search Mask")
 
+    @as_users("anton", "berta")
+    def test_index(self, user):
+        self.assertTitle("CdE-Datenbank")
+        self.assertPresence("Meine Daten", div='sidebar')
+        self.assertPresence("Orga-Veranstaltungen", div='orga-box')
+        if user['id'] == 2:
+            self.assertNonPresence("Log")
+            self.assertNonPresence("Admin-Änderungen")
+            self.assertNonPresence("Nutzer verwalten")
+            self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
+            self.assertNonPresence("Aktivenforum 2000")
+            self.assertPresence("Aktivenforum 2001", div='moderator-box')
+            # Check if there is actually the correct request
+            self.traverse({'href': '/ml/mailinglist/7/management',
+                           'description': "1 Anfrage"})
+            self.traverse({'href': '/'})
+            self.assertTitle("CdE-Datenbank")
+        else:
+            self.assertPresence("Account-Log", div='sidebar')
+            self.assertPresence("Admin-Änderungen", div='sidebar')
+            self.assertPresence("Nutzer verwalten", div='sidebar')
+            self.assertPresence("Nutzer verwalten", div='adminshowuser-box')
+            self.assertNonPresence("Moderierte Mailinglisten")
+        self.assertPresence("CdE-Party 2050", div='orga-box')
+        self.assertNonPresence("Große Testakademie 2222", div='orga-box')
+        self.assertPresence("Aktuelle Veranstaltungen", div='event-box')
+        self.assertPresence("Große Testakademie 2222", div='event-box')
+        self.assertNonPresence("CdE-Party 2050", div='event-box')
+        self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
+        self.assertPresence("Internationaler Kongress", div='assembly-box')
+
     @as_users("anton", "berta", "charly", "emilia", "ferdinand",
               "garcia", "inga", "janis", "kalif")
     def test_showuser(self, user):
@@ -912,13 +943,46 @@ class TestCoreFrontend(FrontendTest):
     def test_modify_balance(self, user):
         self.admin_view_profile('ferdinand')
         self.assertPresence("Guthaben 22,20 €")
+        self.assertNonPresence("Probemitgliedschaft")
         self.traverse({'description': 'Guthaben anpassen'})
         self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        # Test form default values
+        f = self.response.forms['modifybalanceform']
+        self.assertEqual(f['new_balance'].value, "22.20")
+        self.assertFalse(f['trial_member'].checked)
+        # Test 'Nothing changed!' warning
+        self.submit(f, check_notification=False)
+        self.assertPresence("Keine Änderungen", div="notifications")
+        self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        # Test missing change note entry warning
+        f = self.response.forms['modifybalanceform']
+        f['new_balance'] = 15.66
+        self.submit(f, check_notification=False)
+        self.assertPresence("Validierung fehlgeschlagen", div="notifications")
+        self.assertTitle("Guthaben anpassen für Ferdinand F. Findus")
+        # Test changing balance
         f = self.response.forms['modifybalanceform']
         f['new_balance'] = 15.66
         f['change_note'] = 'deduct stolen cookies'
         self.submit(f)
         self.assertPresence("Guthaben 15,66 €")
+        # Test changing trial membership
+        self.traverse({'description': 'Guthaben anpassen'})
+        f = self.response.forms['modifybalanceform']
+        f['trial_member'].checked = True
+        f['change_note'] = "deduct lost cookies"
+        self.submit(f)
+        self.assertPresence("Probemitgliedschaft")
+        # Test changing balance and trial membership
+        self.traverse({'description': 'Guthaben anpassen'})
+        f = self.response.forms['modifybalanceform']
+        self.assertTrue(f['trial_member'].checked)
+        f['new_balance'] = 22.22
+        f['trial_member'].checked = False
+        f['change_note'] = "deduct eaten cookies"
+        self.submit(f)
+        self.assertPresence("Guthaben 22,22 €")
+        self.assertNonPresence("Probemitgliedschaft")
 
     @as_users("anton")
     def test_meta_info(self, user):

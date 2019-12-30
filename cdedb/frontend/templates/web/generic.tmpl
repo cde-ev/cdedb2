@@ -238,7 +238,7 @@
                 <!-- Tabs to chose between NonJS- and JS-form -->
                 <ul class="nav nav-tabs softhide" role="tablist" id="qf_tablist">
                     <li role="presentation" class="active">
-                        <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab">
+                        <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab" id="tab_link_qf_nojs">
                             {{ util.make_icon('list') }} {% trans -%}Tabular{%- endtrans %}
                         </a>
                     </li>
@@ -441,7 +441,16 @@
                             .on('show.bs.tab', function() {
                                 $qf.data('cdedbQueryForm').initFromForm();
                             })
-                            .tab('show');
+                            .on('shown.bs.tab', function() {
+                                eraseCookie('queryform_nojs');
+                            });
+                        $('#tab_link_qf_nojs')
+                            .on('shown.bs.tab',
+                                function(){createCookie('queryform_nojs','true',10*365);});
+                        /* Show the tab */
+                        if (!readCookie('queryform_nojs')) {
+                            $('#tab_link_qf_js').tab('show');
+                        }
                     }
                 </script>
             </div>

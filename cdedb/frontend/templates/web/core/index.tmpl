@@ -32,7 +32,8 @@
     <div class="row">
         {% if 'core_admin' in user.roles %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Manage Users"), aclass="panel-warning", icon='user') %}
+            {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='user',
+                                         aclass="panel-warning", anid="adminshowuser-box") %}
                 <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
                     <div class="sr-only">{% trans -%}Search for Users by ID or Name{%- endtrans %}</div>
                     <div class="input-group">
@@ -58,7 +59,8 @@
               'privilege_changes' in dashboard and dashboard['privilege_changes'] > 0 %}
 
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Account Management"), aclass='panel-info', icon='check') %}
+            {% call util.bootstrap_panel(title=gettext("Account Management"), icon='check',
+                                         aclass='panel-info', anid="accountmanangement-box") %}
                 {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 %}
                     <p>
                         {% trans count=dashboard['genesis_cases'],
@@ -102,8 +104,9 @@
 
         {% if dashboard['orga'] %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='blackboard', aclass='panel-warning') %}
-                <ul class="slim mosp">
+            {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='blackboard',
+                                         aclass='panel-warning', anid="orga-box") %}
+                <ul class="slim spaced">
                     {% for event_id, event in dashboard['orga']|xdictsort('begin') %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
@@ -166,8 +169,8 @@
         {% if 'moderator' in dashboard %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
-                                         aclass='panel-warning') %}
-                <ul class="slim mosp">
+                                         aclass='panel-warning', anid='moderator-box') %}
+                <ul class="slim spaced">
                     {% for mailinglist_id, mailinglist in dashboard['moderator']|xdictsort('title') %}
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
@@ -189,8 +192,8 @@
         {% if 'events' in dashboard %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Current Events"), icon='blackboard',
-                                         aclass='panel-success') %}
-                <ul class="slim mosp">
+                                         aclass='panel-success', anid='event-box') %}
+                <ul class="slim spaced">
                     {% for event_id, event in dashboard['events']|xdictsort('begin') %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
@@ -241,8 +244,8 @@
         {% if 'assemblies' in dashboard %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Current Assemblies"), icon='bullhorn',
-                                         aclass='panel-success') %}
-                <ul class="slim mosp">
+                                         aclass='panel-success', anid='assembly-box') %}
+                <ul class="slim spaced">
                     {% for assembly_id, assembly in dashboard['assemblies']|xdictsort('signup_end') %}
                         <li>
                             {{ util.href(cdedblink('assembly/show_assembly', {'assembly_id': assembly_id}),

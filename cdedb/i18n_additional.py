@@ -160,7 +160,7 @@ I18N_STRINGS = (
     n_("MlLogCodes.request_denied"),
     n_("MlLogCodes.request_cancelled"),
     n_("MlLogCodes.request_blocked"),
-    n_("MlLogCodes.cron_removed")
+    n_("MlLogCodes.cron_removed"),
 
     n_("ModerationPolicy.unmoderated"),
     n_("ModerationPolicy.non_subscribers"),
@@ -228,7 +228,7 @@ I18N_STRINGS = (
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
 
-    n_("MailinglistGroup.other")
+    n_("MailinglistGroup.other"),
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
     n_("MailinglistGroup.event"),

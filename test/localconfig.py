@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""Configuration for test runs.
+
+This is the configuration used during test runs.
+"""
+
 import pathlib
 
 CDEDB_TEST = True
