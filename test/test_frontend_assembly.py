@@ -521,17 +521,17 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertNonPresence("Dunkelaquamarin")
 
-    @as_users
+    @as_users("anton")
     def test_has_voted(self, user):
         self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Drittes CdE-Konzil'},
+                      {'description': 'Kanonische Beispielversammlung'},
                       {'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
 
         self.assertPresence("Du nimmst nicht an der Versammlung teil.")
         self.assertNonPresence("Du hast nicht abgestimmt.")
 
-        self.traverse({'description': 'Übersicht'})
+        self.traverse({'description': 'Kanonische Beispielversammlung'})
         secret = self._signup()
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
