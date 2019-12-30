@@ -100,6 +100,7 @@
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                             <span class="nowrap">
+                                {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
                                 <form action="{{ cdedblink('ml/approve_request') }}"
                                       method="POST"
                                       id="approverequestform{{ request }}"
