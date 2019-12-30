@@ -17,6 +17,9 @@
                 {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),
                         aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
             {% endif %}
+
+            {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
+                    aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
         </div>
 {% endmacro %}
 

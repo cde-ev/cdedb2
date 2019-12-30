@@ -13,8 +13,6 @@
         {% if is_admin and ambience['assembly']['is_active'] %}
             {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
                          icon="cog") }}
-            {{ util.href(cdedblink("assembly/view_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
-                    icon="list-alt") }}
         {% endif %}
     </div>
 
