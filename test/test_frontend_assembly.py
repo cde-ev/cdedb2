@@ -8,6 +8,7 @@ from test.common import as_users, USER_DICT, FrontendTest
 
 from cdedb.common import ASSEMBLY_BAR_MONIKER, now
 from cdedb.query import QueryOperators
+import cdedb.database.constants as const
 
 
 class TestAssemblyFrontend(FrontendTest):
@@ -624,48 +625,27 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/log'})
         self.assertTitle("\nVersammlungs-Log [0–14]\n")
         f = self.response.forms['logshowform']
-        f['codes'] = [0, 1, 2, 10, 11, 12, 14]
+        codes = [const.AssemblyLogCodes.assembly_created.value,
+                 const.AssemblyLogCodes.assembly_changed.value,
+                 const.AssemblyLogCodes.ballot_created.value,
+                 const.AssemblyLogCodes.ballot_changed.value,
+                 const.AssemblyLogCodes.ballot_deleted.value,
+                 const.AssemblyLogCodes.ballot_tallied.value]
+        f['codes'] = codes
         f['assembly_id'] = 1
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
         self.assertTitle("\nVersammlungs-Log [1–6]\n")
 
-        self.traverse({'href': '/assembly/1/log'})
-        self.assertTitle("\nVersammlungs-Log [0–7]\n")
+        self.traverse({'href': '/assembly/$'},
+                      {'description': 'Drittes CdE-Konzil'},
+                      {'description': 'Log'})
+        self.assertTitle("\nDrittes CdE-Konzil: Log [0–6]\n")
 
         f = self.response.forms['logshowform']
-        f['codes'] = [0, 1, 2, 10, 11, 12, 14]
+        f['codes'] = codes
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("\nViertes CdE-Konzil: Log [1–2]\n")
-
-    @as_users("anton")
-    def test_assembly_log(self, user):
-        # produce logs for different assemblies
-        self._create_assembly()
-        self._create_assembly({
-                    'title': 'Viertes CdE-Konzil',
-                    'signup_end': "3333-4-1 00:00:00",
-                    'description': "Zukunft des CdE",
-                    'notes': "bla blub"})
-        self._create_ballot(bdata={
-                    'title': 'CdExit',
-                    'description': "Darf der British-Isles-Kurs den CdExit um ein Jahr verschieben?",
-                    'vote_begin': "3333-4-1 00:00:00",
-                    'vote_end': "3333-5-1 00:00:00",
-                    'votes': "",
-                    'notes': "blub bla"},
-                candidates = [
-                    {'moniker': 'ja', 'description': 'Ja'},
-                    {'moniker': 'nein', 'description': 'Nein'}])
-        # test, that only logs for 'Viertes CdE-Konzil' are shown
-        self.traverse({'description': 'Log'})
-        self.assertTitle("\nViertes CdE-Konzil: Log [0–4]\n")
-        f = self.response.forms['logshowform']
-        f['codes'] = [0, 1, 2, 10, 11, 12, 14]
-        f['start'] = 1
-        f['stop'] = 10
-        self.submit(f)
-        self.assertTitle("\nViertes CdE-Konzil: Log [1–2]\n")
+        self.assertTitle("\nDrittes CdE-Konzil: Log [1–4]\n")
