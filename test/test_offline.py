@@ -50,7 +50,7 @@ class TestOffline(FrontendTest):
                 'Die Veranstaltung befindet sich im Offline-Modus.')
             self.traverse({'href': 'event/event/1/registration/query'},
                           {'description': 'Alle Anmeldungen'})
-            self.assertPresence('Ergebnis [4]')
+            self.assertPresence('5', 'query-results')
             self.assertPresence('Inga')
 
             # Additional tests can be added here.
