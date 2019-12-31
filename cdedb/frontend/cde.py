@@ -2359,6 +2359,10 @@ class CdEFrontend(AbstractUserFrontend):
     def list_past_events(self, rs, institution_id=None):
         """List all concluded events."""
         events = self.pasteventproxy.list_past_events(rs)
+        shortnames = {
+            pevent_id: value['shortname']
+            for pevent_id, value in self.pasteventproxy.get_past_events(rs, events).items()
+        }
         stats = self.pasteventproxy.past_event_stats(rs)
         institution_ids = self.pasteventproxy.list_institutions(rs)
         if institution_id and institution_id not in institution_ids:
@@ -2383,6 +2387,7 @@ class CdEFrontend(AbstractUserFrontend):
             'years': years,
             'institutions': institutions,
             'institution_id': institution_id,
+            'shortnames': shortnames,
         })
 
     @access("cde_admin")
