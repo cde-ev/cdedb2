@@ -1235,7 +1235,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
-        self.assertNotIn("title_2", f.fields)
+        self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
+        self.assertNotIn("title_3", f.fields)
         f['create_-1'].checked = True
         f['title_-1'] = "Bildung und Begabung"
         f['moniker_-1'] = "BuB"
@@ -1243,6 +1244,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
+        self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertEqual("Bildung und Begabung", f['title_1001'].value)
         f['title_1'] = "Monster Academy"
         f['moniker_1'] = "MA"
@@ -1250,12 +1252,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
+        self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertEqual("Bildung und Begabung", f['title_1001'].value)
         f['delete_1001'].checked = True
         self.submit(f)
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
+        self.assertEqual("Disco des Ehemaligen", f['title_2'].value)
         self.assertNotIn("title_1001", f.fields)
 
     @as_users("anton", "berta")
