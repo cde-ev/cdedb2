@@ -3255,11 +3255,11 @@ _BALLOT_COMMON_FIELDS = lambda: {
     'description': _str_or_None,
     'vote_begin': _datetime,
     'vote_end': _datetime,
-    'vote_extension_end': _datetime_or_None,
     'notes': _str_or_None
 }
 _BALLOT_OPTIONAL_FIELDS = lambda: {
     'extended': _bool_or_None,
+    'vote_extension_end': _datetime_or_None,
     'quorum': _int,
     'votes': _int_or_None,
     'use_bar': _bool,
@@ -3327,6 +3327,22 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
                 else:
                     newcandidates[anid] = candidate
         val['candidates'] = newcandidates
+    if ('quorum' in val) != ('vote_extension_end' in val):
+        errs.extend(
+            [("vote_extension_end",
+              ValueError(n_("Must be specified if quorum is given."))),
+             ("quorum", ValueError(
+                 n_("Must be specified if vote extension end is given.")))]
+        )
+    if 'quorum' in val and 'vote_extension_end' in val:
+        if not ((val['quorum'] != 0 and val['vote_extension_end'] is not None)
+                or (val['quorum'] == 0 and val['vote_extension_end'] is None)):
+            errs.extend(
+                [("vote_extension_end",
+                  ValueError(n_("Inconsitent with quorum."))),
+                 ("quorum", ValueError(
+                     n_("Inconsitent with vote extension end.")))]
+            )
     return val, errs
 
 

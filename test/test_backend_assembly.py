@@ -253,7 +253,7 @@ class TestAssemblyBackend(BackendTest):
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222, tzinfo=pytz.utc),
             'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222, tzinfo=pytz.utc),
-            'vote_extension_end': None,
+            'vote_extension_end': datetime.datetime(2222, 2, 7, 13, 22, 22, 222222, tzinfo=pytz.utc),
             'votes': None}
         new_id = self.assembly.create_ballot(self.key, data)
         self.assertLess(0, new_id)
@@ -281,6 +281,54 @@ class TestAssemblyBackend(BackendTest):
             5: 'Lieblingszahl',
             new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
+
+    @as_users("werner")
+    def test_quorum(self, user):
+        data = {
+            'assembly_id': 1,
+            'use_bar': False,
+            'candidates': {-1: {'description': 'Ja', 'moniker': 'j'},
+                           -2: {'description': 'Nein', 'moniker': 'n'},},
+            'description': 'Sind sie sich sicher?',
+            'notes': None,
+            'quorum': 11,
+            'title': 'Verstehen wir Spaß',
+            'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222, tzinfo=pytz.utc),
+            'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222, tzinfo=pytz.utc),
+            'vote_extension_end': None,
+            'votes': None}
+        with self.assertRaises(ValueError):
+            self.assembly.create_ballot(self.key, data)
+
+        data['quorum'] = 0
+        data['vote_extension_end'] = datetime.datetime(2222, 2, 7, 13, 22, 22, 222222, tzinfo=pytz.utc)
+        with self.assertRaises(ValueError):
+            self.assembly.create_ballot(self.key, data)
+
+        # now create the ballot
+        data['quorum'] = 11
+        new_id = self.assembly.create_ballot(self.key, data)
+
+        data = {
+            'id': new_id,
+            'quorum': 0,
+        }
+        with self.assertRaises(ValueError):
+            self.assembly.set_ballot(self.key, data)
+
+        data = {
+            'id': new_id,
+            'vote_extension_end': None,
+        }
+        with self.assertRaises(ValueError):
+            self.assembly.set_ballot(self.key, data)
+
+        data = {
+            'id': new_id,
+            'quorum': 0,
+            'vote_extension_end': None,
+        }
+        self.assembly.set_ballot(self.key, data)
 
     def test_extension(self):
         self.login(USER_DICT['anton'])
