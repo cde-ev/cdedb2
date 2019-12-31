@@ -8,7 +8,8 @@
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
             {{ error.description }}
         {% elif error.code == 404 %}
-            {% trans %}Couldn’t find the requested page{% endtrans %}
+            {% trans %}Couldn’t find the requested page.{% endtrans %}
+            {% if error.description %}({{ error.description }}){% endif %}
         {% elif error.code == 405 %}
             {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
         {% elif error.code == 500 %}

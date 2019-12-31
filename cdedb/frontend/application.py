@@ -98,6 +98,12 @@ class Application(BaseApp):
         :rtype: :py:class:`Response`
         """
         try:
+            # We don't like werkzeug's default 404 description:
+            if isinstance(error, werkzeug.exceptions.NotFound) \
+                    and (error.description
+                         is werkzeug.exceptions.NotFound.description):
+                error.description = None
+
             urls = self.urlmap.bind_to_environ(request.environ)
 
             def _cdedblink(endpoint, params=None):

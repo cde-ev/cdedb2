@@ -3881,7 +3881,7 @@ msgid "You do not have sufficient permissions to access this page:"
 msgstr ""
 
 #: cdedb/frontend/templates/web/error.tmpl:11
-msgid "Couldn’t find the requested page"
+msgid "Couldn’t find the requested page."
 msgstr ""
 
 #: cdedb/frontend/templates/web/error.tmpl:13

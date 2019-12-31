@@ -3936,8 +3936,8 @@ msgstr ""
 "zuzugreifen:"
 
 #: cdedb/frontend/templates/web/error.tmpl:11
-msgid "Couldn’t find the requested page"
-msgstr "Konnte die angeforderte Seite nicht finden"
+msgid "Couldn’t find the requested page."
+msgstr "Konnte die angeforderte Seite nicht finden."
 
 #: cdedb/frontend/templates/web/error.tmpl:13
 msgid "This HTTP method is not allowed for this URL."
