@@ -11,10 +11,9 @@ dependencies.
 
 import abc
 
-from cdedb.common import n_, merge_dicts, ProxyShim, PERSONA_DEFAULTS
+from cdedb.common import n_, merge_dicts, PERSONA_DEFAULTS
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.common import check_validation as check
-from cdedb.backend.core import CoreBackend
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
@@ -26,14 +25,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     user_management = {
         "persona_getter": None,  # callable
     }
-
-    def __init__(self, configpath):
-        super().__init__(configpath)
-        self.coreproxy = ProxyShim(CoreBackend(configpath))
-
-    @abc.abstractmethod
-    def finalize_session(self, rs, connpool, auxilliary=False):
-        super().finalize_session(rs, connpool, auxilliary=auxilliary)
 
     @classmethod
     @abc.abstractmethod

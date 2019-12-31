@@ -27,8 +27,8 @@ from cdedb.database.connection import Atomizer
 from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
-    PERSONA_DEFAULTS, ProxyShim, diacritic_patterns, shutil_copy,
-    asciificator, EntitySorter)
+    PERSONA_DEFAULTS, diacritic_patterns, shutil_copy, asciificator,
+    EntitySorter)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -36,15 +36,12 @@ from cdedb.frontend.common import (
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
-from cdedb.backend.event import EventBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.cde import CdEBackend
 from cdedb.frontend.parse_statement import (
     Transaction, TransactionType, Accounts, get_event_name_pattern,
     STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
     STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_DB_ID_EXTERN,
-    STATEMENT_DB_ID_UNKNOWN, MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS,
-    OTHER_TRANSACTION_FIELDS, ACCOUNT_FIELDS, STATEMENT_OUTPUT_DATEFORMAT)
+    MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS, OTHER_TRANSACTION_FIELDS,
+    ACCOUNT_FIELDS, STATEMENT_OUTPUT_DATEFORMAT)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -76,15 +73,6 @@ class CdEFrontend(AbstractUserFrontend):
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_cde_user,
     }
-
-    def __init__(self, configpath):
-        super().__init__(configpath)
-        self.cdeproxy = ProxyShim(CdEBackend(configpath))
-        self.eventproxy = ProxyShim(EventBackend(configpath))
-        self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
-
-    def finalize_session(self, rs, connpool, auxilliary=False):
-        super().finalize_session(rs, connpool, auxilliary=auxilliary)
 
     @classmethod
     def is_admin(cls, rs):

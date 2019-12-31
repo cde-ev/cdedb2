@@ -34,12 +34,9 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
+    unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
     DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter)
-from cdedb.backend.event import EventBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -52,17 +49,6 @@ class EventFrontend(AbstractUserFrontend):
         "persona_getter": lambda obj: obj.coreproxy.get_event_user,
     }
 
-    def __init__(self, configpath):
-        super().__init__(configpath)
-        self.eventproxy = ProxyShim(EventBackend(configpath))
-        self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
-        self.mlproxy = ProxyShim(MlBackend(configpath))
-
-    def finalize_session(self, rs, connpool, auxilliary=False):
-        super().finalize_session(rs, connpool, auxilliary=auxilliary)
-        if "event" in rs.user.roles:
-            rs.user.orga = self.eventproxy.orga_info(rs, rs.user.persona_id)
-
     def render(self, rs, templatename, params=None):
         params = params or {}
         if 'event' in rs.ambience:
@@ -73,8 +59,8 @@ class EventFrontend(AbstractUserFrontend):
                 params['is_registered'] = bool(reg_list)
                 params['is_participant'] = False
                 if params['is_registered']:
-                    registration = self.eventproxy.get_registration(rs,
-                        unwrap(reg_list, keys=True))
+                    registration = self.eventproxy.get_registration(
+                        rs, unwrap(reg_list, keys=True))
                     if any(part['status']
                            == const.RegistrationPartStati.participant
                            for part in registration['parts'].values()):

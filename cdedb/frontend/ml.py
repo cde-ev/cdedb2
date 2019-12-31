@@ -15,16 +15,13 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, merge_dicts, ProxyShim, EntitySorter, SubscriptionError,
-    SubscriptionActions, now)
+    n_, merge_dicts, SubscriptionError, SubscriptionActions, now, EntitySorter)
 import cdedb.database.constants as const
-from cdedb.backend.event import EventBackend
-from cdedb.backend.assembly import AssemblyBackend
-from cdedb.backend.ml import MlBackend
 from cdedb.config import SecretsConfig
 from cdedb.frontend.ml_mailman import MailmanShard
 
 from cdedb.ml_type_aux import MailinglistGroup
+
 
 class MlFrontend(AbstractUserFrontend):
     """Manage mailing lists which will be run by an external software."""
@@ -37,30 +34,11 @@ class MlFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.eventproxy = ProxyShim(EventBackend(configpath))
-        self.mlproxy = ProxyShim(MlBackend(configpath))
-        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
         secrets = SecretsConfig(configpath)
-        self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
         self.mailman_create_client = lambda url, user: mailmanclient.Client(
             url, user, secrets.MAILMAN_PASSWORD)
         self.mailman_template_password = (
             lambda: secrets.MAILMAN_BASIC_AUTH_PASSWORD)
-
-    def finalize_session(self, rs, connpool, auxilliary=False):
-        super().finalize_session(rs, connpool, auxilliary=auxilliary)
-        if self.validate_scriptkey(rs.scriptkey):
-            # Special case the access of the mailing list software since
-            # it's not tied to an actual persona. Note that this is not
-            # affected by the LOCKDOWN configuration.
-            rs.user.roles.add("ml_script")
-            # Upgrade db connection
-            rs._conn = connpool["cdb_persona"]
-        if "ml" in rs.user.roles:
-            rs.user.moderator = self.mlproxy.moderator_info(rs,
-                                                            rs.user.persona_id)
-        if "event" in rs.user.roles:
-            rs.user.orga = self.eventproxy.orga_info(rs, rs.user.persona_id)
 
     @classmethod
     def is_admin(cls, rs):

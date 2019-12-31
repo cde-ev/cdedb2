@@ -21,16 +21,18 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
-    n_, glue, QuotaException, now,
-    roles_to_db_role, RequestState, User, extract_roles, ANTI_CSRF_TOKEN_NAME)
+    n_, glue, QuotaException, now, roles_to_db_role, RequestState, User,
+    ANTI_CSRF_TOKEN_NAME, ProxyShim)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
     docurl, JINJA_FILTERS, check_validation)
-from cdedb.config import SecretsConfig, Config
+from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.backend.session import SessionBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
 
 
 class Application(BaseApp):
@@ -42,6 +44,8 @@ class Application(BaseApp):
         :type configpath: str
         """
         super().__init__(configpath)
+        self.eventproxy = ProxyShim(EventBackend(configpath))
+        self.mlproxy = ProxyShim(MlBackend(configpath))
         # do not use a ProxyShim since the only usage here is before the
         # RequestState exists
         self.sessionproxy = SessionBackend(configpath)
@@ -55,6 +59,7 @@ class Application(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets, self.conf.DB_PORT)
+        self.validate_mlscriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
         # Construct a reduced Jinja environment for rendering error pages.
         # TODO With buster we can activate the trimming of the trans env
         self.jinja_env = jinja2.Environment(
@@ -149,11 +154,16 @@ class Application(BaseApp):
                 # note time for performance measurement
                 begin = now()
                 sessionkey = request.cookies.get("sessionkey")
-                scriptkey = request.headers.get("SCRIPTKEY")
-                user = self.sessionproxy.lookupsession(sessionkey,
-                                                       request.remote_addr)
                 urls = self.urlmap.bind_to_environ(request.environ)
                 endpoint, args = urls.match()
+                mlscriptkey = request.headers.get("MLSCRIPTKEY")
+                user = self.sessionproxy.lookupsession(sessionkey,
+                                                       request.remote_addr)
+                if self.validate_mlscriptkey(mlscriptkey):
+                    # Special case the access of the mailing list software
+                    # since it's not tied to an actual persona. Note that
+                    # this is not affected by the LOCKDOWN configuration.
+                    user.roles.add("ml_script")
 
                 # Check for timed out / invalid sessionkey
                 if sessionkey and not user.persona_id:
@@ -177,12 +187,12 @@ class Application(BaseApp):
                 }
                 lang = self.get_locale(request)
                 rs = RequestState(
-                    sessionkey=sessionkey, user=None, request=request,
+                    sessionkey=sessionkey, user=user, request=request,
                     response=None, notifications=[], mapadapter=urls,
                     requestargs=args, errors=[], values={}, lang=lang,
                     gettext=self.translations[lang].gettext,
                     ngettext=self.translations[lang].ngettext,
-                    coders=coders, begin=begin, scriptkey=scriptkey,
+                    coders=coders, begin=begin,
                     default_gettext=self.translations["en"].gettext,
                     default_ngettext=self.translations["en"].ngettext
                 )
@@ -193,14 +203,14 @@ class Application(BaseApp):
                     try:
                         notifications = json.loads(raw_notifications)
                         for note in notifications:
-                            ntype, nmessage, nparams = self.decode_notification(
-                                note)
+                            ntype, nmessage, nparams = (
+                                self.decode_notification(note))
                             if ntype:
                                 rs.notify(ntype, nmessage, nparams)
                             else:
                                 self.logger.info(
                                     "Invalid notification '{}'".format(note))
-                    except:
+                    except Exception:
                         # Do nothing if we fail to handle a notification,
                         # they can be manipulated by the client side, so
                         # we can not assume anything.
@@ -209,8 +219,8 @@ class Application(BaseApp):
                 if request.method not in handler.modi:
                     raise werkzeug.exceptions.MethodNotAllowed(
                         handler.modi,
-                        "Unsupported request method {}.".format(request.method))
-                rs.user = user
+                        "Unsupported request method {}.".format(
+                            request.method))
 
                 # Check anti CSRF token (if required by the endpoint)
                 if handler.check_anti_csrf:
@@ -223,13 +233,19 @@ class Application(BaseApp):
 
                 # Store database connection as private attribute.
                 # It will be made accessible for the backends by the ProxyShim.
-                rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
-                # Add realm specific infos (mostly to the user object)
-                getattr(self, component).finalize_session(rs, self.connpool)
-                for realm in getattr(handler, 'realm_usage', set()):
-                    # Add extra information for the cases where it's necessary
-                    getattr(self, realm).finalize_session(rs, self.connpool,
-                                                          auxilliary=True)
+                rs._conn = self.connpool[roles_to_db_role(user.roles)]
+
+                # Insert orga and moderator status context
+                orga = []
+                if "event" in user.roles:
+                    orga = self.eventproxy.orga_info(rs, user.persona_id)
+                moderator = []
+                if "ml" in user.roles:
+                    moderator = self.mlproxy.moderator_info(rs,
+                                                            user.persona_id)
+                user.orga = orga
+                user.moderator = moderator
+
                 try:
                     return handler(rs, **args)
                 finally:
@@ -239,7 +255,7 @@ class Application(BaseApp):
                 # do not log these, since they are not interesting and
                 # reduce the signal to noise ratio
                 raise
-            except Exception as e:
+            except Exception:
                 self.logger.error(glue(
                     ">>>\n>>>\n>>>\n>>> Exception while serving {}",
                     "<<<\n<<<\n<<<\n<<<").format(request.url))
@@ -309,11 +325,11 @@ def check_anti_csrf(rs, component, action):
     """
     A helper function to check the anti CSRF token
 
-    The anti CSRF token is a signed userid, added as hidden input to most forms,
-    used to mitigate Cross Site Request Forgery (CSRF) attacks. It is checked
-    before calling the handler function, if the handler function is marked to
-    be protected against CSRF attacks, which is the default for all POST
-    endpoints.
+    The anti CSRF token is a signed userid, added as hidden input to most
+    forms, used to mitigate Cross Site Request Forgery (CSRF) attacks. It is
+    checked before calling the handler function, if the handler function is
+    marked to be protected against CSRF attacks, which is the default for
+    all POST endpoints.
 
     The anti CSRF token should be created using the util.anti_csrf_token
     template macro.

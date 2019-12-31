@@ -5,7 +5,6 @@
 import collections
 import copy
 import hashlib
-import os
 import pathlib
 import quopri
 import tempfile
@@ -18,18 +17,12 @@ import werkzeug.exceptions
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, request_extractor, REQUESTfile,
-    request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
+    request_dict_extractor, querytoparams_filter,
     csv_output, query_result_to_json, enum_entries_filter, periodic)
 from cdedb.common import (
-    n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError,
+    n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter)
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.assembly import AssemblyBackend
-from cdedb.backend.ml import MlBackend
-from cdedb.backend.event import EventBackend
-from cdedb.backend.past_event import PastEventBackend
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
@@ -44,28 +37,11 @@ class CoreFrontend(AbstractFrontend):
     anonymous access and personas. """
     realm = "core"
 
-    def __init__(self, configpath):
-        """
-        :type configpath: str
-        """
-        super().__init__(configpath)
-        self.coreproxy = ProxyShim(CoreBackend(configpath))
-        self.cdeproxy = ProxyShim(CdEBackend(configpath))
-        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
-        self.mlproxy = ProxyShim(MlBackend(configpath))
-        self.eventproxy = ProxyShim(EventBackend(configpath))
-        self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
-
-    def finalize_session(self, rs, connpool, auxilliary=False):
-        super().finalize_session(rs, connpool, auxilliary=auxilliary)
-
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
     @access("anonymous")
-    @event_usage
-    @ml_usage
     @REQUESTdata(("wants", "#str_or_None"))
     def index(self, rs, wants=None):
         """Basic entry point.
@@ -272,8 +248,6 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("persona")
-    @event_usage
-    @ml_usage
     @REQUESTdata(("confirm_id", "#int"), ("quote_me", "bool"),
                  ("event_id", "id_or_None"), ("ml_id", "id_or_None"))
     def show_user(self, rs, persona_id, confirm_id, quote_me, event_id, ml_id,
@@ -581,8 +555,6 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @event_usage
-    @ml_usage
     @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
                  ("variant", "non_negative_int_or_None"))
     def select_persona(self, rs, phrase, kind, aux, variant=None):

@@ -43,7 +43,7 @@ class RequestState:
 
     def __init__(self, sessionkey, user, request, response, notifications,
                  mapadapter, requestargs, errors, values, lang, gettext,
-                 ngettext, coders, begin, scriptkey, default_gettext=None,
+                 ngettext, coders, begin, default_gettext=None,
                  default_ngettext=None):
         """
         :type sessionkey: str or None
@@ -84,9 +84,6 @@ class RequestState:
           with secrets. This is hacky, but sadly necessary.
         :type begin: datetime.datetime
         :param begin: time where we started to process the request
-        :type scriptkey: str or None
-        :param scriptkey: Like a sessionkey, but for scripts. This is simply
-          stored, so each frontend can take separate action.
         :type default_gettext: callable
         :param default_gettext: default translation function used to ensure
             stability across different locales
@@ -113,7 +110,6 @@ class RequestState:
         self.default_ngettext = default_ngettext or ngettext
         self._coders = coders
         self.begin = begin
-        self.scriptkey = scriptkey
         # Visible version of the database connection
         self.conn = None
         # Private version of the database connection, only visible in the
@@ -142,31 +138,28 @@ class RequestState:
 class User:
     """Container for a persona."""
 
-    def __init__(self, persona_id=None, roles=None, orga=None, moderator=None,
-                 display_name="", given_names="", family_name="", username=""):
+    def __init__(self, persona_id=None, roles=None, display_name="",
+                 given_names="", family_name="", username="", orga=None,
+                 moderator=None):
         """
         :type persona_id: int or None
         :type roles: {str}
         :param roles: python side privilege levels
-        :type orga: {int} or None
-        :param orga: Set of event ids for which this user is orga, only
-          available in the event realm.
-        :type moderator: {int} or None
-        :param moderator: Set of mailing list ids for which this user is
-          moderator, only available in the ml realm.
         :type display_name: str or None
         :type given_names: str or None
         :type family_name or None
         :type username: str or None
+        :type orga: [int]
+        :type moderator: [int]
         """
         self.persona_id = persona_id
         self.roles = roles or {"anonymous"}
-        self.orga = orga or set()
-        self.moderator = moderator or set()
         self.username = username
         self.display_name = display_name
         self.given_names = given_names
         self.family_name = family_name
+        self.orga = orga or []
+        self.moderator = moderator or []
 
 
 def do_singularization(fun):
@@ -1453,6 +1446,7 @@ DB_ROLE_MAPPING = collections.OrderedDict((
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
+    ("ml_script", "cdb_persona"),
 
     ("anonymous", "cdb_anonymous"),
 ))

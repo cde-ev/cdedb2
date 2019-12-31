@@ -37,7 +37,6 @@ import markdown
 import babel.dates
 import babel.numbers
 import bleach
-import docutils.core
 import jinja2
 import werkzeug
 import werkzeug.datastructures
@@ -50,7 +49,13 @@ from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter, EntitySorter)
+    decode_parameter, ProxyShim, EntitySorter)
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.backend.ml import MlBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -58,6 +63,7 @@ import cdedb.validation as validate
 import cdedb.database.constants as const
 import cdedb.query as query_mod
 from cdedb.security import secure_token_hex
+
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -819,29 +825,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
         )
+        # Always provide all backends -- they are cheap
+        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
+        self.cdeproxy = ProxyShim(CdEBackend(configpath))
+        self.coreproxy = ProxyShim(CoreBackend(configpath))
+        self.eventproxy = ProxyShim(EventBackend(configpath))
+        self.mlproxy = ProxyShim(MlBackend(configpath))
+        self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
+
         self.shards = [shardcls(self) for shardcls in self.used_shards]
         for shard in self.shards:
             self.republish(shard)
-
-    @abc.abstractmethod
-    def finalize_session(self, rs, connpool, auxilliary=False):
-        """Allow realm specific tweaking of the session.
-
-        This is intended to add orga and moderator infos in the event
-        and ml realm respectively.
-
-        This will be called by
-        :py:class:`cdedb.frontend.application.Application` and is thus
-        part of the interface.
-
-        :type rs: :py:class:`RequestState`
-        :type auxilliary: bool
-        :param auxilliary: If True this is only called to make realm specific
-          functionality available, but the actual endpoint will not lie in
-          this realm.
-        :rtype: None
-        """
-        return
 
     def _republish(self, shard, name, method):
         """Uninlined code from republish() to avoid late binding."""
@@ -1498,15 +1492,14 @@ class Worker(threading.Thread):
         rrs = RequestState(
             rs.sessionkey, rs.user, rs.request, None, [], rs.urls,
             rs.requestargs, [], copy.deepcopy(rs.values),
-            rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin,
-            rs.scriptkey)
+            rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
             conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets, conf.DB_PORT)
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
 
         def runner():
-            """Implements the actual loop running the task inside the Thread."""
+            """Implement the actual loop running the task inside the Thread."""
             while task(rrs):
                 pass
 
@@ -1960,42 +1953,6 @@ def REQUESTfile(*args):
         return new_fun
 
     return wrap
-
-
-def event_usage(fun):
-    """Indicate usage of the event realm.
-
-    This is intended as decorator to signal a call into the event
-    backend from a non-event frontend. The effect is to make the orga
-    information available which is normally only supplied if requesting
-    an endpoint in the event realm.
-
-    :type fun: callable
-    :rtype: callable
-    """
-    if hasattr(fun, 'realm_usage'):
-        fun.realm_usage.add('event')
-    else:
-        fun.realm_usage = {'event'}
-    return fun
-
-
-def ml_usage(fun):
-    """Indicate usage of the mailinglist realm.
-
-    This is intended as decorator to signal a call into the mailinglist
-    backend from a non-mailinglist frontend. The effect is to make the
-    moderator information available which is normally only supplied if
-    requesting an endpoint in the mailinglist realm.
-
-    :type fun: callable
-    :rtype: callable
-    """
-    if hasattr(fun, 'realm_usage'):
-        fun.realm_usage.add('ml')
-    else:
-        fun.realm_usage = {'ml'}
-    return fun
 
 
 def event_guard(argname="event_id", check_offline=False):

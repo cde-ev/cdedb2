@@ -18,10 +18,7 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, merge_dicts, unwrap, now, ProxyShim,
-    ASSEMBLY_BAR_MONIKER, EntitySorter)
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.assembly import AssemblyBackend
+    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter)
 from cdedb.database.connection import Atomizer
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -36,14 +33,6 @@ class AssemblyFrontend(AbstractUserFrontend):
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_assembly_user,
     }
-
-    def __init__(self, configpath):
-        super().__init__(configpath)
-        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
-        self.cdeproxy = ProxyShim(CdEBackend(configpath))
-
-    def finalize_session(self, rs, connpool, auxilliary=False):
-        super().finalize_session(rs, connpool, auxilliary=auxilliary)
 
     @classmethod
     def is_admin(cls, rs):

@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
 import csv
-import json
-import unittest
-import webtest
 
 import cdedb.database.constants as const
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.frontend.common import CustomCSVDialect
 
 from cdedb.query import QueryOperators
+
 
 class TestMlFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia", "janis")
@@ -562,18 +560,18 @@ class TestMlFrontend(FrontendTest):
                       self.response.text)
 
     def test_export(self):
-        HEADERS = {'SCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
-        expectation =  [{'address': 'announce@example.cde', 'is_active': True},
-                        {'address': 'werbung@example.cde', 'is_active': True},
-                        {'address': 'witz@example.cde', 'is_active': True},
-                        {'address': 'klatsch@example.cde', 'is_active': True},
-                        {'address': 'kongress@example.cde', 'is_active': True},
-                        {'address': 'aktivenforum2000@example.cde', 'is_active': False},
-                        {'address': 'aktivenforum@example.cde', 'is_active': True},
-                        {'address': 'aka@example.cde', 'is_active': True},
-                        {'address': 'participants@example.cde', 'is_active': True},
-                        {'address': 'wait@example.cde', 'is_active': True},
-                        {'address': 'opt@example.cde', 'is_active': True}]
+        HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
+        expectation = [{'address': 'announce@example.cde', 'is_active': True},
+                       {'address': 'werbung@example.cde', 'is_active': True},
+                       {'address': 'witz@example.cde', 'is_active': True},
+                       {'address': 'klatsch@example.cde', 'is_active': True},
+                       {'address': 'kongress@example.cde', 'is_active': True},
+                       {'address': 'aktivenforum2000@example.cde', 'is_active': False},
+                       {'address': 'aktivenforum@example.cde', 'is_active': True},
+                       {'address': 'aka@example.cde', 'is_active': True},
+                       {'address': 'participants@example.cde', 'is_active': True},
+                       {'address': 'wait@example.cde', 'is_active': True},
+                       {'address': 'opt@example.cde', 'is_active': True}]
         self.get("/ml/script/all", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
         expectation = {
@@ -604,7 +602,7 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(expectation, self.response.json)
 
     def test_oldstyle_access(self):
-        HEADERS = {'SCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
+        HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
         expectation = [{'address': 'announce@example.cde',
                         'inactive': False,
                         'maxsize': None,
