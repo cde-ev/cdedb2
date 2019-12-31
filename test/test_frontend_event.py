@@ -1285,15 +1285,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Party")
 
         # at last, test url magic
-        self.get('/event/event/2/registration/list?part_id=5000')
-        self.follow()
-        self.assertTitle("Teilnehmerliste CdE-Party 2050")
-        self.assertPresence("Unbekannter Veranstaltungsteil",
-                            div='notifications')
-        self.get('/event/event/2/registration/list?part_id=4')
-        self.assertTitle("Teilnehmerliste CdE-Party 2050")
-        self.assertNonPresence("Unbekannter Veranstaltungsteil",
-                               div='notifications')
+        self.get('/event/event/2/registration/list?part_id=5000', status=404)
+        self.get('/event/event/2/registration/list?part_id=3', status=404)
 
     @as_users("garcia")
     def test_batch_fee(self, user):
