@@ -25,10 +25,10 @@ import cdedb.database.constants as const
 import cdedb.validation as validate
 from cdedb.database.connection import Atomizer
 from cdedb.common import (
-    n_, merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
+    n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
     PERSONA_DEFAULTS, ProxyShim, diacritic_patterns, shutil_copy,
-    asciificator)
+    asciificator, EntitySorter)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -206,7 +206,7 @@ class CdEFrontend(AbstractUserFrontend):
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
-            result = sorted(result, key=name_key)
+            result = sorted(result, key=EntitySorter.persona)
             count = len(result)
             if count == 1:
                 return self.redirect_show_user(rs, result[0]['id'],
@@ -1247,7 +1247,7 @@ class CdEFrontend(AbstractUserFrontend):
             lastschrift['open'] = lastschrift['id'] in open_permits
         last_order = sorted(
             lastschrifts.keys(),
-            key=lambda anid: name_key(
+            key=lambda anid: EntitySorter.persona(
                 personas[lastschrifts[anid]['persona_id']]))
         lastschrifts = OrderedDict(
             (last_id, lastschrifts[last_id]) for last_id in last_order)
@@ -2272,7 +2272,8 @@ class CdEFrontend(AbstractUserFrontend):
 
             personas = self.coreproxy.get_personas(rs, participants.keys())
             participants = OrderedDict(sorted(
-                participants.items(), key=lambda x: name_key(personas[x[0]])))
+                participants.items(),
+                key=lambda x: EntitySorter.persona(personas[x[0]])))
         # Delete unsearchable participants if we are not privileged
         if not privileged:
             if participants:

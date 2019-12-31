@@ -443,58 +443,54 @@ def pad(value):
     return ('' if value is None else str(value)).rjust(42, '\0')
 
 
-# TODO decide whether we sort by first or last name
-def name_key(entry):
-    """Create a sorting key associated to a persona dataset.
+class EntitySorter:
+    """Provide a singular point for common sortkeys.
 
-    This way we have a standardized sorting order for entries.
-
-    :type entry: {str: object}
-    :param entry: A dataset of a persona from the cde or event realm.
-    :rtype: str
+    This class does not need to be instantiated. It's method can be passed to
+    `sorted` or `keydictsort_filter`.
     """
-    return (entry['family_name'] + " " + entry['given_names']).lower()
 
+    # TODO decide whether we sort by first or last name
+    @staticmethod
+    def persona(entry):
+        """Create a sorting key associated to a persona dataset.
 
-def event_key(event):
-    return (event['begin'], event['end'], event['title'], event['id'])
+        This way we have a standardized sorting order for entries.
 
+        :type entry: {str: object}
+        :param entry: A dataset of a persona from the cde or event realm.
+        :rtype: str
+        """
+        return (entry['family_name'] + " " + entry['given_names']).lower()
 
-def course_key(course):
-    return (pad(course['nr']), course['shortname'], course['id'])
+    @staticmethod
+    def event(event):
+        return (event['begin'], event['end'], event['title'], event['id'])
 
+    @staticmethod
+    def course(course):
+        return (pad(course['nr']), course['shortname'], course['id'])
 
-def lodgement_key(lodgement):
-    return (lodgement['moniker'], lodgement['id'])
+    @staticmethod
+    def lodgement(lodgement):
+        return (lodgement['moniker'], lodgement['id'])
 
+    @staticmethod
+    def lodgement_group(lodgement_group):
+        return (lodgement_group['moniker'], lodgement_group['id'])
 
-def lodgement_group_key(lodgement_group):
-    return (lodgement_group['moniker'], lodgement_group['id'])
+    @staticmethod
+    def event_part(event_part):
+        return (event_part['part_begin'], event_part['part_end'],
+                event_part['shortname'], event_part['id'])
 
+    @staticmethod
+    def course_track(course_track):
+        return (course_track['sortkey'], course_track['id'])
 
-def event_part_key(event_part):
-    return (event_part['part_begin'], event_part['part_end'],
-            event_part['shortname'], event_part['id'])
-
-
-def course_track_key(course_track):
-    return (course_track['sortkey'], course_track['id'])
-
-
-def event_field_key(event_field):
-    return (event_field['field_name'], event_field['id'])
-
-
-ENTITY_SORTKEYS = {
-    "persona": name_key,
-    "event": event_key,
-    "course": course_key,
-    "lodgement": lodgement_key,
-    "lodgement_group": lodgement_group_key,
-    "event_part": event_part_key,
-    "course_track": course_track_key,
-    "event_field": event_field_key,
-}
+    @staticmethod
+    def event_field(event_field):
+        return (event_field['field_name'], event_field['id'])
 
 
 def compute_checkdigit(value):

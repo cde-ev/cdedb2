@@ -47,7 +47,7 @@
             </dl>
 
             <dl class="dl-horizontal">
-                {% for field_id, field in ambience['event']['fields']|keydictsort(ENTITY_SORTKEYS.event_field) %}
+                {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                     {% if field['association'] == enums['FieldAssociations'].lodgement %}
                         <dt>{{ field['field_name'] }}</dt>
                         <dd>
@@ -89,7 +89,7 @@
     
     <h2>{% trans -%}Inhabitants{%- endtrans %}</h2>
     <div class="row">
-        {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
+        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">

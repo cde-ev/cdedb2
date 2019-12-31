@@ -15,7 +15,7 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, name_key, merge_dicts, ProxyShim, SubscriptionError,
+    n_, merge_dicts, ProxyShim, EntitySorter, SubscriptionError,
     SubscriptionActions, now)
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
@@ -270,7 +270,7 @@ class MlFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, ml['moderators'])
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-                personas, key=lambda anid: name_key(personas[anid])))
+                personas, key=lambda anid: EntitySorter.persona(personas[anid])))
 
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'state': state,
@@ -376,14 +376,14 @@ class MlFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscribers = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-                subscribers, key=lambda anid: name_key(personas[anid])))
+                subscribers, key=lambda anid: EntitySorter.persona(personas[anid])))
         moderators = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
                 rs.ambience['mailinglist']['moderators'],
-                key=lambda anid: name_key(personas[anid])))
+                key=lambda anid: EntitySorter.persona(personas[anid])))
         requests = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-            requests, key=lambda anid: name_key(personas[anid])))
+            requests, key=lambda anid: EntitySorter.persona(personas[anid])))
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits})
@@ -404,10 +404,10 @@ class MlFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscription_overrides = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-                subscription_overrides, key=lambda anid: name_key(personas[anid])))
+                subscription_overrides, key=lambda anid: EntitySorter.persona(personas[anid])))
         unsubscription_overrides = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
-                unsubscription_overrides, key=lambda anid: name_key(personas[anid])))
+                unsubscription_overrides, key=lambda anid: EntitySorter.persona(personas[anid])))
         return self.render(rs, "show_subscription_details", {
             'subscription_overrides': subscription_overrides,
             'unsubscription_overrides': unsubscription_overrides})
@@ -439,7 +439,7 @@ class MlFrontend(AbstractUserFrontend):
 
             output.append(pair)
 
-        csv_data = csv_output(sorted(output, key=lambda entry: name_key(entry)),
+        csv_data = csv_output(sorted(output, key=lambda entry: EntitySorter.persona(entry)),
                               columns)
         file = self.send_csv_file(
             rs, data=csv_data, inline=False,

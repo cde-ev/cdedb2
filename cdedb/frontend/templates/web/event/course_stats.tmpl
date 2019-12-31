@@ -67,7 +67,7 @@
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">{% trans -%}Course{%- endtrans %}</th>
-                {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
+                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                     <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
                         {%- if ambience['event']['tracks']|length == 1 -%}
                             {% trans -%}Course Size & Choices{%- endtrans %}
@@ -82,7 +82,7 @@
                 {% endif %}
             </tr>
             <tr>
-                {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
+                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                     <th class="b-left"></th>
                     <th class="text-right">{{ util.make_icon('screenshot', title=gettext("Assigned")) }}</th>
                     {% for i in range(track['num_choices']) %}
@@ -94,12 +94,12 @@
             </tr>
         </thead>
         <tbody>
-            {% for course_id, course in courses|keydictsort(ENTITY_SORTKEYS.course) %}
+            {% for course_id, course in courses|keydictsort(EntitySorter.course) %}
                 <tr>
                     <td>{{ course['nr'] }}</td>
                     <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                      course['shortname']) }}</td>
-                    {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
+                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                         {% if track_id in course['segments'] %}
                             {% set attendees = assign_counts[course_id][track_id] %}
                             {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] and attendees > 0 else

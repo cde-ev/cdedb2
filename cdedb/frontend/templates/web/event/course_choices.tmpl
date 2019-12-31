@@ -54,7 +54,7 @@
 {% endmacro %}
 
 {% block content %}
-    {% set course_entries = courses|keydictsort(ENTITY_SORTKEYS.course)|xdict_entries('{id}', '{nr}. {shortname}') %}
+    {% set course_entries = courses|keydictsort(EntitySorter.course)|xdict_entries('{id}', '{nr}. {shortname}') %}
 
     <div class="p">
         {{ util.href(cdedblink("event/course_assignment_checks"), gettext("Checks"), icon='check',
@@ -68,7 +68,7 @@
                 {% if ambience['event']['tracks']|length > 1 %}
                     {% set select1 = gettext("in Track %s")|e|format(util.input_select(
                         name="track_id", nulloption=gettext("— any —"),
-                        entries=ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track)|dict_entries('id', 'title'),
+                        entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
                         aclass="form-control input-slim input-sm", arialabel=gettext("Filter: Coursetrack"))) %}
                 {% else %}
                     {% set select1 = "" %}
@@ -116,7 +116,7 @@
                 {% set tracks='<label class="sr-only" id="input-track_ids-label">%s</label><div class="col-md-3 strip-inner-space">%s%s</div>'|s|format(
                     gettext("Coursetracks"), gettext("in Tracks"),
                     util.input_checkboxes(name="assign_track_ids", arialabeledby="input-track_ids-label",
-                                          entries=ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track)|dict_entries('id', 'title'))) %}
+                                          entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'))) %}
             {% endif %}
             <div class="row">
                 {% trans assign='<div class="col-md-1">%s</div>'|s|format(gettext("Assign")),
@@ -175,7 +175,7 @@
                     <tr>
                         <th rowspan="2"></th>
                         <th rowspan="2">{% trans -%}Full Name{%- endtrans %}</th>
-                        {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
+                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                             <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['title'] }}</th>
                         {% endfor %}
                     </tr>
@@ -198,7 +198,7 @@
                             {% endif -%}
                         {% endif -%}
                     {% endmacro %}
-                    {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
+                    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
                             {{ util.make_icon('screenshot', title=gettext("assigned to")) }}
                         </th>
@@ -226,7 +226,7 @@
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                         </td>
-                        {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
+                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                             {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
                             {% if registration['parts'][track['part_id']]['status'] != enums['RegistrationPartStati'].not_applied %}
                                 {% set is_participant = registration['parts'][track['part_id']]['status']

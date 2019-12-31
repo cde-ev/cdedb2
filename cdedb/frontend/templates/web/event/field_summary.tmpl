@@ -100,7 +100,7 @@
                     <h3 class="heading-underline">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
                     <div class="row">
                         {# Old items, already stored in the database #}
-                        {% for field_id, entry in ambience['event']['fields']|keydictsort(ENTITY_SORTKEYS.event_field) %}
+                        {% for field_id, entry in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                             {% if entry['association'] == association %}
                                 {{ print_field(field_id, association, field_id not in is_referenced, 'drow-row') }}
                             {% endif %}

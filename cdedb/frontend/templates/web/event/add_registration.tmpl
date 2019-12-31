@@ -47,16 +47,16 @@
         {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local",
                                 placeholder="YYYY-MM-DD hh:ii") }}
 
-        {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
+        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title'] }}</h4>
             {% endif %}
             {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
-                                     entries=lodgements|keydictsort(ENTITY_SORTKEYS.lodgement)|dict_entries('id', 'moniker'), nulloption="") }}
-            {% for track_id, track in part['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
-                {% set course_entries = courses|keydictsort(ENTITY_SORTKEYS.course)
+                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="") }}
+            {% for track_id, track in part['tracks']|keydictsort(EntitySorter.course_track) %}
+                {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
                                           label=gettext("Course %s")|format(track['title'])
@@ -70,7 +70,7 @@
         {{ util.form_input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging"), defaultvalue=True) }}
         {{ util.form_input_checkbox(name="reg.list_consent", label=gettext("Participant List Consent"), defaultvalue=True) }}
         {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) %}
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
             {% if course_choices[track_id]|length > 0 %}
                 <h4>
                     {% trans -%}Course Choices{%- endtrans %}
@@ -79,7 +79,7 @@
                     {% endif %}
                 </h4>
 
-                {% set course_entries = courses|keydictsort(ENTITY_SORTKEYS.course)
+                {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label=gettext("Instructor of"),
                                          entries=course_entries, nulloption="") }}

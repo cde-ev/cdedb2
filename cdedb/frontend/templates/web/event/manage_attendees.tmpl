@@ -27,7 +27,7 @@
     <form action="{{ cdedblink('event/manage_attendees') }}" method="POST" id="manageattendeesform">
         {{ util.anti_csrf_token('event/manage_attendees') }}
         <div class="row">
-            {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track)
+            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                     if track_id in ambience['course']['segments'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(track['title'] if ambience['event']['tracks']|length > 1

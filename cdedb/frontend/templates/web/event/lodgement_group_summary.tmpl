@@ -63,7 +63,7 @@
             </thead>
             <tbody>
                 {# Old items, already stored in the database #}
-                {% for group_id, lodgement_group in lodgement_groups|keydictsort(ENTITY_SORTKEYS.lodgement_group) %}
+                {% for group_id, lodgement_group in lodgement_groups|keydictsort(EntitySorter.lodgement_group) %}
                     {{ print_row(group_id, True, 'drow-row') }}
                 {% endfor %}
                 {# Items that were added by the user but failed validation. They are still new and have no official id.

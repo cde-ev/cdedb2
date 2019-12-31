@@ -150,7 +150,7 @@
         </dl>
     {% endif %}
 
-    {% for track_id, track in ambience['event']['tracks']|keydictsort(ENTITY_SORTKEYS.course_track) if track['num_choices'] %}
+    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
         {% set reg_track = registration['tracks'][track_id] %}
         {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
             <h4>

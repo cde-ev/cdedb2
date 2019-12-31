@@ -50,7 +50,7 @@ from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter, ENTITY_SORTKEYS)
+    decode_parameter, EntitySorter)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -802,7 +802,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
             'GIT_COMMIT': self.conf.GIT_COMMIT,
             'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
-            'ENTITY_SORTKEYS': ENTITY_SORTKEYS,
+            'EntitySorter': EntitySorter,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,

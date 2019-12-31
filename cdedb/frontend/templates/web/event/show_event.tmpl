@@ -33,7 +33,7 @@
                         {#-  #}&#8239;<span class="nowrap">{{ part['part_end']|date(lang=lang,verbosity='full') }}</span>
                     {% endwith %}
                 {% else %}
-                    {% for part_id, part in ambience['event']['parts']|keydictsort(ENTITY_SORTKEYS.event_part) %}
+                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                         {{ part['title'] }}:
                         {{ part['part_begin']|date(lang=lang) }}&#8239;–&#8239;
                         {{- part['part_end']|date(lang=lang) }}<br />
