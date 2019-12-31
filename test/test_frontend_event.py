@@ -951,7 +951,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(None, f.get('active_segments', index=1).value)
         self.assertEqual("3", f.get('active_segments', index=2).value)
         self.assertEqual("10", f['max_size'].value)
-        self.assertEqual("3", f['min_size'].value)
+        self.assertEqual("2", f['min_size'].value)
         self.assertEqual("Wald", f['fields.room'].value)
         f['shortname'] = "Helden"
         f['nr'] = "ω"
@@ -2452,7 +2452,7 @@ etc;anything else""", f['entries_2'].value)
                               'fields': {'room': 'Wald'},
                               'instructors': 'ToFi & Co',
                               'max_size': 10,
-                              'min_size': 3,
+                              'min_size': 2,
                               'notes': 'Promotionen in Mathematik und Ethik für '
                                        'Teilnehmer notwendig.',
                               'nr': 'α',

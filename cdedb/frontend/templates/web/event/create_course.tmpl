@@ -33,8 +33,8 @@
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         <h4 class="heading-underline">{% trans -%}Course{%- endtrans %}</h4>
         {{ util.form_input_text(name="instructors", label=gettext("Instructor")) }}
-        {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (incl. instr.)")) }}
-        {{ util.form_input_text(name="max_size", label=gettext("Maximum Size (incl. instr.)")) }}
+        {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (excl. instr.)")) }}
+        {{ util.form_input_text(name="max_size", label=gettext("Maximum Size (excl. instr.)")) }}
         {% if ambience['event']['tracks']|length == 1 %}
             {# hide selection of course tracks/segments if the event has only one track #}
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
