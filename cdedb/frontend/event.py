@@ -305,7 +305,7 @@ class EventFrontend(AbstractUserFrontend):
         if not part_ids:
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
-            raise werkzeug.exception.NotFound(n_("Invalid part id."))
+            raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
         parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
 
         participant = const.RegistrationPartStati.participant
