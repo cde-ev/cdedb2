@@ -132,7 +132,11 @@
                                                        + (values['event_id']|e)
                                                        + ('&phrase=%s'|s) }}',
                                                    [], true, false, "{{ gettext("ID, name or email") }}");
-                        $i.change(function(){$('#quickregistrationform').submit();})
+                        $i.change(function(){
+                            if ($(this).val()) {
+                                $('#quickregistrationform').submit();
+                            }
+                        });
                     </script>
                 {% endcall %}
             </div>

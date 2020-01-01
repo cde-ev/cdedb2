@@ -48,7 +48,11 @@
                     var $i = $('#input-showuser-id');
                     $i.cdedbSearchPerson('{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
                                          true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}");
-                    $i.change(function(){$('#adminshowuserform').submit();})
+                    $i.change(function(){
+                        if ($(this).val()) {
+                            $('#adminshowuserform').submit();
+                        }
+                    });
                 </script>
             {% endcall %}
             </div>
