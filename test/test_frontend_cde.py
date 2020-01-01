@@ -152,6 +152,15 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/core/persona/2/show'})
         self.assertTitle("Bertålotta Beispiel")
 
+        # Test error displaying for invalid search input
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/member'})
+        f = self.response.forms['membersearchform']
+        f['qval_username'] = "[a]"
+        self.submit(f, check_notification=False)
+        self.assertValidationError("qval_username",
+                                   "Darf keine verbotenen Zeichen enthalten")
+
     @as_users("anton", "berta")
     def test_member_search_fulltext(self, user):
         self.traverse({'href': '/cde/$'},

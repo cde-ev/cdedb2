@@ -7,7 +7,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/member_search"), gettext("CdE-Member Search"), active="True") }}
 {% endblock %}
 {% block content %}
-    {% if values['is_search'] %}
+    {% if values['is_search'] and result %}
         <div class="p">
             {{ util.href("#membersearchform", gettext("Go to Search."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
         </div>

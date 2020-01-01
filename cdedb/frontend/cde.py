@@ -217,6 +217,11 @@ class CdEFrontend(AbstractUserFrontend):
             if count > cutoff:
                 result = result[:cutoff]
                 rs.notify("info", n_("Too many query results."))
+        # A little hack to fix displaying of errors: The form uses
+        # 'qval_<field>' as input name, the validation only returns the field's
+        # name
+        elif rs.errors:
+            rs.errors = [('qval_' + k, v) for k, v in rs.errors]
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
             'cutoff': cutoff, 'count': count,
