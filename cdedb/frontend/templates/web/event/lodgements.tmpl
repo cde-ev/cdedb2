@@ -30,7 +30,8 @@
             <tr>
                 <th rowspan="2" colspan="2">{% trans -%}Lodgement{%- endtrans %}</th>
                 {% if ambience['event']['parts']|length > 1 %}
-                    <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">Inhabitants</th>
+                    <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">
+                        {% trans -%}Inhabitants{% endtrans -%}</th>
                 {% else %}
                     <th rowspan="2" colspan="2" class="text-right">{% trans -%}Inhabitants{%- endtrans %}</th>
                 {% endif %}

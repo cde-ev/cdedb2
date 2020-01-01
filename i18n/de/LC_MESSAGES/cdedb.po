@@ -7805,7 +7805,7 @@ msgstr "Für alle Admins sichtbar, unterstützt %(infolink)s mit Zeilenumbrüche
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:98
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:27
 msgid "Changenotes"
-msgstr "Änderungs-Kommentar"
+msgstr "Änderungskommentar"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
@@ -8412,7 +8412,7 @@ msgstr "Profil anzeigen"
 #: cdedb/frontend/templates/web/core/show_history.tmpl:15
 #: cdedb/frontend/templates/web/core/show_user.tmpl:57
 msgid "Change History"
-msgstr "Änderungs-Historie"
+msgstr "Änderungshistorie"
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:65
 #: cdedb/frontend/templates/web/core/show_history.tmpl:142
@@ -8625,7 +8625,7 @@ msgstr "Zurück"
 #: cdedb/frontend/templates/web/core/show_history.tmpl:7
 #, python-format
 msgid "Change History of %(given_names)s %(family_name)s"
-msgstr "Änderungs Historie von %(given_names)s %(family_name)s"
+msgstr "Änderungshistorie von %(given_names)s %(family_name)s"
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:17
 msgid "pending"
@@ -11524,7 +11524,7 @@ msgstr "Teilnehmer-Mailingliste erstellen"
 msgid ""
 "Create a participant mailinglist for this event with a default "
 "configuration."
-msgstr "Erstellt eine Standard-Teilnehmer-Mailinglsite zu dieser Veranstaltung."
+msgstr "Erstellt eine Standard-Teilnehmer-Mailingliste zu dieser Veranstaltung."
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:393
 msgid ""
