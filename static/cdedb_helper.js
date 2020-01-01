@@ -242,7 +242,7 @@
         var originalRowCallback = options.rowCallback || function(){};
         options.rowCallback = function() {
             $(this).find('.rowSelector').prop('checked', $(this).hasClass('ls-selected'));
-            originalRowCallback.bind(this);
+            originalRowCallback.bind(this)();
         };
 
         $(this).each(function() {
@@ -253,6 +253,7 @@
             // Add ListSelect object to DOM object and make it focusable
             var obj = new ListSelect(this, options);
             $(this).data('listSelect',obj).attr('tabindex','0');
+            var $element = $(this);
 
             // Add event handlers to rowSelector checkbox
             $(this).find('.rowSelector')
@@ -261,6 +262,8 @@
                         $(this).closest('.ls-item').addClass('ls-selected');
                     else
                         $(this).closest('.ls-item').removeClass('ls-selected');
+                    originalRowCallback.bind(this)();
+                    options.callback.bind($element)();
                 })
                 .click(function(e){
                     e.stopPropagation();
