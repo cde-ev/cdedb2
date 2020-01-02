@@ -1016,10 +1016,11 @@ class EventFrontend(AbstractUserFrontend):
         params = {}
         if event_id in rs.user.orga or self.is_admin(rs):
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
+            all_registrations = self.eventproxy.get_registrations(
+                rs, registration_ids)
             registrations = {
                 k: v
-                for k, v in
-                self.eventproxy.get_registrations(rs, registration_ids).items()
+                for k, v in all_registrations.items()
                 if any(track['course_id'] == course_id
                        or track['course_instructor'] == course_id
                        for track in v['tracks'].values())
@@ -1037,14 +1038,13 @@ class EventFrontend(AbstractUserFrontend):
                                          "course_segments"}
             params['logo_present'] = (self.conf.STORAGE_DIR / "course_logo" /
                                       str(course_id)).exists()
-            instructor_ids = {
-                r['persona_id']
-                for k, r in
-                    self.eventproxy.get_registrations(rs, registration_ids).items()
-                if any(t['course_instructor'] == course_id 
-                        for t in r['tracks'].values())}
+            instructor_ids = {reg['persona_id']
+                              for reg in all_registrations.values()
+                              if any(t['course_instructor'] == course_id
+                                     for t in reg['tracks'].values())}
             instructors = self.coreproxy.get_personas(rs, instructor_ids)
-            params['instructor_emails'] = [p['username'] for p in instructors.values()]
+            params['instructor_emails'] = [p['username']
+                                           for p in instructors.values()]
         return self.render(rs, "show_course", params)
 
     @access("event")
@@ -3237,7 +3237,7 @@ class EventFrontend(AbstractUserFrontend):
              msg = n_("Must not duplicate field.")
              return (lambda d: not d[key1] or d[key1] != d[key2],
                      (key1, ValueError(msg)))
-         
+
         def valid_field_constraint(idx):
              key = "field_id_{}".format(idx)
              return (lambda d: not d[key] or d[key] in reg_fields,
@@ -3246,7 +3246,7 @@ class EventFrontend(AbstractUserFrontend):
             None, (duplicate_constraint(idx1, idx2)
                    for idx1 in indices for idx2 in indices)))
         constraints += tuple(valid_field_constraint(idx) for idx in indices)
-                            
+
         params = tuple(("{}_{}".format(key, i), value)
                        for i in indices for key, value in spec.items())
         data = request_extractor(rs, params, constraints)
