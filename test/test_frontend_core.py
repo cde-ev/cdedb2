@@ -1052,7 +1052,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("03.04.1933")
         self.traverse({'href': '/core/persona/2/history'})
-        self.assertTitle("Änderungs Historie von Bertålotta Beispiel")
+        self.assertTitle("Änderungshistorie von Bertålotta Beispiel")
         self.assertPresence(r"Gen 2\W*03.04.1933", regex=True)
         self.assertPresence(r"Gen 1\W*11.02.1981", regex=True)
 

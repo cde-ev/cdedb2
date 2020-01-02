@@ -986,7 +986,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("4 Überweisungen gebucht. 1 neue Mitglieder.",
                             div="notifications")
         self.admin_view_profile("daniel")
-        self.traverse({"description": "Änderungs-Historie"})
+        self.traverse({"description": "Änderungshistorie"})
         self.assertPresence("Guthabenänderung um 100,00 € auf 100,00 € "
                             "(Überwiesen am 17.03.2019)")
 
