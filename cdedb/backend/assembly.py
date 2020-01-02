@@ -1104,7 +1104,7 @@ class AssemblyBackend(AbstractBackend):
                 entity_key="ballot_id")
             monikers = tuple(
                 x['moniker'] for x in ballot['candidates'].values())
-            if ballot['use_bar']:
+            if ballot['use_bar'] or ballot['votes']:
                 monikers += (ASSEMBLY_BAR_MONIKER,)
             result = schulze_evaluate([e['vote'] for e in votes], monikers)
             update = {

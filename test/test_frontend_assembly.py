@@ -466,6 +466,74 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertEqual(None, f.get('vote', index=1).value)
         self.assertEqual(None, f.get('vote', index=2).value)
 
+    @as_users("anton")
+    def test_classical_voting_all_choices(self, user):
+        # This test asserts that in classical voting, we can distinguish
+        # between abstaining and voting for all candidates
+        self.traverse({'href': '/assembly/$'},
+                      {'href': '/assembly/1/show'})
+
+        # We need two subtests: One with an explict bar (including the "against
+        # all candidates option), one without an explicit bar (i.e. the bar is
+        # added implicitly)
+        for use_bar in (False, True):
+            with self.subTest(use_bar=use_bar):
+                # First, create a new ballot
+                wait_time = 2
+                future = now() + datetime.timedelta(seconds=wait_time)
+                farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
+                bdata = {
+                    'title': 'Wahl zum Finanzvorstand -- {} bar'
+                             .format("w." if use_bar else "w/o"),
+                    'vote_begin': future.isoformat(),
+                    'vote_end': farfuture.isoformat(),
+                    'quorum': "0",
+                    'votes': "2",
+                    'use_bar': use_bar,
+                }
+                candidates = [
+                    {'moniker': 'arthur', 'description': 'Arthur Dent'},
+                    {'moniker': 'ford', 'description': 'Ford Perfect'},
+                ]
+                self._create_ballot(bdata, candidates)
+
+                # Wait for voting to start then cast own vote.
+                time.sleep(wait_time)
+                self.traverse({'description': 'Abstimmungen'},
+                              {'description': bdata['title']})
+
+                f = self.response.forms["voteform"]
+                f["vote"] = ["arthur"]
+                self.submit(f)
+                self.assertNonPresence("Du hast Dich enthalten.")
+
+                if use_bar:
+                    f = self.response.forms["voteform"]
+                    f["vote"] = [ASSEMBLY_BAR_MONIKER]
+                    self.submit(f)
+                    self.assertNonPresence("Du hast Dich enthalten.")
+
+                f = self.response.forms["voteform"]
+                f["vote"] = []
+                self.submit(f)
+                self.assertPresence("Du hast Dich enthalten.")
+
+                f = self.response.forms['abstentionform']
+                self.submit(f)
+                self.assertPresence("Du hast Dich enthalten.")
+
+                f = self.response.forms["voteform"]
+                f["vote"] = ["arthur", "ford"]
+                self.submit(f)
+                self.assertNonPresence("Du hast Dich enthalten.")
+
+                # Check tally and own vote.
+                time.sleep(wait_time)
+                self.traverse({'description': 'Abstimmungen'},
+                              {'description': bdata['title']})
+                self.assertPresence("Du hast für die folgenden Kandidaten "
+                                    "gestimmt: Arthur Dent, Ford Perfect")
+
     @as_users("anton", "inga", "kalif")
     def test_tally_and_get_result(self, user):
         self.traverse({'href': '/assembly/$'},

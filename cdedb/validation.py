@@ -3439,7 +3439,7 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
         return val, errs
     entries = tuple(y for x in val.split('>') for y in x.split('='))
     reference = set(e['moniker'] for e in ballot['candidates'].values())
-    if ballot['use_bar']:
+    if ballot['use_bar'] or ballot['votes']:
         reference.add(ASSEMBLY_BAR_MONIKER)
     if set(entries) - reference:
         errs.append((argname, KeyError(n_("Superfluous candidates."))))

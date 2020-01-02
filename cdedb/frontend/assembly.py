@@ -795,19 +795,21 @@ class AssemblyFrontend(AbstractUserFrontend):
                     ASSEMBLY_BAR_MONIKER, "=".join(candidates))
             elif voted == (MAGIC_ABSTAIN,):
                 vote = "=".join(candidates)
-                if ballot['use_bar']:
-                    vote += "={}".format(ASSEMBLY_BAR_MONIKER)
+                # When abstaining, the bar is equal do all candidates. This is
+                # different from voting *for* all candidates.
+                vote += "={}".format(ASSEMBLY_BAR_MONIKER)
             elif ASSEMBLY_BAR_MONIKER in voted and len(voted) > 1:
                 rs.notify("error", n_("Rejection is exclusive."))
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
                 winners = "=".join(voted)
                 losers = "=".join(c for c in candidates if c not in voted)
-                if ballot['use_bar']:
-                    if losers:
-                        losers += "={}".format(ASSEMBLY_BAR_MONIKER)
-                    else:
-                        losers = ASSEMBLY_BAR_MONIKER
+                # When voting for certain candidates, they are ranked higher
+                # than the bar (to distinguish the vote from abstaining)
+                if losers:
+                    losers += "={}".format(ASSEMBLY_BAR_MONIKER)
+                else:
+                    losers = ASSEMBLY_BAR_MONIKER
                 if winners and losers:
                     vote = "{}>{}".format(winners, losers)
                 else:
