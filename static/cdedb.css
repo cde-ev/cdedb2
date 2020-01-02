@@ -126,6 +126,14 @@ ul.slim {
 hr.strong {
     border-top: 1px solid #ddd;
 }
+h4, .h4, h5, .h5, h6, .h6 {
+    font-weight: bold;
+    margin-top: 12px;
+    margin-bottom: 6px;
+}
+h4.heading-underline, h5.heading-underline, h6.heading-underline {
+    font-weight: inherit;
+}
 @media (max-width: 767px) {
     h2.heading-responsive {
         font-size: 20px;
@@ -174,6 +182,9 @@ dd {
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+}
+dd>*:first-child {
+    margin-top: 0;
 }
 
 
