@@ -621,7 +621,8 @@ class CoreFrontend(AbstractFrontend):
         Usually, this will be an enum member marking the kind of action taken.
 
         Possible variants based on the 'kind':
-        * mod_ml_user: Which action you are going to execute on this user.
+
+        - mod_ml_user: Which action you are going to execute on this user.
           A member of the SubscriptionActions enum.
         """
         if rs.errors:

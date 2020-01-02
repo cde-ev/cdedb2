@@ -82,12 +82,11 @@ class AssemblyBackend(AbstractBackend):
         """Variant of `may_assemble` with input validation. To be used by
          frontends to find out if assembly is visible.
 
-         :type rs: :py:class:`cdedb.common.RequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
         :type persona_id: int or None
         :param persona_id: If not provided the current user is used.
         :rtype: bool
-
         """
         assembly_id = affirm("id", assembly_id)
         persona_id = affirm("id_or_None", persona_id)

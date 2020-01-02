@@ -793,7 +793,7 @@ class MlBackend(AbstractBackend):
         :type action: `SubscriptionActions`
         :type mailinglist_id: int
         :type persona_id: int
-        :rtype int
+        :rtype: int
         :returns: number of affected rows.
         """
         action = affirm("enum_subscriptionactions", action)
@@ -1078,7 +1078,7 @@ class MlBackend(AbstractBackend):
             subscribers without explicit subscription addresses.
         :rtype: {int: str or None}
         :returns: Returns persona ids mapped to email addresses or None if
-        `explicits_only` is True.
+            `explicits_only` is True.
         """
         mailinglist_id = affirm("id", mailinglist_id)
 
