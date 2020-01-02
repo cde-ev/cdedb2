@@ -35,7 +35,7 @@ from cdedb.backend.common import (
     Silencer, singularize, AbstractBackend)
 from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
-    ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, name_key,
+    ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, EntitySorter,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
     implying_realms)
 from cdedb.security import secure_random_ascii
@@ -1131,7 +1131,8 @@ class AssemblyBackend(AbstractBackend):
             voters = self.core.get_personas(
                 rs, tuple(unwrap(e) for e in voter_ids))
             voters = ("{} {}".format(e['given_names'], e['family_name'])
-                      for e in sorted(voters.values(), key=name_key))
+                      for e in sorted(voters.values(),
+                                      key=EntitySorter.persona))
             voter_list = ",\n        ".join(esc(v) for v in voters)
             votes = sorted('{{"vote": {}, "salt": {}, "hash": {}}}'.format(
                 esc(v['vote']), esc(v['salt']), esc(v['hash'])) for v in votes)

@@ -434,17 +434,63 @@ class PartialImportError(RuntimeError):
     pass
 
 
-# TODO decide whether we sort by first or last name
-def name_key(entry):
-    """Create a sorting key associated to a persona dataset.
+def pad(value):
+    """Pad strings to sort numerically.
 
-    This way we have a standardized sorting order for entries.
-
-    :type entry: {str: object}
-    :param entry: A dataset of a persona from the cde or event realm.
+    :type value: object
     :rtype: str
     """
-    return (entry['family_name'] + " " + entry['given_names']).lower()
+    return ('' if value is None else str(value)).rjust(42, '\0')
+
+
+class EntitySorter:
+    """Provide a singular point for common sortkeys.
+
+    This class does not need to be instantiated. It's method can be passed to
+    `sorted` or `keydictsort_filter`.
+    """
+
+    # TODO decide whether we sort by first or last name
+    @staticmethod
+    def persona(entry):
+        """Create a sorting key associated to a persona dataset.
+
+        This way we have a standardized sorting order for entries.
+
+        :type entry: {str: object}
+        :param entry: A dataset of a persona from the cde or event realm.
+        :rtype: str
+        """
+        return (entry['family_name'] + " " + entry['given_names']).lower()
+
+    @staticmethod
+    def event(event):
+        return (event['begin'], event['end'], event['title'], event['id'])
+
+    @staticmethod
+    def course(course):
+        return (pad(course['nr']), course['shortname'], course['id'])
+
+    @staticmethod
+    def lodgement(lodgement):
+        return (lodgement['moniker'], lodgement['id'])
+
+    @staticmethod
+    def lodgement_group(lodgement_group):
+        return (lodgement_group['moniker'], lodgement_group['id'])
+
+    @staticmethod
+    def event_part(event_part):
+        return (event_part['part_begin'], event_part['part_end'],
+                event_part['shortname'], event_part['id'])
+
+    @staticmethod
+    def course_track(course_track):
+        return (course_track['sortkey'], course_track['id'])
+
+    @staticmethod
+    def event_field(event_field):
+        return (event_field['field_name'], event_field['id'])
 
 
 def compute_checkdigit(value):

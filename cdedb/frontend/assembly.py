@@ -19,7 +19,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     n_, merge_dicts, unwrap, now, ProxyShim,
-    ASSEMBLY_BAR_MONIKER, name_key)
+    ASSEMBLY_BAR_MONIKER, EntitySorter)
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.database.connection import Atomizer
@@ -374,7 +374,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         attendees = collections.OrderedDict(
             (e['id'], e) for e in sorted(
                 self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
-                key=name_key))
+                key=EntitySorter.persona))
         return self.render(rs, "list_attendees", {"attendees": attendees})
 
     @access("assembly_admin", modi={"POST"})

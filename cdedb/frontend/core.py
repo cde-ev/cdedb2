@@ -21,9 +21,9 @@ from cdedb.frontend.common import (
     request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
     csv_output, query_result_to_json, enum_entries_filter, periodic)
 from cdedb.common import (
-    n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
+    n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
-    REALM_INHERITANCE)
+    REALM_INHERITANCE, EntitySorter)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -747,7 +747,7 @@ class CoreFrontend(AbstractFrontend):
 
         # Generate return JSON list
         ret = []
-        for entry in sorted(data, key=name_key):
+        for entry in sorted(data, key=EntitySorter.persona):
             result = {
                 'id': entry['id'],
                 'name': name(entry),
@@ -1035,7 +1035,7 @@ class CoreFrontend(AbstractFrontend):
         for admin in admins:
             admins[admin] = sorted(
                 admins[admin],
-                key=lambda persona_id: name_key(personas[persona_id])
+                key=lambda anid: EntitySorter.persona(personas[anid])
             )
 
         return self.render(
@@ -1159,7 +1159,8 @@ class CoreFrontend(AbstractFrontend):
         personas = self.coreproxy.get_personas(rs, cases.keys())
 
         cases = collections.OrderedDict(
-            sorted(cases.items(), key=lambda item: name_key(personas[item[0]])))
+            sorted(cases.items(),
+                   key=lambda item: EntitySorter.persona(personas[item[0]])))
 
         return self.render(rs, "list_privilege_changes",
                            {"cases": cases, "personas": personas})

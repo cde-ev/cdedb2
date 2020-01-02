@@ -116,7 +116,7 @@
     </dl>
 
     <div class="row">
-        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
             <div class="col-md-6">
                 {% if ambience['event']['parts']|length > 1 %}
                     <h4>{{ part['title'] }}</h4>
@@ -129,7 +129,7 @@
                     </dd>
                     {% if enums['RegistrationPartStati'](ambience['registration']['parts'][part_id]['status'])
                             .is_involved() %}
-                        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
+                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                                 if track['part_id'] == part_id %}
                             <dt>
                                 {% trans track=track['title'] if ambience['event']['tracks']|length > 1 else "" -%}
@@ -184,7 +184,7 @@
         <h4>{% trans -%}Course Choices{%- endtrans %}</h4>
         {% if ambience['event']['tracks']|length > 0 %}
             <div class="row">
-                {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
+                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                     <div class="col-md-6">
                         {% if ambience['event']['tracks']|length > 1 %}
                             <h5>{{ track['title'] }}</h5>
@@ -223,7 +223,7 @@
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans -%}Custom Fields{%- endtrans %}</h3>
         <dl class="dl-horizontal">
-            {% for field_id, field in ambience['event']['fields']|xdictsort('field_name') %}
+            {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                 {% if field['association'] == enums['FieldAssociations'].registration %}
                     <dt>{{ field['field_name'] }}</dt>
                     <dd>

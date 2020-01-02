@@ -43,7 +43,7 @@
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
             {{ util.form_input_checkboxes(name="segments", label=gettext("Course Tracks"),
-                                          entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
+                                          entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
                                           aclass='checkbox_segment',
                                           info=gettext("Course tracks, in which the Course was originally offered.")) }}
         {% endif %}
@@ -62,7 +62,7 @@
                                                 "cancelled courses.")) }}
         {% else %}
             {{ util.form_input_checkboxes(name="active_segments", label=gettext("Takes place in"),
-                                          entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
+                                          entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title'),
                                           aclass='checkbox_active_segment',
                                           info=gettext("Cancelled courses are no longer choosable by participants and "
                                                        "are marked in the courselist and the course assignment view.")
@@ -77,7 +77,7 @@
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
         <h4 class="heading-underline">{% trans -%}Fields{%- endtrans %}</h4>
-        {% for field_id, field in ambience['event']['fields']|xdictsort('field_name')
+        {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
                 if field['association'] == enums['FieldAssociations'].course %}
             {{ util.form_event_field_input(field) }}
         {% else %}

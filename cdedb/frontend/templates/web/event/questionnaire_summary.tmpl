@@ -45,7 +45,7 @@
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields|xdictsort('field_name')|dict_entries('id', 'field_name'),
+                                              entries=registration_fields|keydictsort(EntitySorter.event_field)|dict_entries('id', 'field_name'),
                                               nulloption=gettext("— Only Text —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}

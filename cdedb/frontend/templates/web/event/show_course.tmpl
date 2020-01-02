@@ -45,7 +45,7 @@
             </dl>
 
             <dl class="dl-horizontal">
-                {% for field_id, field in ambience['event']['fields']|xdictsort('field_name') %}
+                {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                     {% if field['association'] == enums['FieldAssociations'].course %}
                         <dt>{{ field['field_name'] }}</dt>
                         <dd>
@@ -87,7 +87,7 @@
 
     <h2>{% trans -%}Attendees{%- endtrans %}</h2>
     <div class="row">
-        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                 if track_id in ambience['course']['segments'] %}
             {% set num_track_attendees = attendees[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">

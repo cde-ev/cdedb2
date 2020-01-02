@@ -40,7 +40,7 @@
                         {% if ambience['event']['parts']|length > 1 %}
                             <br />
                             <span class="small text-muted">
-                                {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin')
+                                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                    if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
                                     {{ part['title'] }}
                                     {% if registration['parts'][part_id]['status']
@@ -58,7 +58,7 @@
                     <div class="col-sm-4 hide-xs">
                         <small class="text-info">
                             {% trans -%}Lodgement{%- endtrans %}:
-                            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin')
+                            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                    if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
                                 {% if registration['parts'][part_id]['lodgement_id'] %}
                                     {{ lodgements[registration['parts'][part_id]['lodgement_id']]['moniker'] }}

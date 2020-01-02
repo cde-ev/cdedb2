@@ -50,7 +50,7 @@
                 {% trans -%}The instructors for each course are only visible to logged in users.{%- endtrans %}
             </div>
         {% endif %}
-        {% for anid, entry in courses|xdictsort('nr', pad=True) if entry['segments'] %}
+        {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'] %}
             <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
                 {% if ambience['event']['id'] in user.orga or is_admin %}
@@ -72,7 +72,7 @@
                     {% endif %}
                     {% if ambience['event']['tracks']|length > 1 %}
                         – <span class="text-info">
-                        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
+                        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                                 if track_id in entry['segments'] -%}
                             {% if not loop.first %}
                                 {%- if loop.last %}
