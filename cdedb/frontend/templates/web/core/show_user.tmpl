@@ -186,8 +186,10 @@
                 <dt>{% trans -%}Balance{%- endtrans %}</dt>
                     <dd>
                         {{ data['balance']|money(lang=lang) }}
-                        {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pencil",
-                                     aclass="btn btn-xs btn-warning") }}
+                        {% if "finance_admin" in user.roles %}
+                            {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pencil",
+                                         aclass="btn btn-xs btn-warning") }}
+                        {% endif %}
                         {% if data['has_lastschrift'] %}
                             {% trans -%}and{%- endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
