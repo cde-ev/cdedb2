@@ -527,9 +527,9 @@ class FrontendTest(unittest.TestCase):
         self.basic_validate(verbose=verbose)
 
     def submit(self, form, button="submitform", check_notification=True,
-               verbose=False):
+               verbose=False, value=None):
         method = form.method
-        self.response = form.submit(button)
+        self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
@@ -621,6 +621,15 @@ class FrontendTest(unittest.TestCase):
         self.assertEqual("CdEDB –", components[0][:7])
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
         self.assertEqual(title.strip(), normalized)
+
+    def get_content(self, div="content"):
+        if self.response.content_type == "text/plain":
+            return self.response.text
+        tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
+        if not tmp:
+            raise AssertionError("Div not found.", div)
+        content = tmp[0]
+        return content.text_content()
 
     def assertPresence(self, s, div="content", regex=False, exact=False):
         if self.response.content_type == "text/plain":

@@ -28,7 +28,7 @@ from cdedb.common import (
     n_, merge_dicts, lastschrift_reference, now, glue, unwrap,
     int_to_words, deduct_years, determine_age_class, LineResolutions,
     PERSONA_DEFAULTS, diacritic_patterns, shutil_copy, asciificator,
-    EntitySorter)
+    EntitySorter, TransactionType)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -36,12 +36,7 @@ from cdedb.frontend.common import (
     enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
-from cdedb.frontend.parse_statement import (
-    Transaction, TransactionType, Accounts, get_event_name_pattern,
-    STATEMENT_CSV_FIELDS, STATEMENT_CSV_RESTKEY, STATEMENT_GIVEN_NAMES_UNKNOWN,
-    STATEMENT_FAMILY_NAME_UNKNOWN, STATEMENT_DB_ID_EXTERN,
-    MEMBERSHIP_FEE_FIELDS, EVENT_FEE_FIELDS, OTHER_TRANSACTION_FIELDS,
-    ACCOUNT_FIELDS, STATEMENT_OUTPUT_DATEFORMAT)
+import cdedb.frontend.parse_statement as parse
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -752,30 +747,58 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("finance_admin")
-    def parse_statement_form(self, rs, data=None, problems=None,
-                             csvfields=None):
+    def parse_statement_form(self, rs, data=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object} or None
-        :type problems: list(str) or None
-        :type csvfields: tuple(str) or None
+        :type data: list({str: obj}) or None
         """
         data = data or {}
-        problems = problems or []
-        csvfields = csvfields or tuple()
-        csv_position = {key: ind for ind, key in enumerate(csvfields)}
-        return self.render(rs, "parse_statement", {'data': data,
-                                                   'problems': problems,
-                                                   'csvfields': csv_position})
+        merge_dicts(rs.values, data)
+        event_list = sorted(self.eventproxy.list_db_events(rs).items(),
+                            key=lambda x: x[1])
+        params = {
+            'data': data,
+            'TransactionType': parse.TransactionType,
+            'events': event_list,
+        }
+        return self.render(rs, "parse_statement", params)
+
+    def organize_transaction_data(self, rs, transactions, start, end, timestamp):
+        data = {"{}{}".format(k, t.t_id): v
+                for t in transactions
+                for k, v in t.to_dict(rs, self.coreproxy.get_persona,
+                                      self.eventproxy.get_event).items()}
+        data["count"] = len(transactions)
+        data["start"] = start
+        data["end"] = end
+        data["timestamp"] = timestamp
+        data["has_error"] = []
+        data["has_warning"] = []
+        data["has_none"] = []
+        data["accounts"] = defaultdict(int)
+        data["events"] = defaultdict(int)
+        data["memberships"] = 0
+        for t in transactions:
+            if t.errors:
+                data["has_error"].append(t.t_id)
+            elif t.warnings:
+                data["has_warning"].append(t.t_id)
+            else:
+                data["has_none"].append(t.t_id)
+            data["accounts"][str(t.account)] += 1
+            if t.event_id:
+                data["events"][t.event_id] += 1
+            if t.type == TransactionType.MembershipFee:
+                data["memberships"] += 1
+        return data
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata(("statement", "str_or_None"))
     @REQUESTfile("statement_file")
-    def parse_statement(self, rs, statement, statement_file):
+    def parse_statement(self, rs, statement_file):
         """
         Parse the statement into multiple CSV files.
 
@@ -796,181 +819,136 @@ class CdEFrontend(AbstractUserFrontend):
         This uses POST because the expected data is too large for GET.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type statement: str or None
         :type statement_file: file or None
         """
 
+        filename = pathlib.Path(statement_file.filename).parts[-1]
+        start, end, timestamp = parse.dates_from_filename(filename)
+
+        self.logger.debug(rs.request.values)
         # The statements from BFS are encoded in latin-1
-        statement_file = check(rs, "csvfile_or_None", statement_file,
+        statement_file = check(rs, "csvfile", statement_file,
                                "statement_file", encoding="latin-1")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
 
-        if statement_file and statement:
-            rs.notify("warning", n_("Only one input method allowed."))
-            return self.parse_statement_form(rs)
-        elif statement_file:
-            rs.values["statement"] = statement_file
-            statementlines = statement_file.splitlines()
-        elif statement:
-            statementlines = statement.splitlines()
-        else:
-            rs.notify("error", n_("No input provided."))
-            return self.parse_statement_form(rs)
+        statementlines = statement_file.splitlines()
 
         event_list = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
-        event_names = {e["title"]: (get_event_name_pattern(e), e["shortname"])
-                       for e in events.values()}
 
         # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";",
                                 quotechar='"',
-                                fieldnames=STATEMENT_CSV_FIELDS,
-                                restkey=STATEMENT_CSV_RESTKEY,
+                                fieldnames=parse.STATEMENT_CSV_FIELDS,
+                                restkey=parse.STATEMENT_CSV_RESTKEY,
                                 restval="")
-        problems = []
 
         transactions = []
-        event_fees = []
-        membership_fees = []
-        other_transactions = []
 
         for i, line in enumerate(reversed(list(reader))):
             if not len(line) == 23:
-                p = (i, "statement",
+                p = ("statement",
                      ValueError(n_("Line %(lineno)s does not have "
                                    "the correct number of "
                                    "columns."),
                                 {'lineno': i + 1}
                                 ))
-                problems.append(p)
                 rs.append_validation_error(p)
                 continue
             line["id"] = i
-            t = Transaction(line)
-            t.guess_type(event_names)
-            t.match_member(rs, self.coreproxy.get_persona)
-            t.match_event(event_names)
-
-            problems.extend((t.t_id, key, p) for key, p in t.problems)
+            t = parse.Transaction.from_csv(line)
+            t.analyze(rs, events, self.coreproxy.get_persona)
+            t.inspect()
 
             transactions.append(t)
-            if (t.type in {TransactionType.EventFee}
-                    and t.best_event_match
-                    and t.best_member_match
-                    and t.best_member_confidence > 2):
-                event_fees.append(t)
-            elif (t.type in {TransactionType.MembershipFee}
-                  and t.best_member_match
-                  and t.best_member_confidence > 2):
-                membership_fees.append(t)
-            else:
-                other_transactions.append(t)
 
-        data = {"event_fees": event_fees,
-                "membership_fees": membership_fees,
-                "other_transactions": other_transactions,
-                "transactions": transactions,
-                "files": {}}
+        data = self.organize_transaction_data(
+            rs, transactions, start, end, timestamp)
 
-        if membership_fees:
-            rows = []
-            # Separate by known and unknown Names
-            rows.extend([
-                t.to_dict()
-                for t in membership_fees if
-                (t.best_member_match.given_names !=
-                 STATEMENT_GIVEN_NAMES_UNKNOWN or
-                 t.best_member_match.family_name !=
-                 STATEMENT_FAMILY_NAME_UNKNOWN)
-            ])
-            rows.extend([
-                t.to_dict()
-                for t in membership_fees if
-                (t.best_member_match.given_names ==
-                 STATEMENT_GIVEN_NAMES_UNKNOWN and
-                 t.best_member_match.family_name ==
-                 STATEMENT_FAMILY_NAME_UNKNOWN)
-            ])
-
-            if rows:
-                csv_data = csv_output(rows, MEMBERSHIP_FEE_FIELDS,
-                                      writeheader=False)
-                data["files"]["membership_fees"] = csv_data
-
-        all_rows = []
-        for event_name in event_names:
-            rows = []
-            # Separate by not Extern and Extern
-            rows.extend([
-                t.to_dict()
-                for t in event_fees
-                if (event_name == t.best_event_match.title
-                    and t.best_member_match.db_id != STATEMENT_DB_ID_EXTERN)
-            ])
-
-            rows.extend([
-                t.to_dict()
-                for t in event_fees
-                if (event_name == t.best_event_match.title
-                    and t.best_member_match.db_id == STATEMENT_DB_ID_EXTERN)
-            ])
-
-            if rows:
-                all_rows.extend(rows)
-                e_name = event_name.replace(" ", "_").replace("/", "-")
-                csv_data = csv_output(rows, EVENT_FEE_FIELDS,
-                                      writeheader=False)
-                data["files"][e_name] = csv_data
-        if all_rows:
-            csv_data = csv_output(all_rows, EVENT_FEE_FIELDS,
-                                  writeheader=False)
-            data["files"]["event_fees"] = csv_data
-
-        if other_transactions:
-            rows = []
-            # Separate by TransactionType
-            for ty in TransactionType:
-                rows.extend([
-                    t.to_dict()
-                    for t in other_transactions if t.type == ty
-                ])
-            rows.extend([
-                t.to_dict()
-                for t in other_transactions if t.type is None])
-
-            if rows:
-                csv_data = csv_output(rows, OTHER_TRANSACTION_FIELDS,
-                                      writeheader=True)
-                data["files"]["other_transactions"] = csv_data
-
-        rows = defaultdict(list)
-        for t in transactions:
-            rows[t.account].append(t.to_dict())
-
-        for acc in Accounts:
-            if acc in rows:
-                csv_data = csv_output(rows[acc], ACCOUNT_FIELDS,
-                                      writeheader=False)
-                data["files"]["transactions_{}".format(acc)] = csv_data
-
-        csvfields = None
-        return self.parse_statement_form(rs, data=data, problems=problems,
-                                         csvfields=csvfields)
+        return self.parse_statement_form(rs, data)
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata(("data", "str"), ("filename", "str"))
-    def parse_download(self, rs, data, filename):
+    @REQUESTdata(("count", "int"), ("start", "date"), ("end", "date"),
+                 ("timestamp", "datetime"))
+    def parse_download(self, rs, count, start, end, timestamp):
         """
         Provide data as CSV-Download with the given filename.
 
         This uses POST, because the expected filesize is too large for GET.
         """
-        if rs.has_validation_errors():
-            return self.parse_statement_form(rs)
-        return self.send_file(rs, mimetype="text/csv", data=data,
-                              filename=filename)
+        rs.ignore_validation_errors()
+
+        params = lambda i: (
+            ("reference{}".format(i), "str_or_None"),
+            ("account{}".format(i), "enum_accounts"),
+            ("statement_date{}".format(i), "date"),
+            ("amount{}".format(i), "decimal"),
+            ("account_holder{}".format(i), "str_or_None"),
+            ("posting{}".format(i), "str"),
+            ("iban{}".format(i), "iban_or_None"),
+            ("t_id{}".format(i), "id"),
+            ("transaction_type{}".format(i), "enum_transactiontype"),
+            ("transaction_type_confidence{}".format(i), "int"),
+            ("transaction_type_confirm{}".format(i), "bool_or_None"),
+            ("cdedbid{}".format(i), "cdedbid_or_None"),
+            ("persona_id_confidence{}".format(i), "int_or_None"),
+            ("persona_id_confirm{}".format(i), "bool_or_None"),
+            ("event_id{}".format(i), "id_or_None"),
+            ("event_id_confidence{}".format(i), "int_or_None"),
+            ("event_id_confirm{}".format(i), "bool_or_None"),
+        )
+
+        transactions = []
+        for i in range(1, count+1):
+            t = request_extractor(rs, params(i))
+            t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
+            t.inspect()
+            transactions.append(t)
+
+        data = self.organize_transaction_data(
+            rs, transactions, start, end, timestamp)
+
+        if rs.request.values.get("validate") or data["has_error"] or data["has_warning"]:
+            return self.parse_statement_form(rs, data)
+        elif rs.request.values.get("membership"):
+            filename = "Mitgliedsbeiträge"
+            transactions = [t for t in transactions
+                            if t.type == TransactionType.MembershipFee]
+            fields = parse.MEMBERSHIP_EXPORT_FIELDS
+            write_header = False
+        elif rs.request.values.get("event"):
+            aux = int(rs.request.values.get("event"))
+            event = self.eventproxy.get_event(rs, aux)
+            filename = event["shortname"]
+            transactions = [t for t in transactions
+                            if t.event_id == aux
+                            and t.type == TransactionType.EventFee]
+            fields = parse.EVENT_EXPORT_FIELDS
+            write_header = False
+        elif rs.request.values.get("gnucash"):
+            filename = "gnucash"
+            fields = parse.GNUCASH_EXPORT_FIELDS
+            write_header = True
+        elif rs.request.values.get("excel"):
+            aux = rs.request.values.get("excel")
+            filename = "transactions_" + aux
+            transactions = [t for t in transactions
+                            if str(t.account) == aux]
+            fields = parse.EXCEL_EXPORT_FIELDS
+            write_header = False
+        else:
+            rs.notify("error", n_("Unknown action."))
+            return self.parse_statement_form(rs, data)
+        if start != end:
+            filename += "_{}_bis_{}.csv".format(start, end)
+        else:
+            filename += "_{}".format(start)
+        csv_data = [t.to_dict(rs, self.coreproxy.get_persona,
+                              self.eventproxy.get_event)
+                    for t in transactions]
+        csv_data = csv_output(csv_data, fields, write_header)
+        return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
     @access("finance_admin")
     def money_transfers_form(self, rs, data=None, csvfields=None, saldo=None):
@@ -1081,7 +1059,7 @@ class CdEFrontend(AbstractUserFrontend):
                     if note:
                         try:
                             date = datetime.datetime.strptime(
-                                note, STATEMENT_OUTPUT_DATEFORMAT)
+                                note, parse.OUTPUT_DATEFORMAT)
                         except ValueError:
                             pass
                         else:
@@ -1089,7 +1067,7 @@ class CdEFrontend(AbstractUserFrontend):
                             note = note_template.format(
                                 amount=money_filter(datum['amount']),
                                 new_balance=money_filter(new_balance),
-                                date=date.strftime(STATEMENT_OUTPUT_DATEFORMAT))
+                                date=date.strftime(parse.OUTPUT_DATEFORMAT))
                     count += self.coreproxy.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
