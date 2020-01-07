@@ -1516,6 +1516,9 @@ GENESIS_CASE_FIELDS = (
     "address", "postal_code", "location", "country",
     "realm", "notes", "case_status", "reviewer")
 
+# The following dict defines, which additional fields are required for genesis
+# request for distinct realms. Additionally, it is used to define for which
+# realms genesis requrests are allowed
 realm_specific_genesis_fields = {
     "ml": tuple(),
     "event": ("gender", "birthday", "telephone", "mobile",

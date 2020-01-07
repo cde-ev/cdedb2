@@ -1850,18 +1850,16 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", "event_admin", "ml_admin")
     def genesis_list_cases(self, rs):
         """Compile a list of genesis cases to review."""
-        realms = []
-        if {"core_admin", "event_admin"} & rs.user.roles:
-            realms.append("event")
-        if {"core_admin", "ml_admin"} & rs.user.roles:
-            realms.append("ml")
+        realms = [realm for realm in realm_specific_genesis_fields.keys()
+                  if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, stati=(const.GenesisStati.to_review,), realms=realms)
         cases = self.coreproxy.genesis_get_cases(rs, set(data))
-        event_cases = {k: v for k, v in cases.items() if v['realm'] == 'event'}
-        ml_cases = {k: v for k, v in cases.items() if v['realm'] == 'ml'}
+        cases_by_realm = {
+            realm: {k: v for k, v in cases.items() if v['realm'] == realm}
+            for realm in realms}
         return self.render(rs, "genesis_list_cases", {
-            'ml_cases': ml_cases, 'event_cases': event_cases})
+            'cases_by_realm': cases_by_realm})
 
     @access("core_admin", "event_admin", "ml_admin")
     def genesis_show_case(self, rs, case_id):

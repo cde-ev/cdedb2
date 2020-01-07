@@ -8168,34 +8168,37 @@ msgstr "Passwort"
 msgid "The Account Request will be permanently deleted."
 msgstr "Die Accountanfrage wird irreversibel gelöscht."
 
+#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:20
+msgid "Event Account Requests"
+msgstr "Veranstaltungs-Account-Anfragen"
+
+#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:21
+msgid "CdE Account Requests"
+msgstr "CdE-Mitglieds-Account-Anfragen"
+
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:22
-#, python-format
-msgid "Event-Account Requests [%(count)s]"
-msgstr "Veranstaltungs-Accountanfragen [%(count)s]"
+msgid "Assembly Account Requests"
+msgstr "Versammlungs-Account-Anfragen"
+
+#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:23
+msgid "Mailinglist Account Requests"
+msgstr "Mailinglisten-Account-Anfragen"
 
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:50
-msgid "There are currently no Event-Account Requests pending."
-msgstr "Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor."
-
-#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:55
-#, python-format
-msgid "Mailinglist-Account Requests [%(count)s]"
-msgstr "Mailinglisten-Accountanfragen [%(count)s]"
-
-#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:81
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:103
 msgid "Approve"
 msgstr "Genehmigen"
 
-#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:88
+#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:57
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:110
-#: cdedb/frontend/templates/web/ml/management.tmpl:117
+#: cdedb/frontend/templates/web/ml/management.tmpl:119
 msgid "Reject"
 msgstr "Ablehnen"
 
-#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:99
-msgid "There are currently no Mailinglist-Account Requests pending."
-msgstr "Zur Zeit liegen keine Mailinglisten-Accountanfragen vor."
+#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:67
+#, python-format
+msgid "There are currently no %(realm)s pending for approval."
+msgstr "Aktuell stehen keine %(realm)s zur Bestätigung aus."
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:7
 msgid "Edit Account Request"
