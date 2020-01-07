@@ -22,7 +22,7 @@ from cdedb.frontend.common import (
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
-    REALM_INHERITANCE, EntitySorter)
+    REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields)
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
@@ -1708,7 +1708,9 @@ class CoreFrontend(AbstractFrontend):
         allowed_genders = set(const.Genders) - {const.Genders.not_specified}
         return self.render(rs, "genesis_request",
                            {'max_rationale': self.conf.MAX_RATIONALE,
-                            'allowed_genders': allowed_genders})
+                            'allowed_genders': allowed_genders,
+                            'realm_specific_genesis_fields':
+                                realm_specific_genesis_fields})
 
     @access("anonymous", modi={"POST"})
     @REQUESTdatadict(
@@ -1885,7 +1887,9 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         merge_dicts(rs.values, case)
-        return self.render(rs, "genesis_modify_form")
+        return self.render(rs, "genesis_modify_form",
+                           {'realm_specific_genesis_fields':
+                                realm_specific_genesis_fields})
 
     @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
     @REQUESTdatadict(
