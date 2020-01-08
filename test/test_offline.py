@@ -53,6 +53,21 @@ class TestOffline(FrontendTest):
             self.assertPresence('5', 'query-results')
             self.assertPresence('Inga')
 
+            # Test edit of profile
+            self.traverse({'href': 'event/event/1/registration/query'},
+                          {'description': 'Alle Anmeldungen'},
+                          {'href': 'event/event/1/registration/1/show'},
+                          {'href': 'core/persona/1/show'},
+                          {'href': 'core/persona/1/adminchange'})
+            self.assertTitle('Anton Armin A. Administrator bearbeiten')
+            f = self.response.forms['changedataform']
+            f['display_name'] = "Zelda"
+            f['birthday'] = "3.4.1933"
+            self.submit(f)
+            self.assertPresence("Zelda")
+            self.assertTitle("Anton Armin A. Administrator")
+            self.assertPresence("03.04.1933")
+
             # Additional tests can be added here.
             # Due to the expensive setup of this test these should not
             # be split out.

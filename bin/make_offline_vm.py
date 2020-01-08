@@ -191,6 +191,29 @@ def work(args):
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
 
+            # Create a surrogate changelog that can be used for the
+            # duration of the offline deployment
+            print("Instantiating changelog.")
+            for persona in data['core.personas'].values():
+                datum = {**DEFAULTS['core.personas'], **persona}
+                del datum['id']
+                del datum['password_hash']
+                del datum['fulltext']
+                datum['notes'] = ('This is just a copy, changes to profiles'
+                                  ' will not be persisted.')
+                datum['submitted_by'] = persona['id']
+                datum['generation'] = 1
+                datum['change_note'] = 'Create surrogate changelog.'
+                datum['change_status'] = 2  # MemberChangeStati.committed
+                datum['persona_id'] = persona['id']
+                keys = tuple(key for key in datum)
+                query = ("INSERT INTO core.changelog ({keys})"
+                         " VALUES ({placeholders})").format(
+                             table=table, keys=", ".join(keys),
+                             placeholders=", ".join(("%s",) * len(keys)))
+                params = tuple(datum[key] for key in keys)
+                cur.execute(query, params)
+
     print("Checking whether everything was transferred.")
     fails = []
     with conn as con:

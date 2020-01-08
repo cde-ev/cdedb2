@@ -418,7 +418,7 @@ class CoreBackend(AbstractBackend):
             self.sql_insert(rs, "core.changelog", insert)
 
             # resolve change if it doesn't require review
-            if not requires_review:
+            if not requires_review or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
                 ret = self.changelog_resolve_change(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
@@ -746,16 +746,12 @@ class CoreBackend(AbstractBackend):
             raise RuntimeError(n_("Editing archived member impossible."))
 
         with Atomizer(rs):
-            # reroute through the changelog if necessary
-            if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                ret = self.changelog_submit_change(
-                    rs, data, generation=generation,
-                    may_wait=may_wait, change_note=change_note)
-                if allow_specials and ret < 0:
-                    raise RuntimeError(n_("Special change not committed."))
-                return ret
-
-            return self.commit_persona(rs, data, change_note)
+            ret = self.changelog_submit_change(
+                rs, data, generation=generation,
+                may_wait=may_wait, change_note=change_note)
+            if allow_specials and ret < 0:
+                raise RuntimeError(n_("Special change not committed."))
+            return ret
 
     @access("persona")
     def change_persona(self, rs, data, generation=None, may_wait=True,
@@ -1686,8 +1682,7 @@ class CoreBackend(AbstractBackend):
             # remove unlogged attributes
             del data['password_hash']
             del data['fulltext']
-            if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                self.sql_insert(rs, "core.changelog", data)
+            self.sql_insert(rs, "core.changelog", data)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
         return new_id
 

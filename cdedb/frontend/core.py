@@ -924,16 +924,11 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
-        if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            generation = self.coreproxy.changelog_get_generation(
-                rs, persona_id)
-            data = unwrap(self.coreproxy.changelog_get_history(
-                rs, persona_id, (generation,)))
-            del data['change_note']
-        else:
-            data = self.coreproxy.get_event_user(rs, persona_id)
-            data['change_status'] = None
-            data['generation'] = -1
+        generation = self.coreproxy.changelog_get_generation(
+            rs, persona_id)
+        data = unwrap(self.coreproxy.changelog_get_history(
+            rs, persona_id, (generation,)))
+        del data['change_note']
         merge_dicts(rs.values, data)
         if data['change_status'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
