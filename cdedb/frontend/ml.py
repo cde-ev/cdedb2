@@ -730,6 +730,7 @@ class MlFrontend(AbstractUserFrontend):
         for ml_id in ml_ids:
             states = {const.SubscriptionStates.pending}
             requests = self.mlproxy.get_subscription_states(rs, ml_id, states)
+            requests = list(requests)  # convert from dict which breaks JSON
 
             ml_store = store.get(str(ml_id))
             if ml_store is None:
