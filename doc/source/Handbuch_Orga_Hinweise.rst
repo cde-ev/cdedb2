@@ -1,8 +1,9 @@
-Hinweise für Orgas
-==================
+Einführung für Orgas
+====================
 
-Hier findet ihr Hinweise um mittels der Datenbank eine Veranstaltung zu
-organisieren.
+Hier findet ihr allgemeine Hinweise um mittels der Datenbank eine
+Veranstaltung zu organisieren. Unter :ref:`orga-specific-hints` finden
+sich noch Detailhinweise zu spezifischen Aspekten.
 
 Einleitung
 ----------
