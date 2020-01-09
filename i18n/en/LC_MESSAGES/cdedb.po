@@ -977,7 +977,7 @@ msgstr "Assembly lists"
 
 #: cdedb/i18n_additional.py:238
 msgid "MailinglistGroup.cdelokal"
-msgstr "CdElokal (Opt-in)"
+msgstr "CdElokal lists"
 
 #: cdedb/i18n_additional.py:240
 msgid "MailinglistTypes.member_mandatory"
