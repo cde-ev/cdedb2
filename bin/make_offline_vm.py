@@ -109,7 +109,7 @@ def update_event(cur, event):
 
 def work(args):
     db_name = 'cdb_test' if args.test else 'cdb'
-    
+
     print("Loading exported event")
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
@@ -246,11 +246,11 @@ def work(args):
         conf.write("\nCDEDB_OFFLINE_DEPLOYMENT = True\n")
 
     print("Protecting data from accidental reset")
-    subprocess.run(["sudo", "touch", "/DBVM"], check=True)
+    subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
 
     print("Restarting application to make offline mode effective")
     subprocess.run(["make", "reload"], check=True, cwd=args.repopath)
-    
+
     print("Finished")
 
 
