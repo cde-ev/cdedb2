@@ -222,6 +222,9 @@ def work(args):
     with open(str(config_path), 'a', encoding='UTF-8') as conf:
         conf.write("\nCDEDB_OFFLINE_DEPLOYMENT = True\n")
 
+    print("Protecting data from accidental reset")
+    subprocess.run(["sudo", "touch", "/DBVM"], check=True)
+
     print("Restarting application to make offline mode effective")
     subprocess.run(["make", "reload"], check=True, cwd=args.repopath)
     
