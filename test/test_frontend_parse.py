@@ -107,7 +107,7 @@ class TestParseFrontend(FrontendTest):
             else:
                 self.assertEqual(v, adict[k])
 
-    @as_users("anton")
+    @as_users("farin")
     def test_parse_statement(self, user):
         self.get("/cde/parse")
         self.assertTitle("Kontoauszug parsen")
