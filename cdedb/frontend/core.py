@@ -1860,7 +1860,8 @@ class CoreFrontend(AbstractFrontend):
 
         return store
 
-    @access("core_admin", "event_admin", "ml_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields))
     def genesis_list_cases(self, rs):
         """Compile a list of genesis cases to review."""
         realms = [realm for realm in realm_specific_genesis_fields.keys()
@@ -1874,7 +1875,8 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "genesis_list_cases", {
             'cases_by_realm': cases_by_realm})
 
-    @access("core_admin", "event_admin", "ml_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields))
     def genesis_show_case(self, rs, case_id):
         """View a specific case."""
         case = self.coreproxy.genesis_get_case(rs, case_id)
@@ -1887,7 +1889,8 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "genesis_show_case", {
             'case': case, 'reviewer': reviewer})
 
-    @access("core_admin", "event_admin", "ml_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields))
     def genesis_modify_form(self, rs, case_id):
         """Edit a specific case it."""
         case = self.coreproxy.genesis_get_case(rs, case_id)
@@ -1905,7 +1908,9 @@ class CoreFrontend(AbstractFrontend):
             'realm_specific_genesis_fields': realm_specific_genesis_fields,
             'realm_options': realm_options})
 
-    @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields),
+            modi={"POST"})
     @REQUESTdatadict(
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
@@ -1927,7 +1932,9 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields),
+            modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"))
     def genesis_decide(self, rs, case_id, case_status):
         """Approve or decline a genensis case.
