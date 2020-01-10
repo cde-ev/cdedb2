@@ -775,6 +775,30 @@ def _email(val, argname=None, *, _convert=True):
     return val, errs
 
 
+_EMAIL_LOCAL_PART_REGEX = re.compile(r'^[a-z0-9._+-]+$')
+
+
+@_addvalidator
+def _email_local_part(val, argname=None, *, _convert=True):
+    """We accept only a subset of valid email addresses.
+    Here we only care about the local part.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return None, errs
+    # normalize to lower case
+    val = val.strip().lower()
+    if not _EMAIL_LOCAL_PART_REGEX.match(val):
+        errs.append(
+            (argname, ValueError(n_("Must be a valid email local part."))))
+    return val, errs
+
+
 _PERSONA_TYPE_FIELDS = {
     'is_cde_realm': _bool,
     'is_event_realm': _bool,
@@ -3101,7 +3125,7 @@ def _partial_registration_track(val, argname=None, *, _convert=True):
 
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
-    'address': _email,
+    'local_part': _email_local_part,
     'description': _str_or_None,
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
@@ -3115,6 +3139,9 @@ _MAILINGLIST_OPTIONAL_FIELDS = lambda: {
     'assembly_id': _None,
     'event_id': _None,
     'registration_stati': _empty_list,
+}
+_MAILINGLIST_READONLY_FIELDS = {
+    'address',
 }
 
 
@@ -3150,6 +3177,9 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                 iterable_fields.append((key, "_" + validator_str[1:-1]))
             else:
                 target[key] = getattr(current_module, "_" + validator_str)
+    for key in _MAILINGLIST_READONLY_FIELDS:
+        if key in val:
+            del val[key]
     if creation:
         pass
     else:
