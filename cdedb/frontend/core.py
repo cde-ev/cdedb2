@@ -32,6 +32,14 @@ import cdedb.database.constants as const
 import cdedb.validation as validate
 
 
+# Name of each realm's option in the genesis form
+GENESIS_REALM_OPTION_NAMES = (
+    ("event", n_("CdE event")),
+    ("cde", n_("CdE membership")),
+    ("assembly", n_("CdE members' assembly")),
+    ("ml", n_("CdE mailinglist")))
+
+
 class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
     anonymous access and personas. """
@@ -1706,11 +1714,14 @@ class CoreFrontend(AbstractFrontend):
     def genesis_request_form(self, rs):
         """Render form."""
         allowed_genders = set(const.Genders) - {const.Genders.not_specified}
-        return self.render(rs, "genesis_request",
-                           {'max_rationale': self.conf.MAX_RATIONALE,
-                            'allowed_genders': allowed_genders,
-                            'realm_specific_genesis_fields':
-                                realm_specific_genesis_fields})
+        realm_options = [option
+                         for option in GENESIS_REALM_OPTION_NAMES
+                         if option[0] in realm_specific_genesis_fields]
+        return self.render(rs, "genesis_request", {
+            'max_rationale': self.conf.MAX_RATIONALE,
+            'allowed_genders': allowed_genders,
+            'realm_specific_genesis_fields': realm_specific_genesis_fields,
+            'realm_options': realm_options})
 
     @access("anonymous", modi={"POST"})
     @REQUESTdatadict(
@@ -1885,9 +1896,12 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         merge_dicts(rs.values, case)
-        return self.render(rs, "genesis_modify_form",
-                           {'realm_specific_genesis_fields':
-                                realm_specific_genesis_fields})
+        realm_options = [option
+                         for option in GENESIS_REALM_OPTION_NAMES
+                         if option[0] in realm_specific_genesis_fields]
+        return self.render(rs, "genesis_modify_form", {
+            'realm_specific_genesis_fields': realm_specific_genesis_fields,
+            'realm_options': realm_options})
 
     @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
     @REQUESTdatadict(

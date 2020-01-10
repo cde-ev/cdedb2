@@ -25,8 +25,7 @@
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
             {% if "core_admin" in user.roles %}
                 {{ util.form_input_select(
-                    name="realm", small=True, entries=(("event", gettext("CdE-Event")),
-                                                       ("ml", gettext("CdE-Mailinglist"))),
+                    name="realm", small=True, entries=realm_options,
                     label=gettext("Realm"), anid="realm-select") }}
             {% else %}
                 {% with realms = {'event': (gettext("Event"), 'blackboard'),

@@ -26,10 +26,8 @@
             {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
             {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
-            {{ util.form_input_select(name="realm", small=True, entries=(
-                ("event", gettext("CdE-Event")),
-                ("ml", gettext("CdE-Mailinglist"))),
-                label=gettext("Rationale"), anid="realm-select") }}
+            {{ util.form_input_select(name="realm", small=True, entries=realm_options,
+                                      label=gettext("Rationale"), anid="realm-select") }}
             {{ util.form_input_textarea(name="notes",
                                         label=gettext("Rationale (max. %s Characters)")|format(max_rationale),
                                         small=True, maxlength=max_rationale) }}

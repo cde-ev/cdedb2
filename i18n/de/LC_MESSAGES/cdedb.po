@@ -2963,7 +2963,23 @@ msgstr "Diese Veranstaltung ist für die Offline-Nutzung gesperrt."
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
-#: cdedb/frontend/core.py:219
+#: cdedb/frontend/core.py:36
+msgid "CdE event"
+msgstr "CdE-Veranstaltung"
+
+#: cdedb/frontend/core.py:37
+msgid "CdE membership"
+msgstr "CdE-Mitgliedschaft"
+
+#: cdedb/frontend/core.py:38
+msgid "CdE members' assembly"
+msgstr "CdE-Mitgliederversammlung"
+
+#: cdedb/frontend/core.py:39
+msgid "CdE mailinglist"
+msgstr "CdE-Mailingliste"
+
+#: cdedb/frontend/core.py:202
 msgid "Login failure."
 msgstr "Login fehlgeschlagen."
 
