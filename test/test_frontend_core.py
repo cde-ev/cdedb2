@@ -90,8 +90,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
         self.assertPresence("Internationaler Kongress", div='assembly-box')
 
-    @as_users("anton", "berta", "charly", "emilia", "ferdinand",
-              "garcia", "inga", "janis", "kalif")
+    @as_users("anton", "berta", "charly", "daniel", "emilia", "ferdinand",
+              "garcia", "inga", "janis", "kalif", "martin", "nina",
+              "vera", "werner", "annika", "farin", "akira")
     def test_showuser(self, user):
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("{} {}".format(user['given_names'],
