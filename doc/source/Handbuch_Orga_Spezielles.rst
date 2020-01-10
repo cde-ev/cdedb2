@@ -30,7 +30,7 @@ dem entsperren der Online-Instanz noch etwas Nacharbeit nötig.
    Dieser Schritt ist nur notwendig, wenn der neue Nutzer in der
    Online-Instanz noch nicht existiert.
 
-   Schreibt dazu dem Verwaltungsteam eine Email mit den neuen Daten,
+   Schreibt dazu dem Akademieteam eine Email mit den neuen Daten,
    dieses legt den Nutzer dann für euch an und teilt euch dann die ID
    des neuen Accounts mit.
 2. IDs synchronisieren
