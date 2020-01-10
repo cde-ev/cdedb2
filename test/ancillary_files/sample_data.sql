@@ -361,7 +361,7 @@ INSERT INTO ml.mailinglists (id, title, local_part, address, description, ml_typ
     (8, 'Orga-Liste', 'aka', 'aka@aka.cde-ev.de', NULL, 21, 6, 1, 1, 3, '[orga]', NULL, True, 1, ARRAY[]::integer[], NULL),
     (9, 'Teilnehmer-Liste', 'participants', 'participants@aka.cde-ev.de', NULL, 20, 6, 2, 1, 3, '[aka]', NULL, True, 1, ARRAY[2, 4], NULL),
     (10, 'Warte-Liste', 'wait', 'wait@aka.cde-ev.de', NULL, 20, 6, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL),
-    (11, 'Kampfbrief-Kommentare', 'opt', 'opt@lists.cde-ev.de', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], 1);
+    (11, 'Kampfbrief-Kommentare', 'opt', 'opt@lists.cde-ev.de', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], NULL);
 
 INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
     (3, 10, 'janis-spam@example.cde'),

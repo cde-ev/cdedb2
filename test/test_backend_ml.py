@@ -6,6 +6,7 @@ from cdedb.common import (
     PrivilegeError, SubscriptionError, SubscriptionActions as SA)
 from cdedb.database.constants import (SubscriptionStates as SS,)
 import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
 import datetime
 import decimal
 import copy
@@ -43,48 +44,51 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.list_mailinglists(self.key, active_only=False))
         expectation = {
-            3: {'address': 'witz@example.cde',
+            3: {'local_part': 'witz',
+                'address': 'witz@lists.cde-ev.de',
                 'description': "Einer geht noch ...",
                 'assembly_id': None,
-                'attachment_policy': 2,
+                'attachment_policy': const.AttachmentPolicy.pdf_only.value,
                 'event_id': None,
                 'id': 3,
                 'is_active': True,
                 'maxsize': 2048,
-                'ml_type': 40,
-                'mod_policy': 2,
+                'ml_type': const.MailinglistTypes.general_opt_in.value,
+                'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 3, 10},
                 'registration_stati': [],
                 'subject_prefix': '[witz]',
                 'title': 'Witz des Tages',
                 'notes': None,
                 'whitelist': set()},
-            5: {'address': 'kongress@example.cde',
+            5: {'local_part': 'kongress',
+                'address': 'kongress@lists.cde-ev.de',
                 'description': None,
                 'assembly_id': 1,
-                'attachment_policy': 2,
+                'attachment_policy': const.AttachmentPolicy.pdf_only.value,
                 'event_id': None,
                 'id': 5,
                 'is_active': True,
                 'maxsize': 1024,
-                'ml_type': 30,
-                'mod_policy': 2,
+                'ml_type': const.MailinglistTypes.assembly_associated.value,
+                'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 7},
                 'registration_stati': [],
                 'subject_prefix': '[kampf]',
                 'title': 'Sozialistischer Kampfbrief',
                 'notes': None,
                 'whitelist': set()},
-            7: {'address': 'aktivenforum@example.cde',
+            7: {'local_part': 'aktivenforum',
+                'address': 'aktivenforum@lists.cde-ev.de',
                 'description': None,
                 'assembly_id': None,
-                'attachment_policy': 2,
+                'attachment_policy': const.AttachmentPolicy.pdf_only.value,
                 'event_id': None,
                 'id': 7,
                 'is_active': True,
                 'maxsize': 1024,
-                'ml_type': 3,
-                'mod_policy': 2,
+                'ml_type': const.MailinglistTypes.member_opt_in.value,
+                'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 10},
                 'registration_stati': [],
                 'subject_prefix': '[aktivenforum]',
@@ -104,11 +108,12 @@ class TestMlBackend(BackendTest):
                           'picard@example.cde'},
             'ml_type': const.MailinglistTypes.member_moderated_opt_in,
             'is_active': False,
-            'address': 'passivenforum@example.cde',
+            'local_part': 'passivenforum',
             'notes': "this list is no more",
         }
         expectation = expectation[7]
         expectation.update(setter)
+        expectation['address'] = setter['local_part'] + '@' + ml_type.domain_str(expectation)
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
 
@@ -126,14 +131,14 @@ class TestMlBackend(BackendTest):
     def test_mailinglist_creation_deletion(self, user):
         oldlists = self.ml.list_mailinglists(self.key)
         new_data = {
-            'address': 'revolution@example.cde',
+            'local_part': 'revolution',
             'description': 'Vereinigt Euch',
             'assembly_id': None,
-            'attachment_policy': 3,
+            'attachment_policy': const.AttachmentPolicy.forbid.value,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
-            'mod_policy': 1,
+            'mod_policy': const.ModerationPolicy.unmoderated.value,
             'moderators': {1, 2},
             'registration_stati': [],
             'subject_prefix': '[viva la revolution]',
@@ -143,13 +148,14 @@ class TestMlBackend(BackendTest):
                 'fidel@example.cde',
                 'che@example.cde',
             },
-            'ml_type': 5,
+            'ml_type': const.MailinglistTypes.member_invitation_only.value,
         }
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.assertLess(0, new_id)
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
+        new_data['address'] = new_data['local_part'] + '@' + ml_type.domain_str(new_data)
         self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
             self.key, new_id, cascade=("subscriptions", "addresses",
@@ -159,7 +165,7 @@ class TestMlBackend(BackendTest):
     @as_users("anton")
     def test_mailinglist_creation_optional_fields(self, user):
         new_data = {
-            'address': 'revolution1@example.cde',
+            'local_part': 'revolution',
             'description': 'Vereinigt Euch',
             'attachment_policy': const.AttachmentPolicy.forbid,
             'is_active': True,
@@ -172,29 +178,29 @@ class TestMlBackend(BackendTest):
             'title': 'Proletarier aller Länder',
         }
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['address'] += "x"
+        new_data['local_part'] += "x"
         new_data['registration_stati'] = [const.RegistrationPartStati.guest]
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
         new_data['registration_stati'] = []
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['address'] += "x"
+        new_data['local_part'] += "x"
         new_data['whitelist'] = "datenbank@example.cde"
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data['address'] += "x"
+        new_data['local_part'] += "x"
         new_data['whitelist'] = ["datenbank@example.cde"]
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['address'] += "x"
+        new_data['local_part'] += "x"
         new_data['whitelist'] = []
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['address'] += "x"
+        new_data['local_part'] += "x"
         new_data['event_id'] = 1
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
         new_data['event_id'] = None
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data['address'] += "x"
+        new_data['local_part'] += "x"
         new_data['assembly_id'] = 1
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
@@ -936,7 +942,7 @@ class TestMlBackend(BackendTest):
     def test_change_sub_policy(self, user):
         pass
         mdata = {
-            'address': 'revolution@example.cde',
+            'local_part': 'revolution',
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
@@ -1059,7 +1065,7 @@ class TestMlBackend(BackendTest):
     @as_users("anton")
     def test_change_mailinglist_association(self, user):
         mdata = {
-            'address': 'orga@example.cde',
+            'local_part': 'orga',
             'description': None,
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
@@ -1433,14 +1439,14 @@ class TestMlBackend(BackendTest):
         self.ml.set_subscription_address(self.key, **datum)
         self.ml.do_subscription_action(self.key, SA.add_subscriber, 7, 1)
         new_data = {
-            'address': 'revolution@example.cde',
+            'local_part': 'revolution',
             'description': 'Vereinigt Euch',
             'assembly_id': None,
-            'attachment_policy': 3,
+            'attachment_policy': const.AttachmentPolicy.forbid,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
-            'mod_policy': 1,
+            'mod_policy': const.ModerationPolicy.unmoderated,
             'moderators': {1, 2},
             'registration_stati': [],
             'subject_prefix': '[viva la revolution]',
@@ -1458,7 +1464,7 @@ class TestMlBackend(BackendTest):
 
         # now check it
         expectation = (
-            {'additional_info': 'Witz des Tages (witz@example.cde)',
+            {'additional_info': 'Witz des Tages (witz@lists.cde-ev.de)',
              'code': const.MlLogCodes.list_deleted,
              'ctime': nearly_now(),
              'mailinglist_id': None,
@@ -1520,37 +1526,37 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_export(self, user):
-        expectation = ({'address': 'announce@example.cde',
+        expectation = ({'address': 'announce@lists.cde-ev.de',
                         'is_active': True},
-                       {'address': 'werbung@example.cde',
+                       {'address': 'werbung@lists.cde-ev.de',
                         'is_active': True},
-                       {'address': 'witz@example.cde',
+                       {'address': 'witz@lists.cde-ev.de',
                         'is_active': True},
-                       {'address': 'klatsch@example.cde',
+                       {'address': 'klatsch@lists.cde-ev.de',
                         'is_active': True},
-                       {'address': 'kongress@example.cde',
+                       {'address': 'kongress@lists.cde-ev.de',
                         'is_active': True},
-                       {'address': 'aktivenforum2000@example.cde',
+                       {'address': 'aktivenforum2000@lists.cde-ev.de',
                         'is_active': False},
-                       {'address': 'aktivenforum@example.cde',
+                       {'address': 'aktivenforum@lists.cde-ev.de',
                         'is_active': True},
-                       {'address': 'aka@example.cde',
+                       {'address': 'aka@aka.cde-ev.de',
                         'is_active': True},
-                       {'address': 'participants@example.cde',
+                       {'address': 'participants@aka.cde-ev.de',
                         'is_active': True},
-                       {'address': 'wait@example.cde',
+                       {'address': 'wait@aka.cde-ev.de',
                         'is_active': True},
-                       {'address': 'opt@example.cde',
+                       {'address': 'opt@lists.cde-ev.de',
                         'is_active': True})
         self.assertEqual(
             expectation,
             self.ml.export_overview("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))
         expectation = {
-            'address': 'werbung@example.cde',
-            'admin_address': 'werbung-owner@example.cde',
+            'address': 'werbung@lists.cde-ev.de',
+            'admin_address': 'werbung-owner@lists.cde-ev.de',
             'listname': 'Werbung',
             'moderators': ('janis@example.cde',),
-            'sender': 'werbung@example.cde',
+            'sender': 'werbung@lists.cde-ev.de',
             'size_max': None,
             'subscribers': ('anton@example.cde',
                             'berta@example.cde',
@@ -1567,51 +1573,51 @@ class TestMlBackend(BackendTest):
         self.assertEqual(
             expectation,
             self.ml.export_one("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
-                               "werbung@example.cde"))
+                               "werbung@lists.cde-ev.de"))
 
     @as_users("anton")
     def test_oldstyle_scripting(self, user):
-        expectation = ({'address': 'announce@example.cde',
+        expectation = ({'address': 'announce@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': True},
-                       {'address': 'werbung@example.cde',
+                       {'address': 'werbung@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'witz@example.cde',
+                       {'address': 'witz@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': 2048,
                         'mime': None},
-                       {'address': 'klatsch@example.cde',
+                       {'address': 'klatsch@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'kongress@example.cde',
+                       {'address': 'kongress@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': 1024,
                         'mime': None},
-                       {'address': 'aktivenforum2000@example.cde',
+                       {'address': 'aktivenforum2000@lists.cde-ev.de',
                         'inactive': True,
                         'maxsize': 1024,
                         'mime': None},
-                       {'address': 'aktivenforum@example.cde',
+                       {'address': 'aktivenforum@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': 1024,
                         'mime': None},
-                       {'address': 'aka@example.cde',
+                       {'address': 'aka@aka.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'participants@example.cde',
+                       {'address': 'participants@aka.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'wait@example.cde',
+                       {'address': 'wait@aka.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'opt@example.cde',
+                       {'address': 'opt@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False})
@@ -1619,13 +1625,13 @@ class TestMlBackend(BackendTest):
             expectation,
             self.ml.oldstyle_mailinglist_config_export(
                 "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))
-        expectation = {'address': 'werbung@example.cde',
+        expectation = {'address': 'werbung@lists.cde-ev.de',
                        'list-owner': 'https://db.cde-ev.de/',
                        'list-subscribe': 'https://db.cde-ev.de/',
                        'list-unsubscribe': 'https://db.cde-ev.de/',
                        'listname': '[werbung]',
                        'moderators': ('janis@example.cde',),
-                       'sender': 'werbung-bounces@example.cde',
+                       'sender': 'werbung-bounces@lists.cde-ev.de',
                        'subscribers': ('anton@example.cde',
                                        'berta@example.cde',
                                        'charly@example.cde',
@@ -1642,8 +1648,8 @@ class TestMlBackend(BackendTest):
             expectation,
             self.ml.oldstyle_mailinglist_export(
                 "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
-                "werbung@example.cde"))
-        expectation = {'address': 'werbung@example.cde',
+                "werbung@lists.cde-ev.de"))
+        expectation = {'address': 'werbung@lists.cde-ev.de',
                        'list-owner': 'https://db.cde-ev.de/',
                        'list-subscribe': 'https://db.cde-ev.de/',
                        'list-unsubscribe': 'https://db.cde-ev.de/',
@@ -1655,7 +1661,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(
             expectation,
             self.ml.oldstyle_modlist_export("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
-                                            "werbung@example.cde"))
+                                            "werbung@lists.cde-ev.de"))
         self.assertEqual(
             True,
             self.ml.oldstyle_bounce("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
