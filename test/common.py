@@ -314,8 +314,8 @@ USER_DICT = {
         'DB-ID': "DB-14-0",
         'username': 'nina@example.cde',
         'password': "secret",
-        'display_name': "nina",
-        'given_names': "nina",
+        'display_name': "Nina",
+        'given_names': "Nina",
         'family_name': "Neubauer",
     },
     "olaf": {
