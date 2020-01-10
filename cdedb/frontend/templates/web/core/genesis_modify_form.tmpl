@@ -28,11 +28,15 @@
                     name="realm", small=True, entries=realm_options,
                     label=gettext("Realm"), anid="realm-select") }}
             {% else %}
-                {% with realms = {'event': (gettext("Event"), 'blackboard'),
-                                  'ml': (gettext("Mailinglist"), 'envelope')} %}
-                    {{ util.make_icon(values['realm'][1]) }} {{ values['realm'][0] }}
+                {% with (icon, caption) = {
+                        'ml': ('envelope', gettext("Mailinglists")),
+                        'event': ('blackboard', gettext("Events")),
+                        'cde': ('education', gettext("Members")),
+                        'bullhorn': ('education', gettext("Assemblies"))
+                    }.get(values['realm']) %}
+                    {{ util.form_input_static(label=gettext("Realm"), small=True, icon=icon, value=caption) }}
                 {% endwith %}
-                {{ util.form_input_hidden(name="realm") }}
+                {{ util.input_hidden(name="realm") }}
             {% endif %}
             {{ util.form_input_textarea(name="notes",
                                         label=gettext("Rationale (max. %s Characters)")|format(max_rationale),
