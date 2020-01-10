@@ -506,18 +506,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("E-Mail abgeschickt.", div='notifications')
         self.assertTitle("Bertålotta Beispiel")
 
+    @as_users("ferdinand", "nina")
+    def test_ml_admin_reset_password(self, user):
+        self.realm_admin_view_profile('janis', 'ml')
+        self.assertTitle("Janis Jalapeño")
+        f = self.response.forms['sendpasswordresetform']
+        self.submit(f)
+        self.assertPresence("E-Mail abgeschickt.", div='notifications')
+        self.assertTitle("Janis Jalapeño")
 
-    # TODO: Inline this after architecture/mailinglists is merged
-    # @as_users("ferdinand", "nina")
-    # def test_ml_admin_reset_password(self, user):
-    #    self.realm_admin_view_profile('janis', 'ml')
-    #    self.assertTitle("Janis Jalapeño")
-    #    f = self.response.forms['sendpasswordresetform']
-    #    self.submit(f)
-    #    self.assertPresence("E-Mail abgeschickt.")
-    #    self.assertTitle("Janis Jalapeño")
-
-    @as_users("anton", "berta", "emilia")
+    @as_users("vera", "berta", "emilia")
     def test_change_username(self, user):
         # First test with current username
         current_username = user['username']
