@@ -1698,7 +1698,6 @@ class EventBackend(AbstractBackend):
     def check_registration_status(self, rs, persona_id, event_id, stati):
         """Check if any status for a given event matches one of the given stati.
 
-        If stati is empty check is_orga instead.
         This is mostly used to determine mailinglist eligibility.
 
         A user may do this for themselves, an orga for their event and an
@@ -1717,12 +1716,6 @@ class EventBackend(AbstractBackend):
                 or self.is_admin(rs)
                 or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
-
-        if not stati:
-            query = ("SELECT persona_id from event.orgas "
-                     "WHERE persona_id = %s AND event_id = %s")
-            params = (persona_id, event_id)
-            return bool(self.query_all(rs, query, params))
 
         registration_ids = self.list_registrations(
             rs, event_id, persona_id)

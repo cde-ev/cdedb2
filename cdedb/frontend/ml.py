@@ -48,9 +48,7 @@ class MlFrontend(AbstractUserFrontend):
     def index(self, rs):
         """Render start page."""
         policies = const.AudiencePolicy.applicable(rs.user.roles)
-        mailinglists = self.mlproxy.list_mailinglists(
-            rs, audience_policies=policies)
-        mailinglists.update(self.mlproxy.list_subscription_overrides(rs))
+        mailinglists = self.mlproxy.list_mailinglists(rs)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
@@ -226,7 +224,7 @@ class MlFrontend(AbstractUserFrontend):
         state = self.mlproxy.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
 
-        if not self.mlproxy.may_view(rs, ml, state):
+        if not self.mlproxy.may_view(rs, ml):
             return werkzeug.exceptions.Forbidden()
 
         sub_address = None
@@ -278,17 +276,14 @@ class MlFrontend(AbstractUserFrontend):
             'sorted_assemblies': sorted_assemblies})
 
     @access("ml_admin", modi={"POST"})
-    @REQUESTdata(("audience_policy", "enum_audiencepolicy"),
-                 ("registration_stati", "[enum_registrationpartstati]"))
+    @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
         "is_active", "event_id", "assembly_id")
-    def change_mailinglist(self, rs, mailinglist_id, audience_policy,
-                           registration_stati, data):
+    def change_mailinglist(self, rs, mailinglist_id, registration_stati, data):
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
-        data['audience_policy'] = audience_policy
         data['registration_stati'] = registration_stati
         data = check(rs, "mailinglist", data)
         if rs.errors:

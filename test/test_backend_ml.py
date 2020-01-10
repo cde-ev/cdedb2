@@ -40,11 +40,6 @@ class TestMlBackend(BackendTest):
         expectation[6] = 'Aktivenforum 2000'
         self.assertEqual(expectation,
                          self.ml.list_mailinglists(self.key, active_only=False))
-        expectation = {2: 'Werbung',
-                       3: 'Witz des Tages',
-                       4: 'Klatsch und Tratsch'}
-        self.assertEqual(expectation, self.ml.list_mailinglists(
-            self.key, audience_policies=(1,), active_only=False))
         expectation = {
             3: {'address': 'witz@example.cde',
                 'description': "Einer geht noch ...",
@@ -175,13 +170,9 @@ class TestMlBackend(BackendTest):
             expectation = self.ml.get_subscription_states(self.key, ml_id)
             self.ml.write_subscription_states(self.key, ml_id)
             result = self.ml.get_subscription_states(self.key, ml_id)
+            print(ml_id)
 
             self.assertEqual(expectation, result)
-
-    @as_users("nina")
-    def test_list_subscription_overrides(self, user):
-        overrides = self.ml.list_subscription_overrides(self.key)
-        self.assertEqual(overrides, {5: 'Sozialistischer Kampfbrief'})
 
     @as_users("nina", "berta")
     def test_moderator_set_mailinglist(self, user):
@@ -225,9 +216,7 @@ class TestMlBackend(BackendTest):
     def test_subscriptions_two(self, user):
         # Which lists is Janis subscribed to.
         expectation = {
-            2: SS.implicit,
             3: SS.subscribed,
-            4: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=10))
@@ -235,7 +224,6 @@ class TestMlBackend(BackendTest):
     @as_users("anton", "emilia")
     def test_subscriptions_three(self, user):
         expectation = {
-            2: SS.implicit,
             9: SS.unsubscribed,
             10: SS.implicit,
         }
@@ -995,6 +983,7 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_change_sub_policy(self, user):
+        pass
         mdata = {
             'address': 'revolution@example.cde',
             'description': 'Vereinigt Euch',
@@ -1200,15 +1189,10 @@ class TestMlBackend(BackendTest):
             1: 'anton@example.cde',
             2: 'berta@example.cde',
             3: 'charly@example.cde',
-            4: 'daniel@example.cde',
-            5: 'emilia@example.cde',
             7: 'garcia@example.cde',
             9: 'inga@example.cde',
-            10: 'janis@example.cde',
-            11: 'kalif@example.cde',
             12: None,
             13: 'martin@example.cde',
-            14: 'nina@example.cde',
             22: 'vera@example.cde',
             23: 'werner@example.cde',
             27: 'annika@example.cde',
@@ -1625,14 +1609,9 @@ class TestMlBackend(BackendTest):
             'subscribers': ('anton@example.cde',
                             'berta@example.cde',
                             'charly@example.cde',
-                            'daniel@example.cde',
-                            'emilia@example.cde',
                             'garcia@example.cde',
                             'inga@example.cde',
-                            'janis@example.cde',
-                            'kalif@example.cde',
                             'martin@example.cde',
-                            'nina@example.cde',
                             'vera@example.cde',
                             'werner@example.cde',
                             'annika@example.cde',
@@ -1704,14 +1683,9 @@ class TestMlBackend(BackendTest):
                        'subscribers': ('anton@example.cde',
                                        'berta@example.cde',
                                        'charly@example.cde',
-                                       'daniel@example.cde',
-                                       'emilia@example.cde',
                                        'garcia@example.cde',
                                        'inga@example.cde',
-                                       'janis@example.cde',
-                                       'kalif@example.cde',
                                        'martin@example.cde',
-                                       'nina@example.cde',
                                        'vera@example.cde',
                                        'werner@example.cde',
                                        'annika@example.cde',

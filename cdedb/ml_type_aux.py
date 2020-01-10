@@ -46,7 +46,7 @@ class AllMembersImplicitMeta:
     """Metaclass for all mailinglists with members as implicit subscribers."""
     @classmethod
     def get_implicit_subscribers(cls, rs, bc, mailinglist):
-        return bc.core.list_current_members(rs)
+        return bc.core.list_current_members(rs, is_active=True)
 
 
 class AssemblyAssociatedMeta:
@@ -142,7 +142,7 @@ class GeneralMailinglist:
     role_map = OrderedDict()
 
     @classmethod
-    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
+    def get_interaction_policy(cls, rs, bc, mailinglist, persona=None):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -157,19 +157,18 @@ class GeneralMailinglist:
         :type rs: :py:class:`cdedb.common.RequestState`
         :type bc: :py:class:`BackendContainer`
         :type mailinglist: {str: object}
-        :type persona_id: int
+        :type persona: {str: object}
         :rtype: :py:class`const.MailinglistInteractionPolicy` or None
         """
-        if not persona_id:
+        # No permission check here.
+        if persona:
+            roles = extract_roles(persona, introspection_only=True)
+        else:
             roles = rs.user.roles
 
-        # No permission check here.
-
-        persona = unwrap(bc.core.get_personas(rs, (persona_id,)))
-        roles = extract_roles(persona, introspection_only=True)
-        for role, pol in role_map.items():
+        for role, pol in cls.role_map.items():
             if role in roles:
-                return rolemap[role]
+                return cls.role_map[role]
         else:
             return None
 
@@ -286,7 +285,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
 
-        event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
+        event = bc.event.get_event(rs, mailinglist["event_id"])
 
         status_column = ",".join(
             "part{}.status".format(part_id) for part_id in event["parts"])
@@ -295,7 +294,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             spec=QUERY_SPECS["qview_registration"],
             fields_of_interest=("persona.id",),
             constraints=((status_column, QueryOperators.oneof,
-                          ml["registration_stati"]),),
+                          mailinglist["registration_stati"]),),
             order=tuple())
         data = bc.event.submit_general_query(
             rs, query, event_id=event["id"])
@@ -317,7 +316,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         if not persona_id:
             persona_id = rs.user.persona_id
 
-        event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
+        event = bc.event.get_event(rs, mailinglist["event_id"])
         if persona_id in event["orgas"]:
             return const.MailinglistInteractionPolicy.opt_out
         else:
@@ -353,7 +352,7 @@ class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
         linked assembly.
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
-        return bc.assembly.list_attendees(rs, ml["assembly_id"])
+        return bc.assembly.list_attendees(rs, mailinglist["assembly_id"])
 
 
 class AssemblyOptInMailinglist(AssemblyMailinglist):
