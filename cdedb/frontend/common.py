@@ -63,6 +63,7 @@ import cdedb.validation as validate
 import cdedb.database.constants as const
 import cdedb.query as query_mod
 from cdedb.security import secure_token_hex
+import cdedb.ml_type_aux as ml_type
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -773,6 +774,7 @@ JINJA_FILTERS = {
     'dict_entries': dict_entries_filter,
     'xdict_entries': xdict_entries_filter,
     'keydictsort': keydictsort_filter,
+    'domain_str': ml_type.domain_str,
 }
 
 

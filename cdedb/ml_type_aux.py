@@ -22,7 +22,7 @@ class Domain(enum.IntEnum):
     def __str__(self):
         if self not in _DOMAIN_STR_MAP:
             raise NotImplementedError(n_("This domain is not supported."))
-        return domain_map[self]
+        return _DOMAIN_STR_MAP[self]
 
 
 # Instead of importing this, call str() on a Domain.
@@ -30,6 +30,23 @@ _DOMAIN_STR_MAP = {
     Domain.lists: "lists.cde-ev.de",
     Domain.aka: "aka.cde-ev.de",
 }
+
+
+def domain_str(val):
+    if isinstance(val, int) or isinstance(val, const.MailinglistTypes):
+        ml_type = val
+    elif isinstance(val, dict) and 'ml_type' in val:
+        ml_type = val['ml_type']
+    else:
+        raise ValueError(n_("Cannot determine domain str for %s."), val)
+    return str(TYPE_MAP[ml_type].domain)
+
+
+def full_address(val):
+    if isinstance(val, dict):
+        return val['local_part'] + '@' + domain_str(val['ml_type'])
+    else:
+        raise ValueError(n_("Cannot determine full address for %s."), val)
 
 
 class MailinglistGroup(enum.IntEnum):

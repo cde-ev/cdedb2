@@ -1592,7 +1592,7 @@ LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
 
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
-    "id", "title", "address", "description", "mod_policy",
+    "id", "title", "address", "local_part", "description", "mod_policy",
     "notes", "attachment_policy", "ml_type",
     "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")

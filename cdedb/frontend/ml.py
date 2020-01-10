@@ -169,7 +169,7 @@ class MlFrontend(AbstractUserFrontend):
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdatadict(
-        "title", "address", "description", "mod_policy",
+        "title", "local_part", "description", "mod_policy",
         "attachment_policy", "ml_type", "subject_prefix",
         "maxsize", "is_active", "notes", "event_id", "registration_stati",
         "assembly_id")
@@ -226,7 +226,8 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml")
     def show_mailinglist(self, rs, mailinglist_id):
         """Details of a list."""
-        ml = rs.ambience['mailinglist']
+        # Validation of the ml during `may_view` causes information to be lost.
+        ml = copy.deepcopy(rs.ambience['mailinglist'])
         state = self.mlproxy.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
 
@@ -284,7 +285,7 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml_admin", modi={"POST"})
     @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict(
-        "title", "address", "description", "mod_policy",
+        "title", "local_part", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
         "is_active", "event_id", "assembly_id")
     def change_mailinglist(self, rs, mailinglist_id, registration_stati, data):
