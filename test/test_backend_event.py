@@ -13,7 +13,8 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.common import cast_fields
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PartialImportError, CDEDB_EXPORT_EVENT_VERSION, now)
+    PERSONA_EVENT_FIELDS, PartialImportError, CDEDB_EXPORT_EVENT_VERSION, now,
+    PrivilegeError)
 from cdedb.enums import ENUMS_DICT
 import cdedb.database.constants as const
 
@@ -702,7 +703,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation,
                          self.event.get_registration(self.key, 2))
 
-    @as_users("berta")
+    @as_users("berta", "nina")
     def test_registering(self, user):
         new_reg = {
             'checkin': None,
@@ -739,30 +740,35 @@ class TestEventBackend(BackendTest):
             },
             'notes': "Some bla.",
             'payment': None,
-            'persona_id': 2,
+            'persona_id': 14,
             'real_persona_id': None}
-        new_id = self.event.create_registration(self.key, new_reg)
-        self.assertLess(0, new_id)
-        new_reg['id'] = new_id
-        new_reg['fields'] = {}
-        new_reg['parts'][1]['part_id'] = 1
-        new_reg['parts'][1]['registration_id'] = new_id
-        new_reg['parts'][2]['part_id'] = 2
-        new_reg['parts'][2]['registration_id'] = new_id
-        new_reg['parts'][3]['part_id'] = 3
-        new_reg['parts'][3]['registration_id'] = new_id
-        new_reg['tracks'][1]['track_id'] = 1
-        new_reg['tracks'][1]['registration_id'] = new_id
-        new_reg['tracks'][2]['track_id'] = 2
-        new_reg['tracks'][2]['registration_id'] = new_id
-        new_reg['tracks'][2]['choices'] = []
-        new_reg['tracks'][3]['track_id'] = 3
-        new_reg['tracks'][3]['registration_id'] = new_id
-        new_reg['tracks'][3]['choices'] = []
-        self.assertEqual(new_reg,
-                         self.event.get_registration(self.key, new_id))
+        # try to create a registration for nina
+        if user['id'] == USER_DICT['nina']['id']:
+            new_id = self.event.create_registration(self.key, new_reg)
+            self.assertLess(0, new_id)
+            new_reg['id'] = new_id
+            new_reg['fields'] = {}
+            new_reg['parts'][1]['part_id'] = 1
+            new_reg['parts'][1]['registration_id'] = new_id
+            new_reg['parts'][2]['part_id'] = 2
+            new_reg['parts'][2]['registration_id'] = new_id
+            new_reg['parts'][3]['part_id'] = 3
+            new_reg['parts'][3]['registration_id'] = new_id
+            new_reg['tracks'][1]['track_id'] = 1
+            new_reg['tracks'][1]['registration_id'] = new_id
+            new_reg['tracks'][2]['track_id'] = 2
+            new_reg['tracks'][2]['registration_id'] = new_id
+            new_reg['tracks'][2]['choices'] = []
+            new_reg['tracks'][3]['track_id'] = 3
+            new_reg['tracks'][3]['registration_id'] = new_id
+            new_reg['tracks'][3]['choices'] = []
+            self.assertEqual(new_reg,
+                             self.event.get_registration(self.key, new_id))
+        else:
+            with self.assertRaises(PrivilegeError):
+                self.event.create_registration(self.key, new_reg)
 
-    @as_users("anton", "garcia")
+    @as_users("annika", "garcia")
     def test_entity_registration(self, user):
         event_id = 1
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100},
