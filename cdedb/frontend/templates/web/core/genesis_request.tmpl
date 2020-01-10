@@ -5,6 +5,10 @@
     	Request Account
     {%- endtrans %}
 {% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/genesis_request"), gettext("Request Account"), active="True") }}
+{% endblock %}
 {% block content %}
     <p>
         {% trans -%}
