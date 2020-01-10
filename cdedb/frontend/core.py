@@ -72,14 +72,14 @@ class CoreFrontend(AbstractFrontend):
                 return basic_redirect(rs, wants)
 
             # genesis cases
-            if {"core_admin", "event_admin", "ml_admin"} & rs.user.roles:
-                realms = []
-                if {"core_admin", "event_admin"} & rs.user.roles:
-                    realms.append("event")
-                if {"core_admin", "ml_admin"} & rs.user.roles:
-                    realms.append("ml")
+            genesis_realms = []
+            for realm in realm_specific_genesis_fields:
+                if {"core_admin", "{}_admin".format(realm)} & rs.user.roles:
+                    genesis_realms.append(realm)
+            if genesis_realms:
                 data = self.coreproxy.genesis_list_cases(
-                    rs, stati=(const.GenesisStati.to_review,), realms=realms)
+                    rs, stati=(const.GenesisStati.to_review,),
+                    realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
             if self.is_admin(rs):
@@ -1738,8 +1738,9 @@ class CoreFrontend(AbstractFrontend):
             return self.genesis_request_form(rs)
         if len(data['notes']) > self.conf.MAX_RATIONALE:
             rs.errors.append(("notes", ValueError(n_("Rationale too long."))))
-        # We dont actually want not_specified as a valid option for event users.
-        if data.get('realm') == "event":
+        # We dont actually want gender == not_specified as a valid option if it
+        # is required for the requested realm)
+        if 'gender' in realm_specific_genesis_fields.get(data.get('realm'), {}):
             if data['gender'] == const.Genders.not_specified:
                 rs.errors.append(
                     ("gender", ValueError(n_(
@@ -1823,6 +1824,7 @@ class CoreFrontend(AbstractFrontend):
                 notify |= {self.conf.EVENT_ADMIN_ADDRESS}
             if ml_count:
                 notify |= {self.conf.ML_ADMIN_ADDRESS}
+            # TODO add support for CdE and assembly genesis requests
             self.do_mail(
                 rs, "genesis_requests_pending",
                 {'To': tuple(notify),
