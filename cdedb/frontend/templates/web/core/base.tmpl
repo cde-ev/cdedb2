@@ -15,7 +15,7 @@
             {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
                     icon="wrench", active=(sidenav_active=='core_admins')) }}
         </div>
-        {% if is_admin or "event_admin" in user.roles or "ml_admin" in user.roles or "meta_admin" in user.roles %}
+        {% if is_admin or "meta_admin" in user.roles or roles_allow_genesis_management(user.roles) %}
             <div class="list-group tear-down">
             {% if is_admin %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
@@ -25,7 +25,7 @@
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
                         icon="check", active=(sidenav_active=='core_pending_changes')) }}
             {% endif %}
-            {% if "event_admin" in user.roles or "ml_admin" in user.roles %}
+            {% if roles_allow_genesis_management(user.roles) %}
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), aclass="list-group-item",
                         icon="flag", active=(sidenav_active=='core_genesis_list')) }}
             {% endif %}
