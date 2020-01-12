@@ -13,7 +13,6 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
 
    Handbuch_Orga_Allgemeines
    Handbuch_Orga_Spezielles
-   Handbuch_Veranstaltungsleitfaden
    Handbuch_partieller_Import
    Handbuch_Markdown
    Handbuch_elektronisches_Wahlverfahren

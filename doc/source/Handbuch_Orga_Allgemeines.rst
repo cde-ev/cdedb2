@@ -56,7 +56,7 @@ können auf
 :ref:`der Seite mit den Email-Templates <email-templates-for-realm-event>`
 eingesehen werden.
 
-Eine Veranstaltung Planen - ein Ablaufplan
+Planung einer Veranstaltung
 ------------------------------------------
 
 Der Veranstaltungsleitfaden wurde im
