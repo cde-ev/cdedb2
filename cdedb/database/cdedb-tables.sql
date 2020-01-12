@@ -468,9 +468,8 @@ CREATE TABLE cde.log (
 );
 CREATE INDEX idx_cde_log_code ON cde.log(code);
 CREATE INDEX idx_cde_log_persona_id ON cde.log(persona_id);
-GRANT SELECT, INSERT ON cde.log TO cdb_persona;
-GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_persona;
-GRANT DELETE ON cde.log TO cdb_admin;
+GRANT SELECT, INSERT, DELETE ON cde.log TO cdb_admin;
+GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_admin;
 
 ---
 --- SCHEMA past_event
@@ -487,8 +486,8 @@ CREATE TABLE past_event.institutions (
         title                   varchar NOT NULL,
         moniker                 varchar NOT NULL
 );
-GRANT SELECT, UPDATE ON past_event.institutions TO cdb_persona;
-GRANT INSERT, DELETE ON past_event.institutions TO cdb_admin;
+GRANT SELECT ON past_event.institutions TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON past_event.institutions TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.institutions_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.events (
@@ -506,8 +505,9 @@ CREATE TABLE past_event.events (
         -- Information only visible to participants.
         notes                   varchar
 );
-GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
-GRANT DELETE, INSERT ON past_event.events TO cdb_admin;
+GRANT SELECT (id, title, shortname, tempus) ON past_event.events TO cdb_persona;
+GRANT SELECT ON past_event.events to cdb_member;
+GRANT UPDATE, DELETE, INSERT ON past_event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.courses (
@@ -551,9 +551,8 @@ CREATE TABLE past_event.log (
 );
 CREATE INDEX idx_past_event_log_code ON past_event.log(code);
 CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
-GRANT SELECT, INSERT ON past_event.log TO cdb_persona;
-GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_persona;
-GRANT DELETE ON past_event.log TO cdb_admin;
+GRANT SELECT, INSERT, DELETE ON past_event.log TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
 
 ---
 --- SCHEMA event
@@ -704,8 +703,8 @@ CREATE TABLE event.orgas (
 );
 CREATE INDEX idx_orgas_persona_id ON event.orgas(persona_id);
 CREATE INDEX idx_orgas_event_id ON event.orgas(event_id);
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.orgas TO cdb_persona;
-GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
+GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 GRANT SELECT ON event.orgas TO cdb_anonymous;
 
 CREATE TABLE event.lodgement_groups (
@@ -897,8 +896,8 @@ CREATE TABLE assembly.ballots (
         notes                   varchar
 );
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
-GRANT SELECT ON assembly.ballots TO cdb_persona;
-GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_persona;
+GRANT SELECT ON assembly.ballots TO cdb_member;
+GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_admin;
 
@@ -909,7 +908,7 @@ CREATE TABLE assembly.candidates (
         moniker                 varchar NOT NULL
 );
 CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, moniker);
-GRANT SELECT ON assembly.candidates TO cdb_persona;
+GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_admin;
 
@@ -920,8 +919,9 @@ CREATE TABLE assembly.attendees (
         secret                  varchar
 );
 CREATE UNIQUE INDEX idx_attendee_constraint ON assembly.attendees(persona_id, assembly_id);
-GRANT SELECT, INSERT, UPDATE ON assembly.attendees TO cdb_persona;
-GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_persona;
+GRANT SELECT, INSERT ON assembly.attendees TO cdb_member;
+GRANT UPDATE (secret) ON assembly.attendees TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_member;
 
 -- register who did already vote for what
 CREATE TABLE assembly.voter_register (
@@ -931,10 +931,10 @@ CREATE TABLE assembly.voter_register (
         has_voted               boolean NOT NULL DEFAULT False
 );
 CREATE UNIQUE INDEX idx_voter_constraint ON assembly.voter_register(persona_id, ballot_id);
-GRANT SELECT, INSERT ON assembly.voter_register TO cdb_persona;
-GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_persona;
+GRANT SELECT, INSERT ON assembly.voter_register TO cdb_member;
+GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_member;
 GRANT DELETE ON assembly.voter_register TO cdb_admin;
-GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_persona;
+GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_member;
 
 CREATE TABLE assembly.votes (
         id                      serial PRIMARY KEY,
@@ -948,8 +948,8 @@ CREATE TABLE assembly.votes (
         hash                    varchar NOT NULL
 );
 CREATE INDEX idx_votes_ballot_id ON assembly.votes(ballot_id);
-GRANT SELECT, INSERT, UPDATE ON assembly.votes TO cdb_persona;
-GRANT SELECT, UPDATE ON assembly.votes_id_seq TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE ON assembly.votes TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.votes_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachments (
        id                       serial PRIMARY KEY,
@@ -962,7 +962,7 @@ CREATE TABLE assembly.attachments (
 );
 CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
 CREATE INDEX idx_attachments_ballot_id ON assembly.attachments(ballot_id);
-GRANT SELECT ON assembly.attachments TO cdb_persona;
+GRANT SELECT ON assembly.attachments TO cdb_member;
 GRANT INSERT, DELETE ON assembly.attachments TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_admin;
 
@@ -980,8 +980,8 @@ CREATE TABLE assembly.log (
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
 CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
 GRANT SELECT, DELETE ON assembly.log TO cdb_admin;
-GRANT INSERT ON assembly.log TO cdb_persona;
-GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_persona;
+GRANT INSERT ON assembly.log TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_member;
 
 ---
 --- SCHEMA ml
