@@ -6877,7 +6877,9 @@ msgstr "Die Versammlung wurde beendet und die Stimmen sind nun verschlüsselt."
 msgid ""
 "To show your vote, enter the secret you were sent when registering for the "
 "assembly."
-msgstr "Um Deine Stimme anzuzeigen, gib hier Dein persönliches Geheimnis ein, das Dir beim Beginn der Versammlung mitgeteilt wurde."
+msgstr ""
+"Um Deine Stimme anzuzeigen, gib hier Dein persönliches Geheimnis ein, das "
+"Dir beim Beginn der Versammlung mitgeteilt wurde."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:252
 #: cdedb/frontend/templates/web/assembly/ballot_status.tmpl:123
@@ -13908,6 +13910,27 @@ msgid ""
 "keyboard only.\n"
 "                    Use the link above to switch to the text-based form."
 msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_course.tmpl:39
+#: cdedb/frontend/templates/web/event/create_course.tmpl:36
+#: cdedb/frontend/templates/web/event/show_course.tmpl:44
+msgid "Minimum Size (excl. instr.)"
+msgstr "Mindestgröße (exkl. KL)"
+
+#: cdedb/frontend/templates/web/event/change_course.tmpl:40
+#: cdedb/frontend/templates/web/event/create_course.tmpl:37
+#: cdedb/frontend/templates/web/event/show_course.tmpl:43
+msgid "Maximum Size (excl. instr.)"
+msgstr "Maximalgröße (exkl. KL)"
+
+#: cdedb/frontend/templates/web/event/course_stats.tmpl:62
+msgid ""
+"Numbers of course choices include course instructors of other courses. "
+"Limits do not include course\n"
+"            instructors."
+msgstr ""
+"Die Kurswahl-Anzahlen beinhalten Kursleiter anderer Kurse. Die Grenzen "
+"beinhalten nicht die Kursleiter."
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"

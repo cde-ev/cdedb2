@@ -139,7 +139,7 @@ INSERT INTO event.field_definitions (id, event_id, field_name, kind, association
     (6, 1, 'contamination', 1, 3, '{{"high", "lots of radiation"}, {"medium", "elevated level of radiation"}, {"low", "some radiation"}, {"none", "no radiation"}}');
 UPDATE event.events SET lodge_field = 3, reserve_field = 4, course_room_field = 2 WHERE id = 1;
 INSERT INTO event.courses (id, event_id, title, description, nr, shortname, instructors, max_size, min_size, notes, fields) VALUES
-    (1, 1, 'Planetenretten für Anfänger', 'Wir werden die Bäume drücken.', 'α', 'Heldentum', 'ToFi & Co', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.', '{"room": "Wald"}'::jsonb),
+    (1, 1, 'Planetenretten für Anfänger', 'Wir werden die Bäume drücken.', 'α', 'Heldentum', 'ToFi & Co', 10, 2, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.', '{"room": "Wald"}'::jsonb),
     (2, 1, 'Lustigsein für Fortgeschrittene', 'Inklusive Post, Backwaren und frühzeitigem Ableben.', 'β', 'Kabarett', 'Bernd Lucke', 20, 10, 'Kursleiter hat Sekt angefordert.', '{"room": "Theater"}'::jsonb),
     (3, 1, 'Kurzer Kurs', 'mit hoher Leistung.', 'γ', 'Kurz', 'Heinrich und Thomas Mann', 14, 5, NULL, '{"room": "Seminarraum 42"}'::jsonb),
     (4, 1, 'Langer Kurs', 'mit hohem Umsatz.', 'δ', 'Lang', 'Stephen Hawking und Richard Feynman', NULL, NULL, NULL, '{"room": "Seminarraum 23"}'::jsonb),

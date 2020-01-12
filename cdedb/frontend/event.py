@@ -1421,32 +1421,42 @@ class EventFrontend(AbstractUserFrontend):
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         stati = const.RegistrationPartStati
 
+        # Helper for calculation of assign_counts
+        course_participant_lists = {
+            course_id: {
+                track_id: [
+                    reg for reg in registrations.values()
+                    if (reg['tracks'][track_id]['course_id'] == course_id
+                        and (reg['parts'][track['part_id']]['status']
+                             == stati.participant))]
+                for track_id, track in tracks.items()
+            }
+            for course_id in course_ids
+        }
         # Get number of attendees per course
         # assign_counts has the structure:
         # {course_id: {track_id: (num_participants, num_instructors)}}
         assign_counts = {
             course_id: {
                 track_id: (
-                    sum(1 for reg in registrations.values()
-                        if (reg['tracks'][track_id]['course_id'] == course_id
-                            and (reg['parts'][track['part_id']]['status']
-                                 == stati.participant))),
-                    sum(1 for reg in registrations.values()
-                        if (reg['tracks'][track_id]['course_id'] == course_id
-                            and (reg['parts'][track['part_id']]['status']
-                                 == stati.participant)
-                            and (reg['tracks'][track_id]['course_instructor']
-                                 == course_id))))
-                for track_id, track in tracks.items()
+                    sum(1 for reg in course_track_p_data
+                        if (reg['tracks'][track_id]['course_instructor']
+                            != course_id)),
+                    sum(1 for reg in course_track_p_data
+                        if (reg['tracks'][track_id]['course_instructor']
+                            == course_id))
+                )
+                for track_id, course_track_p_data in course_p_data.items()
             }
-            for course_id in courses
+            for course_id, course_p_data in course_participant_lists.items()
         }
 
         # Tests for problematic courses
         course_tests = {
             'cancelled_with_p': lambda c, tid: (
                 tid not in c['active_segments']
-                and assign_counts[c['id']][tid][0] > 0),
+                and (assign_counts[c['id']][tid][0]
+                     + assign_counts[c['id']][tid][1]) > 0),
             'many_p': lambda c, tid: (
                 tid in c['active_segments']
                 and c['max_size'] is not None
@@ -1568,7 +1578,8 @@ class EventFrontend(AbstractUserFrontend):
                 assigned = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track_id)['status'] == stati.participant
-                    and reg['tracks'][track_id]['course_id'] == course_id)
+                    and reg['tracks'][track_id]['course_id'] == course_id and
+                    reg['tracks'][track_id]['course_instructor'] != course_id)
                 all_instructors = sum(
                     1 for reg in all_regs.values()
                     if
@@ -1778,16 +1789,33 @@ class EventFrontend(AbstractUserFrontend):
             }
             for course_id in course_ids
         }
-        assign_counts = {
+        # Helper for calculation of assign_counts
+        course_participant_lists = {
             course_id: {
-                track_id: sum(
-                    1 for reg in registrations.values()
+                track_id: [
+                    reg for reg in registrations.values()
                     if (reg['tracks'][track_id]['course_id'] == course_id
                         and (reg['parts'][track['part_id']]['status']
-                             in include_states)))
+                             in include_states))]
                 for track_id, track in tracks.items()
             }
             for course_id in course_ids
+        }
+        # Tuple of (number of assigned participants, number of instructors) for
+        # each course in each track
+        assign_counts = {
+            course_id: {
+                track_id: (
+                    sum(1 for reg in course_track_p_data
+                        if (reg['tracks'][track_id]['course_instructor']
+                                 != course_id)),
+                    sum(1 for reg in course_track_p_data
+                        if (reg['tracks'][track_id]['course_instructor']
+                            == course_id))
+                )
+                for track_id, course_track_p_data in course_p_data.items()
+            }
+            for course_id, course_p_data in course_participant_lists.items()
         }
         return self.render(rs, "course_stats", {
             'courses': courses, 'choice_counts': choice_counts,

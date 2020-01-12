@@ -293,7 +293,7 @@
             "association": 2
         }
     },
-    "CDEDB_EXPORT_EVENT_VERSION": 6,
+    "CDEDB_EXPORT_EVENT_VERSION": 7,
     "event.registration_parts": {
         "2": {
             "is_reserve": false,
@@ -535,7 +535,7 @@
         },
         "1": {
             "event_id": 1,
-            "min_size": 3,
+            "min_size": 2,
             "nr": "\u03b1",
             "description": "Wir werden die B\u00e4ume dr\u00fccken.",
             "shortname": "Heldentum",
