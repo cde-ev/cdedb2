@@ -2821,6 +2821,8 @@ class EventBackend(AbstractBackend):
                 for e in ret[table].values():
                     if e.get('persona_id'):
                         personas.add(e['persona_id'])
+                    if e.get('submitted_by'):  # for log entries
+                        personas.add(e['submitted_by'])
             ret['core.personas'] = list_to_dict(self.sql_select(
                 rs, "core.personas", PERSONA_EVENT_FIELDS, personas))
             return ret
