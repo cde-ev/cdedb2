@@ -73,6 +73,7 @@ class TestOffline(FrontendTest):
             # be split out.
         finally:
             subprocess.run(["git", "checkout", str(configpath)], check=True)
+            subprocess.run(["rm", "-f", "/OFFLINEVM"], check=True)
             subprocess.run(
                 ["make", "reload"], check=True, cwd=base,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
