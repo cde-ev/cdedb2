@@ -59,7 +59,7 @@ class TestAssemblyFrontend(FrontendTest):
                     f[k] = v
                 self.submit(f)
 
-    @as_users("anton", "berta", "kalif")
+    @as_users("werner", "berta", "kalif")
     def test_index(self, user):
         self.traverse({'href': '/assembly/'})
 
@@ -81,7 +81,7 @@ class TestAssemblyFrontend(FrontendTest):
             self.response.lxml.get_element_by_id(
                 'displayname').text_content().strip())
 
-    @as_users("anton", "ferdinand")
+    @as_users("werner", "ferdinand")
     def test_adminchangeuser(self, user):
         self.realm_admin_view_profile('kalif', 'assembly')
         self.traverse({'href': '/core/persona/11/adminchange'})
@@ -93,7 +93,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertPresence("Zelda")
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
 
-    @as_users("anton", "ferdinand")
+    @as_users("werner", "ferdinand")
     def test_toggleactivity(self, user):
         self.realm_admin_view_profile('kalif', 'assembly')
         self.assertEqual(
@@ -107,7 +107,7 @@ class TestAssemblyFrontend(FrontendTest):
             self.response.lxml.get_element_by_id(
                 'activity_checkbox').get('data-checked') == 'True')
 
-    @as_users("anton", "ferdinand")
+    @as_users("werner", "ferdinand")
     def test_user_search(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/search/user'})
@@ -123,7 +123,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Karabatschi")
 
-    @as_users("anton", "ferdinand")
+    @as_users("werner", "ferdinand")
     def test_create_user(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/search/user'},
@@ -142,7 +142,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_change_assembly(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},)
@@ -155,13 +155,13 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Häretiker")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_create_assembly(self, user):
         self._create_assembly()
         self.assertPresence("Häretiker")
         self.assertPresence("Aprilscherz")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_delete_assembly(self, user):
         self._create_assembly()
         f = self.response.forms['deleteassemblyform']
@@ -180,7 +180,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Internationaler Kongress")
         self.assertNotIn('signupform', self.response.forms)
 
-    @as_users("anton", "ferdinand")
+    @as_users("werner", "ferdinand")
     def test_external_signup(self, user):
         self._create_assembly()
         self.assertNonPresence("Kalif")
@@ -202,10 +202,11 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertPresence("Bertålotta")
         self.assertPresence("Kalif")
         self.assertPresence("Inga")
-        self.assertPresence("Insgesamt 5 Anwesende.")
+        self.assertPresence("Werner")
+        self.assertPresence("Insgesamt 6 Anwesende.")
         self.assertNonPresence("Charly")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_conclude_assembly(self, user):
         self._create_assembly()
         f = self.response.forms['signupform']
@@ -266,7 +267,7 @@ class TestAssemblyFrontend(FrontendTest):
                          "(Internationaler Kongress)")
         self.assertPresence("Du nimmst nicht an der Versammlung teil.")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_entity_ballot_simple(self, user):
         self.traverse({'description': 'Versammlungen$'},
                       {'description': 'Internationaler Kongress'},
@@ -306,7 +307,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Internationaler Kongress – Abstimmungen")
         self.assertNonPresence("Maximale Länge der Satzung")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_delete_ballot(self, user):
         self.get("/assembly/assembly/1/ballot/2/show")
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
@@ -329,7 +330,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNonPresence("Löschen")
         self.assertNotIn("deleteballotform", self.response.forms)
 
-    @as_users("anton")
+    @as_users("werner")
     def test_attachments(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
@@ -379,7 +380,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertNonPresence("Magenta wie die Telekom")
 
-    @as_users("anton", "inga", "kalif")
+    @as_users("werner", "inga", "kalif")
     def test_vote(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
@@ -399,7 +400,7 @@ class TestAssemblyFrontend(FrontendTest):
         f = self.response.forms['voteform']
         self.assertEqual("1=i>pi>e=0", f['vote'].value)
 
-    @as_users("anton", "inga", "kalif")
+    @as_users("werner", "inga", "kalif")
     def test_classical_vote_radio(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
@@ -429,7 +430,7 @@ class TestAssemblyFrontend(FrontendTest):
         f = self.response.forms['voteform']
         self.assertEqual("St", f['vote'].value)
 
-    @as_users("anton", "inga", "kalif")
+    @as_users("werner", "inga", "kalif")
     def test_classical_vote_select(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
@@ -466,7 +467,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertEqual(None, f.get('vote', index=1).value)
         self.assertEqual(None, f.get('vote', index=2).value)
 
-    @as_users("anton")
+    @as_users("werner")
     def test_classical_voting_all_choices(self, user):
         # This test asserts that in classical voting, we can distinguish
         # between abstaining and voting for all candidates
@@ -534,7 +535,7 @@ class TestAssemblyFrontend(FrontendTest):
                 self.assertPresence("Du hast für die folgenden Kandidaten "
                                     "gestimmt: Arthur Dent, Ford Perfect")
 
-    @as_users("anton", "inga", "kalif")
+    @as_users("werner", "inga", "kalif")
     def test_tally_and_get_result(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
@@ -548,7 +549,7 @@ class TestAssemblyFrontend(FrontendTest):
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
 
-    @as_users("anton")
+    @as_users("werner")
     def test_extend(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
@@ -571,7 +572,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
         self.assertPresence("verlängert, da 1000 Stimmen nicht erreicht wurden.")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_candidate_manipulation(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
@@ -590,7 +591,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertNonPresence("Dunkelaquamarin")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_has_voted(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Kanonische Beispielversammlung'},
@@ -608,7 +609,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNonPresence("Du nimmst nicht an der Versammlung teil.")
         self.assertPresence("Du hast nicht abgestimmt.")
 
-    @as_users("anton")
+    @as_users("werner")
     def test_provide_secret(self, user):
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Kanonische Beispielversammlung'})
@@ -688,7 +689,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.logout()
 
         # Now check it
-        self.login(USER_DICT['anton'])
+        self.login(USER_DICT['werner'])
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/log'})
         self.assertTitle("\nVersammlungs-Log [0–14]\n")

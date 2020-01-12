@@ -52,13 +52,13 @@ INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change
     (1, NULL, now(), 1, 'Init.', 2, 12, NULL, True, NULL, False, False, False, False, False, False, False, True, True, True, True, True, True, False, 'Lisa', 'Lost', 'Lisa', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 13, 'martin@example.cde', True, NULL, True, False, False, False, False, False, False, True, True, True, True, True, False, False, 'Martin', 'Meister', 'Martin', NULL, NULL, 2, '2019-07-10', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 25, True, False, False, NULL),
     (1, NULL, now(), 1, 'Init.', 2, 14, 'nina@example.cde', True, NULL, False, False, False, False, False, True, False, False, True, True, False, False, False, False, 'Nina', 'Neubauer', 'Nina', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-    (1, NULL, now(), 1, 'Init.', 2, 15, 'olaf@example.cde', True, NULL, False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Olaf', 'Olaf', 'Olafson', 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 15, 'olaf@example.cde', True, NULL, False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Olaf', 'Olafson', 'Olaf', 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL),
     (6, NULL, now(), 2, 'Deaktiviert, weil er seine Admin-Privilegien missbraucht.', 2, 15, 'olaf@example.cde', False, 'Aktuell deaktiviert weil er seine Admin-Rechte missbraucht, um Benutzer in ihrem Profil zu Rickrollen.', False, False, True, False, False, False, False, True, True, True, True, True, True, False, 'Olaf', 'Olaf', 'Olafson', 'Prof.', NULL, 2, '1979-07-06', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50.12, True, False, False, NULL),
-    (1, NULL, now(), 1, 'Init.', 2, 22, 'vera@example.cde', True, NULL, False, True, True, False, False, False, False, True, True, True, True, True, True, False, 'Vera', 'Vera', 'Verwaltung', NULL, NULL, 1, date '1989-11-09', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 26.77, True, False, False, NULL),
-    (1, NULL, now(), 1, 'Init.', 2, 23, 'werner@example.cde', True, NULL, False, False, False, False, False, False, True, True, True, True, True, True, True, False, 'Werner', 'Werner', 'Wahlleitung', 'Dr. med.', NULL, 2, date '2001-09-11', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10.04, True, False, False, NULL),
-    (1, NULL, now(), 1, 'Init.', 2, 27, 'annika@example.cde', True, NULL, False, False, False, False, True, False, False, True, True, True, True, True, True, False, 'Annika', 'Annika', 'Akademieteam', NULL, NULL, 1, date '1966-04-17', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 417, True, False, False, NULL),
-    (1, NULL, now(), 1, 'Init.', 2, 32, 'farin@example.cde', True, NULL, False, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Farin', 'Farin', 'Finanzvorstand', NULL, NULL, 2, date '1963-10-27', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ich Fahr in Urlaub!', 56, True, False, False, NULL),
-    (1, NULL, now(), 1, 'Init.', 2, 100, 'akira@example.cde', True, NULL, True, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Akira', 'Akira', 'Abukara', NULL, NULL, 10, date '2019-12-28', '+81 (314) 159263', NULL, NULL, 'Kasumigaseki 1-3-2', '100-8798', 'Tokyo', 'Japan', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3.14, True, False, True, NULL);
+    (1, NULL, now(), 1, 'Init.', 2, 22, 'vera@example.cde', True, NULL, False, True, True, False, False, False, False, True, True, True, True, True, True, False, 'Vera', 'Verwaltung', 'Vera', NULL, NULL, 1, date '1989-11-09', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 26.77, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 23, 'werner@example.cde', True, NULL, False, False, False, False, False, False, True, True, True, True, True, True, True, False, 'Werner', 'Wahlleitung', 'Werner', 'Dr. med.', NULL, 2, date '2001-09-11', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 10.04, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 27, 'annika@example.cde', True, NULL, False, False, False, False, True, False, False, True, True, True, True, True, True, False, 'Annika', 'Akademieteam', 'Annika', NULL, NULL, 1, date '1966-04-17', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 417, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 32, 'farin@example.cde', True, NULL, False, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Farin', 'Finanzvorstand', 'Farin', NULL, NULL, 2, date '1963-10-27', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'Ich Fahr in Urlaub!', 56, True, False, False, NULL),
+    (1, NULL, now(), 1, 'Init.', 2, 100, 'akira@example.cde', True, NULL, True, True, True, True, True, True, True, True, True, True, True, True, True, False, 'Akira', 'Abukara', 'Akira', NULL, NULL, 10, date '2019-12-28', '+81 (314) 159263', NULL, NULL, 'Kasumigaseki 1-3-2', '100-8798', 'Tokyo', 'Japan', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3.14, True, False, True, NULL);
 INSERT INTO core.meta_info (info) VALUES
     ('{"Finanzvorstand_Vorname": "Bertålotta",
        "Finanzvorstand_Name": "Bertålotta Beispiel",
@@ -303,6 +303,7 @@ INSERT INTO assembly.attendees (assembly_id, persona_id, secret) VALUES
     (1, 2, 'snthdiueoa'),
     (1, 9, 'asonetuhid'),
     (1, 11, 'bxronkxeud'),
+    (1, 23, 'esfawernae'),
     (1, 100, 'sefnasdfiw');
 
 INSERT INTO assembly.voter_register (persona_id, ballot_id, has_voted) VALUES
@@ -326,6 +327,18 @@ INSERT INTO assembly.voter_register (persona_id, ballot_id, has_voted) VALUES
     (11, 3, False),
     (11, 4, False),
     (11, 5, False);
+
+INSERT INTO assembly.voter_register (persona_id, ballot_id) VALUES
+    (23, 1),
+    (23, 2),
+    (23, 3),
+    (23, 4),
+    (23, 5),
+    (100, 1),
+    (100, 2),
+    (100, 3),
+    (100, 4),
+    (100, 5);
 
 INSERT INTO assembly.votes (ballot_id, vote, salt, hash) VALUES
     (1, '2>3>_bar_>1=4', 'rxt3x/jnl', 'a3bf0788f1eaa85f5ca979d2ba963b7c60bce02c49ac1c0dfe5d06d5b3950d69c55752df5d963b8de770d353bf795ca07060f7578456b19e18028249bcf51195'),
@@ -400,6 +413,7 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (5, 9, 11),
     (5, 11, 30),
     (5, 14, 10),
+    (5, 23, 30),
     (5, 100, 10),
     (6, 1, 1),
     (6, 2, 1),
@@ -419,6 +433,7 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (11, 4, 2),
     (11, 9, 11),
     (11, 11, 30),
+    (11, 23, 30),
     (11, 100, 11);
 
 INSERT INTO ml.whitelist (mailinglist_id, address) VALUES

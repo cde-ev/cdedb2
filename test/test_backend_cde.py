@@ -12,7 +12,7 @@ import copy
 class TestCdEBackend(BackendTest):
     used_backends = ("core", "cde")
 
-    @as_users("anton", "berta")
+    @as_users("berta", "vera")
     def test_basics(self, user):
         data = self.core.get_cde_user(self.key, user['id'])
         data['display_name'] = "Zelda"
@@ -49,7 +49,7 @@ class TestCdEBackend(BackendTest):
         data = self.core.get_cde_user(self.key, user['id'],)
         self.assertEqual(user['family_name'], data['family_name'])
         self.core.logout(self.key)
-        self.login(USER_DICT['anton'])
+        self.login(USER_DICT['vera'])
         self.core.changelog_resolve_change(self.key, user['id'], 4, ack=True)
         data = self.core.get_cde_user(self.key, user['id'],)
         self.assertEqual("Link", data['family_name'])
@@ -61,11 +61,11 @@ class TestCdEBackend(BackendTest):
                                                     'family_name': "Link"}, 1))
         self.assertEqual(2, self.core.changelog_get_generation(self.key, user['id']))
         self.core.logout(self.key)
-        self.login(USER_DICT['anton'])
+        self.login(USER_DICT['vera'])
         self.core.changelog_resolve_change(self.key, user['id'], 2, ack=False)
         self.assertEqual(1, self.core.changelog_get_generation(self.key, user['id']))
 
-    @as_users("anton", "berta")
+    @as_users("berta", "vera")
     def test_get_cde_users(self, user):
         data = self.core.get_cde_users(self.key, (1, 2))
         expectation = {
@@ -168,7 +168,7 @@ class TestCdEBackend(BackendTest):
                 'username': 'berta@example.cde',
                 'weblink': 'https://www.bundestag.cde'}}
         self.assertEqual(expectation, data)
-        if user['id'] == 1:
+        if user['id'] == 22:
             data = self.core.get_event_users(self.key, (1, 2))
             expectation =  {
                 1: {
@@ -301,7 +301,7 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(
             {2, 6, 9, 12, 15, 22, 23, 27, 32, 100}, {e['id'] for e in result})
 
-    @as_users("anton")
+    @as_users("vera")
     def test_user_search(self, user):
         query = Query(
             scope="qview_cde_user",
@@ -315,7 +315,7 @@ class TestCdEBackend(BackendTest):
         self.assertEqual({2, 3, 4, 6, 7, 13, 15, 22, 23, 27, 32, 100},
                          {e['id'] for e in result})
 
-    @as_users("anton")
+    @as_users("vera")
     def test_user_search_operators(self, user):
         query = Query(
             scope="qview_cde_user",
@@ -331,11 +331,11 @@ class TestCdEBackend(BackendTest):
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e['id'] for e in result})
 
-    @as_users("anton")
+    @as_users("vera")
     def test_demotion(self, user):
         self.assertLess(0, self.core.change_membership(self.key, 2, False))
 
-    @as_users("anton")
+    @as_users("farin")
     def test_lastschrift(self, user):
         expectation = {2: 2}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key))
@@ -381,12 +381,12 @@ class TestCdEBackend(BackendTest):
         newdata.update({
             'id': new_id,
             'revoked_at': None,
-            'submitted_by': 1,
+            'submitted_by': user['id'],
         })
         self.assertEqual({new_id: newdata},
                          self.cde.get_lastschrifts(self.key, (new_id,)))
 
-    @as_users("anton")
+    @as_users("farin")
     def test_lastschrift_multiple_active(self, user):
         newdata = {
             'account_address': None,
@@ -401,7 +401,7 @@ class TestCdEBackend(BackendTest):
         with self.assertRaises(ValueError):
             self.cde.create_lastschrift(self.key, newdata)
 
-    @as_users("anton")
+    @as_users("farin")
     def test_lastschrift_transaction(self, user):
         expectation = {1: 1, 2: 1, 3: 2}
         self.assertEqual(expectation,
@@ -437,14 +437,14 @@ class TestCdEBackend(BackendTest):
             'amount': decimal.Decimal('42.23'),
             'processed_at': None,
             'status': 1,
-            'submitted_by': 1,
+            'submitted_by': user['id'],
             'tally': None,
         }
         newdata.update(update)
         self.assertEqual({new_id: newdata},
                          self.cde.get_lastschrift_transactions(self.key, (new_id,)))
 
-    @as_users("anton")
+    @as_users("farin")
     def test_lastschrift_transaction_finalization(self, user):
         ltstati = const.LastschriftTransactionStati
         for status, tally in ((ltstati.success, None),
@@ -463,7 +463,7 @@ class TestCdEBackend(BackendTest):
                     'amount': decimal.Decimal('42.23'),
                     'processed_at': None,
                     'status': 1,
-                    'submitted_by': 1,
+                    'submitted_by': user['id'],
                     'tally': None,
                 }
                 newdata.update(update)
@@ -483,7 +483,7 @@ class TestCdEBackend(BackendTest):
                 elif status == ltstati.failure:
                     self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
 
-    @as_users("anton")
+    @as_users("farin")
     def test_lastschrift_transaction_rollback(self, user):
         ltstati = const.LastschriftTransactionStati
         newdata = {
@@ -498,7 +498,7 @@ class TestCdEBackend(BackendTest):
             'amount': decimal.Decimal('42.23'),
             'processed_at': None,
             'status': 1,
-            'submitted_by': 1,
+            'submitted_by': user['id'],
             'tally': None,
         }
         newdata.update(update)
@@ -516,7 +516,7 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(ltstati.rollback, data['status'])
         self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
 
-    @as_users("anton")
+    @as_users("farin")
     def test_skip_lastschrift_transaction(self, user):
         ## Skip testing for successful transaction
         self.assertLess(0, self.cde.lastschrift_skip(self.key, 2))
@@ -534,7 +534,7 @@ class TestCdEBackend(BackendTest):
         self.assertLess(0, new_id)
         self.assertLess(0, self.cde.lastschrift_skip(self.key, new_id))
 
-    @as_users("anton")
+    @as_users("vera")
     def test_cde_log(self, user):
         ## first generate some data
         # TODO more when available

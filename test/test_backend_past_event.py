@@ -14,7 +14,7 @@ import cdedb.database.constants as const
 class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
 
-    @as_users("anton", "berta")
+    @as_users("vera", "berta")
     def test_participation_infos(self, user):
         participation_infos = self.pastevent.participation_infos(self.key, (1, 2))
         expectation = {1: tuple(),
@@ -32,7 +32,7 @@ class TestPastEventBackend(BackendTest):
         participation_infos = self.pastevent.participation_infos(self.key, (1,))
         self.assertEqual(participation_infos[1], participation_info)
 
-    @as_users("anton")
+    @as_users("vera")
     def test_entity_past_event(self, user):
         old_events = self.pastevent.list_past_events(self.key)
         data = {
@@ -58,21 +58,21 @@ class TestPastEventBackend(BackendTest):
         new_events = self.pastevent.list_past_events(self.key)
         self.assertIn(new_id, new_events)
 
-    @as_users("anton")
+    @as_users("vera")
     def test_delete_past_course_cascade(self, user):
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
         self.pastevent.delete_past_course(
             self.key, 1, cascade=("participants",))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
-    @as_users("anton")
+    @as_users("vera")
     def test_delete_past_event_cascade(self, user):
         self.assertIn(1, self.pastevent.list_past_events(self.key))
         self.pastevent.delete_past_event(
             self.key, 1, cascade=("courses", "participants", "log"))
         self.assertNotIn(1, self.pastevent.list_past_events(self.key))
 
-    @as_users("anton")
+    @as_users("vera")
     def test_entity_past_course(self, user):
         pevent_id = 1
         old_courses = self.pastevent.list_past_courses(self.key, pevent_id)
@@ -100,7 +100,7 @@ class TestPastEventBackend(BackendTest):
         newer_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         self.assertNotIn(new_id, newer_courses)
 
-    @as_users("anton")
+    @as_users("vera")
     def test_entity_participant(self, user):
         expectation = {(2, 1): {'pcourse_id': 1, 'is_instructor': True,
                                 'is_orga': False, 'persona_id': 2},
@@ -140,7 +140,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
 
-    @as_users("anton")
+    @as_users("vera")
     def test_past_log(self, user):
         ## first generate some data
         data = {
@@ -176,43 +176,43 @@ class TestPastEventBackend(BackendTest):
                         'ctime': nearly_now(),
                         'pevent_id': 1,
                         'persona_id': 5,
-                        'submitted_by': 1},
+                        'submitted_by': user['id']},
                        {'additional_info': None,
                         'code': 20,
                         'ctime': nearly_now(),
                         'pevent_id': 1,
                         'persona_id': 5,
-                        'submitted_by': 1},
+                        'submitted_by': user['id']},
                        {'additional_info': 'New improved title',
                         'code': 12,
                         'ctime': nearly_now(),
                         'pevent_id': 1,
                         'persona_id': None,
-                        'submitted_by': 1},
+                        'submitted_by': user['id']},
                        {'additional_info': 'New improved title',
                         'code': 11,
                         'ctime': nearly_now(),
                         'pevent_id': 1,
                         'persona_id': None,
-                        'submitted_by': 1},
+                        'submitted_by': user['id']},
                        {'additional_info': 'Topos theory for the kindergarden',
                         'code': 10,
                         'ctime': nearly_now(),
                         'pevent_id': 1,
                         'persona_id': None,
-                        'submitted_by': 1},
+                        'submitted_by': user['id']},
                        {'additional_info': None,
                         'code': 2,
                         'ctime': nearly_now(),
                         'pevent_id': 1001,
                         'persona_id': None,
-                        'submitted_by': 1},
+                        'submitted_by': user['id']},
                        {'additional_info': None,
                         'code': 1,
                         'ctime': nearly_now(),
                         'pevent_id': 1001,
                         'persona_id': None,
-                        'submitted_by': 1})
+                        'submitted_by': user['id']})
         self.assertEqual(expectation, self.pastevent.retrieve_past_log(self.key))
 
     @as_users("anton")
