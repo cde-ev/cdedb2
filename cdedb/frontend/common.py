@@ -1776,9 +1776,6 @@ def REQUESTdata(*spec):
     """Decorator to extract parameters from requests and validate them. This
     should always be used, so automatic form filling works as expected.
 
-    This strips surrounding whitespace. If this is undesired at some
-    point in the future we have to add an override here.
-
     :type spec: [(str, str)]
     :param spec: Specification of parameters to extract. The
       first value of a tuple is the name of the parameter to look out
@@ -1797,8 +1794,7 @@ def REQUESTdata(*spec):
             for name, argtype in spec:
                 if name not in kwargs:
                     if argtype.startswith('[') and argtype.endswith(']'):
-                        vals = tuple(val.strip()
-                                     for val in rs.request.values.getlist(name))
+                        vals = tuple(rs.request.values.getlist(name))
                         if vals:
                             rs.values.setlist(name, vals)
                         else:
@@ -1809,7 +1805,7 @@ def REQUESTdata(*spec):
                             check_validation(rs, argtype[1:-1], val, name)
                             for val in vals)
                     else:
-                        val = rs.request.values.get(name, "").strip()
+                        val = rs.request.values.get(name, "")
                         rs.values[name] = val
                         if argtype.startswith('#'):
                             argtype = argtype[1:]
@@ -1839,9 +1835,6 @@ def REQUESTdatadict(*proto_spec):
     passes this as ``data`` parameter. This does not do validation since
     this is infeasible in practice.
 
-    This strips surrounding whitespace. If this is undesired at some
-    point in the future we have to add an override here.
-
     :type proto_spec: [str or (str, str)]
     :param proto_spec: Similar to ``spec`` parameter :py:meth:`REQUESTdata`,
       but the only two allowed argument types are ``str`` and
@@ -1861,10 +1854,9 @@ def REQUESTdatadict(*proto_spec):
             data = {}
             for name, argtype in spec:
                 if argtype == "str":
-                    data[name] = rs.request.values.get(name, "").strip()
+                    data[name] = rs.request.values.get(name, "")
                 elif argtype == "[str]":
-                    data[name] = tuple(
-                        val.strip() for val in rs.request.values.getlist(name))
+                    data[name] = tuple(rs.request.values.getlist(name))
                 else:
                     raise ValueError(n_("Invalid argtype {t} found.").format(
                         t=argtype))
