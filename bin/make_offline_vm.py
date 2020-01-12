@@ -75,8 +75,10 @@ def populate_table(cur, table, data):
                                  placeholders=", ".join(("%s",) * len(keys)))
             params = tuple(entry[key] for key in keys)
             cur.execute(query, params)
+        # include a small buffer of 1000 (mainly to allow for the log
+        # messages of locking the event if somebody gets the ordering wrong)
         query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
-            table, max(int(id) for id in data) + 1)
+            table, max(int(id) for id in data) + 1000)
         # we need elevated privileges for sequences
         subprocess.run(
             ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
@@ -122,10 +124,19 @@ def work(args):
         data['event.events'][str(data['id'])]['title'], data['timestamp']))
 
     if not data['event.events'][str(data['id'])]['offline_lock']:
-        print("Event not locked in online instance. Fixing for offline use.")
+        print("Event not locked in online instance at time of export."
+              "\nIn case of simultaneous changes in offline and online"
+              " instance there will be data loss."
+              "\nIf this is just a test run and you intend to scrap this"
+              " offline instance you can ignore this warning.")
+        if (input("Continue anyway (type uppercase USE ANYWAY)? ").strip()
+                != "USE ANYWAY"):
+            print("Aborting.")
+            sys.exit()
+        print("Fixing for offline use.")
         data['event.events'][str(data['id'])]['offline_lock'] = True
 
-    print("Clean current instance")
+    print("Clean current instance (deleting all data)")
     if not args.test:
         if input("Are you sure (type uppercase YES)? ").strip() != "YES":
             print("Aborting.")

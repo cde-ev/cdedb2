@@ -2886,7 +2886,11 @@ class EventBackend(AbstractBackend):
         extra_translations = extra_translations or {}
         ret = 1
         for anid in set(current) - set(data):
-            ret *= self.sql_delete_one(rs, table, anid)
+            # we do not delete additional log messages; this can mainly
+            # happen if somebody gets the order of downloading an export and
+            # locking the event wrong
+            if table != 'event.log':
+                ret *= self.sql_delete_one(rs, table, anid)
         for e in data.values():
             if e != current.get(e['id']):
                 new_e = self.translate(e, translations, extra_translations)
