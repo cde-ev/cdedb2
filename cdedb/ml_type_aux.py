@@ -18,6 +18,8 @@ class BackendContainer:
 class Domain(enum.IntEnum):
     lists = 1
     aka = 2
+    general = 3
+    cdelokal = 4
 
     def __str__(self):
         if self not in _DOMAIN_STR_MAP:
@@ -29,6 +31,8 @@ class Domain(enum.IntEnum):
 _DOMAIN_STR_MAP = {
     Domain.lists: "lists.cde-ev.de",
     Domain.aka: "aka.cde-ev.de",
+    Domain.general: "cde-ev.de",
+    Domain.cdelokal: "cdelokal.cde-ev.de",
 }
 
 
@@ -463,6 +467,7 @@ class SemiPublicMailinglist(GeneralMailinglist):
 
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
+    domain = Domain.cdelokal
 
 
 TYPE_MAP = {
