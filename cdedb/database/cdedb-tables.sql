@@ -377,10 +377,14 @@ CREATE TABLE cde.org_period (
         -- (it is done incrementally)
         ejection_state          integer REFERENCES core.personas(id),
         ejection_done           timestamp WITH TIME ZONE DEFAULT NULL,
+        ejection_count          integer NOT NULL DEFAULT 0,
+        ejection_balance        numeric(8, 2) NOT NULL DEFAULT 0,
         -- has the balance already been adjusted? If so, up to which ID
         -- (it is done incrementally)
         balance_state           integer REFERENCES core.personas(id),
-        balance_done            timestamp WITH TIME ZONE DEFAULT NULL
+        balance_done            timestamp WITH TIME ZONE DEFAULT NULL,
+        balance_trialmembers    integer NOT NULL DEFAULT 0,
+        balance_total           numeric(8, 2) NOT NULL DEFAULT 0
 );
 GRANT SELECT ON cde.org_period TO cdb_persona;
 GRANT INSERT, UPDATE ON cde.org_period TO cdb_admin;

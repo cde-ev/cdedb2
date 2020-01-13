@@ -1613,8 +1613,10 @@ ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id", "title",
                               "filename")
 
 #: Fields of a semester
-ORG_PERIOD_FIELDS = ("id", "billing_state", "billing_done", "ejection_state",
-                     "ejection_done", "balance_state", "balance_done")
+ORG_PERIOD_FIELDS = (
+    "id", "billing_state", "billing_done", "ejection_state", "ejection_done",
+    "ejection_count", "ejection_balance", "balance_state", "balance_done",
+    "balance_trialmembers", "balance_total")
 
 #: Fielsd of an expuls
 EXPULS_PERIOD_FIELDS = ("id", "addresscheck_state", "addresscheck_done")
