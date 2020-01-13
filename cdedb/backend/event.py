@@ -1694,7 +1694,7 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
-    @access("event")
+    @internal_access("persona")
     def check_registration_status(self, rs, persona_id, event_id, stati):
         """Check if any status for a given event matches one of the given stati.
 
