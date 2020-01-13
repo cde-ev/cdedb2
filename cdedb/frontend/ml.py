@@ -710,8 +710,9 @@ class MlFrontend(AbstractUserFrontend):
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return False
-        policy = const.MailinglistInteractionPolicy(
-            rs.ambience['mailinglist']['sub_policy'])
+        policy = self.mlproxy.get_interaction_policy(
+            rs, persona_id=rs.user.persona_id,
+            mailinglist=rs.ambience['mailinglist'])
         if setting and policy == const.MailinglistInteractionPolicy.mandatory:
             rs.notify("error", n_("Disallowed to change address."))
             return False
