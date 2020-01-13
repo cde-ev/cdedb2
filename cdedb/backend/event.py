@@ -2288,7 +2288,14 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def calculate_fees(self, rs, ids):
-        """Calculate the total fee for a registration.
+        """Calculate the total fees for some registrations.
+
+        This should be called once for multiple registrations, as it would be
+        somewhat expensive if called per registration.
+
+        All registrations need to belong to the same event.
+
+        The caller must have priviliged acces to that event.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
