@@ -1162,23 +1162,27 @@ class MlBackend(AbstractBackend):
         :return: default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
-        ml = self.get_mailinglist(rs, mailinglist_id)
 
         # States of current subscriptions we may touch.
         old_subscriber_states = {const.SubscriptionStates.implicit,
                                  const.SubscriptionStates.subscribed}
         # States of current subscriptions we may not touch.
-        protected_states = {const.SubscriptionStates.subscription_override,
-                            const.SubscriptionStates.unsubscription_override,
-                            const.SubscriptionStates.unsubscribed}
+        # These are determined by the mailinglist type below.
 
         ret = 1
         with Atomizer(rs):
+            ml = self.get_mailinglist(rs, mailinglist_id)
+            atype = self.get_ml_type(rs, mailinglist_id)
+
+            if not atype.periodic_cleanup(rs, ml):
+                return ret
+
             old_subscribers = self.get_subscription_states(
                 rs, mailinglist_id, states=old_subscriber_states)
             # This is dependant on mailinglist type
-            new_implicits = (self.get_ml_type(rs, mailinglist_id)
-                .get_implicit_subscribers(rs, self.backends, ml))
+
+            new_implicits = atype.get_implicit_subscribers(
+                rs, self.backends, ml)
 
             # Check whether current subscribers may stay subscribed.
             # This is the case if they are still implicit subscribers of
@@ -1186,20 +1190,20 @@ class MlBackend(AbstractBackend):
             delete = []
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
-            for persona in personas.values():
-                may_subscribe = self.get_interaction_policy(
-                    rs, persona['id'], mailinglist=ml)
-                state = old_subscribers[persona['id']]
+            for persona_id, persona in personas.items():
+                may_subscribe = atype.get_interaction_policy(
+                    rs, self.backends, mailinglist=ml, persona_id=persona_id)
+                state = old_subscribers[persona_id]
                 if (state == const.SubscriptionStates.implicit
-                    or not may_subscribe
-                    or may_subscribe.is_implicit()):
+                        or not may_subscribe
+                        or may_subscribe.is_implicit()):
                     datum = {
                         'mailinglist_id': mailinglist_id,
-                        'persona_id': persona['id'],
+                        'persona_id': persona_id,
                     }
                     # Log this to prevent confusion especially for team lists
                     self.ml_log(rs, const.MlLogCodes.cron_removed,
-                                mailinglist_id, persona_id=persona['id'])
+                                mailinglist_id, persona_id=persona_id)
                     delete.append(datum)
 
             # Remove those who may not stay subscribed.
@@ -1210,8 +1214,9 @@ class MlBackend(AbstractBackend):
                 self.logger.info(msg.format(num, mailinglist_id))
 
             # Check whether any implicit subscribers need to be written.
-            # This is the case im they are not already old subscribers and
+            # This is the case if they are not already old subscribers and
             # they don't have a protected subscription.
+            protected_states = atype.protected_states
             protected = self.get_subscription_states(
                 rs, mailinglist_id, states=protected_states)
             write = set(new_implicits) - set(old_subscribers) - set(protected)

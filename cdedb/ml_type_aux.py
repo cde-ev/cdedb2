@@ -59,16 +59,15 @@ class AssemblyAssociatedMeta:
 
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
+    # Allow empty event_id to mark legacy event-lists.
     validation_fields = {
-        "event_id": validate._id,
+        "event_id": validate._id_or_None,
     }
 
-
-class LegacyMeta:
-    """Metaclass for all legacy event mailinglists."""
-    role_map = OrderedDict([
-        ("event", MailinglistInteractionPolicy.invitation_only)
-    ])
+    @classmethod
+    def periodic_cleanup(cls, rs, mailinglist):
+        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        return mailinglist["event_id"] is not None
 
 
 class TeamMeta:
@@ -187,6 +186,22 @@ class GeneralMailinglist:
         """
         return set()
 
+    # Which states not to touch during periodic subscription cleanup.
+    protected_states = {const.SubscriptionStates.subscription_override,
+                        const.SubscriptionStates.unsubscription_override,
+                        const.SubscriptionStates.unsubscribed}
+
+    @classmethod
+    def periodic_cleanup(cls, rs, mailinglist):
+        """Whether or not to do periodic subscription cleanup on this list.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist: {str: object}
+        :rtype: bool
+        """
+        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        return True
+
     # Additional fields for validation. See docstring for details.
     validation_fields = {}
 
@@ -224,6 +239,8 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
         ("member", MailinglistInteractionPolicy.mandatory)
     ])
+    # For mandatory lists, ignore all unsubscriptions.
+    protected_states = {const.SubscriptionStates.subscription_override}
 
 
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
@@ -270,13 +287,17 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
 
+        # Make event-lists without event link static.
+        if mailinglist["event_id"] is None:
+            return MailinglistInteractionPolicy.invitation_only
+
         if not persona_id:
             persona_id = rs.user.persona_id
 
         if bc.event.check_registration_status(
                 rs, persona_id, mailinglist['event_id'],
                 mailinglist['registration_stati']):
-            return MailinglistInteractionPolicy.implicits_only
+            return MailinglistInteractionPolicy.opt_out
         else:
             return None
 
@@ -289,19 +310,27 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
 
+        if mailinglist["event_id"] is None:
+            raise ValueError(n_("No implicit subscribers possible for "
+                                "legacy event list."))
+
         event = bc.event.get_event(rs, mailinglist["event_id"])
 
         status_column = ",".join(
             "part{}.status".format(part_id) for part_id in event["parts"])
+        spec = {
+            'reg.id': 'id',
+            'persona.id': 'id',
+            status_column: 'int',
+        }
         query = Query(
-            scope="qview_registrations",
-            spec=QUERY_SPECS["qview_registration"],
+            scope="qview_registration",
+            spec=spec,
             fields_of_interest=("persona.id",),
             constraints=((status_column, QueryOperators.oneof,
                           mailinglist["registration_stati"]),),
             order=tuple())
-        data = bc.event.submit_general_query(
-            rs, query, event_id=event["id"])
+        data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
         return {e["persona.id"] for e in data}
 
@@ -316,6 +345,10 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
+
+        # Make event-lists without event link static.
+        if mailinglist["event_id"] is None:
+            return const.MailinglistInteractionPolicy.invitation_only
 
         if not persona_id:
             persona_id = rs.user.persona_id
@@ -334,16 +367,15 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
 
+        if mailinglist["event_id"] is None:
+            raise ValueError(n_("No implicit subscribers possible for "
+                                "legacy event list."))
+
         event = unwrap(bc.event.get_events(rs, (mailinglist["event_id"],)))
         return event["orgas"]
 
 
-class EventAssociatedLegacyMailinglist(EventAssociatedMailinglist):
-    pass
 
-
-class EventOrgaLegacyMailinglist(EventOrgaMailinglist):
-    pass
 
 
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
@@ -404,8 +436,6 @@ TYPE_MAP = {
     MailinglistTypes.restricted_team: RestrictedTeamMailinglist,
     MailinglistTypes.event_associated: EventAssociatedMailinglist,
     MailinglistTypes.event_orga: EventOrgaMailinglist,
-    MailinglistTypes.event_associated_legacy: EventAssociatedLegacyMailinglist,
-    MailinglistTypes.event_orga_legacy: EventOrgaLegacyMailinglist,
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
     MailinglistTypes.general_opt_in: GeneralOptInMailinglist,
