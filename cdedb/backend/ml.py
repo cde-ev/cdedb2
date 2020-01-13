@@ -143,7 +143,8 @@ class MlBackend(AbstractBackend):
         :type data: [{str: object}]
         :param data: Return of the persona select query
         :type allowed_pols: {const.MailinglistInteractionPolicy}
-        :return: Tuple of personas whose interaction policies are in allowe_pols
+        :return: Tuple of personas whose interaction policies are in
+            allowed_pols
         """
         affirm("mailinglist", ml)
         affirm_set("enum_mailinglistinteractionpolicy", allowed_pols)
@@ -151,18 +152,17 @@ class MlBackend(AbstractBackend):
         # persona_ids are validated inside get_personas
         persona_ids = tuple(e['id'] for e in data)
         personas = self.core.get_personas(rs, persona_ids)
-        return tuple(
-            e for e in data
-            if self._filter_personas_by_policy_cond(rs, personas[e['id']], ml,
-                                                     alloed_pols))
+        return tuple(e for e in data if self._filter_personas_by_policy_cond(
+            rs, personas[e['id']], ml, allowed_pols))
 
-    def _filter_personas_by_policy_cond(self, rs, persona, ml):
+    def _filter_personas_by_policy_cond(self, rs, persona, ml, allowed_pols):
         """Helper function for :py:meth:`get_interaction_policy` and
         :py:meth:`filter_personas_by_policy`
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona: {str: object}
         :type ml: {str: object}
+        :type allowed_pols: {const.MailinglistInteractionPolicy}
         :rtype: const.MailinglistInteractionPolicy or None
         :return: The applicable subscription policy for the user or None if the
             user has no means to access a list.
@@ -307,10 +307,16 @@ class MlBackend(AbstractBackend):
         """
         active_only = affirm("bool", active_only)
         query = "SELECT id, title FROM ml.mailinglists"
+        constraints = []
+        params = []
         if active_only:
-            query = glue(query, "WHERE is_active = True")
+            constraints.append("is_active = True")
+
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
+
         with Atomizer(rs):
-            data = self.query_all(rs, query, [])
+            data = self.query_all(rs, query, params)
             # Get additional information to find out if we can view these lists
             ml_ids = [e['id'] for e in data]
             mailinglists = self.get_mailinglists(rs, ml_ids)
@@ -828,7 +834,7 @@ class MlBackend(AbstractBackend):
             raise SubscriptionError(n_("Can not change subscription."))
         elif (action == sa.request_subscription and
               policy != const.MailinglistInteractionPolicy.moderated_opt_in):
-            raise SubscriptionError(n_("Can not change subscription"))
+            raise SubscriptionError(n_("Can not change subscription."))
 
     @access("ml")
     def set_subscription_address(self, rs, mailinglist_id, persona_id, email):

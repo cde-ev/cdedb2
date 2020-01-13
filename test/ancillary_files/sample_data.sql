@@ -361,7 +361,7 @@ INSERT INTO ml.mailinglists (id, title, address, description, ml_type, sub_polic
     (8, 'Orga-Liste', 'aka@example.cde', NULL, 21, 6, 1, 1, 3, '[orga]', NULL, True, 1, ARRAY[]::integer[], NULL),
     (9, 'Teilnehmer-Liste', 'participants@example.cde', NULL, 20, 6, 2, 1, 3, '[aka]', NULL, True, 1, ARRAY[2, 4], NULL),
     (10, 'Warte-Liste', 'wait@example.cde', NULL, 20, 6, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL),
-    (11, 'Kampfbrief-Kommentare', 'opt@example.cde', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], 1);
+    (11, 'Kampfbrief-Kommentare', 'opt@example.cde', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], NULL);
 
 INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
     (3, 10, 'janis-spam@example.cde'),
@@ -421,8 +421,6 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (9, 9, 30),
     (9, 100, 30),
     (10, 5, 30),
-    (11, 1, 11),
-    (11, 2, 30),
     (11, 3, 1),
     (11, 4, 2),
     (11, 9, 11),

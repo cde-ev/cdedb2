@@ -170,7 +170,6 @@ class TestMlBackend(BackendTest):
             expectation = self.ml.get_subscription_states(self.key, ml_id)
             self.ml.write_subscription_states(self.key, ml_id)
             result = self.ml.get_subscription_states(self.key, ml_id)
-            print(ml_id)
 
             self.assertEqual(expectation, result)
 
@@ -207,7 +206,6 @@ class TestMlBackend(BackendTest):
             4: SS.subscribed,
             5: SS.implicit,
             6: SS.subscribed,
-            11: SS.implicit
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
@@ -455,7 +453,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
                          code=1, state=SS.subscribed)
 
-    @as_users("anton", "ferdinand", "janis", "nina")
+    @as_users("anton", "ferdinand")
     def test_opt_out(self, user):
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
@@ -679,91 +677,6 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'],  ml_id, SA.subscribe,
                          code=1, state=SS.subscribed)
 
-        mdata = {
-            'id': ml_id,
-            'assembly_id': None,
-        }
-        self.ml.set_mailinglist(self.key, mdata)
-
-        expectation = {
-            3: SS.subscription_override,
-            9: SS.unsubscription_override,
-            14: SS.subscription_override,
-            100: SS.subscription_override,
-        }
-        result = self.ml.get_subscription_states(self.key, ml_id)
-        self.assertEqual(result, expectation)
-
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=None, state=None, kind="error")
-        self._change_sub(user['id'], ml_id, SA.unsubscribe,
-                         code=None, state=None, kind="info")
-        self._change_sub(user['id'], ml_id, SA.request_subscription,
-                         code=None, state=None, kind="error")
-
-    @as_users("anton")
-    def test_opt_in_opt_out(self, user):
-        ml_id = 11
-
-        # Fix broken test data.
-        sdata = {
-            'persona_id': 1,
-            'mailinglist_id': ml_id,
-            'subscription_state': SS.implicit,
-        }
-        self.ml._set_subscription(self.key, sdata)
-
-        expectation = {
-            1: SS.implicit,
-            2: SS.implicit,
-            3: SS.subscribed,
-            4: SS.unsubscribed,
-            9: SS.unsubscription_override,
-            11: SS.implicit,
-            23: SS.implicit,
-            100: SS.unsubscription_override,
-        }
-        result = self.ml.get_subscription_states(self.key, ml_id)
-        self.assertEqual(result, expectation)
-
-        self._change_sub(user['id'], ml_id, SA.subscribe,
-                         code=None, state=SS.implicit, kind="info")
-        self._change_sub(user['id'], ml_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
-        self._change_sub(user['id'], ml_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscribed, kind="info")
-        self._change_sub(user['id'], ml_id, SA.request_subscription,
-                         code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'], ml_id, SA.subscribe,
-                         code=1, state=SS.subscribed)
-
-        mdata = {
-            'id': ml_id,
-            'assembly_id': None,
-        }
-        self.ml.set_mailinglist(self.key, mdata)
-
-        expectation = {
-            1: SS.subscribed,
-            3: SS.subscribed,
-            4: SS.unsubscribed,
-            9: SS.unsubscription_override,
-            100: SS.unsubscription_override,
-        }
-        result = self.ml.get_subscription_states(self.key, ml_id)
-        self.assertEqual(result, expectation)
-
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=None, state=SS.subscribed, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscribed, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.request_subscription,
-                         code=None,state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=1, state=SS.subscribed)
-
     @as_users("anton", "nina")
     def test_bullshit_requests(self, user):
         # Can I remove people from lists they have not subscribed to?
@@ -825,30 +738,27 @@ class TestMlBackend(BackendTest):
 
     @as_users("janis", "kalif")
     def test_audience(self, user):
-        # List 4 is moderated opt-in
-        if user['id'] == 10:
-            self._change_sub(user['id'],  4, SA.unsubscribe,
-                             code=1, state=SS.unsubscribed)
-            self._change_sub(user['id'],  4, SA.subscribe,
-                             code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'],  4, SA.request_subscription,
-                         code=1, state=SS.pending)
-        self._change_sub(user['id'],  4, SA.cancel_request,
-                         code=1, state=None)
+        # List 4 is moderated opt-in for members only.
+        self._change_sub(user['id'], 4, SA.subscribe,
+                         code=None, state=None, kind="error")
+        self._change_sub(user['id'], 4, SA.request_subscription,
+                         code=None, state=None, kind="error")
+        self._change_sub(user['id'], 4, SA.cancel_request,
+                         code=None, state=None, kind="error")
         # List 7 is not joinable by non-members
-        self._change_sub(user['id'],  7, SA.subscribe,
+        self._change_sub(user['id'], 7, SA.subscribe,
                          code=None, state=None, kind="error")
         # List 9 is only allowed for event users, and not joinable anyway
         self._change_sub(user['id'],  9, SA.subscribe,
                          code=None, state=None, kind="error")
         # List 11 is only joinable by assembly users
         if user['id'] == 11:
-            self._change_sub(user['id'],  11, SA.unsubscribe,
+            self._change_sub(user['id'], 11, SA.unsubscribe,
                              code=1, state=SS.unsubscribed)
-            self._change_sub(user['id'],  11, SA.subscribe,
+            self._change_sub(user['id'], 11, SA.subscribe,
                              code=1, state=SS.subscribed)
         else:
-            self._change_sub(user['id'],  11, SA.subscribe,
+            self._change_sub(user['id'], 11, SA.subscribe,
                              code=None, state=None, kind="error")
 
     @as_users("anton")
@@ -1004,7 +914,7 @@ class TestMlBackend(BackendTest):
                 'fidel@example.cde',
                 'che@example.cde',
             },
-            'ml_type': 5
+            'ml_type': const.MailinglistTypes.member_invitation_only,
         }
         new_id = self.ml.create_mailinglist(self.key, mdata)
 
@@ -1014,7 +924,7 @@ class TestMlBackend(BackendTest):
         # Making the list Opt-Out should yield implicits subscribers.
         mdata = {
             'id': new_id,
-            'sub_policy': const.MailinglistInteractionPolicy.opt_out,
+            'ml_type': const.MailinglistTypes.member_opt_out,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1125,7 +1035,7 @@ class TestMlBackend(BackendTest):
             'subject_prefix': 'orga',
             'title': 'Orgateam',
             'notes': None,
-            'ml_type': 21,
+            'ml_type': const.MailinglistTypes.event_orga,
         }
         new_id = self.ml.create_mailinglist(self.key, mdata)
 
@@ -1152,6 +1062,7 @@ class TestMlBackend(BackendTest):
 
         mdata = {
             'id': new_id,
+            'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.guest,
                                    const.RegistrationPartStati.cancelled],
         }
@@ -1166,6 +1077,7 @@ class TestMlBackend(BackendTest):
 
         mdata = {
             'id': new_id,
+            'ml_type': const.MailinglistTypes.assembly_associated,
             'audience_policy': const.AudiencePolicy.require_assembly,
             'event_id': None,
             'assembly_id': 1,

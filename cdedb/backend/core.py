@@ -605,7 +605,6 @@ class CoreBackend(AbstractBackend):
         if is_active:
             query = "SELECT id from core.personas WHERE is_member = True AND is_active = True"
         data = self.query_all(rs, query, params=tuple())
-        print(data)
         return {e["id"] for e in data}
 
     @access("core_admin")
