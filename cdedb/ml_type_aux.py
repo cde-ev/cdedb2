@@ -375,11 +375,23 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         return event["orgas"]
 
 
+class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta, AssemblyMailinglist):
+    @classmethod
+    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
+        """Determine the MIP of the user or a persona with a mailinglist.
 
+        For the `AssemblyAssociatedMailinglist` this means opt-out for attendees
+        of the associated assembly.
+        """
+        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+        attending = bc.assembly.check_attendance(
+            rs, persona_id=persona_id, assembly_id=mailinglist["assembly_id"])
 
+        if attending:
+            return const.MailinglistInteractionPolicy.opt_out
+        else:
+            return None
 
-class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta,
-                                    AssemblyMailinglist):
     @classmethod
     def get_implicit_subscribers(cls, rs, bc, mailinglist):
         """Get a list of people that should be on this mailinglist.
