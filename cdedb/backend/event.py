@@ -138,7 +138,8 @@ class EventBackend(AbstractBackend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    def is_orga(self, rs, *, event_id=None, course_id=None):
+    def is_orga(self, rs, *, event_id=None, course_id=None,
+                registration_id=None):
         """Check for orga privileges as specified in the event.orgas table.
 
         Exactly one of the inputs has to be provided.
@@ -146,15 +147,21 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int or None
         :type course_id: int or None
+        :type registration_id: int or None
         :rtype: bool
         """
-        if event_id is None and course_id is None:
+        num_inputs = sum(1 for anid in (event_id, course_id, registration_id)
+                         if anid is not None)
+        if num_inputs < 1:
             raise ValueError(n_("No input specified."))
-        if event_id is not None and course_id is not None:
+        if num_inputs > 1:
             raise ValueError(n_("Too many inputs specified."))
         if course_id is not None:
-            event_id = unwrap(self.sql_select_one(rs, "event.courses",
-                                                  ("event_id",), course_id))
+            event_id = unwrap(self.sql_select_one(
+                rs, "event.courses", ("event_id",), course_id))
+        elif registration_id is not None:
+            event_id = unwrap(self.sql_select_one(
+                rs, "event.registrations", ("event_id",), registration_id))
         return event_id in rs.user.orga
 
     @access("event")
@@ -2278,6 +2285,54 @@ class EventBackend(AbstractBackend):
                     n_("Deletion of %(type)s blocked by %(block)s."),
                     {"type": "registration", "block": blockers.keys()})
         return ret
+
+    @access("event")
+    def calculate_fees(self, rs, ids):
+        """Calculate the total fees for some registrations.
+
+        This should be called once for multiple registrations, as it would be
+        somewhat expensive if called per registration.
+
+        All registrations need to belong to the same event.
+
+        The caller must have priviliged acces to that event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ids: [int]
+        :rtype: {int: decimal.Decimal}
+        """
+        ids = affirm_set("id", ids)
+
+        ret = {}
+        with Atomizer(rs):
+            associated = self.sql_select(rs, "event.registrations",
+                                         ("event_id",), ids)
+            if not associated:
+                return {}
+            events = {e['event_id'] for e in associated}
+            if len(events) > 1:
+                raise ValueError(n_(
+                    "Only registrations from exactly one event allowed."))
+
+            event_id = unwrap(events)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+
+            regs = self.get_registrations(rs, ids)
+            event = self.get_event(rs, event_id)
+            relevant_stati = (const.RegistrationPartStati.applied,
+                              const.RegistrationPartStati.waitlist,
+                              const.RegistrationPartStati.participant,)
+
+            ret = {
+                reg_id: sum(event['parts'][part_id]['fee']
+                            for part_id, part in reg['parts'].items()
+                            if part['status'] in relevant_stati)
+                for reg_id, reg in regs.items()
+                }
+        return ret
+
 
     @access("event")
     def check_orga_addition_limit(self, rs, event_id):

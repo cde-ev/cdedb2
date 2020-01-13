@@ -217,6 +217,7 @@
 			},
 			"checkin": null,
 			"payment": null,
+			"amount_paid": "0.00",
 			"list_consent": true,
 			"persona_id": 2,
 			"notes": null,
@@ -250,5 +251,5 @@
 			}
 		}
 	},
-	"CDEDB_EXPORT_EVENT_VERSION": 7
+	"CDEDB_EXPORT_EVENT_VERSION": 8
 }

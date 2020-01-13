@@ -1300,7 +1300,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/batchfee'})
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
-        f['fee_data'] ="""
+        f['fee_data'] = """
 570.99;DB-1-9;Admin;Anton;01.04.18
 461.49;DB-5-1;Eventis;Emilia;01.04.18
 570.99;DB-11-6;K;Kalif;01.04.18
@@ -1309,20 +1309,24 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("Kein Account mit ID 666 gefunden.")
         f = self.response.forms['batchfeesform']
+        f['full_payment'].checked = True
         f['fee_data'] = """
-573.99;DB-1-9;Admin;Anton;01.04.18
+573.98;DB-1-9;Admin;Anton;01.04.18
 461.49;DB-5-1;Eventis;Emilia;04.01.18
+451.00;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
         f = self.response.forms['batchfeesform']
         f['force'].checked = True
         f['send_notifications'].checked = True
         self.submit(f, check_notification=False)
+        self.assertPresence("Nicht genug Geld", "line1_warnings")
+        self.assertPresence("Zu viel Geld", "line3_warnings")
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
         mails = self.fetch_mail()
-        self.assertEqual(2, len(mails))
+        self.assertEqual(3, len(mails))
         for mail in mails:
             text = mail.get_body().get_content()
             self.assertIn(
@@ -1334,13 +1338,22 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/1/show'})
         self.assertTitle("Anmeldung von Anton Armin A. Administrator (Große Testakademie 2222)")
-        self.assertPresence("Bezahlt am 01.04.2018")
+        self.assertPresence("Teilnehmerbeitrag ausstehend")
+        self.assertPresence("Bereits bezahlter Betrag 573,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 04.01.2018")
+        self.assertPresence("Bereits bezahlter Betrag 461,49 €")
+        self.traverse({'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/4/show'})
+        self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
+        self.assertPresence("Bezahlt am 30.12.2019")
+        self.assertPresence("Bereits bezahlter Betrag 451,00 €")
 
     @as_users("garcia")
     def test_registration_query(self, user):
@@ -1453,6 +1466,8 @@ etc;anything else""", f['entries_2'].value)
         f['reg.orga_notes'] = "Wir wllen mal nicht so sein."
         self.assertEqual(True, f['reg.mixed_lodging'].checked)
         f['reg.mixed_lodging'].checked = False
+        self.assertEqual("0.00", f['reg.amount_paid'].value)
+        f['reg.amount_paid'] = "42.01"
         self.assertEqual("3", f['part1.status'].value)
         f['part1.status'] = 2
         self.assertEqual("4", f['part2.lodgement_id'].value)
@@ -1464,12 +1479,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("", f['fields.lodge'].value)
         f['fields.lodge'] = "Om nom nom nom"
         self.submit(f)
-        self.assertTitle("\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Om nom nom nom")
         self.traverse({'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Wir wllen mal nicht so sein.", f['reg.orga_notes'].value)
         self.assertEqual(False, f['reg.mixed_lodging'].checked)
+        self.assertEqual("42.01", f['reg.amount_paid'].value)
         self.assertEqual("2", f['part1.status'].value)
         self.assertEqual("3", f['part2.lodgement_id'].value)
         self.assertEqual("5", f['track3.course_choice_1'].value)
@@ -2625,7 +2641,8 @@ etc;anything else""", f['entries_2'].value)
                                  'notes': None,
                                  'group_id': 1,
                                  'reserve': 0}},
-            'registrations': {'1': {'checkin': None,
+            'registrations': {'1': {'amount_paid': "0.00",
+                                    'checkin': None,
                                     'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
                                     'list_consent': True,
                                     'mixed_lodging': True,
@@ -2669,7 +2686,8 @@ etc;anything else""", f['entries_2'].value)
                                                '3': {'choices': [1, 4],
                                                      'course_id': None,
                                                      'course_instructor': None}}},
-                              '2': {'checkin': None,
+                              '2': {'amount_paid': "0.00",
+                                    'checkin': None,
                                     'fields': {'brings_balls': True,
                                                'transportation': 'pedes'},
                                     'list_consent': True,
@@ -2715,7 +2733,8 @@ etc;anything else""", f['entries_2'].value)
                                                '3': {'choices': [4, 2],
                                                      'course_id': 1,
                                                      'course_instructor': 1}}},
-                              '3': {'checkin': None,
+                              '3': {'amount_paid': "0.00",
+                                    'checkin': None,
                                     'fields': {'transportation': 'car'},
                                     'list_consent': False,
                                     'mixed_lodging': True,
@@ -2759,7 +2778,8 @@ etc;anything else""", f['entries_2'].value)
                                                '3': {'choices': [2, 4],
                                                      'course_id': None,
                                                      'course_instructor': None}}},
-                              '4': {'checkin': None,
+                              '4': {'amount_paid': "0.00",
+                                    'checkin': None,
                                     'fields': {'brings_balls': False,
                                                'may_reserve': True,
                                                'transportation': 'etc'},

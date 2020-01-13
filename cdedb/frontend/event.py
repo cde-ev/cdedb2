@@ -1838,22 +1838,27 @@ class EventFrontend(AbstractUserFrontend):
                            {'data': data, 'csvfields': csv_position,
                             'saldo': saldo})
 
-    def examine_fee(self, rs, datum):
+    def examine_fee(self, rs, datum, expected_fees, full_payment=True):
         """Check one line specifying a paid fee.
 
         We test for fitness of the data itself.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type datum: {str: object}
+        :type expected_fees: {int: decimal.Decimal}
+        :type full_payment: bool
+        :param full_payment: If True, only write the payment date if the fee
+            was paid in full.
         :rtype: {str: object}
         :returns: The processed input datum.
         """
         event = rs.ambience['event']
         warnings = []
+        infos = []
         amount, problems = validate.check_non_negative_decimal(
-            datum['raw']['amount'], "amount")
+            datum['raw']['amount'].strip(), "amount")
         persona_id, p = validate.check_cdedbid(
-            datum['raw']['id'], "persona_id")
+            datum['raw']['id'].strip(), "persona_id")
         problems.extend(p)
         family_name, p = validate.check_str(
             datum['raw']['family_name'], "family_name")
@@ -1861,7 +1866,8 @@ class EventFrontend(AbstractUserFrontend):
         given_names, p = validate.check_str(
             datum['raw']['given_names'], "given_names")
         problems.extend(p)
-        date, p = validate.check_date(datum['raw']['date'], "date")
+        date, p = validate.check_date(
+            datum['raw']['date'].strip(), "date")
         problems.extend(p)
 
         registration_id = None
@@ -1880,19 +1886,18 @@ class EventFrontend(AbstractUserFrontend):
                     registration_id = unwrap(registration_id)
                     registration = self.eventproxy.get_registration(
                         rs, registration_id)
-                    if registration['payment']:
-                        warnings.append(('persona_id',
-                                         ValueError(n_("Already paid."))))
-                    relevant_stati = (const.RegistrationPartStati.applied,
-                                      const.RegistrationPartStati.waitlist,
-                                      const.RegistrationPartStati.participant,)
-                    fee = sum(event['parts'][part_id]['fee']
-                              for part_id, part in registration['parts'].items()
-                              if part['status'] in relevant_stati)
-                    if amount and amount < fee:
-                        problems.append(('amount',
-                                         ValueError(n_("Not enough money."))))
-                    if amount and amount > fee:
+                    amount = amount or decimal.Decimal(0)
+                    amount_paid = registration['amount_paid']
+                    total = amount + amount_paid
+                    fee = expected_fees[registration_id]
+                    if total < fee:
+                        error = ('amount', ValueError(n_("Not enough money.")))
+                        if full_payment:
+                            warnings.append(error)
+                            date = None
+                        else:
+                            infos.append(error)
+                    elif total > fee:
                         warnings.append(('amount',
                                          ValueError(n_("Too much money."))))
                 else:
@@ -1915,6 +1920,7 @@ class EventFrontend(AbstractUserFrontend):
             'amount': amount,
             'warnings': warnings,
             'problems': problems,
+            'infos': infos,
         })
         return datum
 
@@ -1934,10 +1940,15 @@ class EventFrontend(AbstractUserFrontend):
         try:
             with Atomizer(rs):
                 count = 0
+                all_reg_ids = {datum['registration_id'] for datum in data}
+                all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
                 for index, datum in enumerate(data):
+                    reg_id = datum['registration_id']
                     update = {
-                        'id': datum['registration_id'],
+                        'id': reg_id,
                         'payment': datum['date'],
+                        'amount_paid': all_regs[reg_id]['amount_paid']
+                                       + datum['amount'],
                     }
                     count += self.eventproxy.set_registration(rs, update)
         except psycopg2.extensions.TransactionRollbackError:
@@ -1975,11 +1986,12 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @REQUESTdata(("force", "bool"), ("fee_data", "str_or_None"),
-                 ("checksum", "str_or_None"), ("send_notifications", "bool"))
+                 ("checksum", "str_or_None"), ("send_notifications", "bool"),
+                 ("full_payment", "bool"))
     @REQUESTfile("fee_data_file")
     @event_guard(check_offline=True)
     def batch_fees(self, rs, event_id, force, fee_data, fee_data_file,
-                   checksum, send_notifications):
+                   checksum, send_notifications, full_payment):
         """Allow orgas to add lots paid of participant fee at once."""
         fee_data_file = check(rs, "csvfile_or_None", fee_data_file,
                               "fee_data_file")
@@ -1999,6 +2011,9 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("error", n_("No input provided."))
             return self.batch_fees_form(rs, event_id)
 
+        reg_ids = self.eventproxy.list_registrations(rs, event_id=event_id)
+        expected_fees = self.eventproxy.calculate_fees(rs, reg_ids)
+
         fields = ('amount', 'id', 'family_name', 'given_names', 'date')
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect)
@@ -2008,7 +2023,8 @@ class EventFrontend(AbstractUserFrontend):
             dataset = {'raw': raw_entry}
             lineno += 1
             dataset['lineno'] = lineno
-            data.append(self.examine_fee(rs, dataset))
+            data.append(self.examine_fee(
+                rs, dataset, expected_fees, full_payment))
         if lineno != len(fee_data_lines):
             rs.errors.append(("fee_data",
                               ValueError(n_("Lines didn’t match up."))))
@@ -3465,9 +3481,10 @@ class EventFrontend(AbstractUserFrontend):
         tracks = event['tracks']
         reg_params = (
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
-            ("reg.payment", "date_or_None"), ("reg.parental_agreement", "bool"),
-            ("reg.mixed_lodging", "bool"), ("reg.checkin", "datetime_or_None"),
-            ("reg.list_consent", "bool"))
+            ("reg.payment", "date_or_None"),
+            ("reg.amount_paid", "non_negative_decimal"),
+            ("reg.parental_agreement", "bool"), ("reg.mixed_lodging", "bool"),
+            ("reg.checkin", "datetime_or_None"), ("reg.list_consent", "bool"),)
         part_params = []
         for part_id in event['parts']:
             part_params.extend((

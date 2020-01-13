@@ -93,6 +93,10 @@
                 <em>{% trans -%}Pending{%- endtrans %}</em>
             {% endif %}
         </dd>
+        <dt>{% trans -%}Amount Paid{%- endtrans %}</dt>
+        <dd>
+            {{ ambience['registration']['amount_paid']|money(lang=lang) }}
+        </dd>
 
         <dt>{% trans -%}Parental Consent{%- endtrans %}</dt>
         <dd>

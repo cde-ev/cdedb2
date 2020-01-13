@@ -13932,6 +13932,9 @@ msgstr ""
 "Die Kurswahl-Anzahlen beinhalten Kursleiter anderer Kurse. Die Grenzen "
 "beinhalten nicht die Kursleiter."
 
+msgid "Amount Paid"
+msgstr "Bereits bezahlter Betrag"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

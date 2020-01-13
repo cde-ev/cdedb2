@@ -2250,6 +2250,7 @@ _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'real_persona_id': _id_or_None,
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
+    'amount_paid': _non_negative_decimal,
     'checkin': _datetime_or_None,
     'fields': _mapping
 }
@@ -2952,6 +2953,7 @@ _PARTIAL_REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'parental_agreement': _bool_or_None,
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
+    'amount_paid': _non_negative_decimal,
     'checkin': _datetime_or_None,
     'fields': _mapping,
 }
