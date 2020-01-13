@@ -142,7 +142,7 @@ class GeneralMailinglist:
     role_map = OrderedDict()
 
     @classmethod
-    def get_interaction_policy(cls, rs, bc, mailinglist, persona=None):
+    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -157,14 +157,17 @@ class GeneralMailinglist:
         :type rs: :py:class:`cdedb.common.RequestState`
         :type bc: :py:class:`BackendContainer`
         :type mailinglist: {str: object}
-        :type persona: {str: object}
+        :type persona_id: int
         :rtype: :py:class`const.MailinglistInteractionPolicy` or None
         """
-        # No permission check here.
-        if persona:
-            roles = extract_roles(persona, introspection_only=True)
-        else:
+        assert TYPE_MAP[mailinglist["ml_type"]] == cls
+
+        if not persona_id:
             roles = rs.user.roles
+        else:
+            # TODO check for access to the ml? Needs ml_backend.
+            persona = bc.core.get_persona(rs, persona_id)
+            roles = extract_roles(persona, introspection_only=True)
 
         for role, pol in cls.role_map.items():
             if role in roles:

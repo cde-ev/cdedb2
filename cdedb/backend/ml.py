@@ -125,10 +125,9 @@ class MlBackend(AbstractBackend):
         if not (rs.user.persona_id == persona_id
                 or self.may_manage(rs, ml['id'])):
             raise PrivilegeError(n_("Not privileged."))
-        persona = self.core.get_persona(rs, persona_id)
 
         return self.get_ml_type(rs, ml["id"]).get_interaction_policy(
-            rs, self.backends, ml, persona)
+            rs, self.backends, ml, persona_id)
 
     @access("ml")
     def filter_personas_by_policy(self, rs, ml, data, allowed_pols):
