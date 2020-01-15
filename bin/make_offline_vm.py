@@ -129,10 +129,11 @@ def work(args):
               " instance there will be data loss."
               "\nIf this is just a test run and you intend to scrap this"
               " offline instance you can ignore this warning.")
-        if (input("Continue anyway (type uppercase USE ANYWAY)? ").strip()
-                != "USE ANYWAY"):
-            print("Aborting.")
-            sys.exit()
+        if not args.test:
+            if (input("Continue anyway (type uppercase USE ANYWAY)? ").strip()
+                    != "USE ANYWAY"):
+                print("Aborting.")
+                sys.exit()
         print("Fixing for offline use.")
         data['event.events'][str(data['id'])]['offline_lock'] = True
 

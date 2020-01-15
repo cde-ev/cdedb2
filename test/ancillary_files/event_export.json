@@ -204,6 +204,7 @@
             "real_persona_id": null
         },
         "5": {
+            "amount_paid": "0.00",
             "checkin": null,
             "event_id": 1,
             "fields": {"transportation": "pedes"},

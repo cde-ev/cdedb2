@@ -1873,7 +1873,7 @@ class TestEventBackend(BackendTest):
                                   'id': 1,
                                   'instructors': 'ToFi & Co',
                                   'max_size': 10,
-                                  'min_size': 3,
+                                  'min_size': 2,
                                   'notes': 'Promotionen in Mathematik und Ethik für '
                                   'Teilnehmer notwendig.',
                                   'nr': 'α',
@@ -2637,7 +2637,7 @@ class TestEventBackend(BackendTest):
                             'fields': {'room': 'Wald'},
                             'instructors': 'ToFi & Co',
                             'max_size': 10,
-                            'min_size': 3,
+                            'min_size': 2,
                             'notes': 'Promotionen in Mathematik und Ethik für Teilnehmer '
                             'notwendig.',
                             'nr': 'α',
@@ -3128,7 +3128,8 @@ class TestEventBackend(BackendTest):
         del expectation['timestamp']
         del updated['timestamp']
         del updated['registrations'][1002]['persona']  # ignore additional info
-        updated['registrations'][6]['amount_paid'] = str(updated['registrations'][1002]['amount_paid'])
+        updated['registrations'][1002]['amount_paid'] = str(
+            updated['registrations'][1002]['amount_paid'])
         self.assertEqual(expectation, updated)
 
     @as_users("annika")
