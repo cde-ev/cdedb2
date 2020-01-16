@@ -47,7 +47,6 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml")
     def index(self, rs):
         """Render start page."""
-        policies = const.AudiencePolicy.applicable(rs.user.roles)
         mailinglists = self.mlproxy.list_mailinglists(rs)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionStates.subscribing_states()
@@ -133,6 +132,10 @@ class MlFrontend(AbstractUserFrontend):
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=sub_states)
+        grouped = collections.defaultdict(dict)
+        for mailinglist_id, title in mailinglists.items():
+            group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
+            grouped[group_id][mailinglist_id] = title
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         subs = self.mlproxy.get_many_subscription_states(
@@ -140,8 +143,11 @@ class MlFrontend(AbstractUserFrontend):
         for ml_id in subs:
             mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
         return self.render(rs, "list_mailinglists", {
-            'mailinglists': mailinglists, 'subscriptions': subscriptions,
-            'mailinglist_infos': mailinglist_infos, 'events': events,
+            'groups': MailinglistGroup,
+            'mailinglists': grouped,
+            'subscriptions': subscriptions,
+            'mailinglist_infos': mailinglist_infos,
+            'events': events,
             'assemblies': assemblies})
 
     @access("ml_admin")

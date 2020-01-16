@@ -172,6 +172,10 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list'})
         self.assertTitle("Mailinglisten Komplettübersicht")
+        self.assertPresence("Mitglieder (Moderiertes Opt-in)")
+        self.assertPresence("Große Testakademie 2222")
+        self.assertPresence("Internationaler Kongress")
+        self.assertPresence("Andere Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/6'})
         self.assertTitle("Aktivenforum 2000 – Verwaltung")
 
