@@ -142,7 +142,12 @@ class GeneralMailinglist:
     role_map = OrderedDict()
 
     @classmethod
-    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
+    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id):
+        return cls.get_interaction_policies(
+            rs, bc, mailinglist, (persona_id,))[persona_id]
+
+    @classmethod
+    def get_interaction_policies(cls, rs, bc, mailinglist, persona_ids):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -157,23 +162,23 @@ class GeneralMailinglist:
         :type rs: :py:class:`cdedb.common.RequestState`
         :type bc: :py:class:`BackendContainer`
         :type mailinglist: {str: object}
-        :type persona_id: int
+        :type persona_ids: [int]
         :rtype: :py:class`const.MailinglistInteractionPolicy` or None
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
 
-        if not persona_id:
-            roles = rs.user.roles
-        else:
-            # TODO check for access to the ml? Needs ml_backend.
-            persona = bc.core.get_persona(rs, persona_id)
+        # TODO check for access to the ml? Needs ml_backend.
+        personas = bc.core.get_personas(rs, persona_ids)
+        ret = {}
+        for persona_id, persona in personas.items():
             roles = extract_roles(persona, introspection_only=True)
-
-        for role, pol in cls.role_map.items():
-            if role in roles:
-                return cls.role_map[role]
-        else:
-            return None
+            for role, pol in cls.role_map.items():
+                if role in roles:
+                    ret[persona_id] = pol
+                    break
+            else:
+                ret[persona_id] = None
+        return ret
 
     @classmethod
     def get_implicit_subscribers(cls, rs, bc, mailinglist):
@@ -279,7 +284,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
 
     @classmethod
-    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
+    def get_interaction_policies(cls, rs, bc, mailinglist, persona_ids):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this basically means opt-in for all
@@ -291,15 +296,16 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if mailinglist["event_id"] is None:
             return MailinglistInteractionPolicy.invitation_only
 
-        if not persona_id:
-            persona_id = rs.user.persona_id
+        ret = {}
+        for persona_id in persona_ids:
+            if bc.event.check_registration_status(
+                    rs, persona_id, mailinglist['event_id'],
+                    mailinglist['registration_stati']):
+                ret[persona_id] = MailinglistInteractionPolicy.opt_out
+            else:
+                ret[persona_id] = None
 
-        if bc.event.check_registration_status(
-                rs, persona_id, mailinglist['event_id'],
-                mailinglist['registration_stati']):
-            return MailinglistInteractionPolicy.opt_out
-        else:
-            return None
+        return ret
 
     @classmethod
     def get_implicit_subscribers(cls, rs, bc, mailinglist):
@@ -339,7 +345,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     sortkey = MailinglistGroup.event
 
     @classmethod
-    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
+    def get_interaction_policies(cls, rs, bc, mailinglist, persona_ids):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
@@ -350,14 +356,14 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         if mailinglist["event_id"] is None:
             return const.MailinglistInteractionPolicy.invitation_only
 
-        if not persona_id:
-            persona_id = rs.user.persona_id
-
+        ret = {}
         event = bc.event.get_event(rs, mailinglist["event_id"])
-        if persona_id in event["orgas"]:
-            return const.MailinglistInteractionPolicy.opt_out
-        else:
-            return None
+        for persona_id in persona_ids:
+            if persona_id in event["orgas"]:
+                ret[persona_id] = const.MailinglistInteractionPolicy.opt_out
+            else:
+                ret[persona_id] = None
+        return ret
 
     @classmethod
     def get_implicit_subscribers(cls, rs, bc, mailinglist):
@@ -377,20 +383,24 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
 class AssemblyAssociatedMailinglist(AssemblyAssociatedMeta, AssemblyMailinglist):
     @classmethod
-    def get_interaction_policy(cls, rs, bc, mailinglist, persona_id=None):
+    def get_interaction_policies(cls, rs, bc, mailinglist, persona_ids):
         """Determine the MIP of the user or a persona with a mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means opt-out for attendees
         of the associated assembly.
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
-        attending = bc.assembly.check_attendance(
-            rs, persona_id=persona_id, assembly_id=mailinglist["assembly_id"])
 
-        if attending:
-            return const.MailinglistInteractionPolicy.opt_out
-        else:
-            return None
+        ret = {}
+        for persona_id in persona_ids:
+            attending = bc.assembly.check_attendance(
+                rs, persona_id=persona_id,
+                assembly_id=mailinglist["assembly_id"])
+            if attending:
+                ret[persona_id] = const.MailinglistInteractionPolicy.opt_out
+            else:
+                ret[persona_id] = None
+        return ret
 
     @classmethod
     def get_implicit_subscribers(cls, rs, bc, mailinglist):

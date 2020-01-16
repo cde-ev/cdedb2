@@ -151,27 +151,10 @@ class MlBackend(AbstractBackend):
 
         # persona_ids are validated inside get_personas
         persona_ids = tuple(e['id'] for e in data)
-        personas = self.core.get_personas(rs, persona_ids)
-        return tuple(e for e in data if self._filter_personas_by_policy_cond(
-            rs, personas[e['id']], ml, allowed_pols))
-
-    def _filter_personas_by_policy_cond(self, rs, persona, ml, allowed_pols):
-        """Helper function for :py:meth:`get_interaction_policy` and
-        :py:meth:`filter_personas_by_policy`
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona: {str: object}
-        :type ml: {str: object}
-        :type allowed_pols: {const.MailinglistInteractionPolicy}
-        :rtype: const.MailinglistInteractionPolicy or None
-        :return: The applicable subscription policy for the user or None if the
-            user has no means to access a list.
-        """
-        if not (rs.user.persona_id == persona['id']
-                or self.may_manage(rs, ml['id'])):
-            raise PrivilegeError(n_("Not privileged."))
-        return (self.get_ml_type(rs, ml["id"]).get_interaction_policy(
-            rs, self.backends, ml, persona) in allowed_pols)
+        persona_policies = self.get_ml_type(rs, ml['id']).\
+            get_interaction_policies(rs, self.backends, ml, persona_ids)
+        return tuple(e for e in data
+                     if persona_policies[e['id']] in allowed_pols)
 
     @access("ml")
     def may_view(self, rs, ml):
