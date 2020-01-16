@@ -997,13 +997,13 @@ CREATE TABLE ml.mailinglists (
         address                 varchar UNIQUE NOT NULL,
         description             varchar,
         -- see cdedb.database.constants.MailinglistInteractionPolicy
-        sub_policy              integer NOT NULL,
+        sub_policy              integer,
         -- see cdedb.database.constants.ModerationPolicy
         mod_policy              integer NOT NULL,
         -- see cdedb.database.constants.AttachmentPolicy
         attachment_policy       integer NOT NULL,
         -- see cdedb.database.constants.AudiencePolicy
-        audience_policy         integer NOT NULL,
+        audience_policy         integer,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
         subject_prefix          varchar,

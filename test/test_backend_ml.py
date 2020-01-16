@@ -45,7 +45,6 @@ class TestMlBackend(BackendTest):
                 'description': "Einer geht noch ...",
                 'assembly_id': None,
                 'attachment_policy': 2,
-                'audience_policy': 1,
                 'event_id': None,
                 'id': 3,
                 'is_active': True,
@@ -54,7 +53,6 @@ class TestMlBackend(BackendTest):
                 'mod_policy': 2,
                 'moderators': {2, 3, 10},
                 'registration_stati': [],
-                'sub_policy': 3,
                 'subject_prefix': '[witz]',
                 'title': 'Witz des Tages',
                 'notes': None,
@@ -63,7 +61,6 @@ class TestMlBackend(BackendTest):
                 'description': None,
                 'assembly_id': 1,
                 'attachment_policy': 2,
-                'audience_policy': 2,
                 'event_id': None,
                 'id': 5,
                 'is_active': True,
@@ -72,7 +69,6 @@ class TestMlBackend(BackendTest):
                 'mod_policy': 2,
                 'moderators': {2, 7},
                 'registration_stati': [],
-                'sub_policy': 6,
                 'subject_prefix': '[kampf]',
                 'title': 'Sozialistischer Kampfbrief',
                 'notes': None,
@@ -81,7 +77,6 @@ class TestMlBackend(BackendTest):
                 'description': None,
                 'assembly_id': None,
                 'attachment_policy': 2,
-                'audience_policy': 5,
                 'event_id': None,
                 'id': 7,
                 'is_active': True,
@@ -90,7 +85,6 @@ class TestMlBackend(BackendTest):
                 'mod_policy': 2,
                 'moderators': {2, 10},
                 'registration_stati': [],
-                'sub_policy': 3,
                 'subject_prefix': '[aktivenforum]',
                 'title': 'Aktivenforum 2001',
                 'notes': None,
@@ -106,7 +100,7 @@ class TestMlBackend(BackendTest):
             'whitelist': {'aliens@example.cde',
                           'captiankirk@example.cde',
                           'picard@example.cde'},
-            'sub_policy': 4,
+            'ml_type': const.MailinglistTypes.member_moderated_opt_in,
             'is_active': False,
             'address': 'passivenforum@example.cde',
             'notes': "this list is no more",
@@ -134,14 +128,12 @@ class TestMlBackend(BackendTest):
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': 3,
-            'audience_policy': 5,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
             'mod_policy': 1,
             'moderators': {1, 2},
             'registration_stati': [],
-            'sub_policy': 5,
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
@@ -623,7 +615,7 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': ml_id,
             'event_id': 2,
-            'audience_policy': const.AudiencePolicy.require_event,
+            'ml_type': const.MailinglistTypes.event_associated,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -899,14 +891,12 @@ class TestMlBackend(BackendTest):
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
-            'audience_policy': const.AudiencePolicy.require_member,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
             'mod_policy': const.ModerationPolicy.unmoderated,
             'moderators': set(),
             'registration_stati': [],
-            'sub_policy': const.MailinglistInteractionPolicy.invitation_only,
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
@@ -995,7 +985,7 @@ class TestMlBackend(BackendTest):
         # outside of the audience.
         mdata = {
             'id': new_id,
-            'sub_policy': const.MailinglistInteractionPolicy.mandatory,
+            'ml_type': const.MailinglistTypes.member_mandatory,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1024,14 +1014,12 @@ class TestMlBackend(BackendTest):
             'description': None,
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
-            'audience_policy': const.AudiencePolicy.require_event,
             'event_id': 2,
             'is_active': True,
             'maxsize': None,
             'mod_policy': const.ModerationPolicy.unmoderated,
             'moderators': set(),
             'registration_stati': [],
-            'sub_policy': const.MailinglistInteractionPolicy.invitation_only,
             'subject_prefix': 'orga',
             'title': 'Orgateam',
             'notes': None,
@@ -1050,7 +1038,7 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': new_id,
             'event_id': 1,
-            'audience_policy': const.AudiencePolicy.require_event,
+            'ml_type': const.MailinglistTypes.event_orga,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1078,7 +1066,6 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': new_id,
             'ml_type': const.MailinglistTypes.assembly_associated,
-            'audience_policy': const.AudiencePolicy.require_assembly,
             'event_id': None,
             'assembly_id': 1,
         }
@@ -1401,21 +1388,19 @@ class TestMlBackend(BackendTest):
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': 3,
-            'audience_policy': 5,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
             'mod_policy': 1,
             'moderators': {1, 2},
             'registration_stati': [],
-            'sub_policy': 5,
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
             'whitelist': {
                 'che@example.cde',
             },
-            'ml_type': 5,
+            'ml_type': const.MailinglistTypes.member_invitation_only,
         }
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.ml.delete_mailinglist(

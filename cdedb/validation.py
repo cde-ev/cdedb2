@@ -3081,10 +3081,8 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
     'address': _email,
     'description': _str_or_None,
-    'sub_policy': _enum_mailinglistinteractionpolicy,
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
-    'audience_policy': _enum_audiencepolicy,
     'ml_type': _enum_mailinglisttypes,
     'subject_prefix': _str_or_None,
     'maxsize': _int_or_None,
@@ -3134,15 +3132,15 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
         errs.append(('assembly_id', error))
     apol = ENUMS_DICT['AudiencePolicy']
     if (val.get('assembly_id')
-            and val.get('audience_policy') != apol.require_assembly):
+            and val.get('ml_type') not in {30, 31}):
         error = ValueError(n_("Linked assembly requires assembly audience."))
         errs.append(('assembly_id', error))
-        errs.append(('audience_policy', error))
+        errs.append(('ml_type', error))
     if (val.get('event_id')
-            and val.get('audience_policy') != apol.require_event):
-        error = ValueError(n_("Linked event requires event audience."))
+            and val.get('ml_type') not in {20, 21}):
+        error = ValueError(n_("Linked event requires event-associated ml_type."))
         errs.append(('event_id', error))
-        errs.append(('audience_policy', error))
+        errs.append(('ml_type', error))
     for key, validator in (('registration_stati', _enum_registrationpartstati),
                            ('moderators', _id), ('whitelist', _email)):
         if key in val:

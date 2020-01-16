@@ -315,10 +315,8 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['createlistform']
         f['title'] = "Munkelwand"
         f['address'] = "munkelwand@example.cde"
-        f['sub_policy'] = 3
         f['mod_policy'] = 1
         f['attachment_policy'] = 2
-        f['audience_policy'] = 1
         f['subject_prefix'] = "[munkel]"
         f['maxsize'] = 512
         f['is_active'].checked = True
@@ -341,9 +339,6 @@ class TestMlFrontend(FrontendTest):
         f['title'] = "Munkelwand"
         self.assertEqual("werbung@example.cde", f['address'].value)
         f['address'] = "munkelwand@example.cde"
-        self.assertEqual("2", f['sub_policy'].value)
-        f['sub_policy'] = 4
-        f['audience_policy'] = 2
         self.assertTrue(f['is_active'].checked)
         f['is_active'].checked = False
         self.submit(f)
@@ -352,7 +347,6 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['changelistform']
         self.assertEqual("Munkelwand", f['title'].value)
         self.assertEqual("munkelwand@example.cde", f['address'].value)
-        self.assertEqual("4", f['sub_policy'].value)
         self.assertFalse(f['is_active'].checked)
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
@@ -443,8 +437,7 @@ class TestMlFrontend(FrontendTest):
                 mdata = {
                     'title': 'TestAkaList',
                     'address': 'testaka@example.cde',
-                    'audience_policy': const.AudiencePolicy.require_event.value,
-                    'sub_policy': const.MailinglistInteractionPolicy.invitation_only.value,
+                    'ml_type': const.MailinglistTypes.event_associated.value,
                     'event_id': "1",
                     'moderator_ids': user['DB-ID'],
                 }
