@@ -303,8 +303,12 @@ class MlBackend(AbstractBackend):
             # Get additional information to find out if we can view these lists
             ml_ids = [e['id'] for e in data]
             mailinglists = self.get_mailinglists(rs, ml_ids)
-        return {e['id']: e['title'] for e in data
-                if self.may_view(rs, mailinglists[e['id']])}
+            ret = {e['id']: e['title'] for e in data}
+
+        if self.is_admin(rs):
+            return ret
+        return {k: v for k, v in ret.items()
+                if self.may_view(rs, mailinglists[k])}
 
     @access("ml")
     @singularize("get_mailinglist")
