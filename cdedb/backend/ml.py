@@ -482,17 +482,15 @@ class MlBackend(AbstractBackend):
                 ret *= self.set_moderators(rs, data['id'], data['moderators'])
             if data.get('whitelist'):
                 ret *= self.set_whitelist(rs, data['id'], data['whitelist'])
-            policy = const.MailinglistInteractionPolicy
-            if 'sub_policy' in data:
-                if current['sub_policy'] != data['sub_policy']:
-                    if policy(data['sub_policy']) == policy.mandatory:
-                        # Delete all unsubscriptions for mandatory list.
-                        query = ("DELETE FROM ml.subscription_states "
-                                 "WHERE mailinglist_id = %s "
-                                 "AND subscription_state = ANY(%s)")
-                        params = (data['id'], set(const.SubscriptionStates) -
-                                  const.SubscriptionStates.subscribing_states())
-                        ret *= self.query_exec(rs, query, params)
+            if data.get('ml_type'):
+                if not ml_type.TYPE_MAP[data['ml_type']].allow_unsub:
+                    # Delete all unsubscriptions for mandatory list.
+                    query = ("DELETE FROM ml.subscription_states "
+                             "WHERE mailinglist_id = %s "
+                             "AND subscription_state = ANY(%s)")
+                    params = (data['id'], set(const.SubscriptionStates) -
+                              const.SubscriptionStates.subscribing_states())
+                    ret *= self.query_exec(rs, query, params)
 
             # Update subscription states.
             ret *= self.write_subscription_states(rs, data['id'])
@@ -797,15 +795,6 @@ class MlBackend(AbstractBackend):
         """
         sa = SubscriptionActions
 
-        # It is not allowed to unsubscribe from mandatory lists.
-        # This is not using get_interaction_policy, as even people with
-        # moderator override may not unsubscribe
-        if action.is_unsubscribing():
-            sub_policy = self.get_mailinglist(rs, mailinglist_id)[
-                "sub_policy"]
-            if sub_policy == const.MailinglistInteractionPolicy.mandatory:
-                raise SubscriptionError(n_("Can not change subscription."))
-
         # This checks if a user may subscribe via the action triggered
         # This does not check for the override states, as they are always
         # allowed
@@ -818,10 +807,13 @@ class MlBackend(AbstractBackend):
         elif action == sa.subscribe and policy not in (
                 const.MailinglistInteractionPolicy.opt_out,
                 const.MailinglistInteractionPolicy.opt_in):
-            raise SubscriptionError(n_("Can not change subscription."))
+            raise SubscriptionError(n_("Can not subscribe."))
+        elif (action.is_unsubscribing()
+                and not self.get_ml_type(rs, mailinglist_id).allow_unsub):
+            raise SubscriptionError(n_("Can not unsubscribe."))
         elif (action == sa.request_subscription and
               policy != const.MailinglistInteractionPolicy.moderated_opt_in):
-            raise SubscriptionError(n_("Can not change subscription."))
+            raise SubscriptionError(n_("Can not request subscription."))
 
     @access("ml")
     def set_subscription_address(self, rs, mailinglist_id, persona_id, email):
@@ -1154,7 +1146,9 @@ class MlBackend(AbstractBackend):
         old_subscriber_states = {const.SubscriptionStates.implicit,
                                  const.SubscriptionStates.subscribed}
         # States of current subscriptions we may not touch.
-        # These are determined by the mailinglist type below.
+        protected_states = {const.SubscriptionStates.unsubscribed,
+                            const.SubscriptionStates.unsubscription_override,
+                            const.SubscriptionStates.subscription_override}
 
         ret = 1
         with Atomizer(rs):
@@ -1203,7 +1197,6 @@ class MlBackend(AbstractBackend):
             # Check whether any implicit subscribers need to be written.
             # This is the case if they are not already old subscribers and
             # they don't have a protected subscription.
-            protected_states = atype.protected_states
             protected = self.get_subscription_states(
                 rs, mailinglist_id, states=protected_states)
             write = set(new_implicits) - set(old_subscribers) - set(protected)

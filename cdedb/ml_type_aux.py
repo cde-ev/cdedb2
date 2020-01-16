@@ -191,10 +191,7 @@ class GeneralMailinglist:
         """
         return set()
 
-    # Which states not to touch during periodic subscription cleanup.
-    protected_states = {const.SubscriptionStates.subscription_override,
-                        const.SubscriptionStates.unsubscription_override,
-                        const.SubscriptionStates.unsubscribed}
+    allow_unsub = True
 
     @classmethod
     def periodic_cleanup(cls, rs, mailinglist):
@@ -245,7 +242,7 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
         ("member", MailinglistInteractionPolicy.mandatory)
     ])
     # For mandatory lists, ignore all unsubscriptions.
-    protected_states = {const.SubscriptionStates.subscription_override}
+    allow_unsub = False
 
 
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
