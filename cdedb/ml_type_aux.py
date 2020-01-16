@@ -441,7 +441,7 @@ class SemiPublicMailinglist(GeneralMailinglist):
     ])
 
 
-class CdeLokalMailinglist(GeneralOptInMailinglist):
+class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
 
 
