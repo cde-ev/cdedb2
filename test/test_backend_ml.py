@@ -159,11 +159,12 @@ class TestMlBackend(BackendTest):
         ml_ids = self.ml.list_mailinglists(self.key, active_only=False)
 
         for ml_id in ml_ids:
-            expectation = self.ml.get_subscription_states(self.key, ml_id)
-            self.ml.write_subscription_states(self.key, ml_id)
-            result = self.ml.get_subscription_states(self.key, ml_id)
+            with self.subTest(ml_id=ml_id):
+                expectation = self.ml.get_subscription_states(self.key, ml_id)
+                self.ml.write_subscription_states(self.key, ml_id)
+                result = self.ml.get_subscription_states(self.key, ml_id)
 
-            self.assertEqual(expectation, result)
+                self.assertEqual(expectation, result)
 
     @as_users("nina", "berta")
     def test_moderator_set_mailinglist(self, user):

@@ -426,8 +426,8 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (11, 3, 1),
     (11, 4, 2),
     (11, 9, 11),
-    (11, 11, 30),
-    (11, 23, 30),
+    (11, 11, 1),
+    (11, 23, 1),
     (11, 100, 11);
 
 INSERT INTO ml.whitelist (mailinglist_id, address) VALUES
