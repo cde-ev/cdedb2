@@ -225,6 +225,7 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
+            4: SS.unsubscription_override,
             8: SS.implicit,
             9: SS.subscribed,
         }

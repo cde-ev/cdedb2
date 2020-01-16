@@ -400,6 +400,8 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (3, 10, 1),
     (4, 1, 1),
     (4, 2, 1),
+    (4, 3, 1),
+    (4, 7, 11),
     (4, 100, 1),
     (5, 1, 30),
     (5, 2, 30),

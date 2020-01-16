@@ -3248,11 +3248,6 @@ class TestEventBackend(BackendTest):
     def test_check_registration_status(self, user):
         event_id = 1
 
-        # Check for Orga status.
-        self.assertTrue(self.event.check_registration_status(self.key, 7, event_id, []))
-        self.assertFalse(self.event.check_registration_status(self.key, 1, event_id, []))
-        self.assertFalse(self.event.check_registration_status(self.key, 3, event_id, []))
-
         # Check for participant status
         stati = [const.RegistrationPartStati.participant]
         self.assertTrue(self.event.check_registration_status(self.key, 1, event_id, stati))
