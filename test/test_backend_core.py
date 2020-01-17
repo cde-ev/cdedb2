@@ -805,7 +805,7 @@ class TestCoreBackend(BackendTest):
 
         self.login(admin1)
         core_log_expectation = (
-            # Password invaldation.
+            # Password invalidation.
             {
                 'additional_info': None,
                 'code': const.CoreLogCodes.password_invalidated,
@@ -889,14 +889,44 @@ class TestCoreBackend(BackendTest):
             self.core.initialize_privilege_change(
                 self.key, data, user['password'])
 
-        # Authorize with wrong password.
+    @as_users("anton", "martin")
+    def test_privilege_change_authorization(self, user):
+        new_admin = USER_DICT["berta"]
+        # First check initilizing a change.
         data = {
-            "persona_id": USER_DICT["berta"]["id"],
+            "persona_id": new_admin["id"],
             "is_ml_admin": True,
             "notes": "I got hacked!",
         }
         self.assertIsNone(
             self.core.initialize_privilege_change(self.key, data, "abc"))
+        self.assertEqual(
+            {}, self.core.list_privilege_changes(self.key, new_admin["id"]))
+
+        # Generate a pending privilege change.
+        tmp_user = USER_DICT["akira"]
+        case_id = self.core.initialize_privilege_change(
+            self.login(tmp_user), data, tmp_user["password"])
+        self.assertLess(0, case_id)
+
+        # We dont want the privilige change to go anywhere during the following.
+        expectation = self.core.list_privilege_changes(
+            self.key, new_admin["id"])
+        self.assertTrue(expectation)
+
+        self.assertIsNone(
+            self.core.finalize_privilege_change(
+                self.key, case_id, const.PrivilegeChangeStati.approved, "abc"))
+        self.assertEqual(
+            expectation,
+            self.core.list_privilege_changes(self.key, new_admin["id"]))
+
+        self.assertIsNone(
+            self.core.finalize_privilege_change(
+                self.key, case_id, const.PrivilegeChangeStati.rejected, "abc"))
+        self.assertEqual(
+            expectation,
+            self.core.list_privilege_changes(self.key, new_admin["id"]))
 
     @as_users("garcia")
     def test_non_participant_privacy(self, user):

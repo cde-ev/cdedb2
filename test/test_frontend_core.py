@@ -606,6 +606,7 @@ class TestCoreFrontend(FrontendTest):
     def test_privilege_change(self):
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
+        new_admin_copy = copy.deepcopy(new_admin)
         new_privileges = {
             'is_event_admin': True,
             'is_assembly_admin': True,
@@ -619,9 +620,10 @@ class TestCoreFrontend(FrontendTest):
             'is_assembly_admin': False,
             'is_ml_admin': False,
         }
+        new_password = "ihsokdmfsod"
         self._approve_privilege_change(
-            USER_DICT["anton"], USER_DICT["martin"], new_admin,
-            new_privileges, old_privileges)
+            USER_DICT["anton"], USER_DICT["martin"], new_admin_copy,
+            new_privileges, old_privileges, new_password=new_password)
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
         self.assertTitle("Privilegien ändern für {} {}".format(
@@ -630,6 +632,14 @@ class TestCoreFrontend(FrontendTest):
         old_privileges.update(new_privileges)
         for k, v in old_privileges.items():
             self.assertEqual(f[k].checked, v)
+
+        # Check that we can login with new credentials but not with old.
+        self.logout()
+        self.login(new_admin)
+        self.assertPresence("Login fehlgeschlagen.", div="notifications")
+        self.login(new_admin_copy)
+        self.assertNonPresence("Login fehlgeschlagen.", div="notifications")
+        self.assertLogin(new_admin['display_name'])
 
     @as_users("anton")
     def test_change_privileges_dependency_error(self, user):
