@@ -292,8 +292,8 @@ msgid "CoreLogCodes.password_reset"
 msgstr "Passwort zurückgesetzt"
 
 #: cdedb/i18n_additional.py:50
-msgid "CoreLogCodes.password_generated"
-msgstr "Passwort generiert"
+msgid "CoreLogCodes.password_invalidated"
+msgstr "Passwort gelöscht"
 
 #: cdedb/i18n_additional.py:51
 msgid "CoreLogCodes.genesis_request"

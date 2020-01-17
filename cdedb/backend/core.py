@@ -1138,6 +1138,52 @@ class CoreBackend(AbstractBackend):
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
 
+    @access("core_admin", "meta_admin")
+    def invalidate_password(self, rs, persona_id, admin_password):
+        """Replace a users password with an unknown one.
+
+        This forces the user to set a new password and also invalidates all
+        current sessions.
+
+        This is to be used when granting admin privileges to a user who has
+        not previously had any, hence we allow backend access for all
+        meta_admins.
+
+        For security reasons, we require the invalidating admin to supply their
+        own password.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :type admin_password: str
+        :rtype: bool or None
+        :returns: Return `None` if authentication failed, `True` if the
+            invalidation was successful and `False` in case of an error.
+        """
+        persona_id = affirm("id", persona_id)
+        admin_password = affirm("str", admin_password)
+
+        if not self.verify_persona_password(
+                rs, admin_password, rs.user.persona_id):
+            return None
+
+        # modified version of hash for 'secret' and thus
+        # safe/unknown plaintext
+        password_hash = (
+            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
+            "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
+        query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+        ret = self.query_exec(rs, query, (password_hash, persona_id))
+
+        # Invalidate alle active sessions.
+        query = ("UPDATE core.sessions SET is_active = False "
+                 "WHERE persona_id = %s AND is_active = True")
+        self.query_exec(rs, query, (persona_id,))
+
+        ret *= self.core_log(rs, code=const.CoreLogCodes.password_invalidated,
+                             persona_id=persona_id)
+
+        return bool(ret)
+
     @access("core_admin", "cde_admin")
     def archive_persona(self, rs, persona_id, note):
         """Move a persona to the attic.

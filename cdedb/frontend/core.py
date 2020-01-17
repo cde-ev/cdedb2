@@ -1412,6 +1412,29 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code, success=n_("Foto updated."))
         return self.redirect_show_user(rs, persona_id)
 
+    @access("core_admin", modi={"POST"})
+    @REQUESTdata(("invalidate_password_auth", "str"))
+    def invalidate_password(self, rs, persona_id, invalidate_password_auth):
+        """Delete a users current password to force them to set a new one."""
+        if rs.errors:
+            return self.show_user(
+                rs, persona_id, confirm_id=persona_id, internal=True)
+        code = self.coreproxy.invalidate_password(
+            rs, persona_id, admin_password=invalidate_password_auth)
+        self.notify_return_code(rs, code, success=n_("Password invalidated."))
+
+        if not code:
+            if code is None:
+                rs.errors.append(("invalidate_password_auth",
+                                  ValueError(n_("Wrong password."))))
+                self.logger.info(
+                    "Unsuccessful password invalidation for persona {} "
+                    "by persona {}".format(persona_id, rs.user.persona_id))
+            return self.show_user(
+                rs, persona_id, confirm_id=persona_id, internal=True)
+        else:
+            return self.redirect_show_user(rs, persona_id)
+
     @access("persona")
     def change_password_form(self, rs):
         """Render form."""
