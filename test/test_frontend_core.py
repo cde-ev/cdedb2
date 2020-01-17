@@ -639,6 +639,7 @@ class TestCoreFrontend(FrontendTest):
             new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
         f['is_finance_admin'] = True
+        f['change_privileges_auth'] = user['password']
         f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
         self.submit(f, check_notification=False)
         self.assertPresence("Nur CdE Admins können Finanz Admin werden.",
@@ -693,14 +694,15 @@ class TestCoreFrontend(FrontendTest):
 
     def test_archival_admin_requirement(self):
         # First grant admin privileges to new admin.
-        new_admin = USER_DICT["berta"]
+        new_admin = copy.deepcopy(USER_DICT["berta"])
         new_privileges = {
             'is_core_admin': True,
             'is_cde_admin': True,
         }
+        new_password = "ponsdfsidnsdgj"
         self._approve_privilege_change(
             USER_DICT["anton"], USER_DICT["martin"], new_admin,
-            new_privileges)
+            new_privileges, new_password=new_password)
         # Test archival
         self.logout()
         self.login(new_admin)
@@ -757,12 +759,13 @@ class TestCoreFrontend(FrontendTest):
         for k, v in new_privileges.items():
             f[k].checked = v
         f['notes'] = note
+        f['change_privileges_auth'] = admin1['password']
         self.submit(f)
         self.logout()
 
     def _approve_privilege_change(self, admin1, admin2, new_admin,
                                   new_privileges, old_privileges=None,
-                                  note="For testing."):
+                                  note="For testing.", new_password=None):
         """Helper to make a user an admin."""
         self._initialize_privilege_change(
             admin1, admin2, new_admin, new_privileges, old_privileges)
@@ -771,9 +774,20 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': "/core/privileges/list"})
         self.traverse({'description': new_admin["given_names"] + " " +
                                       new_admin["family_name"]})
-        f = self.response.forms["ackprivilegechangeform"]
-        self.submit(f)
+        f = self.response.forms["decideprivilegechangeform"]
+        f['decide_privilege_change_auth'] = admin2['password']
+        self.submit(f, button="ack")
         self.assertPresence("Änderung wurde übernommen.", "notifications")
+        if new_password:
+            mail = self.fetch_mail()[0]
+            link = self.fetch_link(mail)
+            self.get(link)
+            f = self.response.forms["passwordresetform"]
+            f["new_password"] = new_password
+            f["new_password2"] = new_password
+            self.submit(f)
+            # Only do this with a deepcopy of the user!
+            new_admin['password'] = new_password
 
     def _reject_privilege_change(self, admin1, admin2, new_admin,
                                  new_privileges, old_privileges=None,
@@ -786,8 +800,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': "/core/privileges/list"},
                       {'description': new_admin["given_names"] + " " +
                                       new_admin["family_name"]})
-        f = self.response.forms["nackprivilegechangeform"]
-        self.submit(f)
+        f = self.response.forms["decideprivilegechangeform"]
+        f['decide_privilege_change_auth'] = admin2['password']
+        self.submit(f, button="nack")
         self.assertPresence("Änderung abgelehnt.", "notifications")
 
     @as_users("vera")

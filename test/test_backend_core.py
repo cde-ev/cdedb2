@@ -786,7 +786,8 @@ class TestCoreBackend(BackendTest):
             "is_finance_admin": True,
         }
 
-        case_id = self.core.initialize_privilege_change(self.key, data)
+        case_id = self.core.initialize_privilege_change(
+            self.key, data, admin1['password'])
         self.assertLess(0, case_id)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
@@ -795,7 +796,8 @@ class TestCoreBackend(BackendTest):
 
         self.login(admin2)
         self.core.finalize_privilege_change(
-            self.key, case_id, const.PrivilegeChangeStati.approved)
+            self.key, case_id, const.PrivilegeChangeStati.approved,
+            admin2['password'])
 
         persona = self.core.get_persona(self.key, new_admin["id"])
         self.assertEqual(True, persona["is_cde_admin"])
@@ -803,6 +805,14 @@ class TestCoreBackend(BackendTest):
 
         self.login(admin1)
         core_log_expectation = (
+            # Password invaldation.
+            {
+                'additional_info': None,
+                'code': const.CoreLogCodes.password_invalidated,
+                'ctime': nearly_now(),
+                'persona_id': new_admin['id'],
+                'submitted_by': admin2['id'],
+            },
             # Finalizing the privilege process.
             {
                 'additional_info': "Änderung der Admin-Privilegien bestätigt.",
@@ -848,7 +858,8 @@ class TestCoreBackend(BackendTest):
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
-            self.core.initialize_privilege_change(self.key, data)
+            self.core.initialize_privilege_change(
+                self.key, data, user['password'])
 
         data = {
             "persona_id": USER_DICT["emilia"]["id"],
@@ -856,7 +867,8 @@ class TestCoreBackend(BackendTest):
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
-            self.core.initialize_privilege_change(self.key, data)
+            self.core.initialize_privilege_change(
+                self.key, data, user['password'])
 
         data = {
             "persona_id": USER_DICT["berta"]["id"],
@@ -864,7 +876,8 @@ class TestCoreBackend(BackendTest):
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
-            self.core.initialize_privilege_change(self.key, data)
+            self.core.initialize_privilege_change(
+                self.key, data, user['password'])
 
         data = {
             "persona_id": USER_DICT["ferdinand"]["id"],
@@ -873,7 +886,17 @@ class TestCoreBackend(BackendTest):
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
-            self.core.initialize_privilege_change(self.key, data)
+            self.core.initialize_privilege_change(
+                self.key, data, user['password'])
+
+        # Authorize with wrong password.
+        data = {
+            "persona_id": USER_DICT["berta"]["id"],
+            "is_ml_admin": True,
+            "notes": "I got hacked!",
+        }
+        self.assertIsNone(
+            self.core.initialize_privilege_change(self.key, data, "abc"))
 
     @as_users("garcia")
     def test_non_participant_privacy(self, user):
