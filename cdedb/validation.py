@@ -889,7 +889,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
     'timeline': _str_or_None,
     'interests': _str_or_None,
     'free_form': _str_or_None,
-    'balance': _decimal,
+    'balance': _non_negative_decimal,
     'trial_member': _bool,
     'decided_search': _bool,
     'bub_search': _bool,
@@ -1552,7 +1552,7 @@ def _iban(val, argname=None, *, _convert=True):
 
 
 _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
-    'amount': _decimal,
+    'amount': _non_negative_decimal,
     'status': _enum_lastschrifttransactionstati,
     'issued_at': _datetime,
     'processed_at': _datetime_or_None,
@@ -1596,7 +1596,7 @@ _SEPA_TRANSACTIONS_FIELDS = {
     'lastschrift_id': _id,
     'period_id': _id,
     'mandate_reference': _str,
-    'amount': _decimal,
+    'amount': _non_negative_decimal,
     'iban': _iban,
     'mandate_date': _date,
     'account_owner': _str,
@@ -1653,7 +1653,7 @@ def _sepa_transactions(val, argname=None, *, _convert=True):
 
 _SEPA_META_FIELDS = {
     'message_id': _str,
-    'total_sum': _decimal,
+    'total_sum': _non_negative_decimal,
     'partial_sums': _mapping,
     'count': _int,
     'sender': _mapping,
@@ -1955,7 +1955,7 @@ _EVENT_PART_COMMON_FIELDS = {
     'shortname': _str,
     'part_begin': _date,
     'part_end': _date,
-    'fee': _decimal,
+    'fee': _non_negative_decimal,
     'tracks': _mapping,
 }
 
@@ -2173,8 +2173,8 @@ _COURSE_COMMON_FIELDS = lambda: {
     'nr': _str,
     'shortname': _str,
     'instructors': _str_or_None,
-    'max_size': _int_or_None,
-    'min_size': _int_or_None,
+    'max_size': _non_negative_int_or_None,
+    'min_size': _non_negative_int_or_None,
     'notes': _str_or_None,
 }
 _COURSE_OPTIONAL_FIELDS = {
@@ -3087,7 +3087,7 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'audience_policy': _enum_audiencepolicy,
     'ml_type': _enum_mailinglisttypes,
     'subject_prefix': _str_or_None,
-    'maxsize': _int_or_None,
+    'maxsize': _id_or_None,
     'is_active': _bool,
     'event_id': _id_or_None,
     'registration_stati': _iterable,
