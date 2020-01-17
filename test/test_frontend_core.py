@@ -702,6 +702,17 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('is_cde_admin', f.fields)
         self.assertNotIn('is_finance_admin', f.fields)
 
+    @as_users("anton", "vera")
+    def test_invalidate_password(self, user):
+        other_user_name = "berta"
+        self.admin_view_profile(other_user_name)
+        f = self.response.forms["invalidatepasswordform"]
+        f["invalidate_password_auth"] = user["password"]
+        self.submit(f)
+        self.logout()
+        self.login(USER_DICT[other_user_name])
+        self.assertPresence("Login fehlgeschlagen.", div="notifications")
+
     def test_archival_admin_requirement(self):
         # First grant admin privileges to new admin.
         new_admin = copy.deepcopy(USER_DICT["berta"])

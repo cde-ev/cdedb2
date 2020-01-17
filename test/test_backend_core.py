@@ -105,6 +105,26 @@ class TestCoreBackend(BackendTest):
         self.login(newuser)
         self.assertTrue(self.key)
 
+    # Martin may do this in the backend, but not manually via the frontend.
+    @as_users("anton", "martin", "vera")
+    def test_invalidate_session(self, user):
+        # Login with another user.
+        other_user = copy.deepcopy(USER_DICT["berta"])
+        other_key = self.core.login(
+            None, other_user["username"], other_user["password"], "127.0.0.0")
+        self.assertIsNotNone(other_key)
+        self.assertLess(
+            0, self.core.change_foto(other_key, other_user["id"], "xyz"))
+
+        # Invalidate the other users password and session.
+        self.assertLess(
+            0, self.core.invalidate_password(
+                self.key, other_user["id"], user["password"]))
+
+        with self.assertRaises(PrivilegeError):
+            self.core.change_foto(other_key, other_user["id"], "myFoto")
+        self.assertIsNone(self.login(other_user))
+
     @as_users("anton", "berta", "janis")
     def test_change_username(self, user):
         newaddress = "newaddress@example.cde"
