@@ -44,16 +44,14 @@
         <p class="textbox">{{ case["notes"] }}</p>
     {% endif %}
 
-    {% if case["submitted_by"] != user.persona_id and (case["is_meta_admin"] is none or case["persona_id"] != user.persona_id) %}
-        <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="ackprivilegechangeform" style="display: inline;">
-            {{ util.anti_csrf_token('core/decide_privilege_change') }}
-            {{ util.input_hidden(name="ack", value="True") }}
-            {{ util.input_submit(value=gettext("Confirm Privilege Change"), aclass="btn btn-success") }}
-        </form>
-    {% endif %}
-    <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="nackprivilegechangeform" style="display: inline;">
+    <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="decideprivilegechangeform" style="display: inline;">
         {{ util.anti_csrf_token('core/decide_privilege_change') }}
-        {{ util.input_hidden(name="ack", value="False") }}
-        {{ util.input_submit(value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban-circle") }}
+        <div class="row">
+            {{ util.form_input_text(name="decide_privilege_change_auth", type="password", label=gettext("Enter your Password"), horizontal=True) }}
+        </div>
+        {% if case["submitted_by"] != user.persona_id and (case["is_meta_admin"] is none or case["persona_id"] != user.persona_id) %}
+            {{ util.input_submit(name="ack", value=gettext("Confirm Privilege Change"), aclass="btn btn-success") }}
+        {% endif %}
+        {{ util.input_submit(name="nack", value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban-circle") }}
     </form>
 {% endblock %}

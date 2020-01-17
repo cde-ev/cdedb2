@@ -1031,10 +1031,12 @@ class CoreFrontend(AbstractFrontend):
         ("is_meta_admin", "bool"), ("is_core_admin", "bool"),
         ("is_cde_admin", "bool"), ("is_finance_admin", "bool"),
         ("is_event_admin", "bool"), ("is_ml_admin", "bool"),
-        ("is_assembly_admin", "bool"), ("notes", "str"))
+        ("is_assembly_admin", "bool"), ("notes", "str"),
+        ("change_privileges_auth", "str"))
     def change_privileges(self, rs, persona_id, is_meta_admin, is_core_admin,
                           is_cde_admin, is_finance_admin, is_event_admin,
-                          is_ml_admin, is_assembly_admin, notes):
+                          is_ml_admin, is_assembly_admin, notes,
+                          change_privileges_auth):
         """Grant or revoke admin bits."""
         if rs.errors:
             return self.change_privileges_form(rs, persona_id)
@@ -1106,10 +1108,20 @@ class CoreFrontend(AbstractFrontend):
             return self.change_privileges_form(rs, persona_id)
 
         if admin_keys & data.keys():
-            code = self.coreproxy.initialize_privilege_change(rs, data)
+            code = self.coreproxy.initialize_privilege_change(
+                rs, data, password=change_privileges_auth)
             self.notify_return_code(
                 rs, code, success=n_("Privilege change waiting for approval by "
                                      "another Meta-Admin."))
+            if not code:
+                if code is None:
+                    rs.errors.append(("change_privileges_auth",
+                                      ValueError(n_("Wrong password."))))
+                    self.logger.info(
+                        "Unsuccessful privilege change for persona {} "
+                        "by persona {}".format(
+                            persona_id, rs.user.persona_id))
+                return self.change_privileges_form(rs, persona_id)
         else:
             rs.notify("info", n_("No changes were made."))
         return self.redirect_show_user(rs, persona_id)
@@ -1159,30 +1171,55 @@ class CoreFrontend(AbstractFrontend):
                             "submitter": submitter})
 
     @access("meta_admin", modi={"POST"})
-    @REQUESTdata(("ack", "bool"))
-    def decide_privilege_change(self, rs, case_id, ack):
+    @REQUESTdata(("ack", "bool"), ("nack", "bool"),
+                 ("decide_privilege_change_auth", "str"))
+    def decide_privilege_change(self, rs, case_id, ack, nack,
+                                decide_privilege_change_auth):
         """Approve or reject a privilege change."""
+        if ack == nack:
+            msg = n_("Change needs to be either approved or rejected.")
+            rs.errors.append(("ack", ValueError(msg)))
+            rs.errors.append(("nack", ValueError(msg)))
+        if rs.errors:
+            return self.show_privilege_change(rs, case_id)
         case = self.coreproxy.get_privilege_change(rs, case_id)
         if case["status"] != const.PrivilegeChangeStati.pending:
             rs.notify("error", n_("Privilege change not pending."))
             return self.redirect(rs, "core/list_privilege_changes")
-        if not ack:
+        if nack:
             case_status = const.PrivilegeChangeStati.rejected
-        else:
+        elif ack:
             case_status = const.PrivilegeChangeStati.approved
             if (case["is_meta_admin"] is not None
-                and case['persona_id'] == rs.user.persona_id):
+                    and case['persona_id'] == rs.user.persona_id):
                 raise werkzeug.exceptions.Forbidden(
                     n_("Cannot modify own meta admin privileges."))
             if rs.user.persona_id == case["submitted_by"]:
                 raise werkzeug.exceptions.Forbidden(
                     n_("Only a different admin than the submitter "
                        "may approve a privilege change."))
+        else:
+            raise RuntimeError("Impossible.")
         code = self.coreproxy.finalize_privilege_change(
-            rs, case_id, case_status)
-        self.notify_return_code(
-            rs, code, success=(n_("Change committed.")
-                               if ack else n_("Change rejected.")))
+            rs, case_id, case_status, password=decide_privilege_change_auth)
+        success = n_("Change committed.") if ack else n_("Change rejected.")
+        info = n_("Password reset issued for new admin.")
+        self.notify_return_code(rs, code, success=success, pending=info)
+        if not code:
+            if code is None:
+                rs.errors.append(("decide_privilege_change_auth",
+                                  ValueError(n_("Wrong password."))))
+                self.logger.info(
+                    "Unsuccessful privilege change decision for persona {} "
+                    "by persona {}".format(
+                        case["persona_id"], rs.user.persona_id))
+            return self.show_privilege_change(rs, case_id)
+        else:
+            if code < 0:
+                rs.notify("success", success)
+                # Do not return this on purpose to just send mail.
+                self.admin_send_password_reset_link(
+                    rs, case["persona_id"], email_only=True)
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
@@ -1526,9 +1563,9 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+    @access("core_admin", "meta_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
-    def admin_send_password_reset_link(self, rs, persona_id):
+    def admin_send_password_reset_link(self, rs, persona_id, email_only=False):
         """Generate a password reset email for an arbitrary persona.
 
         This is the only way to reset the password of an administrator (for
@@ -1536,9 +1573,14 @@ class CoreFrontend(AbstractFrontend):
         """
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
-        if not self.coreproxy.is_relative_admin(rs, persona_id):
+        if (not self.coreproxy.is_relative_admin(rs, persona_id)
+                and "meta_admin" not in rs.user.roles):
             raise PrivilegeError(n_("Not a relative admin."))
-        email = rs.ambience['persona']['username']
+        if email_only:
+            persona = self.coreproxy.get_persona(rs, persona_id)
+            email = persona['username']
+        else:
+            email = rs.ambience['persona']['username']
         success, message = self.coreproxy.make_reset_cookie(
             rs, email, timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
         if not success:

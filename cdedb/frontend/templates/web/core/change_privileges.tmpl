@@ -38,6 +38,9 @@
         <div class="row">
             {{ util.form_input_textarea(name="notes", label=gettext("Notes"), small=True) }}
         </div>
+        <div class="row">
+            {{ util.form_input_text(name="change_privileges_auth", type="password", label=gettext("Enter your Password"), horizontal=True, small=True) }}
+        </div>
         {{ util.form_input_submit(value=gettext("Confirm"), cancellink=show_user_link(ambience['persona']['id']),
                 small=True) }}
     </form>
