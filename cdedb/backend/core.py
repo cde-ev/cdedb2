@@ -83,6 +83,19 @@ class CoreBackend(AbstractBackend):
                               introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
+    def verify_persona_password(self, rs, password, persona_id):
+        """Helper to retrieve a personas password hash and verify the password.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type password: str
+        :type persona_id: int
+        :rtype bool:
+        """
+        persona_id = affirm("id", persona_id)
+        password_hash = unwrap(self.sql_select_one(
+            rs, "core.personas", ("password_hash",), persona_id))
+        return self.verify_password(password, password_hash)
+
     @staticmethod
     def verify_password(password, password_hash):
         """Central function, so that the actual implementation may be easily
