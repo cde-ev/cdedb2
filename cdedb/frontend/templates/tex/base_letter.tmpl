@@ -11,7 +11,15 @@
     \documentclass[12pt,DIN]{scrlttr2}
     \KOMAoptions{paper=A4,pagesize,DIV=16}
 
-    \usepackage{fontspec}
+    \usepackage{iftex}
+
+    \ifLuaTeX
+        \usepackage{fontspec}
+    \else
+        \usepackage[T1]{fontenc}
+        \usepackage[utf8]{inputenc}
+    \fi
+
     \usepackage[ngerman]{babel}
     \usepackage{graphicx}
     \usepackage{microtype}

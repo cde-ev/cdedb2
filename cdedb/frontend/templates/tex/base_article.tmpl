@@ -13,7 +13,15 @@
         \KOMAoptions{paper=A4,pagesize,DIV=16}
     <<% endblock %>>
 
-    \usepackage{fontspec}
+    \usepackage{iftex}
+
+    \ifLuaTeX
+        \usepackage{fontspec}
+    \else
+        \usepackage[T1]{fontenc}
+        \usepackage[utf8]{inputenc}
+    \fi
+
     \usepackage[ngerman]{babel}
     \usepackage{graphicx}
 <<% endblock %>>
