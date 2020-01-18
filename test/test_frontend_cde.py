@@ -11,6 +11,7 @@ import webtest
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.common import now
 from cdedb.query import QueryOperators
+import cdedb.database.constants as const
 
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")
@@ -1156,6 +1157,19 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Semester Nummer 45")
         self.assertIn('billform', self.response.forms)
 
+        self.traverse({'description': 'CdE-Log'})
+        f = self.response.forms['logshowform']
+        f['codes'] = [const.CdeLogCodes.semester_ejection.value,
+                      const.CdeLogCodes.semester_balance_update.value]
+        self.submit(f)
+        self.assertTitle("CdE-Log [0–3]")
+        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="cdelog_entry3")
+        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="cdelog_entry1")
+        self.assertPresence("3 Probemitgliedschaften beendet", div="cdelog_entry2")
+        self.assertPresence("0 Probemitgliedschaften beendet", div="cdelog_entry0")
+        self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry2")
+        self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry0")
+
     @as_users("farin")
     def test_expuls(self, user):
         self.traverse({'href': '/cde/$'},
@@ -1237,6 +1251,26 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence('Adressabfrage noch nicht erledigt',
                             'notifications')
         self.assertTitle("Semesterverwaltung")
+
+        self.traverse({'description': 'CdE-Log'})
+        f = self.response.forms['logshowform']
+        f['codes'] = [const.CdeLogCodes.expuls_addresscheck.value,
+                      const.CdeLogCodes.expuls_addresscheck_skipped.value,
+                      const.CdeLogCodes.expuls_advance.value]
+        self.submit(f)
+        self.assertTitle("CdE-Log [0–3]")
+        f = self.response.forms['logshowform']
+        f['codes'] = [const.CdeLogCodes.expuls_advance.value]
+        self.submit(f)
+        self.assertTitle("CdE-Log [0–1]")
+        f = self.response.forms['logshowform']
+        f['codes'] = [const.CdeLogCodes.expuls_addresscheck.value]
+        self.submit(f)
+        self.assertTitle("CdE-Log [0–0]")
+        f = self.response.forms['logshowform']
+        f['codes'] = [const.CdeLogCodes.expuls_addresscheck_skipped.value]
+        self.submit(f)
+        self.assertTitle("CdE-Log [0–0]")
 
     @as_users("vera")
     def test_institutions(self, user):

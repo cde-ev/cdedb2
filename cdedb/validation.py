@@ -1436,8 +1436,12 @@ def _period(val, argname=None, *, _convert=True):
         'billing_done': _datetime,
         'ejection_state': _id_or_None,
         'ejection_done': _datetime,
+        'ejection_count': _non_negative_int,
+        'ejection_balance': _non_negative_decimal,
         'balance_state': _id_or_None,
         'balance_done': _datetime,
+        'balance_trialmembers': _non_negative_int,
+        'balance_total': _non_negative_decimal,
     }
     return _examine_dictionary_fields(val, {'id': _id}, optional_fields,
                                       _convert=_convert)

@@ -33,9 +33,9 @@
                 <th>{% trans -%}Additional Info{%- endtrans %}</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="cdelog">
             {% for entry in log %}
-                <tr>
+                <tr id="cdelog_entry{{ loop.index0 }}">
                     <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
                     <td>{{ gettext(enums['CdeLogCodes'](entry['code'])|string) }}</td>
                     <td>

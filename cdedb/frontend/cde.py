@@ -1838,12 +1838,7 @@ class CdEFrontend(AbstractUserFrontend):
                     persona_id = rrs.user.persona_id
                 if not persona_id or period['billing_done']:
                     if not period['billing_done']:
-                        period_update = {
-                            'id': period_id,
-                            'billing_state': None,
-                            'billing_done': now(),
-                        }
-                        self.cdeproxy.set_period(rrs, period_update)
+                        self.cdeproxy.finish_semester_bill(rrs, addresscheck)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 lastschrift_list = self.cdeproxy.list_lastschrift(
@@ -1891,9 +1886,6 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
-        if rs.errors:
-            return self.show_semester(rs)
-
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
         def task(rrs, rs=None):
@@ -1905,18 +1897,21 @@ class CdEFrontend(AbstractUserFrontend):
                 persona_id = self.coreproxy.next_persona(rrs, previous)
                 if not persona_id or period['ejection_done']:
                     if not period['ejection_done']:
-                        period_update = {
-                            'id': period_id,
-                            'ejection_state': None,
-                            'ejection_done': now(),
-                        }
-                        self.cdeproxy.set_period(rrs, period_update)
+                        self.cdeproxy.finish_semester_ejection(rrs)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                period_update = {
+                    'id': period_id,
+                    'ejection_state': persona_id,
+                }
                 if (persona['balance'] < self.conf.MEMBERSHIP_FEE
                         and not persona['trial_member']):
                     self.coreproxy.change_membership(rrs, persona_id,
                                                      is_member=False)
+                    period_update['ejection_count'] = \
+                        period['ejection_count'] + 1
+                    period_update['ejection_balance'] = \
+                        period['ejection_balance'] + persona['balance']
                     transaction_subject = make_transaction_subject(persona)
                     meta_info = self.coreproxy.get_meta_info(rrs)
                     self.do_mail(
@@ -1928,10 +1923,6 @@ class CdEFrontend(AbstractUserFrontend):
                          'transaction_subject': transaction_subject,
                          'meta_info': meta_info,
                          })
-                period_update = {
-                    'id': period_id,
-                    'ejection_state': persona_id,
-                }
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
@@ -1949,9 +1940,6 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 
-        if rs.errors:
-            return self.show_semester(rs)
-
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
         def task(rrs, rs=None):
@@ -1963,16 +1951,17 @@ class CdEFrontend(AbstractUserFrontend):
                 persona_id = self.coreproxy.next_persona(rrs, previous)
                 if not persona_id or period['balance_done']:
                     if not period['balance_done']:
-                        period_update = {
-                            'id': period_id,
-                            'balance_state': None,
-                            'balance_done': now(),
-                        }
-                        self.cdeproxy.set_period(rrs, period_update)
+                        self.cdeproxy.finish_semester_balance_update(rrs)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                period_update = {
+                    'id': period_id,
+                    'balance_state': persona_id,
+                }
                 if (persona['balance'] < self.conf.MEMBERSHIP_FEE
                         and not persona['trial_member']):
+                    # TODO maybe fail more gracefully here?
+                    # Maybe set balance to 0 and send a mail or something.
                     raise ValueError(n_("Balance too low."))
                 else:
                     if persona['trial_member']:
@@ -1984,6 +1973,8 @@ class CdEFrontend(AbstractUserFrontend):
                             rrs, update,
                             change_note="Probemitgliedschaft beendet."
                         )
+                        period_update['balance_trialmembers'] = \
+                            period['balance_trialmembers'] + 1
                     else:
                         new_b = persona['balance'] - self.conf.MEMBERSHIP_FEE
                         note = "Mitgliedsbeitrag abgebucht ({}).".format(
@@ -1992,10 +1983,8 @@ class CdEFrontend(AbstractUserFrontend):
                             rrs, persona_id, new_b,
                             const.FinanceLogCodes.deduct_membership_fee,
                             change_note=note)
-                period_update = {
-                    'id': period_id,
-                    'balance_state': persona_id,
-                }
+                        period_update['balance_total'] = \
+                            period['balance_total'] + self.conf.MEMBERSHIP_FEE
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
@@ -2012,8 +2001,6 @@ class CdEFrontend(AbstractUserFrontend):
         if not period['balance_done']:
             rs.notify("error", n_("Wrong timing for advancing the semester."))
             return self.redirect(rs, "cde/show_semester")
-        if rs.errors:
-            return self.show_semester(rs)
         self.cdeproxy.create_period(rs)
         rs.notify("success", n_("New period started."))
         return self.redirect(rs, "cde/show_semester")
@@ -2048,12 +2035,7 @@ class CdEFrontend(AbstractUserFrontend):
                     persona_id = rrs.user.persona_id
                 if not persona_id or expuls['addresscheck_done']:
                     if not expuls['addresscheck_done']:
-                        expuls_update = {
-                            'id': expuls_id,
-                            'addresscheck_state': None,
-                            'addresscheck_done': now(),
-                        }
-                        self.cdeproxy.set_expuls(rrs, expuls_update)
+                        self.cdeproxy.finish_expuls_addresscheck(rrs, skip=False)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
@@ -2084,12 +2066,7 @@ class CdEFrontend(AbstractUserFrontend):
                 return True
 
         if skip:
-            expuls_update = {
-                'id': expuls_id,
-                'addresscheck_state': None,
-                'addresscheck_done': now(),
-            }
-            self.cdeproxy.set_expuls(rs, expuls_update)
+            self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
             rs.notify("success", n_("Not sending mail."))
         else:
             worker = Worker(self.conf, task, rs)

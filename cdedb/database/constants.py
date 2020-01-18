@@ -328,8 +328,14 @@ class CoreLogCodes(enum.IntEnum):
 @enum.unique
 class CdeLogCodes(enum.IntEnum):
     """Available log messages cde.log."""
-    advance_semester = 1  #:
-    advance_expuls = 2  #:
+    semester_bill = 10
+    semester_bill_with_addresscheck = 11
+    semester_ejection = 12
+    semester_balance_update = 13
+    semester_advance = 1
+    expuls_addresscheck = 20
+    expuls_addresscheck_skipped = 21
+    expuls_advance = 2
 
 
 @enum.unique
