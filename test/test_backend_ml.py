@@ -8,6 +8,8 @@ from cdedb.database.constants import (SubscriptionStates as SS,)
 import cdedb.database.constants as const
 import datetime
 import decimal
+import copy
+import cdedb.validation as validate
 
 
 class TestMlBackend(BackendTest):
@@ -153,6 +155,51 @@ class TestMlBackend(BackendTest):
             self.key, new_id, cascade=("subscriptions", "addresses",
                                        "whitelist", "moderators", "log")))
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
+
+    @as_users("anton")
+    def test_mailinglist_creation_optional_fields(self, user):
+        new_data = {
+            'address': 'revolution1@example.cde',
+            'description': 'Vereinigt Euch',
+            'attachment_policy': const.AttachmentPolicy.forbid,
+            'is_active': True,
+            'maxsize': None,
+            'ml_type': const.MailinglistTypes.member_moderated_opt_in,
+            'mod_policy': const.ModerationPolicy.unmoderated,
+            'moderators': {2, 9},
+            'notes': None,
+            'subject_prefix': 'viva la revolution',
+            'title': 'Proletarier aller Länder',
+        }
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['registration_stati'] = [const.RegistrationPartStati.guest]
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['registration_stati'] = []
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['whitelist'] = "datenbank@example.cde"
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['address'] += "x"
+        new_data['whitelist'] = ["datenbank@example.cde"]
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['whitelist'] = []
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['event_id'] = 1
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['event_id'] = None
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['assembly_id'] = 1
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['assembly_id'] = None
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
 
     @as_users("anton")
     def test_sample_data(self, user):

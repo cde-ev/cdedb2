@@ -1021,7 +1021,7 @@ CREATE TABLE ml.mailinglists (
         -- which stati to address
         -- (cf. cdedb.database.constants.RegistrationPartStati)
         -- this may be empty, in which case this is an orga list
-        registration_stati      integer[] NOT NULL,
+        registration_stati      integer[] NOT NULL DEFAULT array[]::integer[],
         -- assembly awareness
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)

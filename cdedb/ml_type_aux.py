@@ -3,7 +3,6 @@ from collections import OrderedDict
 
 from cdedb.common import extract_roles, PrivilegeError, n_, unwrap
 from cdedb.query import Query, QueryOperators, QUERY_SPECS
-import cdedb.validation as validate
 import cdedb.database.constants as const
 from cdedb.database.constants import (
     MailinglistTypes, MailinglistInteractionPolicy)
@@ -52,17 +51,18 @@ class AllMembersImplicitMeta:
 
 class AssemblyAssociatedMeta:
     """Metaclass for all assembly associated mailinglists."""
-    validation_fields = {
-        "assembly_id": validate._id,
-    }
+    mandatory_validation_fields = (
+        ("assembly_id", "id"),
+    )
 
 
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    validation_fields = {
-        "event_id": validate._id_or_None,
-    }
+    mandatory_validation_fields = (
+        ("event_id", "id_or_None"),
+        ("registration_stati", "[enum_registrationpartstati]"),
+    )
 
     @classmethod
     def periodic_cleanup(cls, rs, mailinglist):
@@ -83,14 +83,16 @@ class GeneralMailinglist:
 
     * `sortkey`: Determines where mailinglists of this type are grouped.
     * `domain`: Determines the domain of the mailinglist.
+    * `allow_unsub`: Whether or not to allow unsubscribing from a mailinglist
+      of this type.
+    * `validation_fields`: A list of additional fields to be considered
+      during validation for mailinglists of this type.
     * `viewer_roles`: Determines who may view the mailinglist.
       See `may_view()` for details.
     * `relevant_admins`: Determines who may administrate the mailinglist. See
       `is_relevant_admin()` for details.
     * `role_map`: An ordered Dict to determine mailinglist interactions in a
       hierarchical way for trivial mailinglist types.
-    * `validation_fields`: A dict of additional fields to be considered
-      during validation for mailinglists of this type.
 
     """
     def __init__(self):
@@ -99,6 +101,12 @@ class GeneralMailinglist:
     sortkey = MailinglistGroup.other
 
     domain = Domain.lists
+
+    allow_unsub = True
+
+    # Additional fields for validation. See docstring for details.
+    mandatory_validation_fields = tuple()
+    optional_validation_fields = tuple()
 
     viewer_roles = {"ml"}
 
@@ -191,8 +199,6 @@ class GeneralMailinglist:
         """
         return set()
 
-    allow_unsub = True
-
     @classmethod
     def periodic_cleanup(cls, rs, mailinglist):
         """Whether or not to do periodic subscription cleanup on this list.
@@ -203,9 +209,6 @@ class GeneralMailinglist:
         """
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
         return True
-
-    # Additional fields for validation. See docstring for details.
-    validation_fields = {}
 
 
 class CdEMailinglist(GeneralMailinglist):

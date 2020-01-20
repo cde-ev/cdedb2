@@ -58,6 +58,7 @@ from cdedb.query import (
     NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS, ENUMS_DICT
+import cdedb.ml_type_aux as ml_type
 
 _BASICCONF = BasicConfig()
 
@@ -213,6 +214,9 @@ def _None(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (object or None, [(str or None, exception)])
     """
+    if _convert:
+        if isinstance(val, str) and not val:
+            val = None
     if val is None:
         return val, []
     return None, [(argname, ValueError(n_("Must be None.")))]
@@ -478,6 +482,24 @@ def _empty_dict(val, argname=None, *, _convert=True):
     """
     if val != {}:
         return None, [(argname, ValueError(n_("Must be an empty dict.")))]
+    return val, []
+
+
+@_addvalidator
+def _empty_list(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (list or None, [(str or None, expection)])
+    """
+    if _convert:
+        val, errs = _iterable(val, argname, _convert=_convert)
+        if errs:
+            return None, errs
+        val = list(val)
+    if val != []:
+        return None, [(argname, ValueError(n_("Must be an empty list.")))]
     return val, []
 
 
@@ -3087,14 +3109,12 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'subject_prefix': _str_or_None,
     'maxsize': _int_or_None,
     'is_active': _bool,
-    'event_id': _id_or_None,
-    'registration_stati': _iterable,
-    'assembly_id': _id_or_None,
     'notes': _str_or_None,
 }
-_MAILINGLIST_OPTIONAL_FIELDS = {
-    'moderators': _iterable,
-    'whitelist': _iterable,
+_MAILINGLIST_OPTIONAL_FIELDS = lambda: {
+    'assembly_id': _None,
+    'event_id': _None,
+    'registration_stati': _empty_list,
 }
 
 
@@ -3113,40 +3133,39 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
+    mandatory_validation_fields = (('moderators', '[id]'),)
+    optional_validation_fields = (('whitelist', '[email]'),)
+    if "ml_type" in val:
+        mlt = ml_type.TYPE_MAP[ml_type.MailinglistTypes(int(val["ml_type"]))]
+        mandatory_validation_fields += mlt.mandatory_validation_fields
+        optional_validation_fields += mlt.optional_validation_fields
+    mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
+    optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
+    iterable_fields = []
+    for source, target in ((mandatory_validation_fields, mandatory_fields),
+                           (optional_validation_fields, optional_fields)):
+        for key, validator_str in source:
+            if validator_str.startswith('[') and validator_str.endswith(']'):
+                target[key] = _iterable
+                iterable_fields.append((key, "_" + validator_str[1:-1]))
+            else:
+                target[key] = getattr(current_module, "_" + validator_str)
     if creation:
-        mandatory_fields = _MAILINGLIST_COMMON_FIELDS()
-        optional_fields = _MAILINGLIST_OPTIONAL_FIELDS
+        pass
     else:
+        # The order is important here, so that mandatory fields take precedence.
+        optional_fields = dict(optional_fields, **mandatory_fields)
         mandatory_fields = {'id': _id}
-        optional_fields = dict(_MAILINGLIST_COMMON_FIELDS(),
-                               **_MAILINGLIST_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    specials = sum(1 for x in (val.get('event_id'),
-                               val.get('assembly_id')) if x)
-    if specials > 1:
-        error = ValueError(n_("Only one allowed of event_id and assembly_id."))
-        errs.append(('event_id', error))
-        errs.append(('assembly_id', error))
-    apol = ENUMS_DICT['AudiencePolicy']
-    if (val.get('assembly_id')
-            and val.get('ml_type') not in {30, 31}):
-        error = ValueError(n_("Linked assembly requires assembly audience."))
-        errs.append(('assembly_id', error))
-        errs.append(('ml_type', error))
-    if (val.get('event_id')
-            and val.get('ml_type') not in {20, 21}):
-        error = ValueError(n_("Linked event requires event-associated ml_type."))
-        errs.append(('event_id', error))
-        errs.append(('ml_type', error))
-    for key, validator in (('registration_stati', _enum_registrationpartstati),
-                           ('moderators', _id), ('whitelist', _email)):
+    for key, validator_str in iterable_fields:
+        validator = getattr(current_module, validator_str)
+        newarray = []
         if key in val:
-            newarray = []
-            for anid in val[key]:
-                v, e = validator(anid, key, _convert=_convert)
+            for x in val[key]:
+                v, e = validator(x, _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
