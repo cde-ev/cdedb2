@@ -242,7 +242,7 @@ def _int(val, argname=None, *, _convert=True):
     :rtype: (int or None, [(str or None, exception)])
     """
     if _convert:
-        if isinstance(val, str):
+        if isinstance(val, str) or isinstance(val, bool):
             try:
                 val = int(val)
             except ValueError:
@@ -252,7 +252,7 @@ def _int(val, argname=None, *, _convert=True):
             if abs(val - int(val)) > EPSILON:
                 return None, [(argname, ValueError(n_("Precision loss.")))]
             val = int(val)
-    if not isinstance(val, int):
+    if not isinstance(val, int) or isinstance(val, bool):
         return None, [(argname, TypeError(n_("Must be an integer.")))]
     return val, []
 
