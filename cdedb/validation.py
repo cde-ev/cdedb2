@@ -277,9 +277,8 @@ def _non_negative_int(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _id(val, argname=None, *, _convert=True):
-    """A numeric ID as in a database key.
-
+def _positive_int(val, argname=None, *, _convert=True):
+    """
     :type val: object
     :type argname: str or None
     :type _convert: bool
@@ -291,6 +290,22 @@ def _id(val, argname=None, *, _convert=True):
             val = None
             errs.append((argname, ValueError(n_("Must be positive."))))
     return val, errs
+
+
+@_addvalidator
+def _id(val, argname=None, *, _convert=True):
+    """A numeric ID as in a database key.
+
+    This is just a wrapper around `_positive_int`, to differentiate this
+    semantically.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (int or None, [(str or None, exception)])
+    """
+    return _positive_int(val, argname, _convert=_convert)
+
 
 @_addvalidator
 def _partial_import_id(val, argname=None, *, _convert=True):
@@ -351,6 +366,21 @@ def _non_negative_decimal(val, argname=None, *, _convert=True):
     """
     val, err = _decimal(val, argname, _convert=_convert)
     if not err and val < 0:
+        val = None
+        err.append((argname, ValueError(n_("Transfer saldo is negative."))))
+    return val, err
+
+
+@_addvalidator
+def _positive_decimal(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (decimal.Decimal or None, [(str or None, exception)])
+    """
+    val, err = _decimal(val, argname, _convert=_convert)
+    if not err and val <= 0:
         val = None
         err.append((argname, ValueError(n_("Transfer saldo is negative."))))
     return val, err
