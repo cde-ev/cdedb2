@@ -1,7 +1,7 @@
 {% macro show_result() -%}
     <h3>{% trans -%}Result{%- endtrans %}</h3>
     {% if result['winners'] %}
-        <ol>
+        <ol id="winners">
             {% for candidate_ids in result['winners'] %}
                 <li value="{{ loop.index }}">
                     {% for candidate_id in candidate_ids %}
@@ -37,7 +37,7 @@
                     The following candidates lost against the bar ({{ abm }}).
                 {%- endtrans %}
             {% endif %}
-        <ol>
+        <ol id="loosers">
             {% for candidate_ids in result['losers'] %}
                 <li value="{{ (loop.index + result['winners']|length) }}">
                     {% for candidate_id in candidate_ids %}
@@ -98,7 +98,7 @@
 
 {% macro show_own_vote() -%}
     <h3>{% trans -%}Your Vote{%- endtrans %}</h3>
-    <p>
+    <p id="own-vote">
         {% set is_active = ambience["assembly"]["is_active"] %}
         {% if not attends %}
             {% trans -%}You are not participating in this assembly.{%- endtrans %}

@@ -31,7 +31,7 @@
 {% macro show_status() -%}
 <dl class="dl-horizontal">
     <dt>{% trans -%}Voting Period{%- endtrans %}</dt>
-        <dd>
+        <dd id="voting-period">
             {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
                      end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
             From {{ begin }} until {{ end }}.
@@ -60,7 +60,7 @@
             {% endif %}
         </dd>
         <dt>{% trans -%}Status{%- endtrans %}</dt>
-        <dd>
+        <dd id="status">
             {% if now() < ambience['ballot']['vote_begin'] %}
                 <strong>{% trans -%}This ballot has not yet begun.{%- endtrans %}</strong><br />
                 {% trans -%}Admins can still make changes to description, files and candidates.{%- endtrans %}
@@ -105,7 +105,7 @@
 {% macro show_attachments(edit_mode) -%}
     {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         {% if attachments %}
-            <ul>
+            <ul id="attachments">
                 {% for attachment_id, attachment in attachments|xdictsort("title") %}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
