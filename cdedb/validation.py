@@ -1520,7 +1520,7 @@ def _expuls(val, argname=None, *, _convert=True):
 
 
 _LASTSCHRIFT_COMMON_FIELDS = lambda: {
-    'amount': _non_negative_decimal,
+    'amount': _positive_decimal,
     'iban': _iban,
     'account_owner': _str_or_None,
     'account_address': _str_or_None,
@@ -1608,7 +1608,7 @@ def _iban(val, argname=None, *, _convert=True):
 
 
 _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
-    'amount': _non_negative_decimal,
+    'amount': _positive_decimal,
     'status': _enum_lastschrifttransactionstati,
     'issued_at': _datetime,
     'processed_at': _datetime_or_None,
@@ -1652,7 +1652,7 @@ _SEPA_TRANSACTIONS_FIELDS = {
     'lastschrift_id': _id,
     'period_id': _id,
     'mandate_reference': _str,
-    'amount': _non_negative_decimal,
+    'amount': _positive_decimal,
     'iban': _iban,
     'mandate_date': _date,
     'account_owner': _str,
@@ -1709,7 +1709,7 @@ def _sepa_transactions(val, argname=None, *, _convert=True):
 
 _SEPA_META_FIELDS = {
     'message_id': _str,
-    'total_sum': _non_negative_decimal,
+    'total_sum': _positive_decimal,
     'partial_sums': _mapping,
     'count': _int,
     'sender': _mapping,

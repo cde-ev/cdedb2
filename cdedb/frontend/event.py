@@ -1851,6 +1851,7 @@ class EventFrontend(AbstractUserFrontend):
         event = rs.ambience['event']
         warnings = []
         infos = []
+        # Allow an amount of zero to allow non-modification of amount_paid.
         amount, problems = validate.check_non_negative_decimal(
             datum['raw']['amount'].strip(), "amount")
         persona_id, p = validate.check_cdedbid(

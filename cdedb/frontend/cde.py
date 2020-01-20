@@ -979,7 +979,7 @@ class CdEFrontend(AbstractUserFrontend):
         :rtype: {str: object}
         :returns: The processed input datum.
         """
-        amount, problems = validate.check_non_negative_decimal(
+        amount, problems = validate.check_positive_decimal(
             datum['raw']['amount'], "amount")
         persona_id, p = validate.check_cdedbid(
             datum['raw']['persona_id'].strip(), "persona_id")
@@ -1747,7 +1747,7 @@ class CdEFrontend(AbstractUserFrontend):
                  ("address", "str_or_None"),
                  ("postal_code", "german_postal_code_or_None"),
                  ("location", "str_or_None"), ("country", "str_or_None"),
-                 ("amount", "non_negative_decimal_or_None"),
+                 ("amount", "positive_decimal_or_None"),
                  ("iban", "iban_or_None"), ("account_holder", "str_or_None"))
     def lastschrift_subscription_form(self, rs, full_name, db_id, username,
                                       not_minor, address_supplement, address,
