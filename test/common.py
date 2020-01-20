@@ -555,7 +555,7 @@ class FrontendTest(unittest.TestCase):
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
         self.assertEqual(title.strip(), normalized)
 
-    def assertPresence(self, s, div="content", regex=False):
+    def assertPresence(self, s, div="content", regex=False, only=False):
         if self.response.content_type == "text/plain":
             target = self.response.text
         else:
@@ -564,6 +564,8 @@ class FrontendTest(unittest.TestCase):
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
             self.assertTrue(re.search(s.strip(), normalized))
+        elif only:
+            self.assertTrue(s.strip(), normalized)
         else:
             self.assertIn(s.strip(), normalized)
 
