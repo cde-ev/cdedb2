@@ -437,6 +437,7 @@ class TestMlFrontend(FrontendTest):
                     'title': 'TestAkaList',
                     'ml_type': const.MailinglistTypes.event_associated.value,
                     'local_part': 'testaka',
+                    'domain': const.MailinglistDomain.aka.value,
                     'event_id': "1",
                     'moderator_ids': user['DB-ID'],
                 }

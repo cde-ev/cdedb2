@@ -45,6 +45,8 @@ class TestMlBackend(BackendTest):
                          self.ml.list_mailinglists(self.key, active_only=False))
         expectation = {
             3: {'local_part': 'witz',
+                'domain': const.MailinglistDomain.lists,
+                'domain_str': 'lists.cde-ev.de',
                 'address': 'witz@lists.cde-ev.de',
                 'description': "Einer geht noch ...",
                 'assembly_id': None,
@@ -54,6 +56,7 @@ class TestMlBackend(BackendTest):
                 'is_active': True,
                 'maxsize': 2048,
                 'ml_type': const.MailinglistTypes.general_opt_in.value,
+                'ml_type_class': ml_type.GeneralOptInMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 3, 10},
                 'registration_stati': [],
@@ -62,6 +65,8 @@ class TestMlBackend(BackendTest):
                 'notes': None,
                 'whitelist': set()},
             5: {'local_part': 'kongress',
+                'domain': const.MailinglistDomain.lists,
+                'domain_str': 'lists.cde-ev.de',
                 'address': 'kongress@lists.cde-ev.de',
                 'description': None,
                 'assembly_id': 1,
@@ -71,6 +76,7 @@ class TestMlBackend(BackendTest):
                 'is_active': True,
                 'maxsize': 1024,
                 'ml_type': const.MailinglistTypes.assembly_associated.value,
+                'ml_type_class': ml_type.AssemblyAssociatedMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 7},
                 'registration_stati': [],
@@ -79,6 +85,8 @@ class TestMlBackend(BackendTest):
                 'notes': None,
                 'whitelist': set()},
             7: {'local_part': 'aktivenforum',
+                'domain': const.MailinglistDomain.lists,
+                'domain_str': 'lists.cde-ev.de',
                 'address': 'aktivenforum@lists.cde-ev.de',
                 'description': None,
                 'assembly_id': None,
@@ -88,6 +96,7 @@ class TestMlBackend(BackendTest):
                 'is_active': True,
                 'maxsize': 1024,
                 'ml_type': const.MailinglistTypes.member_opt_in.value,
+                'ml_type_class': ml_type.MemberOptInMailinglist,
                 'mod_policy': const.ModerationPolicy.non_subscribers.value,
                 'moderators': {2, 10},
                 'registration_stati': [],
@@ -107,13 +116,14 @@ class TestMlBackend(BackendTest):
                           'captiankirk@example.cde',
                           'picard@example.cde'},
             'ml_type': const.MailinglistTypes.member_moderated_opt_in,
+            'ml_type_class': ml_type.MemberModeratedOptInMailinglist,
             'is_active': False,
             'local_part': 'passivenforum',
             'notes': "this list is no more",
         }
         expectation = expectation[7]
         expectation.update(setter)
-        expectation['address'] = setter['local_part'] + '@' + ml_type.domain_str(expectation)
+        expectation['address'] = ml_type.full_address(expectation)
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
 
@@ -132,13 +142,14 @@ class TestMlBackend(BackendTest):
         oldlists = self.ml.list_mailinglists(self.key)
         new_data = {
             'local_part': 'revolution',
+            'domain': const.MailinglistDomain.lists,
             'description': 'Vereinigt Euch',
             'assembly_id': None,
-            'attachment_policy': const.AttachmentPolicy.forbid.value,
+            'attachment_policy': const.AttachmentPolicy.forbid,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
-            'mod_policy': const.ModerationPolicy.unmoderated.value,
+            'mod_policy': const.ModerationPolicy.unmoderated,
             'moderators': {1, 2},
             'registration_stati': [],
             'subject_prefix': '[viva la revolution]',
@@ -155,7 +166,9 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
-        new_data['address'] = new_data['local_part'] + '@' + ml_type.domain_str(new_data)
+        new_data['address'] = ml_type.full_address(new_data)
+        new_data['domain_str'] = str(new_data['domain'])
+        new_data['ml_type_class'] = ml_type.get_type(new_data['ml_type'])
         self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
             self.key, new_id, cascade=("subscriptions", "addresses",
@@ -166,6 +179,7 @@ class TestMlBackend(BackendTest):
     def test_mailinglist_creation_optional_fields(self, user):
         new_data = {
             'local_part': 'revolution',
+            'domain': const.MailinglistDomain.lists,
             'description': 'Vereinigt Euch',
             'attachment_policy': const.AttachmentPolicy.forbid,
             'is_active': True,
@@ -943,6 +957,7 @@ class TestMlBackend(BackendTest):
         pass
         mdata = {
             'local_part': 'revolution',
+            'domain': const.MailinglistDomain.lists,
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
@@ -1066,6 +1081,7 @@ class TestMlBackend(BackendTest):
     def test_change_mailinglist_association(self, user):
         mdata = {
             'local_part': 'orga',
+            'domain': const.MailinglistDomain.aka,
             'description': None,
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
@@ -1440,6 +1456,7 @@ class TestMlBackend(BackendTest):
         self.ml.do_subscription_action(self.key, SA.add_subscriber, 7, 1)
         new_data = {
             'local_part': 'revolution',
+            'domain': const.MailinglistDomain.lists,
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
