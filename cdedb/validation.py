@@ -3126,6 +3126,7 @@ def _partial_registration_track(val, argname=None, *, _convert=True):
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
     'local_part': _email_local_part,
+    'domain': _enum_mailinglistdomain,
     'description': _str_or_None,
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
@@ -3201,6 +3202,15 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                 else:
                     newarray.append(v)
             val[key] = newarray
+    if "domain" in val:
+        if "ml_type" not in val:
+            errs.append(("domain", ValueError(n_(
+                "Must specify mailinglist type to change domain."))))
+        else:
+            atype = ml_type.get_type(val["ml_type"])
+            if val["domain"].value not in atype.domains:
+                errs.append(("domain", ValueError(n_(
+                    "Invalid domain for this mailinglist type."))))
     return val, errs
 
 

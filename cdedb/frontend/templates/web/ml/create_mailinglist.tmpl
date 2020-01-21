@@ -26,6 +26,7 @@
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), defaultvalue='True') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address")) }}
+        {{ util.form_input_select(name="domain", entries=enums['MailinglistDomain']|enum_entries(processing=gettext, prefix="@"), label=gettext("Domain")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}

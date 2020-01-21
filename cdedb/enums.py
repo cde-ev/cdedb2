@@ -33,6 +33,7 @@ ALL_ENUMS = (
     const.FieldAssociations,
     const.FieldDatatypes,
     const.MailinglistTypes,
+    const.MailinglistDomain,
     QueryOperators,
     AgeClasses,
     LineResolutions,

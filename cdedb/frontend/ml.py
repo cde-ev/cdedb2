@@ -169,7 +169,7 @@ class MlFrontend(AbstractUserFrontend):
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdatadict(
-        "title", "local_part", "description", "mod_policy",
+        "title", "local_part", "domain", "description", "mod_policy",
         "attachment_policy", "ml_type", "subject_prefix",
         "maxsize", "is_active", "notes", "event_id", "registration_stati",
         "assembly_id")
@@ -285,7 +285,7 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml_admin", modi={"POST"})
     @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict(
-        "title", "local_part", "description", "mod_policy",
+        "title", "local_part", "domain", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
         "is_active", "event_id", "assembly_id")
     def change_mailinglist(self, rs, mailinglist_id, registration_stati, data):

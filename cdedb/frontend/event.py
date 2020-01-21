@@ -885,6 +885,7 @@ class EventFrontend(AbstractUserFrontend):
             orga_ml_data = {
                 'title': "{} Orgateam".format(event['title']),
                 'local_part': email_local_part,
+                'domain': const.MailinglistDomain.aka,
                 'description': descr,
                 'mod_policy': const.ModerationPolicy.unmoderated,
                 'attachment_policy': const.AttachmentPolicy.allow,
@@ -908,6 +909,7 @@ class EventFrontend(AbstractUserFrontend):
             participant_ml_data = {
                 'title': "{} Teilnehmer".format(event['title']),
                 'local_part': email_local_part,
+                'domain': const.MailinglistDomain.aka,
                 'description': descr,
                 'mod_policy': const.ModerationPolicy.non_subscribers,
                 'attachment_policy': const.AttachmentPolicy.pdf_only,

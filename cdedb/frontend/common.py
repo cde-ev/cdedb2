@@ -666,7 +666,7 @@ def keydictsort_filter(value, sortkey, reverse=False):
     return sorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def enum_entries_filter(enum, processing=None, raw=False):
+def enum_entries_filter(enum, processing=None, raw=False, prefix=""):
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -680,6 +680,8 @@ def enum_entries_filter(enum, processing=None, raw=False):
     :type raw: bool
     :param raw: If this is True, the enum entries are passed to processing as
         is, otherwise they are converted to str first.
+    :type prefix: str
+    :param prefix: A prefix to prepend to the string output of every entry.
     :rtype: [(object, object)]
     :return: A list of tuples to be used in the input_checkboxes or
         input_select macros.
@@ -690,7 +692,8 @@ def enum_entries_filter(enum, processing=None, raw=False):
         pre = lambda x: x
     else:
         pre = str
-    return sorted((entry.value, processing(pre(entry))) for entry in enum)
+    return sorted((entry.value, prefix + processing(pre(entry)))
+                  for entry in enum)
 
 
 def dict_entries_filter(items, *args):
@@ -774,7 +777,6 @@ JINJA_FILTERS = {
     'dict_entries': dict_entries_filter,
     'xdict_entries': xdict_entries_filter,
     'keydictsort': keydictsort_filter,
-    'domain_str': ml_type.domain_str,
 }
 
 

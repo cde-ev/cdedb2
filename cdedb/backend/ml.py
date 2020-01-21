@@ -467,6 +467,7 @@ class MlBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_mailinglists(rs, (data['id'],)))
+            current = affirm("mailinglist", current)
             # Only allow modification of the mailinglist for admins.
             if not self.is_relevant_admin(rs, mailinglist=current):
                 raise PrivilegeError(n_("Not privileged."))

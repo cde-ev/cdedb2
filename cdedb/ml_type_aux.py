@@ -5,7 +5,7 @@ from cdedb.common import extract_roles, PrivilegeError, n_, unwrap
 from cdedb.query import Query, QueryOperators, QUERY_SPECS
 import cdedb.database.constants as const
 from cdedb.database.constants import (
-    MailinglistTypes, MailinglistInteractionPolicy)
+    MailinglistTypes, MailinglistDomain, MailinglistInteractionPolicy)
 
 
 class BackendContainer:
@@ -13,27 +13,6 @@ class BackendContainer:
         self.core = core
         self.event = event
         self.assembly = assembly
-
-
-class Domain(enum.IntEnum):
-    lists = 1
-    aka = 2
-    general = 3
-    cdelokal = 4
-
-    def __str__(self):
-        if self not in _DOMAIN_STR_MAP:
-            raise NotImplementedError(n_("This domain is not supported."))
-        return _DOMAIN_STR_MAP[self]
-
-
-# Instead of importing this, call str() on a Domain.
-_DOMAIN_STR_MAP = {
-    Domain.lists: "lists.cde-ev.de",
-    Domain.aka: "aka.cde-ev.de",
-    Domain.general: "cde-ev.de",
-    Domain.cdelokal: "cdelokal.cde-ev.de",
-}
 
 
 def get_type(val):
@@ -46,19 +25,9 @@ def get_type(val):
     raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
 
 
-def domain_str(val):
-    if isinstance(val, int) or isinstance(val, const.MailinglistTypes):
-        ml_type = val
-    elif isinstance(val, dict) and 'ml_type' in val:
-        ml_type = val['ml_type']
-    else:
-        raise ValueError(n_("Cannot determine domain str for %s."), val)
-    return str(TYPE_MAP[ml_type].domain)
-
-
 def full_address(val):
     if isinstance(val, dict):
-        return val['local_part'] + '@' + domain_str(val['ml_type'])
+        return val['local_part'] + '@' + str(val['domain'])
     else:
         raise ValueError(n_("Cannot determine full address for %s."), val)
 
@@ -105,6 +74,8 @@ class TeamMeta:
     """Metaclass for all team lists."""
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
+    domains = (MailinglistDomain.lists,
+               MailinglistDomain.dokuforge)
 
 
 class GeneralMailinglist:
@@ -131,7 +102,7 @@ class GeneralMailinglist:
 
     sortkey = MailinglistGroup.other
 
-    domain = Domain.lists
+    domains = (MailinglistDomain.lists,)
 
     allow_unsub = True
 
@@ -254,7 +225,7 @@ class EventMailinglist(GeneralMailinglist):
     """Base class for Event-Mailinglists."""
 
     sortkey = MailinglistGroup.event
-    domain = Domain.aka
+    domains = (MailinglistDomain.aka,)
     viewer_roles = {"event"}
     relevant_admins = {"event_admin"}
 
@@ -477,7 +448,8 @@ class SemiPublicMailinglist(GeneralMailinglist):
 
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
-    domain = Domain.cdelokal
+    domains = (MailinglistDomain.cdelokal,
+               MailinglistDomain.cdemuenchen)
 
 
 TYPE_MAP = {

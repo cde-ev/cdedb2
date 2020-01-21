@@ -349,19 +349,18 @@ INSERT INTO assembly.votes (ballot_id, vote, salt, hash) VALUES
 
 --
 -- ml
---
-INSERT INTO ml.mailinglists (id, title, local_part, address, description, ml_type, sub_policy, mod_policy, attachment_policy, audience_policy, subject_prefix, maxsize, is_active, event_id, registration_stati, assembly_id) VALUES
-    (1, 'Verkündungen', 'announce', 'announce@lists.cde-ev.de', NULL, 1, 1, 3, 3, 5, '[Hört, hört]', NULL, True, NULL, ARRAY[]::integer[], NULL),
-    (2, 'Werbung', 'werbung', 'werbung@lists.cde-ev.de', 'Wir werden auch gut bezahlt dafür', 2, 2, 3, 1, 1, '[werbung]', NULL, True, NULL, ARRAY[]::integer[], NULL),
-    (3, 'Witz des Tages', 'witz', 'witz@lists.cde-ev.de', 'Einer geht noch ...', 40, 3, 2, 2, 1, '[witz]', 2048, True, NULL, ARRAY[]::integer[], NULL),
-    (4, 'Klatsch und Tratsch', 'klatsch', 'klatsch@lists.cde-ev.de', NULL, 4, 4, 1, 1, 1, '[klatsch]', NULL, True, NULL, ARRAY[]::integer[], NULL),
-    (5, 'Sozialistischer Kampfbrief', 'kongress', 'kongress@lists.cde-ev.de', NULL, 30, 6, 2, 2, 2, '[kampf]', 1024, True, NULL, ARRAY[]::integer[], 1),
-    (6, 'Aktivenforum 2000', 'aktivenforum2000', 'aktivenforum2000@lists.cde-ev.de', NULL, 3, 3, 2, 2, 5, '[aktivenforum]', 1024, False, NULL, ARRAY[]::integer[], NULL),
-    (7, 'Aktivenforum 2001', 'aktivenforum', 'aktivenforum@lists.cde-ev.de', NULL, 3, 3, 2, 2, 5, '[aktivenforum]', 1024, True, NULL, ARRAY[]::integer[], NULL),
-    (8, 'Orga-Liste', 'aka', 'aka@aka.cde-ev.de', NULL, 21, 6, 1, 1, 3, '[orga]', NULL, True, 1, ARRAY[]::integer[], NULL),
-    (9, 'Teilnehmer-Liste', 'participants', 'participants@aka.cde-ev.de', NULL, 20, 6, 2, 1, 3, '[aka]', NULL, True, 1, ARRAY[2, 4], NULL),
-    (10, 'Warte-Liste', 'wait', 'wait@aka.cde-ev.de', NULL, 20, 6, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL),
-    (11, 'Kampfbrief-Kommentare', 'opt', 'opt@lists.cde-ev.de', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], NULL);
+INSERT INTO ml.mailinglists (id, title, local_part, domain, address, description, ml_type, sub_policy, mod_policy, attachment_policy, audience_policy, subject_prefix, maxsize, is_active, event_id, registration_stati, assembly_id) VALUES
+    (1, 'Verkündungen', 'announce', 1, 'announce@lists.cde-ev.de', NULL, 1, 1, 3, 3, 5, '[Hört, hört]', NULL, True, NULL, ARRAY[]::integer[], NULL),
+    (2, 'Werbung', 'werbung', 1, 'werbung@lists.cde-ev.de', 'Wir werden auch gut bezahlt dafür', 2, 2, 3, 1, 1, '[werbung]', NULL, True, NULL, ARRAY[]::integer[], NULL),
+    (3, 'Witz des Tages', 'witz', 1, 'witz@lists.cde-ev.de', 'Einer geht noch ...', 40, 3, 2, 2, 1, '[witz]', 2048, True, NULL, ARRAY[]::integer[], NULL),
+    (4, 'Klatsch und Tratsch', 'klatsch', 1, 'klatsch@lists.cde-ev.de', NULL, 4, 4, 1, 1, 1, '[klatsch]', NULL, True, NULL, ARRAY[]::integer[], NULL),
+    (5, 'Sozialistischer Kampfbrief', 'kongress', 1, 'kongress@lists.cde-ev.de', NULL, 30, 6, 2, 2, 2, '[kampf]', 1024, True, NULL, ARRAY[]::integer[], 1),
+    (6, 'Aktivenforum 2000', 'aktivenforum2000', 1, 'aktivenforum2000@lists.cde-ev.de', NULL, 3, 3, 2, 2, 5, '[aktivenforum]', 1024, False, NULL, ARRAY[]::integer[], NULL),
+    (7, 'Aktivenforum 2001', 'aktivenforum', 1, 'aktivenforum@lists.cde-ev.de', NULL, 3, 3, 2, 2, 5, '[aktivenforum]', 1024, True, NULL, ARRAY[]::integer[], NULL),
+    (8, 'Orga-Liste', 'aka', 2, 'aka@aka.cde-ev.de', NULL, 21, 6, 1, 1, 3, '[orga]', NULL, True, 1, ARRAY[]::integer[], NULL),
+    (9, 'Teilnehmer-Liste', 'participants', 2, 'participants@aka.cde-ev.de', NULL, 20, 6, 2, 1, 3, '[aka]', NULL, True, 1, ARRAY[2, 4], NULL),
+    (10, 'Warte-Liste', 'wait', 2, 'wait@aka.cde-ev.de', NULL, 20, 6, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL),
+    (11, 'Kampfbrief-Kommentare', 'opt', 1, 'opt@lists.cde-ev.de', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], NULL);
 
 INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
     (3, 10, 'janis-spam@example.cde'),
