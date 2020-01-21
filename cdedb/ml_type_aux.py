@@ -36,6 +36,16 @@ _DOMAIN_STR_MAP = {
 }
 
 
+def get_type(val):
+    if isinstance(val, str):
+        val = int(val)
+    if isinstance(val, int):
+        val = MailinglistTypes(val)
+    if isinstance(val, MailinglistTypes):
+        return TYPE_MAP[val]
+    raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
+
+
 def domain_str(val):
     if isinstance(val, int) or isinstance(val, const.MailinglistTypes):
         ml_type = val
