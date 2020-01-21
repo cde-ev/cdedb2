@@ -348,6 +348,9 @@ class MlBackend(AbstractBackend):
                              for d in data if d['mailinglist_id'] == anid}
                 assert ('whitelist' not in ret[anid])
                 ret[anid]['whitelist'] = whitelist
+            for anid in ids:
+                ret[anid]['domain_str'] = str(const.MailinglistDomain(ret[anid]['domain']))
+                ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
 
     @access("ml")

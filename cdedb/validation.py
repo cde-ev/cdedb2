@@ -3143,6 +3143,8 @@ _MAILINGLIST_OPTIONAL_FIELDS = lambda: {
 }
 _MAILINGLIST_READONLY_FIELDS = {
     'address',
+    'domain_str',
+    'ml_type_class',
 }
 
 
