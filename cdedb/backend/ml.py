@@ -450,8 +450,8 @@ class MlBackend(AbstractBackend):
         the complete set of moderator IDs or whitelisted addresses, which
         will superseed the current list.
 
-        If the subscription policy is set to 'mandatory' all unsubscriptions
-        are dropped without exception.
+        If the new mailinglist type does not allow unsubscription,
+        all unsubscriptions are dropped without exception.
 
         This requires different levels of access depending on what change is
         made. Setting whitelist or moderators is allowed for moderators, setting
