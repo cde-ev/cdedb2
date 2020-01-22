@@ -46,7 +46,7 @@ class AllMembersImplicitMeta:
     @classmethod
     def get_implicit_subscribers(cls, rs, bc, mailinglist):
         assert TYPE_MAP[mailinglist["ml_type"]] == cls
-        return bc.core.list_current_members(rs, is_active=True)
+        return bc.core.list_current_members(rs, is_active=False)
 
 
 class AssemblyAssociatedMeta:
