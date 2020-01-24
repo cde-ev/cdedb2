@@ -103,16 +103,16 @@ class CdEFrontend(AbstractUserFrontend):
             if period['balance_done']:
                 periods_left += 1
             # Initialize deadline
-            deadline = now().date().replace(day=1)
-            month = 7 if deadline.month >= 7 else 1
+            deadline = now().date().replace(day=15)
+            month = 8 if deadline.month >= 8 else 2
             deadline = deadline.replace(month=month)
             # Add remaining periods
             deadline = deadline.replace(year=deadline.year + periods_left // 2)
             if periods_left % 2:
-                if deadline.month >= 7:
-                    deadline = deadline.replace(year=deadline.year + 1, month=1)
+                if deadline.month >= 8:
+                    deadline = deadline.replace(year=deadline.year + 1, month=2)
                 else:
-                    deadline = deadline.replace(month=7)
+                    deadline = deadline.replace(month=8)
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
             'meta_info': meta_info, 'deadline': deadline})
