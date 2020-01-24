@@ -25,6 +25,9 @@
         {% with course_id = registration['tracks'][track_id]['course_id'] %}
             {% if course_id %}
                 {{ courses[course_id]['nr'] }}.&nbsp;{{ courses[course_id]['shortname'] }}
+                {% if registration['tracks'][track_id]['course_instructor'] == course_id %}
+                    {{ "(KL)" }}
+                {% endif %}
                 {% if not loop.last %}
                     <br />
                 {% endif %}
@@ -83,7 +86,7 @@
                     <tr>
                         <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
                         <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
-                        <td>{{ personas[registration['persona_id']]['username'] }}</td>
+                        <td>{{ util.username_mailto(personas[registration['persona_id']]) }}</td>
                         <td>
                             {{ personas[registration['persona_id']]['postal_code'] }}
                             {{ personas[registration['persona_id']]['location'] }}
@@ -121,7 +124,7 @@
                     <tr>
                         <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
                         <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
-                        <td>{{ personas[registration['persona_id']]['username'] }}</td>
+                        <td>{{ util.username_mailto(personas[registration['persona_id']]) }}</td>
                         <td>
                             {{ personas[registration['persona_id']]['postal_code'] }}
                             {{ personas[registration['persona_id']]['location'] }}

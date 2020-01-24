@@ -1249,6 +1249,8 @@ etc;anything else""", f['entries_2'].value)
                                "und Admins sichtbar.")
         self.assertPresence("Warmup")
         self.assertPresence("Zweite Hälfte")
+        self.traverse({'description': 'Zweite Hälfte'},)
+        self.assertPresence("α. Heldentum (KL)")
         self.logout()
 
         # check non-visibility for participant without list consent
