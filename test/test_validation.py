@@ -86,7 +86,15 @@ class TestValidation(unittest.TestCase):
             ("garbage", None, ValueError, False),
             (12.0, 12, None, False),
             (12.5, None, ValueError, False),
+            (True, 1, None, False),
+            (False, 0, None, False),
             ))
+
+    def test_bool_int(self):
+        self.do_validator_test("_int", (
+            (True, None, TypeError, False),
+            (False, None, TypeError, False),
+            ), {"_convert": False})
 
     def test_float(self):
         self.do_validator_test("_float", (
