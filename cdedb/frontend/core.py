@@ -1270,6 +1270,17 @@ class CoreFrontend(AbstractFrontend):
             return self.promote_user_form(rs, persona_id)
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
+        if code > 0 and target_realm == "cde":
+            meta_info = self.coreproxy.get_meta_info(rs)
+            self.do_mail(rs, "welcome",
+                         {'To': (persona['username'],),
+                          'Subject': "Aufnahme in den CdE",
+                          },
+                         {'data': persona,
+                          'email': "",
+                          'cookie': "",
+                          'meta_info': meta_info,
+                          })
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
