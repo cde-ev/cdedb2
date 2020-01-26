@@ -1851,10 +1851,17 @@ class CdEFrontend(AbstractUserFrontend):
                         persona['id'], lastschrift['id'])
                 address = make_postal_address(persona)
                 transaction_subject = make_transaction_subject(persona)
+                endangered = (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                              and not persona['trial_member']
+                              and not lastschrift)
+                if endangered:
+                    subject = "CdE-Mitgliedschaft verlängern"
+                else:
+                    subject = "CdE-Mitgliedschaft verlängert"
                 self.do_mail(
                     rrs, "billing",
                     {'To': (persona['username'],),
-                     'Subject': "CdE-Mitgliedschaft verlängern"},
+                     'Subject': subject},
                     {'persona': persona,
                      'fee': self.conf.MEMBERSHIP_FEE,
                      'lastschrift': lastschrift,

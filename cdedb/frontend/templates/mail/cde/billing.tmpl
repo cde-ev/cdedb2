@@ -8,8 +8,8 @@ Dein Guthaben beim CdE jedoch nicht mehr, um für ein weiteres halbes
 Jahr den Mitgliedsbeitrag von {{ fee|money }} zu bezahlen.
 
 Deshalb bitten wir Dich, auf das CdE-Konto den halbjährlichen
-Mitgliedsbeitrag von {{ fee|money }} oder ein Vielfaches davon
-zu überweisen:
+Mitgliedsbeitrag von {{ fee|money }} oder (noch lieber ob des
+geringeren Verwaltungsaufwands) ein Vielfaches davon zu überweisen:
 
 Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
@@ -44,8 +44,8 @@ Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
 von Deinem Konto den jährlichen Mitgliedsbeitrag und eine Spende
 einzuziehen. Das Lastschriftmandat mit der Mandatsreferenz
 {{ lastschrift['reference'] }} kannst Du unter
-{{ cdedblink("core/index") }}
-widerrufen. Sollte sich Deine Bankverbindung geändert haben,
+{{ cdedblink("cde/lastschrift_show", {'persona_id': persona['id']}) }}
+einsehen. Sollte sich Deine Bankverbindung geändert haben,
 so informiere uns bitte.
 
 In wenigen Tagen werden wir nun den vereinbarten Betrag
@@ -78,13 +78,28 @@ Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
 sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
 von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
 {% else %}
-Du bist für dieses Halbjahr Probemitglied im CdE.
+Du bist für dieses Halbjahr Probemitglied im CdE. Du bekommst in
+dieser Zeit mit der Mitgliedschaft auch den ExPuls (die
+Vereinszeitschrift).
+
+Die Probemitgliedschaft ist für Dich kostenlos und verlängert sich
+nicht automatisch. Falls Du nach Ende der Probemitgliedschaft weiter
+im CdE bleiben möchtest, musst Du danach den Mitgliedsbeitrag in Höhe
+von {{ fee|money }} pro Halbjahr an uns überweisen.
 {% endif %}
+
+Du kannst Dein Guthaben jederzeit durch eine Überweisung auf das
+CdE-Konto auffüllen. Gerne auch in Vielfachen des Mitgliedsbeitrags,
+was den Verwaltungsaufwand senkt. Hier die Kontoverbindung:
+
+Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
+IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
+BIC:              {{ meta_info['CdE_Konto_BIC'] }}
+Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
+Verwendungszweck: {{ transaction_subject }}
+
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
-
-Weitere Angaben zur Überweisung auf das CdE-Konto findest Du unter
-{{ cdedblink("cde/index") }}
 
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
 Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
