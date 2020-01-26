@@ -1311,7 +1311,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             pdf_file = "{}.pdf".format(target_file)
         pdf_path = pathlib.Path(cwd, pdf_file)
 
-        args = ("pdflatex", "-interaction", "batchmode", target_file)
+        args = ("lualatex", "-interaction", "batchmode", target_file)
         self.logger.info("Invoking {}".format(args))
         try:
             for _ in range(runs):
