@@ -24,11 +24,14 @@
     \usepackage{graphicx}
     \usepackage{microtype}
 
-    %% fix euro symbol
     \usepackage[gen]{eurosym}
-    \DeclareUnicodeCharacter{20AC}{\euro{}}
-    %% fix nonbreaking halfspace
-    \DeclareUnicodeCharacter{202F}{\,}
+    \ifLuaTeX
+    \else
+        %% fix euro symbol
+        \DeclareUnicodeCharacter{20AC}{\euro{}}
+        %% fix nonbreaking halfspace
+        \DeclareUnicodeCharacter{202F}{\,}
+    \fi
 
     %%
     %% addresses and other data details

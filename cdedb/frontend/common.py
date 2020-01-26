@@ -1315,10 +1315,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.logger.info("Invoking {}".format(args))
         try:
             for _ in range(runs):
-                subprocess.check_call(args, stdout=subprocess.DEVNULL, cwd=cwd)
+                subprocess.run(args, cwd=cwd, check=True,
+                               stdout=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
-                self.logger.debug("Deleting corrupted file {}".format(pdf_path))
+                self.logger.debug(
+                    "Deleting corrupted file {}".format(pdf_path))
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
             errormsg = errormsg or n_(

@@ -2080,25 +2080,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertLess(100, len(self.response.body))
 
     @as_users("garcia")
-    def test_latex_error(self, user):
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'},
-                      {'description': 'Kurse'},
-                      {'description': 'Heldentum'},
-                      {'description': '\u00a0Bearbeiten'})
-
-        f = self.response.forms["changecourseform"]
-        f["title"] = "English in the /ˌbrɪ.tɪʃ ˈaɪlz/"
-        self.submit(f)
-        self.traverse({'description': 'Downloads'})
-        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
-        save = self.response
-        self.response = save.click(href='/event/event/1/download/courselists\\?runs=2')
-        self.follow()
-        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
-        self.assertPresence("LaTeX-Code konnte nicht kompiliert werden.", div="notifications")
-
-    @as_users("garcia")
     def test_download_export(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
