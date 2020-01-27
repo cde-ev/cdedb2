@@ -632,20 +632,6 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
-    @as_users("farin")
-    def test_lastschrift_receipt_broken(self, user):
-        self.admin_view_profile('berta')
-        self.traverse({'description': 'Bearbeiten'})
-        f = self.response.forms['changedataform']
-        f['given_names'] = '/ˌbrɪ.tɪʃ ˈaɪlz/'  # These characters break pdflatex
-        self.submit(f)
-        self.traverse({'href': '/cde/user/2/lastschrift'})
-        self.assertTitle("Einzugsermächtigung /ˌbrɪ.tɪʃ ˈaɪlz/ Beispiel")
-        f = self.response.forms['receiptform3']
-        self.submit(f, check_notification=False)
-        self.assertTitle("Einzugsermächtigung /ˌbrɪ.tɪʃ ˈaɪlz/ Beispiel")
-        self.assertPresence("Der LaTeX-Code konnte nicht kompiliert werden.", "notifications")
-
     @as_users("vera")
     def test_lastschrift_subscription_form(self, user):
         self.get("/cde/lastschrift/form/download")
@@ -654,15 +640,6 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_subscription_form_anonymous(self):
         self.get("/cde/lastschrift/form/download")
         self.assertTrue(self.response.body.startswith(b"%PDF"))
-
-    def test_lastschrift_subscription_form_broken(self):
-        self.get("/cde/lastschrift/form/fill")
-        self.assertTitle("Einzugsermächtigung ausfüllen")
-        f = self.response.forms["filllastschriftform"]
-        f["full_name"] = "/ˌbrɪ.tɪʃ ˈaɪlz/"  # These characters break pdflatex
-        self.submit(f, check_notification=False)
-        self.assertTitle("Einzugsermächtigung ausfüllen")
-        self.assertPresence("Formular konnte nicht erstellt werden.", "notifications")
 
     @as_users("vera", "charly")
     def test_lastschrift_subscription_form_fill(self, user):
