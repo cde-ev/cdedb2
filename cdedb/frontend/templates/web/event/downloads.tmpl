@@ -135,6 +135,12 @@
             <tr>
                 <td>
                     {% trans -%}Assets{%- endtrans %}<br />
+                    <p>
+                        {% trans -%}
+                            This functionality is deprecated and will be removed soon.
+                            Do not use it anymore.
+                        {%- endtrans %}
+                    </p>
                     <small>({% trans -%}collection of all course logos and event logo{%- endtrans %})</small>
                 </td>
                 <td>{{ util.href(cdedblink('event/download_assets'), gettext("TAR-GZ-File"), icon='download') }}</td>

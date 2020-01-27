@@ -314,6 +314,12 @@
                         {{ util.anti_csrf_token('event/set_event_logo') }}
                         {{ util.input_hidden(name="delete", value=False) }}
                         <div class="input-group">
+                            <p>
+                                {% trans -%}
+                                    This functionality is deprecated and will be removed soon.
+                                    Do not use it anymore.
+                                {%- endtrans %}
+                            </p>
                             {{ util.input_file(name="event_logo", accept="image/*") }}
                             <div class="input-group-btn">
                                 {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='upload') }}
