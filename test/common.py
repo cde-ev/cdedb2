@@ -565,7 +565,7 @@ class FrontendTest(unittest.TestCase):
         if regex:
             self.assertTrue(re.search(s.strip(), normalized))
         elif only:
-            self.assertTrue(s.strip(), normalized)
+            self.assertEqual(s.strip(), normalized.strip())
         else:
             self.assertIn(s.strip(), normalized)
 

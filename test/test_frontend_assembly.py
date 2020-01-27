@@ -423,7 +423,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Bester Hof (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual(None, f['vote'].value)
-        self.assertPresence("Du hast Dich enthalten.", div='status', only=True)
+        self.assertPresence("Du hast Dich enthalten.", div='status')
         f['vote'] = "St"
         self.submit(f)
         self.assertTitle("Bester Hof (Internationaler Kongress)")
@@ -458,7 +458,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual(None, f.get('vote', index=0).value)
-        self.assertPresence("Du hast Dich enthalten.", div='status', only=True)
+        self.assertPresence("Du hast Dich enthalten.", div='status')
         f['vote'] = ["E"]
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
@@ -517,13 +517,11 @@ class TestAssemblyFrontend(FrontendTest):
                 f = self.response.forms["voteform"]
                 f["vote"] = []
                 self.submit(f)
-                self.assertPresence("Du hast Dich enthalten.", div='status',
-                                    only=True)
+                self.assertPresence("Du hast Dich enthalten.", div='status')
 
                 f = self.response.forms['abstentionform']
                 self.submit(f)
-                self.assertPresence("Du hast Dich enthalten.", div='status',
-                                    only=True)
+                self.assertPresence("Du hast Dich enthalten.", div='status')
 
                 f = self.response.forms["voteform"]
                 f["vote"] = ["arthur", "ford"]
@@ -607,7 +605,7 @@ class TestAssemblyFrontend(FrontendTest):
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
 
         self.assertPresence("Du nimmst nicht an der Versammlung teil.",
-                            div='status', only=True)
+                            div='own-vote', only=True)
         self.assertNonPresence("Du hast nicht abgestimmt.")
 
         self.traverse({'description': 'Kanonische Beispielversammlung'})
@@ -616,7 +614,7 @@ class TestAssemblyFrontend(FrontendTest):
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
 
         self.assertNonPresence("Du nimmst nicht an der Versammlung teil.")
-        self.assertPresence("Du hast nicht abgestimmt.", div='status',
+        self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             only=True)
 
     @as_users("werner")
@@ -659,7 +657,7 @@ class TestAssemblyFrontend(FrontendTest):
 
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'})
-        self.assertPresence("Du hast nicht abgestimmt.", div='status',
+        self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             only=True)
 
         # Conclude assembly.
@@ -673,8 +671,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Maximale Länge der Verfassung'})
         self.assertPresence("Die Versammlung wurde beendet und die "
-                            "Stimmen sind nun verschlüsselt.", div='status',
-                            only=True)
+                            "Stimmen sind nun verschlüsselt.")
         self.assertNonPresence(
             "Du hast für die folgenden Kandidaten gestimmt:")
 
@@ -685,7 +682,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertNonPresence("Die Versammlung wurde beendet und die "
                                "Stimmen sind nun verschlüsselt.")
         self.assertPresence(
-            "Du hast für die folgenden Kandidaten gestimmt: Ja", div='status',
+            "Du hast für die folgenden Kandidaten gestimmt: Ja", div='own-vote',
             only=True)
 
     def test_log(self):
