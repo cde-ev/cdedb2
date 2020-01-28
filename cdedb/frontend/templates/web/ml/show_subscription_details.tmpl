@@ -57,14 +57,14 @@
                 {{ util.output_errors('modsubscriber_id', wrapper=True) }}
             </form>
 
-            <ul>
+            <ul id="modsubscriber-list">
                 {% for subscription_override, persona in subscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
 
                         <form action="{{ cdedblink('ml/remove_subscription_override') }}"
                               method="POST"
-                              id="removemodsubscribeform{{ subscription_override }}"
+                              id="removemodsubscriberform{{ subscription_override }}"
                               class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_subscription_override') }}
                             {{ util.input_hidden(name="modsubscriber_id", value=subscription_override) }}
@@ -109,14 +109,14 @@
                 {{ util.output_errors('modunsubscriber_id', wrapper=True) }}
             </form>
 
-            <ul>
+            <ul id="modunsubscriber-list">
                 {% for unsubscription_override, persona in unsubscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
 
                         <form action="{{ cdedblink('ml/remove_unsubscription_override') }}"
                               method="POST"
-                              id="removemodunsubscribeform{{ unsubscription_override }}"
+                              id="removemodunsubscriberform{{ unsubscription_override }}"
                               style="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                             {{ util.input_hidden(name="modunsubscriber_id", value=unsubscription_override) }}
@@ -153,7 +153,7 @@
     </form>
     <div class="row">
         <div class="col-md-6">
-            <ul>
+            <ul id="whitelist">
                 {% for email in ambience['mailinglist']['whitelist']|sort %}
                     <li class="hide-hover-container clearfix-after">
                         {{ email }}

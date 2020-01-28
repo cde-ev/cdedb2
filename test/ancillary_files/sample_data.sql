@@ -361,7 +361,7 @@ INSERT INTO ml.mailinglists (id, title, address, description, ml_type, sub_polic
     (8, 'Orga-Liste', 'aka@example.cde', NULL, 21, 6, 1, 1, 3, '[orga]', NULL, True, 1, ARRAY[]::integer[], NULL),
     (9, 'Teilnehmer-Liste', 'participants@example.cde', NULL, 20, 6, 2, 1, 3, '[aka]', NULL, True, 1, ARRAY[2, 4], NULL),
     (10, 'Warte-Liste', 'wait@example.cde', NULL, 20, 6, 3, 1, 3, '[wait]', NULL, True, 1, ARRAY[3], NULL),
-    (11, 'Kampfbrief-Kommentare', 'opt@example.cde', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], 1);
+    (11, 'Kampfbrief-Kommentare', 'opt@example.cde', NULL, 31, 3, 1, 1, 2, '[talk]', NULL, True, NULL, ARRAY[]::integer[], NULL);
 
 INSERT INTO ml.subscription_addresses (mailinglist_id, persona_id, address) VALUES
     (3, 10, 'janis-spam@example.cde'),
@@ -377,6 +377,7 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (1, 9, 30),
     (1, 12, 30),
     (1, 13, 30),
+    (1, 15, 30),
     (1, 22, 30),
     (1, 23, 30),
     (1, 27, 30),
@@ -385,16 +386,12 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (2, 1, 30),
     (2, 2, 30),
     (2, 3, 30),
-    (2, 4, 30),
-    (2, 5, 30),
     (2, 6, 2),
     (2, 7, 30),
     (2, 9, 30),
-    (2, 10, 30),
-    (2, 11, 30),
     (2, 12, 30),
     (2, 13, 30),
-    (2, 14, 1),
+    (2, 15, 30),
     (2, 22, 30),
     (2, 23, 30),
     (2, 27, 30),
@@ -405,7 +402,8 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (3, 10, 1),
     (4, 1, 1),
     (4, 2, 1),
-    (4, 10, 1),
+    (4, 3, 1),
+    (4, 7, 11),
     (4, 100, 1),
     (5, 1, 30),
     (5, 2, 30),
@@ -427,13 +425,11 @@ INSERT INTO ml.subscription_states (mailinglist_id, persona_id, subscription_sta
     (9, 9, 30),
     (9, 100, 30),
     (10, 5, 30),
-    (11, 1, 11),
-    (11, 2, 30),
     (11, 3, 1),
     (11, 4, 2),
     (11, 9, 11),
-    (11, 11, 30),
-    (11, 23, 30),
+    (11, 11, 1),
+    (11, 23, 1),
     (11, 100, 11);
 
 INSERT INTO ml.whitelist (mailinglist_id, address) VALUES

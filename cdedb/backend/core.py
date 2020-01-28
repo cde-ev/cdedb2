@@ -592,15 +592,18 @@ class CoreBackend(AbstractBackend):
         return {d['id']: d for d in data}
 
     @internal_access("ml")
-    def list_current_members(self, rs):
+    def list_current_members(self, rs, is_active=False):
         """Helper to list all current members.
 
         Used to determine subscribers of mandatory/opt-out member mailinglists.
 
         :type rs: :py:class:`cdedb.common.RequestState`
+        :type is_active: bool
         :rtype: {int}
         """
         query = "SELECT id from core.personas WHERE is_member = True"
+        if is_active:
+            query += " AND is_active = True"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 

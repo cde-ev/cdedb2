@@ -8,6 +8,8 @@ from cdedb.database.constants import (SubscriptionStates as SS,)
 import cdedb.database.constants as const
 import datetime
 import decimal
+import copy
+import cdedb.validation as validate
 
 
 class TestMlBackend(BackendTest):
@@ -40,17 +42,11 @@ class TestMlBackend(BackendTest):
         expectation[6] = 'Aktivenforum 2000'
         self.assertEqual(expectation,
                          self.ml.list_mailinglists(self.key, active_only=False))
-        expectation = {2: 'Werbung',
-                       3: 'Witz des Tages',
-                       4: 'Klatsch und Tratsch'}
-        self.assertEqual(expectation, self.ml.list_mailinglists(
-            self.key, audience_policies=(1,), active_only=False))
         expectation = {
             3: {'address': 'witz@example.cde',
                 'description': "Einer geht noch ...",
                 'assembly_id': None,
                 'attachment_policy': 2,
-                'audience_policy': 1,
                 'event_id': None,
                 'id': 3,
                 'is_active': True,
@@ -59,7 +55,6 @@ class TestMlBackend(BackendTest):
                 'mod_policy': 2,
                 'moderators': {2, 3, 10},
                 'registration_stati': [],
-                'sub_policy': 3,
                 'subject_prefix': '[witz]',
                 'title': 'Witz des Tages',
                 'notes': None,
@@ -68,7 +63,6 @@ class TestMlBackend(BackendTest):
                 'description': None,
                 'assembly_id': 1,
                 'attachment_policy': 2,
-                'audience_policy': 2,
                 'event_id': None,
                 'id': 5,
                 'is_active': True,
@@ -77,7 +71,6 @@ class TestMlBackend(BackendTest):
                 'mod_policy': 2,
                 'moderators': {2, 7},
                 'registration_stati': [],
-                'sub_policy': 6,
                 'subject_prefix': '[kampf]',
                 'title': 'Sozialistischer Kampfbrief',
                 'notes': None,
@@ -86,7 +79,6 @@ class TestMlBackend(BackendTest):
                 'description': None,
                 'assembly_id': None,
                 'attachment_policy': 2,
-                'audience_policy': 5,
                 'event_id': None,
                 'id': 7,
                 'is_active': True,
@@ -95,7 +87,6 @@ class TestMlBackend(BackendTest):
                 'mod_policy': 2,
                 'moderators': {2, 10},
                 'registration_stati': [],
-                'sub_policy': 3,
                 'subject_prefix': '[aktivenforum]',
                 'title': 'Aktivenforum 2001',
                 'notes': None,
@@ -111,7 +102,7 @@ class TestMlBackend(BackendTest):
             'whitelist': {'aliens@example.cde',
                           'captiankirk@example.cde',
                           'picard@example.cde'},
-            'sub_policy': 4,
+            'ml_type': const.MailinglistTypes.member_moderated_opt_in,
             'is_active': False,
             'address': 'passivenforum@example.cde',
             'notes': "this list is no more",
@@ -139,14 +130,12 @@ class TestMlBackend(BackendTest):
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': 3,
-            'audience_policy': 5,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
             'mod_policy': 1,
             'moderators': {1, 2},
             'registration_stati': [],
-            'sub_policy': 5,
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
@@ -168,20 +157,61 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
 
     @as_users("anton")
+    def test_mailinglist_creation_optional_fields(self, user):
+        new_data = {
+            'address': 'revolution1@example.cde',
+            'description': 'Vereinigt Euch',
+            'attachment_policy': const.AttachmentPolicy.forbid,
+            'is_active': True,
+            'maxsize': None,
+            'ml_type': const.MailinglistTypes.member_moderated_opt_in,
+            'mod_policy': const.ModerationPolicy.unmoderated,
+            'moderators': {2, 9},
+            'notes': None,
+            'subject_prefix': 'viva la revolution',
+            'title': 'Proletarier aller Länder',
+        }
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['registration_stati'] = [const.RegistrationPartStati.guest]
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['registration_stati'] = []
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['whitelist'] = "datenbank@example.cde"
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['address'] += "x"
+        new_data['whitelist'] = ["datenbank@example.cde"]
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['whitelist'] = []
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['event_id'] = 1
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['event_id'] = None
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        new_data['address'] += "x"
+        new_data['assembly_id'] = 1
+        with self.assertRaises(ValueError):
+            self.ml.create_mailinglist(self.key, new_data)
+        new_data['assembly_id'] = None
+        self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+
+    @as_users("anton")
     def test_sample_data(self, user):
         ml_ids = self.ml.list_mailinglists(self.key, active_only=False)
 
         for ml_id in ml_ids:
-            expectation = self.ml.get_subscription_states(self.key, ml_id)
-            self.ml.write_subscription_states(self.key, ml_id)
-            result = self.ml.get_subscription_states(self.key, ml_id)
+            with self.subTest(ml_id=ml_id):
+                expectation = self.ml.get_subscription_states(self.key, ml_id)
+                self.ml.write_subscription_states(self.key, ml_id)
+                result = self.ml.get_subscription_states(self.key, ml_id)
 
-            self.assertEqual(expectation, result)
-
-    @as_users("nina")
-    def test_list_subscription_overrides(self, user):
-        overrides = self.ml.list_subscription_overrides(self.key)
-        self.assertEqual(overrides, {5: 'Sozialistischer Kampfbrief'})
+                self.assertEqual(expectation, result)
 
     @as_users("nina", "berta")
     def test_moderator_set_mailinglist(self, user):
@@ -216,7 +246,6 @@ class TestMlBackend(BackendTest):
             4: SS.subscribed,
             5: SS.implicit,
             6: SS.subscribed,
-            11: SS.implicit
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
@@ -225,9 +254,7 @@ class TestMlBackend(BackendTest):
     def test_subscriptions_two(self, user):
         # Which lists is Janis subscribed to.
         expectation = {
-            2: SS.implicit,
             3: SS.subscribed,
-            4: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=10))
@@ -235,7 +262,6 @@ class TestMlBackend(BackendTest):
     @as_users("anton", "emilia")
     def test_subscriptions_three(self, user):
         expectation = {
-            2: SS.implicit,
             9: SS.unsubscribed,
             10: SS.implicit,
         }
@@ -247,6 +273,7 @@ class TestMlBackend(BackendTest):
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
+            4: SS.unsubscription_override,
             8: SS.implicit,
             9: SS.subscribed,
         }
@@ -467,7 +494,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
                          code=1, state=SS.subscribed)
 
-    @as_users("anton", "ferdinand", "janis", "nina")
+    @as_users("anton", "ferdinand")
     def test_opt_out(self, user):
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
@@ -637,7 +664,7 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': ml_id,
             'event_id': 2,
-            'audience_policy': const.AudiencePolicy.require_event,
+            'ml_type': const.MailinglistTypes.event_associated,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -688,91 +715,6 @@ class TestMlBackend(BackendTest):
                          code=None, state=SS.unsubscribed, kind="info")
         self._change_sub(user['id'],  ml_id, SA.request_subscription,
                          code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=1, state=SS.subscribed)
-
-        mdata = {
-            'id': ml_id,
-            'assembly_id': None,
-        }
-        self.ml.set_mailinglist(self.key, mdata)
-
-        expectation = {
-            3: SS.subscription_override,
-            9: SS.unsubscription_override,
-            14: SS.subscription_override,
-            100: SS.subscription_override,
-        }
-        result = self.ml.get_subscription_states(self.key, ml_id)
-        self.assertEqual(result, expectation)
-
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=None, state=None, kind="error")
-        self._change_sub(user['id'], ml_id, SA.unsubscribe,
-                         code=None, state=None, kind="info")
-        self._change_sub(user['id'], ml_id, SA.request_subscription,
-                         code=None, state=None, kind="error")
-
-    @as_users("anton")
-    def test_opt_in_opt_out(self, user):
-        ml_id = 11
-
-        # Fix broken test data.
-        sdata = {
-            'persona_id': 1,
-            'mailinglist_id': ml_id,
-            'subscription_state': SS.implicit,
-        }
-        self.ml._set_subscription(self.key, sdata)
-
-        expectation = {
-            1: SS.implicit,
-            2: SS.implicit,
-            3: SS.subscribed,
-            4: SS.unsubscribed,
-            9: SS.unsubscription_override,
-            11: SS.implicit,
-            23: SS.implicit,
-            100: SS.unsubscription_override,
-        }
-        result = self.ml.get_subscription_states(self.key, ml_id)
-        self.assertEqual(result, expectation)
-
-        self._change_sub(user['id'], ml_id, SA.subscribe,
-                         code=None, state=SS.implicit, kind="info")
-        self._change_sub(user['id'], ml_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
-        self._change_sub(user['id'], ml_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscribed, kind="info")
-        self._change_sub(user['id'], ml_id, SA.request_subscription,
-                         code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'], ml_id, SA.subscribe,
-                         code=1, state=SS.subscribed)
-
-        mdata = {
-            'id': ml_id,
-            'assembly_id': None,
-        }
-        self.ml.set_mailinglist(self.key, mdata)
-
-        expectation = {
-            1: SS.subscribed,
-            3: SS.subscribed,
-            4: SS.unsubscribed,
-            9: SS.unsubscription_override,
-            100: SS.unsubscription_override,
-        }
-        result = self.ml.get_subscription_states(self.key, ml_id)
-        self.assertEqual(result, expectation)
-
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=None, state=SS.subscribed, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscribed, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.request_subscription,
-                         code=None,state=SS.unsubscribed, kind="error")
         self._change_sub(user['id'],  ml_id, SA.subscribe,
                          code=1, state=SS.subscribed)
 
@@ -837,30 +779,27 @@ class TestMlBackend(BackendTest):
 
     @as_users("janis", "kalif")
     def test_audience(self, user):
-        # List 4 is moderated opt-in
-        if user['id'] == 10:
-            self._change_sub(user['id'],  4, SA.unsubscribe,
-                             code=1, state=SS.unsubscribed)
-            self._change_sub(user['id'],  4, SA.subscribe,
-                             code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'],  4, SA.request_subscription,
-                         code=1, state=SS.pending)
-        self._change_sub(user['id'],  4, SA.cancel_request,
-                         code=1, state=None)
+        # List 4 is moderated opt-in for members only.
+        self._change_sub(user['id'], 4, SA.subscribe,
+                         code=None, state=None, kind="error")
+        self._change_sub(user['id'], 4, SA.request_subscription,
+                         code=None, state=None, kind="error")
+        self._change_sub(user['id'], 4, SA.cancel_request,
+                         code=None, state=None, kind="error")
         # List 7 is not joinable by non-members
-        self._change_sub(user['id'],  7, SA.subscribe,
+        self._change_sub(user['id'], 7, SA.subscribe,
                          code=None, state=None, kind="error")
         # List 9 is only allowed for event users, and not joinable anyway
         self._change_sub(user['id'],  9, SA.subscribe,
                          code=None, state=None, kind="error")
         # List 11 is only joinable by assembly users
         if user['id'] == 11:
-            self._change_sub(user['id'],  11, SA.unsubscribe,
+            self._change_sub(user['id'], 11, SA.unsubscribe,
                              code=1, state=SS.unsubscribed)
-            self._change_sub(user['id'],  11, SA.subscribe,
+            self._change_sub(user['id'], 11, SA.subscribe,
                              code=1, state=SS.subscribed)
         else:
-            self._change_sub(user['id'],  11, SA.subscribe,
+            self._change_sub(user['id'], 11, SA.subscribe,
                              code=None, state=None, kind="error")
 
     @as_users("anton")
@@ -995,19 +934,18 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_change_sub_policy(self, user):
+        pass
         mdata = {
             'address': 'revolution@example.cde',
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
-            'audience_policy': const.AudiencePolicy.require_member,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
             'mod_policy': const.ModerationPolicy.unmoderated,
             'moderators': set(),
             'registration_stati': [],
-            'sub_policy': const.MailinglistInteractionPolicy.invitation_only,
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
@@ -1015,7 +953,7 @@ class TestMlBackend(BackendTest):
                 'fidel@example.cde',
                 'che@example.cde',
             },
-            'ml_type': 5
+            'ml_type': const.MailinglistTypes.member_invitation_only,
         }
         new_id = self.ml.create_mailinglist(self.key, mdata)
 
@@ -1025,7 +963,7 @@ class TestMlBackend(BackendTest):
         # Making the list Opt-Out should yield implicits subscribers.
         mdata = {
             'id': new_id,
-            'sub_policy': const.MailinglistInteractionPolicy.opt_out,
+            'ml_type': const.MailinglistTypes.member_opt_out,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1038,6 +976,7 @@ class TestMlBackend(BackendTest):
             9: SS.implicit,
             12: SS.implicit,
             13: SS.implicit,
+            15: SS.implicit,
             22: SS.implicit,
             23: SS.implicit,
             27: SS.implicit,
@@ -1083,6 +1022,7 @@ class TestMlBackend(BackendTest):
             9: SS.implicit,
             12: SS.pending,
             13: SS.implicit,
+            15: SS.implicit,
             22: SS.implicit,
             23: SS.implicit,
             27: SS.implicit,
@@ -1096,7 +1036,7 @@ class TestMlBackend(BackendTest):
         # outside of the audience.
         mdata = {
             'id': new_id,
-            'sub_policy': const.MailinglistInteractionPolicy.mandatory,
+            'ml_type': const.MailinglistTypes.member_mandatory,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1109,6 +1049,7 @@ class TestMlBackend(BackendTest):
             9: SS.implicit,
             12: SS.implicit,
             13: SS.implicit,
+            15: SS.implicit,
             22: SS.implicit,
             23: SS.implicit,
             27: SS.implicit,
@@ -1125,18 +1066,16 @@ class TestMlBackend(BackendTest):
             'description': None,
             'assembly_id': None,
             'attachment_policy': const.AttachmentPolicy.forbid,
-            'audience_policy': const.AudiencePolicy.require_event,
             'event_id': 2,
             'is_active': True,
             'maxsize': None,
             'mod_policy': const.ModerationPolicy.unmoderated,
             'moderators': set(),
             'registration_stati': [],
-            'sub_policy': const.MailinglistInteractionPolicy.invitation_only,
             'subject_prefix': 'orga',
             'title': 'Orgateam',
             'notes': None,
-            'ml_type': 21,
+            'ml_type': const.MailinglistTypes.event_orga,
         }
         new_id = self.ml.create_mailinglist(self.key, mdata)
 
@@ -1151,7 +1090,7 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': new_id,
             'event_id': 1,
-            'audience_policy': const.AudiencePolicy.require_event,
+            'ml_type': const.MailinglistTypes.event_orga,
         }
         self.ml.set_mailinglist(self.key, mdata)
 
@@ -1163,6 +1102,7 @@ class TestMlBackend(BackendTest):
 
         mdata = {
             'id': new_id,
+            'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.guest,
                                    const.RegistrationPartStati.cancelled],
         }
@@ -1177,7 +1117,7 @@ class TestMlBackend(BackendTest):
 
         mdata = {
             'id': new_id,
-            'audience_policy': const.AudiencePolicy.require_assembly,
+            'ml_type': const.MailinglistTypes.assembly_associated,
             'event_id': None,
             'assembly_id': 1,
         }
@@ -1200,15 +1140,11 @@ class TestMlBackend(BackendTest):
             1: 'anton@example.cde',
             2: 'berta@example.cde',
             3: 'charly@example.cde',
-            4: 'daniel@example.cde',
-            5: 'emilia@example.cde',
             7: 'garcia@example.cde',
             9: 'inga@example.cde',
-            10: 'janis@example.cde',
-            11: 'kalif@example.cde',
             12: None,
             13: 'martin@example.cde',
-            14: 'nina@example.cde',
+            15: 'olaf@example.cde',
             22: 'vera@example.cde',
             23: 'werner@example.cde',
             27: 'annika@example.cde',
@@ -1505,21 +1441,19 @@ class TestMlBackend(BackendTest):
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': 3,
-            'audience_policy': 5,
             'event_id': None,
             'is_active': True,
             'maxsize': None,
             'mod_policy': 1,
             'moderators': {1, 2},
             'registration_stati': [],
-            'sub_policy': 5,
             'subject_prefix': '[viva la revolution]',
             'title': 'Proletarier aller Länder',
             'notes': "secrecy is important",
             'whitelist': {
                 'che@example.cde',
             },
-            'ml_type': 5,
+            'ml_type': const.MailinglistTypes.member_invitation_only,
         }
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.ml.delete_mailinglist(
@@ -1625,14 +1559,10 @@ class TestMlBackend(BackendTest):
             'subscribers': ('anton@example.cde',
                             'berta@example.cde',
                             'charly@example.cde',
-                            'daniel@example.cde',
-                            'emilia@example.cde',
                             'garcia@example.cde',
                             'inga@example.cde',
-                            'janis@example.cde',
-                            'kalif@example.cde',
                             'martin@example.cde',
-                            'nina@example.cde',
+                            'olaf@example.cde',
                             'vera@example.cde',
                             'werner@example.cde',
                             'annika@example.cde',
@@ -1704,14 +1634,10 @@ class TestMlBackend(BackendTest):
                        'subscribers': ('anton@example.cde',
                                        'berta@example.cde',
                                        'charly@example.cde',
-                                       'daniel@example.cde',
-                                       'emilia@example.cde',
                                        'garcia@example.cde',
                                        'inga@example.cde',
-                                       'janis@example.cde',
-                                       'kalif@example.cde',
                                        'martin@example.cde',
-                                       'nina@example.cde',
+                                       'olaf@example.cde',
                                        'vera@example.cde',
                                        'werner@example.cde',
                                        'annika@example.cde',

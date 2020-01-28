@@ -47,10 +47,7 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml")
     def index(self, rs):
         """Render start page."""
-        policies = const.AudiencePolicy.applicable(rs.user.roles)
-        mailinglists = self.mlproxy.list_mailinglists(
-            rs, audience_policies=policies)
-        mailinglists.update(self.mlproxy.list_subscription_overrides(rs))
+        mailinglists = self.mlproxy.list_mailinglists(rs)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
@@ -135,6 +132,10 @@ class MlFrontend(AbstractUserFrontend):
         sub_states = const.SubscriptionStates.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=sub_states)
+        grouped = collections.defaultdict(dict)
+        for mailinglist_id, title in mailinglists.items():
+            group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
+            grouped[group_id][mailinglist_id] = title
         events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         subs = self.mlproxy.get_many_subscription_states(
@@ -142,8 +143,11 @@ class MlFrontend(AbstractUserFrontend):
         for ml_id in subs:
             mailinglist_infos[ml_id]['num_subscribers'] = len(subs[ml_id])
         return self.render(rs, "list_mailinglists", {
-            'mailinglists': mailinglists, 'subscriptions': subscriptions,
-            'mailinglist_infos': mailinglist_infos, 'events': events,
+            'groups': MailinglistGroup,
+            'mailinglists': grouped,
+            'subscriptions': subscriptions,
+            'mailinglist_infos': mailinglist_infos,
+            'events': events,
             'assemblies': assemblies})
 
     @access("ml_admin")
@@ -165,8 +169,8 @@ class MlFrontend(AbstractUserFrontend):
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdatadict(
-        "title", "address", "description", "sub_policy", "mod_policy",
-        "attachment_policy", "audience_policy", "ml_type", "subject_prefix",
+        "title", "address", "description", "mod_policy",
+        "attachment_policy", "ml_type", "subject_prefix",
         "maxsize", "is_active", "notes", "event_id", "registration_stati",
         "assembly_id")
     @REQUESTdata(("moderator_ids", "str"))
@@ -226,7 +230,7 @@ class MlFrontend(AbstractUserFrontend):
         state = self.mlproxy.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
 
-        if not self.mlproxy.may_view(rs, ml, state):
+        if not self.mlproxy.may_view(rs, ml):
             return werkzeug.exceptions.Forbidden()
 
         sub_address = None
@@ -278,17 +282,14 @@ class MlFrontend(AbstractUserFrontend):
             'sorted_assemblies': sorted_assemblies})
 
     @access("ml_admin", modi={"POST"})
-    @REQUESTdata(("audience_policy", "enum_audiencepolicy"),
-                 ("registration_stati", "[enum_registrationpartstati]"))
+    @REQUESTdata(("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict(
-        "title", "address", "description", "sub_policy", "mod_policy",
+        "title", "address", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
         "is_active", "event_id", "assembly_id")
-    def change_mailinglist(self, rs, mailinglist_id, audience_policy,
-                           registration_stati, data):
+    def change_mailinglist(self, rs, mailinglist_id, registration_stati, data):
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
-        data['audience_policy'] = audience_policy
         data['registration_stati'] = registration_stati
         data = check(rs, "mailinglist", data)
         if rs.errors:
@@ -715,8 +716,9 @@ class MlFrontend(AbstractUserFrontend):
         if not is_subscribed:
             rs.notify("error", n_("Not subscribed."))
             return False
-        policy = const.MailinglistInteractionPolicy(
-            rs.ambience['mailinglist']['sub_policy'])
+        policy = self.mlproxy.get_interaction_policy(
+            rs, persona_id=rs.user.persona_id,
+            mailinglist=rs.ambience['mailinglist'])
         if setting and policy == const.MailinglistInteractionPolicy.mandatory:
             rs.notify("error", n_("Disallowed to change address."))
             return False

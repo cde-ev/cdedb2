@@ -1001,13 +1001,13 @@ CREATE TABLE ml.mailinglists (
         address                 varchar UNIQUE NOT NULL,
         description             varchar,
         -- see cdedb.database.constants.MailinglistInteractionPolicy
-        sub_policy              integer NOT NULL,
+        sub_policy              integer,
         -- see cdedb.database.constants.ModerationPolicy
         mod_policy              integer NOT NULL,
         -- see cdedb.database.constants.AttachmentPolicy
         attachment_policy       integer NOT NULL,
         -- see cdedb.database.constants.AudiencePolicy
-        audience_policy         integer NOT NULL,
+        audience_policy         integer,
         -- see cdedb.database.constants.MailinglistTypes
         ml_type                 integer NOT NULL,
         subject_prefix          varchar,
@@ -1025,7 +1025,7 @@ CREATE TABLE ml.mailinglists (
         -- which stati to address
         -- (cf. cdedb.database.constants.RegistrationPartStati)
         -- this may be empty, in which case this is an orga list
-        registration_stati      integer[] NOT NULL,
+        registration_stati      integer[] NOT NULL DEFAULT array[]::integer[],
         -- assembly awareness
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)

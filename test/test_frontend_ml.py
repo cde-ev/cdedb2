@@ -86,7 +86,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
 
-    @as_users("berta", "janis")
+    @as_users("berta", "charly")
     def test_show_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},)
         self.assertTitle("Mailinglisten")
@@ -123,7 +123,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn("changeaddressform", self.response.forms)
         self.assertPresence("Diese Mailingliste ist obligatorisch.")
 
-    @as_users("anton", "janis")
+    @as_users("anton", "charly")
     def test_show_ml_buttons_mod_opt_in(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/4'},)
         self.assertTitle("Klatsch und Tratsch")
@@ -150,7 +150,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Du hast diese Mailingliste abonniert.")
         self.assertIn("unsubscribeform", self.response.forms)
 
-    @as_users("anton", "inga")
+    @as_users("akira", "inga")
     def test_show_ml_buttons_blocked(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/11'},)
         self.assertTitle("Kampfbrief-Kommentare")
@@ -158,20 +158,24 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn("subscribe-mod-form", self.response.forms)
         self.assertNotIn("subscribe-no-mod-form", self.response.forms)
 
-    @as_users("nina")
-    def test_show_other_mailinglist(self, user):
-        self.traverse({'href': '/ml/$'},)
-        self.assertTitle("Mailinglisten")
-        self.assertPresence("Allgemeine Mailinglisten")
-        self.assertPresence("Andere Mailinglisten")
-        self.assertPresence("Sozialistischer Kampfbrief")
-        self.assertNonPresence("Aktivenforum 2001")
+    # @as_users("nina")
+    # def test_show_other_mailinglist(self, user):
+    #     self.traverse({'href': '/ml/$'},)
+    #     self.assertTitle("Mailinglisten")
+    #     self.assertPresence("Allgemeine Mailinglisten")
+    #     self.assertPresence("Andere Mailinglisten")
+    #     self.assertPresence("Sozialistischer Kampfbrief")
+    #     self.assertNonPresence("Aktivenforum 2001")
 
     @as_users("anton")
     def test_list_all_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list'})
         self.assertTitle("Mailinglisten Komplettübersicht")
+        self.assertPresence("Mitglieder (Moderiertes Opt-in)")
+        self.assertPresence("Große Testakademie 2222")
+        self.assertPresence("Internationaler Kongress")
+        self.assertPresence("Andere Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/6'})
         self.assertTitle("Aktivenforum 2000 – Verwaltung")
 
@@ -194,11 +198,6 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
         self.assertNonPresence("Inga Iota", div="moderator_list")
-        self.assertPresence("Janis Jalapeño")
-        f = self.response.forms['removesubscriberform10']
-        self.submit(f)
-        self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertNonPresence("Janis Jalapeño")
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
         f['subscriber_id'] = "DB-9-4"
@@ -227,26 +226,26 @@ class TestMlFrontend(FrontendTest):
 
         # add some persona
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertNonPresence("Inga Iota")
+        self.assertNonPresence("Inga Iota", div="modsubscriber-list")
         f = self.response.forms['addmodsubscriberform']
         f['modsubscriber_id'] = "DB-9-4"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertPresence("Inga Iota")
+        self.assertPresence("Inga Iota", div="modsubscriber-list")
 
-        self.assertNonPresence("Emilia E. Eventis")
+        self.assertNonPresence("Emilia E. Eventis", div="modunsubscriber-list")
         f = self.response.forms['addmodunsubscriberform']
         f['modunsubscriber_id'] = "DB-5-1"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertPresence("Emilia E. Eventis")
+        self.assertPresence("Emilia E. Eventis", div="modunsubscriber-list")
 
-        self.assertNonPresence("zelda@example.cde")
+        self.assertNonPresence("zelda@example.cde", div="whitelist")
         f = self.response.forms['addwhitelistform']
         f['email'] = "zelda@example.cde"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertPresence("zelda@example.cde")
+        self.assertPresence("zelda@example.cde", div="whitelist")
 
         # now check the download file
 
@@ -275,13 +274,13 @@ class TestMlFrontend(FrontendTest):
 
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertPresence("Inga Iota")
-        f = self.response.forms['removemodsubscribeform9']
+        f = self.response.forms['removemodsubscriberform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("Inga Iota")
 
         self.assertPresence("Emilia E. Eventis")
-        f = self.response.forms['removemodunsubscribeform5']
+        f = self.response.forms['removemodunsubscriberform5']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("Emilia E. Eventis")
@@ -315,10 +314,8 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['createlistform']
         f['title'] = "Munkelwand"
         f['address'] = "munkelwand@example.cde"
-        f['sub_policy'] = 3
         f['mod_policy'] = 1
         f['attachment_policy'] = 2
-        f['audience_policy'] = 1
         f['subject_prefix'] = "[munkel]"
         f['maxsize'] = 512
         f['is_active'].checked = True
@@ -341,9 +338,6 @@ class TestMlFrontend(FrontendTest):
         f['title'] = "Munkelwand"
         self.assertEqual("werbung@example.cde", f['address'].value)
         f['address'] = "munkelwand@example.cde"
-        self.assertEqual("2", f['sub_policy'].value)
-        f['sub_policy'] = 4
-        f['audience_policy'] = 2
         self.assertTrue(f['is_active'].checked)
         f['is_active'].checked = False
         self.submit(f)
@@ -352,7 +346,6 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['changelistform']
         self.assertEqual("Munkelwand", f['title'].value)
         self.assertEqual("munkelwand@example.cde", f['address'].value)
-        self.assertEqual("4", f['sub_policy'].value)
         self.assertFalse(f['is_active'].checked)
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
@@ -443,8 +436,7 @@ class TestMlFrontend(FrontendTest):
                 mdata = {
                     'title': 'TestAkaList',
                     'address': 'testaka@example.cde',
-                    'audience_policy': const.AudiencePolicy.require_event.value,
-                    'sub_policy': const.MailinglistInteractionPolicy.invitation_only.value,
+                    'ml_type': const.MailinglistTypes.event_associated.value,
                     'event_id': "1",
                     'moderator_ids': user['DB-ID'],
                 }
@@ -458,15 +450,15 @@ class TestMlFrontend(FrontendTest):
                 self.login(user)
                 self.traverse({'href': '/'})
                 self.traverse({'href': '/ml/mailinglist/1001/show'})
-                self.traverse({'description': 'Verwaltung'})
-                self.assertTitle(mdata['title'] + " – Verwaltung")
-                f = self.response.forms['addsubscriberform']
-                f['subscriber_id'] = "DB-2-7"
+                self.traverse({'description': 'Erweiterte Verwaltung'})
+                self.assertTitle(mdata['title'] + " – Erweiterte Verwaltung")
+                f = self.response.forms['addmodsubscriberform']
+                f['modsubscriber_id'] = "DB-2-7"
                 self.submit(f)
-                f = self.response.forms['removesubscriberform2']
+                f = self.response.forms['removemodsubscriberform2']
                 self.submit(f)
 
-    @as_users("janis")
+    @as_users("berta", "charly")
     def test_change_sub_address(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},)
@@ -552,12 +544,12 @@ class TestMlFrontend(FrontendTest):
             self.response.text)
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
-        f['subscriber_id'] = "DB-10-8"
+        f['subscriber_id'] = "DB-7-8"
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertIn("Der Nutzer wurde geblockt. "
-                      "Dies kannst du unter Erweiterte Verwaltung ändern.",
-                      self.response.text)
+        self.assertPresence("Der Nutzer wurde geblockt. "
+                            "Dies kannst du unter Erweiterte Verwaltung ändern.",
+                            div="notifications")
 
     def test_export(self):
         HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
@@ -584,14 +576,10 @@ class TestMlFrontend(FrontendTest):
             'subscribers': ['anton@example.cde',
                             'berta@example.cde',
                             'charly@example.cde',
-                            'daniel@example.cde',
-                            'emilia@example.cde',
                             'garcia@example.cde',
                             'inga@example.cde',
-                            'janis@example.cde',
-                            'kalif@example.cde',
                             'martin@example.cde',
-                            'nina@example.cde',
+                            'olaf@example.cde',
                             'vera@example.cde',
                             'werner@example.cde',
                             'annika@example.cde',
@@ -659,14 +647,10 @@ class TestMlFrontend(FrontendTest):
                        'subscribers': ['anton@example.cde',
                                        'berta@example.cde',
                                        'charly@example.cde',
-                                       'daniel@example.cde',
-                                       'emilia@example.cde',
                                        'garcia@example.cde',
                                        'inga@example.cde',
-                                       'janis@example.cde',
-                                       'kalif@example.cde',
                                        'martin@example.cde',
-                                       'nina@example.cde',
+                                       'olaf@example.cde',
                                        'vera@example.cde',
                                        'werner@example.cde',
                                        'annika@example.cde',
@@ -721,7 +705,7 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("Mailinglisten-Log [0–9]")
+        self.assertTitle("Mailinglisten-Log [0–8]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
@@ -734,4 +718,4 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
-        self.assertTitle("Klatsch und Tratsch: Log [0–6]")
+        self.assertTitle("Klatsch und Tratsch: Log [0–5]")

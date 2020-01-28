@@ -95,35 +95,6 @@ class MlBackend(AbstractBackend):
         return (self.is_moderator(rs, mailinglist_id)
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
-    def _get_interaction_policy_persona(self, rs, persona, ml):
-        """Helper function for :py:meth:`get_interaction_policy` and
-        :py:meth:`filter_personas_by_policy`
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona: {str: object}
-        :type ml: {str: object}
-        :rtype: const.MailinglistInteractionPolicy or None
-        :return: The applicable subscription policy for the user or None if the
-            user is not in the audience.
-        """
-        if not (rs.user.persona_id == persona['id']
-                or self.may_manage(rs, ml['id'])):
-            raise PrivilegeError(n_("Not privileged."))
-        audience_policy = const.AudiencePolicy(ml["audience_policy"])
-        if audience_policy.check(extract_roles(persona,
-                                               introspection_only=True)):
-            # First, check if assembly link allows resubscribing.
-            if ml['assembly_id'] and self.assembly.check_attends(
-                    rs, persona['id'], ml['assembly_id']):
-                return const.MailinglistInteractionPolicy.opt_out
-            # Second, check if event link allows resubscribing.
-            elif ml['event_id'] and self.event.check_registration_status(
-                    rs, persona['id'], ml['event_id'], ml['registration_stati']):
-                return const.MailinglistInteractionPolicy.opt_out
-            return const.MailinglistInteractionPolicy(ml["sub_policy"])
-        else:
-            return None
-
     @access("ml")
     def get_interaction_policy(self, rs, persona_id, *, mailinglist=None,
                                mailinglist_id=None):
@@ -154,9 +125,9 @@ class MlBackend(AbstractBackend):
         if not (rs.user.persona_id == persona_id
                 or self.may_manage(rs, ml['id'])):
             raise PrivilegeError(n_("Not privileged."))
-        persona = self.core.get_persona(rs, persona_id)
 
-        return self._get_interaction_policy_persona(rs, persona, mailinglist)
+        return self.get_ml_type(rs, ml["id"]).get_interaction_policy(
+            rs, self.backends, ml, persona_id)
 
     @access("ml")
     def filter_personas_by_policy(self, rs, ml, data, allowed_pols):
@@ -172,35 +143,31 @@ class MlBackend(AbstractBackend):
         :type data: [{str: object}]
         :param data: Return of the persona select query
         :type allowed_pols: {const.MailinglistInteractionPolicy}
-        :return: Tuple of peronas whose interaction policies are in allowe_pols
+        :return: Tuple of personas whose interaction policies are in
+            allowed_pols
         """
         affirm("mailinglist", ml)
         affirm_set("enum_mailinglistinteractionpolicy", allowed_pols)
 
         # persona_ids are validated inside get_personas
         persona_ids = tuple(e['id'] for e in data)
-        personas = self.core.get_personas(rs, persona_ids)
-        return tuple(
-            e for e in data
-            if (self._get_interaction_policy_persona(rs, personas[e['id']], ml)
-                in allowed_pols))
+        persona_policies = self.get_ml_type(rs, ml['id']).\
+            get_interaction_policies(rs, self.backends, ml, persona_ids)
+        return tuple(e for e in data
+                     if persona_policies[e['id']] in allowed_pols)
 
     @access("ml")
-    def may_view(self, rs, ml, state=None):
+    def may_view(self, rs, ml):
         """Helper to determine whether a persona may view a mailinglist.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ml: {str: object}
-        :type state: const.SubsctriptionStates or None
-        :param state: The state of the relation between the user and the
-            mailinglist.
         :type: bool
         """
-        # TODO fetch the state here instead of passing it.
-        audience_check = const.AudiencePolicy(
-            ml["audience_policy"]).check(rs.user.roles)
-        is_subscribed = False if state is None else state.is_subscribed()
-        return (audience_check or is_subscribed or self.is_admin(rs)
+        is_subscribed = bool(self.get_subscription(
+            rs, rs.user.persona_id, mailinglist_id=ml["id"],
+            states=const.SubscriptionStates.subscribing_states()))
+        return (is_subscribed or self.get_ml_type(rs, ml["id"]).may_view(rs)
                 or ml["id"] in rs.user.moderator)
 
     @access("persona")
@@ -312,62 +279,36 @@ class MlBackend(AbstractBackend):
         return self.general_query(rs, query)
 
     @access("ml")
-    def list_mailinglists(self, rs, audience_policies=None, active_only=True):
-        """List all mailinglists
+    def list_mailinglists(self, rs, active_only=True):
+        """List all mailinglists you may view
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type audience_policies: [AudiencePolicy] or None
-        :param audience_policies: If given, display only mailinglists with these
-          audience policies.
         :type active_only: bool
         :param active_only: Toggle wether inactive lists should be included.
         :rtype: {int: str}
         :returns: Mapping of mailinglist ids to titles.
         """
         active_only = affirm("bool", active_only)
-        audience_policies = affirm_set(
-            "enum_audiencepolicy", audience_policies, allow_None=True)
         query = "SELECT id, title FROM ml.mailinglists"
+        constraints = []
         params = []
         if active_only:
-            query = glue(query, "WHERE is_active = True")
-        if audience_policies is not None:
-            connector = "AND" if active_only else "WHERE"
-            query = glue(query,
-                         "{} audience_policy = ANY(%s)".format(connector))
-            params.append(audience_policies)
-        data = self.query_all(rs, query, params)
-        return {e['id']: e['title'] for e in data}
+            constraints.append("is_active = True")
 
-    @access("ml")
-    def list_subscription_overrides(self, rs, active_only=True):
-        """List all mailinglists where user has a subscription override.
-
-        This is needed because a user with a subscription override probably
-        has no means to access these lists via `list_mailinglists`.
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type active_only: bool
-        :param active_only: Toggle wether inactive lists should be included.
-        :rtype: {int: str}
-        :returns: Mapping of mailinglist ids to titles.
-        """
-        active_only = affirm("bool", active_only)
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
 
         with Atomizer(rs):
-            override_states = {const.SubscriptionStates.subscription_override}
-            overrides = self.get_user_subscriptions(
-                rs, rs.user.persona_id, states=override_states)
-            params = []
-            query = ("SELECT id, title, audience_policy FROM ml.mailinglists "
-                     "WHERE id = ANY(%s)")
-            params.append(overrides.keys())
-            if active_only:
-                query = glue(query, "AND is_active = True")
             data = self.query_all(rs, query, params)
-            a_p = const.AudiencePolicy
-            result = {ml['id']: ml['title'] for ml in data
-                      if not a_p(ml["audience_policy"]).check(rs.user.roles)}
-        return result
+            # Get additional information to find out if we can view these lists
+            ml_ids = [e['id'] for e in data]
+            mailinglists = self.get_mailinglists(rs, ml_ids)
+            ret = {e['id']: e['title'] for e in data}
+
+        if self.is_admin(rs):
+            return ret
+        return {k: v for k, v in ret.items()
+                if self.may_view(rs, mailinglists[k])}
 
     @access("ml")
     @singularize("get_mailinglist")
@@ -388,6 +329,9 @@ class MlBackend(AbstractBackend):
             data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
                                    ids)
             ret = {e['id']: e for e in data}
+            # Maybe more elegant than using get_ml_type?
+            # for k in ret:
+            #    ret[k]['type'] = ml_type.TYPE_MAP[ret[k]['ml_type']]
             data = self.sql_select(
                 rs, "ml.moderators", ("persona_id", "mailinglist_id"), ids,
                 entity_key="mailinglist_id")
@@ -506,8 +450,8 @@ class MlBackend(AbstractBackend):
         the complete set of moderator IDs or whitelisted addresses, which
         will superseed the current list.
 
-        If the subscription policy is set to 'mandatory' all unsubscriptions,
-        even those not in the audience are dropped.
+        If the new mailinglist type does not allow unsubscription,
+        all unsubscriptions are dropped without exception.
 
         This requires different levels of access depending on what change is
         made. Setting whitelist or moderators is allowed for moderators, setting
@@ -538,17 +482,15 @@ class MlBackend(AbstractBackend):
                 ret *= self.set_moderators(rs, data['id'], data['moderators'])
             if data.get('whitelist'):
                 ret *= self.set_whitelist(rs, data['id'], data['whitelist'])
-            policy = const.MailinglistInteractionPolicy
-            if 'sub_policy' in data:
-                if current['sub_policy'] != data['sub_policy']:
-                    if policy(data['sub_policy']) == policy.mandatory:
-                        # Delete all unsubscriptions for mandatory list.
-                        query = ("DELETE FROM ml.subscription_states "
-                                 "WHERE mailinglist_id = %s "
-                                 "AND subscription_state = ANY(%s)")
-                        params = (data['id'], set(const.SubscriptionStates) -
-                                  const.SubscriptionStates.subscribing_states())
-                        ret *= self.query_exec(rs, query, params)
+            if data.get('ml_type'):
+                if not ml_type.TYPE_MAP[data['ml_type']].allow_unsub:
+                    # Delete all unsubscriptions for mandatory list.
+                    query = ("DELETE FROM ml.subscription_states "
+                             "WHERE mailinglist_id = %s "
+                             "AND subscription_state = ANY(%s)")
+                    params = (data['id'], set(const.SubscriptionStates) -
+                              const.SubscriptionStates.subscribing_states())
+                    ret *= self.query_exec(rs, query, params)
 
             # Update subscription states.
             ret *= self.write_subscription_states(rs, data['id'])
@@ -853,15 +795,6 @@ class MlBackend(AbstractBackend):
         """
         sa = SubscriptionActions
 
-        # It is not allowed to unsubscribe from mandatory lists.
-        # This is not using get_interaction_policy, as even people with
-        # moderator override may not unsubscribe
-        if action.is_unsubscribing():
-            sub_policy = self.get_mailinglist(rs, mailinglist_id)[
-                "sub_policy"]
-            if sub_policy == const.MailinglistInteractionPolicy.mandatory:
-                raise SubscriptionError(n_("Can not change subscription."))
-
         # This checks if a user may subscribe via the action triggered
         # This does not check for the override states, as they are always
         # allowed
@@ -874,10 +807,13 @@ class MlBackend(AbstractBackend):
         elif action == sa.subscribe and policy not in (
                 const.MailinglistInteractionPolicy.opt_out,
                 const.MailinglistInteractionPolicy.opt_in):
-            raise SubscriptionError(n_("Can not change subscription."))
+            raise SubscriptionError(n_("Can not subscribe."))
+        elif (action.is_unsubscribing()
+                and not self.get_ml_type(rs, mailinglist_id).allow_unsub):
+            raise SubscriptionError(n_("Can not unsubscribe."))
         elif (action == sa.request_subscription and
               policy != const.MailinglistInteractionPolicy.moderated_opt_in):
-            raise SubscriptionError(n_("Can not change subscription"))
+            raise SubscriptionError(n_("Can not request subscription."))
 
     @access("ml")
     def set_subscription_address(self, rs, mailinglist_id, persona_id, email):
@@ -1193,53 +1129,6 @@ class MlBackend(AbstractBackend):
             rs, persona_id, states=sub_states, mailinglist_id=mailinglist_id)
         return bool(data)
 
-    def _get_implicit_subscribers(self, rs, mailinglist):
-        """Un-inlined code from `write_subscription_states`.
-
-        This has to be called with an atomized context.
-        """
-
-        # TODO adapt to MailinglistTypes.
-        sub_policy = const.MailinglistInteractionPolicy(mailinglist['sub_policy'])
-
-        ret = set()
-        if sub_policy in {const.MailinglistInteractionPolicy.mandatory,
-                          const.MailinglistInteractionPolicy.opt_out}:
-            query = "SELECT id FROM core.personas WHERE {} AND is_active= True"
-            audience = const.AudiencePolicy(
-                mailinglist['audience_policy'])
-            data = self.query_all(rs, query.format(audience.sql_test()), [])
-            ret |= {e['id'] for e in data}
-
-        if mailinglist["event_id"] and mailinglist["assembly_id"]:
-            raise ValueError(
-                n_("Mailinglist is linked to more than one entitiy."))
-        elif mailinglist["event_id"]:
-            event_id = mailinglist['event_id']
-            event = self.event.get_event(rs, event_id)
-
-            registration_stati = mailinglist["registration_stati"]
-
-            if registration_stati:
-                part_stati = ",".join("part{}.status".format(part_id)
-                                      for part_id in event['parts'])
-                query = Query(
-                    scope="qview_registration", spec={part_stati: "int"},
-                    fields_of_interest=("reg.persona_id",),
-                    constraints=((part_stati, QueryOperators.oneof,
-                                  registration_stati),),
-                    order=tuple()
-                )
-                data = self.event.submit_general_query(rs, query, event_id)
-                ret |= {e["reg.persona_id"] for e in data}
-            else:
-                ret |= set(event["orgas"])
-        elif mailinglist["assembly_id"]:
-            assembly_id = affirm("id", mailinglist["assembly_id"])
-            ret |= self.assembly.list_attendees(rs, assembly_id)
-
-        return ret
-
     @access("ml_admin")
     def write_subscription_states(self, rs, mailinglist_id):
         """This takes care of writing implicit subscriptions to the db.
@@ -1252,22 +1141,29 @@ class MlBackend(AbstractBackend):
         :return: default return code.
         """
         mailinglist_id = affirm("id", mailinglist_id)
-        ml = self.get_mailinglist(rs, mailinglist_id)
 
         # States of current subscriptions we may touch.
         old_subscriber_states = {const.SubscriptionStates.implicit,
                                  const.SubscriptionStates.subscribed}
         # States of current subscriptions we may not touch.
-        protected_states = {const.SubscriptionStates.subscription_override,
+        protected_states = {const.SubscriptionStates.unsubscribed,
                             const.SubscriptionStates.unsubscription_override,
-                            const.SubscriptionStates.unsubscribed}
+                            const.SubscriptionStates.subscription_override}
 
         ret = 1
         with Atomizer(rs):
+            ml = self.get_mailinglist(rs, mailinglist_id)
+            atype = self.get_ml_type(rs, mailinglist_id)
+
+            if not atype.periodic_cleanup(rs, ml):
+                return ret
+
             old_subscribers = self.get_subscription_states(
                 rs, mailinglist_id, states=old_subscriber_states)
-            # This will be everyone in the audience for opt-out/mandatory.
-            new_implicits = self._get_implicit_subscribers(rs, ml)
+            # This is dependant on mailinglist type
+
+            new_implicits = atype.get_implicit_subscribers(
+                rs, self.backends, ml)
 
             # Check whether current subscribers may stay subscribed.
             # This is the case if they are still implicit subscribers of
@@ -1275,20 +1171,20 @@ class MlBackend(AbstractBackend):
             delete = []
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
-            for persona in personas.values():
-                may_subscribe = self.get_interaction_policy(
-                    rs, persona['id'], mailinglist=ml)
-                state = old_subscribers[persona['id']]
+            for persona_id, persona in personas.items():
+                may_subscribe = atype.get_interaction_policy(
+                    rs, self.backends, mailinglist=ml, persona_id=persona_id)
+                state = old_subscribers[persona_id]
                 if (state == const.SubscriptionStates.implicit
-                    or not may_subscribe
-                    or may_subscribe.is_implicit()):
+                        or not may_subscribe
+                        or may_subscribe.is_implicit()):
                     datum = {
                         'mailinglist_id': mailinglist_id,
-                        'persona_id': persona['id'],
+                        'persona_id': persona_id,
                     }
                     # Log this to prevent confusion especially for team lists
                     self.ml_log(rs, const.MlLogCodes.cron_removed,
-                                mailinglist_id, persona_id=persona['id'])
+                                mailinglist_id, persona_id=persona_id)
                     delete.append(datum)
 
             # Remove those who may not stay subscribed.
@@ -1299,7 +1195,7 @@ class MlBackend(AbstractBackend):
                 self.logger.info(msg.format(num, mailinglist_id))
 
             # Check whether any implicit subscribers need to be written.
-            # This is the case im they are not already old subscribers and
+            # This is the case if they are not already old subscribers and
             # they don't have a protected subscription.
             protected = self.get_subscription_states(
                 rs, mailinglist_id, states=protected_states)

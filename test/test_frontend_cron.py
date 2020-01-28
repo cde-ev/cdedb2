@@ -253,8 +253,8 @@ class TestCron(CronTest):
         self.assertEqual(["subscription_request_remind"],
                          [mail.template for mail in self.mails])
 
-    @prepsql(subscription_request_template(persona_id=3, mailinglist_id=4)
-             + subscription_request_template(persona_id=5, mailinglist_id=4)
+    @prepsql(subscription_request_template(persona_id=9, mailinglist_id=4)
+             + subscription_request_template(persona_id=27, mailinglist_id=4)
              + subscription_request_template(persona_id=2, mailinglist_id=7)
              + subscription_request_template(persona_id=3, mailinglist_id=8))
     def test_subscription_request_remind_multiple(self):
