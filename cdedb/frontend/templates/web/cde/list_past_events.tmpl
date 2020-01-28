@@ -14,7 +14,7 @@
         </div>
     {% endif %}
 
-    <ul class="nav nav-tabs mosp" role="navigation">
+    <ul class="nav nav-tabs mosp" role="navigation" id="navigation">
         <li role="presentation" {% if institution_id is none %}class="active" aria-current="page" {% endif %}>
             {{ util.href(cdedblink('cde/list_past_events', {'institution_id': None}), gettext("Overview")) }}
         </li>
@@ -27,7 +27,7 @@
 
     {% for year, year_events in years|dictsort|reverse %}
         <h4 class="heading-underline">{{ year }}</h4>
-        <ul>
+        <ul id="events-{{ year }}">
             {% for pevent_id in year_events %}
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}

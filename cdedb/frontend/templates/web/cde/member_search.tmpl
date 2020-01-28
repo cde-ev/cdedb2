@@ -11,7 +11,7 @@
         <div class="p">
             {{ util.href("#membersearchform", gettext("Go to Search."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
         </div>
-        <h2>
+        <h2 id="result-count">
             {% trans -%}Result{%- endtrans %}
             <small>
             {% trans count=count -%}
@@ -26,7 +26,7 @@
             {% endif %}
             </small>
         </h2>
-        <ul>
+        <ul id="result">
             {% for dataset in result %}
                 <li>
                     {{ util.href(show_user_link(dataset['id'], quote_me=True),

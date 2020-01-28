@@ -20,6 +20,7 @@
 {% endif %}
 {% endblock %}
 {% block content %}
+    <div id="active-permit">
     {% if active_permit %}
         {% if is_admin %}
             <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -54,33 +55,40 @@
 
             {% if is_admin %}
                 <dt>{% trans -%}Submitted by{%- endtrans %}</dt>
-                <dd>{{ util.persona_anchor(personas[lastschrift['submitted_by']]) }}</dd>
+                <dd id="submitted-by">
+                    {{ util.persona_anchor(personas[lastschrift['submitted_by']]) }}
+                </dd>
 
                 <dt>{% trans -%}Notes{%- endtrans %}</dt>
-                <dd>{{ lastschrift['notes']|md }}</dd>
+                <dd id="notes">{{ lastschrift['notes']|md }}</dd>
             {% endif %}
             </dl>
             <dl class="dl-horizontal">
                 <dt>{% trans -%}Amount{%- endtrans %}</dt>
-                <dd>{{ lastschrift['amount']|money(lang=lang) }}</dd>
+                <dd id="amount">{{ lastschrift['amount']|money(lang=lang) }}</dd>
 
                 <dt>{% trans -%}IBAN{%- endtrans %}</dt>
-                <dd>{{ lastschrift['iban']|iban }}</dd>
+                <dd id="iban">{{ lastschrift['iban']|iban }}</dd>
 
                 <dt>{% trans -%}Account holder{%- endtrans %}</dt>
-                <dd>{{ lastschrift['account_owner'] }}</dd>
+                <dd id="account-holder">
+                    {{ lastschrift['account_owner'] }}
+                </dd>
 
                 <dt>{% trans -%}Acc. holder’s address{%- endtrans %}</dt>
-                <dd>{{ lastschrift['account_address']|linebreaks }}</dd>
+                <dd id="account-holder-address">
+                    {{ lastschrift['account_address']|linebreaks }}
+                </dd>
 
                 <dt>{% trans -%}Granted{%- endtrans %}</dt>
-                <dd>{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
+                <dd id="granted-at">{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
             </dl>
         {% endwith %}
     {% else %}
         {% trans -%}No active Direct Debit Authorization{%- endtrans %}
         {% if is_admin %} – {{ util.href(cdedblink('cde/lastschrift_create_form'), gettext("Create")) }}{% endif %}
     {% endif %}
+    </div>
 
     {% if transactions or active_open %}
         <h2>{% trans -%}Transactions{%- endtrans %}</h2>
