@@ -7007,7 +7007,7 @@ msgstr "Mitgliedsbeitrag"
 #: cdedb/frontend/templates/web/cde/index.tmpl:88
 #, python-format
 msgid "Your current Balance is %(amount)s."
-msgstr "Dein aktuelle Guthaben beträgt %(amount)s."
+msgstr "Dein Guthaben beträgt aktuell %(amount)s."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:92
 msgid "Your Membership will end in a few days."
@@ -7016,7 +7016,7 @@ msgstr "Deine Mitgliedschaft läuft in wenigen Tagen aus."
 #: cdedb/frontend/templates/web/cde/index.tmpl:96
 #, python-format
 msgid "This will presumably last until %(date)s."
-msgstr "Dies reicht voraussichtlich bis %(date)s."
+msgstr "Damit bist du vorraussichtlich Mitglied bis zum %(date)s."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:103
 msgid ""
