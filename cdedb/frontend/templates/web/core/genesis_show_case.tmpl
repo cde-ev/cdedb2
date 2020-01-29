@@ -20,11 +20,11 @@
     <h4 class="heading-underline">{% trans -%}Case Meta-Information{%- endtrans %}</h4>
     <dl class="dl-horizontal">
         <dt>{% trans %}Status{% endtrans %}</dt>
-        <dd>
+        <dd id="status">
             {{ gettext(enums['GenesisStati'](case['case_status'])|string) }}
         </dd>
         <dt>{% trans %}Realm{% endtrans %}</dt>
-        <dd>
+        <dd id="realm">
             {% if case['realm'] == 'ml' %}
                 {{ util.make_icon("envelope", title=gettext("Mailinglists")) }} {{ gettext("Mailinglists") }}
             {% elif case['realm'] == 'event' %}
@@ -38,11 +38,11 @@
             {{ case['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}
         </dd>
         <dt>{% trans %}Rationale{% endtrans %}</dt>
-        <dd>
+        <dd id="notes">
             {{ case['notes'] }}
         </dd>
         <dt>{% trans %}Reviewer{% endtrans %}</dt>
-        <dd>
+        <dd id="reviewer">
             {% if reviewer %}
                 {{ util.persona_anchor(reviewer) }}
             {% else %}
@@ -54,19 +54,19 @@
     <h4 class="heading-underline">{% trans -%}Persona Information{%- endtrans %}</h4>
     <dl class="dl-horizontal">
         <dt>{% trans -%}Name{%- endtrans %}</dt>
-        <dd>
+        <dd id="given-names">
             {{ case['given_names'] }} {{ case['family_name'] }}
         </dd>
         {% if case['birthday'] %}
             <dt>{% trans -%}Birthday{%- endtrans %}</dt>
-            <dd>{{ case['birthday']|date(lang=lang) }}</dd>
+            <dd id="birthday">{{ case['birthday']|date(lang=lang) }}</dd>
         {% endif %}
         {% if case['gender'] %}
             <dt>{% trans -%}Gender{%- endtrans %}</dt>
-            <dd>{{ gettext(enums['Genders'](case['gender'])|string) }}</dd>
+            <dd id="gender">{{ gettext(enums['Genders'](case['gender'])|string) }}</dd>
         {% endif %}
         <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
-        <dd>
+        <dd id="username">
             {% if case['username'] %}
                 {{ util.username_mailto(case) }}
             {% else %}
@@ -75,16 +75,16 @@
         </dd>
         {% if case['telephone'] %}
             <dt>{% trans -%}Phone{%- endtrans %}</dt>
-            <dd>{{ util.tel_link(case['telephone']) }}</dd>
+            <dd id="telephone">{{ util.tel_link(case['telephone']) }}</dd>
         {% endif %}
         {% if case['mobile'] %}
             <dt>{% trans -%}Mobile Phone{%- endtrans %}</dt>
-            <dd>{{ util.tel_link(case['mobile']) }}</dd>
+            <dd id="mobile">{{ util.tel_link(case['mobile']) }}</dd>
         {% endif %}
         {% if (case['address'] or case['address_supplement'] or case['postal_code']
                     or case['location'] or case['country']) %}
             <dt>{% trans -%}Address{%- endtrans %}</dt>
-            <dd>
+            <dd id="address">
                 {{ case['address'] }}{% if case['address'] %}<br />{% endif %}
                 {{ case['address_supplement'] }}{% if case['address_supplement'] %}<br />{% endif %}
                 {{ case['postal_code'] }} {{ case['location'] }}{% if case['location'] %}<br />{% endif %}

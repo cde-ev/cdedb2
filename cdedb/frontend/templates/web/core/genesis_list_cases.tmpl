@@ -25,7 +25,7 @@
         </h3>
         {% if event_cases|length > 0 %}
             {% for case_id, entry in event_cases|xdictsort('ctime') %}
-                <div class="row">
+                <div class="row" id="request-{{ case_id }}">
                     <div class="col-sm-3">
                         <p>
                             {{ entry['given_names'] }} {{ entry['family_name'] }}
@@ -47,7 +47,9 @@
                 {% endif %}
             {% endfor %}
         {% else %}
-            <p class="text-muted">{% trans -%}There are currently no Event-Account Requests pending.{%- endtrans %}</p>
+            <p class="text-muted" id="no-event-request">
+                {% trans -%}There are currently no Event-Account Requests pending.{%- endtrans %}
+            </p>
         {% endif %}
     {% endif %}
     {% if 'ml_admin' in user.roles or 'core_admin' in user.roles %}
@@ -95,7 +97,7 @@
                 {% endif %}
             {% endfor %}
         {% else %}
-            <p class="text-muted">
+            <p class="text-muted" id="no-ml-request">
                 {% trans -%}There are currently no Mailinglist-Account Requests pending.{%- endtrans %}
             </p>
         {% endif %}

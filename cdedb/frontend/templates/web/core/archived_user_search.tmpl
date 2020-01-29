@@ -19,7 +19,7 @@
     {{ generic.user_search_mask("archived", ("pevent_id",)) }}
 
     {% if values['is_search'] %}
-        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
         {{ generic.user_search_result(result, "archived") }}
     {% endif %}
 {% endblock %}

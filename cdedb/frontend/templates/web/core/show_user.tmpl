@@ -17,12 +17,12 @@
 {% block content %}
     {% if is_relative_admin %}
         {% if not ambience['persona']['is_active'] %}
-            <div class="alert alert-info">
+            <div class="alert alert-info" id="deactivated">
                 {{ util.make_icon('info-sign') }} {% trans -%}The User is deactivated.{%- endtrans %}
             </div>
         {% endif %}
         {% if ambience['persona']['is_archived'] %}
-            <div class="alert alert-info">
+            <div class="alert alert-info" id="archived">
                 {{ util.make_icon('info-sign') }} {% trans -%}The User is archived.{%- endtrans %}
             </div>
         {% endif %}
@@ -354,7 +354,7 @@
         {% endif %}
         {%  if is_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
             <h4 class="heading-underline">{% trans -%}Copy-Paste Template{%- endtrans %}</h4>
-            <pre>
+            <pre id="copy-paste-template">
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:               {{ meta_info['CdE_Konto_IBAN']|iban }}
 BIC:                {{ meta_info['CdE_Konto_BIC'] }}
