@@ -61,7 +61,6 @@ class Application(BaseApp):
             secrets, self.conf.DB_PORT)
         self.validate_mlscriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
         # Construct a reduced Jinja environment for rendering error pages.
-        # TODO With buster we can activate the trimming of the trans env
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
                 str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
@@ -76,6 +75,7 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
+        self.jinja_env.policies['ext.i18n.trimmed'] = True
         self.translations = {
             lang: gettext.translation(
                 'cdedb', languages=(lang,),

@@ -788,7 +788,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type configpath: str
         """
         super().__init__(configpath, *args, **kwargs)
-        # TODO With buster we can activate the trimming of the trans env
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
                 str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
@@ -825,6 +824,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
         )
+        self.jinja_env.policies['ext.i18n.trimmed'] = True
         # Always provide all backends -- they are cheap
         self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
         self.cdeproxy = ProxyShim(CdEBackend(configpath))
