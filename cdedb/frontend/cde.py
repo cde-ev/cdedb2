@@ -93,26 +93,21 @@ class CdEFrontend(AbstractUserFrontend):
                 periods_left += 1
             period = self.cdeproxy.get_period(rs,
                                               self.cdeproxy.current_period(rs))
-            today = now().date()
-            # Compensate if the start of the period is not exactly on the
-            # 1.1. or 1.7.
-            if not period['billing_done'] and today.month in (6, 12):
-                periods_left += 1
-            if period['balance_done'] and today.month in (1, 7):
+            # dont take payment for actual period into account while calculating
+            # remaining periods
+            if not period['balance_done']:
                 periods_left -= 1
-            if period['balance_done']:
-                periods_left += 1
             # Initialize deadline
             deadline = now().date().replace(day=1)
-            month = 7 if deadline.month >= 7 else 1
+            month = 8 if deadline.month in range(2, 8) else 2
             deadline = deadline.replace(month=month)
             # Add remaining periods
             deadline = deadline.replace(year=deadline.year + periods_left // 2)
             if periods_left % 2:
-                if deadline.month >= 7:
-                    deadline = deadline.replace(year=deadline.year + 1, month=1)
+                if deadline.month in range(2, 8):
+                    deadline = deadline.replace(month=8)
                 else:
-                    deadline = deadline.replace(month=7)
+                    deadline = deadline.replace(year=deadline.year + 1, month=2)
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
             'meta_info': meta_info, 'deadline': deadline})
