@@ -1238,13 +1238,14 @@ class TestCdEFrontend(FrontendTest):
 
         # 1.2 Remove Inactive Members
         self.assertPresence("Erledigt am", div='payment-request')
+        self.assertPresence("9 E-Mails versandt", div='payment-request')
         self.assertPresence("Später zu erledigen.", div='balance-update')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
         self.assertPresence(
             "Derzeit haben 0 Mitglieder ein zu niedriges Guthaben "
-            "(davon 0 mit einer Einzugsermächtigung). Zusätzlich gibt es 3 "
-            "Probemitglieder.", div='eject-members')
+            "(insgesamt 0,00 €, davon 0 mit einer aktiven Einzugsermächtigung)."
+            " Zusätzlich gibt es 3 Probemitglieder.", div='eject-members')
         # Check error handling for bill
         self.submit(f, check_notification=False)
         self.assertPresence('Zahlungserinnerung bereits erledigt',
@@ -1267,7 +1268,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erledigt am", div='eject-members')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
-        self.assertPresence("Derzeit haben 3 Mitglieder eine "
+        self.assertPresence("Insgesamt 9 Mitglieder, 3 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
@@ -1330,8 +1331,8 @@ class TestCdEFrontend(FrontendTest):
         # 2.2 Remove Inactive Members
         self.assertPresence(
             "Derzeit haben 3 Mitglieder ein zu niedriges Guthaben "
-            "(davon 0 mit einer Einzugsermächtigung). Zusätzlich gibt es 0 "
-            "Probemitglieder.", div='eject-members')
+            "(insgesamt 2,44 €, davon 0 mit einer aktiven Einzugsermächtigung)."
+            " Zusätzlich gibt es 0 Probemitglieder.", div='eject-members')
 
         f = self.response.forms['ejectform']
         self.submit(f)
@@ -1345,7 +1346,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
-        self.assertPresence("Derzeit haben 0 Mitglieder eine "
+        self.assertPresence("Insgesamt 6 Mitglieder, 0 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
 
         f = self.response.forms['balanceform']

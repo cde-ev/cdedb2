@@ -1867,12 +1867,13 @@ ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id", "title",
 
 #: Fields of a semester
 ORG_PERIOD_FIELDS = (
-    "id", "billing_state", "billing_done", "ejection_state", "ejection_done",
-    "ejection_count", "ejection_balance", "balance_state", "balance_done",
-    "balance_trialmembers", "balance_total")
+    "id", "billing_state", "billing_done", "billing_count",
+    "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
+    "balance_state", "balance_done", "balance_trialmembers", "balance_total")
 
 #: Fielsd of an expuls
-EXPULS_PERIOD_FIELDS = ("id", "addresscheck_state", "addresscheck_done")
+EXPULS_PERIOD_FIELDS = (
+    "id", "addresscheck_state", "addresscheck_done", "addresscheck_count")
 
 #: Fields of one direct debit permit
 LASTSCHRIFT_FIELDS = (

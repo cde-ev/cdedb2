@@ -381,6 +381,7 @@ CREATE TABLE cde.org_period (
         -- is done incrementally)
         billing_state           integer REFERENCES core.personas(id),
         billing_done            timestamp WITH TIME ZONE DEFAULT NULL,
+        billing_count           integer NOT NULL DEFAULT 0,
         -- have those who haven't paid been ejected? If so, up to which ID
         -- (it is done incrementally)
         ejection_state          integer REFERENCES core.personas(id),
@@ -403,7 +404,8 @@ CREATE TABLE cde.expuls_period (
         -- has the address check mail already been sent? If so, up to which
         -- ID (it is done incrementally)
         addresscheck_state      integer REFERENCES core.personas(id),
-        addresscheck_done       timestamp WITH TIME ZONE DEFAULT NULL
+        addresscheck_done       timestamp WITH TIME ZONE DEFAULT NULL,
+        addresscheck_count      integer NOT NULL DEFAULT 0
 );
 GRANT SELECT, INSERT, UPDATE ON cde.expuls_period TO cdb_admin;
 

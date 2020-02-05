@@ -1839,11 +1839,15 @@ class CdEFrontend(AbstractUserFrontend):
         """Show information."""
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
+        period_history = self.cdeproxy.get_period_history(rs)
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
+        expuls_history = self.cdeproxy.get_expuls_history(rs)
         stats = self.cdeproxy.finance_statistics(rs)
         return self.render(rs, "show_semester", {
-            'period': period, 'expuls': expuls, 'stats': stats})
+            'period': period, 'expuls': expuls, 'stats': stats,
+            'period_history': period_history, 'expuls_history': expuls_history,
+        })
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("addresscheck", "bool"), ("testrun", "bool"))
@@ -1874,6 +1878,7 @@ class CdEFrontend(AbstractUserFrontend):
                 period = self.cdeproxy.get_period(rrs, period_id)
                 meta_info = self.coreproxy.get_meta_info(rrs)
                 previous = period['billing_state'] or 0
+                count = period['billing_count'] or 0
                 persona_id = self.coreproxy.next_persona(rrs, previous)
                 if testrun:
                     persona_id = rrs.user.persona_id
@@ -1916,6 +1921,7 @@ class CdEFrontend(AbstractUserFrontend):
                 period_update = {
                     'id': period_id,
                     'billing_state': persona_id,
+                    'billing_count': count + 1,
                 }
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
@@ -2081,6 +2087,7 @@ class CdEFrontend(AbstractUserFrontend):
                 expuls_id = self.cdeproxy.current_expuls(rrs)
                 expuls = self.cdeproxy.get_expuls(rrs, expuls_id)
                 previous = expuls['addresscheck_state'] or 0
+                count = expuls['addresscheck_count'] or 0
                 persona_id = self.coreproxy.next_persona(rrs, previous)
                 if testrun:
                     persona_id = rrs.user.persona_id
@@ -2103,6 +2110,7 @@ class CdEFrontend(AbstractUserFrontend):
                 expuls_update = {
                     'id': expuls_id,
                     'addresscheck_state': persona_id,
+                    'addresscheck_count': count + 1,
                 }
                 self.cdeproxy.set_expuls(rrs, expuls_update)
                 return True

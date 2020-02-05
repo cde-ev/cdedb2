@@ -1692,6 +1692,7 @@ def _period(val, argname=None, *, _convert=True, _ignore_warnings=False):
     optional_fields = {
         'billing_state': _id_or_None,
         'billing_done': _datetime,
+        'billing_count': _non_negative_int,
         'ejection_state': _id_or_None,
         'ejection_done': _datetime,
         'ejection_count': _non_negative_int,
@@ -1723,6 +1724,7 @@ def _expuls(val, argname=None, *, _convert=True, _ignore_warnings=False):
     optional_fields = {
         'addresscheck_state': _id_or_None,
         'addresscheck_done': _datetime,
+        'addresscheck_count': _non_negative_int,
     }
     return _examine_dictionary_fields(
         val, {'id': _id}, optional_fields, _convert=_convert,
