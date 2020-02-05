@@ -45,7 +45,7 @@
     </div>
     
     <h3>{% trans -%}Current Events{%- endtrans %}</h3>
-    <div class="list-group list-group-hover list-group-condensed">
+    <div class="list-group list-group-hover list-group-condensed" id="current-events">
         {% for event_id, entry in events|keydictsort(EntitySorter.event) %}
             {% if not entry['is_archived'] %}
                 {{ format_entry(entry) }}
@@ -54,7 +54,7 @@
     </div>
 
     <h3>{% trans -%}Archived Events{%- endtrans %}</h3>
-    <div class="list-group list-group-hover list-group-condensed">
+    <div class="list-group list-group-hover list-group-condensed" id="archived-events">
         {% for event_id, entry in events|keydictsort(EntitySorter.event) %}
             {% if entry['is_archived'] %}
                 {{ format_entry(entry) }}

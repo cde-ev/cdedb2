@@ -12,7 +12,7 @@
 {% block content %}
     <h3>{% trans -%}Current Events{%- endtrans %}</h3>
     {% if open_events %}
-        <ul class="spaced">
+        <ul class="spaced" id="current-events">
             {% for event_id, event in open_events|keydictsort(EntitySorter.event) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
@@ -29,7 +29,7 @@
 
     {% if orga_events %}
         <h3>{% trans -%}Organized Events{%- endtrans %}</h3>
-        <ul class="spaced">
+        <ul class="spaced" id="organized-events">
             {% for event_id, entry in orga_events|keydictsort(EntitySorter.event) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
@@ -55,7 +55,7 @@
 
     {% if other_events %}
         <h3>{% trans -%}Other Events{%- endtrans %}</h3>
-        <ul class="spaced">
+        <ul class="spaced" id="other-events">
             {% for event_id, event in other_events|keydictsort(EntitySorter.event) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
@@ -68,7 +68,7 @@
 
     {% if 'cde' in user.roles %}
         <h3>{% trans %}Past Events (long){% endtrans %}</h3>
-        <p>
+        <p id="past-events">
             {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events (long)'))|s -%}
                 Previous CdE events, including their courses and participants, can be found at {{ link }} – together with Junior- and SchülerAkademien.
             {%- endtrans %}

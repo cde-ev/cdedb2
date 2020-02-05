@@ -800,14 +800,18 @@ class TestCoreFrontend(FrontendTest):
                 msg = "Benutzer ist deaktiviert."
                 if u in {"olaf"}:
                     self.assertNonPresence(msg)
+                    self.assertPresence("Ja", div='account-active')
                 else:
                     self.assertPresence(msg, div='deactivated')
+                    self.assertPresence("Nein", div='account-active')
                 f = self.response.forms['activitytoggleform']
                 self.submit(f)
                 if u in {"olaf"}:
                     self.assertPresence(msg, div='deactivated')
+                    self.assertPresence("Nein", div='account-active')
                 else:
                     self.assertNonPresence(msg)
+                    self.assertPresence("Ja", div='account-active')
 
     @as_users("vera", "berta")
     def test_get_foto(self, user):

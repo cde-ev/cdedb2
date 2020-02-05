@@ -20,7 +20,7 @@
 {% endblock %}
 {% block content %}
     {% if not ambience['event']['is_course_list_visible'] %}
-        <div class="alert alert-info" role="alert">
+        <div class="alert alert-info" role="alert" id="course-not-visible">
             {{ util.make_icon('info-sign') }}
             <strong>{% trans -%}Caution!{%- endtrans %}</strong>
             <span class="notificationMessage">
@@ -28,7 +28,7 @@
             </span>
         </div>
     {% elif not ambience['event']['is_course_state_visible'] and ambience['event']['id'] in user.orga %}
-        <div class="alert alert-info" role="alert">
+        <div class="alert alert-info" role="alert" id="cancelled-not-visible">
             {{ util.make_icon('info-sign') }}
             <strong>{% trans -%}Caution!{%- endtrans %}</strong>
             {% if ambience['event']['tracks']|length > 1 %}
@@ -45,13 +45,13 @@
     {% endif %}
     {% if courses %}
         {% if "event" not in user.roles %}
-            <div class="alert alert-info" role="alert">
+            <div class="alert alert-info" role="alert" id="instructors-not-visible">
                 {{ util.make_icon('info-sign') }}
                 {% trans -%}The instructors for each course are only visible to logged in users.{%- endtrans %}
             </div>
         {% endif %}
         {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'] %}
-            <div class="hide-hover-container">
+            <div class="hide-hover-container" id="list-courses">
                 <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
                 {% if ambience['event']['id'] in user.orga or is_admin %}
                     <div class="pull-right">
