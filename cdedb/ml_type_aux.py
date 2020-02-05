@@ -458,6 +458,8 @@ TYPE_MAP = {
     MailinglistTypes.restricted_team: RestrictedTeamMailinglist,
     MailinglistTypes.event_associated: EventAssociatedMailinglist,
     MailinglistTypes.event_orga: EventOrgaMailinglist,
+    MailinglistTypes.event_associated_legacy: EventAssociatedMailinglist,
+    MailinglistTypes.event_orga_legacy: EventOrgaMailinglist,
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
     MailinglistTypes.general_opt_in: GeneralOptInMailinglist,
