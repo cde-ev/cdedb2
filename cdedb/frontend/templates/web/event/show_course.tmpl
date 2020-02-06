@@ -160,6 +160,12 @@
         {{ ambience['course']['description']|md }}
     {% endcall %}
     {% call util.bootstrap_panel(title=gettext("Course Logo"), icon="picture") %}
+        <div class="alert alert-info" role="alert">
+            {% trans -%}
+                This functionality is deprecated and will be removed soon.
+                Do not use it anymore.
+            {%- endtrans %}
+        </div>
         {% if logo_present %}
             <embed src="{{ cdedblink('event/get_course_logo') }}#view=Fit&scrollbar=0&toolbar=0"
                    type="application/pdf" width="150px" height="150px" />
