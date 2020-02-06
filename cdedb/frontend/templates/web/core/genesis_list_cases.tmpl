@@ -17,14 +17,13 @@
             $('.rejection-form').cdedbProtectAction("{{ gettext("The Account Request will be permanently deleted.") }}");
         });
     </script>
-    {% if 'event_admin' in user.roles or 'core_admin' in user.roles %}
-        <h3>
-            {% trans count=event_cases|length -%}
-                Event-Account Requests [{{ count }}]
-            {%- endtrans %}
-        </h3>
-        {% if event_cases|length > 0 %}
-            {% for case_id, entry in event_cases|xdictsort('ctime') %}
+    {% with REALM_REQUEST_TITLES={'event': gettext('Event Account Requests'),
+                                  'cde': gettext('CdE Account Requests'),
+                                  'assembly': gettext('Assembly Account Requests'),
+                                  'ml': gettext('Mailinglist Account Requests')} %}
+        {% for realm, cases in cases_by_realm.items() %}
+            <h3>{{ REALM_REQUEST_TITLES[realm] }}</h3>
+            {% for case_id, entry in cases|xdictsort('ctime') %}
                 <div class="row">
                     <div class="col-sm-3">
                         <p>
@@ -40,64 +39,34 @@
                             aclass="btn btn-primary btn-sm", icon="user") }}
                         {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), gettext("Edit"),
                             aclass="btn btn-warning btn-sm", icon="pencil") }}
+                        {% if realm == 'ml' %}
+                            {# For mailinglist genesis requrests, there is no additional information to review (apart from
+                              that shown on this page. So we allow admins to accept these requests directly. #}
+                            <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id}) }}" method="POST"
+                             id="genesismlapprovalform{{ loop.index }}" style="display: inline;">
+                                {{ util.anti_csrf_token('core/genesis_decide') }}
+                                {{ util.input_hidden(name="case_id", value=case_id) }}
+                                {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
+                                {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
+                            </form>
+                            <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id}) }}" method="POST"
+                             id="genesismlrejectionform{{ loop.index }}" class="rejection-form" style="display: inline;">
+                                {{ util.anti_csrf_token('core/genesis_decide') }}
+                                {{ util.input_hidden(name="case_id", value=case_id) }}
+                                {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
+                                {{ util.input_submit(icon="remove", value=gettext("Reject"),
+                                    aclass="btn btn-sm btn-danger") }}
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
                 {% if not loop.last %}
                     <hr />
                 {% endif %}
+            {% else %}
+                <p class="text-muted">{% trans realm=REALM_REQUEST_TITLES[realm] -%}
+                    There are currently no {{ realm }} pending for approval.{%- endtrans %}</p>
             {% endfor %}
-        {% else %}
-            <p class="text-muted">{% trans -%}There are currently no Event-Account Requests pending.{%- endtrans %}</p>
-        {% endif %}
-    {% endif %}
-    {% if 'ml_admin' in user.roles or 'core_admin' in user.roles %}
-        <h3>
-            {% trans count=ml_cases|length -%}
-            	Mailinglist-Account Requests [{{ count }}]
-            {%- endtrans %}
-        </h3>
-        {% if ml_cases|length > 0 %}
-            {% for case_id, entry in ml_cases|xdictsort('ctime') %}
-                <div class="row">
-                    <div class="col-sm-3">
-                        <p>
-                            {{ entry['given_names'] }} {{ entry['family_name'] }}
-                            &lt;{{ util.href('mailto:%s'|format(entry['username']), entry['username']) }}&gt;
-                        </p>
-                    </div>
-                    <div class="col-sm-5">
-                        {% if entry['notes'] %}<p class="textbox">{{ entry['notes'] }}</p>{% endif %}
-                    </div>
-                    <div class="col-sm-4 button-par">
-                        {{ util.href(cdedblink('core/genesis_show_case', {'case_id': case_id}), gettext("Details"),
-                            aclass="btn btn-primary btn-sm", icon="user") }}
-                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), gettext("Edit"),
-                            aclass="btn btn-warning btn-sm", icon="pencil") }}
-                        <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id}) }}" method="POST"
-                         id="genesismlapprovalform{{ loop.index }}" style="display: inline;">
-                            {{ util.anti_csrf_token('core/genesis_decide') }}
-                            {{ util.input_hidden(name="case_id", value=case_id) }}
-                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                            {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
-                        </form>
-                        <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id}) }}" method="POST"
-                         id="genesismlrejectionform{{ loop.index }}" class="rejection-form" style="display: inline;">
-                            {{ util.anti_csrf_token('core/genesis_decide') }}
-                            {{ util.input_hidden(name="case_id", value=case_id) }}
-                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                            {{ util.input_submit(icon="remove", value=gettext("Reject"),
-                                aclass="btn btn-sm btn-danger") }}
-                        </form>
-                    </div>
-                </div>
-                {% if not loop.last %}
-                    <hr />
-                {% endif %}
-            {% endfor %}
-        {% else %}
-            <p class="text-muted">
-                {% trans -%}There are currently no Mailinglist-Account Requests pending.{%- endtrans %}
-            </p>
-        {% endif %}
-    {% endif %}
+        {% endfor %}
+    {% endwith %}
 {% endblock %}

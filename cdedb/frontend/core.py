@@ -22,7 +22,7 @@ from cdedb.frontend.common import (
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
-    REALM_INHERITANCE, EntitySorter)
+    REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields)
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
@@ -30,6 +30,16 @@ from cdedb.validation import (
     _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS)
 import cdedb.database.constants as const
 import cdedb.validation as validate
+
+
+# Name of each realm's option in the genesis form
+GenesisRealmOptionName = collections.namedtuple(
+    'GenesisRealmOptionName', ['realm', 'name'])
+GENESIS_REALM_OPTION_NAMES = (
+    GenesisRealmOptionName("event", n_("CdE event")),
+    GenesisRealmOptionName("cde", n_("CdE membership")),
+    GenesisRealmOptionName("assembly", n_("CdE members' assembly")),
+    GenesisRealmOptionName("ml", n_("CdE mailinglist")))
 
 
 class CoreFrontend(AbstractFrontend):
@@ -64,14 +74,14 @@ class CoreFrontend(AbstractFrontend):
                 return basic_redirect(rs, wants)
 
             # genesis cases
-            if {"core_admin", "event_admin", "ml_admin"} & rs.user.roles:
-                realms = []
-                if {"core_admin", "event_admin"} & rs.user.roles:
-                    realms.append("event")
-                if {"core_admin", "ml_admin"} & rs.user.roles:
-                    realms.append("ml")
+            genesis_realms = []
+            for realm in realm_specific_genesis_fields:
+                if {"core_admin", "{}_admin".format(realm)} & rs.user.roles:
+                    genesis_realms.append(realm)
+            if genesis_realms:
                 data = self.coreproxy.genesis_list_cases(
-                    rs, stati=(const.GenesisStati.to_review,), realms=realms)
+                    rs, stati=(const.GenesisStati.to_review,),
+                    realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
             if self.is_admin(rs):
@@ -1712,9 +1722,14 @@ class CoreFrontend(AbstractFrontend):
     def genesis_request_form(self, rs):
         """Render form."""
         allowed_genders = set(const.Genders) - {const.Genders.not_specified}
-        return self.render(rs, "genesis_request",
-                           {'max_rationale': self.conf.MAX_RATIONALE,
-                            'allowed_genders': allowed_genders})
+        realm_options = [option
+                         for option in GENESIS_REALM_OPTION_NAMES
+                         if option.realm in realm_specific_genesis_fields]
+        return self.render(rs, "genesis_request", {
+            'max_rationale': self.conf.MAX_RATIONALE,
+            'allowed_genders': allowed_genders,
+            'realm_specific_genesis_fields': realm_specific_genesis_fields,
+            'realm_options': realm_options})
 
     @access("anonymous", modi={"POST"})
     @REQUESTdatadict(
@@ -1731,8 +1746,9 @@ class CoreFrontend(AbstractFrontend):
             return self.genesis_request_form(rs)
         if len(data['notes']) > self.conf.MAX_RATIONALE:
             rs.errors.append(("notes", ValueError(n_("Rationale too long."))))
-        # We dont actually want not_specified as a valid option for event users.
-        if data.get('realm') == "event":
+        # We dont actually want gender == not_specified as a valid option if it
+        # is required for the requested realm)
+        if 'gender' in realm_specific_genesis_fields.get(data.get('realm'), {}):
             if data['gender'] == const.Genders.not_specified:
                 rs.errors.append(
                     ("gender", ValueError(n_(
@@ -1816,6 +1832,7 @@ class CoreFrontend(AbstractFrontend):
                 notify |= {self.conf.EVENT_ADMIN_ADDRESS}
             if ml_count:
                 notify |= {self.conf.ML_ADMIN_ADDRESS}
+            # TODO add support for CdE and assembly genesis requests
             self.do_mail(
                 rs, "genesis_requests_pending",
                 {'To': tuple(notify),
@@ -1851,23 +1868,23 @@ class CoreFrontend(AbstractFrontend):
 
         return store
 
-    @access("core_admin", "event_admin", "ml_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields))
     def genesis_list_cases(self, rs):
         """Compile a list of genesis cases to review."""
-        realms = []
-        if {"core_admin", "event_admin"} & rs.user.roles:
-            realms.append("event")
-        if {"core_admin", "ml_admin"} & rs.user.roles:
-            realms.append("ml")
+        realms = [realm for realm in realm_specific_genesis_fields.keys()
+                  if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, stati=(const.GenesisStati.to_review,), realms=realms)
         cases = self.coreproxy.genesis_get_cases(rs, set(data))
-        event_cases = {k: v for k, v in cases.items() if v['realm'] == 'event'}
-        ml_cases = {k: v for k, v in cases.items() if v['realm'] == 'ml'}
+        cases_by_realm = {
+            realm: {k: v for k, v in cases.items() if v['realm'] == realm}
+            for realm in realms}
         return self.render(rs, "genesis_list_cases", {
-            'ml_cases': ml_cases, 'event_cases': event_cases})
+            'cases_by_realm': cases_by_realm})
 
-    @access("core_admin", "event_admin", "ml_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields))
     def genesis_show_case(self, rs, case_id):
         """View a specific case."""
         case = self.coreproxy.genesis_get_case(rs, case_id)
@@ -1880,7 +1897,8 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "genesis_show_case", {
             'case': case, 'reviewer': reviewer})
 
-    @access("core_admin", "event_admin", "ml_admin")
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields))
     def genesis_modify_form(self, rs, case_id):
         """Edit a specific case it."""
         case = self.coreproxy.genesis_get_case(rs, case_id)
@@ -1891,9 +1909,16 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         merge_dicts(rs.values, case)
-        return self.render(rs, "genesis_modify_form")
+        realm_options = [option
+                         for option in GENESIS_REALM_OPTION_NAMES
+                         if option.realm in realm_specific_genesis_fields]
+        return self.render(rs, "genesis_modify_form", {
+            'realm_specific_genesis_fields': realm_specific_genesis_fields,
+            'realm_options': realm_options})
 
-    @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields),
+            modi={"POST"})
     @REQUESTdatadict(
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
@@ -1915,7 +1940,9 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm in realm_specific_genesis_fields),
+            modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"))
     def genesis_decide(self, rs, case_id, case_status):
         """Approve or decline a genensis case.

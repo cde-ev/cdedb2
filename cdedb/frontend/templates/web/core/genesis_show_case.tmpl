@@ -25,13 +25,14 @@
         </dd>
         <dt>{% trans %}Realm{% endtrans %}</dt>
         <dd>
-            {% if case['realm'] == 'ml' %}
-                {{ util.make_icon("envelope", title=gettext("Mailinglists")) }} {{ gettext("Mailinglists") }}
-            {% elif case['realm'] == 'event' %}
-                {{ util.make_icon("blackboard", title=gettext("Events")) }} {{ gettext("Events") }}
-            {% else %}
-                Impossible!
-            {% endif %}
+            {% with (icon, caption) = {
+                        'ml': ('envelope', gettext("Mailinglists")),
+                        'event': ('blackboard', gettext("Events")),
+                        'cde': ('education', gettext("Members")),
+                        'bullhorn': ('education', gettext("Assemblies"))
+                    }.get(case['realm']) %}
+                {{ util.make_icon(icon) }} {{ caption }}
+            {% endwith %}
         </dd>
         <dt>{% trans %}Creation Time{% endtrans %}</dt>
         <dd>

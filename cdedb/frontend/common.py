@@ -49,7 +49,7 @@ from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter, ProxyShim, EntitySorter)
+    decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -811,6 +811,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'GIT_COMMIT': self.conf.GIT_COMMIT,
             'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
             'EntitySorter': EntitySorter,
+            'roles_allow_genesis_management':
+                lambda roles: roles & {'core_admin'} | set(
+                    "{}_admin".format(realm)
+                    for realm in realm_specific_genesis_fields),
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,
