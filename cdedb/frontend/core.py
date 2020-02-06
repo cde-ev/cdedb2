@@ -33,11 +33,13 @@ import cdedb.validation as validate
 
 
 # Name of each realm's option in the genesis form
+GenesisRealmOptionName = collections.namedtuple(
+    'GenesisRealmOptionName', ['realm', 'name'])
 GENESIS_REALM_OPTION_NAMES = (
-    ("event", n_("CdE event")),
-    ("cde", n_("CdE membership")),
-    ("assembly", n_("CdE members' assembly")),
-    ("ml", n_("CdE mailinglist")))
+    GenesisRealmOptionName("event", n_("CdE event")),
+    GenesisRealmOptionName("cde", n_("CdE membership")),
+    GenesisRealmOptionName("assembly", n_("CdE members' assembly")),
+    GenesisRealmOptionName("ml", n_("CdE mailinglist")))
 
 
 class CoreFrontend(AbstractFrontend):
@@ -1716,7 +1718,7 @@ class CoreFrontend(AbstractFrontend):
         allowed_genders = set(const.Genders) - {const.Genders.not_specified}
         realm_options = [option
                          for option in GENESIS_REALM_OPTION_NAMES
-                         if option[0] in realm_specific_genesis_fields]
+                         if option.realm in realm_specific_genesis_fields]
         return self.render(rs, "genesis_request", {
             'max_rationale': self.conf.MAX_RATIONALE,
             'allowed_genders': allowed_genders,
@@ -1903,7 +1905,7 @@ class CoreFrontend(AbstractFrontend):
         merge_dicts(rs.values, case)
         realm_options = [option
                          for option in GENESIS_REALM_OPTION_NAMES
-                         if option[0] in realm_specific_genesis_fields]
+                         if option.realm in realm_specific_genesis_fields]
         return self.render(rs, "genesis_modify_form", {
             'realm_specific_genesis_fields': realm_specific_genesis_fields,
             'realm_options': realm_options})
