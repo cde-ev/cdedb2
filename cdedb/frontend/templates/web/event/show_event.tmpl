@@ -291,6 +291,12 @@
 
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Event Logo"), icon="picture") %}
+                    <div class="alert alert-info" role="alert">
+                        {% trans -%}
+                            This functionality is deprecated and will be removed soon.
+                            Do not use it anymore.
+                        {%- endtrans %}
+                    </div>
                     {% if logo_present %}
                         <embed src="{{ cdedblink('event/get_event_logo') }}#view=Fit&scrollbar=0&toolbar=0"
                                type="application/pdf" width="150px" height="150px" />
@@ -314,12 +320,6 @@
                         {{ util.anti_csrf_token('event/set_event_logo') }}
                         {{ util.input_hidden(name="delete", value=False) }}
                         <div class="input-group">
-                            <p>
-                                {% trans -%}
-                                    This functionality is deprecated and will be removed soon.
-                                    Do not use it anymore.
-                                {%- endtrans %}
-                            </p>
                             {{ util.input_file(name="event_logo", accept="image/*") }}
                             <div class="input-group-btn">
                                 {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='upload') }}
