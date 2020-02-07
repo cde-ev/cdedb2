@@ -337,10 +337,10 @@
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
-        small=False, horizontal=True, infolink='') %}
+        aclass="", small=False, horizontal=True, infolink='') %}
     {%- if not anid %}{% set anid = "input-file-{}".format(name) %}{% endif %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink) %}
-        {{- input_file(name, readonly, defaultvalue, anid, accept=accept) }}
+        {{- input_file(name, readonly, defaultvalue, anid, accept=accept, aclass='form-control ' + aclass) }}
     {%- endcall %}
 {%- endmacro %}
 
