@@ -1443,6 +1443,9 @@ class CoreFrontend(AbstractFrontend):
                  ("new_password2", "str"))
     def change_password(self, rs, old_password, new_password, new_password2):
         """Update your own password."""
+        if rs.errors:
+            return self.change_password_form(rs)
+
         if new_password != new_password2:
             rs.errors.append(("new_password",
                               ValueError(n_("Passwords don’t match."))))
