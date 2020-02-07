@@ -6,7 +6,7 @@
 {% endblock %}
 {% block navigation %}
     {% if "persona" in user.roles %}
-        <h4>{% trans -%}Index{%- endtrans %}</h4>
+        <h3 class="heading-sidebar">{% trans -%}Index{%- endtrans %}</h3>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("core/index"), gettext("Overview"), aclass="list-group-item",
                     icon="triangle-right", active=(sidenav_active=='core_index')) }}

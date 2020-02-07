@@ -84,11 +84,11 @@
             {{ util.href(cdedblink("event/index"), gettext("Event-Overview"), icon="circle-arrow-up") }}
         </p>
 
-        <h4>{{ util.make_icon('blackboard', arialabel=gettext("Event")) }}
-            {{ ambience['event']['title'] }}</h4>
+        <h3 class="heading-sidebar">{{ util.make_icon('blackboard', arialabel=gettext("Event")) }}
+            {{ ambience['event']['title'] }}</h3>
         {{ one_event_links(ambience['event']) }}
     {% else %}
-        <h4>{% trans -%}Events{%- endtrans %}</h4>
+        <h3 class="heading-sidebar">{% trans -%}Events{%- endtrans %}</h3>
         <div class="list-group tear-down">
             {% if is_admin %}
                 {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item",

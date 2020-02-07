@@ -34,11 +34,11 @@
             {% endif %}
         </p>
 
-        <h4>{{ util.make_icon('envelope', arialabel='Mailingliste') }}
-            {{ ambience['mailinglist']['title'] }}</h4>
+        <h3 class="heading-sidebar">{{ util.make_icon('envelope', arialabel='Mailingliste') }}
+            {{ ambience['mailinglist']['title'] }}</h3>
         {{ ml_inner_navigation(ambience['mailinglist']) }}
     {% else %}
-        <h4>Mailinglisten</h4>
+        <h3 class="heading-sidebar">Mailinglisten</h3>
         <div class="list-group tear-down">
             {% if is_admin %}
                 {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="triangle-right",
