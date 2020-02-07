@@ -473,7 +473,14 @@ class FrontendTest(unittest.TestCase):
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
-            self.assertIn("alert alert-success", self.response.text)
+            success = True
+            try:
+                self.assertIn("alert alert-success", self.response.text)
+            except AssertionError as e:
+                success = False
+            if not success:
+                raise AssertionError(
+                    "Post request did not produce success notification.")
 
     def traverse(self, *links, verbose=False):
         for link in links:
