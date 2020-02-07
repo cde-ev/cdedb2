@@ -2276,6 +2276,14 @@ class CoreBackend(AbstractBackend):
                 ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)
                 self.core_log(rs, const.CoreLogCodes.genesis_deleted,
                               persona_id=None, additional_info=case["username"])
+                if case["attachment"]:
+                    query = ("SELECT COUNT(*) as num FROM core.genesis_cases "
+                             "WHERE attachment = %s")
+                    if unwrap(self.query_one(rs, query, (case["attachment"],))):
+                        path = (self.conf.STORAGE_DIR / 'genesis_attachments' /
+                                case['attachment'])
+                        if path.exists():
+                            path.unlink()
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
