@@ -150,6 +150,7 @@ CREATE TABLE core.genesis_cases (
         username                varchar NOT NULL,
         given_names             varchar NOT NULL,
         family_name             varchar NOT NULL,
+        birth_name              varchar,
         gender                  integer,
         birthday                date,
         telephone               varchar,
@@ -164,6 +165,9 @@ CREATE TABLE core.genesis_cases (
         -- user-supplied comment (short justification of request)
         -- may be amended during review
         notes                   varchar,
+        -- For some realms an attachment may be included. This column contains the filename,
+        -- which is the hash of the file.
+        attachment              varchar,
         -- A verification link is sent to the email address; upon
         -- verification an admittance email is sent to the responsible team
         --

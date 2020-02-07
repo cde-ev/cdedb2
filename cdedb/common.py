@@ -1618,7 +1618,7 @@ PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country",
+    "address", "postal_code", "location", "country", "birth_name", "attachment",
     "realm", "notes", "case_status", "reviewer")
 
 # The following dict defines, which additional fields are required for genesis
@@ -1629,6 +1629,39 @@ realm_specific_genesis_fields = {
     "event": ("gender", "birthday", "telephone", "mobile",
               "address_supplement", "address", "postal_code", "location",
               "country"),
+    "cde": ("gender", "birthday", "telephone", "mobile",
+            "address_supplement", "address", "postal_code", "location",
+            "country", "birth_name", "attachment"),
+}
+
+genesis_realm_access_bits = {
+    'event': {
+        'is_cde_realm': False,
+        'is_event_realm': True,
+        'is_assembly_realm': False,
+        'is_ml_realm': True,
+        'is_member': False,
+        'is_searchable': False,
+    },
+    'ml': {
+        'is_cde_realm': False,
+        'is_event_realm': False,
+        'is_assembly_realm': False,
+        'is_ml_realm': True,
+        'is_member': False,
+        'is_searchable': False,
+    },
+    'cde': {
+        'is_cde_realm': True,
+        'is_event_realm': True,
+        'is_assembly_realm': True,
+        'is_ml_realm': True,
+        'is_member': False,
+        'is_searchable': False,
+        'trial_member': False,
+        'decided_search': False,
+        'bub_search': False,
+    }
 }
 
 #: Fields of a pending privilege change.

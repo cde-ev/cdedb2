@@ -1799,12 +1799,24 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdatadict(
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country")
-    def genesis_request(self, rs, data):
+        "postal_code", "location", "country", "birth_name")
+    @REQUESTfile("attachment")
+    def genesis_request(self, rs, data, attachment):
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
+        if attachment:
+            attachment = check(rs, 'pdffile', attachment, 'attachment')
+        if attachment:
+            myhash = hashlib.sha512()
+            myhash.update(attachment)
+            myhash = myhash.hexdigest()
+            path = self.conf.STORAGE_DIR / 'genesis_attachments' / myhash
+            if not path.exists():
+                with open(path, 'wb') as f:
+                    f.write(attachment)
+            data['attachment'] = myhash
         data = check(rs, "genesis_case", data, creation=True)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
@@ -1844,8 +1856,8 @@ class CoreFrontend(AbstractFrontend):
                       'Subject': "CdEDB Accountanfrage verifizieren",},
                      {'case_id': self.encode_parameter(
                          "core/genesis_verify", "case_id", case_id),
-                      'given_names': data['given_names'],
-                      'family_name': data['family_name'],})
+                         'given_names': data['given_names'],
+                         'family_name': data['family_name'],})
         rs.notify(
             "success",
             n_("Email sent. Please follow the link contained in the email."))
@@ -1932,6 +1944,16 @@ class CoreFrontend(AbstractFrontend):
                 "genesis_forget: Deleted {} genesis cases.".format(count))
 
         return store
+
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm, fields in
+                            realm_specific_genesis_fields.items()
+                            if "attachment" in fields))
+    def genesis_get_attachment(self, rs, attachment):
+        """Retrieve attachment for genesis case."""
+        path = self.conf.STORAGE_DIR / 'genesis_attachments' / attachment
+        mimetype = magic.from_file(str(path), mime=True)
+        return self.send_file(rs, path=path, mimetype=mimetype)
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in realm_specific_genesis_fields))

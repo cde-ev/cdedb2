@@ -58,6 +58,10 @@
         <dd id="given-names">
             {{ case['given_names'] }} {{ case['family_name'] }}
         </dd>
+        {% if case['birth_name'] %}
+            <dt>{% trans %}Birth Name{% endtrans %}</dt>
+            <dd>{{ case['birth_name'] }}</dd>
+        {% endif %}
         {% if case['birthday'] %}
             <dt>{% trans %}Birthday{% endtrans %}</dt>
             <dd id="birthday">{{ case['birthday']|date(lang=lang) }}</dd>
@@ -91,6 +95,10 @@
                 {{ case['postal_code'] }} {{ case['location'] }}{% if case['location'] %}<br />{% endif %}
                 {{ case['country'] }}
             </dd>
+        {% endif %}
+        {% if case['attachment'] %}
+            {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment': case['attachment']}),
+                        gettext("Download Attachment"), aclass="btn btn-info", icon="download") }}
         {% endif %}
     </dl>
 

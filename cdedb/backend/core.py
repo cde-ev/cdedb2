@@ -24,7 +24,7 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter)
+    decode_parameter, genesis_realm_access_bits)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -2435,24 +2435,6 @@ class CoreBackend(AbstractBackend):
         :returns: The id of the newly created persona.
         """
         case_id = affirm("id", case_id)
-        ACCESS_BITS = {
-            'event': {
-                'is_cde_realm': False,
-                'is_event_realm': True,
-                'is_assembly_realm': False,
-                'is_ml_realm': True,
-                'is_member': False,
-                'is_searchable': False,
-            },
-            'ml': {
-                'is_cde_realm': False,
-                'is_event_realm': False,
-                'is_assembly_realm': False,
-                'is_ml_realm': True,
-                'is_member': False,
-                'is_searchable': False,
-            },
-        }
         with Atomizer(rs):
             case = unwrap(self.genesis_get_cases(rs, (case_id,)))
             data = {k: v for k, v in case.items()
@@ -2460,7 +2442,7 @@ class CoreBackend(AbstractBackend):
             data['display_name'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
-            data.update(ACCESS_BITS[case['realm']])
+            data.update(genesis_realm_access_bits[case['realm']])
             data = affirm("persona", data, creation=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
