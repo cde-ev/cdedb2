@@ -165,8 +165,8 @@ class AssemblyBackend(AbstractBackend):
                         additional_info))
 
     @access("assembly_admin")
-    def retrieve_log(self, rs, codes=None, assembly_id=None, start=None,
-                     stop=None, persona_id=None, submitted_by=None,
+    def retrieve_log(self, rs, codes=None, assembly_id=None, offset=None,
+                     length=None, persona_id=None, submitted_by=None,
                      additional_info=None, time_start=None, time_stop=None):
         """Get recorded activity.
 
@@ -176,8 +176,8 @@ class AssemblyBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type assembly_id: int or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
         :type additional_info: str or None
@@ -187,8 +187,8 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm("id_or_None", assembly_id)
         return self.generic_retrieve_log(
-            rs, "enum_assemblylogcodes", "assembly", "assembly.log", codes,
-            entity_id=assembly_id, start=start, stop=stop,
+            rs, "enum_assemblylogcodes", "assembly", "assembly.log",
+            codes=codes, entity_id=assembly_id, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             additional_info=additional_info, time_start=time_start,
             time_stop=time_stop)

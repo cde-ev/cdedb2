@@ -256,8 +256,8 @@ class EventBackend(AbstractBackend):
         return self.sql_insert(rs, "event.log", data)
 
     @access("event")
-    def retrieve_log(self, rs, codes=None, event_id=None, start=None,
-                     stop=None, persona_id=None, submitted_by=None,
+    def retrieve_log(self, rs, codes=None, event_id=None, offset=None,
+                     length=None, persona_id=None, submitted_by=None,
                      additional_info=None, time_start=None, time_stop=None):
         """Get recorded activity.
 
@@ -267,8 +267,8 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type event_id: int or None
-        :type start: int or None
-        :type stop: int or None
+        :type offset: int or None
+        :type length: int or None
         :type persona_id: int or None
         :type submitted_by: int or None
         :type additional_info: str or None
@@ -281,10 +281,11 @@ class EventBackend(AbstractBackend):
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
-            rs, "enum_eventlogcodes", "event", "event.log", codes,
-            entity_id=event_id, start=start, stop=stop, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
-            time_start=time_start, time_stop=time_stop)
+            rs, "enum_eventlogcodes", "event", "event.log", codes=codes,
+            entity_id=event_id, offset=offset, length=length,
+            persona_id=persona_id, submitted_by=submitted_by,
+            additional_info=additional_info, time_start=time_start,
+            time_stop=time_stop)
 
     @access("anonymous")
     def list_db_events(self, rs, visible=None, current=None, archived=None):
