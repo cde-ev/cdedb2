@@ -116,13 +116,13 @@ class TestMlBackend(BackendTest):
                           'captiankirk@example.cde',
                           'picard@example.cde'},
             'ml_type': const.MailinglistTypes.member_moderated_opt_in,
-            'ml_type_class': ml_type.MemberModeratedOptInMailinglist,
             'is_active': False,
             'local_part': 'passivenforum',
             'notes': "this list is no more",
         }
         expectation = expectation[7]
         expectation.update(setter)
+        expectation['ml_type_class'] = ml_type.MemberModeratedOptInMailinglist
         expectation['address'] = ml_type.full_address(expectation)
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))

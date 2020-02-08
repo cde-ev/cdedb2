@@ -3149,7 +3149,8 @@ _MAILINGLIST_READONLY_FIELDS = {
 
 
 @_addvalidator
-def _mailinglist(val, argname=None, *, creation=False, _convert=True):
+def _mailinglist(val, argname=None, *, creation=False, _convert=True,
+                 _allow_readonly=False):
     """
     :type val: object
     :type argname: str or None
@@ -3180,9 +3181,12 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                 iterable_fields.append((key, "_" + validator_str[1:-1]))
             else:
                 target[key] = getattr(current_module, "_" + validator_str)
-    for key in _MAILINGLIST_READONLY_FIELDS:
-        if key in val:
-            del val[key]
+    # Optionally remove readonly attributes, take care to keep the original.
+    if _allow_readonly:
+        val = copy.deepcopy(val)
+        for key in _MAILINGLIST_READONLY_FIELDS:
+            if key in val:
+                del val[key]
     if creation:
         pass
     else:

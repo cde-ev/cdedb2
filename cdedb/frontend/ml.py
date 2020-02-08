@@ -227,7 +227,7 @@ class MlFrontend(AbstractUserFrontend):
     def show_mailinglist(self, rs, mailinglist_id):
         """Details of a list."""
         # Validation of the ml during `may_view` causes information to be lost.
-        ml = copy.deepcopy(rs.ambience['mailinglist'])
+        ml = rs.ambience['mailinglist']
         state = self.mlproxy.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
 

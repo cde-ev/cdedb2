@@ -120,7 +120,7 @@ class MlBackend(AbstractBackend):
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
         persona_id = affirm("id", persona_id)
-        ml = affirm("mailinglist", mailinglist)
+        ml = affirm("mailinglist", mailinglist, _allow_readonly=True)
 
         if not (rs.user.persona_id == persona_id
                 or self.may_manage(rs, ml['id'])):
@@ -146,7 +146,7 @@ class MlBackend(AbstractBackend):
         :return: Tuple of personas whose interaction policies are in
             allowed_pols
         """
-        affirm("mailinglist", ml)
+        affirm("mailinglist", ml, _allow_readonly=True)
         affirm_set("enum_mailinglistinteractionpolicy", allowed_pols)
 
         # persona_ids are validated inside get_personas
@@ -470,7 +470,9 @@ class MlBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_mailinglists(rs, (data['id'],)))
-            current = affirm("mailinglist", current)
+            # TODO return enum members from get_mailinglist.
+            # This validation is required to get the enum members for data.
+            current = affirm("mailinglist", current, _allow_readonly=True)
             # Only allow modification of the mailinglist for admins.
             if not self.is_relevant_admin(rs, mailinglist=current):
                 raise PrivilegeError(n_("Not privileged."))
