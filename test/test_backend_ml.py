@@ -324,7 +324,7 @@ class TestMlBackend(BackendTest):
         # permissions are present. This should work for moderators as well,
         # but it does not for some reason.
         if code is not None and self.ml.may_manage(self.key, mailinglist_id):
-            log_entry = {
+            expected_log = {
                 'additional_info': None,
                 'code': action.get_log_code(),
                 'ctime': nearly_now(),
@@ -332,9 +332,9 @@ class TestMlBackend(BackendTest):
                 'persona_id': persona_id,
                 'submitted_by': persona_id
             }
-            self.assertIn(
-                log_entry, self.ml.retrieve_log(
-                    self.key, mailinglist_id=mailinglist_id))
+            _, log_entry = self.ml.retrieve_log(
+                self.key, mailinglist_id=mailinglist_id)
+            self.assertIn(expected_log, log_entry)
 
     @as_users("anton", "berta", "ferdinand")
     def test_opt_in(self, user):
@@ -860,7 +860,9 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
         # Check that this has been logged
-        log_entry = {
+        _, log_entries = self.ml.retrieve_log(
+            self.key, mailinglist_id=mailinglist_id)
+        expected_log = {
             'additional_info': None,
             'code': const.MlLogCodes.cron_removed,
             'ctime': nearly_now(),
@@ -868,9 +870,17 @@ class TestMlBackend(BackendTest):
             'persona_id': 5,
             'submitted_by': user['id']
         }
-        self.assertIn(
-            log_entry, self.ml.retrieve_log(
-                self.key, mailinglist_id=mailinglist_id))
+        self.assertIn(expected_log, log_entries)
+        expected_log = {
+            'additional_info': None,
+            'code': const.MlLogCodes.cron_removed,
+            'ctime': nearly_now(),
+            'mailinglist_id': mailinglist_id,
+            'persona_id': 5,
+            'submitted_by': user['id']
+        }
+        self.assertIn(expected_log, log_entries)
+
 
         # Now test lists with implicit subscribers.
         # First for events.
@@ -1461,64 +1471,65 @@ class TestMlBackend(BackendTest):
                                   "whitelist", "moderators", "log"))
 
         # now check it
-        expectation = (
-            {'additional_info': 'Witz des Tages (witz@example.cde)',
-             'code': const.MlLogCodes.list_deleted,
-             'ctime': nearly_now(),
-             'mailinglist_id': None,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': 'che@example.cde',
-             'code': const.MlLogCodes.whitelist_added,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.moderator_added,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': 2,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.moderator_added,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': 1,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.list_created,
-             'ctime': nearly_now(),
-             'mailinglist_id': new_id,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': const.MlLogCodes.subscribed,
-             'ctime': nearly_now(),
-             'mailinglist_id': 7,
-             'persona_id': 1,
-             'submitted_by': 1},
-            {'additional_info': 'devnull@example.cde',
-             'code': const.MlLogCodes.subscription_changed,
-             'ctime': nearly_now(),
-             'mailinglist_id': 4,
-             'persona_id': 1,
-             'submitted_by': 1},
+        expectation = (8, (
             {'additional_info': None,
              'code': const.MlLogCodes.unsubscribed,
              'ctime': nearly_now(),
              'mailinglist_id': 2,
              'persona_id': 1,
-             'submitted_by': 1})
+             'submitted_by': user['id']},
+            {'additional_info': 'devnull@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'mailinglist_id': 4,
+             'persona_id': 1,
+             'submitted_by': user['id']},
+            {'additional_info': None,
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'mailinglist_id': 7,
+             'persona_id': 1,
+             'submitted_by': user['id']},
+            {'additional_info': None,
+             'code': const.MlLogCodes.list_created,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': None,
+             'submitted_by': user['id']},
+            {'additional_info': None,
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': 1,
+             'submitted_by': user['id']},
+            {'additional_info': None,
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': 2,
+             'submitted_by': user['id']},
+            {'additional_info': 'che@example.cde',
+             'code': const.MlLogCodes.whitelist_added,
+             'ctime': nearly_now(),
+             'mailinglist_id': new_id,
+             'persona_id': None,
+             'submitted_by': user['id']},
+            {'additional_info': 'Witz des Tages (witz@example.cde)',
+             'code': const.MlLogCodes.list_deleted,
+             'ctime': nearly_now(),
+             'mailinglist_id': None,
+             'persona_id': None,
+             'submitted_by': user['id']}
+        ))
         self.assertEqual(expectation, self.ml.retrieve_log(self.key))
         self.assertEqual(
-            expectation[2:5],
-            self.ml.retrieve_log(self.key, start=2, stop=5))
+            (expectation[0], expectation[1][2:5]),
+            self.ml.retrieve_log(self.key, offset=2, length=3))
         self.assertEqual(
-            expectation[2:5],
-            self.ml.retrieve_log(self.key, mailinglist_id=new_id, start=1, stop=5))
+            (4, expectation[1][3:7]),
+            self.ml.retrieve_log(self.key, mailinglist_id=new_id))
         self.assertEqual(
-            expectation[2:4],
+            (2, expectation[1][4:6]),
             self.ml.retrieve_log(
                 self.key, codes=(const.MlLogCodes.moderator_added,)))
 

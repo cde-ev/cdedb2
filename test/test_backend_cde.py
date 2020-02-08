@@ -540,5 +540,5 @@ class TestCdEBackend(BackendTest):
         # TODO more when available
 
         ## now check it
-        expectation = tuple()
+        expectation = (0, tuple())
         self.assertEqual(expectation, self.cde.retrieve_cde_log(self.key))
