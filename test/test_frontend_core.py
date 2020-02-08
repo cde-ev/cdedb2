@@ -22,11 +22,11 @@ class TestCoreFrontend(FrontendTest):
                 f['password'] = user['password']
                 self.submit(f, check_notification=False)
                 self.assertPresence(user['display_name'], div='displayname',
-                                    only=True)
+                                    exact=True)
 
     @as_users("vera", "berta", "emilia")
     def test_logout(self, user):
-        self.assertPresence(user['display_name'], div='displayname', only=True)
+        self.assertPresence(user['display_name'], div='displayname', exact=True)
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False)
         self.assertNonPresence(user['display_name'])
@@ -285,8 +285,10 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence('Das ist ähnlich zu einem häufig genutzen Passwort.')
-        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertPresence(
+            'Das ist ähnlich zu einem häufig genutzen Passwort.')
+        self.assertPresence(
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         # Password two: Repeating patterns
         new_password = 'dfgdfg123'
         f = self.response.forms['passwordchangeform']
@@ -296,9 +298,12 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence(' Wiederholungen wie „abcabcabc“ sind nur geringfügig schwieriger zu erraten als „abc“.')
-        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
-        self.assertPresence('Vermeide Wiederholungen von Wörtern und Buchstaben.')
+        self.assertPresence(
+            ' Wiederholungen wie „abcabcabc“ sind nur geringfügig schwieriger zu erraten als „abc“.')
+        self.assertPresence(
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertPresence(
+            'Vermeide Wiederholungen von Wörtern und Buchstaben.')
         # Password three: Common German words
         new_password = 'wurdeGemeinde'
         f = self.response.forms['passwordchangeform']
@@ -308,7 +313,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertPresence(
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         self.assertPresence('Großschreibung hilft nicht wirklich.')
         # Password four: German umlauts
         new_password = 'überwährend'
@@ -318,7 +324,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertPresence('Passwort ist zu schwach.', div="notifications")
-        self.assertPresence('Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+        self.assertPresence(
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
         # Password five: User-specific passwords
         new_password = (user['given_names'].replace('-', ' ').split()[0] +
                         user['family_name'].replace('-', ' ').split()[0])
@@ -436,7 +443,8 @@ class TestCoreFrontend(FrontendTest):
                     elif key == 'bad':
                         self.submit(f, check_notification=False)
                         self.assertNonPresence('Passwort zurückgesetzt.')
-                        self.assertPresence('Passwort ist zu schwach.', div="notifications")
+                        self.assertPresence('Passwort ist zu schwach.',
+                                            div="notifications")
 
     def test_repeated_password_reset(self):
         new_password = "krce63koLe#$e"
@@ -522,7 +530,8 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = current_username
         self.submit(f, check_notification=False)
-        self.assertPresence("Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
+        self.assertPresence(
+            "Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
         self.assertNonPresence("E-Mail abgeschickt!", div="notifications")
         # Now with new username
         new_username = "zelda@example.cde"
@@ -945,7 +954,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
-        self.assertPresence("Name N. N.", div='personal-information', only=True)
+        self.assertPresence("Name N. N.", div='personal-information',
+                            exact=True)
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
 
     @as_users("farin")
@@ -1029,7 +1039,7 @@ class TestCoreFrontend(FrontendTest):
                       {'description': 'Änderungen bearbeiten'})
         self.assertTitle("Bertålotta Ganondorf bearbeiten")
         self.traverse({'description': 'Änderungen prüfen'},
-                      {'description': 'Bertålotta Beispiel'})
+                      {'description': 'Bertålotta Ganondorf'})
         f = self.response.forms['ackchangeform']
         self.submit(f)
         self.assertTitle("Zu prüfende Profiländerungen [0]")
@@ -1181,7 +1191,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zelda@example.cde", div='request-1')
         self.assertNonPresence("zorro@example.cde")
         self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor")
-        self.assertPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor", div='no-ml-request')
+        self.assertPresence(
+            "Zur Zeit liegen keine Mailinglisten-Accountanfragen vor",
+            div='no-ml-request')
         self.traverse({'href': '/core/genesis/1/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
@@ -1193,7 +1205,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zorro@example.cde", div='username')
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
-        self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor", div='no-event-request')
+        self.assertPresence(
+            "Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor",
+            div='no-event-request')
         self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor")
         self.traverse({'href': '/core/genesis/1/modify'})
         f = self.response.forms['genesismodifyform']
@@ -1202,7 +1216,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
         self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor")
-        self.assertPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor", div='no-ml-request')
+        self.assertPresence(
+            "Zur Zeit liegen keine Mailinglisten-Accountanfragen vor",
+            div='no-ml-request')
         self.traverse({'href': '/core/genesis/1/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         f = self.response.forms['genesiseventapprovalform']
@@ -1226,7 +1242,7 @@ class TestCoreFrontend(FrontendTest):
             'family_name': "Zeruda-Hime",
         }
         self.login(new_user)
-        self.traverse({'description': user['display_name']})
+        self.traverse({'href': '/core/self/show'})
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertPresence("12345", div='address')
 
@@ -1250,7 +1266,9 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1')
-        self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor", div='no-event-requests')
+        self.assertPresence(
+            "Zur Zeit liegen keine Veranstaltungs-Accountanfragen vor",
+            div='no-event-request')
         self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Accountanfragen vor")
         f = self.response.forms['genesismlapprovalform1']
         self.submit(f)
@@ -1273,7 +1291,7 @@ class TestCoreFrontend(FrontendTest):
             'family_name': "Zeruda-Hime",
         }
         self.login(new_user)
-        self.traverse({'description': user['display_name']})
+        self.traverse({'href': '/core/self/show'})
         self.assertTitle("Zelda Zeruda-Hime")
 
     def test_genesis_name_collision(self):
@@ -1349,7 +1367,8 @@ class TestCoreFrontend(FrontendTest):
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
         self.submit(f, check_notification=False)
-        self.assertPresence("Ein Geburtsdatum muss in der Vergangenheit liegen.")
+        self.assertPresence(
+            "Ein Geburtsdatum muss in der Vergangenheit liegen.")
 
     def test_genesis_missing_data(self):
         self.get('/')

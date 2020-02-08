@@ -60,7 +60,7 @@
         </h3>
         {% if ml_cases|length > 0 %}
             {% for case_id, entry in ml_cases|xdictsort('ctime') %}
-                <div class="row">
+                <div class="row" id="request-{{ case_id }}">
                     <div class="col-sm-3">
                         <p>
                             {{ entry['given_names'] }} {{ entry['family_name'] }}

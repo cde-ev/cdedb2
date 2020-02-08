@@ -27,7 +27,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertPresence("CdE-Party 2050", div='organized-events')
-        self.assertNonPresence("CdE-Party 2050")
+        self.assertNonPresence("CdE-Party 2050", div='current-events')
 
     @as_users("emilia")
     def test_showuser(self, user):
@@ -129,15 +129,15 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence(
-            "Warmup: 02.02.2222 – 02.02.2222 "
-            "Erste Hälfte: 01.11.2222 – 11.11.2222 "
-            "Zweite Hälfte: 11.11.2222 – 30.11.2222", div='timeframe-parts')
+        self.assertPresence("Warmup: 02.02.2222 – 02.02.2222 "
+                            "Erste Hälfte: 01.11.2222 – 11.11.2222 "
+                            "Zweite Hälfte: 11.11.2222 – 30.11.2222",
+                            div='timeframe-parts')
         self.assertPresence("Everybody come!", div='description')
         self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
                             div='timeframe-registration')
         self.assertPresence("aka@example.cde", div='orga-address')
-        self.assertPresence("Garcia G. Generalis", div='orgas', only=True)
+        self.assertPresence("Garcia G. Generalis", div='orgas', exact=True)
 
     @as_users("berta", "charly")
     def test_show_event_noorga(self, user):
@@ -166,7 +166,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("TestAka", div='shortname')
         self.assertPresence("Club der Ehemaligen", div='institution')
         self.assertPresence("DE96 3702 0500 0008 0689 01", div='cde-iban')
-        self.assertPresence("Nein", div='questionaire-active')
+        self.assertPresence("Nein", div='questionnaire-active')
         self.assertPresence("Todoliste … just kidding ;)", div='orga-notes')
         self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
                             div='mail-text')
@@ -203,7 +203,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("CdE-Party 2050")
         self.assertPresence("Let‘s have a party!")
         self.assertPresence("01.12.2049, 01:00:00 – 31.12.2049, 01:00:00",
-                            div='timeframe-registration', only=True)
+                            div='timeframe-registration', exact=True)
 
     @as_users("annika", "garcia")
     def test_hard_limit_orga(self, user):
@@ -212,15 +212,15 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 "
                             "(Nachmeldungen bis 30.10.2221, 01:00:00) ",
-                            div='timeframe-registration', only=True)
+                            div='timeframe-registration', exact=True)
 
     @as_users("charly", "emilia")
     def test_hard_limit_noorga(self, user):
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("01.12.2049, 01:00:00 – 31.12.2049, 01:00:00",
-                            div='timeframe-registration', only=True)
+        self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00",
+                            div='timeframe-registration', exact=True)
 
     @as_users("annika", "berta", "emilia")
     def test_course_list(self, user):
@@ -460,7 +460,8 @@ class TestEventFrontend(FrontendTest):
         f['track_create_1001_-1'].checked = True
         self.submit(f, check_notification=False)
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
-        self.assertPresence("Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein.")
+        self.assertPresence(
+            "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein.")
         f['track_min_choices_1001_-1'] = "2"
         self.submit(f)
         f = self.response.forms['partsummaryform']
@@ -1063,7 +1064,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("Validierung fehlgeschlagen.", div="notifications")
         self.assertTitle("Anmeldung für Große Testakademie 2222")
-        self.assertPresence("Du kannst diesen Kurs nicht als 1. und 2 Wahl wählen.")
+        self.assertPresence(
+            "Du kannst diesen Kurs nicht als 1. und 2 Wahl wählen.")
         f['course_choice3_1'] = 4
         # Now, we did it right.
         self.submit(f)
@@ -1104,7 +1106,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
-        self.assertPresence("Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
+        self.assertPresence(
+            "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
         self.assertPresence("573,99 €")
         self.assertNonPresence("Warteliste")
         self.assertPresence("α. Planetenretten für Anfänger")
@@ -2102,7 +2105,8 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/courselists\\?runs=2')
         self.follow()
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
-        self.assertPresence("LaTeX-Code konnte nicht kompiliert werden.", div="notifications")
+        self.assertPresence("LaTeX-Code konnte nicht kompiliert werden.",
+                            div="notifications")
 
     @as_users("garcia")
     def test_download_export(self, user):
@@ -2301,7 +2305,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms["lockform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
+        self.assertPresence(
+            "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
 
     @as_users("annika", "garcia")
     def test_unlock_event(self, user):
@@ -2320,7 +2325,8 @@ etc;anything else""", f['entries_2'].value)
         self.response = saved
         self.traverse({'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
+        self.assertPresence(
+            "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
         f = self.response.forms['unlockform']
         f['json'] = webtest.Upload("event_export.json", data,
                                    "application/octet-stream")
@@ -2348,8 +2354,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Warme Stube", "box-changed-registrations")
         self.assertPresence("brings_balls", "box-changed-registration-fields")
         self.assertPresence("Notizen", "box-changed-registration-fields")
-        self.assertPresence("2.H.: Unterkunft", "box-changed-registration-fields")
-        self.assertPresence("Morgenkreis: Kurswahlen", "box-changed-registration-fields")
+        self.assertPresence("2.H.: Unterkunft",
+                            "box-changed-registration-fields")
+        self.assertPresence("Morgenkreis: Kurswahlen",
+                            "box-changed-registration-fields")
         self.assertNonPresence("Sitzung: Kursleiter", "box-changed-registration-fields")
         self.assertNonPresence("Inga", "box-changed-registrations")
         self.assertPresence("Bertålotta", "box-new-registrations")
@@ -2946,7 +2954,8 @@ etc;anything else""", f['entries_2'].value)
         f['ack_archive'].checked = True
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Diese Veranstaltung wurde archiviert.", div="notifications")
+        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+                            div="notifications")
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/past/event/list'})
         self.assertPresence("Große Testakademie 2222 (Warmup)")
@@ -2955,12 +2964,14 @@ etc;anything else""", f['entries_2'].value)
         self.logout()
         self.login(USER_DICT["emilia"])
         self.get("/event/event/1/show")
-        self.assertPresence("Diese Veranstaltung wurde archiviert.", div="notifications")
+        self.assertPresence("Diese Veranstaltung wurde archiviert.",
+                            div="notifications")
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertNonPresence("Bearbeiten")
         self.get("/event/event/1/registration/amend")
         self.follow()
-        self.assertPresence("Veranstaltung ist bereits archiviert.", div="notifications")
+        self.assertPresence("Veranstaltung ist bereits archiviert.",
+                            div="notifications")
 
     @as_users("annika")
     def test_one_track_no_courses(self, user):

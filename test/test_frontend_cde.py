@@ -82,7 +82,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.traverse({'description': user['display_name']})
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
-                            div='searchability', only=True)
+                            div='searchability', exact=True)
 
     def test_consent_change(self):
         # Remove consent decision of Bertalotta Beispiel
@@ -219,7 +219,8 @@ class TestCdEFrontend(FrontendTest):
     @as_users("charly")
     def test_member_search_non_searchable(self, user):
         self.traverse({'description': 'Mitglieder'})
-        self.assertPresence("Mitglieder-Schnellsuche", div='member-quick-search')
+        self.assertPresence("Mitglieder-Schnellsuche",
+                            div='member-quick-search')
         self.assertPresence("Um die Mitgliedersuche verwenden zu können, musst "
                             "Du die Datenschutzerklärung bestätigen.",
                             div='member-quick-search')
@@ -328,15 +329,15 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_toggle_activity(self, user):
         self.admin_view_profile('berta')
-        self.assertPresence("Ja", div='account-active', only=True)
+        self.assertPresence("Ja", div='account-active', exact=True)
         f = self.response.forms['activitytoggleform']
         self.submit(f)
-        self.assertPresence("Nein", div='account-active', only=True)
+        self.assertPresence("Nein", div='account-active', exact=True)
 
     @as_users("anton")
     def test_modify_membership(self, user):
         self.admin_view_profile('berta')
-        self.assertPresence("CdE-Mitglied", div='membership',)
+        self.assertPresence("CdE-Mitglied", div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.traverse({'description': 'Status ändern'})
@@ -350,7 +351,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['modifymembershipform']
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
-        self.assertPresence("CdE-Mitglied", div='membership',)
+        self.assertPresence("CdE-Mitglied", div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
 
@@ -361,14 +362,15 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Einzugsermächtigungen'},
                       {'description': 'Bertålotta Beispiel'},)
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        self.assertPresence("42,23 €", div='amount', only=True)
+        self.assertPresence("42,23 €", div='amount', exact=True)
         self.get("/cde/user/2/lastschrift/create")
         f = self.response.forms['createlastschriftform']
         f['amount'] = 25
         f['iban'] = "DE12 5001 0517 0648 4898 90"
         self.submit(f, check_notification=False)
-        self.assertPresence("Mehrere aktive Einzugsermächtigungen sind unzulässig.",
-                            div="notifications")
+        self.assertPresence(
+            "Mehrere aktive Einzugsermächtigungen sind unzulässig.",
+            div="notifications")
 
     @as_users("vera")
     def test_create_user(self, user):
@@ -418,8 +420,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Dr. Zelda Zeruda-Hime von und zu",
                             div='personal-information')
         self.assertPresence("05.06.1987", div='personal-information')
-        self.assertPresence("+49 (30) 456790", div='contact-telephone', only=True)
-        self.assertPresence("+49 (160) 2047", div='contact-mobile', only=True)
+        self.assertPresence("+49 (30) 456790", div='contact-telephone',
+                            exact=True)
+        self.assertPresence("+49 (160) 2047", div='contact-mobile', exact=True)
         self.assertPresence("12345 Lynna", div='address')
         self.assertPresence("Ligusterweg 4", div='address2')
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
@@ -495,7 +498,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Keine zu bearbeitenden Lastschriften für "
                                "dieses Semester.")
         self.assertPresence("Aktuell befinden sich keine Einzüge in der "
-                            "Schwebe.", div='open-dd', only=True)
+                            "Schwebe.", div='open-dd', exact=True)
         f = self.response.forms['downloadsepapainform']
         g = self.response.forms['generatetransactionsform']
         self.submit(f, check_notification=False)
@@ -509,7 +512,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 Lastschriften initialisiert.",
                             div="notifications")
         self.assertPresence("Keine zu bearbeitenden Lastschriften für dieses "
-                            "Semester.", div='open-dd-authorization', only=True)
+                            "Semester.", div='open-dd-authorization',
+                            exact=True)
         self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
                                "Schwebe.")
 
@@ -521,7 +525,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Keine zu bearbeitenden Lastschriften für "
                                "dieses Semester.")
         self.assertPresence("Aktuell befinden sich keine Einzüge in der "
-                            "Schwebe.", div='open-dd', only=True)
+                            "Schwebe.", div='open-dd', exact=True)
         f = self.response.forms['downloadsepapainform2']
         g = self.response.forms['generatetransactionform2']
         self.submit(f, check_notification=False)
@@ -535,7 +539,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 Lastschriften initialisiert.",
                             div="notifications")
         self.assertPresence("Keine zu bearbeitenden Lastschriften für dieses "
-                            "Semester.", div='open-dd-authorization', only=True)
+                            "Semester.", div='open-dd-authorization',
+                            exact=True)
         self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
                                "Schwebe.")
 
@@ -560,7 +565,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transactionrollbackform4']
         self.submit(f)
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen",
-                            div='active-permit', only=True)
+                            div='active-permit', exact=True)
         #self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
         self.assertPresence("12,50 €")
@@ -581,7 +586,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn('generatetransactionform2', self.response.forms)
         self.assertPresence("Aktuell befinden sich keine Einzüge in der "
-                            "Schwebe.", div='open-dd', only=True)
+                            "Schwebe.", div='open-dd', exact=True)
 
     @as_users("farin")
     def test_lastschrift_transaction_failure(self, user):
@@ -599,7 +604,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertNotIn('generatetransactionform2', self.response.forms)
         self.assertPresence("Aktuell befinden sich keine Einzüge in der "
-                            "Schwebe.", div='open-dd', only=True)
+                            "Schwebe.", div='open-dd', exact=True)
 
     @as_users("farin")
     def test_lastschrift_skip(self, user):
@@ -617,7 +622,7 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile('charly')
         self.traverse({'description': 'Neue Einzugsermächtigung …'})
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen",
-                            div='active-permit', only=True)
+                            div='active-permit', exact=True)
         self.traverse({'description': 'Anlegen'})
         self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
         f = self.response.forms['createlastschriftform']
@@ -645,11 +650,11 @@ class TestCdEFrontend(FrontendTest):
         f['account_owner'] = "Dagobert Beetlejuice"
         f['notes'] = "reicher Onkel (neu verheiratet)"
         self.submit(f)
-        self.assertPresence("27,16 €", div='amount', only=True)
-        self.assertPresence('Dagobert Beetlejuice',
-                            div='account-holder', only=True)
-        self.assertPresence('reicher Onkel (neu verheiratet)',
-                            div='notes', only=True)
+        self.assertPresence("27,16 €", div='amount', exact=True)
+        self.assertPresence('Dagobert Beetlejuice', div='account-holder',
+                            exact=True)
+        self.assertPresence('reicher Onkel (neu verheiratet)', div='notes',
+                            exact=True)
 
     @as_users("farin")
     def test_lastschrift_receipt(self, user):
@@ -672,7 +677,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['receiptform3']
         self.submit(f, check_notification=False)
         self.assertTitle("Einzugsermächtigung /ˌbrɪ.tɪʃ ˈaɪlz/ Beispiel")
-        self.assertPresence("Der LaTeX-Code konnte nicht kompiliert werden.", "notifications")
+        self.assertPresence("Der LaTeX-Code konnte nicht kompiliert werden.",
+                            "notifications")
 
     @as_users("inga")
     def test_lastschrift_subscription_form(self, user):
@@ -691,7 +697,8 @@ class TestCdEFrontend(FrontendTest):
         f["full_name"] = "/ˌbrɪ.tɪʃ ˈaɪlz/"  # These characters break pdflatex
         self.submit(f, check_notification=False)
         self.assertTitle("Einzugsermächtigung ausfüllen")
-        self.assertPresence("Formular konnte nicht erstellt werden.", "notifications")
+        self.assertPresence("Formular konnte nicht erstellt werden.",
+                            "notifications")
 
     @as_users("vera", "charly")
     def test_lastschrift_subscription_form_fill(self, user):
@@ -1007,7 +1014,7 @@ class TestCdEFrontend(FrontendTest):
 
         # second round
         self.assertPresence("Bestätigen")
-        self.assertPresence("Saldo: 151,09 €", div='saldo', only=True)
+        self.assertPresence("Saldo: 151,09 €", div='saldo', exact=True)
         self.assertNonPresence("Validieren")
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
@@ -1231,10 +1238,14 @@ class TestCdEFrontend(FrontendTest):
                       const.CdeLogCodes.semester_balance_update.value]
         self.submit(f)
         self.assertTitle("CdE-Log [0–3]")
-        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="cdelog_entry3")
-        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="cdelog_entry1")
-        self.assertPresence("3 Probemitgliedschaften beendet", div="cdelog_entry2")
-        self.assertPresence("0 Probemitgliedschaften beendet", div="cdelog_entry0")
+        self.assertPresence("0 inaktive Mitglieder gestrichen.",
+                            div="cdelog_entry3")
+        self.assertPresence("3 inaktive Mitglieder gestrichen.",
+                            div="cdelog_entry1")
+        self.assertPresence("3 Probemitgliedschaften beendet",
+                            div="cdelog_entry2")
+        self.assertPresence("0 Probemitgliedschaften beendet",
+                            div="cdelog_entry0")
         self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry2")
         self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry0")
 
@@ -1425,8 +1436,9 @@ class TestCdEFrontend(FrontendTest):
         # Overview
         self.assertPresence("PfingstAkademie 2014 [pa14] (CdE) 2 Kurse, 5 "
                             "Teilnehmer", div='events-2014')
-        self.assertPresence("Geburtstagsfete [gebi] (DdE) 0 Kurse, 0 Teilnehmer",
-                            div='events-2019')
+        self.assertPresence(
+            "Geburtstagsfete [gebi] (DdE) 0 Kurse, 0 Teilnehmer",
+            div='events-2019')
 
         # Institution CdE
         self.traverse({'description': '^CdE$'}, verbose=True)
@@ -1447,14 +1459,15 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
-        self.assertPresence("Club der Ehemaligen", div='institution', only=True)
-        self.assertPresence("Great event!", div='description', only=True)
+        self.assertPresence("Club der Ehemaligen", div='institution',
+                            exact=True)
+        self.assertPresence("Great event!", div='description', exact=True)
         self.assertPresence("1a. Swish -- und alles ist gut",
                             div='list-courses')
         self.traverse({'description': 'Swish -- und alles ist gut'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertPresence("Ringelpiez mit anfassen.", div='description',
-                            only=True)
+                            exact=True)
 
     @as_users("vera", "berta", "charly", "ferdinand", "inga")
     def test_show_past_event_gallery(self, user):
@@ -1477,8 +1490,9 @@ class TestCdEFrontend(FrontendTest):
             self.assertNonPresence("Mediensammlung "
                                    "https://pa14:secret@example.cde/pa14/")
         else:
-            self.assertPresence("Mediensammlung https://pa14:secret@example.cde/pa14/",
-                                div='gallery-link')
+            self.assertPresence(
+                "Mediensammlung https://pa14:secret@example.cde/pa14/",
+                div='gallery-link')
 
     @as_users("vera", "berta", "charly", "garcia", "inga")
     def test_show_past_event_privacy(self, user):
@@ -1600,7 +1614,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Disco des Ehemaligen", div='institution')
         self.assertPresence("Ganz ohne Minderjährige.", div='description')
         self.assertPresence("https://zelda:hyrule@link.cde", div='gallery-link',
-                            only=True)
+                            exact=True)
 
     @as_users("vera")
     def test_create_past_event(self, user):
@@ -1621,7 +1635,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Disco des Ehemaligen", div='institution')
         self.assertPresence("Ganz ohne Minderjährige.", div='description')
         self.assertPresence("https://zelda:hyrule@link.cde", div='gallery-link',
-                            only=True)
+                            exact=True)
 
     @as_users("vera")
     def test_create_past_event_with_courses(self, user):
@@ -1678,7 +1692,7 @@ class TestCdEFrontend(FrontendTest):
         f['description'] = "Loud and proud."
         self.submit(f)
         self.assertTitle("Omph (PfingstAkademie 2014)")
-        self.assertPresence("Loud and proud.", div='description', only=True)
+        self.assertPresence("Loud and proud.", div='description', exact=True)
         self.assertPresence("Bertålotta Beispiel", div='list-participants')
 
     @as_users("vera")
