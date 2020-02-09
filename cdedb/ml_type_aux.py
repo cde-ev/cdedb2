@@ -294,7 +294,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         # Make event-lists without event link static.
         if mailinglist["event_id"] is None:
-            return MailinglistInteractionPolicy.invitation_only
+            return {anid: MailinglistInteractionPolicy.invitation_only
+                    for anid in persona_ids}
 
         ret = {}
         for persona_id in persona_ids:
@@ -354,7 +355,8 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
         # Make event-lists without event link static.
         if mailinglist["event_id"] is None:
-            return const.MailinglistInteractionPolicy.invitation_only
+            return {anid: MailinglistInteractionPolicy.invitation_only
+                    for anid in persona_ids}
 
         ret = {}
         event = bc.event.get_event(rs, mailinglist["event_id"])
