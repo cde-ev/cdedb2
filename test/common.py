@@ -566,7 +566,10 @@ class FrontendTest(unittest.TestCase):
         if self.response.content_type == "text/plain":
             target = self.response.text
         else:
-            content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
+            tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
+            if not tmp:
+                raise AssertionError("Div not found.", div)
+            content = tmp[0]
             target = content.text_content()
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
