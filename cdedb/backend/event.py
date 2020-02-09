@@ -1097,13 +1097,13 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
+            self.event_log(rs, const.EventLogCodes.event_created, new_id)
             update_data = {aspect: data[aspect]
                            for aspect in ('parts', 'orgas', 'fields')
                            if aspect in data}
             if update_data:
                 update_data['id'] = new_id
                 self.set_event(rs, update_data)
-        self.event_log(rs, const.EventLogCodes.event_created, new_id)
         return new_id
 
     @access("event_admin")
