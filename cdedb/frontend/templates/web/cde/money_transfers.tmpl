@@ -87,7 +87,9 @@
         {% endif %}
 
         {% if saldo %}
-            {% trans -%}Saldo{%- endtrans %}: {{ saldo|money(lang=lang) }}
+             <div id="saldo">
+                 {% trans -%}Saldo{%- endtrans %}: {{ saldo|money(lang=lang) }}
+             </div>
         {% endif %}
 
         {% if values['checksum'] %}

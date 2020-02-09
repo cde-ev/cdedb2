@@ -19,7 +19,7 @@
 
     <h2>{% trans -%}CdE-Semester{%- endtrans %}</h2>
 
-    <p>
+    <p id="current-semester">
         {% trans number="<span class='label label-default'>%s</span>"|s|format(period['id']) -%}
             We are currently in Semester {{ number }}.
         {%- endtrans %}
@@ -50,7 +50,7 @@
 
     <div class="row">
             <div class="col-md-6">
-            <div class="panel {% if period['billing_done'] %}panel-default{% else %}panel-primary{% endif %}">
+            <div id="payment-request" class="panel {% if period['billing_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.01./01.07.)</span>
                     <h4 class="panel-title">{% trans -%}Send Payment Requests/Information{%- endtrans %}</h4>
@@ -85,7 +85,7 @@
                 </div>
             </div>
 
-            <div class="panel {% if period['ejection_done'] or not period['billing_done'] %}
+            <div id="eject-members" class="panel {% if period['ejection_done'] or not period['billing_done'] %}
                     panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.02./01.08.)</span>
@@ -127,7 +127,7 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="panel {% if period['balance_done'] or not period['ejection_done'] %}
+            <div id="balance-update" class="panel {% if period['balance_done'] or not period['ejection_done'] %}
                     panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(15.02./15.08.)</span>
@@ -163,7 +163,8 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="panel {% if not period['balance_done'] %}panel-default{% else %}panel-primary{% endif %}">
+
+            <div id="next-semester" class="panel {% if not period['balance_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.07./01.01.)</span>
                     <h4 class="panel-title">{% trans -%}Next Semester{%- endtrans %}</h4>
@@ -190,14 +191,14 @@
 
     <h2>{% trans -%}exPuls-Semester{%- endtrans %}</h2>
 
-    <p>
+    <p id="expuls-number">
         {% trans number="<span class='label label-default'>%s</span>"|s|format(expuls['id']) -%}
             The next exPuls will be number {{ number }}.
         {%- endtrans %}
     </p>
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-6" id="expuls-address">
             <div class="panel {% if expuls['addresscheck_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <h4 class="panel-title">{% trans -%}Send Address-Checks{%- endtrans %}</h4>
@@ -238,7 +239,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6" id="expuls-next">
             <div class="panel {% if not expuls['addresscheck_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <h4 class="panel-title">{% trans -%}Next exPuls{%- endtrans %}</h4>

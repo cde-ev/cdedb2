@@ -10,7 +10,7 @@
 {% endblock %}
 {% block content %}
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-6" id="member-quick-search">
             {% call util.bootstrap_panel(title=gettext("CdE-Member Quick-Search"), icon='search', aclass="panel-primary") %}
                 {% if "searchable" in user.roles %}
                     <form action="{{ cdedblink('cde/member_search') }}" method="GET" id="membersearchform"

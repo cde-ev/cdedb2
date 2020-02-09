@@ -27,8 +27,8 @@
                     aclass="btn btn-warning btn-sm") }}
         </div>
     {% endif %}
-    
-    {{ ambience['pcourse']['description']|md }}
+
+    <div id="description">{{ ambience['pcourse']['description']|md }}</div>
 
     <h2>{% trans -%}Participants{%- endtrans %}</h2>
     {% if is_admin %}
@@ -68,7 +68,7 @@
         {% endcall %}
     {% endif %}
     {% if participants %}
-        <ul>
+        <ul id="list-participants">
             {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
                 <li>
                     {% if participant['is_instructor'] %}<strong>{% endif %}
@@ -93,16 +93,18 @@
                 </li>
             {% endfor %}
             {% if extra_participants %}
-                <li>{% trans count=extra_participants -%}
-                    extra_participants_singular
-                {%- pluralize count -%}
-                    extra_participants_plural
-                {%- endtrans %} …</li>
+                <li id="count-extra-participants">
+                    {% trans count=extra_participants -%}
+                        extra_participants_singular
+                    {%- pluralize count -%}
+                        extra_participants_plural
+                    {%- endtrans %} …
+                </li>
             {% endif %}
         </ul>
     {% elif extra_participants %}
         <p>
-            <i>
+            <i id="count-extra-participants">
                 {% trans count=extra_participants -%}
                     {{ count }} Participant
                 {%- pluralize count -%}

@@ -37,7 +37,7 @@
         {%- endtrans %}
     </p>
 
-    <table class="table table-condensed">
+    <table class="table table-condensed" id="open-dd-authorization">
         <tbody>
         {% for lastschrift_id, lastschrift in lastschrifts.items() if lastschrift['open']%}
             <tr>
@@ -98,6 +98,7 @@
     {% endif %}
 
     <h2>{% trans -%}Open Direct Debits{%- endtrans %}</h2>
+    <div id="open-dd">
     {% if transactions|length > 0 %}
         <p>
             {% trans -%}
@@ -178,12 +179,13 @@
             {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-sign") }}
             {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="remove",
                     anid="finalization-cancel") }}
-        {% else %}
-            <p>
-                {% trans -%}There are currently no Direct Debits pending.{%- endtrans %}
-            </p>
-        {% endif %}
-    </form>
+        </form>
+    {% else %}
+        <p>
+            {% trans -%}There are currently no Direct Debits pending.{%- endtrans %}
+        </p>
+    {% endif %}
+    </div>
 
     <h2>{% trans -%}All active Authorizations{%- endtrans %}</h2>
     <div class="row">

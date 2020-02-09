@@ -25,26 +25,28 @@
     <dl class="dl-horizontal">
         {% if is_admin %}
             <dt>{% trans -%}Shortname{%- endtrans %}</dt>
-            <dd>{{ ambience['pevent']['shortname'] }}</dd>
+            <dd id="shortname">{{ ambience['pevent']['shortname'] }}</dd>
         {% endif %}
         <dt>{% trans -%}Institution{%- endtrans %}</dt>
-        <dd>{{ institutions[ambience['pevent']['institution']] }}</dd>
+        <dd id="institution">{{ institutions[ambience['pevent']['institution']] }}</dd>
     </dl>
-    
-    {{ ambience['pevent']['description']|md }}
+
+    <div id="description">
+        {{ ambience['pevent']['description']|md }}
+    </div>
     {% if ambience['pevent']['description'] and ambience['pevent']['notes']%}
     <hr />
     {% endif %}
     {% if ambience['pevent']['notes'] and (is_admin or is_participant) %}
         {% if is_admin and not is_participant %}
-            <p class="text-info">{{ util.make_icon('info-sign') }}
+            <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-sign') }}
                 {% trans -%}
                     As you are no participant of this past event, you can only
                     see this link because you are admin.
                 {%- endtrans %}
             </p>
         {% endif %}
-        {{ ambience['pevent']['notes']|md }}
+       <div id="gallery-link">{{ ambience['pevent']['notes']|md }}</div>
     {% endif %}
     {% if courses or is_admin %}
         <h2>{% trans -%}Courses{%- endtrans %}</h2>
@@ -56,7 +58,7 @@
         </div>
     {% endif %}
     {% if courses %}
-        <ul>
+        <ul id="list-courses">
             {% for anid, acourse in courses|xdictsort('nr', pad=True) %}
                 <li>
                     {{ acourse['nr'] }}.
@@ -104,7 +106,7 @@
         </div>
     {% endif %}
     {% if participants %}
-        <ul>
+        <ul id="list-participants">
             {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
                 <li>
 
@@ -141,15 +143,17 @@
                 </li>
             {% endfor %}
             {% if extra_participants %}
-                <li>{% trans count=extra_participants -%}
-                    extra_participants_singular
-                {%- pluralize count -%}
-                    extra_participants_plural
-                {%- endtrans %} …</li>
+                <li id="count-extra-participants">
+                    {% trans count=extra_participants -%}
+                        extra_participants_singular
+                    {%- pluralize count -%}
+                        extra_participants_plural
+                    {%- endtrans %} …
+                </li>
             {% endif %}
         </ul>
     {% elif extra_participants %}
-        <p>
+        <p id="count-extra-participants">
             <i>
                 {% trans count=extra_participants -%}
                     {{ count }} Participant

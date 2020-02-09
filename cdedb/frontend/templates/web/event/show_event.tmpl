@@ -20,13 +20,13 @@
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
-        {{ ambience['event']['description']|md }}
+        <div id="description">{{ ambience['event']['description']|md }}</div>
     {% endif %}
 
     <dl class="dl-horizontal">
         {% if ambience['event']['parts']|length > 0 %}
             <dt>{% trans -%}Timeframe{%- endtrans %}</dt>
-            <dd>
+            <dd id="timeframe-parts">
                 {% if ambience['event']['parts']|length == 1 %}
                     {% with part = (ambience['event']['parts'].values()|list)[0] %}
                         <span class="nowrap">{{ part['part_begin']|date(lang=lang,verbosity='full') }}</span>&#8239;–
@@ -43,7 +43,7 @@
         {% endif %}
         {% if not ambience['event']['registration_start'] is none %}
             <dt>{% trans -%}Registration{%- endtrans %}</dt>
-            <dd>
+            <dd id="timeframe-registration">
                 {% set soft_limit = ambience['event']['registration_soft_limit'] %}
                 {% set hard_limit = ambience['event']['registration_hard_limit'] %}
                 {% if soft_limit is none and hard_limit is none %}
@@ -64,11 +64,13 @@
         {% endif %}
         {% if ambience['event']['orga_address'] %}
             <dt>{% trans %}Orga Address{% endtrans %}</dt>
-            <dd><a href="mailto:{{ ambience['event']['orga_address'] }}">{{ ambience['event']['orga_address'] }}</a></dd>
+            <dd id="orga-address">
+                <a href="mailto:{{ ambience['event']['orga_address'] }}">{{ ambience['event']['orga_address'] }}</a>
+            </dd>
         {% endif %}
         {% if "event" in user.roles %}
             <dt>{% trans -%}Orgas{%- endtrans %}</dt>
-            <dd>
+            <dd id="orgas">
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                     {{util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
                 {% endfor %}
@@ -78,13 +80,13 @@
     {% if values['event_id'] in user.orga or is_admin %}
         <dl class="dl-horizontal">
             <dt>{% trans -%}Shortname{%- endtrans %}</dt>
-            <dd>{{ ambience['event']['shortname'] }}</dd>
+            <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
             <dt>{% trans -%}Institution{%- endtrans %}</dt>
-            <dd>{{ institutions[ambience['event']['institution']] }}</dd>
+            <dd id="institution">{{ institutions[ambience['event']['institution']] }}</dd>
             <dt>{% trans -%}CdE-Account IBAN{%- endtrans %}</dt>
-            <dd>{{ ambience['event']['iban']|iban }}</dd>
+            <dd id="cde-iban">{{ ambience['event']['iban']|iban }}</dd>
             <dt>{% trans -%}Questionnaire active{%- endtrans %}</dt>
-            <dd>{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire'],
+            <dd id="questionnaire-active">{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire'],
                         titles=[gettext("No"),gettext("Yes")]) }}</dd>
         </dl>
     {% endif %}
@@ -94,21 +96,21 @@
         {% if ambience['event']['notes'] %}
             {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['notes']|md }}
+                <div id="orga-notes">{{ ambience['event']['notes']|md }}</div>
             {% endcall %}
         {% endif %}
 
         {% if ambience['event']['registration_text'] %}
             {% call util.bootstrap_panel(title=gettext("Registration page free text"), icon="log-in",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['registration_text']|md }}
+                <div id="registration-text">{{ ambience['event']['registration_text']|md }}</div>
             {% endcall %}
         {% endif %}
 
         {% if ambience['event']['mail_text'] %}
             {% call util.bootstrap_panel(title=gettext("Registration mail free text"), icon="envelope",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['mail_text']|linebreaks }}
+                <div id="mail-text">{{ ambience['event']['mail_text']|linebreaks }}</div>
             {% endcall %}
         {% endif %}
 
@@ -142,7 +144,7 @@
             </div>
 
             {% if is_admin %}
-                <div class="col-md-6">
+                <div class="col-md-6" id="manage-orgas">
                     {% call util.bootstrap_panel(title="Orgas", icon='user') %}
                     <ul>
                         {% for anid, entry in orgas.items() %} {# This is already sorted. #}
@@ -182,7 +184,7 @@
                 </div>
             {% endif %}
 
-            <div class="col-md-6">
+            <div class="col-md-6" id="minor-form">
                 {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}
                     <p>
                         {% if minor_form_present %}
@@ -224,7 +226,7 @@
                 {% endcall %}
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-6" id="offline-use">
                 {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download', aclass='panel-danger') %}
                     {% if ambience['event']['offline_lock'] != CDEDB_OFFLINE_DEPLOYMENT %}
                         {% if CDEDB_OFFLINE_DEPLOYMENT %}
@@ -289,7 +291,7 @@
                 {% endcall %}
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-6" id="event-logo">
                 {% call util.bootstrap_panel(title=gettext("Event Logo"), icon="picture") %}
                     <div class="alert alert-info" role="alert">
                         {% trans -%}
@@ -340,7 +342,7 @@
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             {% if "ml_admin" in user.roles %}
                 {% if not ambience['event']['orga_address'] %}
-                    <div class="row">
+                    <div class="row" id="create-orga-list">
                         <div class="col-sm-4">
                             <div class="p">
                                 <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
@@ -362,7 +364,7 @@
                     </div>
                 {% endif %}
                 {% if not participant_list %}
-                    <div class="row">
+                    <div class="row" id="create-participant-list">
                         <div class="col-sm-4">
                             <div class="p">
                                 <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
@@ -385,7 +387,7 @@
                 {% endif %}
             {% endif %}
             {% if is_admin and "cde_admin" in user.roles %}
-                <div class="row">
+                <div class="row" id="archive-event">
                     <div class="col-sm-4">
                         <div class="p">
                             <form action="{{ cdedblink('event/archive_event') }}" method="POST" id="archiveeventform"
@@ -412,7 +414,7 @@
                     $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
                 </script>
             {% endif %}
-            <div class="row">
+            <div class="row" id="delete-event">
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"

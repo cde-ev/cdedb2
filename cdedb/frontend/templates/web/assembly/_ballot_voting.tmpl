@@ -4,7 +4,7 @@
 {% macro show_classical_candidates(edit_mode) -%}
     <h3>{% trans -%}Candidates{%- endtrans %}</h3>
     <div class="row">
-        <ul class="col-md-8">
+        <ul class="col-md-8" id="classical-candidates">
             {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('description', pad=True) %}
                 <li class="hide-hover-container clearfix-after">
                     {{ candidate['description'] }}
@@ -77,7 +77,7 @@
 {# Preferential voting: Presentation of candidates #}
 {% macro show_preferential_candidates(edit_mode) -%}
     <h3>{% trans -%}Candidates{%- endtrans %}</h3>
-    <div class="row">
+    <div class="row" id="preferential-candidates">
         <ul class="col-md-8">
             {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('description', pad=True) %}
                 <li class="hide-hover-container clearfix-after">
