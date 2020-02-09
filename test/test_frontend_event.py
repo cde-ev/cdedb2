@@ -511,6 +511,7 @@ class TestEventFrontend(FrontendTest):
         f['part_begin_-1'] = "2233-4-5"
         f['part_end_-1'] = "2233-6-7"
         f['fee_-1'] = "23456.78"
+        f['non_member_fee_-1'] = "0.22"
         f['track_create_-1_-1'].checked = True
         f['track_title_-1_-1'] = "Chillout Training"
         f['track_shortname_-1_-1'] = "Chillout"
@@ -2709,12 +2710,14 @@ etc;anything else""", f['entries_2'].value)
                       'offline_lock': False,
                       'orga_address': 'aka@example.cde',
                       'parts': {'1': {'fee': '10.50',
+                                      'non_member_fee': '0.00',
                                       'part_begin': '2222-02-02',
                                       'part_end': '2222-02-02',
                                       'shortname': 'Wu',
                                       'tracks': {},
                                       'title': 'Warmup'},
                                 '2': {'fee': '123.00',
+                                      'non_member_fee': '2.50',
                                       'part_begin': '2222-11-01',
                                       'part_end': '2222-11-11',
                                       'shortname': '1.H.',
@@ -2730,6 +2733,7 @@ etc;anything else""", f['entries_2'].value)
                                                        'title': 'Kaffeekränzchen (Erste Hälfte)'}},
                                       'title': 'Erste Hälfte'},
                                 '3': {'fee': '450.99',
+                                      'non_member_fee': '5.00',
                                       'part_begin': '2222-11-11',
                                       'part_end': '2222-11-30',
                                       'shortname': '2.H.',
@@ -3005,8 +3009,8 @@ etc;anything else""", f['entries_2'].value)
                                                      'course_id': 1,
                                                      'course_instructor': None}}}
                               },
+            'timestamp': result['timestamp'],  # nearly_now() won't do
         }
-        expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
         self.assertEqual(expectation, result)
 
     @as_users("annika", "garcia")

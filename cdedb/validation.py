@@ -2036,6 +2036,7 @@ _EVENT_PART_COMMON_FIELDS = {
     'part_begin': _date,
     'part_end': _date,
     'fee': _non_negative_decimal,
+    'non_member_fee': _non_negative_decimal,
     'tracks': _mapping,
 }
 

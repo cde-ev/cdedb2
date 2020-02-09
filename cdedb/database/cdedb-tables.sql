@@ -618,7 +618,8 @@ CREATE TABLE event.event_parts (
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
         -- fees are cummulative
-        fee                     numeric(8,2) NOT NULL
+        fee                     numeric(8,2) NOT NULL,
+        non_member_fee          numeric(8,2) NOT NULL
 );
 CREATE INDEX idx_event_parts_event_id ON event.event_parts(event_id);
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;

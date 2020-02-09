@@ -560,6 +560,7 @@ class EventFrontend(AbstractUserFrontend):
             'part_begin': "date",
             'part_end': "date",
             'fee': "decimal",
+            'non_member_fee': "decimal",
         }
         params = tuple(("{}_{}".format(key, part_id), value)
                        for part_id in parts if part_id not in deletes
@@ -930,6 +931,7 @@ class EventFrontend(AbstractUserFrontend):
                 'part_begin': event_begin,
                 'part_end': event_end,
                 'fee': decimal.Decimal(0),
+                'non_member_fee': self.conf.MEMBERSHIP_FEE * self.conf.PERIODS_PER_YEAR,
                 'tracks': ({-1: new_track} if create_track else {}),
             }
         }

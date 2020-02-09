@@ -160,11 +160,11 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, courses_in_participant_list, iban, orga_address, mail_text, notes, offline_lock, lodge_field, reserve_field, course_room_field) VALUES
     (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2221-10-30 01:00:00+01', True, True, False, 'DE96370205000008068901', 'aka@example.cde', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL, NULL),
     (2, 'CdE-Party 2050', 1, 'Let''s have a party!', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, False, 'DE96370205000008068901', '', '', 'Wird anstrengend …', False, NULL, NULL, NULL);
-INSERT INTO event.event_parts (id, event_id, title, shortname, part_begin, part_end, fee) VALUES
-    (1, 1, 'Warmup', 'Wu', date '2222-2-2', date '2222-2-2', 10.50),
-    (2, 1, 'Erste Hälfte', '1.H.', date '2222-11-01', date '2222-11-11', 123.00),
-    (3, 1, 'Zweite Hälfte', '2.H.', date '2222-11-11', date '2222-11-30', 450.99),
-    (4, 2, 'Party', 'Party', date '2050-01-15', date '2050-01-15', 15.00);
+INSERT INTO event.event_parts (id, event_id, title, shortname, part_begin, part_end, fee, non_member_fee) VALUES
+    (1, 1, 'Warmup', 'Wu', date '2222-2-2', date '2222-2-2', 10.50, 0),
+    (2, 1, 'Erste Hälfte', '1.H.', date '2222-11-01', date '2222-11-11', 123.00, 2.50),
+    (3, 1, 'Zweite Hälfte', '2.H.', date '2222-11-11', date '2222-11-30', 450.99, 5.00),
+    (4, 2, 'Party', 'Party', date '2050-01-15', date '2050-01-15', 15.00, 1.00);
 INSERT INTO event.course_tracks (id, part_id, title, shortname, num_choices, min_choices, sortkey) VALUES
     (1, 2, 'Morgenkreis (Erste Hälfte)', 'Morgenkreis', 4, 4, 1),
     (2, 2, 'Kaffeekränzchen (Erste Hälfte)', 'Kaffee', 1, 1, 2),
