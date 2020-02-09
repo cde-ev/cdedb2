@@ -2934,9 +2934,7 @@ class EventFrontend(AbstractUserFrontend):
                                          and age.may_mix())
         new_id = self.eventproxy.create_registration(rs, registration)
         meta_info = self.coreproxy.get_meta_info(rs)
-        fee = sum(rs.ambience['event']['parts'][part_id]['fee']
-                  for part_id, entry in registration['parts'].items()
-                  if const.RegistrationPartStati(entry['status']).is_involved())
+        fee = self.eventproxy.calculate_fee(rs, new_id)
 
         subject = "[CdE] Anmeldung für {}".format(rs.ambience['event']['title'])
         reply_to = (rs.ambience['event']['orga_address'] or
@@ -2966,9 +2964,7 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         meta_info = self.coreproxy.get_meta_info(rs)
-        fee = sum(rs.ambience['event']['parts'][part_id]['fee']
-                  for part_id, e in registration['parts'].items()
-                  if const.RegistrationPartStati(e['status']).is_involved())
+        fee = self.eventproxy.calculate_fee(rs, registration_id)
         part_order = sorted(
             registration['parts'].keys(),
             key=lambda anid:
@@ -3312,9 +3308,7 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         meta_info = self.coreproxy.get_meta_info(rs)
-        fee = sum(rs.ambience['event']['parts'][part_id]['fee']
-                  for part_id, e in rs.ambience['registration']['parts'].items()
-                  if const.RegistrationPartStati(e['status']).is_involved())
+        fee = self.eventproxy.calculate_fee(rs, registration_id)
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,

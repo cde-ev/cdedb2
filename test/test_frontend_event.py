@@ -1409,7 +1409,7 @@ etc;anything else""", f['entries_2'].value)
         f['full_payment'].checked = True
         f['fee_data'] = """
 573.98;DB-1-9;Admin;Anton;01.04.18
-461.49;DB-5-1;Eventis;Emilia;04.01.18
+466.99;DB-5-1;Eventis;Emilia;04.01.18
 451.00;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
@@ -1443,7 +1443,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 04.01.2018")
-        self.assertPresence("Bereits bezahlter Betrag 461,49 €")
+        self.assertPresence("Bereits bezahlter Betrag 466,99 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
