@@ -812,9 +812,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
-                lambda roles: roles & {'core_admin'} | set(
+                lambda roles: roles & ({'core_admin'} | set(
                     "{}_admin".format(realm)
-                    for realm in realm_specific_genesis_fields),
+                    for realm in realm_specific_genesis_fields)),
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,
