@@ -85,6 +85,29 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
         self.assertPresence("Internationaler Kongress", div='assembly-box')
 
+    @as_users("annika", "martin", "nina", "vera", "werner")
+    def test_navigation(self, user):
+        self.assertTitle("CdE-Datenbank")
+        s = "Index Übersicht Meine Daten Administratorenübersicht "
+        genesis = "Accountanfragen "
+        meta = "Admin-Änderungen "
+
+        # admin of a realm without genesis cases
+        if user == USER_DICT['werner']:
+            s = s
+        # admin of a realm with genesis cases
+        if user in [USER_DICT['annika'], USER_DICT['nina']]:
+            s = s + genesis
+        # core admin
+        if user == USER_DICT['vera']:
+            s = (s + "Nutzer verwalten Archivsuche Änderungen prüfen " +
+                 genesis + "Account-Log Nutzerdaten-Log Metadaten")
+        # meta admin
+        if user == USER_DICT['martin']:
+            s = s + meta
+
+        self.assertPresence(s, div='sidebar', exact=True)
+
     @as_users("anton", "berta", "charly", "daniel", "emilia", "ferdinand",
               "garcia", "inga", "janis", "kalif", "martin", "nina",
               "vera", "werner", "annika", "farin", "akira")

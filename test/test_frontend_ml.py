@@ -14,6 +14,22 @@ class TestMlFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'href': '/ml/'})
 
+    @as_users("annika", "martin", "nina", "vera", "werner")
+    def test_navigation(self, user):
+        self.traverse({'description': 'Mailinglisten'})
+        s = "Mailinglisten "
+
+        # not ml admins
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera'],
+                    USER_DICT['werner']]:
+            s = s + "Übersicht"
+        # ml admin
+        if user == USER_DICT['nina']:
+            s = (s + "Aktive Mailinglisten Alle Mailinglisten Nutzer verwalten "
+                     "Log")
+
+        self.assertPresence(s, div='sidebar', exact=True)
+
     @as_users("janis")
     def test_showuser(self, user):
         self.traverse({'href': '/core/self/show'})
@@ -92,6 +108,22 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
+
+    @as_users("annika", "berta", "martin", "nina", "vera", "werner")
+    def test_navigation_one_mailinglist(self, user):
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Klatsch und Tratsch'})
+        s = "Mailinglisten-Übersicht Mailingliste Klatsch und Tratsch Übersicht "
+
+        # not moderator or ml-admin
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera'],
+                    USER_DICT['werner']]:
+            s = s
+        # moderator or ml-admin
+        if user in [USER_DICT['berta'], USER_DICT['nina']]:
+            s = s + "Verwaltung Erweiterte Verwaltung Konfiguration Log"
+
+        self.assertPresence(s, div='sidebar', exact=True)
 
     @as_users("anton", "janis")
     def test_show_ml_buttons_change_address(self, user):

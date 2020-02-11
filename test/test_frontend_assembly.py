@@ -63,6 +63,20 @@ class TestAssemblyFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'href': '/assembly/'})
 
+    @as_users("annika", "martin", "vera", "werner")
+    def test_navigation(self, user):
+        self.traverse({'description': 'Versammlungen'})
+        s = "Versammlungen Übersicht "
+
+        # not assembly admins
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
+            s = s
+        # assembly admins
+        if user == USER_DICT['werner']:
+            s = s + "Nutzer verwalten Log"
+
+        self.assertPresence(s, div='sidebar', exact=True)
+
     @as_users("kalif")
     def test_showuser(self, user):
         self.traverse({'description': user['display_name']})
@@ -136,6 +150,22 @@ class TestAssemblyFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
+
+    @as_users("annika", "martin", "vera", "werner")
+    def test_navigation_one_assembly(self, user):
+        self.traverse({'description': 'Versammlungen'},
+                      {'description': 'Internationaler Kongress'})
+        s = ("Versammlungs-Übersicht Versammlung Internationaler Kongress "
+             "Übersicht Teilnehmer Abstimmungen ")
+
+        # not assembly admins
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
+            s = s
+        # assembly admin
+        if user == USER_DICT['werner']:
+            s = s + "Konfiguration Log"
+
+        self.assertPresence(s, div='sidebar', exact=True)
 
     @as_users("werner")
     def test_change_assembly(self, user):

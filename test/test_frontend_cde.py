@@ -18,6 +18,32 @@ class TestCdEFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'description': 'Mitglieder'})
 
+    @as_users("annika", "farin", "martin", "vera", "werner")
+    def test_navigation(self, user):
+        self.traverse({'description': 'Mitglieder'})
+        s = "Mitglieder Übersicht "
+        member = "Verg. Veranstaltungen Sonstiges"
+        admin = ("Verg. Veranstaltungen Organisationen verwalten "
+                 "Verg.-Veranstaltungen-Log Sonstiges")
+
+        # searchable member
+        if user in [USER_DICT['annika'], USER_DICT['werner']]:
+            s = s + "CdE-Mitglied suchen " + member
+        # not-searchable member
+        if user == USER_DICT['martin']:
+            s = s + "Datenschutzerklärung " + member
+        # cde but not finance admin
+        if user == USER_DICT['vera']:
+            s = s + "CdE-Mitglied suchen Nutzer verwalten " + admin
+        # cde and finance admin
+        if user == USER_DICT['farin']:
+            s = (s + "CdE-Mitglied suchen Nutzer verwalten " +
+                 "Einzugsermächtigungen Kontoauszug parsen "
+                 "Überweisungen eintragen Semesterverwaltung CdE-Log "
+                 "Finanz-Log " + admin)
+
+        self.assertPresence(s, div='sidebar', exact=True)
+
     @as_users("vera", "berta")
     def test_showuser(self, user):
         self.traverse({'description': user['display_name']},)

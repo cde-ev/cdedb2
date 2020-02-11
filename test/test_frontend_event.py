@@ -29,6 +29,21 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("CdE-Party 2050", div='organized-events')
         self.assertNonPresence("CdE-Party 2050", div='current-events')
 
+    @as_users("annika", "emilia", "martin", "vera", "werner")
+    def test_navigation(self, user):
+        self.traverse({'description': 'Veranstaltungen'})
+        s = "Veranstaltungen Übersicht "
+
+        # not event admins (also orgas!)
+        if user in [USER_DICT['emilia'], USER_DICT['martin'], USER_DICT['vera'],
+                    USER_DICT['werner']]:
+            s = s
+        # event admins
+        if user == USER_DICT['annika']:
+            s = s + "Veranstaltungen verwalten Nutzer verwalten Log"
+
+        self.assertPresence(s, div='sidebar', exact=True)
+
     @as_users("emilia")
     def test_showuser(self, user):
         self.traverse({'description': user['display_name']})
@@ -195,6 +210,35 @@ class TestEventFrontend(FrontendTest):
         # self.assertIn("createorgalistform", self.response.forms)
         self.assertIn("addorgaform", self.response.forms)
         self.assertIn("removeorgaform7", self.response.forms)
+
+    @as_users("annika", "emilia", "garcia", "martin", "vera", "werner")
+    def test_navigation_one_event(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'})
+        s = ("Veranstaltungsübersicht Veranstaltung Große Testakademie 2222 "
+             "Übersicht Kursliste ")
+        orga = (
+            "Teilnehmerliste Anmeldungen Statistik Kurse Kurseinteilung "
+            "Unterkünfte Downloads Partieller Import Überweisungen eintragen "
+            "Konfiguration Veranstaltungsteile Datenfelder konfigurieren "
+            "Fragebogen konfigurieren Log Checkin")
+
+        # TODO this could be more expanded (event without courses, distinguish
+        #  between registrated and participant, ...
+        # not registrated, not event admin
+        if user in [USER_DICT['martin'], USER_DICT['vera'], USER_DICT['werner']]:
+            s = s + "Anmelden"
+        # participant
+        if user == USER_DICT['emilia']:
+            s = s + "Meine Anmeldung"
+        # orga
+        if user == USER_DICT['garcia']:
+            s = s + "Meine Anmeldung " + orga
+        # event admin (annika is not registrated)
+        if user == USER_DICT['annika']:
+            s = s + "Anmelden " + orga
+
+        self.assertPresence(s, div='sidebar', exact=True)
 
     @as_users("anton", "berta")
     def test_no_hard_limit(self, user):
