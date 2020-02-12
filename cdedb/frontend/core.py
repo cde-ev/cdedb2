@@ -1031,12 +1031,10 @@ class CoreFrontend(AbstractFrontend):
         ("is_meta_admin", "bool"), ("is_core_admin", "bool"),
         ("is_cde_admin", "bool"), ("is_finance_admin", "bool"),
         ("is_event_admin", "bool"), ("is_ml_admin", "bool"),
-        ("is_assembly_admin", "bool"), ("notes", "str"),
-        ("change_privileges_auth", "str"))
+        ("is_assembly_admin", "bool"), ("notes", "str"))
     def change_privileges(self, rs, persona_id, is_meta_admin, is_core_admin,
                           is_cde_admin, is_finance_admin, is_event_admin,
-                          is_ml_admin, is_assembly_admin, notes,
-                          change_privileges_auth):
+                          is_ml_admin, is_assembly_admin, notes):
         """Grant or revoke admin bits."""
         if rs.errors:
             return self.change_privileges_form(rs, persona_id)
@@ -1108,19 +1106,11 @@ class CoreFrontend(AbstractFrontend):
             return self.change_privileges_form(rs, persona_id)
 
         if admin_keys & data.keys():
-            code = self.coreproxy.initialize_privilege_change(
-                rs, data, password=change_privileges_auth)
+            code = self.coreproxy.initialize_privilege_change(rs, data)
             self.notify_return_code(
                 rs, code, success=n_("Privilege change waiting for approval by "
                                      "another Meta-Admin."))
             if not code:
-                if code is None:
-                    rs.errors.append(("change_privileges_auth",
-                                      ValueError(n_("Wrong password."))))
-                    self.logger.info(
-                        "Unsuccessful privilege change for persona {} "
-                        "by persona {}".format(
-                            persona_id, rs.user.persona_id))
                 return self.change_privileges_form(rs, persona_id)
         else:
             rs.notify("info", n_("No changes were made."))
@@ -1171,10 +1161,8 @@ class CoreFrontend(AbstractFrontend):
                             "submitter": submitter})
 
     @access("meta_admin", modi={"POST"})
-    @REQUESTdata(("ack", "bool"), ("nack", "bool"),
-                 ("decide_privilege_change_auth", "str"))
-    def decide_privilege_change(self, rs, case_id, ack, nack,
-                                decide_privilege_change_auth):
+    @REQUESTdata(("ack", "bool"), ("nack", "bool"))
+    def decide_privilege_change(self, rs, case_id, ack, nack):
         """Approve or reject a privilege change."""
         if ack == nack:
             msg = n_("Change needs to be either approved or rejected.")
@@ -1201,18 +1189,11 @@ class CoreFrontend(AbstractFrontend):
         else:
             raise RuntimeError("Impossible.")
         code = self.coreproxy.finalize_privilege_change(
-            rs, case_id, case_status, password=decide_privilege_change_auth)
+            rs, case_id, case_status)
         success = n_("Change committed.") if ack else n_("Change rejected.")
         info = n_("Password reset issued for new admin.")
         self.notify_return_code(rs, code, success=success, pending=info)
         if not code:
-            if code is None:
-                rs.errors.append(("decide_privilege_change_auth",
-                                  ValueError(n_("Wrong password."))))
-                self.logger.info(
-                    "Unsuccessful privilege change decision for persona {} "
-                    "by persona {}".format(
-                        case["persona_id"], rs.user.persona_id))
             return self.show_privilege_change(rs, case_id)
         else:
             if code < 0:
@@ -1453,11 +1434,14 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("invalidate_password_auth", "str"))
     def invalidate_password(self, rs, persona_id, invalidate_password_auth):
         """Delete a users current password to force them to set a new one."""
+        if invalidate_password_auth != rs.ambience['persona']['username']:
+            rs.errors.append(
+                ('invalidate_password_auth',
+                 ValueError(n_("Please provide the user's email address."))))
         if rs.errors:
             return self.show_user(
                 rs, persona_id, confirm_id=persona_id, internal=True)
-        code = self.coreproxy.invalidate_password(
-            rs, persona_id, admin_password=invalidate_password_auth)
+        code = self.coreproxy.invalidate_password(rs, persona_id)
         self.notify_return_code(rs, code, success=n_("Password invalidated."))
 
         if not code:

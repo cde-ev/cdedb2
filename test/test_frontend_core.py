@@ -649,7 +649,6 @@ class TestCoreFrontend(FrontendTest):
             new_admin["given_names"], new_admin["family_name"]))
         f = self.response.forms['privilegechangeform']
         f['is_finance_admin'] = True
-        f['change_privileges_auth'] = user['password']
         f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
         self.submit(f, check_notification=False)
         self.assertPresence("Nur CdE Admins können Finanz Admin werden.",
@@ -707,7 +706,7 @@ class TestCoreFrontend(FrontendTest):
         other_user_name = "berta"
         self.admin_view_profile(other_user_name)
         f = self.response.forms["invalidatepasswordform"]
-        f["invalidate_password_auth"] = user["password"]
+        f["invalidate_password_auth"] = USER_DICT[other_user_name]["username"]
         self.submit(f)
         self.logout()
         self.login(USER_DICT[other_user_name])
@@ -780,7 +779,6 @@ class TestCoreFrontend(FrontendTest):
         for k, v in new_privileges.items():
             f[k].checked = v
         f['notes'] = note
-        f['change_privileges_auth'] = admin1['password']
         self.submit(f)
         self.logout()
 
@@ -796,7 +794,6 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': new_admin["given_names"] + " " +
                                       new_admin["family_name"]})
         f = self.response.forms["decideprivilegechangeform"]
-        f['decide_privilege_change_auth'] = admin2['password']
         self.submit(f, button="ack")
         self.assertPresence("Änderung wurde übernommen.", "notifications")
         if new_password:
@@ -822,7 +819,6 @@ class TestCoreFrontend(FrontendTest):
                       {'description': new_admin["given_names"] + " " +
                                       new_admin["family_name"]})
         f = self.response.forms["decideprivilegechangeform"]
-        f['decide_privilege_change_auth'] = admin2['password']
         self.submit(f, button="nack")
         self.assertPresence("Änderung abgelehnt.", "notifications")
 

@@ -118,8 +118,7 @@ class TestCoreBackend(BackendTest):
 
         # Invalidate the other users password and session.
         self.assertLess(
-            0, self.core.invalidate_password(
-                self.key, other_user["id"], user["password"]))
+            0, self.core.invalidate_password(self.key, other_user["id"]))
 
         with self.assertRaises(PrivilegeError):
             self.core.change_foto(other_key, other_user["id"], "myFoto")
@@ -806,8 +805,7 @@ class TestCoreBackend(BackendTest):
             "is_finance_admin": True,
         }
 
-        case_id = self.core.initialize_privilege_change(
-            self.key, data, admin1['password'])
+        case_id = self.core.initialize_privilege_change(self.key, data)
         self.assertLess(0, case_id)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
@@ -816,8 +814,7 @@ class TestCoreBackend(BackendTest):
 
         self.login(admin2)
         self.core.finalize_privilege_change(
-            self.key, case_id, const.PrivilegeChangeStati.approved,
-            admin2['password'])
+            self.key, case_id, const.PrivilegeChangeStati.approved)
 
         persona = self.core.get_persona(self.key, new_admin["id"])
         self.assertEqual(True, persona["is_cde_admin"])
@@ -878,8 +875,7 @@ class TestCoreBackend(BackendTest):
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
-            self.core.initialize_privilege_change(
-                self.key, data, user['password'])
+            self.core.initialize_privilege_change(self.key, data)
 
         data = {
             "persona_id": USER_DICT["emilia"]["id"],
@@ -887,8 +883,7 @@ class TestCoreBackend(BackendTest):
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
-            self.core.initialize_privilege_change(
-                self.key, data, user['password'])
+            self.core.initialize_privilege_change(self.key, data)
 
         data = {
             "persona_id": USER_DICT["berta"]["id"],
@@ -896,8 +891,7 @@ class TestCoreBackend(BackendTest):
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
-            self.core.initialize_privilege_change(
-                self.key, data, user['password'])
+            self.core.initialize_privilege_change(self.key, data)
 
         data = {
             "persona_id": USER_DICT["ferdinand"]["id"],
@@ -906,47 +900,7 @@ class TestCoreBackend(BackendTest):
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
-            self.core.initialize_privilege_change(
-                self.key, data, user['password'])
-
-    @as_users("anton", "martin")
-    def test_privilege_change_authorization(self, user):
-        new_admin = USER_DICT["berta"]
-        # First check initilizing a change.
-        data = {
-            "persona_id": new_admin["id"],
-            "is_ml_admin": True,
-            "notes": "I got hacked!",
-        }
-        self.assertIsNone(
-            self.core.initialize_privilege_change(self.key, data, "abc"))
-        self.assertEqual(
-            {}, self.core.list_privilege_changes(self.key, new_admin["id"]))
-
-        # Generate a pending privilege change.
-        tmp_user = USER_DICT["akira"]
-        case_id = self.core.initialize_privilege_change(
-            self.login(tmp_user), data, tmp_user["password"])
-        self.assertLess(0, case_id)
-
-        # We dont want the privilige change to go anywhere during the following.
-        expectation = self.core.list_privilege_changes(
-            self.key, new_admin["id"])
-        self.assertTrue(expectation)
-
-        self.assertIsNone(
-            self.core.finalize_privilege_change(
-                self.key, case_id, const.PrivilegeChangeStati.approved, "abc"))
-        self.assertEqual(
-            expectation,
-            self.core.list_privilege_changes(self.key, new_admin["id"]))
-
-        self.assertIsNone(
-            self.core.finalize_privilege_change(
-                self.key, case_id, const.PrivilegeChangeStati.rejected, "abc"))
-        self.assertEqual(
-            expectation,
-            self.core.list_privilege_changes(self.key, new_admin["id"]))
+            self.core.initialize_privilege_change(self.key, data)
 
     @as_users("garcia")
     def test_non_participant_privacy(self, user):

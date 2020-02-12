@@ -46,9 +46,6 @@
 
     <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="decideprivilegechangeform" style="display: inline;">
         {{ util.anti_csrf_token('core/decide_privilege_change') }}
-        <div class="row">
-            {{ util.form_input_text(name="decide_privilege_change_auth", type="password", label=gettext("Enter your Password"), horizontal=True) }}
-        </div>
         {% if case["submitted_by"] != user.persona_id and (case["is_meta_admin"] is none or case["persona_id"] != user.persona_id) %}
             {{ util.input_submit(name="ack", value=gettext("Confirm Privilege Change"), aclass="btn btn-success") }}
         {% endif %}

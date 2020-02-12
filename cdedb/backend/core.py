@@ -838,7 +838,7 @@ class CoreBackend(AbstractBackend):
             allow_specials=("foto",))
 
     @access("meta_admin")
-    def initialize_privilege_change(self, rs, data, password):
+    def initialize_privilege_change(self, rs, data):
         """Initialize a change to a users admin bits.
 
         This has to be approved by another admin.
@@ -847,21 +847,14 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
-        :type password: str
-        :rtype: int or None
-        :returns: eturn `None` if authentication failed, otherwise return
-            the id of the new row or `0` in case of an error.
+        :rtype: int
+        :returns: default return code
         """
         data['submitted_by'] = rs.user.persona_id
         data['status'] = const.PrivilegeChangeStati.pending
         data = affirm("privilege_change", data)
-        password = affirm("str", password)
 
         with Atomizer(rs):
-            if not self.verify_persona_password(
-                    rs, password, rs.user.persona_id):
-                return None
-
             if ("is_meta_admin" in data
                     and data['persona_id'] == rs.user.persona_id):
                 raise PrivilegeError(n_(
@@ -907,7 +900,7 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("meta_admin")
-    def finalize_privilege_change(self, rs, case_id, case_status, password):
+    def finalize_privilege_change(self, rs, case_id, case_status):
         """Finalize a pending change to a users admin bits.
 
         This has to be done by a different admin.
@@ -917,20 +910,12 @@ class CoreBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type case_id: int
         :type case_status: int
-        :type password: str
-        :rtype: int or None,
-        :returns: Return `None` if authentication failed, otherwise return
-            `0` in case of error, the positive affected rowcount for success
-            and the negative rowcount if a password was reset.
+        :rtype: int
+        :returns: default return code
         """
         case_id = affirm("id", case_id)
         case_status = affirm("enum_privilegechangestati", case_status)
-        password = affirm("str", password)
 
-        case = self.get_privilege_change(rs, case_id)
-        if case['status'] != const.PrivilegeChangeStati.pending:
-            raise ValueError(n_("Invalid privilege change state: %(status)s."),
-                             {"status": case["status"]})
 
         data = {
             "id": case_id,
@@ -939,9 +924,11 @@ class CoreBackend(AbstractBackend):
             "status": case_status,
         }
         with Atomizer(rs):
-            if not self.verify_persona_password(rs, password, rs.user.persona_id):
-                return None
-
+            case = self.get_privilege_change(rs, case_id)
+            if case['status'] != const.PrivilegeChangeStati.pending:
+                raise ValueError(
+                    n_("Invalid privilege change state: %(status)s."),
+                    {"status": case["status"]})
             if case_status == const.PrivilegeChangeStati.approved:
                 if (case["is_meta_admin"] is not None
                         and case['persona_id'] == rs.user.persona_id):
@@ -980,8 +967,7 @@ class CoreBackend(AbstractBackend):
                 # Force password reset if non-admin has gained admin privileges.
                 if (not any(old[key] for key in admin_keys)
                         and any(data.get(key) for key in admin_keys)):
-                    ret *= self.invalidate_password(
-                        rs, case["persona_id"], admin_password=password)
+                    ret *= self.invalidate_password(rs, case["persona_id"])
                     ret *= -1
 
                 # Mark case as successful
@@ -1171,7 +1157,7 @@ class CoreBackend(AbstractBackend):
             return ret
 
     @access("core_admin", "meta_admin")
-    def invalidate_password(self, rs, persona_id, admin_password):
+    def invalidate_password(self, rs, persona_id):
         """Replace a users password with an unknown one.
 
         This forces the user to set a new password and also invalidates all
@@ -1181,22 +1167,12 @@ class CoreBackend(AbstractBackend):
         not previously had any, hence we allow backend access for all
         meta_admins.
 
-        For security reasons, we require the invalidating admin to supply their
-        own password.
-
         :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
-        :type admin_password: str
-        :rtype: bool or None
-        :returns: Return `None` if authentication failed, `True` if the
-            invalidation was successful and `False` in case of an error.
+        :rtype: int
+        :returns: default return code
         """
         persona_id = affirm("id", persona_id)
-        admin_password = affirm("str", admin_password)
-
-        if not self.verify_persona_password(
-                rs, admin_password, rs.user.persona_id):
-            return None
 
         # modified version of hash for 'secret' and thus
         # safe/unknown plaintext
@@ -1214,7 +1190,7 @@ class CoreBackend(AbstractBackend):
         ret *= self.core_log(rs, code=const.CoreLogCodes.password_invalidated,
                              persona_id=persona_id)
 
-        return bool(ret)
+        return ret
 
     @access("core_admin", "cde_admin")
     def archive_persona(self, rs, persona_id, note):
