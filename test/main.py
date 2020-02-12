@@ -10,5 +10,6 @@ if __name__ == "__main__":
         pattern = sys.argv[1]
     loader = unittest.TestLoader()
     tests = loader.discover('./test/', pattern=pattern)
+    unittest.installHandler()
     testRunner = unittest.runner.TextTestRunner(verbosity=2)
     testRunner.run(tests)
