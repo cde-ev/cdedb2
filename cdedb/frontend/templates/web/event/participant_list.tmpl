@@ -2,9 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Participant List {{ title }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -14,7 +14,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Participant List{%- endtrans %}
+        {% trans %}Participant List{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -41,9 +41,9 @@
     {% if not ambience['event']['is_participant_list_visible'] %}
         <div class="alert alert-info" role="alert">
             {{ util.make_icon('info-sign') }}
-            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
-                {% trans -%}The Participant List is currently only visible to Orgas and Admins.{%- endtrans %}
+                {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
             </span>
         </div>
     {% endif %}
@@ -69,14 +69,14 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>{% trans -%}Given Names{%- endtrans %}</th>
-                        <th>{% trans -%}Family Name{%- endtrans %}</th>
-                        <th>{% trans -%}Email Address{%- endtrans %}</th>
-                        <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
+                        <th>{% trans %}Given Names{% endtrans %}</th>
+                        <th>{% trans %}Family Name{% endtrans %}</th>
+                        <th>{% trans %}Email Address{% endtrans %}</th>
+                        <th>{% trans %}Postal Code, City{% endtrans %}</th>
                         {% if parts[part_id]['tracks']|length > 1 and ambience['event']['courses_in_participant_list'] %}
-                            <th>{% trans -%}Courses{%- endtrans %}</th>
+                            <th>{% trans %}Courses{% endtrans %}</th>
                         {% elif parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
-                            <th>{% trans -%}Course{%- endtrans %}</th>
+                            <th>{% trans %}Course{% endtrans %}</th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -111,11 +111,11 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>{% trans -%}Given Names{%- endtrans %}</th>
-                        <th>{% trans -%}Family Name{%- endtrans %}</th>
-                        <th>{% trans -%}Email Address{%- endtrans %}</th>
-                        <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
-                        <th>{% trans -%}Event Parts{%- endtrans %}</th>
+                        <th>{% trans %}Given Names{% endtrans %}</th>
+                        <th>{% trans %}Family Name{% endtrans %}</th>
+                        <th>{% trans %}Email Address{% endtrans %}</th>
+                        <th>{% trans %}Postal Code, City{% endtrans %}</th>
+                        <th>{% trans %}Event Parts{% endtrans %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -137,7 +137,7 @@
                                    if registration['parts'][part_id]['status'] == enums['RegistrationPartStati']['participant'] -%}
                                 {% if not loop.first %}
                                     {%- if loop.last %}
-                                        {% trans -%}and{%- endtrans %}
+                                        {% trans %}and{% endtrans %}
                                     {% else -%}
                                         ,
                                     {% endif %}
@@ -152,24 +152,24 @@
             </table>
         {% endif %}
         <p>
-            {% trans count=registrations|length -%}There are {{ count }} participants in total.{%- endtrans %}
+            {% trans count=registrations|length %}There are {{ count }} participants in total.{% endtrans %}
         </p>
 
 
     {% elif not list_consent %}
         <div class="alert alert-info" role="alert">
             {{ util.make_icon('info-sign') }}
-            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
-                {% trans -%}
+                {% trans %}
                     You can not access the Participant List as you have not agreed to have your own data
                     sent to other participants before the event.
-                {%- endtrans %}
+                {% endtrans %}
             </span>
         </div>
 
 
     {% else %}
-        {% trans -%}There are no participants yet.{%- endtrans %}
+        {% trans %}There are no participants yet.{% endtrans %}
     {% endif %}
 {% endblock %}

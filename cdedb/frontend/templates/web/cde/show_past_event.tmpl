@@ -24,10 +24,10 @@
     {% endif %}
     <dl class="dl-horizontal">
         {% if is_admin %}
-            <dt>{% trans -%}Shortname{%- endtrans %}</dt>
+            <dt>{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['pevent']['shortname'] }}</dd>
         {% endif %}
-        <dt>{% trans -%}Institution{%- endtrans %}</dt>
+        <dt>{% trans %}Institution{% endtrans %}</dt>
         <dd id="institution">{{ institutions[ambience['pevent']['institution']] }}</dd>
     </dl>
 
@@ -40,16 +40,16 @@
     {% if ambience['pevent']['notes'] and (is_admin or is_participant) %}
         {% if is_admin and not is_participant %}
             <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-sign') }}
-                {% trans -%}
+                {% trans %}
                     As you are no participant of this past event, you can only
                     see this link because you are admin.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
         {% endif %}
        <div id="gallery-link">{{ ambience['pevent']['notes']|md }}</div>
     {% endif %}
     {% if courses or is_admin %}
-        <h2>{% trans -%}Courses{%- endtrans %}</h2>
+        <h2>{% trans %}Courses{% endtrans %}</h2>
     {% endif %}
     {% if is_admin %}
         <div class="p">
@@ -68,11 +68,11 @@
         </ul>
     {% endif %}
 
-    <h2>{% trans -%}Participants{%- endtrans %}</h2>
+    <h2>{% trans %}Participants{% endtrans %}</h2>
     {% if is_admin %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">
-                <h4 class="panel-title">{{util.make_icon('plus') }} {% trans -%}Add Participant <u>without</u> Course{%- endtrans %}</h4>
+                <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
             </div>
             <div class="panel-body">
                 <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
@@ -127,7 +127,7 @@
                         {% endfor -%}
                         )
                     {% endif %}
-                    {% if participant['is_orga'] %}({% trans -%}Orga{%- endtrans %}){% endif %}
+                    {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
 
                     {# only allow removal of participants without a course #}
                     {% if is_admin and None in participant['pcourse_ids'] %}
@@ -144,27 +144,27 @@
             {% endfor %}
             {% if extra_participants %}
                 <li id="count-extra-participants">
-                    {% trans count=extra_participants -%}
+                    {% trans count=extra_participants %}
                         extra_participants_singular
                     {%- pluralize count -%}
                         extra_participants_plural
-                    {%- endtrans %} …
+                    {% endtrans %} …
                 </li>
             {% endif %}
         </ul>
     {% elif extra_participants %}
         <p id="count-extra-participants">
             <i>
-                {% trans count=extra_participants -%}
+                {% trans count=extra_participants %}
                     {{ count }} Participant
                 {%- pluralize count -%}
                     {{ count }} Participants
-                {%- endtrans %}
+                {% endtrans %}
             </i>
         </p>
     {% else %}
         <p>
-            <i>{% trans -%}This Event had no Participants.{%- endtrans %}</i>
+            <i>{% trans %}This Event had no Participants.{% endtrans %}</i>
         </p>
     {% endif %}
     {% if is_admin %}
@@ -182,7 +182,7 @@
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        {% trans -%}Deletes the event, including description, courses and participant information.{%- endtrans %}
+                        {% trans %}Deletes the event, including description, courses and participant information.{% endtrans %}
                     </p>
                 </div>
             </div>

@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_change_mailinglist.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}
+    {% trans title=ambience['mailinglist']['title'] %}
         {{ title }} – Configuration
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -18,7 +18,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Configuration{%- endtrans %}
+        {% trans %}Configuration{% endtrans %}
         <small>
             {{- util.make_icon('envelope', arialabel="Mailingliste") }} {{ ambience['mailinglist']['title'] -}}
         </small>
@@ -36,7 +36,7 @@
     {% else %}
         <div id="changelistform" class="form-horizontal">
     {% endif %}
-        <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
             {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=not is_admin) }}
             {{ util.form_input_text(name="title", label=gettext("Title"), readonly=not is_admin) }}
             {{ util.form_input_text(name="address", label=gettext("Address"), readonly=not is_admin) }}
@@ -49,7 +49,7 @@
                                             infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
                                                                title=gettext("Short Markdown summary")))|s) }}
 
-        <h4 class="heading-underline">{% trans -%}Moderation & Subscribers{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
             {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"), readonly=not is_admin,
                     entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), readonly=not is_admin,
@@ -64,7 +64,7 @@
                     entries=sorted_assemblies,
                     info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
 
-        <h4 class="heading-underline">{% trans -%}Mails{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Mails{% endtrans %}</h4>
             {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix"), readonly=not is_admin) }}
             {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"), readonly=not is_admin,
                     entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}

@@ -1,9 +1,9 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] -%}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
     	Change Privileges for {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -12,9 +12,9 @@
     {{ util.breadcrumb_link(cdedblink("core/change_privileges_form"), gettext("Change Privileges"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% trans -%}
+    {% trans %}
         Privilege changes will have to be approved by another Meta-Admin.
-    {%- endtrans %}
+    {% endtrans %}
     <form action="{{ cdedblink('core/change_privileges') }}" method="POST" id="privilegechangeform">
         {{ util.anti_csrf_token('core/change_privileges') }}
         <div class="row">

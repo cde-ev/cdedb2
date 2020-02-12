@@ -5,9 +5,9 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{% endblock %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
         Search Archived Users
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -19,7 +19,7 @@
     {{ generic.user_search_mask("archived", ("pevent_id",)) }}
 
     {% if values['is_search'] %}
-        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         {{ generic.user_search_result(result, "archived") }}
     {% endif %}
 {% endblock %}

@@ -199,13 +199,13 @@
 {% macro doclink(topic, anchor=None) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
         {{ make_icon('question-sign') }}
-    {% trans -%}
+    {% trans %}
         Help
-    {%- endtrans %}
+    {% endtrans %}
     <span class="sr-only">
-        {% trans -%}
+        {% trans %}
             for this site
-        {%- endtrans %}
+        {% endtrans %}
     </span>
     </a>
 {%- endmacro %}
@@ -500,9 +500,9 @@
         </label>
         <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
             <div class="input-group">
-                <span class="input-group-addon">{% trans -%}from{%- endtrans %}</span>
+                <span class="input-group-addon">{% trans %}from{% endtrans %}</span>
                 {{ input_text(name=name1, type=type, arialabel=gettext('%s from')|format(label)) }}
-                <span class="input-group-addon">{% trans -%}to{%- endtrans %}</span>
+                <span class="input-group-addon">{% trans %}to{% endtrans %}</span>
                 {{ input_text(name=name2, type=type, arialabel=gettext('%s to')|format(label)) }}
             </div>
             {{- output_errors(name1, displayerrors) }}

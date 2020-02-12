@@ -2,7 +2,7 @@
 
 {# Classical voting: Presentation of candidates #}
 {% macro show_classical_candidates(edit_mode) -%}
-    <h3>{% trans -%}Candidates{%- endtrans %}</h3>
+    <h3>{% trans %}Candidates{% endtrans %}</h3>
     <div class="row">
         <ul class="col-md-8" id="classical-candidates">
             {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('description', pad=True) %}
@@ -31,7 +31,7 @@
 
 {# Classical voting: Voting form #}
 {% macro show_classical_voting() -%}
-    <h3>{% trans -%}Ballot{%- endtrans %}</h3>
+    <h3>{% trans %}Ballot{% endtrans %}</h3>
     <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/vote') }}
         {% if ambience['ballot']['votes'] > 1 %}
@@ -60,7 +60,7 @@
     <div class="form-horizontal">
         <div class="form-group">
             <div class="col-sm-2 control-label">
-                <strong>{% trans -%}Additional Options{%- endtrans %}</strong>
+                <strong>{% trans %}Additional Options{% endtrans %}</strong>
             </div>
             <div class="col-sm-10">
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
@@ -76,14 +76,14 @@
 
 {# Preferential voting: Presentation of candidates #}
 {% macro show_preferential_candidates(edit_mode) -%}
-    <h3>{% trans -%}Candidates{%- endtrans %}</h3>
+    <h3>{% trans %}Candidates{% endtrans %}</h3>
     <div class="row" id="preferential-candidates">
         <ul class="col-md-8">
             {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('description', pad=True) %}
                 <li class="hide-hover-container clearfix-after">
                     {{ candidate['description'] }}
                     {% if attends or edit_mode %}
-                        <span class="label label-primary"><span class="sr-only">{% trans -%}Short: {%- endtrans %}</span>
+                        <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
                             {{ candidate['moniker'] }}
                         </span>
                     {% endif %}
@@ -111,87 +111,87 @@
 {% macro show_manual_for_text_preferential_voting() -%}
     {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
         <p>
-            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
+            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
                 evaluated using the {{ link }}, to determine the winner.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         <p>
-            {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
+            {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
                 To enter your preferencelist, use the shortnames given in the list of candidates and the
                 {{ gt }} and {{ eq }} characters. Use the greater-than character {{ gt }}
                 to give the candidates left of the character higher preference than those on the right.
                 Use the equals character to give two candidates the same preference. You need to have all
                 candidates in your preferencelist.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         {% if ambience['ballot']['use_bar'] %}
             <p>
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
+                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
                     Additionally you need to use the rejection bar {{ abm }} in your preferencelist.
                     Use it in your preferencelist like you would a candidate. Put all
                     candidates you deem suitable higher than {{ abm }} and all
                     candidates you reject lower, i. e. to the right of {{ abm }}.
                     Should no candidate win against the bar, the board may take additional measures.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
         {% endif %}
         <p>
-            <strong>{% trans -%}Examples{%- endtrans %}:</strong>
-            {% trans -%}
+            <strong>{% trans %}Examples{% endtrans %}:</strong>
+            {% trans %}
                 Take the following examplatory candidate list:
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         <ul>
-            <li>{% trans -%}Luke Skywalker, short: [Luke]{%- endtrans %}</li>
-            <li>{% trans -%}Princess Leia Organa of Alderaan, short: [Leia]{%- endtrans %}</li>
-            <li>{% trans -%}Han Solo, short: [Han]{%- endtrans %}</li>
-            <li>{% trans -%}Obi-Wan “Ben” Kenobi, short: [ObiWan]{%- endtrans %}</li>
+            <li>{% trans %}Luke Skywalker, short: [Luke]{% endtrans %}</li>
+            <li>{% trans %}Princess Leia Organa of Alderaan, short: [Leia]{% endtrans %}</li>
+            <li>{% trans %}Han Solo, short: [Han]{% endtrans %}</li>
+            <li>{% trans %}Obi-Wan “Ben” Kenobi, short: [ObiWan]{% endtrans %}</li>
         </ul>
         <p>
-            {% trans -%}Your Vote could look like this:{%- endtrans %}
+            {% trans %}Your Vote could look like this:{% endtrans %}
         </p>
         {% if ambience['ballot']['use_bar'] %}
             <ul>
-                <li>{% trans -%}
+                <li>{% trans %}
                         You deem all candidates suitable, but you like Leia the best,
                         with no difference between the other candidates.
-                    {%- endtrans %}<br />
+                    {% endtrans %}<br />
                     <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}</code></li>
-                <li>{% trans -%}
+                <li>{% trans %}
                         You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke
                         and you absolutely can’t stand Han Solo.
-                    {%- endtrans %}<br />
+                    {% endtrans %}<br />
                     <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}&gt;Luke&gt;Han</code></li>
-                <li>{% trans -%}
+                <li>{% trans %}
                         You want to vote for Luke and if he doesn’t make it, you think Obi-Wan should.
                         You don’t have an opinion about the others.
-                    {%- endtrans %}<br />
+                    {% endtrans %}<br />
                     <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}=Han=Leia</code></li>
-                <li>{% trans -%}
+                <li>{% trans %}
                         You want to completely abstain.
-                    {%- endtrans %}<br />
+                    {% endtrans %}<br />
                     <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER }}</code></li>
             </ul>
         {% else %}
             <ul>
-                <li>{% trans -%}
+                <li>{% trans %}
                         You like Leia the most, but you see no difference between the others.
-                    {%- endtrans %}<br />
+                    {% endtrans %}<br />
                     <code>Leia&gt;Luke=Han=ObiWan</code></li>
-                <li>{% trans -%}
+                <li>{% trans %}
                         You deem Leia and Obi-Wan (equally) suitable, Luke less so and Han Solo not at all.
-                    {%- endtrans %}<br />
+                    {% endtrans %}<br />
                     <code>Leia=ObiWan&gt;Luke&gt;Han</code></li>
-                <li>{% trans -%}
+                <li>{% trans %}
                         You want to vote for Luke and if he doesn’t make it, you think Obi-Wan should.
                         You don’t have an opinion about the others.
-                    {%- endtrans %}<br />
+                    {% endtrans %}<br />
                     <code>Luke&gt;ObiWan&gt;Han=Leia</code></li>
-                <li>{% trans -%}
+                <li>{% trans %}
                         You want to completely abstain.
-                    {%- endtrans %}<br />
+                    {% endtrans %}<br />
                     <code>Luke=ObiWan=Han=Leia</code></li>
             </ul>
         {% endif %}
@@ -201,18 +201,18 @@
 {% macro show_manual_for_js_preferential_voting() -%}
     {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
         <p>
-            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s -%}
+            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
                 evaluated using the {{ link }}, to determine the winner.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         <p>
-            {% trans -%}
+            {% trans %}
                 To arrange the candidates, move them into one of the shaded boxes. The higher up the box,
                 the higher your preference for that candidate. Candidates within the same box will be
                 evaluated with the same preference. Move a candidate between two boxes to create a new box.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         <p>
             {% trans tab="<kbd>%(key)s</kbd>"|s|format(key=gettext("TAB")),
@@ -222,23 +222,23 @@
                 click on a candidate and then on a box. Or you can select a candidate with {{ tab }},
                 confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
                 and confirm the selection with {{ enter }} or {{ space }}.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         {% if ambience['ballot']['use_bar'] %}
             <p>
-                {% trans -%}
+                {% trans %}
                     One of the boxes is marked as “Neutral”. Please place candidates cou deem suitable
                     above this box (they will be highlighted in green) and candidates you want to reject
                     below this box (they will be highlighted in red). Should all candidates be rejected,
                     the board may take additional measures.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
             <p>
-                {% trans -%}To abstain, place all candidates in the neutral box.{%- endtrans %}
+                {% trans %}To abstain, place all candidates in the neutral box.{% endtrans %}
             </p>
         {% else %}
             <p>
-                {% trans -%}To abstain, place all candidates in the same box.{%- endtrans %}
+                {% trans %}To abstain, place all candidates in the same box.{% endtrans %}
             </p>
         {% endif %}
     {% endcall %}
@@ -246,20 +246,20 @@
 
 {# Preferential voting: Voting form #}
 {% macro show_preferential_voting() -%}
-    <h3>{% trans -%}Ballot{%- endtrans %}</h3>
+    <h3>{% trans %}Ballot{% endtrans %}</h3>
 
     {# Tab controls to switch to javascript preferential voting form #}
     <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
         <li role="presentation" class="active">
             <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab"
                id="tablink-textform">
-                {{ util.make_icon('console') }} {% trans -%}Text-based Voting{%- endtrans %}
+                {{ util.make_icon('console') }} {% trans %}Text-based Voting{% endtrans %}
             </a>
         </li>
         <li role="presentation">
             <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
                     id="tablink-jsform">
-                {{ util.make_icon('flash') }} {% trans -%}Interactive Voting{%- endtrans %}
+                {{ util.make_icon('flash') }} {% trans %}Interactive Voting{% endtrans %}
             </a>
         </li>
     </ul>
@@ -283,19 +283,19 @@
         {# Javascript preferential voting form #}
         <div role="tabpanel" class="tab-pane" id="tab-jsform">
             <p class="sr-only">
-                {% trans -%}
+                {% trans %}
                     This is the interactive voting form. It is inconvenient to used with a keyboard only.
                     Use the link above to switch to the text-based form.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
             <div class="prefvote_container" id="prefvote_container">
                 <div class="indicator">
-                    {% trans -%}Incr. Preference{%- endtrans %} →
+                    {% trans %}Incr. Preference{% endtrans %} →
                 </div>
             </div>
             <div class="p clearfix">
                 <button class="btn btn-primary" id="button-jsvote">
-                    {{ util.make_icon('ok') }} {% trans -%}Vote{%- endtrans %}
+                    {{ util.make_icon('ok') }} {% trans %}Vote{% endtrans %}
                 </button>
             </div>
             <script type="text/javascript" nonce="{{ csp_nonce }}">

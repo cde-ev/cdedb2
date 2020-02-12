@@ -4,7 +4,7 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
-{% block title %}{% trans -%}CdE-Usermanagement{%- endtrans %}{% endblock %}
+{% block title %}{% trans %}CdE-Usermanagement{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users"), active="True") }}
@@ -19,7 +19,7 @@
                              aclass="btn btn-default btn-sm") }}
             </div>
             <p class="text-muted">{{ util.make_icon('info-sign') }}
-                {% trans -%}Only CdE-Members (and ex-Members) can be found here. {%- endtrans %}
+                {% trans %}Only CdE-Members (and ex-Members) can be found here. {% endtrans %}
             </p>
         </div>
         <div class="col-md-8">
@@ -30,7 +30,7 @@
     {{ generic.user_search_mask("cde", ("pevent_id", "pcourse_id")) }}
 
     {% if values['is_search'] %}
-        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         {{ generic.user_search_result(result, "cde") }}
     {% endif %}
 {% endblock %}

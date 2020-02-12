@@ -4,9 +4,9 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_dynamicrow.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Lodgement Groups ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -16,7 +16,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Lodgement Groups{%- endtrans %}
+        {% trans %}Lodgement Groups{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -59,7 +59,7 @@
         {{ util.anti_csrf_token('event/lodgement_group_summary') }}
         <table class="table table-condensed" id="drow-table">
             <thead>
-                <tr><th>{% trans -%}Name{%- endtrans %}</th><th></th></tr>
+                <tr><th>{% trans %}Name{% endtrans %}</th><th></th></tr>
             </thead>
             <tbody>
                 {# Old items, already stored in the database #}
@@ -78,7 +78,7 @@
         </table>
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_icon('plus') }} {% trans -%}Add Lodgement Group{%- endtrans %}
+                {{ util.make_icon('plus') }} {% trans %}Add Lodgement Group{% endtrans %}
             </button>
         </p>
         {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}

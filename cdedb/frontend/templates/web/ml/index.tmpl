@@ -1,7 +1,7 @@
 {% set sidenav_active='ml_index' %}
 {% extends "web/ml/base.tmpl" %}
 {% block title %}
-    {% trans -%}Mailinglists{%- endtrans %}
+    {% trans %}Mailinglists{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("ml/index"), gettext("Mailinglists"), active=True) }}
@@ -24,9 +24,9 @@
         </div>
     {% endif %}
     <p>
-        {% trans -%}
+        {% trans %}
             Here you can find the CdE’s Mailinglists; notably also those linked to events and assemblies.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
     {% for group in groups %}
         {% if mailinglists[group] %}

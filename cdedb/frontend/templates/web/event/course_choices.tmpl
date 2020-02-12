@@ -4,9 +4,9 @@
 {% set jshint='weak' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Course Choices ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -15,7 +15,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Course Choices{%- endtrans %}
+        {% trans %}Course Choices{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -31,13 +31,13 @@
                        {% if filtered %}filtered_column{% endif %} {{ aclass }}">
                 <span title="{{ course['nr'] }}. {{ course['shortname'] }} {# -#}
                             {% if course['max_size'] -%}
-                                ({% trans count=attendees, max=course['max_size'] -%}
+                                ({% trans count=attendees, max=course['max_size'] %}
                                     {{ count }} of {{ max }} Att.
-                                {%- endtrans %})
+                                {% endtrans %})
                             {%- else -%}
-                                ({% trans count=attendees -%}
+                                ({% trans count=attendees %}
                                 	{{ count }} Att.
-                                {%- endtrans %})
+                                {% endtrans %})
                             {%- endif %}"
                       data-id="{{ course_id }}"
                       class="event_course_id{% if not_participating %} nopart{% endif %}">
@@ -63,7 +63,7 @@
 
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form') }}" method="GET" id="choicefilterform"
-              aria-label="{% trans -%}Filter{%- endtrans %}">
+              aria-label="{% trans %}Filter{% endtrans %}">
             <div class="p">
                 {% if ambience['event']['tracks']|length > 1 %}
                     {% set select1 = gettext("in Track %s")|e|format(util.input_select(
@@ -83,14 +83,14 @@
                                 arialabel=gettext("Filter: Course Operator"))
                         -%}
                     Show only participants who {{ select3 }} the course {{ select2 }} {{ select1 }}
-                {%- endtrans %}
+                {% endtrans %}
             </div>
             <div class="p">
                 {% trans select4=util.input_text(name='ids', aclass="form-control input-slim input-sm",
                                    arialabel=gettext("Filter: Registration IDs")),
                          checkbox=util.input_checkbox('include_active', gettext("Show pending registrations")) -%}
                     Only include these IDs: {{ select4 }}, but {{ checkbox }}.
-                {%- endtrans %}
+                {% endtrans %}
             </div>
             <p class="nosp">
                 {{ util.input_submit(value=gettext("Go!"), icon="search") }}
@@ -101,7 +101,7 @@
     {% endcall %}
 
     <form action="{{ cdedblink('event/course_choices') }}" method="POST" id="choiceactionform"
-          aria-label="{% trans -%}Assignment{%- endtrans %}">
+          aria-label="{% trans %}Assignment{% endtrans %}">
         {{ util.anti_csrf_token('event/course_choices') }}
         {{ util.input_hidden(name="track_id") }}
         {{ util.input_hidden(name="course_id") }}
@@ -129,7 +129,7 @@
                         tracks=tracks,
                         submit='<div class="col-md-2">%s</div>'|s|format(util.input_submit(value=gettext("Go!"))) -%}
                 	{{ assign }} {{ participants }} {{ course }} {{ tracks }} {{ submit }}
-                {%- endtrans %}
+                {% endtrans %}
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
                     $(function() {
                         var $actionSelect = $('#input-action');
@@ -153,17 +153,17 @@
         </div>
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Select All{%- endtrans %}"
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select All{% endtrans %}"
                         id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans -%}All{%- endtrans %}</span>
+                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Select None{%- endtrans %}"
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select None{% endtrans %}"
                         id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans -%}None{%- endtrans %}</span>
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Invert Selection{%- endtrans %}"
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Invert Selection{% endtrans %}"
                         id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans -%}Invert{%- endtrans %}</span>
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
                 </button>
             </div>
         </div>
@@ -174,7 +174,7 @@
                 {% if ambience['event']['tracks']|length > 1 %}
                     <tr>
                         <th rowspan="2"></th>
-                        <th rowspan="2">{% trans -%}Full Name{%- endtrans %}</th>
+                        <th rowspan="2">{% trans %}Full Name{% endtrans %}</th>
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                             <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['title'] }}</th>
                         {% endfor %}
@@ -183,7 +183,7 @@
                 <tr>
                     {% if ambience['event']['tracks']|length <= 1 %}
                         <th></th>
-                        <th>{% trans -%}Name{%- endtrans %}</th>
+                        <th>{% trans %}Name{% endtrans %}</th>
                     {% endif %}
 
                     {# Some definitions to highlight the headings of the filtered columns #}
@@ -203,7 +203,7 @@
                             {{ util.make_icon('screenshot', title=gettext("assigned to")) }}
                         </th>
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">
-                            {% trans -%}Instr.{%- endtrans %}
+                            {% trans %}Instr.{% endtrans %}
                         </th>
                         {% for i in range(track['num_choices']) %}
                             <th class="text-center {{ filtered_col_class(track_id, i) }}">
@@ -280,13 +280,13 @@
 
     <hr />
     <p>
-        <strong>{% trans -%}Color Guide{%- endtrans %}:</strong> <br />
-        <span class="color-legend course-fewp"></span>&nbsp;{% trans -%}Course is too empty{%- endtrans %} &emsp;
-        <span class="color-legend course-manyp"></span>&nbsp;{% trans -%}Course is overfull{%- endtrans %} &emsp;
+        <strong>{% trans %}Color Guide{% endtrans %}:</strong> <br />
+        <span class="color-legend course-fewp"></span>&nbsp;{% trans %}Course is too empty{% endtrans %} &emsp;
+        <span class="color-legend course-manyp"></span>&nbsp;{% trans %}Course is overfull{% endtrans %} &emsp;
         <span class="color-legend course-cancelled"></span>&nbsp;
-                {% trans -%}not assigned or course is cancelled{%- endtrans %}&emsp;
+                {% trans %}not assigned or course is cancelled{% endtrans %}&emsp;
     </p>
     <p>
-        {{ util.make_icon('info-sign') }} {% trans -%}Double-Click the course number to view the course.{%- endtrans %}
+        {{ util.make_icon('info-sign') }} {% trans %}Double-Click the course number to view the course.{% endtrans %}
     </p>
 {% endblock %}

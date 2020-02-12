@@ -6,9 +6,9 @@
 {% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}
-    {% trans course=ambience['course']['shortname'], title=ambience['event']['title'] -%}
+    {% trans course=ambience['course']['shortname'], title=ambience['event']['title'] %}
     	Course {{ course }} ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -19,9 +19,9 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans nr=ambience['course']['nr'], course=ambience['course']['shortname'] -%}
+        {% trans nr=ambience['course']['nr'], course=ambience['course']['shortname'] %}
             Course {{ nr }}: {{ course }}
-        {%- endtrans %}
+        {% endtrans %}
     </h1>
     <div class="subtitle">
         {{ ambience['course']['title'] }}
@@ -42,9 +42,9 @@
     <div class="row">
         <div class="col-md-6">
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Instructor{%- endtrans %}</dt><dd>{{ ambience['course']['instructors'] }}</dd>
-                <dt>{% trans -%}Maximum Size (excl. instr.){%- endtrans %}</dt><dd>{{ ambience['course']['max_size'] }}</dd>
-                <dt>{% trans -%}Minimum Size (excl. instr.){%- endtrans %}</dt><dd>{{ ambience['course']['min_size'] }}</dd>
+                <dt>{% trans %}Instructor{% endtrans %}</dt><dd>{{ ambience['course']['instructors'] }}</dd>
+                <dt>{% trans %}Maximum Size (excl. instr.){% endtrans %}</dt><dd>{{ ambience['course']['max_size'] }}</dd>
+                <dt>{% trans %}Minimum Size (excl. instr.){% endtrans %}</dt><dd>{{ ambience['course']['min_size'] }}</dd>
             </dl>
 
             <dl class="dl-horizontal">
@@ -88,7 +88,7 @@
         {% endif %}
     </div>
 
-    <h2>{% trans -%}Attendees{%- endtrans %}</h2>
+    <h2>{% trans %}Attendees{% endtrans %}</h2>
     <div class="row">
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                 if track_id in ambience['course']['segments'] %}
@@ -109,30 +109,30 @@
                             {% if ambience['event']['tracks']|length > 1 %}
                                 {{ track['title'] }}
                             {% else %}
-                                {% trans -%}Attendees{%- endtrans %}
+                                {% trans %}Attendees{% endtrans %}
                             {% endif %}
                         </h3>
                     </div>
                     <div class="panel-body">
                         {% if track_id not in ambience['course']['active_segments'] %}
                             <p class="text-danger">
-                                <strong>{% trans -%}Course is cancelled{%- endtrans %}</strong>
+                                <strong>{% trans %}Course is cancelled{% endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['min_size'] != None and
                                 num_track_attendees < ambience['course']['min_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(ambience['course']['min_size'] - num_track_attendees) -%}
+                                    {% trans count=(ambience['course']['min_size'] - num_track_attendees) %}
                                         Course has {{ count }} attendees too few.
-                                    {%- endtrans %}</strong>
+                                    {% endtrans %}</strong>
                             </p>
                         {% elif ambience['course']['max_size'] != None and
                                 num_track_attendees > ambience['course']['max_size'] %}
                             <p class="text-warning">
                                 <strong>
-                                    {% trans count=(num_track_attendees - ambience['course']['max_size']) -%}
+                                    {% trans count=(num_track_attendees - ambience['course']['max_size']) %}
                                     	Course has {{ count }} attendees too many.
-                                    {%- endtrans %}</strong>
+                                    {% endtrans %}</strong>
                             </p>
                         {% endif %}
                         <ul class="slim">
@@ -161,10 +161,10 @@
     {% endcall %}
     {% call util.bootstrap_panel(title=gettext("Course Logo"), icon="picture") %}
         <div class="alert alert-info" role="alert">
-            {% trans -%}
+            {% trans %}
                 This functionality is deprecated and will be removed soon.
                 Do not use it anymore.
-            {%- endtrans %}
+            {% endtrans %}
         </div>
         {% if logo_present %}
             <embed src="{{ cdedblink('event/get_course_logo') }}#view=Fit&scrollbar=0&toolbar=0"
@@ -182,7 +182,7 @@
                 $('#removecourselogoform').find('[name="logo_ack_delete"]').prop('checked', true).parent().hide();
             </script>
         {% else %}
-            {% trans -%}No logo set.{%- endtrans %}
+            {% trans %}No logo set.{% endtrans %}
         {% endif %}
         <form action="{{ cdedblink('event/set_course_logo') }}" method="POST" enctype="multipart/form-data"
               id="setcourselogoform" {% if "course_logo" in errors %}class="has-error"{% endif %}>
@@ -212,7 +212,7 @@
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans -%}Delete the Course.{%- endtrans %}
+                    {% trans %}Delete the Course.{% endtrans %}
                 </p>
             </div>
         </div>

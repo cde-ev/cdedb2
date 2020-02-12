@@ -7,8 +7,8 @@
 {% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Management
-    {%- endtrans %}
+    {% trans title=ambience['mailinglist']['title'] %}{{ title }} – Management
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -20,26 +20,26 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Manage Mailinglist{%- endtrans %}
+        {% trans %}Manage Mailinglist{% endtrans %}
         <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     <p class="text-info">
         {{ util.make_icon('info-sign') }}
-        {% trans -%}
+        {% trans %}
             Note that every change can take up to 15 minutes to take effect.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
 
     <div class="row">
         <div class="col-md-6">
-            <h2>{% trans -%}Moderators{%- endtrans %} [{{ ambience['mailinglist']['moderators']|length }}]</h2>
+            <h2>{% trans %}Moderators{% endtrans %} [{{ ambience['mailinglist']['moderators']|length }}]</h2>
                 <p class="text-muted">
                 {{ util.make_icon('info-sign') }}
-                    {% trans -%}
+                    {% trans %}
                         Only users can be moderators.
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             <form action="{{ cdedblink('ml/add_moderators') }}" method="POST"
                   id="addmoderatorform" class="p">
@@ -86,12 +86,12 @@
         </div>
 
         <div class="col-md-6">
-            <h2>{% trans -%}Subscription Requests{%- endtrans %}</h2>
+            <h2>{% trans %}Subscription Requests{% endtrans %}</h2>
                 <p class="text-muted">
                     {{ util.make_icon('info-sign') }}
-                    {% trans -%}
+                    {% trans %}
                         Subscription Requests of other users to this mailinglist.
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             {# TODO Restyle #}
             {% if requests|length > 0 %}
@@ -133,20 +133,20 @@
                     {% endfor %}
                 </ul>
             {% else %}
-                <p>{% trans -%}
+                <p>{% trans %}
                     There are currently no Subscription Requests pending.
-                {%- endtrans %}</p>
+                {% endtrans %}</p>
             {% endif %}
         </div>
     </div>
 
-    <h2>{% trans -%}Subscribers{%- endtrans %} [{{ subscribers|length }}]</h2>
+    <h2>{% trans %}Subscribers{% endtrans %} [{{ subscribers|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-sign') }}
-            {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) -%}
+            {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) %}
                 Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here.
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
           id="addsubscriberform" class="p">
@@ -213,7 +213,7 @@
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        {% trans -%}Deletes the mailinglist including description and all subscriber information.{%- endtrans %}
+                        {% trans %}Deletes the mailinglist including description and all subscriber information.{% endtrans %}
                     </p>
                 </div>
             </div>

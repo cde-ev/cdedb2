@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_manage_participants.js') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans lodgement=ambience['lodgement']['moniker'], title=ambience['event']['title'] -%}
+    {% trans lodgement=ambience['lodgement']['moniker'], title=ambience['event']['title'] %}
     	Manage Inhabitants of Lodgement {{ lodgement }} ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -17,9 +17,9 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans lodgement=ambience['lodgement']['moniker']-%}
+        {% trans lodgement=ambience['lodgement']['moniker']%}
         	Inhabitants of {{ lodgement }}
-        {%- endtrans %}
+        {% endtrans %}
         <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -49,17 +49,17 @@
                                     </td>
                                 </tr>
                             {% else %}
-                                <tr class="text-muted"><td>{% trans -%}The are currently no inhabitants assigned.{%- endtrans %}</td></tr>
+                                <tr class="text-muted"><td>{% trans %}The are currently no inhabitants assigned.{% endtrans %}</td></tr>
                             {% endfor %}
                             </tbody>
                         </table>
 
                         <label for="input_new_{{ part_id }}">
-                            {{ util.make_icon('plus') }} {% trans -%}Add Inhabitant{%- endtrans %}
+                            {{ util.make_icon('plus') }} {% trans %}Add Inhabitant{% endtrans %}
                         </label>
                         <select multiple="multiple" id="input_new_{{ part_id }}" class="form-control"
                                 name="new_{{ part_id }}">
-                            <option value="">{% trans -%}– none –{%- endtrans %}</option>
+                            <option value="">{% trans %}– none –{% endtrans %}</option>
                             {% for registration_id in without_lodgement[part_id] %}
                                 <option id="{{ registration_id }}_{{ part_id }}" value="{{ registration_id }}">
                                     {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}

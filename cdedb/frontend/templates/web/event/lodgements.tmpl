@@ -2,9 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Lodgements ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -13,7 +13,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Lodgements{%- endtrans %}
+        {% trans %}Lodgements{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -28,14 +28,14 @@
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th rowspan="2" colspan="2">{% trans -%}Lodgement{%- endtrans %}</th>
+                <th rowspan="2" colspan="2">{% trans %}Lodgement{% endtrans %}</th>
                 {% if ambience['event']['parts']|length > 1 %}
                     <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">
-                        {% trans -%}Inhabitants{% endtrans -%}</th>
+                        {% trans %}Inhabitants{% endtrans -%}</th>
                 {% else %}
-                    <th rowspan="2" colspan="2" class="text-right">{% trans -%}Inhabitants{%- endtrans %}</th>
+                    <th rowspan="2" colspan="2" class="text-right">{% trans %}Inhabitants{% endtrans %}</th>
                 {% endif %}
-                <th colspan="2" class="b-left">{% trans -%}Capacity{%- endtrans %}</th>
+                <th colspan="2" class="b-left">{% trans %}Capacity{% endtrans %}</th>
                 <th rowspan="2" class="b-left"></th>
             </tr>
             <tr>
@@ -47,8 +47,8 @@
                         <th></th>
                     {% endfor %}
                 {% endif %}
-                <th class="b-left text-right">{% trans -%}Regular{%- endtrans %}</th>
-                <th class="text-right">{% trans -%}Camping Mat{%- endtrans %}</th>
+                <th class="b-left text-right">{% trans %}Regular{% endtrans %}</th>
+                <th class="text-right">{% trans %}Camping Mat{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>
@@ -133,9 +133,9 @@
 
     <hr />
     <p>
-        <strong>{% trans -%}Color Guide{%- endtrans %}:</strong> <br />
-        <span class="color-legend course-fewp"></span>&nbsp;{% trans -%}Warning{%- endtrans %} &emsp;
-        <span class="color-legend course-manyp"></span>&nbsp;{% trans -%}Overfull{%- endtrans %} &emsp;
-        <span class="color-legend course-cancelled"></span>&nbsp;{% trans -%}Illegal Gendermix{%- endtrans %}
+        <strong>{% trans %}Color Guide{% endtrans %}:</strong> <br />
+        <span class="color-legend course-fewp"></span>&nbsp;{% trans %}Warning{% endtrans %} &emsp;
+        <span class="color-legend course-manyp"></span>&nbsp;{% trans %}Overfull{% endtrans %} &emsp;
+        <span class="color-legend course-cancelled"></span>&nbsp;{% trans %}Illegal Gendermix{% endtrans %}
     </p>
 {% endblock %}

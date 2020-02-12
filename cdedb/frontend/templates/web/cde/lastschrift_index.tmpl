@@ -3,9 +3,9 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
         Direct Debit Authorizations Overview
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -25,16 +25,16 @@
         });
     </script>
 
-    <h2>{% trans -%}Open Direct Debit Authorizations{%- endtrans %}</h2>
+    <h2>{% trans %}Open Direct Debit Authorizations{% endtrans %}</h2>
 
     <p>
-        {% trans -%}
+        {% trans %}
             During the Semester – as early as possible, but not before the Payment Reqeusts/Information are sent – the
             following Direct Debits have to be executed.
             To do this, generate a cdd-file and import it into the online banking software.
             Directly afterwards activate the Direct Debits in the DB by clicking “Perform Direct Debit”.
             This sends a notification to the members informing them about the transaction.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
 
     <table class="table table-condensed" id="open-dd-authorization">
@@ -72,7 +72,7 @@
                 </td>
             </tr>
         {% else %}
-            <tr><td colspan="3">{% trans -%}No Direct Debits to perform this Semester.{%- endtrans %}</td></tr>
+            <tr><td colspan="3">{% trans %}No Direct Debits to perform this Semester.{% endtrans %}</td></tr>
         {% endfor %}
         </tbody>
     </table>
@@ -97,30 +97,30 @@
         </ul>
     {% endif %}
 
-    <h2>{% trans -%}Open Direct Debits{%- endtrans %}</h2>
+    <h2>{% trans %}Open Direct Debits{% endtrans %}</h2>
     <div id="open-dd">
     {% if transactions|length > 0 %}
         <p>
-            {% trans -%}
+            {% trans %}
                 The following Direct Debits are pending. As soon as they are executed, enter whether they were
                 executed successfully, were not executed at all or failed to execute. In the latter case, the
                 authorization will be considered revoked.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
 
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Select All{%- endtrans %}"
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select All{% endtrans %}"
                         id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans -%}All{%- endtrans %}</span>
+                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Select None{%- endtrans %}"
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select None{% endtrans %}"
                         id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans -%}None{%- endtrans %}</span>
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}Invert Selection{%- endtrans %}"
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Invert Selection{% endtrans %}"
                         id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans -%}Invert{%- endtrans %}</span>
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
                 </button>
             </div>
         </div>
@@ -131,9 +131,9 @@
                 <thead>
                     <tr>
                         <th></th>
-                        <th>{% trans -%}Member{%- endtrans %}</th>
-                        <th>{% trans -%}Date{%- endtrans %}</th>
-                        <th>{% trans -%}Amount{%- endtrans %}</th></tr>
+                        <th>{% trans %}Member{% endtrans %}</th>
+                        <th>{% trans %}Date{% endtrans %}</th>
+                        <th>{% trans %}Amount{% endtrans %}</th></tr>
                 </thead>
                 <tbody>
                 {% for transaction_id, transaction in transactions|xdictsort('issued_at') %}
@@ -147,9 +147,9 @@
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                             {% if all_lastschrifts[transaction['lastschrift_id']]['revoked_at'] %}
                                 <b class="alert-danger">{{ util.make_icon("warning-sign") }}
-                                {% trans -%}
+                                {% trans %}
                                     This transaction needs to be cancelled!
-                                {%- endtrans %}
+                                {% endtrans %}
                                 </b>
                             {% endif %}
                         </td>
@@ -174,7 +174,7 @@
                 $('#js-button-group').show();
             </script>
 
-            {% trans -%}All selected:{%- endtrans %}
+            {% trans %}All selected:{% endtrans %}
             {{ util.input_submit(value=gettext("Success"), name='success', aclass="btn btn-success") }}
             {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-sign") }}
             {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="remove",
@@ -182,12 +182,12 @@
         </form>
     {% else %}
         <p>
-            {% trans -%}There are currently no Direct Debits pending.{%- endtrans %}
+            {% trans %}There are currently no Direct Debits pending.{% endtrans %}
         </p>
     {% endif %}
     </div>
 
-    <h2>{% trans -%}All active Authorizations{%- endtrans %}</h2>
+    <h2>{% trans %}All active Authorizations{% endtrans %}</h2>
     <div class="row">
         {% for chunk in lastschrifts.items()|slice(3 if lastschrifts|length > 10
                                                     else 2 if lastschrifts|length > 5

@@ -2,15 +2,15 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Events
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events"), active=True) }}
 {% endblock %}
 {% block content %}
-    <h3>{% trans -%}Current Events{%- endtrans %}</h3>
+    <h3>{% trans %}Current Events{% endtrans %}</h3>
     {% if open_events %}
         <ul class="spaced" id="current-events">
             {% for event_id, event in open_events|keydictsort(EntitySorter.event) %}
@@ -23,12 +23,12 @@
         </ul>
     {% else %}
         <p class="text-muted">
-            {% trans -%}There are currently no event registrations open.{%- endtrans %}
+            {% trans %}There are currently no event registrations open.{% endtrans %}
         </p>
     {% endif %}
 
     {% if orga_events %}
-        <h3>{% trans -%}Organized Events{%- endtrans %}</h3>
+        <h3>{% trans %}Organized Events{% endtrans %}</h3>
         <ul class="spaced" id="organized-events">
             {% for event_id, entry in orga_events|keydictsort(EntitySorter.event) %}
                 <li>
@@ -54,7 +54,7 @@
     {% endif %}
 
     {% if other_events %}
-        <h3>{% trans -%}Other Events{%- endtrans %}</h3>
+        <h3>{% trans %}Other Events{% endtrans %}</h3>
         <ul class="spaced" id="other-events">
             {% for event_id, event in other_events|keydictsort(EntitySorter.event) %}
                 <li>
@@ -69,9 +69,9 @@
     {% if 'cde' in user.roles %}
         <h3>{% trans %}Past Events (long){% endtrans %}</h3>
         <p id="past-events">
-            {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events (long)'))|s -%}
+            {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events (long)'))|s %}
                 Previous CdE events, including their courses and participants, can be found at {{ link }} – together with Junior- and SchülerAkademien.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% endif %}
 {% endblock %}

@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=persona['given_names'], family_name=persona['family_name'], title=ambience['event']['title'] -%}
+    {% trans given_names=persona['given_names'], family_name=persona['family_name'], title=ambience['event']['title'] %}
         Edit Registration by {{ given_names }} {{ family_name }} ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -18,9 +18,9 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans given_names=persona['given_names'], family_name=persona['family_name'] -%}
+        {% trans given_names=persona['given_names'], family_name=persona['family_name'] %}
             Edit {{ given_names }} {{ family_name }}
-        {%- endtrans %}
+        {% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -38,7 +38,7 @@
         {{ util.anti_csrf_token('event/change_registration') }}
         {% for val in skip %}{{ util.input_hidden('skip', val) }}{% endfor %}
 
-        <h3 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
         {{ util.form_input_static(label=gettext("Full Name"), value=output_name(persona)) }}
         {{ util.form_input_static(label=gettext("CdEDB-ID"), value=persona['id']|cdedbid) }}
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
@@ -48,13 +48,13 @@
         {{ util.form_input_static(label=gettext("Gender"), value=gettext(enums['Genders'](persona['gender'])|string)) }}
         {{ util.form_input_textarea(name="reg.orga_notes", label=gettext("Orga-Notes"), rows="5") }}
 
-        <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
         <p class="text-info">
             {{ util.make_icon('info-sign') }}
-            {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) -%}
+            {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
                 The registered people are able to see their current registration status, the payment status and – for
                 minors – the status of the parental consent at “{{ my_registration }}”.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
                                 placeholder="YYYY-MM-DD") }}
@@ -84,14 +84,14 @@
             {% endfor %}
         {% endfor %}
 
-        <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         {{ util.form_input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging")) }}
         {{ util.form_input_checkbox(name="reg.list_consent", label=gettext("Participant List Consent")) }}
         {{ util.form_input_textarea(name="reg.notes", label=gettext("Notes"), rows="5") }}
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
             {% if course_choices[track_id]|length > 0 %}
                 <h4>
-                    {% trans -%}Course Choices{%- endtrans %}
+                    {% trans %}Course Choices{% endtrans %}
                     {% if ambience['event']['tracks']|length > 1 %}
                     {{ track['title'] }}
                     {% endif %}
@@ -109,7 +109,7 @@
         {% endfor %}
 
         {% if ambience['event']['fields']|length > 0 %}
-            <h3 class="heading-underline">{% trans -%}Custom Fields{%- endtrans %}</h3>
+            <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
             {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                 {% if field['association'] == enums['FieldAssociations'].registration %}
                     {{ util.form_event_field_input(field) }}

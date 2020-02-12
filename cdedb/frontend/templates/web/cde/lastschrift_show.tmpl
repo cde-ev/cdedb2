@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title -%}
-    {% trans -%}Direct Debit Authorization{%- endtrans %}
+    {% trans %}Direct Debit Authorization{% endtrans %}
     {{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }}
 {%- endblock %}
 {% block breadcrumb %}
@@ -47,51 +47,51 @@
 	    </div>
         {% endif %}
 
-        <h2>{% trans -%}Active Direct Debit Authorization{%- endtrans %}</h2>
+        <h2>{% trans %}Active Direct Debit Authorization{% endtrans %}</h2>
         {% with lastschrift = lastschrifts[active_permit] %}
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Member{%- endtrans %}</dt>
+                <dt>{% trans %}Member{% endtrans %}</dt>
                 <dd>{{ util.persona_anchor(personas[values['persona_id']]) }}</dd>
 
             {% if is_admin %}
-                <dt>{% trans -%}Submitted by{%- endtrans %}</dt>
+                <dt>{% trans %}Submitted by{% endtrans %}</dt>
                 <dd id="submitted-by">
                     {{ util.persona_anchor(personas[lastschrift['submitted_by']]) }}
                 </dd>
 
-                <dt>{% trans -%}Notes{%- endtrans %}</dt>
+                <dt>{% trans %}Notes{% endtrans %}</dt>
                 <dd id="notes">{{ lastschrift['notes']|md }}</dd>
             {% endif %}
             </dl>
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Amount{%- endtrans %}</dt>
+                <dt>{% trans %}Amount{% endtrans %}</dt>
                 <dd id="amount">{{ lastschrift['amount']|money(lang=lang) }}</dd>
 
-                <dt>{% trans -%}IBAN{%- endtrans %}</dt>
+                <dt>{% trans %}IBAN{% endtrans %}</dt>
                 <dd id="iban">{{ lastschrift['iban']|iban }}</dd>
 
-                <dt>{% trans -%}Account holder{%- endtrans %}</dt>
+                <dt>{% trans %}Account holder{% endtrans %}</dt>
                 <dd id="account-holder">
                     {{ lastschrift['account_owner'] }}
                 </dd>
 
-                <dt>{% trans -%}Acc. holder’s address{%- endtrans %}</dt>
+                <dt>{% trans %}Acc. holder’s address{% endtrans %}</dt>
                 <dd id="account-holder-address">
                     {{ lastschrift['account_address']|linebreaks }}
                 </dd>
 
-                <dt>{% trans -%}Granted{%- endtrans %}</dt>
+                <dt>{% trans %}Granted{% endtrans %}</dt>
                 <dd id="granted-at">{{ lastschrift['granted_at']|datetime(lang=lang) }}</dd>
             </dl>
         {% endwith %}
     {% else %}
-        {% trans -%}No active Direct Debit Authorization{%- endtrans %}
+        {% trans %}No active Direct Debit Authorization{% endtrans %}
         {% if is_admin %} – {{ util.href(cdedblink('cde/lastschrift_create_form'), gettext("Create")) }}{% endif %}
     {% endif %}
     </div>
 
     {% if transactions or active_open %}
-        <h2>{% trans -%}Transactions{%- endtrans %}</h2>
+        <h2>{% trans %}Transactions{% endtrans %}</h2>
 		{% if active_open and is_admin %}
             <div class="p">
                 <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
@@ -121,13 +121,13 @@
         <table class="table table-condensed">
 	    <thead>
             <tr>
-                <th>{% trans -%}Created{%- endtrans %}</th>
-                <th>{% trans -%}Finalized{%- endtrans %}</th>
-                <th>{% trans -%}Semester{%- endtrans %}</th>
-                <th>{% trans -%}Status{%- endtrans %}</th>
-                <th>{% trans -%}Amount{%- endtrans %}</th>
-                <th>{% trans -%}Transaction{%- endtrans %}</th>
-                <th>{% trans -%}Creator{%- endtrans %}</th>
+                <th>{% trans %}Created{% endtrans %}</th>
+                <th>{% trans %}Finalized{% endtrans %}</th>
+                <th>{% trans %}Semester{% endtrans %}</th>
+                <th>{% trans %}Status{% endtrans %}</th>
+                <th>{% trans %}Amount{% endtrans %}</th>
+                <th>{% trans %}Transaction{% endtrans %}</th>
+                <th>{% trans %}Creator{% endtrans %}</th>
                 <th></th>
             </tr>
 	    </thead>

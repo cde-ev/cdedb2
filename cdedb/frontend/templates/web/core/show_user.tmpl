@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
-    {% trans given_names=data['given_names'], family_name=data['family_name'] -%}
+    {% trans given_names=data['given_names'], family_name=data['family_name'] %}
         {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -18,12 +18,12 @@
     {% if is_relative_admin %}
         {% if not ambience['persona']['is_active'] %}
             <div class="alert alert-info" id="deactivated">
-                {{ util.make_icon('info-sign') }} {% trans -%}The User is deactivated.{%- endtrans %}
+                {{ util.make_icon('info-sign') }} {% trans %}The User is deactivated.{% endtrans %}
             </div>
         {% endif %}
         {% if ambience['persona']['is_archived'] %}
             <div class="alert alert-info" id="archived">
-                {{ util.make_icon('info-sign') }} {% trans -%}The User is archived.{%- endtrans %}
+                {{ util.make_icon('info-sign') }} {% trans %}The User is archived.{% endtrans %}
             </div>
         {% endif %}
     {% endif %}
@@ -80,36 +80,36 @@
     {% endif %}
 
     <div class="float-along">
-        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
         <dl class="dl-horizontal" id="personal-information">
-            <dt>{% trans -%}Name{%- endtrans %}</dt>
+            <dt>{% trans %}Name{% endtrans %}</dt>
             <dd>
                 {{ data['title'] }} {{ util.output_given_displayname(data['given_names'], data ['display_name']) }}
                 {{ data['family_name'] }} {{ data['name_supplement'] }}
             </dd>
             {% if data['birth_name'] %}
-                <dt>{% trans -%}Birth Name{%- endtrans %}</dt>
+                <dt>{% trans %}Birth Name{% endtrans %}</dt>
                 <dd>{{ data['birth_name'] }}</dd>
             {% endif %}
             {% if data['birthday'] %}
-                <dt>{% trans -%}Birthday{%- endtrans %}</dt>
+                <dt>{% trans %}Birthday{% endtrans %}</dt>
                 <dd>{{ data['birthday']|date(lang=lang) }}</dd>
             {% endif %}
             {% if data['gender'] %}
-                <dt>{% trans -%}Gender{%- endtrans %}</dt>
+                <dt>{% trans %}Gender{% endtrans %}</dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string) }}</dd>
             {% endif %}
         </dl>
 
 
-        <h4 class="heading-underline">{% trans -%}Account & Membership{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
         <dl class="dl-horizontal">
-            <dt>{% trans -%}CdEDB-ID{%- endtrans %}</dt>
+            <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
             <dd id="cdedb-id">
                 {{ data['id']|cdedbid }}
             </dd>
             {% if is_relative_admin %}
-                <dt>{% trans -%}Account active{%- endtrans %}</dt>
+                <dt>{% trans %}Account active{% endtrans %}</dt>
                 <dd id="account-active">
                     {{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
                                           titles=[gettext("No"), gettext("Yes")]) }}
@@ -119,7 +119,7 @@
 
         {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.roles %}
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Realms{%- endtrans %}</dt>
+                <dt>{% trans %}Realms{% endtrans %}</dt>
                 <dd id="has-realm">
                     {% set vars = {'any_realm_not': False} %}
                     {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "education"),
@@ -141,7 +141,7 @@
                     {% endif %}
                 </dd>
 
-                <dt>{% trans -%}Admin Privileges{%- endtrans %}</dt>
+                <dt>{% trans %}Admin Privileges{% endtrans %}</dt>
                 <dd id="admin-realms">
                     {% set vars = {'any_privilege': False} %}
                     {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
@@ -157,7 +157,7 @@
                         {% endif %}
                     {% endfor %}
                     {% if not vars['any_privilege'] %}
-                        <i>{% trans -%}None{%- endtrans %}</i>
+                        <i>{% trans %}None{% endtrans %}</i>
                     {% endif %}
                     {% if 'meta_admin' in user.roles and not ambience['persona']['is_archived'] %}
                         {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pencil",
@@ -166,7 +166,7 @@
                 </dd>
 
                 {% if data['notes'] and is_relative_admin %}
-                    <dt>{% trans -%}Admin-Notes{%- endtrans %}</dt>
+                    <dt>{% trans %}Admin-Notes{% endtrans %}</dt>
                     <dd>{{ data['notes']|md|linebreaks }}</dd>
                 {% endif %}
             </dl>
@@ -174,12 +174,12 @@
 
         {% if data['is_cde_realm'] and (data['id'] == user.persona_id or is_relative_admin) %}
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Membership{%- endtrans %}</dt>
+                <dt>{% trans %}Membership{% endtrans %}</dt>
                 <dd id="membership">
                     {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
-                    {% if data['is_member'] %}{% trans -%}CdE-Member{%- endtrans %}{% endif %}
+                    {% if data['is_member'] %}{% trans %}CdE-Member{% endtrans %}{% endif %}
                     {% if data['trial_member'] %}
-                        {% trans -%}(Trialmembership){%- endtrans %}
+                        {% trans %}(Trialmembership){% endtrans %}
                     {% endif %}
                     {% if is_relative_admin %}
                         {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pencil",
@@ -187,7 +187,7 @@
                     {% endif %}
                 </dd>
 
-                <dt>{% trans -%}Balance{%- endtrans %}</dt>
+                <dt>{% trans %}Balance{% endtrans %}</dt>
                     <dd id="balance">
                         {{ data['balance']|money(lang=lang) }}
                         {% if "finance_admin" in user.roles %}
@@ -195,7 +195,7 @@
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
                         {% if data['has_lastschrift'] %}
-                            {% trans -%}and{%- endtrans %}
+                            {% trans %}and{% endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("Direct Debit Authorization"), icon="euro",
                                     readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
@@ -206,20 +206,20 @@
                     </dd>
 
                 {% if data['is_member'] %}
-                    <dt>{% trans -%}Searchability{%- endtrans %}</dt>
+                    <dt>{% trans %}Searchability{% endtrans %}</dt>
                     <dd id="searchability">
                         {{ util.deko_checkbox(checked=data['is_searchable']) }}
                         {% if data['is_searchable'] %}
-                            <td>{% trans -%}Data is visible for other Members.{%- endtrans %}</td>
+                            <td>{% trans %}Data is visible for other Members.{% endtrans %}</td>
                         {% else %}
                             {% if not data['decided_search'] %}
-                                {% trans -%}Not yet decided. (Data is not visible){%- endtrans %}
+                                {% trans %}Not yet decided. (Data is not visible){% endtrans %}
                                 {% if data['id'] == user.persona_id %}
                                     {{ util.href(cdedblink('cde/consent_decision'), gettext("Give Consent"),
                                                  icon="hand-right", aclass="btn btn-xs btn-primary") }}
                                 {% endif %}
                             {% else %}
-                                {% trans -%}Data is not visible.{%- endtrans %}
+                                {% trans %}Data is not visible.{% endtrans %}
                             {% endif %}
                         {% endif %}
                     </dd>
@@ -227,9 +227,9 @@
             </dl>
         {% endif %}
 
-        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         <dl class="dl-horizontal">
-            <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
+            <dt>{% trans %}E-Mail{% endtrans %}</dt>
             <dd id="contact-email">
                 {% if data['username'] %}
                     {{ util.username_mailto(data) }}
@@ -245,19 +245,19 @@
                 {% endif %}
             </dd>
             {% if data['telephone'] %}
-                <dt>{% trans -%}Phone{%- endtrans %}</dt>
+                <dt>{% trans %}Phone{% endtrans %}</dt>
                 <dd id="contact-telephone">
                     {{ util.tel_link(data['telephone']) }}
                 </dd>
             {% endif %}
             {% if data['mobile'] %}
-                <dt>{% trans -%}Mobile Phone{%- endtrans %}</dt>
+                <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
                 <dd id="contact-mobile">
                     {{ util.tel_link(data['mobile']) }}
                 </dd>
             {% endif %}
             {% if data['weblink'] %}
-                <dt>{% trans -%}WWW{%- endtrans %}</dt>
+                <dt>{% trans %}WWW{% endtrans %}</dt>
                 {# TODO maybe add links or so - must be validated before! #}
                 <dd id="contact-weblink">
                     {{ util.web_link(data['weblink']) }}
@@ -267,9 +267,9 @@
 
         {% if (data['address'] or data['address_supplement'] or data['postal_code']
                     or data['location'] or data['country']) %}
-            <h4 class="heading-underline">{% trans -%}Address Information{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Address Information{% endtrans %}</h4>
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Address{%- endtrans %}</dt>
+                <dt>{% trans %}Address{% endtrans %}</dt>
                 <dd id="address">
                     {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
                     {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
@@ -282,7 +282,7 @@
         {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
                 or data['location2'] or data['country2']) %}
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Second Address{%- endtrans %}</dt>
+                <dt>{% trans %}Second Address{% endtrans %}</dt>
                 <dd id="address2">
                     {{ data['address2'] }}{% if data['address2'] %}<br />{% endif %}
                     {{ data['address_supplement2'] }}{% if data['address_supplement2'] %}<br />{% endif %}
@@ -295,33 +295,33 @@
 
         {% if data['specialisation'] or data['affiliation'] or data['timeline'] or data['interests']
                 or data['free_form'] %}
-            <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
             <dl class="dl-horizontal" id="additional">
                 {% if data['specialisation'] %}
-                    <dt>{% trans -%}Specialisation{%- endtrans %}</dt>
+                    <dt>{% trans %}Specialisation{% endtrans %}</dt>
                     <dd>{{ data['specialisation']|md }}</dd>
                 {% endif %}
                 {% if data['affiliation'] %}
-                    <dt>{% trans -%}School, University, …{%- endtrans %}</dt>
+                    <dt>{% trans %}School, University, …{% endtrans %}</dt>
                     <dd>{{ data['affiliation']|md }}</dd>
                 {% endif %}
                 {% if data['timeline'] %}
-                    <dt>{% trans -%}Year(s) of Graduation{%- endtrans %}</dt>
+                    <dt>{% trans %}Year(s) of Graduation{% endtrans %}</dt>
                     <dd>{{ data['timeline']|md }}</dd>
                 {% endif %}
                 {% if data['interests'] %}
-                    <dt>{% trans -%}Interests{%- endtrans %}</dt>
+                    <dt>{% trans %}Interests{% endtrans %}</dt>
                     <dd>{{ data['interests']|md }}</dd>
                 {% endif %}
                 {% if data['free_form'] %}
-                    <dt>{% trans -%}Miscellaneous{%- endtrans %}</dt>
+                    <dt>{% trans %}Miscellaneous{% endtrans %}</dt>
                     <dd>{{ data['free_form']|md }}</dd>
                 {% endif %}
             </dl>
         {% endif %}
 
         {% if past_events %}
-            <h4 class="heading-underline">{% trans -%}Past Events{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
                 {% for pevent_id, pevent in past_events|xdictsort('tempus')|reverse %}
@@ -341,7 +341,7 @@
                                                                                     "pcourse_id": pcourse_id}),
                                                  pcourse['course_name'], readonly='cde' not in user.roles) }}
                                     {%- if pcourse['is_instructor'] %}
-                                        {% trans -%}(Instructor){%- endtrans %}
+                                        {% trans %}(Instructor){% endtrans %}
                                     {%- endif -%}
                                     {% if not loop.last %}<br />{% endif %}
                                 {% endfor %}
@@ -353,7 +353,7 @@
             </table>
         {% endif %}
         {%  if is_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
-            <h4 class="heading-underline">{% trans -%}Copy-Paste Template{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
 IBAN:               {{ meta_info['CdE_Konto_IBAN']|iban }}
@@ -393,11 +393,11 @@ Mitglied.</pre>
                         <div class="col-sm-8">
                             <p class="text-muted">
                                 {% if data['is_active'] %}
-                                    {% trans -%}
+                                    {% trans %}
                                     	Sends an email to this user, which contains a password reset link. This is
                                         basically the same as any non-admin user can achieve using the “Reset Password”
                                         form on the login page.
-                                    {%- endtrans %}
+                                    {% endtrans %}
                                 {% endif %}
                             </p>
                         </div>
@@ -427,17 +427,17 @@ Mitglied.</pre>
                         <div class="col-sm-8">
                             <p class="text-muted">
                                 {% if data['is_active'] %}
-                                    {% trans -%}
+                                    {% trans %}
                                     	Deactivates the account, so the user can no longer log in.
                                         This is intended for exceptional circumstances, e.g. if the
                                         account was compromised.
                                         This can be reversed at any time.
-                                    {%- endtrans %}
+                                    {% endtrans %}
                                 {% else %}
-                                    {% trans -%}
+                                    {% trans %}
                                     	Reactivates the account, so the user can log in again.
                                         Make sure that the cause of the deactivation was removed.
-                                    {%- endtrans %}
+                                    {% endtrans %}
                                 {% endif %}
                             </p>
                         </div>
@@ -470,12 +470,12 @@ Mitglied.</pre>
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                 	Archives the Account. The User can no longer login and most Information is deleted.
                                     Only Information necessary to restore Membership will be retained
                                     (i. e. Name and Past Events attendance).
                                     Other Users can no longer see the Account.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>
@@ -496,9 +496,9 @@ Mitglied.</pre>
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                 	Restores the archives Account. It will be usable again.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>
@@ -522,10 +522,10 @@ Mitglied.</pre>
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                 	Deletes all remaining Information associated with the Account.
                                     The Name will be lost as well. It will no longer be possible to restore the Account.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>

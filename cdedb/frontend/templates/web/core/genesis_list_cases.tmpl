@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Account Requests
-    {%- endtrans %}{% endblock %}
+    {% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), active="True") }}
@@ -65,8 +65,8 @@
                 {% endif %}
             {% else %}
                 <div class="row" id="no-{{realm}}-request">
-                    <p class="text-muted">{% trans realm=REALM_REQUEST_TITLES[realm] -%}
-                        There are currently no {{ realm }} pending for approval.{%- endtrans %}</p>
+                    <p class="text-muted">{% trans realm=REALM_REQUEST_TITLES[realm] %}
+                        There are currently no {{ realm }} pending for approval.{% endtrans %}</p>
                 </div>
             {% endfor %}
         {% endfor %}

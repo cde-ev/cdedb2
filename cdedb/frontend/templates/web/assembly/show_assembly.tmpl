@@ -21,16 +21,16 @@
     </div>
 
     <dl class="dl-horizontal">
-        <dt>{% trans -%}Participation Deadline{%- endtrans %}</dt>
+        <dt>{% trans %}Participation Deadline{% endtrans %}</dt>
         <dd id="participation-deadline">
             {{ ambience['assembly']['signup_end']|datetime(lang=lang) }}
         </dd>
-        <dt>{% trans -%}Participation Status{%- endtrans %}</dt>
+        <dt>{% trans %}Participation Status{% endtrans %}</dt>
         <dd id="participation-status">
             {% if attends %}
-                <strong class="text-success">{% trans -%}You are participating in this assembly.{%- endtrans %}</strong>
+                <strong class="text-success">{% trans %}You are participating in this assembly.{% endtrans %}</strong>
             {% else %}
-                <p><strong class="text-muted">{% trans -%}You are not participating.{%- endtrans %}</strong></p>
+                <p><strong class="text-muted">{% trans %}You are not participating.{% endtrans %}</strong></p>
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
                         {{ util.anti_csrf_token('assembly/signup') }}
@@ -54,7 +54,7 @@
         <div class="row">
             {% if attachments or is_admin %}
                 <div class="col-sm-6">
-                    <h4>{% trans -%}General Files{%- endtrans %}</h4>
+                    <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
                         {% for attachment_id, attachment in attachments|xdictsort("title") %}
                             <li class="hide-hover-container clearfix-after">
@@ -89,7 +89,7 @@
 
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
-                <h4>{% trans -%}Ballot Files{%- endtrans %}</h4>
+                <h4>{% trans %}Ballot Files{% endtrans %}</h4>
                     {% for ballot_id, ballot in ballots|xdictsort('title') %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
@@ -131,11 +131,11 @@
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                     Archives the assembly. The configuration cannot be changed after this.
                                     The private keys used to sign the votes will be deleted from the database.
                                     This should typically be done shortly after all ballots have been conlcuded.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>
@@ -154,10 +154,10 @@
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                     Permanently deletes the assembly including all ballots and attendee information.
                                     This is only possible while no ballots have begun voting.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>

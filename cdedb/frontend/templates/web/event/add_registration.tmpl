@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint = 'strong' %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         New Registration ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -16,9 +16,9 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}
+        {% trans %}
             New Registration
-        {%- endtrans %}
+        {% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -26,7 +26,7 @@
     <form action="{{ cdedblink('event/add_registration') }}" method="POST" id="addregistrationform"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/add_registration') }}
-        <h3 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
         {{ util.form_input_text(name="persona.persona_id", label=gettext("CdEDB-ID"), anid="input-persona-persona_id",
                                 placeholder=gettext("DB-XXXX-X")) }}
         <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -39,7 +39,7 @@
             {{ util.form_input_text(name="reg.real_persona_id", label=gettext("Online CdEDB-ID")) }}
         {% endif %}
 
-        <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
         {{ util.form_input_textarea(name="reg.orga_notes", label=gettext("Orga-Notes"), rows="5") }}
         {{ util.form_input_text(name="reg.payment", label=gettext("Fee paid"), type="date",
                             placeholder="YYYY-MM-DD") }}
@@ -75,7 +75,7 @@
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
             {% if course_choices[track_id]|length > 0 %}
                 <h4>
-                    {% trans -%}Course Choices{%- endtrans %}
+                    {% trans %}Course Choices{% endtrans %}
                     {% if ambience['event']['tracks']|length > 1 %}
                     {{ track['title'] }}
                     {% endif %}

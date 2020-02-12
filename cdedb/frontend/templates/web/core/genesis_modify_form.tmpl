@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Edit Account Request
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -45,7 +45,7 @@
              <noscript>
                 <p class="text-muted">
                     {{ util.make_icon('info-sign') }}
-                    {% trans -%}The following fields are only relevant for Event-Account Requests.{%- endtrans %}
+                    {% trans %}The following fields are only relevant for Event-Account Requests.{% endtrans %}
                 </p>
             </noscript>
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),

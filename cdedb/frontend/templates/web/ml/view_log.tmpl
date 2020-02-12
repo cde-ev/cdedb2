@@ -6,9 +6,9 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title -%}
-    {% trans -%}
+    {% trans %}
         Mailinglists Log
-    {%- endtrans %}
+    {% endtrans %}
     {% if log %}
         [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
     {% endif %}
@@ -26,12 +26,12 @@
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th>{% trans -%}Timestamp{%- endtrans %}</th>
-                <th>{% trans -%}Code{%- endtrans %}</th>
-                <th>{% trans -%}Submitted By{%- endtrans %}</th>
-                <th>{% trans -%}Mailinglist{%- endtrans %}</th>
-                <th>{% trans -%}Affected{%- endtrans %}</th>
-                <th>{% trans -%}Additional Info{%- endtrans %}</th>
+                <th>{% trans %}Timestamp{% endtrans %}</th>
+                <th>{% trans %}Code{% endtrans %}</th>
+                <th>{% trans %}Submitted By{% endtrans %}</th>
+                <th>{% trans %}Mailinglist{% endtrans %}</th>
+                <th>{% trans %}Affected{% endtrans %}</th>
+                <th>{% trans %}Additional Info{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>

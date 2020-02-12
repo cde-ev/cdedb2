@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] -%}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
     	Set Profile Picture for {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -20,7 +20,7 @@
     <div class="row">
         {% if foto %}
             <div class="col-md-5">
-                <h3>{% trans -%}Current Picture{%- endtrans %}</h3>
+                <h3>{% trans %}Current Picture{% endtrans %}</h3>
                 <img src="{{ cdedblink('core/get_foto', {'foto': foto}) }}" class="profilepic img-thumbnail">
 
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -40,16 +40,16 @@
         {% endif %}
 
         <div class="col-md-7">
-            <h3>{% trans -%}Upload new Picture{%- endtrans %}</h3>
+            <h3>{% trans %}Upload new Picture{% endtrans %}</h3>
             <p>
-                {% trans -%}
+                {% trans %}
                 	The Picture must meet the following Criteria:
-                {%- endtrans %}
+                {% endtrans %}
             </p>
             <ul>
-                <li>{% trans -%}JPEG or PNG file{%- endtrans %}</li>
-                <li>{% trans -%}max. 128 kB Filesize{%- endtrans %}</li>
-                <li>{% trans -%}preferably square{%- endtrans %}</li>
+                <li>{% trans %}JPEG or PNG file{% endtrans %}</li>
+                <li>{% trans %}max. 128 kB Filesize{% endtrans %}</li>
+                <li>{% trans %}preferably square{% endtrans %}</li>
             </ul>
             <form action="{{ cdedblink('core/set_foto') }}" method="POST" enctype="multipart/form-data"
                     id="setfotoform">

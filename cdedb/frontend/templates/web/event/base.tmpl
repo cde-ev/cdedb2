@@ -88,7 +88,7 @@
             {{ ambience['event']['title'] }}</h3>
         {{ one_event_links(ambience['event']) }}
     {% else %}
-        <h3 class="heading-sidebar">{% trans -%}Events{%- endtrans %}</h3>
+        <h3 class="heading-sidebar">{% trans %}Events{% endtrans %}</h3>
         <div class="list-group tear-down">
             {% if is_admin %}
                 {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item",

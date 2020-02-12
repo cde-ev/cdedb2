@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=values['given_names'], family_name=values['family_name'] -%}
+    {% trans given_names=values['given_names'], family_name=values['family_name'] %}
         Edit {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -24,7 +24,7 @@
         class="form-horizontal">
         {{ util.anti_csrf_token('core/admin_change_user') }}
         {{ util.input_hidden(name="generation") }}
-        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
@@ -47,7 +47,7 @@
                                     info=gettext("Visible to all Admins, supports %(infolink)s with auto linebreaks.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
-        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ util.form_input_static(label="E-Mail", value=values['username']) }}
         {% if (values['is_cde_realm'] or values['is_event_realm']) and 'event' in admin_bits %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
@@ -58,7 +58,7 @@
         {% endif %}
 
         {% if (values['is_cde_realm'] or values['is_event_realm']) and 'event' in admin_bits %}
-            <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
             {{ util.form_input_text(name="address", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
@@ -66,7 +66,7 @@
             {{ util.form_input_text(name="country", label=gettext("Country")) }}
         {% endif %}
         {% if values['is_cde_realm'] and 'cde' in admin_bits %}
-            <h4 class="heading-underline">{% trans -%}Second Address{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
             {{ util.form_input_text(name="address2", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
@@ -75,7 +75,7 @@
         {% endif %}
 
         {% if values['is_cde_realm'] and 'cde' in admin_bits %}
-            <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
                                         info=gettext("Supports %(infolink)s.")|format(
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}

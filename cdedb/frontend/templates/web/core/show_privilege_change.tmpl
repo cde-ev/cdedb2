@@ -2,9 +2,9 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=persona['given_names'], family_name=persona['family_name'] -%}
+    {% trans given_names=persona['given_names'], family_name=persona['family_name'] %}
     	Privilege Change for {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -14,11 +14,11 @@
 {% endblock %}
 
 {% block content %}
-    {% trans link=util.persona_anchor(persona) -%}
+    {% trans link=util.persona_anchor(persona) %}
         {{ link }} will gain/lose the following admin privileges:
-    {%- endtrans %}
+    {% endtrans %}
 
-    <h4 class="heading-underline">{% trans -%}Admin Privileges{%- endtrans %}</h4>
+    <h4 class="heading-underline">{% trans %}Admin Privileges{% endtrans %}</h4>
     <div class="diff-view" id="diff-view">
         {% for privilege in ("is_meta_admin",
                              "is_core_admin",

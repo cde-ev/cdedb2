@@ -6,16 +6,16 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	{{ title }} Log
-    {%- endtrans %}
+    {% endtrans %}
     {% if log %}
         [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
     {% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Log{%- endtrans %}
+        {% trans %}Log{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
         {% if log %}
         [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
@@ -36,11 +36,11 @@
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th>{% trans -%}Timestamp{%- endtrans %}</th>
-                <th>{% trans -%}Code{%- endtrans %}</th>
-                <th>{% trans -%}Submitted By{%- endtrans %}</th>
-                <th>{% trans -%}Affected{%- endtrans %}</th>
-                <th>{% trans -%}Additional Info{%- endtrans %}</th>
+                <th>{% trans %}Timestamp{% endtrans %}</th>
+                <th>{% trans %}Code{% endtrans %}</th>
+                <th>{% trans %}Submitted By{% endtrans %}</th>
+                <th>{% trans %}Affected{% endtrans %}</th>
+                <th>{% trans %}Additional Info{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>

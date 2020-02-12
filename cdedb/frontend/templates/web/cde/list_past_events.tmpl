@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{% trans -%}Past Events (long){%- endtrans %}{% endblock %}
+{% block title %}{% trans %}Past Events (long){% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active="True") }}
@@ -35,16 +35,16 @@
                     {% if not institution_id %}({{ stats[pevent_id]['institution_moniker'] }}){% endif %}
                     {% if is_admin %}
                         <small class="text-muted nowrap">
-                            {% trans count=stats[pevent_id]['courses'] -%}
+                            {% trans count=stats[pevent_id]['courses'] %}
                                 {{ count }} Course
                             {%- pluralize count -%}
                                 {{ count }} Courses
-                            {%- endtrans %},
-                            {% trans count=stats[pevent_id]['participants'] -%}
+                            {% endtrans %},
+                            {% trans count=stats[pevent_id]['participants'] %}
                                 {{ count }} Participant
                             {%- pluralize count -%}
                                 {{ count }} Participants
-                            {%- endtrans %}
+                            {% endtrans %}
                         </small>
                     {% endif %}
                 </li>

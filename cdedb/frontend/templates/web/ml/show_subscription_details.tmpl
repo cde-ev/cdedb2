@@ -7,8 +7,8 @@
 {% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} – Advanced Management
-    {%- endtrans %}
+    {% trans title=ambience['mailinglist']['title'] %}{{ title }} – Advanced Management
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -20,7 +20,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Advanced Management{%- endtrans %}
+        {% trans %}Advanced Management{% endtrans %}
         <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -28,12 +28,12 @@
 
     <div class="row">
         <div class="col-md-6">
-            <h2>{% trans -%}Forced Subscribers{%- endtrans %} [{{ subscription_overrides|length }}]</h2>
+            <h2>{% trans %}Forced Subscribers{% endtrans %} [{{ subscription_overrides|length }}]</h2>
                 <p class="text-muted">
                     {{ util.make_icon('info-sign') }}
-                    {% trans -%}
+                    {% trans %}
                         Subscribed users who are protected from automatic unsubscription when loosing their means to acces the list.
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             <form action="{{ cdedblink('ml/add_subscription_override') }}" method="POST"
                   id="addmodsubscriberform" class="p">
@@ -80,12 +80,12 @@
         </div>
 
         <div class="col-md-6">
-            <h2>{% trans -%}Blocked Users{%- endtrans %} [{{ unsubscription_overrides|length }}]</h2>
+            <h2>{% trans %}Blocked Users{% endtrans %} [{{ unsubscription_overrides|length }}]</h2>
                 <p class="text-muted">
                     {{ util.make_icon('info-sign') }}
-                    {% trans -%}
+                    {% trans %}
                         Users who are blocked from subscribing and requesting subscription. They can see that they are blocked.
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             <form action="{{ cdedblink('ml/add_unsubscription_override') }}" method="POST"
                   id="addmodunsubscriberform" class="p">
@@ -131,12 +131,12 @@
         </div>
     </div>
 
-    <h2>{% trans -%}Whitelist{%- endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
+    <h2>{% trans %}Whitelist{% endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-sign') }}
-            {% trans -%}
+            {% trans %}
                 Sender addresses that are not moderated.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     <form action="{{ cdedblink('ml/add_whitelist') }}" method="POST"
           id="addwhitelistform" class="p">
@@ -181,9 +181,9 @@
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans link=util.href(docurl("Workflows", "mailinglist-management"), gettext("subscription state"), title=gettext("Summary of subscription states")) -%}
+                    {% trans link=util.href(docurl("Workflows", "mailinglist-management"), gettext("subscription state"), title=gettext("Summary of subscription states")) %}
                         A download csv file of all users associated with this mailinglist (including name, email address and {{ link }}).
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             </div>
         </div>
