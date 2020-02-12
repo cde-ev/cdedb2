@@ -2,6 +2,7 @@
 
 import unittest
 import sys
+from test.common import MyTextTestResult
 
 if __name__ == "__main__":
     pattern = 'test*.py'
@@ -11,5 +12,5 @@ if __name__ == "__main__":
     loader = unittest.TestLoader()
     tests = loader.discover('./test/', pattern=pattern)
     unittest.installHandler()
-    testRunner = unittest.runner.TextTestRunner(verbosity=2)
+    testRunner = unittest.runner.TextTestRunner(verbosity=2, resultclass=MyTextTestResult)
     testRunner.run(tests)
