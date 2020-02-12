@@ -334,7 +334,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Nein", div='account-active', exact=True)
 
-    @as_users("anton")
+    @as_users("vera")
     def test_modify_membership(self, user):
         self.admin_view_profile('berta')
         self.assertPresence("CdE-Mitglied", div='membership')

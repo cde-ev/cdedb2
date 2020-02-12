@@ -1324,7 +1324,6 @@ class CoreFrontend(AbstractFrontend):
                 if not lastschrift['revoked_at']:
                     active_permits.append(lastschrift['id'])
             if active_permits:
-                active_transactions = []
                 transaction_ids = self.cdeproxy.list_lastschrift_transactions(
                     rs, lastschrift_ids=active_permits,
                     stati=(const.LastschriftTransactionStati.issued,))
