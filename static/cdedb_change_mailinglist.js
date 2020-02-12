@@ -13,9 +13,11 @@
          */
         function update_view() {
             // Calculate visibility of event/assembly select boxes
+            // numeric values from cdedb.database.constants.MailinglistTypes
+            // 20 = participant list; 21 = orga list; 30 = participant list
             var visible = {
                 'event_id':     (fields['ml_type'].val() == 20 || fields['ml_type'].val() == 21),
-                'assembly_id':  (fields['ml_type'].val() == 30)
+                'assembly_id':  (fields['ml_type'].val() == 30) // TODO: why 31 not listed here?
             };
 
             // Change visibility of event/assembly select boxes and clear boxes
