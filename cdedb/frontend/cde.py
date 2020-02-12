@@ -1011,12 +1011,12 @@ class CdEFrontend(AbstractUserFrontend):
                     problems.append((
                         'persona_id',
                         ValueError(n_("Persona is not in CdE realm."))))
-                if not re.search(diacritic_patterns(family_name),
+                if not re.search(diacritic_patterns(re.escape(family_name)),
                                  persona['family_name'], flags=re.IGNORECASE):
                     problems.append(('family_name',
                                      ValueError(
                                          n_("Family name doesn’t match."))))
-                if not re.search(diacritic_patterns(given_names),
+                if not re.search(diacritic_patterns(re.escape(given_names)),
                                  persona['given_names'], flags=re.IGNORECASE):
                     problems.append(('given_names',
                                      ValueError(

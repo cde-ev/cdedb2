@@ -1002,6 +1002,16 @@ class TestCdEFrontend(FrontendTest):
                             "(Überwiesen am 17.03.2019)")
 
     @as_users("farin")
+    def test_money_transfers_regex(self, user):
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Überweisungen eintragen'})
+        self.assertTitle("Überweisungen eintragen")
+        f = self.response.forms['transfersform']
+        f['transfers'] = '"10";"DB-1-9";"Fiese[";"Zeichen{";"überall("'
+        self.submit(f, check_notification=False)
+        # Here the active regex chars where successfully neutralised
+
+    @as_users("farin")
     def test_money_transfers_file(self, user):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})

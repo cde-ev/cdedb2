@@ -1369,6 +1369,17 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Bereits bezahlter Betrag 451,00 €")
 
     @as_users("garcia")
+    def test_batch_fee_regex(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/batchfee'})
+        self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
+        f = self.response.forms['batchfeesform']
+        f['fee_data'] = "666.66;DB-1-9;Fiese[;Zeichen{;01.04.18;überall("
+        self.submit(f, check_notification=False)
+        # Here the active regex chars where successfully neutralised
+
+    @as_users("garcia")
     def test_registration_query(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
