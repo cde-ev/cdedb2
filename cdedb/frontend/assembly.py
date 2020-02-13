@@ -378,16 +378,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Provides a tex-snipped with all attendes of an assembly."""
         attendees = self._get_list_attendees_data(rs, assembly_id)
         if not attendees:
-            return self.redirect(rs, "assembly/list_attendees")
-        tex = self.fill_template(rs, "tex", "list_attendees", {'attendees': attendees})
-        file = self.send_file(
-            rs, data=tex, inline=False,
-            filename="{}_attendees.tex".format(rs.ambience['assembly']['title']))
-        if file:
-            return file
-        else:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "assembly/list_attendees")
+        tex = self.fill_template(
+            rs, "tex", "list_attendees", {'attendees': attendees})
+        return self.send_file(
+            rs, data=tex, inline=False, filename="Anwesenheitsliste.tex")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("ack_conclude", "bool"))
