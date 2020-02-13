@@ -138,10 +138,7 @@ class BackendShim(ProxyShim):
 
 
 class MyTextTestResult(unittest.TextTestResult):
-    """Subclasing the TestResult object to fix the CLI reporting.
-
-    If
-    """
+    """Subclasing the TestResult object to fix the CLI reporting."""
     def __init__(self, *args, **kwargs):
         super(MyTextTestResult, self).__init__(*args, **kwargs)
         self._subTestErrors = []
@@ -170,14 +167,14 @@ class MyTextTestResult(unittest.TextTestResult):
         if self._subTestErrors:
             l = len(self._subTestErrors)
             if self.showAll:
-                s = "ERROR" + "({})".format(l) if l > 1 else ""
+                s = "ERROR" + ("({})".format(l) if l > 1 else "")
             else:
                 s = "E" * l
             output.append(s)
         if self._subTestFailures:
-            l = len(self._subTestErrors)
+            l = len(self._subTestFailures)
             if self.showAll:
-                s = "FAIL" + "({})".format(l) if l > 1 else ""
+                s = "FAIL" + ("({})".format(l) if l > 1 else "")
             else:
                 s = "F" * l
             output.append(s)
@@ -188,12 +185,12 @@ class MyTextTestResult(unittest.TextTestResult):
             else:
                 s = "s" * len(self._subTestSkips)
             output.append(s)
-        output = ", ".join(output)
-        if self.showAll:
-            self.stream.writeln(output)
-        else:
-            self.stream.write(output)
-            self.stream.flush()
+        if output:
+            if self.showAll:
+                self.stream.writeln(", ".join(output))
+            else:
+                self.stream.write("".join(output))
+                self.stream.flush()
 
     def addSkip(self, test, reason):
         # Purposely override the parents method, to not print the skip here.

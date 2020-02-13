@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import unittest
-from unittest.loader import _FailedTest
 import sys
 from test.common import MyTextTestResult
 
@@ -25,7 +24,7 @@ if __name__ == "__main__":
         # unittest.TestCase, or a single _FailedTest instance in case of an
         # import error.
         for test_class in test_file:
-            if isinstance(test_class, _FailedTest):
+            if not hasattr(test_class, '__iter__'):
                 print("Failed to import tests from {}.py".format(
                     str(test_class).split()[0]))
                 continue
@@ -33,17 +32,18 @@ if __name__ == "__main__":
             # test methods of the test classes in this file.
             for test_case in test_class:
                 singular_tests.append(test_case)
-    target = []
+    targets = []
     for test in singular_tests:
         parts = str(test).split()
         if parts[0] == name:
             if filename is None or filename in str(test):
-                target.append(test)
-    if target is None:
+                targets.append(test)
+    if not targets:
         print("No test found!")
         sys.exit()
     suite = unittest.TestSuite()
-    suite.addTests(target)
+    suite.addTests(targets)
     unittest.installHandler()
-    testRunner = unittest.runner.TextTestRunner(verbosity=2, resultclass=MyTextTestResult)
+    testRunner = unittest.runner.TextTestRunner(
+        verbosity=2, resultclass=MyTextTestResult)
     testRunner.run(suite)

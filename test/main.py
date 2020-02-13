@@ -12,5 +12,6 @@ if __name__ == "__main__":
     loader = unittest.TestLoader()
     tests = loader.discover('./test/', pattern=pattern)
     unittest.installHandler()
-    testRunner = unittest.runner.TextTestRunner(verbosity=2, resultclass=MyTextTestResult)
+    testRunner = unittest.runner.TextTestRunner(
+        verbosity=2, resultclass=MyTextTestResult)
     testRunner.run(tests)
