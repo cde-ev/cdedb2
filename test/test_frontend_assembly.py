@@ -76,7 +76,7 @@ class TestAssemblyFrontend(FrontendTest):
             ins = everyone
             out = admins
         # assembly admins
-        if user == USER_DICT['werner']:
+        elif user == USER_DICT['werner']:
             ins = everyone + admins
             out = []
 
@@ -175,7 +175,7 @@ class TestAssemblyFrontend(FrontendTest):
             ins = everyone
             out = admin
         # assembly admin
-        if user == USER_DICT['werner']:
+        elif user == USER_DICT['werner']:
             ins = everyone + admin
             out = []
 

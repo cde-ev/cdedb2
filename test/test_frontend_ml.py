@@ -31,7 +31,7 @@ class TestMlFrontend(FrontendTest):
             ins = everyone + no_admin
             out = admin
         # ml admin
-        if user == USER_DICT['nina']:
+        elif user == USER_DICT['nina']:
             ins = everyone + admin
             out = no_admin
 
@@ -136,7 +136,7 @@ class TestMlFrontend(FrontendTest):
             ins = everyone
             out = moderator
         # moderator or ml-admin
-        if user in [USER_DICT['berta'], USER_DICT['nina']]:
+        elif user in [USER_DICT['berta'], USER_DICT['nina']]:
             ins = everyone + moderator
             out = []
 

@@ -38,17 +38,18 @@ class TestCdEFrontend(FrontendTest):
             ins = everyone + searchable
             out = not_searchable + cde_admin + finance_admin
         # not-searchable member
-        if user == USER_DICT['martin']:
+        elif user == USER_DICT['martin']:
             ins = everyone + not_searchable
             out = searchable + cde_admin + finance_admin
         # cde but not finance admin
-        if user == USER_DICT['vera']:
+        elif user == USER_DICT['vera']:
             ins = everyone + searchable + cde_admin
             out = not_searchable + finance_admin
         # cde and finance admin
-        if user == USER_DICT['farin']:
+        elif user == USER_DICT['farin']:
             ins = everyone + searchable + cde_admin + finance_admin
             out = not_searchable
+
         for s in ins:
             self.assertPresence(s, div='sidebar')
         for s in out:

@@ -43,7 +43,7 @@ class TestEventFrontend(FrontendTest):
             ins = everyone
             out = admin
         # event admins
-        if user == USER_DICT['annika']:
+        elif user == USER_DICT['annika']:
             ins = everyone + admin
             out = []
 
@@ -243,15 +243,15 @@ class TestEventFrontend(FrontendTest):
             ins = everyone + not_registrated
             out = registrated + orga
         # registrated
-        if user == USER_DICT['emilia']:
+        elif user == USER_DICT['emilia']:
             ins = everyone + registrated
             out = not_registrated + orga
         # orga
-        if user == USER_DICT['garcia']:
+        elif user == USER_DICT['garcia']:
             ins = everyone + registrated + orga
             out = not_registrated
         # event admin (annika is not registrated)
-        if user == USER_DICT['annika']:
+        elif user == USER_DICT['annika']:
             ins = everyone + not_registrated + orga
             out = registrated
 

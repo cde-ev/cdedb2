@@ -102,15 +102,15 @@ class TestCoreFrontend(FrontendTest):
             ins = everyone
             out = genesis + core_admin + meta_admin
         # admin of a realm with genesis cases
-        if user in [USER_DICT['annika'], USER_DICT['nina']]:
+        elif user in [USER_DICT['annika'], USER_DICT['nina']]:
             ins = everyone + genesis
             out = core_admin + meta_admin
         # core admin
-        if user == USER_DICT['vera']:
+        elif user == USER_DICT['vera']:
             ins = everyone + genesis + core_admin
             out = meta_admin
         # meta admin
-        if user == USER_DICT['martin']:
+        elif user == USER_DICT['martin']:
             ins = everyone + meta_admin
             out = genesis + core_admin
 
