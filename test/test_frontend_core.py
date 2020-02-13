@@ -88,25 +88,36 @@ class TestCoreFrontend(FrontendTest):
     @as_users("annika", "martin", "nina", "vera", "werner")
     def test_navigation(self, user):
         self.assertTitle("CdE-Datenbank")
-        s = "Index Übersicht Meine Daten Administratorenübersicht "
-        genesis = "Accountanfragen "
-        meta = "Admin-Änderungen "
+        everyone = ["Index", "Übersicht", "Meine Daten",
+                    "Administratorenübersicht"]
+        genesis = ["Accountanfragen"]
+        core_admin = ["Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
+                      "Account-Log", "Nutzerdaten-Log", "Metadaten"]
+        meta_admin = ["Admin-Änderungen"]
+        ins = []
+        out = everyone + genesis + core_admin + meta_admin
 
         # admin of a realm without genesis cases
         if user == USER_DICT['werner']:
-            s = s
+            ins = everyone
+            out = genesis + core_admin + meta_admin
         # admin of a realm with genesis cases
         if user in [USER_DICT['annika'], USER_DICT['nina']]:
-            s = s + genesis
+            ins = everyone + genesis
+            out = core_admin + meta_admin
         # core admin
         if user == USER_DICT['vera']:
-            s = (s + "Nutzer verwalten Archivsuche Änderungen prüfen " +
-                 genesis + "Account-Log Nutzerdaten-Log Metadaten")
+            ins = everyone + genesis + core_admin
+            out = meta_admin
         # meta admin
         if user == USER_DICT['martin']:
-            s = s + meta
+            ins = everyone + meta_admin
+            out = genesis + core_admin
 
-        self.assertPresence(s, div='sidebar', exact=True)
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
 
     @as_users("anton", "berta", "charly", "daniel", "emilia", "ferdinand",
               "garcia", "inga", "janis", "kalif", "martin", "nina",
