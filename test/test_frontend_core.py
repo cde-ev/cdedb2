@@ -1188,13 +1188,13 @@ class TestCoreFrontend(FrontendTest):
         self.login(user)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
-        self.assertPresence("zelda@example.cde", div='request-1')
+        self.assertPresence("zelda@example.cde", div='request-1001')
         self.assertNonPresence("zorro@example.cde")
         self.assertNonPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
         self.assertPresence(
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.",
             div='no-ml-request')
-        self.traverse({'href': '/core/genesis/1/modify'})
+        self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['username'] = 'zorro@example.cde'
@@ -1209,7 +1209,7 @@ class TestCoreFrontend(FrontendTest):
             "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.",
             div='no-event-request')
         self.assertNonPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
-        self.traverse({'href': '/core/genesis/1/modify'})
+        self.traverse({'href': '/core/genesis/1001/modify'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = 'event'
         self.submit(f)
@@ -1219,7 +1219,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.",
             div='no-ml-request')
-        self.traverse({'href': '/core/genesis/1/show'})
+        self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
@@ -1265,7 +1265,7 @@ class TestCoreFrontend(FrontendTest):
         self.login(user)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
-        self.assertPresence("zelda@example.cde", div='request-1')
+        self.assertPresence("zelda@example.cde", div='request-1001')
         self.assertPresence(
             "Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.",
             div='no-event-request')

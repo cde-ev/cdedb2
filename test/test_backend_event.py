@@ -2559,21 +2559,21 @@ class TestEventBackend(BackendTest):
             'persona_id': 2,
             'real_persona_id': None,
             'amount_paid': decimal.Decimal(42)}
-        stored_data['event.registration_parts'][16] = {
-            'id': 16,
+        stored_data['event.registration_parts'][1001] = {
+            'id': 1001,
             'is_reserve': False,
             'lodgement_id': 1001,
             'part_id': 1001,
             'registration_id': 1001,
             'status': 1}
-        stored_data['event.registration_tracks'][16] = {
+        stored_data['event.registration_tracks'][1001] = {
             'course_id': 1001,
             'course_instructor': None,
-            'id': 16,
+            'id': 1001,
             'track_id': 1001,
             'registration_id': 1001}
-        stored_data['event.orgas'][5] = {
-            'event_id': 1, 'id': 5, 'persona_id': 2}
+        stored_data['event.orgas'][1001] = {
+            'event_id': 1, 'id': 1001, 'persona_id': 2}
         stored_data['event.courses'][1001] = {
             'description': 'Spontankurs',
             'event_id': 1,
@@ -2586,15 +2586,15 @@ class TestEventBackend(BackendTest):
             'nr': 'φ',
             'shortname': 'Spontan',
             'title': 'Spontankurs'}
-        stored_data['event.course_segments'][13] = {
-            'course_id': 1001, 'id': 13, 'track_id': 1001, 'is_active': True}
+        stored_data['event.course_segments'][1001] = {
+            'course_id': 1001, 'id': 1001, 'track_id': 1001, 'is_active': True}
         stored_data['event.course_choices'][27] = {
             'course_id': 5, 'id': 27, 'track_id': 3, 'rank': 0, 'registration_id': 4}
         del stored_data['event.course_choices'][28]
-        stored_data['event.course_choices'][37] = {
-            'course_id': 1001, 'id': 37, 'track_id': 1001, 'rank': 0, 'registration_id': 1001}
-        stored_data['event.course_choices'][36] = {
-            'course_id': 4, 'id': 36, 'track_id': 3, 'rank': 1, 'registration_id': 4}
+        stored_data['event.course_choices'][1002] = {
+            'course_id': 1001, 'id': 1002, 'track_id': 1001, 'rank': 0, 'registration_id': 1001}
+        stored_data['event.course_choices'][1001] = {
+            'course_id': 4, 'id': 1001, 'track_id': 3, 'rank': 1, 'registration_id': 4}
         stored_data['event.field_definitions'][1001] = {
             'association': 1,
             'entries': [['good', 'good'],
@@ -2604,10 +2604,10 @@ class TestEventBackend(BackendTest):
             'field_name': 'behaviour',
             'id': 1001,
             'kind': 1}
-        stored_data['event.questionnaire_rows'][7] = {
+        stored_data['event.questionnaire_rows'][1001] = {
             'event_id': 1,
             'field_id': 1001,
-            'id': 7,
+            'id': 1001,
             'info': 'Wie brav wirst Du sein',
             'input_size': None,
             'pos': 1,

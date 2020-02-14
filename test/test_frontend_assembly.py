@@ -374,7 +374,7 @@ class TestAssemblyFrontend(FrontendTest):
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         self.response = saved_response
-        f = self.response.forms['removeattachmentform2']
+        f = self.response.forms['removeattachmentform1002']
         f['attachment_ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
