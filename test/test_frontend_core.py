@@ -1379,7 +1379,7 @@ class TestCoreFrontend(FrontendTest):
         # Submit once
         self.submit(f)
         # Submit twice
-        self.submit(f)
+        self.submit(f, check_notification=False)
         self.assertPresence("Bestätigungsmail erneut versendet.",
                             div="notifications")
         self.get('/')

@@ -1498,8 +1498,8 @@ def reconnoitre_ambience(obj, rs):
               'persona', t),
         Scout(lambda anid: obj.coreproxy.get_privilege_change(rs, anid), 'privilege_change_id',
               'privilege_change', t),
-        # no case_id for genesis cases since they are special and cause
-        # PrivilegeErrors
+        Scout(lambda anid: obj.coreproxy.genesis_get_case(rs, anid),
+              'genesis_case_id', 'genesis_case', t),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift(rs, anid),
               'lastschrift_id', 'lastschrift', t),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
