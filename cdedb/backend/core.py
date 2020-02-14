@@ -843,8 +843,6 @@ class CoreBackend(AbstractBackend):
 
         This has to be approved by another admin.
 
-        For security reasons, we require a password here.
-
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
@@ -869,27 +867,23 @@ class CoreBackend(AbstractBackend):
             # see also cdedb.frontend.templates.core.change_privileges
             # and change_privileges in cdedb.frontend.core
 
+            errormsg = n_("User does not fit the requirements for this"
+                          " admin privilege.")
             realms = {"cde", "event", "ml", "assembly"}
             for realm in realms:
                 if not persona['is_{}_realm'.format(realm)]:
                     if data.get('is_{}_admin'.format(realm)):
-                        raise ValueError(n_(
-                            "User does not fit the requirements for this "
-                            "admin privilege."))
+                        raise ValueError(errormsg)
 
             if data.get('is_finance_admin'):
                 if (data.get('is_cde_admin') is False
                     or (not persona['is_cde_admin']
                         and not data.get('is_cde_admin'))):
-                    raise ValueError(n_(
-                        "User does not fit the requirements for this "
-                        "admin privilege."))
+                    raise ValueError(errormsg)
 
             if data.get('is_core_admin') or data.get('is_meta_admin'):
                 if not persona['is_cde_realm']:
-                    raise ValueError(n_(
-                        "User does not fit the requirements for this "
-                        "admin privilege."))
+                    raise ValueError(errormsg)
 
             self.core_log(
                 rs, const.CoreLogCodes.privilege_change_pending,
@@ -905,17 +899,18 @@ class CoreBackend(AbstractBackend):
 
         This has to be done by a different admin.
 
-        For security reasons we require the reviewers password here.
+        If the user had no admin privileges previously, we require a password
+        reset afterwards.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type case_id: int
         :type case_status: int
         :rtype: int
-        :returns: default return code
+        :returns: default return code. A neegative return indicates, that the
+            users password was invalidated and will need to be changed.
         """
         case_id = affirm("id", case_id)
         case_status = affirm("enum_privilegechangestati", case_status)
-
 
         data = {
             "id": case_id,

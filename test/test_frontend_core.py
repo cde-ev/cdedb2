@@ -706,7 +706,7 @@ class TestCoreFrontend(FrontendTest):
         other_user_name = "berta"
         self.admin_view_profile(other_user_name)
         f = self.response.forms["invalidatepasswordform"]
-        f["invalidate_password_auth"] = USER_DICT[other_user_name]["username"]
+        f["confirm_username"] = USER_DICT[other_user_name]["username"]
         self.submit(f)
         self.logout()
         self.login(USER_DICT[other_user_name])
@@ -793,8 +793,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': "/core/privileges/list"})
         self.traverse({'description': new_admin["given_names"] + " " +
                                       new_admin["family_name"]})
-        f = self.response.forms["decideprivilegechangeform"]
-        self.submit(f, button="ack")
+        f = self.response.forms["ackprivilegechangeform"]
+        self.submit(f)
         self.assertPresence("Änderung wurde übernommen.", "notifications")
         if new_password:
             mail = self.fetch_mail()[0]
@@ -818,8 +818,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': "/core/privileges/list"},
                       {'description': new_admin["given_names"] + " " +
                                       new_admin["family_name"]})
-        f = self.response.forms["decideprivilegechangeform"]
-        self.submit(f, button="nack")
+        f = self.response.forms["nackprivilegechangeform"]
+        self.submit(f)
         self.assertPresence("Änderung abgelehnt.", "notifications")
 
     @as_users("vera")

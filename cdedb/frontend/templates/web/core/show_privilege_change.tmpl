@@ -9,7 +9,7 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes")) }}
-{{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': case['id']}),
+{{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': ambience['privilege_change']['id']}),
         "{} {}".format(persona['given_names'], persona['family_name']), icon="user", active="True") }}
 {% endblock %}
 
@@ -27,28 +27,35 @@
                              "is_event_admin",
                              "is_ml_admin",
                              "is_assembly_admin") %}
-            {% if case[privilege] is not none %}
+            {% if ambience['privilege_change'][privilege] is not none %}
                 <div class="row">
                     <label class="col-sm-3">
                         {{ gettext(privilege) }}
                     </label>
                     <div class="col-sm-4">
-                        {{ util.deko_checkbox(case[privilege], anid="{}-display".format(privilege),
+                        {{ util.deko_checkbox(ambience['privilege_change'][privilege], anid="{}-display".format(privilege),
                                               titles=[gettext("to revoke"), gettext("to grant")]) }}
                     </div>
                 </div>
             {% endif %}
         {% endfor %}
     </div>
-    {% if case["notes"] %}
-        <p class="textbox">{{ case["notes"] }}</p>
+    {% if ambience['privilege_change']["notes"] %}
+        <p class="textbox">{{ ambience['privilege_change']["notes"] }}</p>
     {% endif %}
 
-    <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="decideprivilegechangeform" style="display: inline;">
+    {% if ambience['privilege_change']["submitted_by"] != user.persona_id and
+            (ambience['privilege_change']["is_meta_admin"] is none
+             or ambience['privilege_change']["persona_id"] != user.persona_id) %}
+        <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="ackprivilegechangeform" style="display: inline;">
+            {{ util.anti_csrf_token('core/decide_privilege_change') }}
+            {{ util.input_hidden(name="ack", value="True") }}
+            {{ util.input_submit(value=gettext("Confirm Privilege Change"), aclass="btn btn-success") }}
+        </form>
+    {% endif %}
+    <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="nackprivilegechangeform" style="display: inline;">
         {{ util.anti_csrf_token('core/decide_privilege_change') }}
-        {% if case["submitted_by"] != user.persona_id and (case["is_meta_admin"] is none or case["persona_id"] != user.persona_id) %}
-            {{ util.input_submit(name="ack", value=gettext("Confirm Privilege Change"), aclass="btn btn-success") }}
-        {% endif %}
-        {{ util.input_submit(name="nack", value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban-circle") }}
+        {{ util.input_hidden(name="ack", value="False") }}
+        {{ util.input_submit(value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban-circle") }}
     </form>
 {% endblock %}

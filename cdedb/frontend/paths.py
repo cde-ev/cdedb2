@@ -158,7 +158,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
             sub('/privileges', (
                 rule("/list", methods=_GET,
                      endpoint="list_privilege_changes"),)),
-            sub('/privileges/<int:case_id>', (
+            sub('/privileges/<int:privilege_change_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_privilege_change"),
                 rule("/decide", methods=_POST,
