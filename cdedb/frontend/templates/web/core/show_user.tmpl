@@ -113,7 +113,7 @@
             {% endif %}
         </dl>
 
-        {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.roles %}
+        {% if data['id'] == user.persona_id or is_relative_admin or "meta_admin" in user.admin_views %}
             <dl class="dl-horizontal">
                 <dt>{% trans -%}Realms{%- endtrans %}</dt>
                 <dd>
@@ -129,7 +129,7 @@
                             {% set tmp = vars.update({'any_realm_not': True}) %}
                         {% endif %}
                     {% endfor %}
-                    {% if 'core_admin' in user.roles
+                    {% if 'core_user' in user.admin_views
                             and vars['any_realm_not']
                             and not ambience['persona']['is_archived'] %}
                         {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pencil",
@@ -155,7 +155,7 @@
                     {% if not vars['any_privilege'] %}
                         <i>{% trans -%}None{%- endtrans %}</i>
                     {% endif %}
-                    {% if 'meta_admin' in user.roles and not ambience['persona']['is_archived'] %}
+                    {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
                         {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pencil",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
@@ -186,7 +186,7 @@
                 <dt>{% trans -%}Balance{%- endtrans %}</dt>
                     <dd>
                         {{ data['balance']|money(lang=lang) }}
-                        {% if "finance_admin" in user.roles %}
+                        {% if "finance" in user.admin_views %}
                             {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pencil",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -194,8 +194,9 @@
                             {% trans -%}and{%- endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("Direct Debit Authorization"), icon="euro",
-                                    readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
-                        {% elif "finance_admin" in user.roles %}
+                                    readonly=(data['id'] != user.persona_id
+                                              and "finance" not in user.admin_views)) }}
+                        {% elif "finance" in user.admin_views %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                     gettext("New Direct Debit Authorization …"), icon="euro") }}
                         {% endif %}
@@ -342,7 +343,7 @@
             </tbody>
             </table>
         {% endif %}
-        {%  if is_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
+        {%  if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
             <h4 class="heading-underline">{% trans -%}Copy-Paste Template{%- endtrans %}</h4>
             <pre>
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
@@ -363,78 +364,74 @@ Mitglied.</pre>
         {% endif %}
     </div>
 
-    {% if data['id'] != user.persona_id and (is_relative_admin or "core_admin" in user.roles) %}
+    {% if data['id'] != user.persona_id and is_relative_admin %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
-                {% if data['id'] != user.persona_id %}
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <div class="p">
-                                {% if data['is_active'] %}
-                                    <form action="{{ cdedblink('core/admin_send_password_reset_link') }}"
-                                          method="POST" id="sendpasswordresetform" style="display: inline;">
-                                        {{ util.anti_csrf_token('core/admin_send_password_reset_link') }}
-                                        {{ util.input_submit(value=gettext("Send Password Reset Link"), icon="send",
-                                                aclass="btn btn-sm btn-warning") }}
-                                    </form>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-sm-8">
-                            <p class="text-muted">
-                                {% if data['is_active'] %}
-                                    {% trans -%}
-                                    	Sends an email to this user, which contains a password reset link. This is
-                                        basically the same as any non-admin user can achieve using the “Reset Password”
-                                        form on the login page.
-                                    {%- endtrans %}
-                                {% endif %}
-                            </p>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            {% if data['is_active'] %}
+                                <form action="{{ cdedblink('core/admin_send_password_reset_link') }}"
+                                      method="POST" id="sendpasswordresetform" style="display: inline;">
+                                    {{ util.anti_csrf_token('core/admin_send_password_reset_link') }}
+                                    {{ util.input_submit(value=gettext("Send Password Reset Link"), icon="send",
+                                            aclass="btn btn-sm btn-warning") }}
+                                </form>
+                            {% endif %}
                         </div>
                     </div>
-                {% endif %}
-                {% if is_relative_admin %}
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <div class="p">
-                                {% if data['is_active'] %}
-                                    <form action="{{ cdedblink('core/toggle_activity', {'activity': False}) }}"
-                                          method="POST" id="activitytoggleform" style="display: inline;">
-                                        {{ util.anti_csrf_token('core/toggle_activity') }}
-                                        {{ util.input_submit(value=gettext("Deactivate Account"), icon="ban-circle",
-                                                aclass="btn btn-danger btn-sm") }}
-                                    </form>
-                                {% else %}
-                                    <form action="{{ cdedblink('core/toggle_activity', {'activity': True}) }}"
-                                          method="POST" id="activitytoggleform" style="display: inline;">
-                                        {{ util.anti_csrf_token('core/toggle_activity') }}
-                                        {{ util.input_submit(value=gettext("Reactivate Account"), icon="ok-circle",
-                                                aclass="btn btn-success btn-sm") }}
-                                    </form>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-sm-8">
-                            <p class="text-muted">
-                                {% if data['is_active'] %}
-                                    {% trans -%}
-                                    	Deactivates the account, so the user can no longer log in.
-                                        This is intended for exceptional circumstances, e.g. if the
-                                        account was compromised.
-                                        This can be reversed at any time.
-                                    {%- endtrans %}
-                                {% else %}
-                                    {% trans -%}
-                                    	Reactivates the account, so the user can log in again.
-                                        Make sure that the cause of the deactivation was removed.
-                                    {%- endtrans %}
-                                {% endif %}
-                            </p>
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            {% if data['is_active'] %}
+                                {% trans -%}
+                                    Sends an email to this user, which contains a password reset link. This is
+                                    basically the same as any non-admin user can achieve using the “Reset Password”
+                                    form on the login page.
+                                {%- endtrans %}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            {% if data['is_active'] %}
+                                <form action="{{ cdedblink('core/toggle_activity', {'activity': False}) }}"
+                                      method="POST" id="activitytoggleform" style="display: inline;">
+                                    {{ util.anti_csrf_token('core/toggle_activity') }}
+                                    {{ util.input_submit(value=gettext("Deactivate Account"), icon="ban-circle",
+                                            aclass="btn btn-danger btn-sm") }}
+                                </form>
+                            {% else %}
+                                <form action="{{ cdedblink('core/toggle_activity', {'activity': True}) }}"
+                                      method="POST" id="activitytoggleform" style="display: inline;">
+                                    {{ util.anti_csrf_token('core/toggle_activity') }}
+                                    {{ util.input_submit(value=gettext("Reactivate Account"), icon="ok-circle",
+                                            aclass="btn btn-success btn-sm") }}
+                                </form>
+                            {% endif %}
                         </div>
                     </div>
-                {% endif %}
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            {% if data['is_active'] %}
+                                {% trans -%}
+                                    Deactivates the account, so the user can no longer log in.
+                                    This is intended for exceptional circumstances, e.g. if the
+                                    account was compromised.
+                                    This can be reversed at any time.
+                                {%- endtrans %}
+                            {% else %}
+                                {% trans -%}
+                                    Reactivates the account, so the user can log in again.
+                                    Make sure that the cause of the deactivation was removed.
+                                {%- endtrans %}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
 
-                {% if "core_admin" in user.roles %}
+                {% if "core_user" in user.admin_views %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -472,7 +469,7 @@ Mitglied.</pre>
                 {% endif %}
 
             {% else %} {# user is archived #}
-                {% if "core_admin" in user.roles %}
+                {% if "core_user" in user.admin_views %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">

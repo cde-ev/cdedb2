@@ -160,6 +160,34 @@ class User:
         self.family_name = family_name
         self.orga = orga or []
         self.moderator = moderator or []
+        self.admin_views = set()
+
+    @property
+    def available_admin_views(self):
+        result = set()
+        if "meta_admin" in self.roles:
+            result |= {"meta_admin"}
+        if "core_admin" in self.roles:
+            result |= {"core_user", "core"}
+        if "cde_admin" in self.roles:
+            result |= {"cde_user", "past_event"}
+        if "finance_admin" in self.roles:
+            result |= {"finance"}
+        if "event_admin" in self.roles:
+            result |= {"event_user", "event_mgmt", "event_orga"}
+        if "ml_admin" in self.roles:
+            result |= {"ml_user", "ml_mgmt", "ml_moderator"}
+        if "assembly_admin" in self.roles:
+            result |= {"assembly_user", "assembly_mgmt", "assembly_contents"}
+        if self.roles & ({'core_admin'} | set(
+                "{}_admin".format(realm)
+                for realm in realm_specific_genesis_fields)):
+            result |= {"genesis"}
+        return result
+
+    def init_admin_views_from_cookie(self, disabled_views_cookie):
+        disabled_views = disabled_views_cookie.split(',')
+        self.admin_views = self.available_admin_views - set(disabled_views)
 
 
 def do_singularization(fun):

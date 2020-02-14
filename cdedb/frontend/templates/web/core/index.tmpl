@@ -30,7 +30,7 @@
     {% endif %}
 
     <div class="row">
-        {% if 'core_admin' in user.roles %}
+        {% if "core_user" in user.admin_views %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='user',
                                          aclass="panel-warning", anid="adminshowuser-box") %}

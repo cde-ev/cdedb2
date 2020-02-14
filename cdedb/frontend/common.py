@@ -625,6 +625,17 @@ def md_filter(val):
     return bleach_filter(md.convert(val))
 
 
+def set_filter(value):
+    """
+    A simple filter to construct a Python set from an iterable object. Just
+    like Jinja's builtin "list" filter, but for sets.
+
+    :type value: Iterable
+    :rtype: set
+    """
+    return set(value)
+
+
 def xdictsort_filter(value, attribute, pad=False, reverse=False):
     """Allow sorting by an arbitrary attribute of the value.
 
@@ -767,6 +778,7 @@ JINJA_FILTERS = {
     'enum': enum_filter,
     'xdictsort': xdictsort_filter,
     's': safe_filter,
+    'set': set_filter,
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,

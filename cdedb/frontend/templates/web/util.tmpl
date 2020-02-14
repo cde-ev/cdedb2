@@ -568,3 +568,22 @@
 {% macro anti_csrf_token(target) %}
     {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, user.persona_id)) }}
 {% endmacro %}
+
+{% macro admin_views_toggle(views) %}
+    <form action="{{ cdedblink('core/enable_admin_view') }}" method="post" style="display: inline;">
+        {% if original_request and original_request.url %}
+            {{ util.input_hidden("wants", encode_parameter("core/enable_admin_view", "wants",
+                                                           original_request.url, timeout=None)) }}
+        {% endif %}
+        {% for label, view_names in views %}
+            {% if (view_names|set).intersection(user.available_admin_views) %}
+                <button type="submit"
+                        name="view_specifier"
+                        value="{% if view_names|set <= user.admin_views %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
+                        class="btn btn-info btn-block {% if view_names|set <= user.admin_views %}active{% endif %}">
+                    {{ util.make_icon('wrench') }} {{ label }}
+                </button>
+            {% endif %}
+        {% endfor %}
+    </form>
+{% endmacro %}

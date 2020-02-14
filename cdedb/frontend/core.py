@@ -22,7 +22,8 @@ from cdedb.frontend.common import (
 from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
-    REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields)
+    REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
+    privilege_tier)
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
@@ -78,18 +79,18 @@ class CoreFrontend(AbstractFrontend):
             for realm in realm_specific_genesis_fields:
                 if {"core_admin", "{}_admin".format(realm)} & rs.user.roles:
                     genesis_realms.append(realm)
-            if genesis_realms:
+            if genesis_realms and "genesis" in rs.user.admin_views:
                 data = self.coreproxy.genesis_list_cases(
                     rs, stati=(const.GenesisStati.to_review,),
                     realms=genesis_realms)
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if self.is_admin(rs):
+            if "core_user" in rs.user.admin_views:
                 data = self.coreproxy.changelog_get_changes(
                     rs, stati=(const.MemberChangeStati.pending,))
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
-            if "meta_admin" in rs.user.roles:
+            if "meta_admin" in rs.user.admin_views:
                 stati = (const.PrivilegeChangeStati.pending,)
                 data = self.coreproxy.list_privilege_changes(
                     rs, stati=stati)
@@ -250,6 +251,40 @@ class CoreFrontend(AbstractFrontend):
                 expires=now() + datetime.timedelta(days=10 * 365))
         else:
             rs.notify("error", n_("Unsupported locale"))
+        return rs.response
+
+    @access("persona", modi={"POST"}, check_anti_csrf=False)
+    @REQUESTdata(("view_specifier", "printable_ascii"),
+                 ("wants", "#str_or_None"))
+    def enable_admin_view(self, rs, view_specifier, wants):
+        """
+        Enable or disable admin views for the current user.
+
+        A list of possible admin views for the current user is returned by
+        User.available_admin_views. The user may enable or disable any of them.
+
+        :param admin_view: A "+" or "-", followed by a commaseperated string of
+            admin view names. If prefixed by "+", they are enabled, otherwise
+            they are disabled.
+        :param wants: URL to redirect to (typically URL of the previous page)
+        """
+        if wants:
+            basic_redirect(rs, wants)
+        else:
+            self.redirect(rs, "core/index")
+
+        disabled_views = set(rs.request.cookies.get('disabled_admin_views', "")
+                             .split(','))
+        changed_views = set(view_specifier[1:].split(','))
+        enable = view_specifier[0] == "+"
+        if enable:
+            disabled_views -= changed_views
+        else:
+            disabled_views.update(changed_views)
+        rs.response.set_cookie(
+            "disabled_admin_views",
+            ",".join(disabled_views),
+            expires=now() + datetime.timedelta(days=10 * 365))
         return rs.response
 
     @access("persona")
@@ -428,9 +463,22 @@ class CoreFrontend(AbstractFrontend):
 
         meta_info = self.coreproxy.get_meta_info(rs)
 
+        # Check if the current user has the right admin *views* activated to
+        # show the admin-only information and controls of this persona
+        # TODO make nicer code
+        #   This is basically a modified version of
+        #   CoreBackend.is_relative_admin() with a string-replace hack to make
+        #   use of cdedb.common.privilege_tier()
+        is_relative_admin_view = any(
+            admin_views <= {v.replace('_user', '_admin')
+                            for v in rs.user.admin_views}
+            for admin_views in privilege_tier(
+                extract_roles(rs.ambience['persona'])))
+
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
-            'is_relative_admin': is_relative_admin, 'quoteable': quoteable})
+            'is_relative_admin': is_relative_admin_view,
+            'quoteable': quoteable})
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")

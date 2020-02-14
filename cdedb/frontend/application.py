@@ -246,6 +246,8 @@ class Application(BaseApp):
                                                             user.persona_id)
                 user.orga = orga
                 user.moderator = moderator
+                user.init_admin_views_from_cookie(
+                    request.cookies.get('disabled_admin_views', ''))
 
                 try:
                     return handler(rs, **args)
