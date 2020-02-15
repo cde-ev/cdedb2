@@ -202,10 +202,11 @@ class MlFrontend(AbstractUserFrontend):
     def view_log(self, rs, codes, mailinglist_id, start, stop, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.mlproxy.retrieve_log(
             rs, codes, mailinglist_id, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
@@ -327,10 +328,11 @@ class MlFrontend(AbstractUserFrontend):
     def view_ml_log(self, rs, mailinglist_id, codes, start, stop, persona_id,
                     submitted_by, additional_info, time_start, time_stop):
         """View activities pertaining to one list."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.mlproxy.retrieve_log(
             rs, codes, mailinglist_id, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,

@@ -1003,6 +1003,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['modifybalanceform']
         self.assertEqual(f['new_balance'].value, "22.20")
         self.assertFalse(f['trial_member'].checked)
+        f['change_note'] = 'nop'
         # Test 'Nothing changed!' warning
         self.submit(f, check_notification=False)
         self.assertPresence("Keine Änderungen", div="notifications")

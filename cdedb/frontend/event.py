@@ -248,6 +248,8 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdata(("part_id", "id_or_None"))
     def participant_list(self, rs, event_id, part_id=None):
         """List participants of an event"""
+        if rs.has_validation_errors():
+            return self.redirect(rs, "event/show_event")
         if not (event_id in rs.user.orga or self.is_admin(rs)):
             reg_list = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=rs.user.persona_id)
@@ -1768,6 +1770,8 @@ class EventFrontend(AbstractUserFrontend):
         Provide an overview of the number of choices and assignments for
         all courses.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/show_event')
         if include_active:
             include_states = tuple(
                 status for status in const.RegistrationPartStati
@@ -2076,6 +2080,8 @@ class EventFrontend(AbstractUserFrontend):
 
         You probably want to edit the provided tex file.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/downloads')
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -2133,6 +2139,8 @@ class EventFrontend(AbstractUserFrontend):
 
         This can be printed and cut to help with distribution of participants.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/downloads')
         event = rs.ambience['event']
         tracks = event['tracks']
         tracks_sorted = [e['id'] for e in sorted(tracks.values(),
@@ -2185,6 +2193,8 @@ class EventFrontend(AbstractUserFrontend):
         participants. This make use of the lodge_field and the
         reserve_field.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/downloads')
         event = rs.ambience['event']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -2243,6 +2253,8 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def download_course_lists(self, rs, event_id, runs):
         """Create lists to post to course rooms."""
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/downloads')
         tracks = rs.ambience['event']['tracks']
         tracks_sorted = [e['id'] for e in sorted(tracks.values(),
                                                  key=EntitySorter.course_track)]
@@ -2317,6 +2329,8 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def download_lodgement_lists(self, rs, event_id, runs):
         """Create lists to post to lodgements."""
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/downloads')
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -2360,7 +2374,8 @@ class EventFrontend(AbstractUserFrontend):
     def download_participant_list(self, rs, event_id, runs, landscape,
                                   orgas_only, part_ids=None):
         """Create list to send to all participants."""
-
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/downloads')
         data = self._get_participant_list_data(rs, event_id, part_ids)
         if not data:
             return self.redirect(rs, "event/downloads")
@@ -3149,8 +3164,14 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("preview", "bool_or_None"))
-    def questionnaire_form(self, rs, event_id, preview=False):
-        """Render form."""
+    def questionnaire_form(self, rs, event_id, preview=False, internal=False):
+        """Render form.
+
+        The internal flag is used if the call comes from another frontend
+        function to disable further redirection on validation errors.
+        """
+        if rs.has_validation_errors() and not internal:
+            return self.redirect(rs, "event/show_event")
         if not preview:
             registration_id = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=rs.user.persona_id)
@@ -3210,7 +3231,7 @@ class EventFrontend(AbstractUserFrontend):
             if entry['field_id'] and not entry['readonly'])
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
-            return self.questionnaire_form(rs, event_id)
+            return self.questionnaire_form(rs, event_id, internal=True)
 
         code = self.eventproxy.set_registration(rs, {
             'id': registration_id, 'fields': data,
@@ -3392,13 +3413,21 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard(check_offline=True)
     @REQUESTdata(('skip', '[str]'))
-    def change_registration_form(self, rs, event_id, registration_id, skip):
+    def change_registration_form(self, rs, event_id, registration_id, skip,
+                                 internal=False):
         """Render form.
 
         The skip parameter is meant to hide certain fields and skip them when
         evaluating the submitted from in change_registration(). This can be
         used in situations, where changing those fields could override
-        concurrent changes (e.g. the Check-in)"""
+        concurrent changes (e.g. the Check-in).
+
+
+        The internal flag is used if the call comes from another frontend
+        function to disable further redirection on validation errors.
+        """
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/show_registration')
         tracks = rs.ambience['event']['tracks']
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(rs, registration['persona_id'],
@@ -3581,7 +3610,8 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event'], skip=skip,
             do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
         if rs.has_validation_errors():
-            return self.change_registration_form(rs, event_id, registration_id)
+            return self.change_registration_form(rs, event_id, registration_id,
+                                                 internal=True)
         registration['id'] = registration_id
         code = self.eventproxy.set_registration(rs, registration)
         self.notify_return_code(rs, code)
@@ -5023,10 +5053,15 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdata(("field_id", "id"),
                  ("reg_ids", "int_csv_list_or_None"))
     @event_guard(check_offline=True)
-    def field_set_form(self, rs, event_id, field_id, reg_ids):
-        """Render form."""
+    def field_set_form(self, rs, event_id, field_id, reg_ids, internal=False):
+        """Render form.
+
+        The internal flag is used if the call comes from another frontend
+        function to disable further redirection on validation errors.
+        """
+        if rs.has_validation_errors() and not internal:
+            return self.redirect(rs, "event/registration_query")
         if field_id not in rs.ambience['event']['fields']:
-            # also catches field_id validation errors
             return werkzeug.exceptions.NotFound(n_("Wrong associated event."))
         field = rs.ambience['event']['fields'][field_id]
         if field['association'] != const.FieldAssociations.registration:
@@ -5059,7 +5094,6 @@ class EventFrontend(AbstractUserFrontend):
     def field_set(self, rs, event_id, field_id, reg_ids):
         """Modify a specific field on all registrations."""
         if field_id not in rs.ambience['event']['fields']:
-            # also catches field_id validation errors
             return werkzeug.exceptions.NotFound(n_("Wrong associated event."))
         field = rs.ambience['event']['fields'][field_id]
         if field['association'] != const.FieldAssociations.registration:
@@ -5070,7 +5104,7 @@ class EventFrontend(AbstractUserFrontend):
                             for registration_id in registration_ids)
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
-            return self.field_set_form(rs, event_id)
+            return self.field_set_form(rs, event_id, internal=True)
 
         # If no list of registration_ids is given as parameter get all
         # registrations
@@ -5416,10 +5450,11 @@ class EventFrontend(AbstractUserFrontend):
     def view_log(self, rs, codes, event_id, start, stop, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities concerning events organized via DB."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.eventproxy.retrieve_log(
             rs, codes, event_id, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
@@ -5449,10 +5484,11 @@ class EventFrontend(AbstractUserFrontend):
     def view_event_log(self, rs, codes, event_id, start, stop, persona_id,
                        submitted_by, additional_info, time_start, time_stop):
         """View activities concerning one event organized via DB."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.eventproxy.retrieve_log(
             rs, codes, event_id, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,

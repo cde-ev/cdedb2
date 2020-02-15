@@ -59,6 +59,7 @@ class CoreFrontend(AbstractFrontend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :param wants: URL to redirect to upon login
         """
+        rs.ignore_validation_errors()  # drop an invalid "wants"
         meta_info = self.coreproxy.get_meta_info(rs)
         dashboard = {}
         if not rs.user.persona_id:
@@ -240,6 +241,7 @@ class CoreFrontend(AbstractFrontend):
         :param locale: The target locale
         :param wants: URL to redirect to (typically URL of the previous page)
         """
+        rs.ignore_validation_errors()  # missing values are ok
         if wants:
             basic_redirect(rs, wants)
         else:
@@ -1173,6 +1175,8 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("ack", "bool"))
     def decide_privilege_change(self, rs, case_id, ack):
         """Approve or reject a privilege change."""
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'core/show_privilege_change')
         case = self.coreproxy.get_privilege_change(rs, case_id)
         if case["status"] != const.PrivilegeChangeStati.pending:
             rs.notify("error", n_("Privilege change not pending."))
@@ -1229,13 +1233,18 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("target_realm", "realm_or_None"))
-    def promote_user_form(self, rs, persona_id, target_realm):
+    def promote_user_form(self, rs, persona_id, target_realm, internal=False):
         """Render form.
 
         This has two parts. If the target realm is absent, we let the
         admin choose one. If it is present we present a mask to promote
         the user.
+
+        The internal flag is used if the call comes from another frontend
+        function to disable further redirection on validation errors.
         """
+        if rs.has_validation_errors() and not internal:
+            return self.redirect_show_user(rs, persona_id)
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
@@ -1247,7 +1256,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdata(("target_realm", "realm_or_None"))
+    @REQUESTdata(("target_realm", "realm"))
     @REQUESTdatadict(
         "title", "name_supplement", "birthday", "gender", "free_form",
         "telephone", "mobile", "address", "address_supplement", "postal_code",
@@ -1278,7 +1287,7 @@ class CoreFrontend(AbstractFrontend):
             data['is_{}_realm'.format(realm)] = True
         data = check(rs, "persona", data, transition=True)
         if rs.has_validation_errors():
-            return self.promote_user_form(rs, persona_id)
+            return self.promote_user_form(rs, persona_id, internal=True)
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
@@ -1366,6 +1375,8 @@ class CoreFrontend(AbstractFrontend):
     def modify_balance(self, rs, persona_id, new_balance, trial_member,
                        change_note):
         """Set the new balance."""
+        if rs.has_validation_errors():
+            return self.modify_balance_form(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
         if (persona['balance'] == new_balance
                 and persona['trial_member'] == trial_member):
@@ -1754,7 +1765,7 @@ class CoreFrontend(AbstractFrontend):
         This initiates the genesis process.
         """
         data = check(rs, "genesis_case", data, creation=True)
-        if data is None:
+        if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         if len(data['notes']) > self.conf.MAX_RATIONALE:
             rs.append_validation_error(
@@ -2134,10 +2145,11 @@ class CoreFrontend(AbstractFrontend):
                             submitted_by, additional_info, time_start,
                             time_stop, reviewed_by):
         """View changelog activity."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.coreproxy.retrieve_changelog_meta(
             rs, stati, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
@@ -2163,10 +2175,11 @@ class CoreFrontend(AbstractFrontend):
     def view_log(self, rs, codes, start, stop, persona_id, submitted_by,
                  additional_info, time_start, time_stop):
         """View activity."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.coreproxy.retrieve_log(
             rs, codes=codes, start=start, stop=stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,

@@ -152,10 +152,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     def view_log(self, rs, codes, assembly_id, start, stop, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.assemblyproxy.retrieve_log(
             rs, codes, assembly_id, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
@@ -184,10 +185,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     def view_assembly_log(self, rs, codes, assembly_id, start, stop, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.assemblyproxy.retrieve_log(
             rs, codes, assembly_id, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,

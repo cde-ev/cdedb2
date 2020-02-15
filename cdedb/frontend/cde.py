@@ -188,7 +188,7 @@ class CdEFrontend(AbstractUserFrontend):
         result = None
         count = 0
         cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
-        if is_search and not rs.has_validation_errors():
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
@@ -207,6 +207,7 @@ class CdEFrontend(AbstractUserFrontend):
             current = tuple(rs.retrieve_validation_errors())
             rs.retrieve_validation_errors().clear()
             rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
+            rs.ignore_validation_errors()
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
             'cutoff': cutoff, 'count': count,
@@ -1812,6 +1813,8 @@ class CdEFrontend(AbstractUserFrontend):
         In case of a test run we send only a single mail to the button
         presser.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if period['billing_done']:
@@ -2018,14 +2021,14 @@ class CdEFrontend(AbstractUserFrontend):
         In case of a test run we send only a single mail to the button
         presser.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'cde/show_semester')
+
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         if expuls['addresscheck_done']:
             rs.notify("error", n_("Addresscheck already done."))
             return self.redirect(rs, "cde/show_semester")
-
-        if rs.has_validation_errors():
-            return self.show_semester(rs)
 
         # The rs parameter shadows the outer request state, making sure that
         # it doesn't leak
@@ -2334,6 +2337,8 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("institution_id", "id_or_None"))
     def list_past_events(self, rs, institution_id=None):
         """List all concluded events."""
+        if rs.has_validation_errors():
+            rs.notify('warning', n_("Institution parameter got lost."))
         events = self.pasteventproxy.list_past_events(rs)
         shortnames = {
             pevent_id: value['shortname']
@@ -2559,10 +2564,11 @@ class CdEFrontend(AbstractUserFrontend):
     def view_cde_log(self, rs, codes, start, stop, persona_id, submitted_by,
                      additional_info, time_start, time_stop):
         """View general activity."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.cdeproxy.retrieve_cde_log(
             rs, codes, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
@@ -2586,10 +2592,11 @@ class CdEFrontend(AbstractUserFrontend):
     def view_finance_log(self, rs, codes, start, stop, persona_id, submitted_by,
                          additional_info, time_start, time_stop):
         """View financial activity."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.cdeproxy.retrieve_finance_log(
             rs, codes, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
@@ -2614,10 +2621,11 @@ class CdEFrontend(AbstractUserFrontend):
     def view_past_log(self, rs, codes, pevent_id, start, stop, persona_id,
                       submitted_by, additional_info, time_start, time_stop):
         """View activities concerning concluded events."""
-        start = start or 0
-        stop = stop or 50
         # no validation since the input stays valid, even if some options
         # are lost
+        rs.ignore_validation_errors()
+        start = start or 0
+        stop = stop or 50
         log = self.pasteventproxy.retrieve_past_log(
             rs, codes, pevent_id, start, stop, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
