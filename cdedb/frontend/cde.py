@@ -188,7 +188,25 @@ class CdEFrontend(AbstractUserFrontend):
         result = None
         count = 0
         cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
-        if not rs.has_validation_errors() and is_search:
+
+        if is_search and not query.constraints:
+            rs.notify("error", n_("You have to specify some filters."))
+        elif is_search and not rs.has_validation_errors():
+
+            def restrict(constrain):
+                filter, operation, value = constrain
+                if filter == 'fulltext':
+                    pass
+                elif len(value) <= 3:
+                    operation = QueryOperators.equal
+                    msg = ("Match of {} will be an equal search, because the"
+                           "argument is too short.").format(filter)
+                    rs.notify("info", n_(msg))
+                constrain = (filter, operation, value)
+                return constrain
+
+            query.constraints = [restrict(constrain)
+                                 for constrain in query.constraints]
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
