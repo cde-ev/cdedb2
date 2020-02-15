@@ -2211,6 +2211,52 @@ etc;anything else""", f['entries_2'].value)
         self.assertIn('low', tuple(row['fields.contamination']
                                    for row in result))
 
+    @as_users("berta")
+    def test_no_downloads(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'CdE-Party 2050'},
+                      {'description': 'Downloads'})
+        self.assertTitle("Downloads zur Veranstaltung CdE-Party 2050")
+
+        # first check empty csv
+        self.traverse({'href': '/event/event/2/download/csv_registrations'})
+        self.assertPresence('Leere Datei.', div='notifications')
+        self.traverse({'href': '/event/event/2/download/csv_courses'})
+        self.assertPresence('Leere Datei.', div='notifications')
+        self.traverse({'href': '/event/event/2/download/csv_lodgements'})
+        self.assertPresence('Leere Datei.', div='notifications')
+        self.traverse({'href': '/event/event/2/download/expuls'})
+        self.assertPresence('Leere Datei.', div='notifications')
+
+        # now check empty pdfs
+        self.traverse({'href': '/event/event/2/download/nametag\\?runs=2'})
+        self.assertPresence('Leeres PDF.', div='notifications')
+        self.traverse({'href': '/event/event/2/download/courselists\\?runs=2'})
+        self.assertPresence('Leeres PDF.', div='notifications')
+        self.traverse({'href': '/event/event/2/download/lodgementlists\\?runs=2'})
+        self.assertPresence('Leeres PDF.', div='notifications')
+        self.traverse({'href': '/event/event/2/download/coursepuzzle\\?runs=2'})
+        self.assertPresence('Leeres PDF.', div='notifications')
+        self.traverse({'href': '/event/event/2/download/lodgementpuzzle\\?runs=2'})
+        self.assertPresence('Leeres PDF.', div='notifications')
+        self.traverse({'href': '/event/event/2/download/participantlist\\?runs=2'})
+        self.assertPresence('Leeres PDF.', div='notifications')
+
+        # but the latex source code should still be available
+        save = self.response
+        self.response = save.click(href='/event/event/2/download/nametag\\?runs=0')
+        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
+        self.response = save.click(href='/event/event/2/download/courselists\\?runs=0')
+        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
+        self.response = save.click(href='/event/event/2/download/lodgementlists\\?runs=0')
+        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
+        self.response = save.click(href='/event/event/2/download/coursepuzzle\\?runs=0')
+        self.assertPresence('documentclass')
+        self.response = save.click(href='/event/event/2/download/lodgementpuzzle\\?runs=0')
+        self.assertPresence('documentclass')
+        self.response = save.click(href='/event/event/2/download/participantlist\\?runs=0$')
+        self.assertPresence('documentclass')
+
     @as_users("garcia")
     def test_questionnaire_manipulation(self, user):
         self.traverse({'href': '/event/$'},
