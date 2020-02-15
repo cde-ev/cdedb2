@@ -118,17 +118,10 @@
                             </span>
                         </div>
                     </div>
-                    {% call util.form_input_general("fee_{}".format(part_id), gettext("Event-Part Fee"),
-                                                    anid="input-text-fee_".format(part_id)) %}
-                        <div class="input-group">
-                            {{ util.input_text(name="fee_{}".format(part_id),
-                                               attributes=('data-basename="fee_"'|s if newrow else ''),
-                                               aclass='drow-input form-control', anid="input-text-fee_".format(part_id)) }}
-                            <span class="input-group-addon">
-                                €
-                            </span>
-                        </div>
-                    {% endcall %}
+                    {{ util.form_input_text(name="fee_{}".format(part_id), label=gettext("Event-Part Fee"),
+                                            attributes=('data-basename="fee_"'|s if newrow else ''),
+                                            aclass='drow-input form-control', anid="input-text-fee_".format(part_id),
+                                            addon='€') }}
                 </div>
             </div>
                 <hr />

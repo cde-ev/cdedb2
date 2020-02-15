@@ -334,9 +334,9 @@ class TestCron(CronTest):
         }
         mm_lists = {
             'zombie': unittest.mock.MagicMock(
-                fqdn_listname='zombie@example.cde'),
+                fqdn_listname='zombie@lists.cde-ev.de'),
             'announce': unittest.mock.MagicMock(
-                fqdn_listname='announce@example.cde',
+                fqdn_listname='announce@lists.cde-ev.de',
                 settings=SaveDict(
                     **base_settings,
                     **{'display_name': "Announce name",
@@ -348,7 +348,7 @@ class TestCron(CronTest):
                        'default_nonmember_action': 'hold',}
                 )),
             'witz': unittest.mock.MagicMock(
-                fqdn_listname='witz@example.cde',
+                fqdn_listname='witz@lists.cde-ev.de',
                 settings=SaveDict(
                     **base_settings,
                     **{'display_name': "Witz name",
@@ -434,4 +434,4 @@ class TestCron(CronTest):
 
         # Deletion
         self.assertEqual(client.delete_list.call_args_list,
-                         [umcall('zombie@example.cde')])
+                         [umcall('zombie@lists.cde-ev.de')])

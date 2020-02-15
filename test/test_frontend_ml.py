@@ -365,7 +365,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mailingliste anlegen")
         f = self.response.forms['createlistform']
         f['title'] = "Munkelwand"
-        f['address'] = "munkelwand@example.cde"
+        f['local_part'] = "munkelwand"
         f['mod_policy'] = 1
         f['attachment_policy'] = 2
         f['subject_prefix'] = "[munkel]"
@@ -388,8 +388,8 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['changelistform']
         self.assertEqual("Werbung", f['title'].value)
         f['title'] = "Munkelwand"
-        self.assertEqual("werbung@example.cde", f['address'].value)
-        f['address'] = "munkelwand@example.cde"
+        self.assertEqual("werbung", f['local_part'].value)
+        f['local_part'] = "munkelwand"
         self.assertTrue(f['is_active'].checked)
         f['is_active'].checked = False
         self.submit(f)
@@ -397,7 +397,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/2/change'},)
         f = self.response.forms['changelistform']
         self.assertEqual("Munkelwand", f['title'].value)
-        self.assertEqual("munkelwand@example.cde", f['address'].value)
+        self.assertEqual("munkelwand", f['local_part'].value)
         self.assertFalse(f['is_active'].checked)
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
@@ -487,8 +487,9 @@ class TestMlFrontend(FrontendTest):
                 self.login(USER_DICT["anton"])
                 mdata = {
                     'title': 'TestAkaList',
-                    'address': 'testaka@example.cde',
                     'ml_type': const.MailinglistTypes.event_associated.value,
+                    'local_part': 'testaka',
+                    'domain': const.MailinglistDomain.aka.value,
                     'event_id': "1",
                     'moderator_ids': user['DB-ID'],
                 }
@@ -605,25 +606,25 @@ class TestMlFrontend(FrontendTest):
 
     def test_export(self):
         HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
-        expectation = [{'address': 'announce@example.cde', 'is_active': True},
-                       {'address': 'werbung@example.cde', 'is_active': True},
-                       {'address': 'witz@example.cde', 'is_active': True},
-                       {'address': 'klatsch@example.cde', 'is_active': True},
-                       {'address': 'kongress@example.cde', 'is_active': True},
-                       {'address': 'aktivenforum2000@example.cde', 'is_active': False},
-                       {'address': 'aktivenforum@example.cde', 'is_active': True},
-                       {'address': 'aka@example.cde', 'is_active': True},
-                       {'address': 'participants@example.cde', 'is_active': True},
-                       {'address': 'wait@example.cde', 'is_active': True},
-                       {'address': 'opt@example.cde', 'is_active': True}]
+        expectation = [{'address': 'announce@lists.cde-ev.de', 'is_active': True},
+                       {'address': 'werbung@lists.cde-ev.de', 'is_active': True},
+                       {'address': 'witz@lists.cde-ev.de', 'is_active': True},
+                       {'address': 'klatsch@lists.cde-ev.de', 'is_active': True},
+                       {'address': 'kongress@lists.cde-ev.de', 'is_active': True},
+                       {'address': 'aktivenforum2000@lists.cde-ev.de', 'is_active': False},
+                       {'address': 'aktivenforum@lists.cde-ev.de', 'is_active': True},
+                       {'address': 'aka@aka.cde-ev.de', 'is_active': True},
+                       {'address': 'participants@aka.cde-ev.de', 'is_active': True},
+                       {'address': 'wait@aka.cde-ev.de', 'is_active': True},
+                       {'address': 'opt@lists.cde-ev.de', 'is_active': True}]
         self.get("/ml/script/all", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
         expectation = {
-            'address': 'werbung@example.cde',
-            'admin_address': 'werbung-owner@example.cde',
+            'address': 'werbung@lists.cde-ev.de',
+            'admin_address': 'werbung-owner@lists.cde-ev.de',
             'listname': 'Werbung',
             'moderators': ['janis@example.cde'],
-            'sender': 'werbung@example.cde',
+            'sender': 'werbung@lists.cde-ev.de',
             'size_max': None,
             'subscribers': ['anton@example.cde',
                             'berta@example.cde',
@@ -638,64 +639,64 @@ class TestMlFrontend(FrontendTest):
                             'farin@example.cde',
                             'akira@example.cde'],
             'whitelist': ['honeypot@example.cde']}
-        self.get("/ml/script/one?address=werbung@example.cde", headers=HEADERS)
+        self.get("/ml/script/one?address=werbung@lists.cde-ev.de", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
 
     def test_oldstyle_access(self):
         HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
-        expectation = [{'address': 'announce@example.cde',
+        expectation = [{'address': 'announce@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': True},
-                       {'address': 'werbung@example.cde',
+                       {'address': 'werbung@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'witz@example.cde',
+                       {'address': 'witz@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': 2048,
                         'mime': None},
-                       {'address': 'klatsch@example.cde',
+                       {'address': 'klatsch@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'kongress@example.cde',
+                       {'address': 'kongress@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': 1024,
                         'mime': None},
-                       {'address': 'aktivenforum2000@example.cde',
+                       {'address': 'aktivenforum2000@lists.cde-ev.de',
                         'inactive': True,
                         'maxsize': 1024,
                         'mime': None},
-                       {'address': 'aktivenforum@example.cde',
+                       {'address': 'aktivenforum@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': 1024,
                         'mime': None},
-                       {'address': 'aka@example.cde',
+                       {'address': 'aka@aka.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'participants@example.cde',
+                       {'address': 'participants@aka.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'wait@example.cde',
+                       {'address': 'wait@aka.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'opt@example.cde',
+                       {'address': 'opt@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False}]
         self.get("/ml/script/all/compat", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
-        expectation = {'address': 'werbung@example.cde',
+        expectation = {'address': 'werbung@lists.cde-ev.de',
                        'list-owner': 'https://db.cde-ev.de/',
                        'list-subscribe': 'https://db.cde-ev.de/',
                        'list-unsubscribe': 'https://db.cde-ev.de/',
                        'listname': '[werbung]',
                        'moderators': ['janis@example.cde',],
-                       'sender': 'werbung-bounces@example.cde',
+                       'sender': 'werbung-bounces@lists.cde-ev.de',
                        'subscribers': ['anton@example.cde',
                                        'berta@example.cde',
                                        'charly@example.cde',
@@ -709,10 +710,10 @@ class TestMlFrontend(FrontendTest):
                                        'farin@example.cde',
                                        'akira@example.cde'],
                        'whitelist': ['honeypot@example.cde',]}
-        self.get("/ml/script/one/compat?address=werbung@example.cde",
+        self.get("/ml/script/one/compat?address=werbung@lists.cde-ev.de",
                  headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
-        expectation = {'address': 'werbung@example.cde',
+        expectation = {'address': 'werbung@lists.cde-ev.de',
                        'list-owner': 'https://db.cde-ev.de/',
                        'list-subscribe': 'https://db.cde-ev.de/',
                        'list-unsubscribe': 'https://db.cde-ev.de/',
@@ -721,7 +722,7 @@ class TestMlFrontend(FrontendTest):
                        'sender': 'cdedb-doublebounces@cde-ev.de',
                        'subscribers': ['janis@example.cde',],
                        'whitelist': ['*']}
-        self.get("/ml/script/mod/compat?address=werbung@example.cde",
+        self.get("/ml/script/mod/compat?address=werbung@lists.cde-ev.de",
                  headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
         self.post("/ml/script/bounce/compat",

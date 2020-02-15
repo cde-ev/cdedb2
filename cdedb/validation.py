@@ -805,6 +805,30 @@ def _email(val, argname=None, *, _convert=True):
     return val, errs
 
 
+_EMAIL_LOCAL_PART_REGEX = re.compile(r'^[a-z0-9._+-]+$')
+
+
+@_addvalidator
+def _email_local_part(val, argname=None, *, _convert=True):
+    """We accept only a subset of valid email addresses.
+    Here we only care about the local part.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return None, errs
+    # normalize to lower case
+    val = val.strip().lower()
+    if not _EMAIL_LOCAL_PART_REGEX.match(val):
+        errs.append(
+            (argname, ValueError(n_("Must be a valid email local part."))))
+    return val, errs
+
+
 _PERSONA_TYPE_FIELDS = {
     'is_cde_realm': _bool,
     'is_event_realm': _bool,
@@ -3135,7 +3159,8 @@ def _partial_registration_track(val, argname=None, *, _convert=True):
 
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
-    'address': _email,
+    'local_part': _email_local_part,
+    'domain': _enum_mailinglistdomain,
     'description': _str_or_None,
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
@@ -3150,10 +3175,16 @@ _MAILINGLIST_OPTIONAL_FIELDS = lambda: {
     'event_id': _None,
     'registration_stati': _empty_list,
 }
+_MAILINGLIST_READONLY_FIELDS = {
+    'address',
+    'domain_str',
+    'ml_type_class',
+}
 
 
 @_addvalidator
-def _mailinglist(val, argname=None, *, creation=False, _convert=True):
+def _mailinglist(val, argname=None, *, creation=False, _convert=True,
+                 _allow_readonly=False):
     """
     :type val: object
     :type argname: str or None
@@ -3170,9 +3201,9 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     mandatory_validation_fields = (('moderators', '[id]'),)
     optional_validation_fields = (('whitelist', '[email]'),)
     if "ml_type" in val:
-        mlt = ml_type.TYPE_MAP[ml_type.MailinglistTypes(int(val["ml_type"]))]
-        mandatory_validation_fields += mlt.mandatory_validation_fields
-        optional_validation_fields += mlt.optional_validation_fields
+        atype = ml_type.get_type(val["ml_type"])
+        mandatory_validation_fields += atype.mandatory_validation_fields
+        optional_validation_fields += atype.optional_validation_fields
     mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
     optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
     iterable_fields = []
@@ -3184,6 +3215,12 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                 iterable_fields.append((key, "_" + validator_str[1:-1]))
             else:
                 target[key] = getattr(current_module, "_" + validator_str)
+    # Optionally remove readonly attributes, take care to keep the original.
+    if _allow_readonly:
+        val = copy.deepcopy(val)
+        for key in _MAILINGLIST_READONLY_FIELDS:
+            if key in val:
+                del val[key]
     if creation:
         pass
     else:
@@ -3205,6 +3242,15 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
                 else:
                     newarray.append(v)
             val[key] = newarray
+    if "domain" in val:
+        if "ml_type" not in val:
+            errs.append(("domain", ValueError(n_(
+                "Must specify mailinglist type to change domain."))))
+        else:
+            atype = ml_type.get_type(val["ml_type"])
+            if val["domain"].value not in atype.domains:
+                errs.append(("domain", ValueError(n_(
+                    "Invalid domain for this mailinglist type."))))
     return val, errs
 
 

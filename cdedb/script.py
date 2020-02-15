@@ -98,7 +98,7 @@ def setup(persona_id, dbuser, dbpassword, check_system_user=True):
 
     return rs
 
-def make_backend(realm):
+def make_backend(realm, proxy=True):
     """Instantiate backend objects and wrap them in proxy shims.
 
     :type realm: str
@@ -106,15 +106,20 @@ def make_backend(realm):
     :returns: a new backend
     """
     if realm == "core":
-        return ProxyShim(CoreBackend("/etc/cdedb-application-config.py"))
-    if realm == "cde":
-        return ProxyShim(CdEBackend("/etc/cdedb-application-config.py"))
-    if realm == "past_event":
-        return ProxyShim(PastEventBackend("/etc/cdedb-application-config.py"))
-    if realm == "ml":
-        return ProxyShim(MlBackend("/etc/cdedb-application-config.py"))
-    if realm == "assembly":
-        return ProxyShim(AssemblyBackend("/etc/cdedb-application-config.py"))
-    if realm == "event":
-        return ProxyShim(EventBackend("/etc/cdedb-application-config.py"))
-    raise ValueError("Unrecognized realm")
+        backend = CoreBackend("/etc/cdedb-application-config.py")
+    elif realm == "cde":
+        backend = CdEBackend("/etc/cdedb-application-config.py")
+    elif realm == "past_event":
+        backend = PastEventBackend("/etc/cdedb-application-config.py")
+    elif realm == "ml":
+        backend = MlBackend("/etc/cdedb-application-config.py")
+    elif realm == "assembly":
+        backend = AssemblyBackend("/etc/cdedb-application-config.py")
+    elif realm == "event":
+        backend = EventBackend("/etc/cdedb-application-config.py")
+    else:
+        raise ValueError("Unrecognized realm")
+    if proxy:
+        return ProxyShim(backend)
+    else:
+        return backend

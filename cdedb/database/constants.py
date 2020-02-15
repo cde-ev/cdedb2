@@ -173,6 +173,32 @@ class MailinglistTypes(enum.IntEnum):
     cdelokal = 60
 
 
+class MailinglistDomain(enum.IntEnum):
+    lists = 1
+    aka = 2
+    general = 3
+    cdelokal = 4
+
+    cdemuenchen = 10
+    dokuforge = 11
+
+    def __str__(self):
+        if self not in _DOMAIN_STR_MAP:
+            raise NotImplementedError(n_("This domain is not supported."))
+        return _DOMAIN_STR_MAP[self]
+
+
+# Instead of importing this, call str() on a MailinglistDomain.
+_DOMAIN_STR_MAP = {
+    MailinglistDomain.lists: "lists.cde-ev.de",
+    MailinglistDomain.aka: "aka.cde-ev.de",
+    MailinglistDomain.general: "cde-ev.de",
+    MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
+    MailinglistDomain.cdemuenchen: "cde-muenchen.de",
+    MailinglistDomain.dokuforge: "dokuforge.de",
+}
+
+
 @enum.unique
 class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""

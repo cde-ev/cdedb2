@@ -279,7 +279,7 @@
 {% endmacro %}
 
 {% macro form_input_general(name='', label='', anid='', small=False, info='', displayerrors=True,
-        horizontal=True, labelid='', infolink='') %}
+        horizontal=True, labelid='', infolink='', addon='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {%- if label %}
             <label{% if labelid %} id="{{ labelid }}"{% endif %}{% if anid %} for="{{ anid }}"{% endif %} {# -#}
@@ -292,7 +292,18 @@
                                        {%- if not label %}
                                            {%- if small %} col-sm-offset-2{% else %} col-sm-offset-4{% endif %}
                                        {%- endif %}">{% endif %}
+        {% if addon %}
+            <div class="input-group">
+        {% endif %}
+
             {{- caller() }}
+
+        {% if addon %}
+                <span class="input-group-addon">
+                    {{ addon }}
+                </span>
+            </div>
+        {% endif %}
             {{- output_errors(name, displayerrors) }}
             {{- output_info(info, infolink) }}
         {%- if horizontal %}</div>{% endif %}
@@ -320,9 +331,9 @@
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', infolink='') %}
+    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='', infolink='', addon='') %}
     {%- if not anid %}{% set anid = "input-text-{}".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, infolink=infolink, addon=addon) %}
         {{- input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
                 aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}

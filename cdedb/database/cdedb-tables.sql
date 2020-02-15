@@ -998,7 +998,11 @@ GRANT USAGE ON SCHEMA ml TO cdb_persona;
 CREATE TABLE ml.mailinglists (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
+        -- explicitly store the address for simplicity.
         address                 varchar UNIQUE NOT NULL,
+        local_part              varchar UNIQUE NOT NULL,
+        -- see cdedb.database.constants.MailinglisstDomains
+        domain                  integer NOT NULL,
         description             varchar,
         -- see cdedb.database.constants.MailinglistInteractionPolicy
         sub_policy              integer,

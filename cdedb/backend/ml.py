@@ -120,7 +120,7 @@ class MlBackend(AbstractBackend):
             mailinglist = self.get_mailinglist(rs, mailinglist_id)
 
         persona_id = affirm("id", persona_id)
-        ml = affirm("mailinglist", mailinglist)
+        ml = affirm("mailinglist", mailinglist, _allow_readonly=True)
 
         if not (rs.user.persona_id == persona_id
                 or self.may_manage(rs, ml['id'])):
@@ -146,7 +146,7 @@ class MlBackend(AbstractBackend):
         :return: Tuple of personas whose interaction policies are in
             allowed_pols
         """
-        affirm("mailinglist", ml)
+        affirm("mailinglist", ml, _allow_readonly=True)
         affirm_set("enum_mailinglistinteractionpolicy", allowed_pols)
 
         # persona_ids are validated inside get_personas
@@ -348,6 +348,9 @@ class MlBackend(AbstractBackend):
                              for d in data if d['mailinglist_id'] == anid}
                 assert ('whitelist' not in ret[anid])
                 ret[anid]['whitelist'] = whitelist
+            for anid in ids:
+                ret[anid]['domain_str'] = str(const.MailinglistDomain(ret[anid]['domain']))
+                ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
 
     @access("ml")
@@ -467,12 +470,16 @@ class MlBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_mailinglists(rs, (data['id'],)))
+            # TODO return enum members from get_mailinglist.
+            # This validation is required to get the enum members for data.
+            current = affirm("mailinglist", current, _allow_readonly=True)
             # Only allow modification of the mailinglist for admins.
             if not self.is_relevant_admin(rs, mailinglist=current):
                 raise PrivilegeError(n_("Not privileged."))
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
+                mdata['address'] = ml_type.full_address(dict(current, **mdata))
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
                 # Check if privileges allow new state of the mailinglist.
@@ -506,6 +513,7 @@ class MlBackend(AbstractBackend):
         :returns: the id of the new mailinglist
         """
         data = affirm("mailinglist", data, creation=True)
+        data['address'] = ml_type.full_address(data)
         if not self.is_relevant_admin(rs, mailinglist=data):
             raise PrivilegeError("Not privileged to create mailinglist of this "
                                  "type.")

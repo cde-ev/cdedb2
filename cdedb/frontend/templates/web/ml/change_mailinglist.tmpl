@@ -39,7 +39,10 @@
         <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
             {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=not is_admin) }}
             {{ util.form_input_text(name="title", label=gettext("Title"), readonly=not is_admin) }}
-            {{ util.form_input_text(name="address", label=gettext("Address"), readonly=not is_admin) }}
+            {{ util.form_input_text(name="local_part", label=gettext("Address"), readonly=not is_admin,
+                                    addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
+            {{ util.form_input_select(name="domain", label=gettext("Domain"), readonly=not is_admin, defaultvalue=ambience['mailinglist']['domain'].value,
+                        entries=enums['MailinglistDomain']|enum_entries(processing=gettext, prefix="@")) }}
             {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", readonly=not is_admin,
                                         info=gettext("Supports %(infolink)s.")|format(
                                             infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
