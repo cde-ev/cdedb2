@@ -164,7 +164,7 @@ class TestCron(CronTest):
         + cron_template(
             moniker="genesis_remind",
             store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
-                   "ids": [1]}))
+                   "ids": [1001]}))
     def test_genesis_remind_old(self):
         self.execute('genesis_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -172,7 +172,7 @@ class TestCron(CronTest):
     @prepsql(
         genesis_template(ctime=(now() - datetime.timedelta(hours=6)))
         + cron_template(moniker="genesis_remind",
-                        store={"tstamp": 1, "ids": [1]}))
+                        store={"tstamp": 1, "ids": [1001]}))
     def test_genesis_remind_older(self):
         self.execute('genesis_remind')
         self.assertEqual(["genesis_requests_pending"],
@@ -184,7 +184,7 @@ class TestCron(CronTest):
     @prepsql(genesis_template())
     def test_genesis_forget_unrelated(self):
         self.execute('genesis_forget')
-        self.assertEqual({1}, set(self.core.genesis_list_cases()))
+        self.assertEqual({1001}, set(self.core.genesis_list_cases()))
 
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
@@ -204,7 +204,7 @@ class TestCron(CronTest):
         case_status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_recent_unconfirmed(self):
         self.execute('genesis_forget')
-        self.assertEqual({1}, set(self.core.genesis_list_cases()))
+        self.assertEqual({1001}, set(self.core.genesis_list_cases()))
 
     def test_changelog_remind_empty(self):
         self.cron.execute(['pending_changelog_remind'])
@@ -292,7 +292,7 @@ class TestCron(CronTest):
         + cron_template(
             moniker="privilege_change_remind",
             store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
-                   "ids": [1]}))
+                   "ids": [1001]}))
     def test_privilege_change_remind_old(self):
         self.execute('privilege_change_remind')
         self.assertEqual([],
@@ -303,7 +303,7 @@ class TestCron(CronTest):
                                   ctime=now() - datetime.timedelta(hours=6))
         + cron_template(
             moniker="privilege_change_remind",
-            store={"tstamp": 1, "ids": [1]}))
+            store={"tstamp": 1, "ids": [1001]}))
     def test_privilege_change_remind_older(self):
         self.execute('privilege_change_remind')
         self.assertEqual(['privilege_change_remind'],

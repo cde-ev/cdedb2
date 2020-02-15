@@ -555,14 +555,14 @@ class TestCdEFrontend(FrontendTest):
         self.response = saved
         self.traverse({'description': 'Einzugsermächtigungen'})
         f = self.response.forms['finalizationform']
-        f['transaction_ids'] = [4]
+        f['transaction_ids'] = [1001]
         self.submit(f, button="success")
         self.assertTitle("Übersicht Einzugsermächtigungen")
         # self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
         self.assertPresence("17,50 €")
         self.traverse({'description': 'Einzugsermächtigung'})
-        f = self.response.forms['transactionrollbackform4']
+        f = self.response.forms['transactionrollbackform1001']
         self.submit(f)
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen",
                             div='active-permit', exact=True)
@@ -581,7 +581,7 @@ class TestCdEFrontend(FrontendTest):
         self.response = saved
         self.traverse({'description': 'Einzugsermächtigungen'})
         f = self.response.forms['finalizationform']
-        f['transaction_ids'] = [4]
+        f['transaction_ids'] = [1001]
         self.submit(f, button="cancelled")
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn('generatetransactionform2', self.response.forms)
@@ -599,7 +599,7 @@ class TestCdEFrontend(FrontendTest):
         self.response = saved
         self.traverse({'description': 'Einzugsermächtigungen'})
         f = self.response.forms['finalizationform']
-        f['transaction_ids'] = [4]
+        f['transaction_ids'] = [1001]
         self.submit(f, button="failure")
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertNotIn('generatetransactionform2', self.response.forms)

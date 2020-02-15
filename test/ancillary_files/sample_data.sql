@@ -1,17 +1,56 @@
 --
 -- fix some serials (otherwise the test suite gets messed up)
 --
+ALTER SEQUENCE core.personas_id_seq RESTART WITH 1;
 ALTER SEQUENCE core.genesis_cases_id_seq RESTART WITH 1;
 ALTER SEQUENCE core.privilege_changes_id_seq RESTART WITH 1;
-ALTER SEQUENCE assembly.attachments_id_seq RESTART WITH 1;
+ALTER SEQUENCE core.sessions_id_seq RESTART WITH 1;
+ALTER SEQUENCE core.quota_id_seq RESTART WITH 1;
+ALTER SEQUENCE core.meta_info_id_seq RESTART WITH 1;
+ALTER SEQUENCE core.log_id_seq RESTART WITH 1;
+ALTER SEQUENCE core.changelog_id_seq RESTART WITH 1;
+ALTER SEQUENCE core.cron_store_id_seq RESTART WITH 1;
+-- they are by design no serial but integers and must not be changed
+-- ALTER SEQUENCE cde.org_period_id_seq RESTART WITH 1;
+-- ALTER SEQUENCE cde.expuls_period_id_seq RESTART WITH 1;
+ALTER SEQUENCE cde.lastschrift_id_seq RESTART WITH 1;
 ALTER SEQUENCE cde.lastschrift_transactions_id_seq RESTART WITH 1;
-ALTER SEQUENCE event.course_choices_id_seq RESTART WITH 1;
+ALTER SEQUENCE cde.finance_log_id_seq RESTART WITH 1;
+ALTER SEQUENCE cde.log_id_seq RESTART WITH 1;
+ALTER SEQUENCE past_event.institutions_id_seq RESTART WITH 1;
+ALTER SEQUENCE past_event.events_id_seq RESTART WITH 1;
+ALTER SEQUENCE past_event.courses_id_seq RESTART WITH 1;
+ALTER SEQUENCE past_event.participants_id_seq RESTART WITH 1;
+ALTER SEQUENCE past_event.log_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.events_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.event_parts_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.course_tracks_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.field_definitions_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.courses_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.course_segments_id_seq RESTART WITH 1;
-ALTER SEQUENCE event.questionnaire_rows_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.orgas_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.lodgement_groups_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.lodgements_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.registrations_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.registration_parts_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.registration_tracks_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.course_choices_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.questionnaire_rows_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.log_id_seq RESTART WITH 1;
-ALTER SEQUENCE event.orgas_id_seq RESTART WITH 1;
+ALTER SEQUENCE assembly.assemblies_id_seq RESTART WITH 1;
+ALTER SEQUENCE assembly.ballots_id_seq RESTART WITH 1;
+ALTER SEQUENCE assembly.candidates_id_seq RESTART WITH 1;
+ALTER SEQUENCE assembly.attendees_id_seq RESTART WITH 1;
+ALTER SEQUENCE assembly.voter_register_id_seq RESTART WITH 1;
+ALTER SEQUENCE assembly.votes_id_seq RESTART WITH 1;
+ALTER SEQUENCE assembly.attachments_id_seq RESTART WITH 1;
+ALTER SEQUENCE assembly.log_id_seq RESTART WITH 1;
+ALTER SEQUENCE ml.mailinglists_id_seq RESTART WITH 1;
+ALTER SEQUENCE ml.subscription_states_id_seq RESTART WITH 1;
+ALTER SEQUENCE ml.subscription_addresses_id_seq RESTART WITH 1;
+ALTER SEQUENCE ml.whitelist_id_seq RESTART WITH 1;
+ALTER SEQUENCE ml.moderators_id_seq RESTART WITH 1;
+ALTER SEQUENCE ml.log_id_seq RESTART WITH 1;
 
 --
 -- personas
@@ -462,20 +501,52 @@ INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES
 -- them so we reference the correct things in the test suite)
 --
 SELECT setval('core.personas_id_seq', 1000);
+SELECT setval('core.genesis_cases_id_seq', 1000);
+SELECT setval('core.privilege_changes_id_seq', 1000);
+SELECT setval('core.sessions_id_seq', 1000);
+SELECT setval('core.quota_id_seq', 1000);
+SELECT setval('core.meta_info_id_seq', 1000);
+SELECT setval('core.log_id_seq', 1000);
+SELECT setval('core.changelog_id_seq', 1000);
+SELECT setval('core.cron_store_id_seq', 1000);
+-- they are by design no serial but integers and must not be changed
+-- SELECT setval('cde.org_period_id_seq', 1000);
+-- SELECT setval('cde.expuls_period_id_seq', 1000);
 SELECT setval('cde.lastschrift_id_seq', 1000);
+SELECT setval('cde.lastschrift_transactions_id_seq', 1000);
+SELECT setval('cde.finance_log_id_seq', 1000);
+SELECT setval('cde.log_id_seq', 1000);
+SELECT setval('past_event.institutions_id_seq', 1000);
 SELECT setval('past_event.events_id_seq', 1000);
 SELECT setval('past_event.courses_id_seq', 1000);
-SELECT setval('past_event.institutions_id_seq', 1000);
+SELECT setval('past_event.participants_id_seq', 1000);
+SELECT setval('past_event.log_id_seq', 1000);
 SELECT setval('event.events_id_seq', 1000);
 SELECT setval('event.event_parts_id_seq', 1000);
 SELECT setval('event.course_tracks_id_seq', 1000);
-SELECT setval('event.courses_id_seq', 1000);
 SELECT setval('event.field_definitions_id_seq', 1000);
+SELECT setval('event.courses_id_seq', 1000);
+SELECT setval('event.course_segments_id_seq', 1000);
+SELECT setval('event.orgas_id_seq', 1000);
 SELECT setval('event.lodgement_groups_id_seq', 1000);
 SELECT setval('event.lodgements_id_seq', 1000);
 SELECT setval('event.registrations_id_seq', 1000);
+SELECT setval('event.registration_parts_id_seq', 1000);
+SELECT setval('event.registration_tracks_id_seq', 1000);
+SELECT setval('event.course_choices_id_seq', 1000);
+SELECT setval('event.questionnaire_rows_id_seq', 1000);
 SELECT setval('event.log_id_seq', 1000);
-SELECT setval('ml.mailinglists_id_seq', 1000);
 SELECT setval('assembly.assemblies_id_seq', 1000);
 SELECT setval('assembly.ballots_id_seq', 1000);
 SELECT setval('assembly.candidates_id_seq', 1000);
+SELECT setval('assembly.attendees_id_seq', 1000);
+SELECT setval('assembly.voter_register_id_seq', 1000);
+SELECT setval('assembly.votes_id_seq', 1000);
+SELECT setval('assembly.attachments_id_seq', 1000);
+SELECT setval('assembly.log_id_seq', 1000);
+SELECT setval('ml.mailinglists_id_seq', 1000);
+SELECT setval('ml.subscription_states_id_seq', 1000);
+SELECT setval('ml.subscription_addresses_id_seq', 1000);
+SELECT setval('ml.whitelist_id_seq', 1000);
+SELECT setval('ml.moderators_id_seq', 1000);
+SELECT setval('ml.log_id_seq', 1000);
