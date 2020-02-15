@@ -4,12 +4,11 @@
 
 This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
-
-Most functions are uninlined methods from the ml-frontend.
 """
 
 import cdedb.database.constants as const
-from cdedb.frontend.common import AbstractFrontendShard, periodic
+from cdedb.frontend.common import periodic
+from cdedb.frontend.ml_base import MlBaseFrontend
 
 
 POLICY_MEMBER_CONVERT = {
@@ -38,7 +37,7 @@ def template_url(name):
     return "https://db.cde-ev.de/mailman_templates/{}".format(name)
 
 
-class MailmanShard(AbstractFrontendShard):
+class MailmanShard(MlBaseFrontend):
     def mailman_connect(self):
         """Create a Mailman REST client."""
         url = "http://{}/3.1".format(self.parent.conf.MAILMAN_HOST)
