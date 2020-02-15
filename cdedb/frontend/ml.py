@@ -405,6 +405,9 @@ class MlFrontend(AbstractUserFrontend):
         """Create CSV file with all subscribers and their subscription state"""
         personas_state = self.mlproxy.get_subscription_states(
             rs, mailinglist_id)
+        if not personas_state:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "ml/management")
         personas = self.coreproxy.get_personas(rs, personas_state.keys())
         addresses = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
@@ -428,15 +431,10 @@ class MlFrontend(AbstractUserFrontend):
 
         csv_data = csv_output(sorted(output, key=lambda entry: EntitySorter.persona(entry)),
                               columns)
-        file = self.send_csv_file(
+        return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename="{}_subscription_states.csv".format(
-                rs.ambience['mailinglist']['title']))
-        if file:
-            return file
-        else:
-            rs.notify("info", n_("Empty File."))
-            return self.redirect(rs, "ml/management")
+                rs.ambience['mailinglist']['id']))
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("moderator_ids", "str"))

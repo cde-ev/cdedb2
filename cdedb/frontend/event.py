@@ -2377,7 +2377,8 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
         data = self._get_participant_list_data(rs, event_id, part_ids)
-        if not data:
+        if runs and not data['registrations']:
+            rs.notify("info", n_("Empty PDF."))
             return self.redirect(rs, "event/downloads")
         data['orientation'] = "landscape" if landscape else "portrait"
         data['orgas_only'] = orgas_only
@@ -2397,26 +2398,27 @@ class EventFrontend(AbstractUserFrontend):
     def download_expuls(self, rs, event_id):
         """Create TeX-snippet for announcement in the exPuls."""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        if not course_ids:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
         courses = self.eventproxy.get_courses(rs, course_ids)
         tracks = rs.ambience['event']['tracks']
         tracks_sorted = [e['id'] for e in sorted(tracks.values(),
                                                  key=EntitySorter.course_track)]
         tex = self.fill_template(rs, "tex", "expuls", {'courses': courses,
                                                        'tracks': tracks_sorted})
-        file = self.send_file(
+        return self.send_file(
             rs, data=tex, inline=False,
             filename="{}_expuls.tex".format(rs.ambience['event']['shortname']))
-        if file:
-            return file
-        else:
-            rs.notify("info", n_("Empty File."))
-            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
     def download_csv_courses(self, rs, event_id):
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        if not course_ids:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
         courses = self.eventproxy.get_courses(rs, course_ids)
         columns = ['id', 'nr', 'shortname', 'title', 'instructors', 'max_size',
                    'min_size', 'notes', 'description']
@@ -2441,20 +2443,19 @@ class EventFrontend(AbstractUserFrontend):
                 if field['association'] == const.FieldAssociations.course})
         csv_data = csv_output(sorted(courses.values(), key=EntitySorter.course),
                               columns)
-        file = self.send_csv_file(
+        return self.send_csv_file(
             rs, data=csv_data, inline=False, filename="{}_courses.csv".format(
                 rs.ambience['event']['shortname']))
-        if file:
-            return file
-        else:
-            rs.notify("info", n_("Empty File."))
-            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
     def download_csv_lodgements(self, rs, event_id):
         """Create CSV file with all courses"""
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        if not lodgement_ids:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
+
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         columns = ['id', 'moniker', 'capacity', 'reserve', 'notes']
         columns.extend('fields.' + field['field_name']
@@ -2470,15 +2471,10 @@ class EventFrontend(AbstractUserFrontend):
                 if field['association'] == const.FieldAssociations.lodgement})
         csv_data = csv_output(sorted(lodgements.values(), key=EntitySorter.lodgement),
                               columns)
-        file = self.send_csv_file(
+        return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename="{}_lodgements.csv".format(
                 rs.ambience['event']['shortname']))
-        if file:
-            return file
-        else:
-            rs.notify("info", n_("Empty File."))
-            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
@@ -2500,6 +2496,9 @@ class EventFrontend(AbstractUserFrontend):
         query = Query('qview_registration', spec, fields_of_interest, [], [])
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
+        if not result:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
 
         fields = []
         for csvfield in query.fields_of_interest:
@@ -2509,15 +2508,10 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event'], courses, lodgements, fixed_gettext=True)
         csv_data = csv_output(result, fields, substitutions=choices)
 
-        file = self.send_csv_file(
+        return self.send_csv_file(
             rs, data=csv_data, inline=False,
             filename="{}_registrations.csv".format(
                 rs.ambience['event']['shortname']))
-        if file:
-            return file
-        else:
-            rs.notify("info", n_("Empty File."))
-            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
@@ -2525,31 +2519,27 @@ class EventFrontend(AbstractUserFrontend):
         """Retrieve all data for this event to initialize an offline
         instance."""
         data = self.eventproxy.export_event(rs, event_id)
-        json = json_serialize(data)
-        file = self.send_file(
-            rs, data=json, inline=False, filename="{}_export_event.json".format(
-                rs.ambience['event']['shortname']))
-        if file:
-            return file
-        else:
+        if not data:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
+        json = json_serialize(data)
+        return self.send_file(
+            rs, data=json, inline=False, filename="{}_export_event.json".format(
+                rs.ambience['event']['shortname']))
 
     @access("event")
     @event_guard()
     def download_partial_export(self, rs, event_id):
         """Retrieve data for third-party applications."""
         data = self.eventproxy.partial_export_event(rs, event_id)
+        if not data:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "event/downloads")
         json = json_serialize(data)
-        file = self.send_file(
+        return self.send_file(
             rs, data=json, inline=False,
             filename="{}_partial_export_event.json".format(
                 rs.ambience['event']['shortname']))
-        if file:
-            return file
-        else:
-            rs.notify("info", n_("Empty File."))
-            return self.redirect(rs, "event/downloads")
 
     @access("event")
     @event_guard()
