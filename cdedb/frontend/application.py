@@ -228,8 +228,8 @@ class Application(BaseApp):
                     okay, error = check_anti_csrf(rs, component, action)
                     if not okay:
                         rs.csrf_alert = True
-                        rs.errors.append((ANTI_CSRF_TOKEN_NAME,
-                                          ValueError(error)))
+                        rs.extend_validation_errors(
+                            ((ANTI_CSRF_TOKEN_NAME, ValueError(error)),))
                         rs.notify('error', error)
 
                 # Store database connection as private attribute.

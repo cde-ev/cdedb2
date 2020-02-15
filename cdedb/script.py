@@ -54,7 +54,6 @@ class RequestState:
         self.urls = None
         self.requestargs = None
         self.urlmap = None
-        self.errors = None
         self.values = None
         self.lang = "de"
         self.gettext = gettext.translation('cdedb', languages=("de",),
@@ -66,6 +65,9 @@ class RequestState:
         self.conn = conn
         self._conn = conn
         self.is_quiet = False
+        self._errors = None
+        self.validation_appraised = True
+        self.csrf_alert = False
 
 def setup(persona_id, dbuser, dbpassword, check_system_user=True):
     """This sets up the database.

@@ -172,7 +172,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
-        if rs.errors and not rs.notifications:
+        if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
         url = cdedburl(rs, target, params, force_external=True)
         if anchor is not None:
@@ -945,7 +945,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return cdedburl(rs, 'core/show_user', params)
 
         errorsdict = {}
-        for key, value in rs.errors:
+        for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
         # here come the always accessible things promised above
 
@@ -1075,13 +1075,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
                 "method={} ; remote_addr={} ; values={}, ambience={},",
                 "errors={}, time={}").format(
-                rs.request.is_multithread, rs.request.is_multiprocess,
-                rs.request.base_url, rs.request.cookies, rs.request.url,
-                rs.request.is_secure, rs.request.method,
-                rs.request.remote_addr, rs.values, rs.ambience, rs.errors,
-                now())
+                    rs.request.is_multithread, rs.request.is_multiprocess,
+                    rs.request.base_url, rs.request.cookies, rs.request.url,
+                    rs.request.is_secure, rs.request.method,
+                    rs.request.remote_addr, rs.values, rs.ambience,
+                    rs.retrieve_validation_errors(), now())
             params['debugstring'] = debugstring
-        if rs.errors and not rs.notifications:
+        if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))
         if self.conf.LOCKDOWN:
             rs.notify("info", n_("The database currently undergoes "
@@ -1907,10 +1907,10 @@ def request_extractor(rs, args, constraints=None):
     """
     @REQUESTdata(*args)
     def fun(_, rs, **kwargs):
-        if not rs.errors:
+        if not rs.has_validation_errors():
             for checker, error in constraints or []:
                 if not checker(kwargs):
-                    rs.errors.append(error)
+                    rs.append_validation_error(error)
         return kwargs
 
     return fun(None, rs)
@@ -2040,7 +2040,7 @@ def check_validation(rs, assertion, value, name=None, **kwargs):
         ret, errs = checker(value, name, **kwargs)
     else:
         ret, errs = checker(value, **kwargs)
-    rs.errors.extend(errs)
+    rs.extend_validation_errors(errs)
     return ret
 
 
