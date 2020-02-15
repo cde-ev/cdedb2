@@ -63,6 +63,28 @@ class TestAssemblyFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'href': '/assembly/'})
 
+    @as_users("annika", "martin", "vera", "werner")
+    def test_navigation(self, user):
+        self.traverse({'description': 'Versammlungen'})
+        everyone = ["Versammlungen", "Übersicht"]
+        admins = ["Nutzer verwalten", "Log"]
+        ins = []
+        out = everyone + admins
+
+        # not assembly admins
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
+            ins = everyone
+            out = admins
+        # assembly admins
+        elif user == USER_DICT['werner']:
+            ins = everyone + admins
+            out = []
+
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
+
     @as_users("kalif")
     def test_showuser(self, user):
         self.traverse({'description': user['display_name']})
@@ -136,6 +158,31 @@ class TestAssemblyFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
+
+    @as_users("annika", "martin", "vera", "werner")
+    def test_navigation_one_assembly(self, user):
+        self.traverse({'description': 'Versammlungen'},
+                      {'description': 'Internationaler Kongress'})
+        everyone = [
+            "Versammlungs-Übersicht", "Versammlung Internationaler Kongress",
+            "Übersicht", "Teilnehmer", "Abstimmungen"]
+        admin = ["Konfiguration", "Log"]
+        ins = []
+        out = everyone + admin
+
+        # not assembly admins
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
+            ins = everyone
+            out = admin
+        # assembly admin
+        elif user == USER_DICT['werner']:
+            ins = everyone + admin
+            out = []
+
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
 
     @as_users("werner")
     def test_change_assembly(self, user):

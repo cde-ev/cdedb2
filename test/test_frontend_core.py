@@ -85,6 +85,40 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
         self.assertPresence("Internationaler Kongress", div='assembly-box')
 
+    @as_users("annika", "martin", "nina", "vera", "werner")
+    def test_navigation(self, user):
+        self.assertTitle("CdE-Datenbank")
+        everyone = ["Index", "Übersicht", "Meine Daten",
+                    "Administratorenübersicht"]
+        genesis = ["Accountanfragen"]
+        core_admin = ["Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
+                      "Account-Log", "Nutzerdaten-Log", "Metadaten"]
+        meta_admin = ["Admin-Änderungen"]
+        ins = []
+        out = everyone + genesis + core_admin + meta_admin
+
+        # admin of a realm without genesis cases
+        if user == USER_DICT['werner']:
+            ins = everyone
+            out = genesis + core_admin + meta_admin
+        # admin of a realm with genesis cases
+        elif user in [USER_DICT['annika'], USER_DICT['nina']]:
+            ins = everyone + genesis
+            out = core_admin + meta_admin
+        # core admin
+        elif user == USER_DICT['vera']:
+            ins = everyone + genesis + core_admin
+            out = meta_admin
+        # meta admin
+        elif user == USER_DICT['martin']:
+            ins = everyone + meta_admin
+            out = genesis + core_admin
+
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
+
     @as_users("anton", "berta", "charly", "daniel", "emilia", "ferdinand",
               "garcia", "inga", "janis", "kalif", "martin", "nina",
               "vera", "werner", "annika", "farin", "akira")

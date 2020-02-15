@@ -14,6 +14,32 @@ class TestMlFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'href': '/ml/'})
 
+    @as_users("annika", "martin", "nina", "vera", "werner")
+    def test_navigation(self, user):
+        self.traverse({'description': 'Mailinglisten'})
+        everyone = ["Mailinglisten"]
+        no_admin = ["Übersicht"]
+        admin = ["Aktive Mailinglisten", "Alle Mailinglisten",
+                 "Nutzer verwalten", "Log"]
+        ins = []
+        out = everyone + no_admin + admin
+        s = "Mailinglisten "
+
+        # not ml admins
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera'],
+                    USER_DICT['werner']]:
+            ins = everyone + no_admin
+            out = admin
+        # ml admin
+        elif user == USER_DICT['nina']:
+            ins = everyone + admin
+            out = no_admin
+
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
+
     @as_users("janis")
     def test_showuser(self, user):
         self.traverse({'href': '/core/self/show'})
@@ -92,6 +118,32 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
+
+    @as_users("annika", "berta", "martin", "nina", "vera", "werner")
+    def test_navigation_one_mailinglist(self, user):
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Klatsch und Tratsch'})
+        everyone = ["Mailinglisten-Übersicht",
+                    "Mailingliste Klatsch und Tratsch", "Übersicht "]
+        moderator = ["Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
+                     "Log"]
+        ins = []
+        out = everyone + moderator
+
+        # not moderator or ml-admin
+        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera'],
+                    USER_DICT['werner']]:
+            ins = everyone
+            out = moderator
+        # moderator or ml-admin
+        elif user in [USER_DICT['berta'], USER_DICT['nina']]:
+            ins = everyone + moderator
+            out = []
+
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
 
     @as_users("anton", "janis")
     def test_show_ml_buttons_change_address(self, user):

@@ -18,6 +18,43 @@ class TestCdEFrontend(FrontendTest):
     def test_index(self, user):
         self.traverse({'description': 'Mitglieder'})
 
+    @as_users("annika", "farin", "martin", "vera", "werner")
+    def test_navigation(self, user):
+        self.traverse({'description': 'Mitglieder'})
+        everyone = ["Mitglieder", "Übersicht", "Verg. Veranstaltungen",
+                    "Sonstiges"]
+        not_searchable = ["Datenschutzerklärung"]
+        searchable = ["CdE-Mitglied suchen"]
+        cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
+                     "Verg.-Veranstaltungen-Log"]
+        finance_admin = [
+            "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
+            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"]
+        ins = []
+        out = everyone + not_searchable + searchable + cde_admin + finance_admin
+
+        # searchable member
+        if user in [USER_DICT['annika'], USER_DICT['werner']]:
+            ins = everyone + searchable
+            out = not_searchable + cde_admin + finance_admin
+        # not-searchable member
+        elif user == USER_DICT['martin']:
+            ins = everyone + not_searchable
+            out = searchable + cde_admin + finance_admin
+        # cde but not finance admin
+        elif user == USER_DICT['vera']:
+            ins = everyone + searchable + cde_admin
+            out = not_searchable + finance_admin
+        # cde and finance admin
+        elif user == USER_DICT['farin']:
+            ins = everyone + searchable + cde_admin + finance_admin
+            out = not_searchable
+
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
+
     @as_users("vera", "berta")
     def test_showuser(self, user):
         self.traverse({'description': user['display_name']},)

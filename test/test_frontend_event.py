@@ -29,6 +29,29 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("CdE-Party 2050", div='organized-events')
         self.assertNonPresence("CdE-Party 2050", div='current-events')
 
+    @as_users("annika", "emilia", "martin", "vera", "werner")
+    def test_navigation(self, user):
+        self.traverse({'description': 'Veranstaltungen'})
+        everyone = ["Veranstaltungen", "Übersicht"]
+        admin = ["Veranstaltungen verwalten", "Nutzer verwalten", "Log"]
+        ins = []
+        out = everyone + admin
+
+        # not event admins (also orgas!)
+        if user in [USER_DICT['emilia'], USER_DICT['martin'], USER_DICT['vera'],
+                    USER_DICT['werner']]:
+            ins = everyone
+            out = admin
+        # event admins
+        elif user == USER_DICT['annika']:
+            ins = everyone + admin
+            out = []
+
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
+
     @as_users("emilia")
     def test_showuser(self, user):
         self.traverse({'description': user['display_name']})
@@ -195,6 +218,47 @@ class TestEventFrontend(FrontendTest):
         # self.assertIn("createorgalistform", self.response.forms)
         self.assertIn("addorgaform", self.response.forms)
         self.assertIn("removeorgaform7", self.response.forms)
+
+    @as_users("annika", "emilia", "garcia", "martin", "vera", "werner")
+    def test_navigation_one_event(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'})
+        everyone = [
+            "Veranstaltungsübersicht", "Veranstaltung Große Testakademie 2222",
+            "Übersicht", "Kursliste"]
+        not_registrated = ["Anmelden"]
+        registrated = ["Meine Anmeldung"]
+        orga = ["Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse",
+                "Kurseinteilung", "Unterkünfte", "Downloads", "Partieller",
+                "Import", "Überweisungen eintragen", "Konfiguration",
+                "Veranstaltungsteile", "Datenfelder konfigurieren",
+                "Fragebogen konfigurieren", "Log", "Checkin"]
+        ins = []
+        out = everyone + not_registrated + registrated + orga
+
+        # TODO this could be more expanded (event without courses, distinguish
+        #  between registrated and participant, ...
+        # not registrated, not event admin
+        if user in [USER_DICT['martin'], USER_DICT['vera'], USER_DICT['werner']]:
+            ins = everyone + not_registrated
+            out = registrated + orga
+        # registrated
+        elif user == USER_DICT['emilia']:
+            ins = everyone + registrated
+            out = not_registrated + orga
+        # orga
+        elif user == USER_DICT['garcia']:
+            ins = everyone + registrated + orga
+            out = not_registrated
+        # event admin (annika is not registrated)
+        elif user == USER_DICT['annika']:
+            ins = everyone + not_registrated + orga
+            out = registrated
+
+        for s in ins:
+            self.assertPresence(s, div='sidebar')
+        for s in out:
+            self.assertNonPresence(s, div='sidebar')
 
     @as_users("anton", "berta")
     def test_no_hard_limit(self, user):
