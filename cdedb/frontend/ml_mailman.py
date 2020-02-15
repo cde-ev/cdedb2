@@ -37,7 +37,7 @@ def template_url(name):
     return "https://db.cde-ev.de/mailman_templates/{}".format(name)
 
 
-class MailmanShard(MlBaseFrontend):
+class MailmanMixin(MlBaseFrontend):
     def mailman_connect(self):
         """Create a Mailman REST client."""
         url = "http://{}/3.1".format(self.parent.conf.MAILMAN_HOST)

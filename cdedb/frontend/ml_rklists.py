@@ -5,6 +5,7 @@
 This utilizes a custom software for mailinglist management.
 """
 
+from cdedb.frontend.common import REQUESTdata, access
 from cdedb.frontend.ml_base import MlBaseFrontend
 
 
