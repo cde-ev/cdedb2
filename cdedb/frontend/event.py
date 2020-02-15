@@ -173,7 +173,7 @@ class EventFrontend(AbstractUserFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_event_user"
             result = self.eventproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -340,7 +340,7 @@ class EventFrontend(AbstractUserFrontend):
         """Modify an event organized via DB."""
         data['id'] = event_id
         data = check(rs, "event", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_event_form(rs, event_id)
         code = self.eventproxy.set_event(rs, data)
         self.notify_return_code(rs, code)
@@ -373,9 +373,9 @@ class EventFrontend(AbstractUserFrontend):
         """
         minor_form = check(rs, 'pdffile_or_None', minor_form, "minor_form")
         if not minor_form and not delete:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("minor_form", ValueError(n_("Mustn't be empty."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         path = self.conf.STORAGE_DIR / 'minor_form' / str(event_id)
         if delete and not minor_form:
@@ -408,16 +408,16 @@ class EventFrontend(AbstractUserFrontend):
         """
         event_logo = check(rs, 'pdffile_or_None', event_logo, "event_logo")
         if not event_logo and not delete:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("event_logo", ValueError(n_("Mustn’t be empty."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
         if delete and not event_logo:
             if not logo_ack_delete:
-                rs.errors.append(
-                    ("logo_ack_delete",
-                     ValueError(n_("Must be checked."))))
+                rs.append_validation_error(
+                    ("logo_ack_delete", ValueError(n_("Must be checked."))))
+                rs.ignore_validation_errors()
                 return self.show_event(rs, event_id)
 
             if path.exists():
@@ -451,16 +451,16 @@ class EventFrontend(AbstractUserFrontend):
         """
         course_logo = check(rs, 'pdffile_or_None', course_logo, "course_logo")
         if not course_logo and not delete:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("course_logo", ValueError(n_("Mustn't be empty."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_course(rs, event_id, course_id)
         path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
         if delete and not course_logo:
             if not logo_ack_delete:
-                rs.errors.append(
-                    ("logo_ack_delete",
-                     ValueError(n_("Must be checked."))))
+                rs.append_validation_error(
+                    ("logo_ack_delete", ValueError(n_("Must be checked."))))
+                rs.ignore_validation_errors()
                 return self.show_event(rs, event_id)
 
             if path.exists():
@@ -479,7 +479,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def add_orga(self, rs, event_id, orga_id):
         """Make an additional persona become orga."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         new = {
             'id': event_id,
@@ -497,7 +497,7 @@ class EventFrontend(AbstractUserFrontend):
 
         This can drop your own orga role (but only if you're admin).
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         new = {
             'id': event_id,
@@ -727,8 +727,8 @@ class EventFrontend(AbstractUserFrontend):
         for part_id in deletes:
             ret[part_id] = None
         if not any(ret.values()):
-            rs.errors.append((None, ValueError(n_(
-                "At least one event part required."))))
+            rs.append_validation_error(
+                (None, ValueError(n_("At least one event part required."))))
             rs.notify("error", n_("At least one event part required."))
         return ret
 
@@ -739,7 +739,7 @@ class EventFrontend(AbstractUserFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         parts = self.process_part_input(
             rs, rs.ambience['event']['parts'], has_registrations)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.part_summary_form(rs, event_id)
         for part_id, part in rs.ambience['event']['parts'].items():
             if parts.get(part_id) == part:
@@ -800,7 +800,7 @@ class EventFrontend(AbstractUserFrontend):
         for field_id in fields:
             if field_id not in deletes:
                 tmp = request_extractor(rs, params(field_id))
-                if rs.errors:
+                if rs.has_validation_errors():
                     break
                 tmp = check(rs, "event_field", tmp,
                             extra_suffix="_{}".format(field_id))
@@ -823,7 +823,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
                 tmp = request_extractor(rs, params(marker))
-                if rs.errors:
+                if rs.has_validation_errors():
                     marker += 1
                     break
                 tmp = check(rs, "event_field", tmp, creation=True,
@@ -844,8 +844,9 @@ class EventFrontend(AbstractUserFrontend):
             for f_id, field in ret.items())
         for field_id, field in ret.items():
             if field and 'field_name' in field and count[field['field_name']] > 1:
-                rs.errors.append(("field_name_{}".format(field_id),
-                                  ValueError(n_("Field name not unique."))))
+                rs.append_validation_error(
+                    ("field_name_{}".format(field_id),
+                      ValueError(n_("Field name not unique."))))
         rs.values['create_last_index'] = marker - 1
         return ret
 
@@ -856,7 +857,7 @@ class EventFrontend(AbstractUserFrontend):
         """Manipulate the fields of an event."""
         fields = self.process_field_input(
             rs, rs.ambience['event']['fields'])
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.field_summary_form(rs, event_id)
         for field_id, field in rs.ambience['event']['fields'].items():
             if fields.get(field_id) == field:
@@ -978,7 +979,7 @@ class EventFrontend(AbstractUserFrontend):
             data['orga_address'] = None
 
         data = check(rs, "event", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
         if orga_ml_data:
@@ -1075,7 +1076,7 @@ class EventFrontend(AbstractUserFrontend):
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
         data = check(rs, "course", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_course_form(rs, event_id, course_id)
         code = self.eventproxy.set_course(rs, data)
         self.notify_return_code(rs, code)
@@ -1113,7 +1114,7 @@ class EventFrontend(AbstractUserFrontend):
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
         }
         data = check(rs, "course", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_course_form(rs, event_id)
         new_id = self.eventproxy.create_course(rs, data)
         self.notify_return_code(rs, new_id, success=n_("Course created."))
@@ -1125,8 +1126,9 @@ class EventFrontend(AbstractUserFrontend):
     def delete_course(self, rs, event_id, course_id, ack_delete):
         """Delete a course from an event organized via DB."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.show_course(rs, event_id, course_id)
         blockers = self.eventproxy.delete_course_blockers(rs, course_id)
         # Do not allow deletion of course with attendees
@@ -1553,7 +1555,7 @@ class EventFrontend(AbstractUserFrontend):
         all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
         stati = const.RegistrationPartStati
 
-        if rs.errors:
+        if rs.has_validation_errors():
             registration_ids = all_reg_ids
             registrations = all_regs
             personas = self.coreproxy.get_personas(rs, (r['persona_id'] for r in
@@ -1664,7 +1666,7 @@ class EventFrontend(AbstractUserFrontend):
         Allow assignment of multiple people in multiple tracks to one of
         their choices or a specific course.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.course_choices_form(rs, event_id)
 
         tracks = rs.ambience['event']['tracks']
@@ -1999,7 +2001,7 @@ class EventFrontend(AbstractUserFrontend):
         """Allow orgas to add lots paid of participant fee at once."""
         fee_data_file = check(rs, "csvfile_or_None", fee_data_file,
                               "fee_data_file")
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.batch_fees_form(rs, event_id)
 
         if fee_data_file and fee_data:
@@ -2030,13 +2032,13 @@ class EventFrontend(AbstractUserFrontend):
             data.append(self.examine_fee(
                 rs, dataset, expected_fees, full_payment))
         if lineno != len(fee_data_lines):
-            rs.errors.append(("fee_data",
-                              ValueError(n_("Lines didn’t match up."))))
+            rs.append_validation_error(
+                ("fee_data", ValueError(n_("Lines didn’t match up."))))
         open_issues = any(e['problems'] for e in data)
         saldo = sum(e['amount'] for e in data if e['amount'])
         if not force:
             open_issues = open_issues or any(e['warnings'] for e in data)
-        if rs.errors or not data or open_issues:
+        if rs.has_validation_errors() or not data or open_issues:
             return self.batch_fees_form(rs, event_id, data=data,
                                         csvfields=fields)
 
@@ -2595,7 +2597,7 @@ class EventFrontend(AbstractUserFrontend):
                          json.loads(partial_import_data))
         else:
             data = check(rs, "serialized_partial_event_upload", json_file)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.partial_import_form(rs, event_id)
         if event_id != data['id']:
             rs.notify("error", n_("Data from wrong event."))
@@ -2921,15 +2923,15 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in event['parts'][part_id]['tracks'])
         instructor = request_extractor(rs, instructor_params)
         if not standard['parts']:
-            rs.errors.append(("parts",
-                              ValueError(n_("Must select at least one part."))))
+            rs.append_validation_error(
+                ("parts", ValueError(n_("Must select at least one part."))))
         present_tracks = set()
         choice_getter = lambda track_id, i: choices["course_choice{}_{}".format(track_id, i)]
         for part_id in standard['parts']:
             for track_id, track in event['parts'][part_id]['tracks'].items():
                 present_tracks.add(track_id)
                 # Check for duplicate course choices
-                rs.errors.extend(
+                rs.extend_validation_errors(
                     ("course_choice{}_{}".format(track_id, j),
                      ValueError(n_("You cannot have the same course as %(i)s. and %(j)s. choice"), {'i': i+1, 'j': j+1}))
                     for j in range(track['num_choices'])
@@ -2937,7 +2939,7 @@ class EventFrontend(AbstractUserFrontend):
                     if (choice_getter(track_id, j) is not None
                         and choice_getter(track_id, i) == choice_getter(track_id, j)))
                 # Check for unfilled mandatory course choices
-                rs.errors.extend(
+                rs.extend_validation_errors(
                     ("course_choice{}_{}".format(track_id, i),
                      ValueError(n_("You must chose at least %(min_choices)s courses."),
                                 {'min_choices': track['min_choices']}))
@@ -2989,7 +2991,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         registration = self.process_registration_input(rs, rs.ambience['event'],
                                                        courses)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.register_form(rs, event_id)
         registration['event_id'] = event_id
         registration['persona_id'] = rs.user.persona_id
@@ -3132,7 +3134,7 @@ class EventFrontend(AbstractUserFrontend):
         stored = self.eventproxy.get_registration(rs, registration_id)
         registration = self.process_registration_input(
             rs, rs.ambience['event'], courses, parts=stored['parts'])
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.amend_registration_form(rs, event_id)
 
         registration['id'] = registration_id
@@ -3207,7 +3209,7 @@ class EventFrontend(AbstractUserFrontend):
             for entry in questionnaire
             if entry['field_id'] and not entry['readonly'])
         data = request_extractor(rs, params)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.questionnaire_form(rs, event_id)
 
         code = self.eventproxy.set_registration(rs, {
@@ -3315,7 +3317,7 @@ class EventFrontend(AbstractUserFrontend):
             if v['association'] == const.FieldAssociations.registration}
         new_questionnaire = self.process_questionnaire_input(
             rs, len(questionnaire), registration_fields)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.questionnaire_summary_form(rs, event_id)
         code = self.eventproxy.set_questionnaire(rs, event_id,
                                                  new_questionnaire)
@@ -3355,7 +3357,7 @@ class EventFrontend(AbstractUserFrontend):
         This is strictly speaking redundant functionality, but it's pretty
         laborious to do without.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id)
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         new_questionnaire = tuple(
@@ -3547,7 +3549,7 @@ class EventFrontend(AbstractUserFrontend):
                 for i in range(track['num_choices']) if extractor(i))
             choices_set = set(choices_tuple)
             if len(choices_set) != len(choices_tuple):
-                rs.errors.extend(
+                rs.extend_validation_errors(
                     ("track{}.course_choice_{}".format(track_id, i),
                      ValueError(n_("Must choose different courses.")))
                     for i in range(track['num_choices']))
@@ -3578,7 +3580,7 @@ class EventFrontend(AbstractUserFrontend):
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], skip=skip,
             do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_registration_form(rs, event_id, registration_id)
         registration['id'] = registration_id
         code = self.eventproxy.set_registration(rs, registration)
@@ -3625,20 +3627,24 @@ class EventFrontend(AbstractUserFrontend):
         if (persona_id is not None
                 and not self.coreproxy.verify_personas(
                     rs, (persona_id,), required_roles=("event",))):
-            rs.errors.append(("persona.persona_id",
-                              ValueError(n_("Invalid persona."))))
-        if not rs.errors and self.eventproxy.list_registrations(
-                rs, event_id, persona_id=persona_id):
-            rs.errors.append(("persona.persona_id",
-                              ValueError(n_("Already registered."))))
+            rs.append_validation_error(
+                ("persona.persona_id", ValueError(n_("Invalid persona."))))
+        if (not rs.has_validation_errors()
+                and self.eventproxy.list_registrations(rs, event_id,
+                                                       persona_id=persona_id)):
+            rs.append_validation_error(
+                ("persona.persona_id",
+                  ValueError(n_("Already registered."))))
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], do_fields=False,
             do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
-        if not rs.errors and not self.eventproxy.check_orga_addition_limit(
-                rs, event_id):
-            rs.errors.append(("persona.persona_id",
-                              ValueError(n_("Rate-limit reached."))))
-        if rs.errors:
+        if (not rs.has_validation_errors()
+                and not self.eventproxy.check_orga_addition_limit(
+                    rs, event_id)):
+            rs.append_validation_error(
+                ("persona.persona_id",
+                  ValueError(n_("Rate-limit reached."))))
+        if rs.has_validation_errors():
             return self.add_registration_form(rs, event_id)
 
         registration['persona_id'] = persona_id
@@ -3654,8 +3660,9 @@ class EventFrontend(AbstractUserFrontend):
     def delete_registration(self, rs, event_id, registration_id, ack_delete):
         """Remove a registration."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
         blockers = self.eventproxy.delete_registration_blockers(
@@ -3676,7 +3683,9 @@ class EventFrontend(AbstractUserFrontend):
         # Redirect, if the reg_ids parameters is error-prone, to avoid backend
         # errors. Other errors are okay, since they can occur on submitting the
         # form
-        if rs.errors and all(field == 'reg_ids' for field, _ in rs.errors):
+        if (rs.has_validation_errors()
+                and all(field == 'reg_ids'
+                        for field, _ in rs.retrieve_validation_errors())):
             return self.redirect(rs, 'event/registration_query',
                                  {'download': None, 'is_search': False})
         # Get information about registrations, courses and lodgements
@@ -3764,7 +3773,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], check_enabled=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_registrations_form(rs, event_id)
 
         code = 1
@@ -4110,7 +4119,7 @@ class EventFrontend(AbstractUserFrontend):
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         groups = self.process_lodgement_group_input(rs, group_ids.keys(),
                                                     event_id)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
         code = 1
         for group_id, group in groups.items():
@@ -4183,7 +4192,7 @@ class EventFrontend(AbstractUserFrontend):
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
         }
         data = check(rs, "lodgement", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_lodgement_form(rs, event_id)
 
         new_id = self.eventproxy.create_lodgement(rs, data)
@@ -4220,7 +4229,7 @@ class EventFrontend(AbstractUserFrontend):
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
         data = check(rs, "lodgement", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_lodgement_form(rs, event_id, lodgement_id)
 
         code = self.eventproxy.set_lodgement(rs, data)
@@ -4233,8 +4242,9 @@ class EventFrontend(AbstractUserFrontend):
     def delete_lodgement(self, rs, event_id, lodgement_id, ack_delete):
         """Remove a lodgement."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.show_lodgement(rs, event_id, lodgement_id)
         code = self.eventproxy.delete_lodgement(
             rs, lodgement_id, cascade={"inhabitants"})
@@ -4335,7 +4345,7 @@ class EventFrontend(AbstractUserFrontend):
                  for part_id in rs.ambience['event']['parts']
                  for reg_id in current_inhabitants[part_id])))
         data = request_extractor(rs, params)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         # Iterate all registrations to find changed ones
         code = 1
@@ -4465,7 +4475,7 @@ class EventFrontend(AbstractUserFrontend):
                     for track_id in rs.ambience['course']['segments']
                     for reg_id in current_attendees[track_id]))
         data = request_extractor(rs, params)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.manage_attendees_form(rs, event_id, course_id)
 
         # Iterate all registrations to find changed ones
@@ -4896,7 +4906,7 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles, 'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_registration"
             result = self.eventproxy.submit_general_query(rs, query,
                                                           event_id=event_id)
@@ -4957,7 +4967,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def checkin(self, rs, event_id, registration_id):
         """Check a participant in."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)
         registration = self.eventproxy.get_registration(rs, registration_id)
         if registration['event_id'] != event_id:
@@ -4980,7 +4990,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def field_set_select(self, rs, event_id, field_id, reg_ids):
         """Select a field for manipulation across all registrations."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.render(rs, "field_set_select")
         if field_id is None:
             registrations = self.eventproxy.get_registrations(rs, reg_ids)
@@ -5059,7 +5069,7 @@ class EventFrontend(AbstractUserFrontend):
         data_params = tuple(("input{}".format(registration_id), kind)
                             for registration_id in registration_ids)
         data = request_extractor(rs, data_params)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.field_set_form(rs, event_id)
 
         # If no list of registration_ids is given as parameter get all
@@ -5111,7 +5121,7 @@ class EventFrontend(AbstractUserFrontend):
         """Unlock an event after offline usage and incorporate the offline
         changes."""
         data = check(rs, "serialized_event_upload", json)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_event(rs, event_id)
         if event_id != data['id']:
             rs.notify("error", n_("Data from wrong event."))
@@ -5141,9 +5151,9 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Event already archived."))
             return self.redirect(rs, "event/show_event")
         if not ack_archive:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("ack_archive", ValueError(n_("Must be checked."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
         if rs.ambience['event']['end'] >= now().date():
@@ -5168,8 +5178,9 @@ class EventFrontend(AbstractUserFrontend):
     def delete_event(self, rs, event_id, ack_delete):
         """Remove an event."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
         if rs.ambience['event']['end'] >= now().date():
@@ -5212,7 +5223,7 @@ class EventFrontend(AbstractUserFrontend):
         Required aux value based on the 'kind':
         * orga_registration: Id of the event you are orga of
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.send_json(rs, {})
 
         spec_additions = {}
@@ -5314,7 +5325,7 @@ class EventFrontend(AbstractUserFrontend):
         The search phrase may be anything: a numeric id or a string
         matching the data set.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
         anid, errs = validate.check_cdedbid(phrase, "phrase")

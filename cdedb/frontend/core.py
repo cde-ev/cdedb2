@@ -180,7 +180,7 @@ class CoreFrontend(AbstractFrontend):
         data_params = tuple((key, "str_or_None") for key in info)
         data = request_extractor(rs, data_params)
         data = check(rs, "meta_info", data, keys=info.keys())
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.meta_info_form(rs)
         code = self.coreproxy.set_meta_info(rs, data)
         self.notify_return_code(rs, code)
@@ -197,14 +197,15 @@ class CoreFrontend(AbstractFrontend):
         :type password: str
         :param wants: URL to redirect to
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.index(rs)
         sessionkey = self.coreproxy.login(rs, username, password,
                                           rs.request.remote_addr)
         if not sessionkey:
             rs.notify("error", n_("Login failure."))
-            rs.errors.extend((("username", ValueError()),
-                              ("password", ValueError())))
+            rs.extend_validation_errors(
+                (("username", ValueError()), ("password", ValueError())))
+            rs.ignore_validation_errors()
             return self.index(rs)
 
         if wants:
@@ -282,7 +283,7 @@ class CoreFrontend(AbstractFrontend):
         frontend function and not an incoming request. This allows to access
         this endpoint without a redirect to preserve validation results.
         """
-        if (persona_id != confirm_id or rs.errors) and not internal:
+        if (persona_id != confirm_id or rs.has_validation_errors()) and not internal:
             return self.index(rs)
         if (rs.ambience['persona']['is_archived']
                 and "core_admin" not in rs.user.roles):
@@ -518,7 +519,7 @@ class CoreFrontend(AbstractFrontend):
         The search phrase may be anything: a numeric id (wellformed with
         check digit or without) or a string matching the data set.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.index(rs)
         anid, errs = validate.check_cdedbid(phrase, "phrase")
         if not errs:
@@ -607,7 +608,7 @@ class CoreFrontend(AbstractFrontend):
         - mod_ml_user: Which action you are going to execute on this user.
           A member of the SubscriptionActions enum.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.send_json(rs, {})
 
         spec_additions = {}
@@ -706,7 +707,7 @@ class CoreFrontend(AbstractFrontend):
         if mailinglist:
             pol = const.MailinglistInteractionPolicy
             action = check(rs, "enum_subscriptionactions_or_None", variant)
-            if rs.errors:
+            if rs.has_validation_errors():
                 return self.send_json(rs, {})
             if action == SubscriptionActions.add_subscriber:
                 allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
@@ -790,7 +791,7 @@ class CoreFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, "persona", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_user_form(rs)
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(rs, data, generation=generation,
@@ -832,7 +833,7 @@ class CoreFrontend(AbstractFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_core_user"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -884,7 +885,7 @@ class CoreFrontend(AbstractFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_archived_persona"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -980,7 +981,7 @@ class CoreFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, "persona", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
 
         code = self.coreproxy.change_persona(rs, data, generation=generation,
@@ -1046,7 +1047,7 @@ class CoreFrontend(AbstractFrontend):
                           is_cde_admin, is_finance_admin, is_event_admin,
                           is_ml_admin, is_assembly_admin, notes):
         """Grant or revoke admin bits."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
 
         stati = (const.PrivilegeChangeStati.pending,)
@@ -1276,7 +1277,7 @@ class CoreFrontend(AbstractFrontend):
         for realm in implied_realms(target_realm):
             data['is_{}_realm'.format(realm)] = True
         data = check(rs, "persona", data, transition=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.promote_user_form(rs, persona_id)
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
@@ -1309,7 +1310,7 @@ class CoreFrontend(AbstractFrontend):
         This is CdE-functionality so we require a cde_admin instead of a
         core_admin.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.modify_membership_form(rs, persona_id)
         code = self.coreproxy.change_membership(rs, persona_id, is_member)
         self.notify_return_code(rs, code)
@@ -1373,7 +1374,7 @@ class CoreFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.modify_balance_form(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
             rs, persona_id, new_balance,
@@ -1409,8 +1410,9 @@ class CoreFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         foto = check(rs, 'profilepic_or_None', foto, "foto")
         if not foto and not delete:
-            rs.errors.append(("foto", ValueError("Mustn't be empty.")))
-        if rs.errors:
+            rs.append_validation_error(
+                ("foto", ValueError("Mustn't be empty.")))
+        if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
         previous = self.coreproxy.get_cde_user(rs, persona_id)['foto']
         myhash = None
@@ -1442,24 +1444,25 @@ class CoreFrontend(AbstractFrontend):
                  ("new_password2", "str"))
     def change_password(self, rs, old_password, new_password, new_password2):
         """Update your own password."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_password_form(rs)
 
         if new_password != new_password2:
-            rs.errors.append(("new_password",
-                              ValueError(n_("Passwords don’t match."))))
-            rs.errors.append(("new_password2",
-                              ValueError(n_("Passwords don’t match."))))
+            rs.extend_validation_errors(
+                (("new_password", ValueError(n_("Passwords don’t match."))),
+                 ("new_password2", ValueError(n_("Passwords don’t match.")))))
+            rs.ignore_validation_errors()
             rs.notify("error", n_("Passwords don’t match."))
             return self.change_password_form(rs)
 
         new_password, errs = self.coreproxy.check_password_strength(
             rs, new_password, persona_id=rs.user.persona_id,
             argname="new_password")
-        rs.errors.extend(errs)
+        rs.extend_validation_errors(errs)
 
-        if rs.errors:
-            if any(name == "new_password" for name, _ in rs.errors):
+        if rs.has_validation_errors():
+            if any(name == "new_password"
+                   for name, _ in rs.retrieve_validation_errors()):
                 rs.notify("error", n_("Password too weak."))
             return self.change_password_form(rs)
         code, message = self.coreproxy.change_password(
@@ -1467,8 +1470,9 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code, success=n_("Password changed."),
                                 error=message)
         if not code:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("old_password", ValueError(n_("Wrong password."))))
+            rs.ignore_validation_errors()
             self.logger.info(
                 "Unsuccessful password change for persona {}.".format(
                     rs.user.persona_id))
@@ -1491,11 +1495,13 @@ class CoreFrontend(AbstractFrontend):
 
         To prevent an adversary from changing random passwords.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.reset_password_form(rs)
         exists = self.coreproxy.verify_existence(rs, email)
         if not exists:
-            rs.errors.append(("email", ValueError(n_("Nonexistant user."))))
+            rs.append_validation_error(
+                ("email", ValueError(n_("Nonexistant user."))))
+            rs.ignore_validation_errors()
             return self.reset_password_form(rs)
         admin_exception = False
         try:
@@ -1534,7 +1540,7 @@ class CoreFrontend(AbstractFrontend):
         This is the only way to reset the password of an administrator (for
         security reasons).
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.redirect_show_user(rs, persona_id)
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise PrivilegeError(n_("Not a relative admin."))
@@ -1568,9 +1574,9 @@ class CoreFrontend(AbstractFrontend):
         frontend function and not an incoming request. This prevents
         validation from changing the target again.
         """
-        if rs.errors and not internal:
+        if rs.has_validation_errors() and not internal:
             # Clean errors prior to displaying a new form for the first step
-            rs.errors = []
+            rs.retrieve_validation_errors().clear()
             rs.notify("info", n_("Please try again."))
             return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
@@ -1582,21 +1588,22 @@ class CoreFrontend(AbstractFrontend):
                  ("new_password2", "str"), ("cookie", "str"))
     def do_password_reset(self, rs, email, new_password, new_password2, cookie):
         """Now we can reset to a new password."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.reset_password_form(rs)
         if new_password != new_password2:
-            rs.errors.append(("new_password",
-                              ValueError(n_("Passwords don’t match."))))
-            rs.errors.append(("new_password2",
-                              ValueError(n_("Passwords don’t match."))))
+            rs.extend_validation_errors(
+                (("new_password", ValueError(n_("Passwords don’t match."))),
+                 ("new_password2", ValueError(n_("Passwords don’t match."))),))
+            rs.ignore_validation_errors()
             rs.notify("error", n_("Passwords don’t match."))
             return self.change_password_form(rs)
         new_password, errs = self.coreproxy.check_password_strength(
             rs, new_password, email=email, argname="new_password")
-        rs.errors.extend(errs)
+        rs.extend_validation_errors(errs)
 
-        if rs.errors:
-            if any(name == "new_password" for name, _ in rs.errors):
+        if rs.has_validation_errors():
+            if any(name == "new_password"
+                   for name, _ in rs.retrieve_validation_errors()):
                 rs.notify("error", n_("Password too weak."))
             return self.do_password_reset_form(rs, email=email, cookie=cookie,
                                                internal=True)
@@ -1619,11 +1626,14 @@ class CoreFrontend(AbstractFrontend):
     def send_username_change_link(self, rs, new_username):
         """First verify new name with test email."""
         if new_username == rs.user.username:
-            rs.errors.append(("new_username", ValueError(n_(
-                "Must be different from current email address."))))
-        if not rs.errors and self.coreproxy.verify_existence(rs, new_username):
-            rs.errors.append(("new_username", ValueError(n_("Name collision."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("new_username", ValueError(n_(
+                    "Must be different from current email address."))))
+        if (not rs.has_validation_errors()
+                and self.coreproxy.verify_existence(rs, new_username)):
+            rs.append_validation_error(
+                ("new_username", ValueError(n_("Name collision."))))
+        if rs.has_validation_errors():
             return self.change_username_form(rs)
         self.do_mail(rs, "change_username",
                      {'To': (new_username,),
@@ -1640,7 +1650,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("new_username", "#email"))
     def do_username_change_form(self, rs, new_username):
         """Email is now verified or we are admin."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_username_form(rs)
         rs.values['new_username'] = self.encode_parameter(
             "core/do_username_change", "new_username", new_username)
@@ -1651,7 +1661,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(('new_username', '#email'), ('password', 'str'))
     def do_username_change(self, rs, new_username, password):
         """Now we can do the actual change."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_username_form(rs)
         code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)
@@ -1685,7 +1695,7 @@ class CoreFrontend(AbstractFrontend):
         """Change username without verification."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.admin_username_change_form(rs, persona_id)
         code, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
@@ -1703,7 +1713,7 @@ class CoreFrontend(AbstractFrontend):
         """Enable/disable an account."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if rs.errors:
+        if rs.has_validation_errors():
             # Redirect for encoded parameter
             return self.redirect_show_user(rs, persona_id)
         if rs.ambience['persona']['is_archived']:
@@ -1747,15 +1757,16 @@ class CoreFrontend(AbstractFrontend):
         if data is None:
             return self.genesis_request_form(rs)
         if len(data['notes']) > self.conf.MAX_RATIONALE:
-            rs.errors.append(("notes", ValueError(n_("Rationale too long."))))
+            rs.append_validation_error(
+                ("notes", ValueError(n_("Rationale too long."))))
         # We dont actually want gender == not_specified as a valid option if it
         # is required for the requested realm)
         if 'gender' in realm_specific_genesis_fields.get(data.get('realm'), {}):
             if data['gender'] == const.Genders.not_specified:
-                rs.errors.append(
+                rs.append_validation_error(
                     ("gender", ValueError(n_(
                         "Must specify gender for event realm."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
             case_id = self.coreproxy.genesis_case_by_email(
@@ -1795,7 +1806,7 @@ class CoreFrontend(AbstractFrontend):
 
         This is not a POST since the link is shared via email.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         code, realm = self.coreproxy.genesis_verify(rs, case_id)
         self.notify_return_code(
@@ -1929,7 +1940,7 @@ class CoreFrontend(AbstractFrontend):
         """Edit a case to fix potential issues before creation."""
         data['id'] = case_id
         data = check(rs, "genesis_case", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.genesis_modify_form(rs, case_id)
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if (not self.is_admin(rs)
@@ -1951,7 +1962,7 @@ class CoreFrontend(AbstractFrontend):
 
         This either creates a new account or declines account creation.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.genesis_list_cases(rs)
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if (not self.is_admin(rs)
@@ -2057,7 +2068,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("generation", "int"), ("ack", "bool"))
     def resolve_change(self, rs, persona_id, generation, ack):
         """Make decision."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.list_pending_changes(rs)
         code = self.coreproxy.changelog_resolve_change(rs, persona_id,
                                                        generation, ack)
@@ -2070,11 +2081,11 @@ class CoreFrontend(AbstractFrontend):
     def archive_persona(self, rs, persona_id, ack_delete, note):
         """Move a persona to the attic."""
         if not ack_delete:
-            rs.errors.append(("ack_delete",
-                              ValueError(n_("Must be checked."))))
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
         if not note:
             rs.notify("error", n_("Must supply archival note."))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_user(rs, persona_id, confirm_id=persona_id,
                                   internal=True)
 
@@ -2089,7 +2100,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", "cde_admin", modi={"POST"})
     def dearchive_persona(self, rs, persona_id):
         """Reinstate a persona from the attic."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.redirect_show_user(rs, persona_id)
 
         code = self.coreproxy.dearchive_persona(rs, persona_id)
@@ -2101,9 +2112,9 @@ class CoreFrontend(AbstractFrontend):
     def purge_persona(self, rs, persona_id, ack_delete):
         """Delete all identifying information for a persona."""
         if not ack_delete:
-            rs.errors.append(("ack_delete",
-                              ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.redirect_show_user(rs, persona_id)
 
         code = self.coreproxy.purge_persona(rs, persona_id)

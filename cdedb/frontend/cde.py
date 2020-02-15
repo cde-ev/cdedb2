@@ -128,7 +128,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("ack", "bool"))
     def consent_decision(self, rs, ack):
         """Record decision."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.consent_decision_form(rs)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         new = {
@@ -188,7 +188,7 @@ class CdEFrontend(AbstractUserFrontend):
         result = None
         count = 0
         cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
-        if is_search and not rs.errors:
+        if is_search and not rs.has_validation_errors():
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
@@ -203,8 +203,10 @@ class CdEFrontend(AbstractUserFrontend):
         # A little hack to fix displaying of errors: The form uses
         # 'qval_<field>' as input name, the validation only returns the field's
         # name
-        elif rs.errors:
-            rs.errors = [('qval_' + k, v) for k, v in rs.errors]
+        elif rs.has_validation_errors():
+            current = tuple(rs.retrieve_validation_errors())
+            rs.retrieve_validation_errors().clear()
+            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
             'cutoff': cutoff, 'count': count,
@@ -237,7 +239,7 @@ class CdEFrontend(AbstractUserFrontend):
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_cde_user"
             result = self.cdeproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -701,17 +703,17 @@ class CdEFrontend(AbstractUserFrontend):
                 rs.values['resolution{}'.format(dataset['lineno'] - 1)] = \
                     LineResolutions.create.value
         if lineno != len(accountlines):
-            rs.errors.append(("accounts",
-                              ValueError(n_("Lines didn’t match up."))))
+            rs.append_validation_error(
+                ("accounts", ValueError(n_("Lines didn’t match up."))))
         if not membership:
-            rs.errors.append(("membership",
-                              ValueError(
-                                  n_("Only member admission supported."))))
+            rs.append_validation_error(
+                ("membership",
+                  ValueError(n_("Only member admission supported."))))
         open_issues = any(
             e['resolution'] is None
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
             for e in data)
-        if rs.errors or not data or open_issues:
+        if rs.has_validation_errors() or not data or open_issues:
             return self.batch_admission_form(rs, data=data, csvfields=fields)
         if not finalized:
             rs.values['finalized'] = True
@@ -783,7 +785,7 @@ class CdEFrontend(AbstractUserFrontend):
         # The statements from BFS are encoded in latin-1
         statement_file = check(rs, "csvfile_or_None", statement_file,
                                "statement_file", encoding="latin-1")
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.parse_statement_form(rs)
 
         if statement_file and statement:
@@ -825,7 +827,7 @@ class CdEFrontend(AbstractUserFrontend):
                                 {'lineno': i + 1}
                                 ))
                 problems.append(p)
-                rs.errors.append(p)
+                rs.append_validation_error(p)
                 continue
             line["id"] = i
             t = Transaction(line)
@@ -947,7 +949,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         This uses POST, because the expected filesize is too large for GET.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.parse_statement_form(rs)
         return self.send_file(rs, mimetype="text/csv", data=data,
                               filename=filename)
@@ -1125,7 +1127,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         transfers_file = check(rs, "csvfile_or_None", transfers_file,
                                "transfers_file")
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.money_transfers_form(rs)
         if transfers_file and transfers:
             rs.notify("warning", n_("Only one input method allowed."))
@@ -1158,11 +1160,11 @@ class CdEFrontend(AbstractUserFrontend):
                 ds1['warnings'].append(warning)
                 ds2['warnings'].append(warning)
         if lineno != len(transferlines):
-            rs.errors.append(("transfers",
-                              ValueError(n_("Lines didn’t match up."))))
+            rs.append_validation_error(
+                ("transfers", ValueError(n_("Lines didn’t match up."))))
         open_issues = any(e['problems'] for e in data)
         saldo = sum(e['amount'] for e in data if e['amount'])
-        if rs.errors or not data or open_issues:
+        if rs.has_validation_errors() or not data or open_issues:
             rs.values['checksum'] = None
             return self.money_transfers_form(rs, data=data, csvfields=fields,
                                              saldo=saldo)
@@ -1296,7 +1298,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Modify one permit."""
         data['id'] = lastschrift_id
         data = check(rs, "lastschrift", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_change_form(rs, lastschrift_id)
         code = self.cdeproxy.set_lastschrift(rs, data)
         self.notify_return_code(rs, code)
@@ -1315,7 +1317,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Create a new permit."""
         data['persona_id'] = persona_id
         data = check(rs, "lastschrift", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
         if self.cdeproxy.list_lastschrift(
                 rs, persona_ids=(persona_id,), active=True):
@@ -1329,7 +1331,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("finance_admin", modi={"POST"})
     def lastschrift_revoke(self, rs, lastschrift_id):
         """Disable a permit."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_show(
                 rs, rs.ambience['lastschrift']['persona_id'])
         data = {
@@ -1406,7 +1408,7 @@ class CdEFrontend(AbstractUserFrontend):
         :rtype: str
         """
         sanitized_transactions = check(rs, "sepa_transactions", transactions)
-        if rs.errors:
+        if rs.has_validation_errors():
             return None
         sorted_transactions = {}
         for transaction in sanitized_transactions:
@@ -1432,7 +1434,7 @@ class CdEFrontend(AbstractUserFrontend):
             'payment_date': self._calculate_payment_date(),
         }
         meta = check(rs, "sepa_meta", meta)
-        if rs.errors:
+        if rs.has_validation_errors():
             return None
         sepapain_file = self.fill_template(rs, "other", "pain.008.003.02", {
             'transactions': sorted_transactions, 'meta': meta})
@@ -1447,7 +1449,7 @@ class CdEFrontend(AbstractUserFrontend):
         lastschrift_id is given. If it is None, then this creates the file
         for all open permits (c.f. :py:func:`determine_open_permits`).
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         period = self.cdeproxy.current_period(rs)
         if lastschrift_id is None:
@@ -1515,7 +1517,7 @@ class CdEFrontend(AbstractUserFrontend):
         passed or if that is None, then for all open permits
         (c.f. :py:func:`determine_open_permits`).
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         stati = const.LastschriftTransactionStati
         period = self.cdeproxy.current_period(rs)
@@ -1575,7 +1577,7 @@ class CdEFrontend(AbstractUserFrontend):
         lastschrift page, otherwise return to a general lastschrift
         page.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         success = self.cdeproxy.lastschrift_skip(rs, lastschrift_id)
         if not success:
@@ -1615,7 +1617,7 @@ class CdEFrontend(AbstractUserFrontend):
         lastschrift page, otherwise return to a general lastschrift
         page.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         code = self.lastschrift_process_transaction(rs, transaction_id, status)
         self.notify_return_code(rs, code)
@@ -1632,8 +1634,9 @@ class CdEFrontend(AbstractUserFrontend):
                                           cancelled, failure):
         """Finish many transaction."""
         if sum(1 for s in (success, cancelled, failure) if s) != 1:
-            rs.errors.append((None, ValueError(n_("Wrong number of actions."))))
-        if rs.errors:
+            rs.append_validation_error(
+                (None, ValueError(n_("Wrong number of actions."))))
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         if not transaction_ids:
             rs.notify("warning", n_("No transactions selected."))
@@ -1661,7 +1664,7 @@ class CdEFrontend(AbstractUserFrontend):
         The user can cancel a direct debit transaction after the
         fact. So we have to deal with this possibility.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         tally = -self.conf.SEPA_ROLLBACK_FEE
         code = self.cdeproxy.rollback_lastschrift_transaction(
@@ -1755,7 +1758,7 @@ class CdEFrontend(AbstractUserFrontend):
                                       iban, account_holder):
         """Fill the direct debit authorization template with information."""
 
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.lastschrift_subscription_form_fill(rs)
 
         data = {
@@ -1816,7 +1819,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
 
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_semester(rs)
 
         # The rs parameter shadows the outer request state, making sure that
@@ -2021,7 +2024,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Addresscheck already done."))
             return self.redirect(rs, "cde/show_semester")
 
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_semester(rs)
 
         # The rs parameter shadows the outer request state, making sure that
@@ -2081,7 +2084,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Proceed to next expuls."""
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_semester(rs)
         if not expuls['addresscheck_done']:
             rs.notify("error", n_("Addresscheck not done."))
@@ -2171,7 +2174,7 @@ class CdEFrontend(AbstractUserFrontend):
         institution_ids = self.pasteventproxy.list_institutions(rs)
         institutions = self.process_institution_input(
             rs, institution_ids.keys())
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.institution_summary_form(rs)
         code = 1
         for institution_id, institution in institutions.items():
@@ -2378,7 +2381,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Modify a concluded event."""
         data['id'] = pevent_id
         data = check(rs, "past_event", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
         code = self.pasteventproxy.set_past_event(rs, data)
         self.notify_return_code(rs, code)
@@ -2414,7 +2417,7 @@ class CdEFrontend(AbstractUserFrontend):
                 else:
                     rs.notify("warning", n_("Line %(lineno)s is faulty."),
                               {'lineno': lineno})
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_past_event_form(rs)
         with Atomizer(rs):
             new_id = self.pasteventproxy.create_past_event(rs, data)
@@ -2429,8 +2432,9 @@ class CdEFrontend(AbstractUserFrontend):
     def delete_past_event(self, rs, pevent_id, ack_delete):
         """Remove a past event."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
 
         code = self.pasteventproxy.delete_past_event(
@@ -2450,7 +2454,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Modify a concluded course."""
         data['id'] = pcourse_id
         data = check(rs, "past_course", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
         code = self.pasteventproxy.set_past_course(rs, data)
         self.notify_return_code(rs, code)
@@ -2467,7 +2471,7 @@ class CdEFrontend(AbstractUserFrontend):
         """Add new concluded course."""
         data['pevent_id'] = pevent_id
         data = check(rs, "past_course", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
         new_id = self.pasteventproxy.create_past_course(rs, data)
         self.notify_return_code(rs, new_id, success=n_("Course created."))
@@ -2481,8 +2485,9 @@ class CdEFrontend(AbstractUserFrontend):
         This also deletes all participation information w.r.t. this course.
         """
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
         code = self.pasteventproxy.delete_past_course(
@@ -2496,7 +2501,7 @@ class CdEFrontend(AbstractUserFrontend):
     def add_participant(self, rs, pevent_id, pcourse_id, persona_id,
                         is_instructor, is_orga):
         """Add participant to concluded event."""
-        if rs.errors:
+        if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
@@ -2525,7 +2530,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("persona_id", "id"), ("pcourse_id", "id_or_None"))
     def remove_participant(self, rs, pevent_id, persona_id, pcourse_id):
         """Remove participant."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(
             rs, pevent_id, pcourse_id, persona_id)

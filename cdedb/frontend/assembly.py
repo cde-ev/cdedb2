@@ -118,7 +118,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_persona"
             result = self.assemblyproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -255,7 +255,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Modify an assembly."""
         data['id'] = assembly_id
         data = check(rs, "assembly", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_assembly_form(rs, assembly_id)
         code = self.assemblyproxy.set_assembly(rs, data)
         self.notify_return_code(rs, code)
@@ -271,7 +271,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def create_assembly(self, rs, data):
         """Make a new assembly."""
         data = check(rs, "assembly", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_assembly_form(rs)
         new_id = self.assemblyproxy.create_assembly(rs, data)
         self.notify_return_code(rs, new_id)
@@ -282,9 +282,9 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(("ack_delete", "bool"))
     def delete_assembly(self, rs, assembly_id, ack_delete):
         if not ack_delete:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         blockers = self.assemblyproxy.delete_assembly_blockers(rs, assembly_id)
         if "vote_begin" in blockers:
@@ -337,7 +337,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/show_assembly")
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
@@ -349,7 +349,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/list_attendees")
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.list_attendees(rs, assembly_id)
         self.process_signup(rs, assembly_id, persona_id)
         return self.redirect(rs, "assembly/list_attendees")
@@ -393,9 +393,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         This purges stored voting secret.
         """
         if not ack_conclude:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("ack_conclude", ValueError(n_("Must be checked."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
 
         blockers = self.assemblyproxy.conclude_assembly_blockers(
@@ -489,7 +489,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Make a new ballot."""
         data['assembly_id'] = assembly_id
         data = check(rs, "ballot", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_ballot_form(rs, assembly_id)
         new_id = self.assemblyproxy.create_ballot(rs, data)
         self.notify_return_code(rs, new_id)
@@ -529,7 +529,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, "identifier", tmp, 'filename')
         attachment = check(rs, "pdffile", attachment, 'attachment')
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.add_attachment_form(rs, assembly_id=assembly_id,
                                             ballot_id=ballot_id)
         data = {
@@ -555,9 +555,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                           attachment_ack_delete, ballot_id=None):
         """Delete an attachment."""
         if not attachment_ack_delete:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("attachment_ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             if ballot_id:
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
@@ -574,8 +574,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(("secret", "str"))
     def show_old_vote(self, rs, assembly_id, ballot_id, secret):
         """Show a vote in a ballot of an old assembly by providing secret."""
-        if (rs.ambience["assembly"]["is_active"] or
-                not rs.ambience["ballot"]["is_tallied"] or rs.errors):
+        if (rs.has_validation_errors() or rs.ambience["assembly"]["is_active"]
+                or not rs.ambience["ballot"]["is_tallied"]):
             return self.show_ballot(rs, assembly_id, ballot_id)
         return self.show_ballot(rs, assembly_id, ballot_id, secret.strip())
 
@@ -732,7 +732,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Modify a ballot."""
         data['id'] = ballot_id
         data = check(rs, "ballot", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_ballot_form(rs, assembly_id, ballot_id)
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
@@ -761,9 +761,9 @@ class AssemblyFrontend(AbstractUserFrontend):
     def delete_ballot(self, rs, assembly_id, ballot_id, ack_delete):
         """Remove a ballot."""
         if not ack_delete:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
         blockers = self.assemblyproxy.delete_ballot_blockers(rs, ballot_id)
         if "vote_begin" in blockers:
@@ -794,7 +794,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot['votes']:
             voted = unwrap(
                 request_extractor(rs, (("vote", "[str]"),)))
-            if rs.errors:
+            if rs.has_validation_errors():
                 return self.show_ballot(rs, assembly_id, ballot_id)
             if voted == (ASSEMBLY_BAR_MONIKER,):
                 if not ballot['use_bar']:
@@ -830,7 +830,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if ballot['use_bar']:
                     vote += "={}".format(ASSEMBLY_BAR_MONIKER)
         vote = check(rs, "vote", vote, "vote", ballot=ballot)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
         self.notify_return_code(rs, code)
@@ -855,11 +855,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         monikers = {c['moniker']
                     for c in rs.ambience['ballot']['candidates'].values()}
         if moniker in monikers:
-            rs.errors.append(("moniker", ValueError(n_("Duplicate moniker."))))
+            rs.append_validation_error(
+                ("moniker", ValueError(n_("Duplicate moniker."))))
         if moniker == ASSEMBLY_BAR_MONIKER:
-            rs.errors.append(
+            rs.append_validation_error(
                 ("moniker", ValueError(n_("Mustn’t be the bar moniker."))))
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
         data = {
             'id': ballot_id,
@@ -877,7 +878,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin", modi={"POST"})
     def remove_candidate(self, rs, assembly_id, ballot_id, candidate_id):
         """Delete an option from a ballot."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
         data = {
             'id': ballot_id,

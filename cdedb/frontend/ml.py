@@ -102,7 +102,7 @@ class MlFrontend(AbstractUserFrontend):
             'spec': spec, 'default_queries': default_queries, 'choices': {},
             'choices_lists': {}, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_persona"
             result = self.mlproxy.submit_general_query(rs, query)
             params['result'] = result
@@ -182,7 +182,7 @@ class MlFrontend(AbstractUserFrontend):
                 for anid in moderator_ids.split(",")
                 }
         data = check(rs, "mailinglist", data, creation=True)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.create_mailinglist_form(rs)
 
         new_id = self.mlproxy.create_mailinglist(rs, data)
@@ -292,7 +292,7 @@ class MlFrontend(AbstractUserFrontend):
         data['id'] = mailinglist_id
         data['registration_stati'] = registration_stati
         data = check(rs, "mailinglist", data)
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.change_mailinglist_form(rs, mailinglist_id)
         code = self.mlproxy.set_mailinglist(rs, data)
         self.notify_return_code(rs, code)
@@ -303,8 +303,9 @@ class MlFrontend(AbstractUserFrontend):
     def delete_mailinglist(self, rs, mailinglist_id, ack_delete):
         """Remove a mailinglist."""
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
-        if rs.errors:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
         code = self.mlproxy.delete_mailinglist(
@@ -443,7 +444,7 @@ class MlFrontend(AbstractUserFrontend):
         if moderator_ids:
             moderator_ids = {check(rs, "cdedbid", anid.strip(), "moderator_ids")
                              for anid in moderator_ids.split(",")}
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
         moderator_ids |= set(rs.ambience['mailinglist']['moderators'])
@@ -456,7 +457,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def remove_moderator(self, rs, mailinglist_id, moderator_id):
         """Demote persona from moderator status."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         if moderator_id == rs.user.persona_id and not self.is_admin(rs):
             rs.notify("error",
@@ -474,7 +475,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def add_whitelist(self, rs, mailinglist_id, email):
         """Allow address to write to the list."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
 
         whitelist = set(rs.ambience['mailinglist']['whitelist']) | {email}
@@ -487,7 +488,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def remove_whitelist(self, rs, mailinglist_id, email):
         """Withdraw privilege of writing to list."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
 
         whitelist = set(rs.ambience['mailinglist']['whitelist']) - {email}
@@ -509,7 +510,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def approve_request(self, rs, mailinglist_id, persona_id):
         """Evaluate whether to admit subscribers."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.approve_request,
@@ -521,7 +522,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def deny_request(self, rs, mailinglist_id, persona_id):
         """Evaluate whether to admit subscribers."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.deny_request,
@@ -533,7 +534,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def block_request(self, rs, mailinglist_id, persona_id):
         """Evaluate whether to admit subscribers."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.block_request,
@@ -545,7 +546,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def add_subscriber(self, rs, mailinglist_id, subscriber_id):
         """Administratively subscribe somebody."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.add_subscriber,
@@ -557,7 +558,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def remove_subscriber(self, rs, mailinglist_id, subscriber_id):
         """Administratively unsubscribe somebody."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_subscriber,
@@ -569,7 +570,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def add_subscription_override(self, rs, mailinglist_id, modsubscriber_id):
         """Administratively subscribe somebody with moderator override."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.add_subscription_override,
@@ -581,7 +582,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def remove_subscription_override(self, rs, mailinglist_id, modsubscriber_id):
         """Administratively remove somebody with moderator override."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_subscription_override,
@@ -593,7 +594,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def add_unsubscription_override(self, rs, mailinglist_id, modunsubscriber_id):
         """Administratively block somebody."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.add_unsubscription_override,
@@ -605,7 +606,7 @@ class MlFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def remove_unsubscription_override(self, rs, mailinglist_id, modunsubscriber_id):
         """Administratively remove block."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_unsubscription_override,
@@ -615,7 +616,7 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     def subscribe(self, rs, mailinglist_id):
         """Change own subscription state to subscribed or pending."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.subscribe,
@@ -625,7 +626,7 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     def request_subscription(self, rs, mailinglist_id):
         """Change own subscription state to subscribed or pending."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.request_subscription,
@@ -635,7 +636,7 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     def unsubscribe(self, rs, mailinglist_id):
         """Change own subscription state to unsubscribed."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.unsubscribe,
@@ -645,7 +646,7 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     def cancel_subscription(self, rs, mailinglist_id):
         """Cancel subscription request."""
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.cancel_request,
@@ -659,7 +660,7 @@ class MlFrontend(AbstractUserFrontend):
 
         If this address has not been used before, we verify it.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         if not self._check_address_change_requirements(rs, mailinglist_id,
                                                        bool(email)):
@@ -693,7 +694,7 @@ class MlFrontend(AbstractUserFrontend):
 
         This is not a POST since the link is shared via email.
         """
-        if rs.errors:
+        if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         if not self._check_address_change_requirements(rs, mailinglist_id,
                                                        False):
@@ -770,23 +771,29 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml_script")
     def export_overview(self, rs):
         """Provide listing for mailinglist software"""
-        if rs.errors:
-            return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
+        if rs.has_validation_errors():
+            return self.send_json(
+                rs,
+                {'error': tuple(map(str, rs.retrieve_validation_errors()))})
         return self.send_json(rs, self.mlproxy.export_overview(rs))
 
     @access("ml_script")
     @REQUESTdata(("address", "email"))
     def export_one(self, rs, address):
         """Provide specific infos for mailinglist software"""
-        if rs.errors:
-            return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
+        if rs.has_validation_errors():
+            return self.send_json(
+                rs,
+                {'error': tuple(map(str, rs.retrieve_validation_errors()))})
         return self.send_json(rs, self.mlproxy.export_one(rs, address))
 
     @access("ml_script")
     def oldstyle_mailinglist_config_export(self, rs):
         """Provide listing for comptability mailinglist software"""
-        if rs.errors:
-            return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
+        if rs.has_validation_errors():
+            return self.send_json(
+                rs,
+                {'error': tuple(map(str, rs.retrieve_validation_errors()))})
         return self.send_json(
             rs, self.mlproxy.oldstyle_mailinglist_config_export(rs))
 
@@ -794,8 +801,10 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdata(("address", "email"))
     def oldstyle_mailinglist_export(self, rs, address):
         """Provide specific infos for comptability mailinglist software"""
-        if rs.errors:
-            return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
+        if rs.has_validation_errors():
+            return self.send_json(
+                rs,
+                {'error': tuple(map(str, rs.retrieve_validation_errors()))})
         return self.send_json(rs, self.mlproxy.oldstyle_mailinglist_export(
             rs, address))
 
@@ -803,8 +812,10 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdata(("address", "email"))
     def oldstyle_modlist_export(self, rs, address):
         """Provide specific infos for comptability mailinglist software"""
-        if rs.errors:
-            return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
+        if rs.has_validation_errors():
+            return self.send_json(
+                rs,
+                {'error': tuple(map(str, rs.retrieve_validation_errors()))})
         return self.send_json(rs, self.mlproxy.oldstyle_modlist_export(
             rs, address))
 
@@ -812,7 +823,9 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdata(("address", "email"), ("error", "int"))
     def oldstyle_bounce(self, rs, address, error):
         """Provide specific infos for comptability mailinglist software"""
-        if rs.errors:
-            return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
+        if rs.has_validation_errors():
+            return self.send_json(
+                rs,
+                {'error': tuple(map(str, rs.retrieve_validation_errors()))})
         return self.send_json(rs, self.mlproxy.oldstyle_bounce(rs, address,
                                                                error))
