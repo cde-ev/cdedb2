@@ -354,17 +354,36 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.process_signup(rs, assembly_id, persona_id)
         return self.redirect(rs, "assembly/list_attendees")
 
-    @access("assembly")
-    def list_attendees(self, rs, assembly_id):
-        """Provide a list of who is/was present."""
-        if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+    def _get_list_attendees_data(self, rs, assembly_id):
+        """This lists all attendees of an assembly.
+
+        This is un-inlined to provide a download file too."""
         attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
         attendees = collections.OrderedDict(
             (e['id'], e) for e in sorted(
                 self.coreproxy.get_assembly_users(rs, attendee_ids).values(),
                 key=EntitySorter.persona))
+        return attendees
+
+    @access("assembly")
+    def list_attendees(self, rs, assembly_id):
+        """Provide a online list of who is/was present."""
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        attendees = self._get_list_attendees_data(rs, assembly_id)
         return self.render(rs, "list_attendees", {"attendees": attendees})
+
+    @access("assembly_admin")
+    def download_list_attendees(self, rs, assembly_id):
+        """Provides a tex-snipped with all attendes of an assembly."""
+        attendees = self._get_list_attendees_data(rs, assembly_id)
+        if not attendees:
+            rs.notify("info", n_("Empty File."))
+            return self.redirect(rs, "assembly/list_attendees")
+        tex = self.fill_template(
+            rs, "tex", "list_attendees", {'attendees': attendees})
+        return self.send_file(
+            rs, data=tex, inline=False, filename="Anwesenheitsliste.tex")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("ack_conclude", "bool"))
