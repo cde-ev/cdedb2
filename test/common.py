@@ -137,6 +137,67 @@ class BackendShim(ProxyShim):
         return new_fun
 
 
+class MyTextTestResult(unittest.TextTestResult):
+    """Subclasing the TestResult object to fix the CLI reporting."""
+    def __init__(self, *args, **kwargs):
+        super(MyTextTestResult, self).__init__(*args, **kwargs)
+        self._subTestErrors = []
+        self._subTestFailures = []
+        self._subTestSkips = []
+
+    def startTest(self, test):
+        super(MyTextTestResult, self).startTest(test)
+        self._subTestErrors = []
+        self._subTestFailures = []
+        self._subTestSkips = []
+
+    def addSubTest(self, test, subtest, err):
+        super(MyTextTestResult, self).addSubTest(test, subtest, err)
+        if err is not None:
+            if issubclass(err[0], subtest.failureException):
+                errors = self._subTestFailures
+            else:
+                errors = self._subTestErrors
+            errors.append(err)
+
+    def stopTest(self, test):
+        super(MyTextTestResult, self).stopTest(test)
+        # Print a comprehensive list of failures and errors in subTests.
+        output = []
+        if self._subTestErrors:
+            l = len(self._subTestErrors)
+            if self.showAll:
+                s = "ERROR" + ("({})".format(l) if l > 1 else "")
+            else:
+                s = "E" * l
+            output.append(s)
+        if self._subTestFailures:
+            l = len(self._subTestFailures)
+            if self.showAll:
+                s = "FAIL" + ("({})".format(l) if l > 1 else "")
+            else:
+                s = "F" * l
+            output.append(s)
+        if self._subTestSkips:
+            if self.showAll:
+                s = "skipped {}".format(", ".join(
+                    "{0!r}".format(r) for r in self._subTestSkips))
+            else:
+                s = "s" * len(self._subTestSkips)
+            output.append(s)
+        if output:
+            if self.showAll:
+                self.stream.writeln(", ".join(output))
+            else:
+                self.stream.write("".join(output))
+                self.stream.flush()
+
+    def addSkip(self, test, reason):
+        # Purposely override the parents method, to not print the skip here.
+        super(unittest.TextTestResult, self).addSkip(test, reason)
+        self._subTestSkips.append(reason)
+
+
 class BackendUsingTest(unittest.TestCase):
     used_backends = None
 
