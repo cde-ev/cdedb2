@@ -17,7 +17,52 @@
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
                     <br />
-                    {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
+                    {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }},
+                    {% if now() <= event['registration_start'] %}
+                        Registration in future.
+                    {% elif not event['registration_soft_limit'] is none and now() <= event['registration_soft_limit'] %}
+                        Registration is open.
+                    {% elif not event['registration_hard_limit'] is none and now() <= event['registration_hard_limit'] %}
+                        Late-Registration is open.
+                    {% elif event['begin'] <= now() <= event['end'] %}
+                        Event is happening.
+                    {% elif event['end'] <= now() %}
+                        Event is past.
+                    {% endif %}
+                    <br />
+                    {% if event['registration'] %}
+                        {% trans link=util.href(cdedblink('event/registration_status', {'event_id': event_id}),
+                                     gettext("registered")) -%}
+                            (Already {{ link }})
+                        {% endtrans %}
+                        {%- if event['use_questionnaire'] %}
+                            &bull;
+                            {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
+                                         gettext("Questionnaire"), icon='edit') -}}
+                        {% endif -%}
+                    {% elif event['is_open'] %}
+                        {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
+                            gettext("Register"), icon='log-in') }}
+                        {% if not event['registration_soft_limit'] is none %}
+                            {% if now() <= event['registration_soft_limit'] %}
+                                {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
+                                    (Until {{ date }})
+                                {% endtrans %}
+                            {% elif event['registration_hard_limit'] %}
+                                {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
+                                    (Late Registrations until {{ date }})
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    (Only late Registrations possible)
+                                {% endtrans %}
+                            {% endif %}
+                        {% elif not event['registration_hard_limit'] is none %}
+                            {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
+                                (Until {{ date }})
+                            {% endtrans %}
+                        {% endif %}
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
