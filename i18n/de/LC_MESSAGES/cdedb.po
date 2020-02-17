@@ -10443,6 +10443,26 @@ msgstr "Beschreibungstext"
 msgid "Create Event-User"
 msgstr "Veranstaltungsaccount anlegen"
 
+#: cdedb/frontend/templates/web/event/index.tmpl:22
+msgid "Registration in future."
+msgstr "Anmeldung beginnt bald™."
+
+#: cdedb/frontend/templates/web/event/index.tmpl:26
+msgid "Registration is open."
+msgstr "Anmeldung ist offen."
+
+#: cdedb/frontend/templates/web/event/index.tmpl:30
+msgid "Late-Registration is open."
+msgstr "Nachmeldung ist offen."
+
+#: cdedb/frontend/templates/web/event/index.tmpl:34
+msgid "Event is happening."
+msgstr "Veranstaltung findet gerade statt."
+
+#: cdedb/frontend/templates/web/event/index.tmpl:38
+msgid "Event is past."
+msgstr "Veranstaltung ist vorbei"
+
 #: cdedb/frontend/templates/web/event/index.tmpl:26
 msgid "There are currently no event registrations open."
 msgstr "Zur Zeit sind keine Veranstaltungen zur Anmeldung freigegeben."
