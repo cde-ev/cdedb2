@@ -513,11 +513,13 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdata(("orgalist", "bool"))
     def create_event_mailinglist(self, rs, event_id, orgalist=False):
         """Create a default mailinglist for the event. Requires ml_admin."""
+        if rs.has_validation_errors():
+            return self.redirect(rs, "event/show_event")
         if "ml_admin" not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Must be ml_admin."))
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
-        if not self.mlproxy.verify_existence(rs, ml_data['address']):
+        if not self.mlproxy.verify_existence(rs, ml_type.full_address(ml_data)):
             if not orgalist:
                 link = cdedburl(rs, "event/register", {'event_id': event_id})
                 ml_data['description'] = ml_data['description'].format(link)
@@ -528,12 +530,12 @@ class EventFrontend(AbstractUserFrontend):
             if code and orgalist:
                 data = {
                     'id': event_id,
-                    'orga_address': ml_data['address'],
+                    'orga_address': ml_type.full_address(ml_data),
                 }
                 self.eventproxy.set_event(rs, data)
         else:
             rs.notify("info", n_("Mailinglist %(address)s already exists."),
-                      {'address': ml_data['address']})
+                      {'address': ml_type.full_address(ml_data)})
         return self.redirect(rs, "event/show_event")
 
     @access("event")

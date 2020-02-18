@@ -219,6 +219,14 @@ class TestEventFrontend(FrontendTest):
         self.assertIn("addorgaform", self.response.forms)
         self.assertIn("removeorgaform7", self.response.forms)
 
+    @as_users("anton")
+    def test_create_orgalist(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'CdE-Party 2050'})
+        self.assertTitle("CdE-Party 2050")
+        f = self.response.forms["createorgalistform"]
+        self.submit(f)
+
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner")
     def test_navigation_one_event(self, user):
         self.traverse({'description': 'Veranstaltungen'},
