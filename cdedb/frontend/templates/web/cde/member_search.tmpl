@@ -94,4 +94,22 @@
             </div>
         </div>
     </form>
+    {% call util.bootstrap_panel(title=gettext("Einschränkungen bei der Suche"), aclass='panel-default mosp', icon='info-sign') %}
+        <ul class="slim">
+            {% trans %}
+                <li>
+                    Es werden nur CdEler gefunden, die ihre Einwilligung zur Suchbarkeit erteilt haben und aktuell Mitglied sind.
+                </li>
+                <li>
+                    Sucheingaben, die bis zu 3 Zeichen lang sind, müssen genau auf den zu suchenden Eintrag passen.
+                </li>
+                <li>
+                    Sucheingaben, die mindestens 4 Zeichen lang sind, müssen nur im zu suchenden Eintrag enthalten sein.
+                </li>
+                <li>
+                    Die Volltext Suche findet nur ganze Wörter, keine Wortteile.
+                </li>
+            {% endtrans %}
+        </ul>
+    {% endcall %}
 {% endblock %}
