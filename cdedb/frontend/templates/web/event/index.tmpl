@@ -43,7 +43,7 @@
                     {% if event['registration'] %}
                         {% trans link=util.href(cdedblink('event/registration_status', {'event_id': event_id}),
                                      gettext("registered")) -%}
-                            (Already {{ link }})
+                            (already {{ link }})
                         {% endtrans %}
                         {%- if event['use_questionnaire'] %}
                             &bull;
@@ -56,20 +56,20 @@
                         {% if not event['registration_soft_limit'] is none %}
                             {% if now() <= event['registration_soft_limit'] %}
                                 {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
-                                    (Until {{ date }})
+                                    (until {{ date }})
                                 {% endtrans %}
                             {% elif event['registration_hard_limit'] %}
                                 {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
-                                    (Late Registrations until {{ date }})
+                                    (late registrations until {{ date }})
                                 {% endtrans %}
                             {% else %}
                                 {% trans %}
-                                    (Only late Registrations possible)
+                                    (only late registrations possible)
                                 {% endtrans %}
                             {% endif %}
                         {% elif not event['registration_hard_limit'] is none %}
                             {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
-                                (Until {{ date }})
+                                (until {{ date }})
                             {% endtrans %}
                         {% endif %}
                     {% endif %}

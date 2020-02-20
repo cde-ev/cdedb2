@@ -20,11 +20,11 @@
                     <br />
                     {% if assembly['does_attend'] %}
                         {% trans %}
-                            (Already attending)
+                            (already attending)
                         {% endtrans %}
                     {% else %}
                         {% trans date=assembly['signup_end']|datetime(lang=lang) %}
-                            (Registration possible until {{ date }})
+                            (registration possible until {{ date }})
                         {% endtrans %}
                     {% endif %}
                 </li>
