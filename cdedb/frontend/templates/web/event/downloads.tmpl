@@ -1,6 +1,10 @@
 {% set sidenav_active='event_downloads' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint='strong' %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
         Downloads for Event {{ title }}
@@ -123,7 +127,20 @@
                     {% trans %}Full Event Export{% endtrans %}<br />
                     <small>({% trans %}for initilization of the offline-VM{% endtrans %})</small>
                 </td>
-                <td>{{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download') }}</td>
+                <td>
+                    <form action="{{ cdedblink('event/download_export') }}" method="GET" id="fullexportform"
+                        class="display-inline">
+                        {{ util.anti_csrf_token('event/download_export') }}
+                        {{ util.input_submit(value=gettext("JSON file"), icon='download') }}
+                        {{ util.input_checkbox(name="do_lock", label=gettext("Do you want to lock the event?")) }}
+                    </form>
+                    {#
+                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                        $('#fullexportform').cdedbProtectAction("{{ gettext("Do you want to lock the event?") }}");
+                        $('#fullexportform').find('[name="do_lock"]').parent().hide();
+                    </script>
+                    #}
+                </td>
             </tr>
             <tr>
                 <td>

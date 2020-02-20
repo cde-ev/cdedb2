@@ -2516,10 +2516,20 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname']))
 
     @access("event")
+    @REQUESTdata(("do_lock", "bool"))
     @event_guard()
-    def download_export(self, rs, event_id):
+    def download_export(self, rs, event_id, do_lock):
         """Retrieve all data for this event to initialize an offline
         instance."""
+        if rs.has_validation_errors():
+            return self.redirect(rs, "event/downloads")
+
+        if do_lock:
+            if rs.ambience['event']['offline_lock']:
+                rs.notify("error", "Event already locked.")
+            else:
+                code = self.eventproxy.lock_event(rs, event_id)
+                self.notify_return_code(rs, code)
         data = self.eventproxy.export_event(rs, event_id)
         if not data:
             rs.notify("info", n_("Empty File."))
