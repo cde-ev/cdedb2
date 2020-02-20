@@ -189,19 +189,16 @@ class CdEFrontend(AbstractUserFrontend):
         count = 0
         cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
 
-        if is_search and not query.constraints:
+        if is_search and not rs.errors and not query.constraints:
             rs.notify("error", n_("You have to specify some filters."))
         elif is_search and not rs.has_validation_errors():
 
             def restrict(constrain):
                 filter, operation, value = constrain
                 if filter == 'fulltext':
-                    pass
-                elif len(value) <= 3:
+                    value = [r"\m{}\M".format(val) for val in value]
+                elif len(str(value)) <= 3:
                     operation = QueryOperators.equal
-                    msg = ("Match of {} will be an equal search, because the"
-                           "argument is too short.").format(filter)
-                    rs.notify("info", n_(msg))
                 constrain = (filter, operation, value)
                 return constrain
 

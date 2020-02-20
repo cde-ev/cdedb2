@@ -193,16 +193,17 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("Im Garten 77", div='address')
 
-        # by fulltext
+        # by fulltext (this matches wordwise, here on a number in their address)
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_fulltext'] = "876 @example.cde"
+        f['qval_fulltext'] = "1"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertPresence("2 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Anton", div='result')
-        self.assertPresence("Bertålotta", div='result')
+        self.assertPresence("3 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Akira", div='result')
+        self.assertPresence("Ferdinand", div='result')
+        self.assertPresence("Inga", div='result')
 
         # by zip: upper
         self.traverse({'description': 'CdE-Mitglied suchen'})
@@ -252,6 +253,29 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationError("qval_username",
                                    "Darf keine verbotenen Zeichen enthalten")
+
+    @as_users("inga")
+    def test_member_search_restrictions(self, user):
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        # len(entries) <= 3 must equal the column entry in the database
+        f = self.response.forms['membersearchform']
+        f['qval_given_names,display_name'] = "Ant"
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertNonPresence("Ergebnis")
+
+        # len(entries) > 3 performs a wildcard search
+        f['qval_given_names,display_name'] = "Anton"
+        self.submit(f)
+        self.assertTitle("Anton Armin A. Administrator")
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        # Fulltext search is always word-matching
+        f['qval_fulltext'] = "A"
+        self.submit(f)
+        self.assertTitle("Anton Armin A. Administrator")
 
     @as_users("charly")
     def test_member_search_non_searchable(self, user):
