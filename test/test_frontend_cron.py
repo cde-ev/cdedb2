@@ -249,8 +249,9 @@ class TestCron(CronTest):
 
     def test_subscription_request_remind_new(self):
         # Mailinglist 7 has pending subscription for persona 6
+        # Mailinglist 54 for 2 and Mailinglist 56 for 7
         self.execute('subscription_request_remind')
-        self.assertEqual(["subscription_request_remind"],
+        self.assertEqual(["subscription_request_remind"] * 3,
                          [mail.template for mail in self.mails])
 
     @prepsql(subscription_request_template(persona_id=9, mailinglist_id=4)
@@ -259,11 +260,16 @@ class TestCron(CronTest):
              + subscription_request_template(persona_id=3, mailinglist_id=8))
     def test_subscription_request_remind_multiple(self):
         self.execute('subscription_request_remind')
-        self.assertEqual(["subscription_request_remind"] * 3,
+        # 7, 54 and 56 have pending subscriptions
+        self.assertEqual(["subscription_request_remind"] * 5,
                          [mail.template for mail in self.mails])
 
     @prepsql(cron_template(moniker="subscription_request_remind",
                            store={7: {'persona_ids': [6],
+                                      'tstamp': now().timestamp()},
+                                  54: {'persona_ids': [2],
+                                      'tstamp': now().timestamp()},
+                                  56: {'persona_ids': [7],
                                       'tstamp': now().timestamp()}}))
     def test_subscription_request_remind_old(self):
         self.execute('subscription_request_remind')
