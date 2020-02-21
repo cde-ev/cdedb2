@@ -4,7 +4,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] -%}
-    	Partial Import Validation ({{ title }})
+        Partial Import Validation ({{ title }})
     {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
@@ -21,7 +21,7 @@
 {# The following macro generates the diff table for a changed registration, lodgement or course. It takes the (flattened)
 diff of the item and shows a table with all changed attributes, old and new values. #}
 {% macro diff_table(diff, titles, choices) %}
-    <table class="table table-slim small diff-details" style="clear: right;">
+    <table class="table table-slim small" style="clear: right;">
         <thead>
             <tr>
                 <th>{% trans %}Attribute{% endtrans %}</th>
@@ -138,10 +138,11 @@ diff of the item and shows a table with all changed attributes, old and new valu
                         <ul class="slim">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
                                 <li class="clearfix-after">
-                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
                                     {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
                                     {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
-                                    {{ diff_table(reg_diff, reg_titles, reg_choices) }}
+                                    <details class="pull-right">
+                                        {{ diff_table(reg_diff, reg_titles, reg_choices) }}
+                                    </details>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -211,8 +212,9 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                     {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
                                     {{ courses[course_id]['shortname'] }}{# -#}
                                     {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
-                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
-                                    {{ diff_table(course_diff, course_titles, course_choices) }}
+                                    <details class="pull-right">
+                                        {{ diff_table(course_diff, course_titles, course_choices) }}
+                                    </details>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -279,8 +281,9 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                 <li class="clearfix-after">
                                     {{ lodgements[lodgement_id]['moniker'] }}{# -#}
                                     {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
-                                    <a href="#" class="pull-right show-details softhide">{{ util.make_icon('expand') }} Details</a>
-                                    {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
+                                    <details class="pull-right">
+                                        {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
+                                   </details>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -378,27 +381,6 @@ diff of the item and shows a table with all changed attributes, old and new valu
             </div>
         {% endcall %}
     {% endif %}
-
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
-        $('.diff-details').hide();
-        $('.show-details')
-            .show()
-            .on('click', function() {
-                var $details = $(this).siblings('.diff-details');
-                if ($details.is(':visible')) {
-                    $details.hide();
-                    $(this).children('.glyphicon')
-                        .removeClass('glyphicon-collapse-down')
-                        .addClass('glyphicon-expand');
-                } else {
-                    $details.show();
-                    $(this).children('.glyphicon')
-                        .removeClass('glyphicon-expand')
-                        .addClass('glyphicon-collapse-down');
-                }
-                return false;
-            });
-    </script>
 
     {% if not summary['changed_registratios'] and not summary['new_registration_ids'] and not summary['real_deleted_registration_ids']
             and not summary['changed_courses'] and not summary['new_course_ids'] and not summary['real_deleted_course_ids']
