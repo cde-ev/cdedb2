@@ -245,8 +245,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
-    @REQUESTdata(("part_id", "id_or_None"))
-    def participant_list(self, rs, event_id, part_id=None):
+    @REQUESTdata(("part_id", "id_or_None"),
+                 ("sortkey", "str_or_None"))
+    def participant_list(self, rs, event_id, part_id=None, sortkey=None):
         """List participants of an event"""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
@@ -274,7 +275,8 @@ class EventFrontend(AbstractUserFrontend):
             part_ids = [part_id]
         else:
             part_ids = None
-        data = self._get_participant_list_data(rs, event_id, part_ids)
+
+        data = self._get_participant_list_data(rs, event_id, part_ids, sortkey)
         if data is None:
             return self.redirect(rs, "event/participant_list")
         if len(rs.ambience['event']['parts']) == 1:
@@ -283,7 +285,8 @@ class EventFrontend(AbstractUserFrontend):
         data['list_consent'] = list_consent
         return self.render(rs, "participant_list", data)
 
-    def _get_participant_list_data(self, rs, event_id, part_ids=None):
+    def _get_participant_list_data(self, rs, event_id, part_ids=None,
+                                   sortkey=EntitySorter.persona):
         """This provides data for download and online participant list.
 
         This is un-inlined so download_participant_list can use this
@@ -308,10 +311,33 @@ class EventFrontend(AbstractUserFrontend):
                    for part_id in parts)}
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
-        ordered = sorted(
-            registrations.keys(),
-            key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]))
+
+        all_sortkeys = {
+            "given_names": EntitySorter.given_names,
+            "family_name": EntitySorter.family_name,
+            "email": EntitySorter.email,
+            "address": EntitySorter.address,
+            "course": EntitySorter.course,
+        }
+        # nach Kursen darf nur sortiert werden, wenn genau eine part_id gegeben ist
+
+        def sort_rank(sortkey, anid):
+            prim_sorter = (all_sortkeys[sortkey]
+                           if sortkey in all_sortkeys else EntitySorter.persona)
+            sec_sorter = EntitySorter.persona
+            if sortkey == "course":
+                part_id = unwrap(part_ids)
+                prim_key = registrations[anid]['tracks'][part_id]['course_id']
+                prim_rank = prim_sorter(courses[prim_key]) if prim_key else ("0",)
+            else:
+                prim_key = personas[registrations[anid]['persona_id']]
+                prim_rank = prim_sorter(prim_key)
+            sec_key = personas[registrations[anid]['persona_id']]
+            sec_rank = sec_sorter(sec_key)
+            return (prim_rank, sec_rank)
+
+        ordered = sorted(registrations.keys(),
+                         key=lambda anid: sort_rank(sortkey, anid))
         return {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered, 'parts': parts,

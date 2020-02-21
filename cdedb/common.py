@@ -520,6 +520,25 @@ class EntitySorter:
         return (entry['family_name'] + " " + entry['given_names']).lower()
 
     @staticmethod
+    def given_names(persona):
+        return persona['given_names']
+
+    @staticmethod
+    def family_name(persona):
+        return persona['family_name']
+
+    @staticmethod
+    def email(persona):
+        return persona['username']
+
+    @staticmethod
+    def address(persona):
+        loc = persona['location'] if 'location' in persona else ""
+        zip = persona['postal_code'] if 'postal_code' in persona else ""
+        address = persona['address'] if 'address' in persona else ""
+        return (loc + zip + address)
+
+    @staticmethod
     def event(event):
         return (event['begin'], event['end'], event['title'], event['id'])
 
