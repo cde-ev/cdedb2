@@ -319,7 +319,6 @@ class EventFrontend(AbstractUserFrontend):
             "address": EntitySorter.address,
             "course": EntitySorter.course,
         }
-        # nach Kursen darf nur sortiert werden, wenn genau eine part_id gegeben ist
 
         def sort_rank(sortkey, anid):
             prim_sorter = (all_sortkeys[sortkey]
@@ -327,14 +326,22 @@ class EventFrontend(AbstractUserFrontend):
             sec_sorter = EntitySorter.persona
             if sortkey == "course":
                 part_id = unwrap(part_ids)
-                prim_key = registrations[anid]['tracks'][part_id]['course_id']
-                prim_rank = prim_sorter(courses[prim_key]) if prim_key else ("0",)
+                all_tracks = parts[part_id]['tracks']
+                registered_tracks = [registrations[anid]['tracks'][track_id]
+                                     for track_id in all_tracks]
+                tracks = sorted(
+                    registered_tracks,
+                    key=lambda track: all_tracks[track['track_id']]['sortkey'])
+                prim_keys = [track['course_id'] for track in tracks]
+                prim_rank = [
+                    prim_sorter(courses[prim_key]) if prim_key else ("0",)
+                    for prim_key in prim_keys]
             else:
                 prim_key = personas[registrations[anid]['persona_id']]
-                prim_rank = prim_sorter(prim_key)
+                prim_rank = [prim_sorter(prim_key)]
             sec_key = personas[registrations[anid]['persona_id']]
             sec_rank = sec_sorter(sec_key)
-            return (prim_rank, sec_rank)
+            return (*prim_rank, sec_rank)
 
         ordered = sorted(registrations.keys(),
                          key=lambda anid: sort_rank(sortkey, anid))
