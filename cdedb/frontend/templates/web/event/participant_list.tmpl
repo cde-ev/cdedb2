@@ -69,14 +69,26 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>{% trans %}Given Names{% endtrans %}</th>
-                        <th>{% trans %}Family Name{% endtrans %}</th>
-                        <th>{% trans %}Email Address{% endtrans %}</th>
-                        <th>{% trans %}Postal Code, City{% endtrans %}</th>
+                        <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "given_names"}), gettext("Given Names")) }}
+                        </th>
+                        <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "family_name"}), gettext("Family Name")) }}
+                        </th>
+                        <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "email"}), gettext("Email Address")) }}
+                        </th>
+                        <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "address"}), gettext("Postal Code, City")) }}
+                        </th>
                         {% if parts[part_id]['tracks']|length > 1 and ambience['event']['courses_in_participant_list'] %}
-                            <th>{% trans %}Courses{% endtrans %}</th>
+                            <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "course"}), gettext("Courses")) }}
+                            </th>
                         {% elif parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
-                            <th>{% trans %}Course{% endtrans %}</th>
+                            <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "course"}), gettext("Course")) }}
+                            </th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -111,10 +123,18 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>{% trans %}Given Names{% endtrans %}</th>
-                        <th>{% trans %}Family Name{% endtrans %}</th>
-                        <th>{% trans %}Email Address{% endtrans %}</th>
-                        <th>{% trans %}Postal Code, City{% endtrans %}</th>
+                        <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "given_names"}), gettext("Given Names")) }}
+                        </th>
+                        <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "family_name"}), gettext("Family Name")) }}
+                        </th>
+                        <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "email"}), gettext("Email Address")) }}
+                        </th>
+                        <th>
+                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "address"}), gettext("Postal Code, City")) }}
+                        </th>
                         <th>{% trans %}Event Parts{% endtrans %}</th>
                     </tr>
                 </thead>
