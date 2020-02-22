@@ -32,6 +32,7 @@ ALL_ENUMS = (
     const.MlLogCodes,
     const.FieldAssociations,
     const.FieldDatatypes,
+    const.SortkeysLodgements,
     const.MailinglistTypes,
     const.MailinglistDomain,
     QueryOperators,

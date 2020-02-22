@@ -42,18 +42,18 @@
                 {% if ambience['event']['parts']|length > 1 %}
                     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                         <th class="text-right{% if loop.first %} b-left{% endif %}">
-                            {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': "part_regular"}), part['title']) }}
+                            {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': enums['SortkeysLodgements'].part_regular.value}), part['title']) }}
                         </th>
                         <th class="text-right">
-                            {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': "part_reserved"}), "+ x") }}
+                            {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': enums['SortkeysLodgements'].part_reserved.value}), "+ x") }}
                         </th>
                     {% endfor %}
                 {% endif %}
                 <th class="b-left text-right">
-                    {{ util.href(cdedblink('event/lodgements', {'sortkey': "entity_regular"}), gettext("Regular")) }}
+                    {{ util.href(cdedblink('event/lodgements', {'sortkey': enums['SortkeysLodgements'].entity_regular.value}), gettext("Regular")) }}
                 </th>
                 <th class="text-right">
-                    {{ util.href(cdedblink('event/lodgements', {'sortkey': "entity_reserved"}), gettext("Camping Mat")) }}
+                    {{ util.href(cdedblink('event/lodgements', {'sortkey': enums['SortkeysLodgements'].entity_reserved.value}), gettext("Camping Mat")) }}
                 </th>
             </tr>
         </thead>

@@ -94,6 +94,28 @@ class FieldDatatypes(enum.IntEnum):
 
 
 @enum.unique
+class SortkeysLodgements(enum.IntEnum):
+    """Sortkeys for lodgment overview."""
+
+    #: (used capacity - used reserved) places in this part
+    part_regular = 1
+    #: used "reserved" places (for camping mats) in this part
+    part_reserved = 2
+    #: (capacity - reserved) places of this lodgement
+    entity_regular = 10
+    #: "reserved" places (for camping mats) of this lodgement
+    entity_reserved = 11
+
+    def is_part(self):
+        return self in (SortkeysLodgements.part_regular,
+                        SortkeysLodgements.part_reserved)
+
+    def is_entity(self):
+        return self in (SortkeysLodgements.entity_regular,
+                        SortkeysLodgements.entity_reserved)
+
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed

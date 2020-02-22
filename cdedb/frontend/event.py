@@ -3955,8 +3955,10 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     @REQUESTdata(("sort_part_id", "id_or_None"),
-                 ("sortkey", "str_or_None"))
-    def lodgements(self, rs, event_id, sort_part_id=None, sortkey=None):
+                 ("sortkey", "enum_sortkeyslodgements_or_None"),
+                 ("reverse", "bool"))
+    def lodgements(self, rs, event_id, sort_part_id=None, sortkey=None,
+                   reverse=False):
         """Overview of the lodgements of an event.
 
         This also displays some issues where possibly errors occured.
@@ -4052,20 +4054,21 @@ class EventFrontend(AbstractUserFrontend):
         def sort_lodgement(entry, group_id):
             id = entry[0]
             lodgement_group = grouped_lodgements[group_id]
-            if sortkey in ["part_regular", "part_reserved"]:
+            sort = const.SortkeysLodgements
+            if sort.is_part(sortkey):
                 if sort_part_id not in parts.keys():
                     raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
                 capacity = inhabitant_nums[(id, sort_part_id)]
                 reserved = reserve_inhabitant_nums[(id, sort_part_id)]
                 primary_sort = (capacity - reserved
-                                if sortkey == "part_regular" else reserved)
-            elif sortkey in ["entity_regular", "entity_reserved"]:
+                                if sortkey == sort.part_regular else reserved)
+            elif sort.is_entity(sortkey):
                 capacity = (lodgement_group[id]['capacity']
                             if id in lodgement_group else 0)
                 reserved = (lodgement_group[id]['reserve']
                             if id in lodgement_group else 0)
                 primary_sort = (capacity - reserved
-                                if sortkey == "entity_regular" else reserved)
+                                if sortkey == sort.entity_regular else reserved)
             else:
                 primary_sort = 0
             secondary_sort = EntitySorter.lodgement(entry[1])
@@ -4076,7 +4079,7 @@ class EventFrontend(AbstractUserFrontend):
             (group_id, OrderedDict([
                 (lodgement_id, lodgement)
                 for lodgement_id, lodgement
-                in sorted(lodgements.items(),
+                in sorted(lodgements.items(), reverse=reverse,
                           key=lambda e: sort_lodgement(e, group_id))
                 if lodgement['group_id'] == group_id
             ]))
