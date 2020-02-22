@@ -124,16 +124,16 @@
                 <thead>
                     <tr>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "given_names"}), gettext("Given Names")) }}
+                            {{ util.href(cdedblink('event/participant_list', {'sortkey': "given_names"}), gettext("Given Names")) }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "family_name"}), gettext("Family Name")) }}
+                            {{ util.href(cdedblink('event/participant_list', {'sortkey': "family_name"}), gettext("Family Name")) }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "email"}), gettext("Email Address")) }}
+                            {{ util.href(cdedblink('event/participant_list', {'sortkey': "email"}), gettext("Email Address")) }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "address"}), gettext("Postal Code, City")) }}
+                            {{ util.href(cdedblink('event/participant_list', {'sortkey': "address"}), gettext("Postal Code, City")) }}
                         </th>
                         <th>{% trans %}Event Parts{% endtrans %}</th>
                     </tr>

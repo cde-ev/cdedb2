@@ -325,6 +325,8 @@ class EventFrontend(AbstractUserFrontend):
                            if sortkey in all_sortkeys else EntitySorter.persona)
             sec_sorter = EntitySorter.persona
             if sortkey == "course":
+                if not len(part_ids) == 1:
+                    raise werkzeug.exceptions.BadRequest(n_("Only one part id."))
                 part_id = unwrap(part_ids)
                 all_tracks = parts[part_id]['tracks']
                 registered_tracks = [registrations[anid]['tracks'][track_id]
