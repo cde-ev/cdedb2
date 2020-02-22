@@ -246,8 +246,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("part_id", "id_or_None"),
-                 ("sortkey", "str_or_None"))
-    def participant_list(self, rs, event_id, part_id=None, sortkey=None):
+                 ("sortkey", "str_or_None"),
+                 ("reverse", "bool"))
+    def participant_list(self, rs, event_id, part_id=None, sortkey=None,
+                         reverse=False):
         """List participants of an event"""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
@@ -276,7 +278,8 @@ class EventFrontend(AbstractUserFrontend):
         else:
             part_ids = None
 
-        data = self._get_participant_list_data(rs, event_id, part_ids, sortkey)
+        data = self._get_participant_list_data(rs, event_id, part_ids, sortkey,
+                                               reverse=reverse)
         if data is None:
             return self.redirect(rs, "event/participant_list")
         if len(rs.ambience['event']['parts']) == 1:
@@ -285,8 +288,9 @@ class EventFrontend(AbstractUserFrontend):
         data['list_consent'] = list_consent
         return self.render(rs, "participant_list", data)
 
-    def _get_participant_list_data(self, rs, event_id, part_ids=None,
-                                   sortkey=EntitySorter.persona):
+    def _get_participant_list_data(
+            self, rs, event_id, part_ids=None, sortkey=EntitySorter.given_names,
+            reverse=False):
         """This provides data for download and online participant list.
 
         This is un-inlined so download_participant_list can use this
@@ -345,7 +349,7 @@ class EventFrontend(AbstractUserFrontend):
             sec_rank = sec_sorter(sec_key)
             return (*prim_rank, sec_rank)
 
-        ordered = sorted(registrations.keys(),
+        ordered = sorted(registrations.keys(), reverse=reverse,
                          key=lambda anid: sort_rank(sortkey, anid))
         return {
             'courses': courses, 'registrations': registrations,
