@@ -94,25 +94,26 @@ class FieldDatatypes(enum.IntEnum):
 
 
 @enum.unique
-class SortkeysLodgements(enum.IntEnum):
+class LodgementsSortkeys(enum.IntEnum):
     """Sortkeys for lodgment overview."""
+    #: default sortkey (currently equal to EntitySorter.lodgement)
+    moniker = 1
+    #: (capacity - reserve) which are used in this part
+    used_regular = 10
+    #: reserve which is used in this part
+    used_reserve = 11
+    #: (capacity - reserve) of this lodgement
+    total_regular = 20
+    #: reserve of this lodgement
+    total_reserve = 21
 
-    #: (used capacity - used reserve) places in this part
-    part_regular = 1
-    #: used reserve places (for camping mats) in this part
-    part_reserve = 2
-    #: (capacity - reserve) places of this lodgement
-    entity_regular = 10
-    #: reserve places (for camping mats) of this lodgement
-    entity_reserve = 11
+    def is_used_sorting(self):
+        return self in (LodgementsSortkeys.used_regular,
+                        LodgementsSortkeys.used_reserve)
 
-    def is_part(self):
-        return self in (SortkeysLodgements.part_regular,
-                        SortkeysLodgements.part_reserve)
-
-    def is_entity(self):
-        return self in (SortkeysLodgements.entity_regular,
-                        SortkeysLodgements.entity_reserve)
+    def is_total_sorting(self):
+        return self in (LodgementsSortkeys.total_regular,
+                        LodgementsSortkeys.total_reserve)
 
 
 @enum.unique

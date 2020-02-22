@@ -3955,7 +3955,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     @REQUESTdata(("sort_part_id", "id_or_None"),
-                 ("sortkey", "enum_sortkeyslodgements_or_None"),
+                 ("sortkey", "enum_lodgementssortkeys_or_None"),
                  ("reverse", "bool"))
     def lodgements(self, rs, event_id, sort_part_id=None, sortkey=None,
                    reverse=False):
@@ -4054,21 +4054,23 @@ class EventFrontend(AbstractUserFrontend):
         def sort_lodgement(entry, group_id):
             id = entry[0]
             lodgement_group = grouped_lodgements[group_id]
-            sort = const.SortkeysLodgements
-            if sort.is_part(sortkey):
+            sort = const.LodgementsSortkeys
+            if sort.is_used_sorting(sortkey):
                 if sort_part_id not in parts.keys():
                     raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
                 capacity = inhabitant_nums[(id, sort_part_id)]
                 reserve = reserve_inhabitant_nums[(id, sort_part_id)]
                 primary_sort = (capacity - reserve
-                                if sortkey == sort.part_regular else reserve)
-            elif sort.is_entity(sortkey):
+                                if sortkey == sort.used_regular else reserve)
+            elif sort.is_total_sorting(sortkey):
                 capacity = (lodgement_group[id]['capacity']
                             if id in lodgement_group else 0)
                 reserve = (lodgement_group[id]['reserve']
                            if id in lodgement_group else 0)
                 primary_sort = (capacity - reserve
-                                if sortkey == sort.entity_regular else reserve)
+                                if sortkey == sort.total_regular else reserve)
+            elif sortkey == sort.moniker:
+                primary_sort = EntitySorter.lodgement(entry[1])
             else:
                 primary_sort = 0
             secondary_sort = EntitySorter.lodgement(entry[1])
