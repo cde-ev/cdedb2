@@ -97,22 +97,22 @@ class FieldDatatypes(enum.IntEnum):
 class SortkeysLodgements(enum.IntEnum):
     """Sortkeys for lodgment overview."""
 
-    #: (used capacity - used reserved) places in this part
+    #: (used capacity - used reserve) places in this part
     part_regular = 1
-    #: used "reserved" places (for camping mats) in this part
-    part_reserved = 2
-    #: (capacity - reserved) places of this lodgement
+    #: used reserve places (for camping mats) in this part
+    part_reserve = 2
+    #: (capacity - reserve) places of this lodgement
     entity_regular = 10
-    #: "reserved" places (for camping mats) of this lodgement
-    entity_reserved = 11
+    #: reserve places (for camping mats) of this lodgement
+    entity_reserve = 11
 
     def is_part(self):
         return self in (SortkeysLodgements.part_regular,
-                        SortkeysLodgements.part_reserved)
+                        SortkeysLodgements.part_reserve)
 
     def is_entity(self):
         return self in (SortkeysLodgements.entity_regular,
-                        SortkeysLodgements.entity_reserved)
+                        SortkeysLodgements.entity_reserve)
 
 
 @enum.unique

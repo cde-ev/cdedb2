@@ -4059,16 +4059,16 @@ class EventFrontend(AbstractUserFrontend):
                 if sort_part_id not in parts.keys():
                     raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
                 capacity = inhabitant_nums[(id, sort_part_id)]
-                reserved = reserve_inhabitant_nums[(id, sort_part_id)]
-                primary_sort = (capacity - reserved
-                                if sortkey == sort.part_regular else reserved)
+                reserve = reserve_inhabitant_nums[(id, sort_part_id)]
+                primary_sort = (capacity - reserve
+                                if sortkey == sort.part_regular else reserve)
             elif sort.is_entity(sortkey):
                 capacity = (lodgement_group[id]['capacity']
                             if id in lodgement_group else 0)
-                reserved = (lodgement_group[id]['reserve']
-                            if id in lodgement_group else 0)
-                primary_sort = (capacity - reserved
-                                if sortkey == sort.entity_regular else reserved)
+                reserve = (lodgement_group[id]['reserve']
+                           if id in lodgement_group else 0)
+                primary_sort = (capacity - reserve
+                                if sortkey == sort.entity_regular else reserve)
             else:
                 primary_sort = 0
             secondary_sort = EntitySorter.lodgement(entry[1])

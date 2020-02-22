@@ -45,7 +45,7 @@
                             {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': enums['SortkeysLodgements'].part_regular.value}), part['title']) }}
                         </th>
                         <th class="text-right">
-                            {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': enums['SortkeysLodgements'].part_reserved.value}), "+ x") }}
+                            {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': enums['SortkeysLodgements'].part_reserve.value}), "+ x") }}
                         </th>
                     {% endfor %}
                 {% endif %}
@@ -53,7 +53,7 @@
                     {{ util.href(cdedblink('event/lodgements', {'sortkey': enums['SortkeysLodgements'].entity_regular.value}), gettext("Regular")) }}
                 </th>
                 <th class="text-right">
-                    {{ util.href(cdedblink('event/lodgements', {'sortkey': enums['SortkeysLodgements'].entity_reserved.value}), gettext("Camping Mat")) }}
+                    {{ util.href(cdedblink('event/lodgements', {'sortkey': enums['SortkeysLodgements'].entity_reserve.value}), gettext("Camping Mat")) }}
                 </th>
             </tr>
         </thead>
