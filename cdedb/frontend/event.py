@@ -2515,7 +2515,7 @@ class EventFrontend(AbstractUserFrontend):
             filename="{}_registrations.csv".format(
                 rs.ambience['event']['shortname']))
 
-    @access("event")
+    @access("event", modi={"POST"})
     @REQUESTdata(("do_lock", "bool"))
     @event_guard()
     def download_export(self, rs, event_id, do_lock):
@@ -2524,12 +2524,8 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, "event/downloads")
 
-        if do_lock:
-            if rs.ambience['event']['offline_lock']:
-                rs.notify("error", "Event already locked.")
-            else:
-                code = self.eventproxy.lock_event(rs, event_id)
-                self.notify_return_code(rs, code)
+        if do_lock and not rs.ambience['event']['offline_lock']:
+            code = self.eventproxy.lock_event(rs, event_id)
         data = self.eventproxy.export_event(rs, event_id)
         if not data:
             rs.notify("info", n_("Empty File."))
