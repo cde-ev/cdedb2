@@ -3954,11 +3954,15 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def lodgements(self, rs, event_id):
+    @REQUESTdata(("sort_part_id", "id_or_None"),
+                 ("sortkey", "str_or_None"))
+    def lodgements(self, rs, event_id, sort_part_id=None, sortkey=None):
         """Overview of the lodgements of an event.
 
         This also displays some issues where possibly errors occured.
         """
+        if rs.has_validation_errors():
+            return self.redirect(rs, "event/lodgements")
         parts = rs.ambience['event']['parts']
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -4014,16 +4018,16 @@ class EventFrontend(AbstractUserFrontend):
                 "; ".join(rs.gettext(p[0]) for p in problems_here),)
 
         # Calculate groups
-        grouped_lodgements = OrderedDict([
-            (group_id, OrderedDict([
-                (lodgement_id, lodgement)
+        grouped_lodgements = {
+            group_id: {
+                lodgement_id: lodgement
                 for lodgement_id, lodgement
                 in keydictsort_filter(lodgements, EntitySorter.lodgement)
                 if lodgement['group_id'] == group_id
-            ]))
+            }
             for group_id, group
             in (keydictsort_filter(groups, EntitySorter.lodgement_group) + [(None, None)])
-        ])
+        }
 
         # Calculate group_inhabitants_sum, group_reserve_inhabitants_sum,
         # group_capacity_sum and group_reserve_sum
@@ -4045,10 +4049,45 @@ class EventFrontend(AbstractUserFrontend):
             group_id: sum(lodgement['reserve'] for lodgement in group.values())
             for group_id, group in grouped_lodgements.items()}
 
+        def sort_lodgement(entry, group_id):
+            id = entry[0]
+            lodgement_group = grouped_lodgements[group_id]
+            if sortkey in ["part_regular", "part_reserved"]:
+                if sort_part_id not in parts.keys():
+                    raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
+                capacity = inhabitant_nums[(id, sort_part_id)]
+                reserved = reserve_inhabitant_nums[(id, sort_part_id)]
+                primary_sort = (capacity - reserved
+                                if sortkey == "part_regular" else reserved)
+            elif sortkey in ["entity_regular", "entity_reserved"]:
+                capacity = (lodgement_group[id]['capacity']
+                            if id in lodgement_group else 0)
+                reserved = (lodgement_group[id]['reserve']
+                            if id in lodgement_group else 0)
+                primary_sort = (capacity - reserved
+                                if sortkey == "entity_regular" else reserved)
+            else:
+                primary_sort = 0
+            secondary_sort = EntitySorter.lodgement(entry[1])
+            return (primary_sort, secondary_sort)
+
+        # now sort the lodgements inside their group
+        sorted_grouped_lodgements = OrderedDict([
+            (group_id, OrderedDict([
+                (lodgement_id, lodgement)
+                for lodgement_id, lodgement
+                in sorted(lodgements.items(),
+                          key=lambda e: sort_lodgement(e, group_id))
+                if lodgement['group_id'] == group_id
+            ]))
+            for group_id, group
+            in (keydictsort_filter(groups, EntitySorter.lodgement_group) + [(None, None)])
+        ])
+
         return self.render(rs, "lodgements", {
             'lodgements': lodgements,
             'groups': groups,
-            'grouped_lodgements': grouped_lodgements,
+            'grouped_lodgements': sorted_grouped_lodgements,
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitant_nums,
             'inhabitants_sum': inhabitant_sum,
