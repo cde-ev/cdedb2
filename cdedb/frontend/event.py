@@ -5050,7 +5050,7 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles,
         }
 
-        if not rs.errors and is_search:
+        if not rs.has_validation_errors() and is_search:
             query.scope = "qview_event_course"
             result = self.eventproxy.submit_general_query(
                 rs, query, event_id=event_id)
