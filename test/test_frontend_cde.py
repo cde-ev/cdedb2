@@ -240,7 +240,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms["membersearchform"]
-        f["qval_telephone,mobile"] = 234
+        f["qval_telephone,mobile"] = 9876
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden", div='result-count')

@@ -189,9 +189,17 @@ class CdEFrontend(AbstractUserFrontend):
         count = 0
         cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
 
-        if is_search and not query.constraints:
+        if rs.has_validation_errors():
+            # A little hack to fix displaying of errors: The form uses
+            # 'qval_<field>' as input name, the validation only returns the
+            # field's name
+            current = tuple(rs.retrieve_validation_errors())
+            rs.retrieve_validation_errors().clear()
+            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
+            rs.ignore_validation_errors()
+        elif is_search and not query.constraints:
             rs.notify("error", n_("You have to specify some filters."))
-        elif is_search and not rs.has_validation_errors():
+        elif is_search:
 
             def restrict(constrain):
                 filter, operation, value = constrain
@@ -216,14 +224,7 @@ class CdEFrontend(AbstractUserFrontend):
             if count > cutoff:
                 result = result[:cutoff]
                 rs.notify("info", n_("Too many query results."))
-        # A little hack to fix displaying of errors: The form uses
-        # 'qval_<field>' as input name, the validation only returns the field's
-        # name
-        elif rs.has_validation_errors():
-            current = tuple(rs.retrieve_validation_errors())
-            rs.retrieve_validation_errors().clear()
-            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
-            rs.ignore_validation_errors()
+
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
             'cutoff': cutoff, 'count': count,
