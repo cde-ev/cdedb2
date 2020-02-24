@@ -367,7 +367,7 @@
                     <div class="row" id="create-participant-list">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
+                                <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createparticipantlistform"
                                         style="display: inline;">
                                     {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                     {{ util.input_hidden("orgalist", value=False) }}

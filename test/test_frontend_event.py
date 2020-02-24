@@ -220,11 +220,11 @@ class TestEventFrontend(FrontendTest):
         self.assertIn("removeorgaform7", self.response.forms)
 
     @as_users("anton")
-    def test_create_orgalist(self, user):
+    def test_create_participant_list(self, user):
         self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'CdE-Party 2050'})
-        self.assertTitle("CdE-Party 2050")
-        f = self.response.forms["createorgalistform"]
+                      {'description': 'Große Testakademie 2222'})
+        self.assertTitle("Große Testakademie 2222")
+        f = self.response.forms["createparticipantlistform"]
         self.submit(f)
 
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner")
