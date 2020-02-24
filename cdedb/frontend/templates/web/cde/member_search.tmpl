@@ -96,26 +96,31 @@
     </form>
     {% call util.bootstrap_panel(title=gettext("Einschränkungen bei der Suche"), aclass='panel-default mosp', icon='info-sign') %}
         <ul class="slim">
-            {% trans %}
-                <li>
-                    Es werden nur CdEler gefunden, die ihre Einwilligung zur Suchbarkeit erteilt haben und aktuell Mitglied sind.
-                </li>
-                <li>
-                    Sucheingaben, die bis zu 3 Zeichen lang sind, müssen genau auf den zu suchenden Eintrag passen.
-                </li>
-                <li>
-                    Sucheingaben, die mindestens 4 Zeichen lang sind, müssen lediglich im zu suchenden Eintrag enthalten sein.
-                </li>
-                <li>
-                    In der Volltext Suche wird jede Eingabe bis zu 3 Zeichen als ein vollständiges Wort behandelt.
-                </li>
-                <li>
-                    In der Volltext Suche können Eingaben mit mindestens 4 Zeichen auch Wortteile sein.
-                </li>
-                <li>
-                    Beispielsweise wird bei "Aka" in der Volltextsuche "Akademie" nicht gefunden, bei "Akadem" wird "Akademie" gefunden.
-                </li>
-            {% endtrans %}
+            <li>
+                {% trans %}
+                    Es werden nur CdEler gefunden, die ihre Einwilligung zur Suchbarkeit erteilt
+                    haben und aktuell Mitglied sind.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Sucheingaben, die bis zu 3 Zeichen lang sind, müssen genau auf den zu suchenden
+                    Eintrag passen. In der Volltext Suche wird jede Eingabe bis zu 3 Zeichen als ein
+                    vollständiges Wort behandelt.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Sucheingaben, die mindestens 4 Zeichen lang sind, können an beliebiger Stelle im
+                    zu suchenden Eintrag enthalten sein.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Beispielsweise wird bei "Aka" in der Volltextsuche "Akademie" nicht gefunden,
+                    bei "Akadem" hingegen wird "Akademie" gefunden.
+                {% endtrans %}
+            </li>
         </ul>
     {% endcall %}
 {% endblock %}
