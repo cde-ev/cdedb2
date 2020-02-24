@@ -63,7 +63,6 @@ class TestCoreFrontend(FrontendTest):
             self.assertNonPresence("Log")
             self.assertNonPresence("Admin-Änderungen")
             self.assertNonPresence("Nutzer verwalten")
-            self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
             self.assertNonPresence("Aktivenforum 2000")
             self.assertPresence("Aktivenforum 2001", div='moderator-box')
             # Check if there is actually the correct request
@@ -76,7 +75,8 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence("Admin-Änderungen", div='sidebar')
             self.assertPresence("Nutzer verwalten", div='sidebar')
             self.assertPresence("Nutzer verwalten", div='adminshowuser-box')
-            self.assertNonPresence("Moderierte Mailinglisten")
+            self.assertPresence("Platin-Lounge", div='moderator-box')
+        self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
         self.assertPresence("CdE-Party 2050", div='orga-box')
         self.assertNonPresence("Große Testakademie 2222", div='orga-box')
         self.assertPresence("Aktuelle Veranstaltungen", div='event-box')
