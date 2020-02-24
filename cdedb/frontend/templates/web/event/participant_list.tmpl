@@ -37,6 +37,16 @@
 {% endmacro %}
 
 
+{% macro sorting_header(part_id, sortkey, titel) %}
+    {% if sortkey == last_sortkey and last_reverse == False %}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': True}), gettext(titel + " ▲"), title=gettext("Sort is asending.")) }}
+    {% elif sortkey == last_sortkey and last_reverse == True %}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}), gettext(titel + " ▼"), title=gettext("Sort is descending.")) }}
+    {% else %}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}), gettext(titel + " ⧗"), title=gettext("Sort is asending.")) }}
+    {% endif %}
+{% endmacro %}
+
 {% block content %}
     {% if not ambience['event']['is_participant_list_visible'] %}
         <div class="alert alert-info" role="alert">
@@ -70,24 +80,24 @@
                 <thead>
                     <tr>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "given_names"}), gettext("Given Names")) }}
+                            {{ sorting_header(part_id, "given_names", "Given Names") }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "family_name"}), gettext("Family Name")) }}
+                            {{ sorting_header(part_id, "family_name", "Family Name") }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "email"}), gettext("Email Address")) }}
+                            {{ sorting_header(part_id, "email", "Email Address") }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "address"}), gettext("Postal Code, City")) }}
+                            {{ sorting_header(part_id, "address", "Postal Code, City") }}
                         </th>
                         {% if parts[part_id]['tracks']|length > 1 and ambience['event']['courses_in_participant_list'] %}
                             <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "course"}), gettext("Courses")) }}
+                            {{ sorting_header(part_id, "course", "Courses") }}
                             </th>
                         {% elif parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
                             <th>
-                            {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': "course"}), gettext("Course")) }}
+                            {{ sorting_header(part_id, "course", "Course") }}
                             </th>
                         {% endif %}
                     </tr>
@@ -124,16 +134,16 @@
                 <thead>
                     <tr>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'sortkey': "given_names"}), gettext("Given Names")) }}
+                            {{ sorting_header(None, "given_names", "Given Names") }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'sortkey': "family_name"}), gettext("Family Name")) }}
+                            {{ sorting_header(None, "family_name", "Family Name") }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'sortkey': "email"}), gettext("Email Address")) }}
+                            {{ sorting_header(None, "email", "Email Address") }}
                         </th>
                         <th>
-                            {{ util.href(cdedblink('event/participant_list', {'sortkey': "address"}), gettext("Postal Code, City")) }}
+                            {{ sorting_header(None, "address", "Postal Code, City") }}
                         </th>
                         <th>{% trans %}Event Parts{% endtrans %}</th>
                     </tr>

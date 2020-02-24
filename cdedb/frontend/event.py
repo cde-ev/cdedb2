@@ -286,6 +286,8 @@ class EventFrontend(AbstractUserFrontend):
             part_id = list(rs.ambience['event']['parts'])[0]
         data['part_id'] = part_id
         data['list_consent'] = list_consent
+        data['last_sortkey'] = sortkey
+        data['last_reverse'] = reverse
         return self.render(rs, "participant_list", data)
 
     def _get_participant_list_data(
