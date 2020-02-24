@@ -94,31 +94,29 @@
             </div>
         </div>
     </form>
-    {% call util.bootstrap_panel(title=gettext("Einschränkungen bei der Suche"), aclass='panel-default mosp', icon='info-sign') %}
+    {% call util.bootstrap_panel(title=gettext("Properties of the search"), aclass='panel-default mosp', icon='info-sign') %}
         <ul class="slim">
             <li>
                 {% trans %}
-                    Es werden nur CdEler gefunden, die ihre Einwilligung zur Suchbarkeit erteilt
-                    haben und aktuell Mitglied sind.
+                    The search will only find those, who are currently members and set their account
+                    to be visible.
                 {% endtrans %}
             </li>
             <li>
                 {% trans %}
-                    Sucheingaben, die bis zu 3 Zeichen lang sind, müssen genau auf den zu suchenden
-                    Eintrag passen. In der Volltext Suche wird jede Eingabe bis zu 3 Zeichen als ein
-                    vollständiges Wort behandelt.
+                    Search terms of up to three characters have to match exactly. In the full text
+                    search terms of up to three characters have to match an entire word.
                 {% endtrans %}
             </li>
             <li>
                 {% trans %}
-                    Sucheingaben, die mindestens 4 Zeichen lang sind, können an beliebiger Stelle im
-                    zu suchenden Eintrag enthalten sein.
+                    Search terms of four or more characters can match anywhere.
                 {% endtrans %}
             </li>
             <li>
                 {% trans %}
-                    Beispielsweise wird bei "Aka" in der Volltextsuche "Akademie" nicht gefunden,
-                    bei "Akadem" hingegen wird "Akademie" gefunden.
+                    For example the search for "Aka" in the full text search will not match
+                    "Akademie". However the search for "Akadem" will mitch "Akademie".
                 {% endtrans %}
             </li>
         </ul>
