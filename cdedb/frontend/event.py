@@ -4105,6 +4105,9 @@ class EventFrontend(AbstractUserFrontend):
             'capacity_sum': capacity_sum,
             'reserve_sum': reserve_sum,
             'problems': problems_condensed,
+            'last_sortkey': sortkey,
+            'last_sort_part_id': sort_part_id,
+            'last_reverse': reverse,
         })
 
     @access("event")

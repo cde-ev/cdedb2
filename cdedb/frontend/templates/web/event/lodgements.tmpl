@@ -17,6 +17,18 @@
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
+
+{% macro display_sorting_header(part_id, sortkey, label) %}
+    {% if sortkey == last_sortkey and part_id == last_sort_part_id and last_reverse == False %}
+        {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': True}), label + " ▲", title=gettext("Sort descending.")) }}
+    {% elif sortkey == last_sortkey and part_id == last_sort_part_id and last_reverse == True %}
+        {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': False}), label + " ▼", title=gettext("Sort asending.")) }}
+    {% else %}
+        {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': False}), label + " ⧗", title=gettext("Sort asending.")) }}
+    {% endif %}
+{% endmacro %}
+
+
 {% block content %}
     <div class="p">
         {{ util.href(cdedblink("event/create_lodgement_form"), gettext("Add Lodgement"), readonly=is_locked,
@@ -42,18 +54,18 @@
                 {% if ambience['event']['parts']|length > 1 %}
                     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                         <th class="text-right{% if loop.first %} b-left{% endif %}">
-                            {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': enums['LodgementsSortkeys'].used_regular.value}), part['title']) }}
+                            {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_regular.value, part['title']) }}
                         </th>
                         <th class="text-right">
-                            {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': enums['LodgementsSortkeys'].used_reserve.value}), "+ x") }}
+                            {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_reserve.value, "+ x") }}
                         </th>
                     {% endfor %}
                 {% endif %}
                 <th class="b-left text-right">
-                    {{ util.href(cdedblink('event/lodgements', {'sortkey': enums['LodgementsSortkeys'].total_regular.value}), gettext("Regular")) }}
+                    {{ display_sorting_header(None,  enums['LodgementsSortkeys'].total_regular.value, gettext("Regular")) }}
                 </th>
                 <th class="text-right">
-                    {{ util.href(cdedblink('event/lodgements', {'sortkey': enums['LodgementsSortkeys'].total_reserve.value}), gettext("Camping Mat")) }}
+                    {{ display_sorting_header(None,  enums['LodgementsSortkeys'].total_reserve.value, "+ " + gettext("Camping Mat")) }}
                 </th>
             </tr>
         </thead>
