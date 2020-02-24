@@ -39,13 +39,14 @@
 
 {% macro sorting_header(part_id, sortkey, titel) %}
     {% if sortkey == last_sortkey and last_reverse == False %}
-        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': True}), gettext(titel + " ▲"), title=gettext("Sort is asending.")) }}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': True}), gettext(titel + " ▲"), title=gettext("Sort descending.")) }}
     {% elif sortkey == last_sortkey and last_reverse == True %}
-        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}), gettext(titel + " ▼"), title=gettext("Sort is descending.")) }}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}), gettext(titel + " ▼"), title=gettext("Sort asending.")) }}
     {% else %}
-        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}), gettext(titel + " ⧗"), title=gettext("Sort is asending.")) }}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}), gettext(titel + " ⧗"), title=gettext("Sort asending.")) }}
     {% endif %}
 {% endmacro %}
+
 
 {% block content %}
     {% if not ambience['event']['is_participant_list_visible'] %}
