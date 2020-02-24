@@ -156,4 +156,32 @@
         <span class="color-legend course-manyp"></span>&nbsp;{% trans %}Overfull{% endtrans %} &emsp;
         <span class="color-legend course-cancelled"></span>&nbsp;{% trans %}Illegal Gendermix{% endtrans %}
     </p>
+    <br/>
+    <p>
+        <strong>{% trans %}Anzeige Metrik{% endtrans %}:</strong> <br />
+        Die Unterkünfte können innerhalb der Unterkunftsgruppen sortiert werden:
+        <ul class="slim">
+            <li>
+                {% trans %}
+                    Die <strong>Veranstaltungsnamen</strong> sortieren nach den genutzten regulären Plätzen in diesem Veranstaltungsteil.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Die <strong>+x</strong> sortieren nach den genutzen Isomattenplätzen in diesem Veranstaltungsteil.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Das <strong>Regulär</strong> sortiert nach den vorhandenen regulären Plätzen.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Das <strong>+Isomatte</strong> sortiert nach den vorhandenen Isomattenplätzen.
+                {% endtrans %}
+            </li>
+        </ul>
+    </p>
+
 {% endblock %}
