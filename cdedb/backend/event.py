@@ -359,31 +359,6 @@ class EventBackend(AbstractBackend):
                     and "ml_admin" not in rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
-            # Fix for custom fields with uppercase letters so they do not
-            # get misinterpreted by postgres
-            query.fields_of_interest = [
-                ",".join(
-                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
-                             for atom in moniker.split("."))
-                    for moniker in column.split(","))
-                for column in query.fields_of_interest]
-            query.constraints = [
-                (",".join(
-                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
-                             for atom in moniker.split("."))
-                    for moniker in column.split(",")),
-                 operator, value)
-                for column, operator, value in query.constraints
-            ]
-            query.order = [
-                (".".join(atom if atom.islower() else '"{}"'.format(atom)
-                          for atom in entry.split(".")),
-                 ascending)
-                for entry, ascending in query.order]
-            for field, _, _ in query.constraints:
-                if '"' in field:
-                    query.spec[field] = query.spec[field.replace('"', '')]
-                    del query.spec[field.replace('"', '')]
 
             lodgement_fields = {
                 e['field_name']:
@@ -526,31 +501,6 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
-            # Fix for custom fields with uppercase letters so they do not
-            # get misinterpreted by postgres
-            query.fields_of_interest = [
-                ",".join(
-                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
-                             for atom in moniker.split("."))
-                    for moniker in column.split(","))
-                for column in query.fields_of_interest]
-            query.constraints = [
-                (",".join(
-                    ".".join(atom if atom.islower() else '"{}"'.format(atom)
-                             for atom in moniker.split("."))
-                    for moniker in column.split(",")),
-                 operator, value)
-                for column, operator, value in query.constraints
-            ]
-            query.order = [
-                (".".join(atom if atom.islower() else '"{}"'.format(atom)
-                          for atom in entry.split(".")),
-                 ascending)
-                for entry, ascending in query.order]
-            for field, _, _ in query.constraints:
-                if '"' in field:
-                    query.spec[field] = query.spec[field.replace('"', '')]
-                    del query.spec[field.replace('"', '')]
 
             course_table = glue(
                 "event.courses AS course",
