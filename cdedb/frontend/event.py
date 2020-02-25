@@ -4926,16 +4926,21 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def make_course_view_query_spec(event):
+        """Helper to enrich ``QUERY_SPECS['qview_event_course']``.
 
+        Since each event has custom course fields we have to amend the query
+        spec on the fly.
+
+        :type event: {str: object}
+        """
         tracks = event['tracks']
         course_fields = {
             field_id: field for field_id, field in event['fields'].items()
             if field['association'] == const.FieldAssociations.course
         }
 
-        spec = copy.deepcopy(QUERY_SPECS["qview_event_course"])
         # This is an OrderedDict, so order should be respected.
-
+        spec = copy.deepcopy(QUERY_SPECS["qview_event_course"])
         spec.update({
             "course_fields.xfield_{0}".format(field['field_name']):
                 const.FieldDatatypes(field['kind']).name
@@ -4952,6 +4957,17 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def make_course_view_query_aux(rs, event, courses, fixed_gettext=False):
+        """Un-inlined code to prepare input for template.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type event: {str: object}
+        :type courses: {int: {str: object}}
+        :type fixed_gettext: bool
+        :param fixed_gettext: whether or not to use a fixed translation
+            function. True means static, False means localized.
+        :rtype: ({str: dict}, {str: str})
+        :returns: Choices for select inputs and titles for columns.
+        """
 
         tracks = event['tracks']
 
@@ -4962,20 +4978,17 @@ class EventFrontend(AbstractUserFrontend):
             gettext = rs.gettext
             enum_gettext = rs.gettext
 
+        # Construct choices.
         course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
         course_choices = OrderedDict(
             sorted((c["id"], course_identifier(c)) for c in courses.values()))
-
-        # Construct choices.
         choices = {
             "course.id": course_choices
         }
-
         course_fields = {
             field_id: field for field_id, field in event['fields'].items()
             if field['association'] == const.FieldAssociations.course
             }
-
         if not fixed_gettext:
             # Course fields value -> description
             choices.update({
@@ -4996,13 +5009,11 @@ class EventFrontend(AbstractUserFrontend):
             "course.max_size": gettext("course max size"),
             "course.notes": gettext("course notes"),
         }
-
         titles.update({
             "course.xfield_{}".format(field['field_name']):
                 field['field_name']
             for field in course_fields.values()
         })
-
         for track_id, track in tracks.items():
             if len(tracks) > 1:
                 prefix = "{shortname}: ".format(shortname=track['shortname'])
