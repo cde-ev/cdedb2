@@ -502,12 +502,15 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
+            # Template for the final view.
+            # We retrieve general course, custom field and track specific info.
             course_table = glue(
                 "event.courses AS course",
                 "{course_fields_table}",
-                "{track_table}",
+                "{track_tables}",
             )
 
+            # Dynamically construct the custom field view.
             course_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
@@ -527,6 +530,7 @@ class EventBackend(AbstractBackend):
                 "ON course.id = course_fields.id",
             ).format(course_field_columns=course_field_columns)
 
+            # Template for retrieving course information for one specific track.
             track_table = glue(
                 "LEFT OUTER JOIN (",
                 "{segment_table}",
@@ -536,6 +540,7 @@ class EventBackend(AbstractBackend):
                 "ON course.id = track{track_id}.course_id",
             )
 
+            # General course information specific to a track.
             segment_table = glue(
                 "(SELECT is_active, course_id, course_id AS c_id",
                 "FROM event.course_segments",
@@ -543,6 +548,7 @@ class EventBackend(AbstractBackend):
                 "AS segment{track_id}",
             )
 
+            # Retrieve attendee count.
             attendees_table = glue(
                 "LEFT OUTER JOIN",
                 "(SELECT COUNT(*) as attendees, course_id AS c_id",
@@ -553,6 +559,7 @@ class EventBackend(AbstractBackend):
                 "ON segment{track_id}.c_id = attendees{track_id}.c_id"
             )
 
+            # Retrieve course choice count. Limit to regs with relevant stati.
             choices_table = glue(
                 "LEFT OUTER JOIN",
                 "(SELECT COUNT(*) as num_choices{rank}, course_id AS c_id",
@@ -564,6 +571,8 @@ class EventBackend(AbstractBackend):
                 "ON segment{track_id}.c_id = choices{track_id}_{rank}.c_id",
             )
 
+            # Retrieve the registration stati data, so we can filter it.
+            # TODO do this once and not once per choices table?
             status_table = glue(
                 "event.course_choices AS choices",
                 "LEFT OUTER JOIN",
@@ -580,33 +589,32 @@ class EventBackend(AbstractBackend):
                 const.RegistrationPartStati.applied,
             }
 
-            view = course_table.format(
-                course_fields_table=course_fields_table.format(
-                    course_field_columns=course_field_columns),
-                track_table=" ".join(
-                    track_table.format(
-                        segment_table=segment_table.format(
-                            track_id=track['id']
-                        ),
-                        attendees_table=attendees_table.format(
-                            track_id=track['id']
-                        ),
-                        choices_table=" ".join(
-                            choices_table.format(
-                                rank=rank, track_id=track['id'],
-                                status_table=status_table.format(
-                                    part_id=track['part_id']
-                                ),
-                                stati="ARRAY[{}]".format(
-                                    ",".join(str(x.value) for x in stati)
-                                )
-                            )
-                            for rank in range(track['num_choices'])
-                        ),
-                        track_id=track['id'],
-                    )
-                    for track in event['tracks'].values()
+            track_tables = " ".join(
+                track_table.format(
+                    segment_table=segment_table.format(
+                        track_id=track['id']
+                    ),
+                    attendees_table=attendees_table.format(
+                        track_id=track['id']
+                    ),
+                    choices_tables=" ".join(
+                        choices_table.format(
+                            rank=rank, track_id=track['id'],
+                            status_table=status_table.format(
+                                part_id=track['part_id']
+                            ),
+                            stati="ARRAY[{}]".format(
+                                ",".join(str(x.value) for x in stati)
+                            ),
+                        )
+                        for rank in range(track['num_choices'])
+                    ),
                 )
+                for track in event['tracks'].values()
+            )
+            view = course_table.format(
+                course_fields_table=course_fields_table,
+                track_tables=track_tables,
             )
 
             query.constraints.append(
