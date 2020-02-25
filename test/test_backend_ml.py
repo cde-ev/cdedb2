@@ -1662,7 +1662,7 @@ class TestMlBackend(BackendTest):
                         'is_active': True},
                        {'address': '42@lists.cde-ev.de',
                         'is_active': True},
-                       {'address': 'howarts@cdelokal.cde-ev.de',
+                       {'address': 'hogwarts@cdelokal.cde-ev.de',
                         'is_active': True})
 
         self.assertEqual(
@@ -1795,7 +1795,7 @@ class TestMlBackend(BackendTest):
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'howarts@cdelokal.cde-ev.de',
+                       {'address': 'hogwarts@cdelokal.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False})

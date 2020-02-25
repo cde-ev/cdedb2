@@ -631,7 +631,7 @@ class TestMlFrontend(FrontendTest):
                        {'address': 'wal@lists.cde-ev.de', 'is_active': True},
                        {'address': 'dsa@lists.cde-ev.de', 'is_active': True},
                        {'address': '42@lists.cde-ev.de', 'is_active': True},
-                       {'address': 'howarts@cdelokal.cde-ev.de', 'is_active': True},
+                       {'address': 'hogwarts@cdelokal.cde-ev.de', 'is_active': True},
                        ]
         self.get("/ml/script/all", headers=HEADERS)
         self.assertEqual(expectation, self.response.json)
@@ -760,7 +760,7 @@ class TestMlFrontend(FrontendTest):
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
-                       {'address': 'howarts@cdelokal.cde-ev.de',
+                       {'address': 'hogwarts@cdelokal.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False}]

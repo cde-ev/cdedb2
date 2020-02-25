@@ -348,7 +348,7 @@ class TestCron(CronTest):
                     **{'display_name': "Announce name",
                        'description': "Announce description",
                        'info': "Announce info",
-                       'subject_prefix': "[ann]",
+                       'subject_prefix': "[ann] ",
                        'max_message_size': 1024,
                        'default_member_action': 'hold',
                        'default_nonmember_action': 'hold',}
@@ -360,7 +360,7 @@ class TestCron(CronTest):
                     **{'display_name': "Witz name",
                        'description': "Witz description",
                        'info': "Witz info",
-                       'subject_prefix': "[witz]",
+                       'subject_prefix': "[witz] ",
                        'max_message_size': 512,
                        'default_member_action': 'hold',
                        'default_nonmember_action': 'hold',}
@@ -373,6 +373,21 @@ class TestCron(CronTest):
             'werbung': unittest.mock.MagicMock(),
             'aka': unittest.mock.MagicMock(),
             'opt': unittest.mock.MagicMock(),
+            'party50-all': unittest.mock.MagicMock(),
+            'party50': unittest.mock.MagicMock(),
+            'info': unittest.mock.MagicMock(),
+            'mitgestaltung': unittest.mock.MagicMock(),
+            'all': unittest.mock.MagicMock(),
+            'gutscheine': unittest.mock.MagicMock(),
+            'bau': unittest.mock.MagicMock(),
+            'wal': unittest.mock.MagicMock(),
+            'test-gast': unittest.mock.MagicMock(),
+            'kanonisch': unittest.mock.MagicMock(),
+            '42': unittest.mock.MagicMock(),
+            'dsa': unittest.mock.MagicMock(),
+            'platin': unittest.mock.MagicMock(),
+            'geheim': unittest.mock.MagicMock(),
+            'hogwarts': unittest.mock.MagicMock(),
         }
 
         client = client_class.return_value
@@ -403,7 +418,23 @@ class TestCron(CronTest):
                          umcall('werbung'),
                          umcall('aktivenforum'),
                          umcall('kongress'),
-                         umcall('participants'),])))
+                         umcall('participants'),
+                         umcall('party50-all'),
+                         umcall('party50'),
+                         umcall('info'),
+                         umcall('mitgestaltung'),
+                         umcall('all'),
+                         umcall('gutscheine'),
+                         umcall('bau'),
+                         umcall('wal'),
+                         umcall('test-gast'),
+                         umcall('kanonisch'),
+                         umcall('42'),
+                         umcall('dsa'),
+                         umcall('platin'),
+                         umcall('geheim'),
+                         umcall('hogwarts'),
+                         ])))
         # Meta update
         expectation = {
             'advertised': True,
@@ -412,7 +443,7 @@ class TestCron(CronTest):
             'display_name': 'Witz des Tages',
             'info': 'Einer geht noch ...',
             'max_message_size': 2048,
-            'subject_prefix': '[[witz]] ',
+            'subject_prefix': '[witz] ',
         }
         for key, value in expectation.items():
             self.assertEqual(mm_lists['witz'].settings[key], value)
