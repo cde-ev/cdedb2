@@ -336,8 +336,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             scope="qview_registration",
             spec=spec,
             fields_of_interest=("persona.id",),
-            constraints=((status_column, QueryOperators.oneof,
-                          mailinglist["registration_stati"]),),
+            constraints=[(status_column, QueryOperators.oneof,
+                          mailinglist["registration_stati"]),],
             order=tuple())
         data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
