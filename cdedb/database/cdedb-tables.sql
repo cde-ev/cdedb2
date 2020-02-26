@@ -251,9 +251,9 @@ GRANT DELETE ON core.quota TO cdb_admin;
 CREATE TABLE core.meta_info
 (
         id                      serial PRIMARY KEY,
-	-- variable store for things like names of persons on
-	-- regularily changing posts
-        info			jsonb NOT NULL
+        -- variable store for things like names of persons on
+        -- regularily changing posts
+        info                    jsonb NOT NULL
 );
 GRANT SELECT ON core.meta_info TO cdb_anonymous;
 GRANT UPDATE ON core.meta_info TO cdb_admin;
@@ -785,7 +785,7 @@ GRANT SELECT, UPDATE ON event.registration_parts_id_seq TO cdb_persona;
 CREATE TABLE event.registration_tracks (
         id                      serial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
-	track_id		integer NOT NULL REFERENCES event.course_tracks(id),
+        track_id                integer NOT NULL REFERENCES event.course_tracks(id),
         course_id               integer REFERENCES event.courses(id),
         -- this is NULL if not an instructor
         course_instructor       integer REFERENCES event.courses(id)
