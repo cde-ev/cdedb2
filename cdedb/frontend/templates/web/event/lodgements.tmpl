@@ -161,32 +161,27 @@
         <span class="color-legend course-manyp"></span>&nbsp;{% trans %}Overfull{% endtrans %} &emsp;
         <span class="color-legend course-cancelled"></span>&nbsp;{% trans %}Illegal Gendermix{% endtrans %}
     </p>
-    <br/>
     <p>
-        <strong>{% trans %}Anzeige Metrik{% endtrans %}:</strong> <br />
-        Die Unterkünfte können innerhalb der Unterkunftsgruppen sortiert werden:
+        <strong>{% trans %}Sorting:{% endtrans %}</strong> <br />
+        {% trans %}
+            The lodgements may be sorted according to the following criteria inside their lodgement groups.
+        {% endtrans %}
         <ul class="slim">
             <li>
                 {% trans %}
-                    Die <strong>Veranstaltungsnamen</strong> sortieren nach den genutzten regulären Plätzen in diesem Veranstaltungsteil.
+                    The names of the <strong>event parts</strong> sort by the number of regular spaces used in this part.
                 {% endtrans %}
             </li>
             <li>
                 {% trans %}
-                    Die <strong>+x</strong> sortieren nach den genutzen Isomattenplätzen in diesem Veranstaltungsteil.
+                    The <strong>+x</strong> sort by the number of camping mat spaces used in the associated part.
                 {% endtrans %}
             </li>
             <li>
                 {% trans %}
-                    Das <strong>Regulär</strong> sortiert nach den vorhandenen regulären Plätzen.
+                    The columns <strong>regular</strong> and <strong>camping mat</strong> sort numerically.
                 {% endtrans %}
-            </li>
-            <li>
-                {% trans %}
-                    Das <strong>+Isomatte</strong> sortiert nach den vorhandenen Isomattenplätzen.
-                {% endtrans %}
-            </li>
+            </lin>
         </ul>
     </p>
-
 {% endblock %}
