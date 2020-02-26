@@ -133,6 +133,7 @@
     },
     "event.registrations": {
         "2": {
+            "amount_owed": "589.49",
             "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
@@ -151,6 +152,7 @@
             "real_persona_id": null
         },
         "1": {
+            "amount_owed": "573.99",
             "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
@@ -168,6 +170,7 @@
             "real_persona_id": null
         },
         "3": {
+            "amount_owed": "584.49",
             "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
@@ -185,6 +188,7 @@
             "real_persona_id": null
         },
         "4": {
+            "amount_owed": "450.99",
             "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
@@ -204,6 +208,7 @@
             "real_persona_id": null
         },
         "5": {
+            "amount_owed": "584.49",
             "amount_paid": "0.00",
             "checkin": null,
             "event_id": 1,

@@ -21,7 +21,7 @@ from cdedb.common import (
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter)
+    mixed_existence_sorter, deep_update)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -1996,6 +1996,16 @@ class EventBackend(AbstractBackend):
                                    new_choice)
         return ret
 
+    def _get_registration_info(self, rs, reg_id):
+        """Helper to retrieve basic registration information.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type reg_id: int
+        :rtype: {str: object}
+        """
+        return self.sql_select_one(
+            rs, "event.registrations", ("persona_id", "event_id"), reg_id)
+
     @access("event")
     def set_registration(self, rs, data):
         """Update some keys of a registration.
@@ -2022,16 +2032,20 @@ class EventBackend(AbstractBackend):
         :returns: default return code
         """
         data = affirm("registration", data)
-        current = self.sql_select_one(
-            rs, "event.registrations", ("persona_id", "event_id"), data['id'])
-        persona_id, event_id = current['persona_id'], current['event_id']
         with Atomizer(rs):
+            # Retrieve some basic data about the registration.
+            current = self._get_registration_info(rs, reg_id=data['id'])
+            persona_id, event_id = current['persona_id'], current['event_id']
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
                     and not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
+            # We need more information for calculating the fee.
+            current = deep_update(self.get_registration(rs, data['id']), data)
+            data['amount_owed'] = self._calculate_single_fee(
+                rs, current, event=event)
             course_segments = self._get_event_course_segments(rs, event_id)
 
             # now we get to do the actual work
@@ -2129,11 +2143,10 @@ class EventBackend(AbstractBackend):
         :returns: the id of the new registration
         """
         data = affirm("registration", data, creation=True)
-        # direct validation since we already have an event_id
-        event_fields = self._get_event_fields(rs, data['event_id'])
+        event = self.get_event(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            "event_associated_fields", fdata, fields=event_fields,
+            "event_associated_fields", fdata, fields=event['fields'],
             association=const.FieldAssociations.registration)
         data['fields'] = PsycoJson(fdata)
         if (data['persona_id'] != rs.user.persona_id
@@ -2142,6 +2155,8 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
+            data['amount_owed'] = self._calculate_single_fee(
+                rs, data, event=event)
             course_segments = self._get_event_course_segments(rs,
                                                               data['event_id'])
             part_ids = {e['id'] for e in self.sql_select(
@@ -2279,6 +2294,43 @@ class EventBackend(AbstractBackend):
                     {"type": "registration", "block": blockers.keys()})
         return ret
 
+    def _calculate_single_fee(self, rs, reg, *, event=None, event_id=None,
+                              is_member=None):
+        """Helper function to calculate the fee for one registration.
+
+        This is used inside `create_registration` and `set_registration`,
+        so we take the full registration and event as input instead of
+        retrieving them via id.
+
+        :type reg: {str: object}
+        :type event: {str: object}
+        :type event_id: int
+        :type is_member: bool or None
+        :param is_member: If this is None, retrieve membership status here.
+        :rtype: decimal.Decimal
+        """
+        fee = decimal.Decimal(0)
+        rps = const.RegistrationPartStati
+
+        if event is None and event_id is None:
+            raise ValueError("No input given.")
+        elif event is not None and event_id is not None:
+            raise ValueError("Only one input for event allowed.")
+        elif event_id is not None:
+            event = self.get_event(rs, event_id)
+        for part_id, rpart in reg['parts'].items():
+            part = event['parts'][part_id]
+            if rps(rpart['status']).is_involved():
+                fee += part['fee']
+
+        if is_member is None:
+            is_member = self.core.get_persona(
+                rs, reg['persona_id'])['is_member']
+        if not is_member:
+            fee += event['additional_external_fee']
+
+        return fee
+
     @access("event")
     @singularize("calculate_fee")
     def calculate_fees(self, rs, ids):
@@ -2318,18 +2370,13 @@ class EventBackend(AbstractBackend):
 
             persona_ids = {e['persona_id'] for e in regs.values()}
             personas = self.core.get_personas(rs, persona_ids)
+
             event = self.get_event(rs, event_id)
-            rps = const.RegistrationPartStati
             ret = {}
             for reg_id, reg in regs.items():
-                fee = decimal.Decimal(0)
-                for part_id, rpart in reg['parts'].items():
-                    part = event['parts'][part_id]
-                    if rps(rpart['status']).is_involved():
-                        fee += part['fee']
-                if not personas[reg['persona_id']]['is_member']:
-                    fee += event['nonmember_surcharge']
-                ret[reg_id] = fee
+                is_member = personas[reg['persona_id']]['is_member']
+                ret[reg_id] = self._calculate_single_fee(
+                    rs, reg, event=event, is_member=is_member)
         return ret
 
     @access("event")
@@ -2903,6 +2950,8 @@ class EventBackend(AbstractBackend):
                     cls.translate(ret[x], translations, extra_translations))
         if ret.get('real_persona_id'):
             ret['real_persona_id'] = None
+        if ret.get('amount_owed'):
+            del ret['amount_owed']
         return ret
 
     def synchronize_table(self, rs, table, data, current, translations,
@@ -3016,7 +3065,17 @@ class EventBackend(AbstractBackend):
                 ret *= self.synchronize_table(
                     rs, table, data[table], current[table], translations,
                     entity=entity, extra_translations=extra_translations)
-            # Third unlock the event
+            # Third fix the amounts owed for all registrations.
+            reg_ids = self.list_registrations(rs, event_id=data['id'])
+            fees_owed = self.calculate_fees(rs, reg_ids)
+            for reg_id, fee in fees_owed.items():
+                update = {
+                    'id': reg_id,
+                    'amount_owed': fee,
+                }
+                ret *= self.sql_update(rs, "event.registrations", update)
+
+            # Forth unlock the event
             update = {
                 'id': data['id'],
                 'offline_lock': False,

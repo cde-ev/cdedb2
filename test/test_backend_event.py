@@ -649,6 +649,7 @@ class TestEventBackend(BackendTest):
     def test_registration_participant(self, user):
         expectation = {
             'amount_paid': decimal.Decimal(0),
+            'amount_owed': decimal.Decimal("589.49"),
             'checkin': None,
             'event_id': 1,
             'fields': {'brings_balls': True, 'transportation': 'pedes'},
@@ -753,6 +754,7 @@ class TestEventBackend(BackendTest):
             new_id = self.event.create_registration(self.key, new_reg)
             self.assertLess(0, new_id)
             new_reg['id'] = new_id
+            new_reg['amount_owed'] = decimal.Decimal("589.49")
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id
@@ -780,7 +782,8 @@ class TestEventBackend(BackendTest):
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100},
                          self.event.list_registrations(self.key, event_id))
         expectation = {
-            1: {'amount_paid': decimal.Decimal(0),
+            1: {'amount_owed': decimal.Decimal("573.99"),
+                'amount_paid': decimal.Decimal(0),
                 'checkin': None,
                 'event_id': 1,
                 'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
@@ -825,7 +828,8 @@ class TestEventBackend(BackendTest):
                 'payment': None,
                 'persona_id': 1,
                 'real_persona_id': None},
-            2: {'amount_paid': decimal.Decimal(0),
+            2: {'amount_owed': decimal.Decimal("589.49"),
+                'amount_paid': decimal.Decimal(0),
                 'checkin': None,
                 'event_id': 1,
                 'fields': {'brings_balls': True, 'transportation': 'pedes'},
@@ -870,7 +874,8 @@ class TestEventBackend(BackendTest):
                 'payment': datetime.date(2014, 2, 2),
                 'persona_id': 5,
                 'real_persona_id': None},
-            4: {'amount_paid': decimal.Decimal(0),
+            4: {'amount_owed': decimal.Decimal("450.99"),
+                'amount_paid': decimal.Decimal(0),
                 'checkin': None,
                 'event_id': 1,
                 'fields': {'brings_balls': False,
@@ -953,6 +958,7 @@ class TestEventBackend(BackendTest):
         expectation[4]['fields'].update(data['fields'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
         expectation[4]['checkin'] = nearly_now()
+        expectation[4]['amount_owed'] = decimal.Decimal("10.50")
         for key, value in expectation[4]['parts'].items():
             if key in data['parts']:
                 value.update(data['parts'][key])
@@ -1000,6 +1006,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
+        new_reg['amount_owed'] = decimal.Decimal("584.49")
         new_reg['fields'] = {}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
@@ -2320,7 +2327,9 @@ class TestEventBackend(BackendTest):
                                         'payment': None,
                                         'persona_id': 1,
                                         'real_persona_id': None,
-                                        'amount_paid': decimal.Decimal(0)},
+                                        'amount_paid': decimal.Decimal(0),
+                                        'amount_owed': decimal.Decimal("573.99"),
+                                        },
                                     2: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'brings_balls': True,
@@ -2335,7 +2344,9 @@ class TestEventBackend(BackendTest):
                                         'payment': datetime.date(2014, 2, 2),
                                         'persona_id': 5,
                                         'real_persona_id': None,
-                                        'amount_paid': decimal.Decimal(0)},
+                                        'amount_paid': decimal.Decimal(0),
+                                        'amount_owed': decimal.Decimal("589.49"),
+                                        },
                                     3: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'transportation': 'car'},
@@ -2348,7 +2359,9 @@ class TestEventBackend(BackendTest):
                                         'payment': datetime.date(2014, 3, 3),
                                         'persona_id': 7,
                                         'real_persona_id': None,
-                                        'amount_paid': decimal.Decimal(0)},
+                                        'amount_paid': decimal.Decimal(0),
+                                        'amount_owed': decimal.Decimal("584.49"),
+                                        },
                                     4: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'brings_balls': False,
@@ -2363,9 +2376,10 @@ class TestEventBackend(BackendTest):
                                         'payment': datetime.date(2014, 4, 4),
                                         'persona_id': 9,
                                         'real_persona_id': None,
-                                        'amount_paid': decimal.Decimal(0)},
-                                    5: {
-                                        'checkin': None,
+                                        'amount_paid': decimal.Decimal(0),
+                                        'amount_owed': decimal.Decimal("450.99"),
+                                        },
+                                    5: {'checkin': None,
                                         'event_id': 1,
                                         'fields': {'transportation': 'pedes'},
                                         'id': 5,
@@ -2377,7 +2391,10 @@ class TestEventBackend(BackendTest):
                                         'payment': None,
                                         'persona_id': 100,
                                         'real_persona_id': None,
-                                        'amount_paid': decimal.Decimal(0)}},
+                                        'amount_paid': decimal.Decimal(0),
+                                        'amount_owed': decimal.Decimal("584.49"),
+                                        },
+                                    },
             'id': 1,
             'kind': 'full',
             'timestamp': nearly_now()
@@ -2445,7 +2462,9 @@ class TestEventBackend(BackendTest):
             'payment': None,
             'persona_id': 2000,
             'real_persona_id': 2,
-            'amount_paid': decimal.Decimal(42)}
+            'amount_paid': decimal.Decimal(42),
+            'amount_owed': decimal.Decimal("666.66"),
+        }
         ## registration parts
         new_data['event.registration_parts'][5000] = {
             'id': 5000,
@@ -2563,7 +2582,9 @@ class TestEventBackend(BackendTest):
             'payment': None,
             'persona_id': 2,
             'real_persona_id': None,
-            'amount_paid': decimal.Decimal(42)}
+            'amount_paid': decimal.Decimal(42),
+            'amount_owed': decimal.Decimal("666.66"),
+        }
         stored_data['event.registration_parts'][1001] = {
             'id': 1001,
             'is_reserve': False,
@@ -2803,7 +2824,8 @@ class TestEventBackend(BackendTest):
                                'notes': None,
                                'group_id': 1,
                                'reserve': 0}},
-            'registrations': {1: {'amount_paid': decimal.Decimal(0),
+            'registrations': {1: {'amount_owed': decimal.Decimal("573.99"),
+                                  'amount_paid': decimal.Decimal(0),
                                   'checkin': None,
                                   'fields': {'lodge': 'Die üblichen Verdächtigen :)'},
                                   'list_consent': True,
@@ -2848,7 +2870,8 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [1, 4],
                                                  'course_id': None,
                                                  'course_instructor': None}}},
-                              2: {'amount_paid': decimal.Decimal(0),
+                              2: {'amount_owed': decimal.Decimal("589.49"),
+                                  'amount_paid': decimal.Decimal(0),
                                   'checkin': None,
                                   'fields': {'brings_balls': True,
                                              'transportation': 'pedes'},
@@ -2895,7 +2918,8 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [4, 2],
                                                  'course_id': 1,
                                                  'course_instructor': 1}}},
-                              3: {'amount_paid': decimal.Decimal(0),
+                              3: {'amount_owed': decimal.Decimal("584.49"),
+                                  'amount_paid': decimal.Decimal(0),
                                   'checkin': None,
                                   'fields': {'transportation': 'car'},
                                   'list_consent': False,
@@ -2940,7 +2964,8 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [2, 4],
                                                  'course_id': None,
                                                  'course_instructor': None}}},
-                              4: {'amount_paid': decimal.Decimal(0),
+                              4: {'amount_owed': decimal.Decimal("450.99"),
+                                  'amount_paid': decimal.Decimal(0),
                                   'checkin': None,
                                   'fields': {'brings_balls': False,
                                              'may_reserve': True,
@@ -2987,7 +3012,8 @@ class TestEventBackend(BackendTest):
                                              3: {'choices': [1, 2],
                                                  'course_id': 1,
                                                  'course_instructor': None}}},
-                              5: {'amount_paid': decimal.Decimal(0),
+                              5: {'amount_owed': decimal.Decimal("584.49"),
+                                  'amount_paid': decimal.Decimal(0),
                                   'checkin': None,
                                   'fields': {'transportation': 'pedes'},
                                   'list_consent': True,
@@ -3136,6 +3162,8 @@ class TestEventBackend(BackendTest):
         del updated['registrations'][1002]['persona']  # ignore additional info
         updated['registrations'][1002]['amount_paid'] = str(
             updated['registrations'][1002]['amount_paid'])
+        updated['registrations'][1002]['amount_owed'] = str(
+            updated['registrations'][1002]['amount_owed'])
         self.assertEqual(expectation, updated)
 
     @as_users("annika")
@@ -3267,17 +3295,47 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.check_registration_status(self.key, 5, event_id, stati))
         self.assertFalse(self.event.check_registration_status(self.key, 9, event_id, stati))
 
-    @as_users("garcia", "annika")
+    @as_users("emilia", "garcia", "annika")
     def test_calculate_fees(self, user):
-        reg_ids = self.event.list_registrations(self.key, event_id=1)
-        expectation = {
-            1: decimal.Decimal("573.99"),
-            2: decimal.Decimal("589.49"),
-            3: decimal.Decimal("584.49"),
-            4: decimal.Decimal("450.99"),
-            5: decimal.Decimal("584.49"),
+        if user['id'] != 5:
+            reg_ids = self.event.list_registrations(self.key, event_id=1)
+            expectation = {
+                1: decimal.Decimal("573.99"),
+                2: decimal.Decimal("589.49"),
+                3: decimal.Decimal("584.49"),
+                4: decimal.Decimal("450.99"),
+                5: decimal.Decimal("584.49"),
+            }
+            self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
+        reg_id = 2
+        reg = self.event.get_registration(self.key, reg_id)
+        self.assertEqual(reg['amount_owed'], decimal.Decimal("589.49"))
+        self.assertEqual(reg['parts'][1]['status'], const.RegistrationPartStati.waitlist)
+        self.assertEqual(reg['parts'][2]['status'], const.RegistrationPartStati.guest)
+        self.assertEqual(reg['parts'][3]['status'], const.RegistrationPartStati.participant)
+        update = {
+            'id': reg_id,
+            'parts': {
+                1: {
+                    'status': const.RegistrationPartStati.cancelled,
+                },
+                2: {
+                    'status': const.RegistrationPartStati.participant,
+                },
+                3: {
+                    'status': const.RegistrationPartStati.rejected,
+                },
+            },
         }
-        self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
+        self.assertLess(0, self.event.set_registration(self.key, update))
+        reg = self.event.get_registration(self.key, reg_id)
+        self.assertEqual(reg['amount_owed'], decimal.Decimal("128.00"))
+        self.assertEqual(reg['parts'][1]['status'],
+                         const.RegistrationPartStati.cancelled)
+        self.assertEqual(reg['parts'][2]['status'],
+                         const.RegistrationPartStati.participant)
+        self.assertEqual(reg['parts'][3]['status'],
+                         const.RegistrationPartStati.rejected)
 
     @as_users("annika")
     def test_log(self, user):

@@ -3030,7 +3030,8 @@ def _serialized_event(val, argname=None, *, _convert=True,
         'event.lodgements': _augment_dict_validator(
             _lodgement, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
-            _registration, {'event_id': _id, 'persona_id': _id}),
+            _registration, {'event_id': _id, 'persona_id': _id,
+                            'amount_owed': _non_negative_decimal}),
         'event.registration_parts': _augment_dict_validator(
             _registration_part, {'id': _id, 'part_id': _id,
                                  'registration_id': _id}),
@@ -3326,6 +3327,7 @@ _PARTIAL_REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
     'amount_paid': _non_negative_decimal,
+    'amount_owed': _non_negative_decimal,
     'checkin': _datetime_or_None,
     'fields': _mapping,
 }
@@ -3366,6 +3368,8 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
+    if 'amount_owed' in val:
+        del val['amount_owed']
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():

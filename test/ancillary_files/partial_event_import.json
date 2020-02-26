@@ -218,6 +218,7 @@
 			"checkin": null,
 			"payment": null,
 			"amount_paid": "0.00",
+			"amount_owed": "573.99",
 			"list_consent": true,
 			"persona_id": 2,
 			"notes": null,

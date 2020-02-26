@@ -1250,6 +1250,22 @@ def n_(x):
     return x
 
 
+def deep_update(adict, update):
+    """Update a dict with multiple layers.
+
+    :type adict: dict
+    :type update: collections.abc.Mapping
+    :rtype: dict
+    """
+    new_dict = copy.deepcopy(adict)
+    for k, v in update.items():
+        if isinstance(v, collections.abc.Mapping):
+            new_dict[k] = deep_update(new_dict.get(k, {}), v)
+        else:
+            new_dict[k] = v
+    return new_dict
+
+
 def asciificator(s):
     """Pacify a string.
 
@@ -1818,7 +1834,7 @@ COURSE_SEGMENT_FIELDS = ("course_id", "track_id", "is_active")
 REGISTRATION_FIELDS = (
     "id", "persona_id", "event_id", "notes", "orga_notes", "payment",
     "parental_agreement", "mixed_lodging", "checkin", "list_consent", "fields",
-    "real_persona_id", "amount_paid")
+    "real_persona_id", "amount_paid", "amount_owed")
 
 #: Fields of a registration which are specific for each part of the event
 REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
