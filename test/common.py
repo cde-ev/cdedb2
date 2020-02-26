@@ -534,12 +534,11 @@ class FrontendTest(unittest.TestCase):
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
-            success = True
-            try:
-                self.assertIn("alert alert-success", self.response.text)
-            except AssertionError as e:
-                success = False
-            if not success:
+            success_str = "alert alert-success"
+            target = self.response.text
+            if verbose:
+                self.assertIn(success_str, target)
+            elif success_str not in target:
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
