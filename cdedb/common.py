@@ -533,10 +533,8 @@ class EntitySorter:
 
     @staticmethod
     def address(persona):
-        loc = persona['location'] if 'location' in persona else ""
-        zip = persona['postal_code'] if 'postal_code' in persona else ""
-        address = persona['address'] if 'address' in persona else ""
-        return (loc + zip + address)
+        return (persona.get('location', "") + persona.get('postal_code', "")
+                + persona.get('address', ""))
 
     @staticmethod
     def event(event):
