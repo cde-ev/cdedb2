@@ -44,10 +44,10 @@
                      label + nbsp + "▲", title=gettext("Sort descending.")) }}
     {% elif sortkey == last_sortkey and last_reverse == True %}
         {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
-                     label + nbsp + "▼", title=gettext("Sort asending.")) }}
+                     label + nbsp + "▼", title=gettext("Sort ascending.")) }}
     {% else %}
         {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
-                     label + nbsp + "♦", title=gettext("Sort asending.")) }}
+                     label + nbsp + "♦", title=gettext("Sort ascending.")) }}
     {% endif %}
 {% endmacro %}
 
