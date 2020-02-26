@@ -249,10 +249,18 @@ class TestCdEFrontend(FrontendTest):
 
         # Test error displaying for invalid search input
         f = self.response.forms['membersearchform']
-        f['qval_username'] = "[a]"
+        fields = [
+            "fulltext", "given_names,display_name", "family_name,birth_name",
+            "weblink,specialisation,affiliation,timeline,interests,free_form",
+            "username", "telephone,mobile",
+            "address,address_supplement,address2,address_supplement2",
+            "location,location2", "country,country2"]
+        for field in fields:
+            f['qval_' + field] = "[a]"
         self.submit(f, check_notification=False)
-        self.assertValidationError("qval_username",
-                                   "Darf keine verbotenen Zeichen enthalten")
+        for field in fields:
+            self.assertValidationError("qval_" + field,
+                                       "Darf keine verbotenen Zeichen enthalten")
 
     @as_users("inga")
     def test_member_search_restrictions(self, user):

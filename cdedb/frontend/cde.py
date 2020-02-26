@@ -201,15 +201,15 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("error", n_("You have to specify some filters."))
         elif is_search:
 
-            def restrict(constrain):
-                filter, operation, value = constrain
+            def restrict(constraint):
+                filter, operation, value = constraint
                 if filter == 'fulltext':
                     value = [r"\m{}\M".format(val) if len(val) <= 3 else val
                              for val in value]
                 elif len(str(value)) <= 3:
                     operation = QueryOperators.equal
-                constrain = (filter, operation, value)
-                return constrain
+                constraint = (filter, operation, value)
+                return constraint
 
             query.constraints = [restrict(constrain)
                                  for constrain in query.constraints]
