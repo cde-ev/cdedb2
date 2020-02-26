@@ -2318,18 +2318,16 @@ class EventBackend(AbstractBackend):
             persona_ids = {e['persona_id'] for e in regs.values()}
             personas = self.core.get_personas(rs, persona_ids)
             event = self.get_event(rs, event_id)
-            relevant_stati = (const.RegistrationPartStati.applied,
-                              const.RegistrationPartStati.waitlist,
-                              const.RegistrationPartStati.participant,)
+            rps = const.RegistrationPartStati
             ret = {}
             for reg_id, reg in regs.items():
                 fee = decimal.Decimal(0)
                 for part_id, rpart in reg['parts'].items():
                     part = event['parts'][part_id]
-                    if rpart['status'] in relevant_stati:
+                    if rps(rpart['status']).is_involved():
                         fee += part['fee']
-                        if not personas[reg['persona_id']]['is_member']:
-                            fee += part['non_member_fee']
+                if not personas[reg['persona_id']]['is_member']:
+                    fee += event['additional_external_fee']
                 ret[reg_id] = fee
         return ret
 

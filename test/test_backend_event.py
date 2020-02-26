@@ -49,6 +49,7 @@ class TestEventBackend(BackendTest):
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'additional_external_fee': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
             'use_questionnaire': False,
@@ -68,7 +69,6 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56"),
-                    'non_member_fee': decimal.Decimal("15.44"),
                 },
                 -2: {
                     'tracks': {
@@ -83,7 +83,6 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'fee': decimal.Decimal("0.00"),
-                    'non_member_fee': decimal.Decimal("6.66"),
                 },
             },
             'fields': {
@@ -171,14 +170,12 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'fee': decimal.Decimal("123.40"),
-            'non_member_fee': decimal.Decimal("1.60"),
         }
         changed_part = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
-            'non_member_fee': decimal.Decimal("1.23"),
             'tracks': {
                 1002: {'title': "Second lecture v2",
                        'shortname': "Second v2",
@@ -1933,7 +1930,6 @@ class TestEventBackend(BackendTest):
                                   'title': 'Backup-Kurs'}},
             'event.event_parts': {1: {'event_id': 1,
                                       'fee': decimal.Decimal('10.50'),
-                                      'non_member_fee': decimal.Decimal('0.00'),
                                       'id': 1,
                                       'part_begin': datetime.date(2222, 2, 2),
                                       'part_end': datetime.date(2222, 2, 2),
@@ -1941,7 +1937,6 @@ class TestEventBackend(BackendTest):
                                       'title': 'Warmup'},
                                   2: {'event_id': 1,
                                       'fee': decimal.Decimal('123.00'),
-                                      'non_member_fee': decimal.Decimal('2.50'),
                                       'id': 2,
                                       'part_begin': datetime.date(2222, 11, 1),
                                       'part_end': datetime.date(2222, 11, 11),
@@ -1949,7 +1944,6 @@ class TestEventBackend(BackendTest):
                                       'title': 'Erste Hälfte'},
                                   3: {'event_id': 1,
                                       'fee': decimal.Decimal('450.99'),
-                                      'non_member_fee': decimal.Decimal('5.00'),
                                       'id': 3,
                                       'part_begin': datetime.date(2222, 11, 11),
                                       'part_end': datetime.date(2222, 11, 30),
@@ -1958,6 +1952,7 @@ class TestEventBackend(BackendTest):
             'event.events': {1: {'course_room_field': 2,
                                  'description': 'Everybody come!',
                                  'iban': 'DE96370205000008068901',
+                                 'additional_external_fee': decimal.Decimal("5.00"),
                                  'id': 1,
                                  'institution': 1,
                                  'is_archived': False,
@@ -2405,7 +2400,6 @@ class TestEventBackend(BackendTest):
         new_data['event.event_parts'][4000] = {
             'event_id': 1,
             'fee': decimal.Decimal('666.66'),
-            'non_member_fee': decimal.Decimal('333.34'),
             'id': 4000,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2528,7 +2522,6 @@ class TestEventBackend(BackendTest):
         stored_data['event.event_parts'][1001] = {
             'event_id': 1,
             'fee': decimal.Decimal('666.66'),
-            'non_member_fee': decimal.Decimal('333.34'),
             'id': 1001,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
@@ -2727,6 +2720,7 @@ class TestEventBackend(BackendTest):
                                                                 ['etc', 'anything else']],
                                                     'kind': 1}},
                       'iban': 'DE96370205000008068901',
+                      'additional_external_fee': decimal.Decimal("5.00"),
                       'institution': 1,
                       'is_archived': False,
                       'is_participant_list_visible': False,
@@ -2743,14 +2737,12 @@ class TestEventBackend(BackendTest):
                       'offline_lock': False,
                       'orga_address': 'aka@example.cde',
                       'parts': {1: {'fee': decimal.Decimal('10.50'),
-                                    'non_member_fee': decimal.Decimal('0.00'),
                                     'part_begin': datetime.date(2222, 2, 2),
                                     'part_end': datetime.date(2222, 2, 2),
                                     'shortname': 'Wu',
                                     'tracks': {},
                                     'title': 'Warmup'},
                                 2: {'fee': decimal.Decimal('123.00'),
-                                    'non_member_fee': decimal.Decimal('2.50'),
                                     'part_begin': datetime.date(2222, 11, 1),
                                     'part_end': datetime.date(2222, 11, 11),
                                     'shortname': '1.H.',
@@ -2766,7 +2758,6 @@ class TestEventBackend(BackendTest):
                                                    'title': 'Kaffeekränzchen (Erste Hälfte)'}},
                                     'title': 'Erste Hälfte'},
                                 3: {'fee': decimal.Decimal('450.99'),
-                                    'non_member_fee': decimal.Decimal('5.00'),
                                     'part_begin': datetime.date(2222, 11, 11),
                                     'part_end': datetime.date(2222, 11, 30),
                                     'shortname': '2.H.',
@@ -3276,6 +3267,18 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.check_registration_status(self.key, 5, event_id, stati))
         self.assertFalse(self.event.check_registration_status(self.key, 9, event_id, stati))
 
+    @as_users("garcia", "annika")
+    def test_calculate_fees(self, user):
+        reg_ids = self.event.list_registrations(self.key, event_id=1)
+        expectation = {
+            1: decimal.Decimal("573.99"),
+            2: decimal.Decimal("589.49"),
+            3: decimal.Decimal("584.49"),
+            4: decimal.Decimal("450.99"),
+            5: decimal.Decimal("584.49"),
+        }
+        self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
+
     @as_users("annika")
     def test_log(self, user):
         # first generate some data
@@ -3290,6 +3293,7 @@ class TestEventBackend(BackendTest):
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'additional_external_fee': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
             'use_questionnaire': False,
@@ -3308,7 +3312,6 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56"),
-                    'non_member_fee': decimal.Decimal("14.44"),
                 },
                 -2: {
                     'tracks': {
@@ -3322,7 +3325,6 @@ class TestEventBackend(BackendTest):
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
                     'fee': decimal.Decimal("0.00"),
-                    'non_member_fee': decimal.Decimal("6.66"),
                 },
             },
             'fields': {
@@ -3380,14 +3382,12 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
             'fee': decimal.Decimal("123.40"),
-            'non_member_fee': decimal.Decimal("1.60"),
         }
         changed_part = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
-            'non_member_fee': decimal.Decimal("1.23"),
             'tracks': {
                 1002: {'title': "Second lecture v2",  # hardcoded id 5
                        'shortname': "Second v2",

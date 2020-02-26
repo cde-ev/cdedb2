@@ -1933,6 +1933,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'courses_in_participant_list': _bool,
     'is_archived': _bool,
     'iban': _iban_or_None,
+    'additional_external_fee': _non_negative_decimal,
     'orgas': _iterable,
     'mail_text': _str_or_None,
     'parts': _mapping,
@@ -2036,7 +2037,6 @@ _EVENT_PART_COMMON_FIELDS = {
     'part_begin': _date,
     'part_end': _date,
     'fee': _non_negative_decimal,
-    'non_member_fee': _non_negative_decimal,
     'tracks': _mapping,
 }
 

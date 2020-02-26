@@ -384,7 +384,8 @@ class EventFrontend(AbstractUserFrontend):
         "mail_text", "use_questionnaire", "notes", "lodge_field",
         "reserve_field", "is_visible", "is_course_list_visible",
         "is_course_state_visible", "is_participant_list_visible",
-        "courses_in_participant_list", "course_room_field")
+        "courses_in_participant_list", "course_room_field",
+        "additional_external_fee")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -560,7 +561,6 @@ class EventFrontend(AbstractUserFrontend):
             'part_begin': "date",
             'part_end': "date",
             'fee': "decimal",
-            'non_member_fee': "decimal",
         }
         params = tuple(("{}_{}".format(key, part_id), value)
                        for part_id in parts if part_id not in deletes
@@ -910,7 +910,7 @@ class EventFrontend(AbstractUserFrontend):
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
-        "iban", "notes")
+        "iban", "additional_external_fee", "notes")
     def create_event(self, rs, event_begin, event_end, orga_ids, data,
                      create_track, create_orga_list, create_participant_list):
         """Create a new event, organized via DB."""
@@ -931,7 +931,6 @@ class EventFrontend(AbstractUserFrontend):
                 'part_begin': event_begin,
                 'part_end': event_end,
                 'fee': decimal.Decimal(0),
-                'non_member_fee': self.conf.MEMBERSHIP_FEE * self.conf.PERIODS_PER_YEAR,
                 'tracks': ({-1: new_track} if create_track else {}),
             }
         }

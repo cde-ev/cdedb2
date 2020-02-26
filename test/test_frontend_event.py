@@ -511,7 +511,6 @@ class TestEventFrontend(FrontendTest):
         f['part_begin_-1'] = "2233-4-5"
         f['part_end_-1'] = "2233-6-7"
         f['fee_-1'] = "23456.78"
-        f['non_member_fee_-1'] = "0.22"
         f['track_create_-1_-1'].checked = True
         f['track_title_-1_-1'] = "Chillout Training"
         f['track_shortname_-1_-1'] = "Chillout"
@@ -937,6 +936,7 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "UnAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
+        f['additional_external_fee'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
@@ -966,6 +966,7 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "AltAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
+        f['additional_external_fee'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
         # TODO This should be fixed with introducing relative admins
@@ -1398,18 +1399,20 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-570.99;DB-1-9;Admin;Anton;01.04.18
-461.49;DB-5-1;Eventis;Emilia;01.04.18
+573.99;DB-1-9;Admin;Anton;01.04.18
+466.99;DB-5-1;Eventis;Emilia;01.04.18
+589.49;DB-9-4;Iota;Inga;30.12.19
 570.99;DB-11-6;K;Kalif;01.04.18
 0.0;DB-666-1;Y;Z;77.04.18;stuff
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Kein Account mit ID 666 gefunden.")
+        self.assertPresence("Keine Anmeldung gefunden.", div="line4_problems")
+        self.assertPresence("Kein Account mit ID 666 gefunden.", div="line5_problems")
         f = self.response.forms['batchfeesform']
         f['full_payment'].checked = True
         f['fee_data'] = """
 573.98;DB-1-9;Admin;Anton;01.04.18
-466.99;DB-5-1;Eventis;Emilia;04.01.18
+589.49;DB-5-1;Eventis;Emilia;04.01.18
 451.00;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
@@ -1443,7 +1446,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 04.01.2018")
-        self.assertPresence("Bereits bezahlter Betrag 466,99 €")
+        self.assertPresence("Bereits bezahlter Betrag 589,49 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
@@ -2694,6 +2697,7 @@ etc;anything else""", f['entries_2'].value)
                                                                 ['etc', 'anything else']],
                                                     'kind': 1}},
                       'iban': 'DE96370205000008068901',
+                      'additional_external_fee': "5.00",
                       'institution': 1,
                       'is_archived': False,
                       'is_participant_list_visible': False,
@@ -2710,14 +2714,12 @@ etc;anything else""", f['entries_2'].value)
                       'offline_lock': False,
                       'orga_address': 'aka@example.cde',
                       'parts': {'1': {'fee': '10.50',
-                                      'non_member_fee': '0.00',
                                       'part_begin': '2222-02-02',
                                       'part_end': '2222-02-02',
                                       'shortname': 'Wu',
                                       'tracks': {},
                                       'title': 'Warmup'},
                                 '2': {'fee': '123.00',
-                                      'non_member_fee': '2.50',
                                       'part_begin': '2222-11-01',
                                       'part_end': '2222-11-11',
                                       'shortname': '1.H.',
@@ -2733,7 +2735,6 @@ etc;anything else""", f['entries_2'].value)
                                                        'title': 'Kaffeekränzchen (Erste Hälfte)'}},
                                       'title': 'Erste Hälfte'},
                                 '3': {'fee': '450.99',
-                                      'non_member_fee': '5.00',
                                       'part_begin': '2222-11-11',
                                       'part_end': '2222-11-30',
                                       'shortname': '2.H.',
