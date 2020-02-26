@@ -291,8 +291,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "participant_list", data)
 
     def _get_participant_list_data(
-            self, rs, event_id, part_ids=None, sortkey=EntitySorter.given_names,
-            reverse=False):
+            self, rs, event_id, part_ids=None,
+            sortkey=EntitySorter.given_names, reverse=False):
         """This provides data for download and online participant list.
 
         This is un-inlined so download_participant_list can use this
@@ -306,7 +306,8 @@ class EventFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
             raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
-        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
+        parts = {anid: rs.ambience['event']['parts'][anid]
+                 for anid in part_ids}
 
         participant = const.RegistrationPartStati.participant
         registrations = {
@@ -316,7 +317,8 @@ class EventFrontend(AbstractUserFrontend):
                    and v['parts'][part_id]['status'] == participant
                    for part_id in parts)}
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
+            rs, tuple(e['persona_id']
+                      for e in registrations.values()), event_id)
 
         all_sortkeys = {
             "given_names": EntitySorter.given_names,
@@ -327,12 +329,12 @@ class EventFrontend(AbstractUserFrontend):
         }
 
         def sort_rank(sortkey, anid):
-            prim_sorter = (all_sortkeys[sortkey]
-                           if sortkey in all_sortkeys else EntitySorter.persona)
+            prim_sorter = all_sortkeys.get(sortkey, EntitySorter.persona)
             sec_sorter = EntitySorter.persona
             if sortkey == "course":
                 if not len(part_ids) == 1:
-                    raise werkzeug.exceptions.BadRequest(n_("Only one part id."))
+                    raise werkzeug.exceptions.BadRequest(n_(
+                        "Only one part id."))
                 part_id = unwrap(part_ids)
                 all_tracks = parts[part_id]['tracks']
                 registered_tracks = [registrations[anid]['tracks'][track_id]
@@ -357,7 +359,6 @@ class EventFrontend(AbstractUserFrontend):
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered, 'parts': parts,
         }
-
 
     @access("event")
     @event_guard()
