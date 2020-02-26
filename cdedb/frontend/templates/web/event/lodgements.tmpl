@@ -19,16 +19,15 @@
 {% endblock %}
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
-    {% set nbsp = "\u00A0" %}
     {% if sortkey == last_sortkey and part_id == last_sort_part_id and last_reverse == False %}
         {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': True}),
                      label + nbsp + "▲", title=gettext("Sort descending.")) }}
     {% elif sortkey == last_sortkey and part_id == last_sort_part_id and last_reverse == True %}
         {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
-                     label + nbsp + "▼", title=gettext("Sort asending.")) }}
+                     label + nbsp + "▼", title=gettext("Sort ascending.")) }}
     {% else %}
         {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
-                     label + nbsp + "♦", title=gettext("Sort asending.")) }}
+                     label + nbsp + "♦", title=gettext("Sort ascending.")) }}
     {% endif %}
 {% endmacro %}
 
@@ -41,31 +40,24 @@
                      aclass='btn btn-sm btn-info', icon='th-large') }}
     </div>
 
-    {% set nbsp = "\u00A0" %}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">{% trans %}Lodgement{% endtrans %}</th>
-                {% if ambience['event']['parts']|length > 1 %}
-                    <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">
-                        {% trans %}Inhabitants{% endtrans -%}</th>
-                {% else %}
-                    <th rowspan="2" colspan="2" class="text-right">{% trans %}Inhabitants{% endtrans %}</th>
-                {% endif %}
+                <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">
+                    {% trans %}Inhabitants{% endtrans -%}</th>
                 <th colspan="2" class="b-left">{% trans %}Capacity{% endtrans %}</th>
                 <th rowspan="2" class="b-left"></th>
             </tr>
             <tr>
-                {% if ambience['event']['parts']|length > 1 %}
-                    {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                        <th class="text-right{% if loop.first %} b-left{% endif %}">
-                            {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_regular.value, part['title']) }}
-                        </th>
-                        <th class="text-right">
-                            {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_reserve.value, "+" + nbsp + "x") }}
-                        </th>
-                    {% endfor %}
-                {% endif %}
+                {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+                    <th class="text-right{% if loop.first %} b-left{% endif %}">
+                        {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_regular.value, part['title']) }}
+                    </th>
+                    <th class="text-right">
+                        {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_reserve.value, "+" + nbsp + "x") }}
+                    </th>
+                {% endfor %}
                 <th class="b-left text-right">
                     {{ display_sorting_header(None,  enums['LodgementsSortkeys'].total_regular.value, gettext("Regular")) }}
                 </th>

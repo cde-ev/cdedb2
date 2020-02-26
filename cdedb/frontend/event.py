@@ -4052,8 +4052,8 @@ class EventFrontend(AbstractUserFrontend):
             group_id: sum(lodgement['reserve'] for lodgement in group.values())
             for group_id, group in grouped_lodgements.items()}
 
-        def sort_lodgement(entry, group_id):
-            id = entry[0]
+        def sort_lodgement(lodgement, group_id):
+            id, lodgement = lodgement
             lodgement_group = grouped_lodgements[group_id]
             sort = LodgementsSortkeys
             if sort.is_used_sorting(sortkey):
@@ -4071,10 +4071,11 @@ class EventFrontend(AbstractUserFrontend):
                 primary_sort = (capacity - reserve
                                 if sortkey == sort.total_regular else reserve)
             elif sortkey == sort.moniker:
-                primary_sort = EntitySorter.lodgement(entry[1])
+                primary_sort = EntitySorter.lodgement(lodgement)
             else:
                 primary_sort = 0
-            secondary_sort = EntitySorter.lodgement(entry[1])
+            secondary_sort = EntitySorter.lodgement(lodgement)
+            lodgements
             return (primary_sort, secondary_sort)
 
         # now sort the lodgements inside their group
