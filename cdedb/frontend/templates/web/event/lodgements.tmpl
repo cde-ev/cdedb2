@@ -19,10 +19,10 @@
 {% endblock %}
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
-    {% if sortkey == last_sortkey and part_id == last_sort_part_id and last_reverse == False %}
+    {% if sortkey == last_sortkey.value and part_id == last_sort_part_id and last_reverse == False %}
         {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': True}),
                      label + nbsp + "▲", title=gettext("Sort descending.")) }}
-    {% elif sortkey == last_sortkey and part_id == last_sort_part_id and last_reverse == True %}
+    {% elif sortkey == last_sortkey.value and part_id == last_sort_part_id and last_reverse == True %}
         {{ util.href(cdedblink('event/lodgements', {'sort_part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
                      label + nbsp + "▼", title=gettext("Sort ascending.")) }}
     {% else %}

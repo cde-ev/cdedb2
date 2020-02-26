@@ -879,7 +879,7 @@ def unwrap(single_element_list, keys=False):
 
 
 @enum.unique
-class LodgementsSortkeys(enum.IntEnum):
+class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgment overview."""
     #: default sortkey (currently equal to EntitySorter.lodgement)
     moniker = 1
