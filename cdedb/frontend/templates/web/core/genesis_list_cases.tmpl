@@ -64,9 +64,12 @@
                     <hr />
                 {% endif %}
             {% else %}
-                <div class="row" id="no-{{realm}}-request">
-                    <p class="text-muted">{% trans realm=REALM_REQUEST_TITLES[realm] %}
-                        There are currently no {{ realm }} pending for approval.{% endtrans %}</p>
+                <div id="no-{{realm}}-request">
+                    <p class="text-muted">
+                        {% trans realm=REALM_REQUEST_TITLES[realm] %}
+                            There are currently no {{ realm }} pending for approval.
+                        {% endtrans %}
+                    </p>
                 </div>
             {% endfor %}
         {% endfor %}
