@@ -251,8 +251,11 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
-    @REQUESTdata(("part_id", "id_or_None"))
-    def participant_list(self, rs, event_id, part_id=None):
+    @REQUESTdata(("part_id", "id_or_None"),
+                 ("sortkey", "str_or_None"),
+                 ("reverse", "bool"))
+    def participant_list(self, rs, event_id, part_id=None, sortkey=None,
+                         reverse=False):
         """List participants of an event"""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
@@ -280,16 +283,22 @@ class EventFrontend(AbstractUserFrontend):
             part_ids = [part_id]
         else:
             part_ids = None
-        data = self._get_participant_list_data(rs, event_id, part_ids)
+
+        data = self._get_participant_list_data(rs, event_id, part_ids, sortkey,
+                                               reverse=reverse)
         if data is None:
             return self.redirect(rs, "event/participant_list")
         if len(rs.ambience['event']['parts']) == 1:
             part_id = list(rs.ambience['event']['parts'])[0]
         data['part_id'] = part_id
         data['list_consent'] = list_consent
+        data['last_sortkey'] = sortkey
+        data['last_reverse'] = reverse
         return self.render(rs, "participant_list", data)
 
-    def _get_participant_list_data(self, rs, event_id, part_ids=None):
+    def _get_participant_list_data(
+            self, rs, event_id, part_ids=None,
+            sortkey=EntitySorter.given_names, reverse=False):
         """This provides data for download and online participant list.
 
         This is un-inlined so download_participant_list can use this
@@ -303,7 +312,8 @@ class EventFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
         if any(anid not in rs.ambience['event']['parts'] for anid in part_ids):
             raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
-        parts = {anid: rs.ambience['event']['parts'][anid] for anid in part_ids}
+        parts = {anid: rs.ambience['event']['parts'][anid]
+                 for anid in part_ids}
 
         participant = const.RegistrationPartStati.participant
         registrations = {
@@ -313,16 +323,48 @@ class EventFrontend(AbstractUserFrontend):
                    and v['parts'][part_id]['status'] == participant
                    for part_id in parts)}
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
-        ordered = sorted(
-            registrations.keys(),
-            key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]))
+            rs, tuple(e['persona_id']
+                      for e in registrations.values()), event_id)
+
+        all_sortkeys = {
+            "given_names": EntitySorter.given_names,
+            "family_name": EntitySorter.family_name,
+            "email": EntitySorter.email,
+            "address": EntitySorter.address,
+            "course": EntitySorter.course,
+        }
+
+        def sort_rank(sortkey, anid):
+            prim_sorter = all_sortkeys.get(sortkey, EntitySorter.persona)
+            sec_sorter = EntitySorter.persona
+            if sortkey == "course":
+                if not len(part_ids) == 1:
+                    raise werkzeug.exceptions.BadRequest(n_(
+                        "Only one part id."))
+                part_id = unwrap(part_ids)
+                all_tracks = parts[part_id]['tracks']
+                registered_tracks = [registrations[anid]['tracks'][track_id]
+                                     for track_id in all_tracks]
+                tracks = sorted(
+                    registered_tracks,
+                    key=lambda track: all_tracks[track['track_id']]['sortkey'])
+                prim_keys = [track['course_id'] for track in tracks]
+                prim_rank = [
+                    prim_sorter(courses[prim_key]) if prim_key else ("0",)
+                    for prim_key in prim_keys]
+            else:
+                prim_key = personas[registrations[anid]['persona_id']]
+                prim_rank = [prim_sorter(prim_key)]
+            sec_key = personas[registrations[anid]['persona_id']]
+            sec_rank = sec_sorter(sec_key)
+            return (*prim_rank, sec_rank)
+
+        ordered = sorted(registrations.keys(), reverse=reverse,
+                         key=lambda anid: sort_rank(sortkey, anid))
         return {
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'ordered': ordered, 'parts': parts,
         }
-
 
     @access("event")
     @event_guard()
