@@ -36,7 +36,8 @@ from cdedb.common import (
     n_, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, json_serialize, glue, CourseChoiceToolActions,
     CourseFilterPositions, diacritic_patterns, shutil_copy, PartialImportError,
-    DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter)
+    DEFAULT_NUM_COURSE_CHOICES, mixed_existence_sorter, EntitySorter,
+    LodgementsSortkeys)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import cdedb.validation as validate
@@ -4054,7 +4055,7 @@ class EventFrontend(AbstractUserFrontend):
         def sort_lodgement(entry, group_id):
             id = entry[0]
             lodgement_group = grouped_lodgements[group_id]
-            sort = const.LodgementsSortkeys
+            sort = LodgementsSortkeys
             if sort.is_used_sorting(sortkey):
                 if sort_part_id not in parts.keys():
                     raise werkzeug.exceptions.NotFound(n_("Invalid part id."))

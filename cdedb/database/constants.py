@@ -94,29 +94,6 @@ class FieldDatatypes(enum.IntEnum):
 
 
 @enum.unique
-class LodgementsSortkeys(enum.IntEnum):
-    """Sortkeys for lodgment overview."""
-    #: default sortkey (currently equal to EntitySorter.lodgement)
-    moniker = 1
-    #: (capacity - reserve) which are used in this part
-    used_regular = 10
-    #: reserve which is used in this part
-    used_reserve = 11
-    #: (capacity - reserve) of this lodgement
-    total_regular = 20
-    #: reserve of this lodgement
-    total_reserve = 21
-
-    def is_used_sorting(self):
-        return self in (LodgementsSortkeys.used_regular,
-                        LodgementsSortkeys.used_reserve)
-
-    def is_total_sorting(self):
-        return self in (LodgementsSortkeys.total_regular,
-                        LodgementsSortkeys.total_reserve)
-
-
-@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
