@@ -188,7 +188,31 @@ class CdEFrontend(AbstractUserFrontend):
         result = None
         count = 0
         cutoff = self.conf.MAX_MEMBER_SEARCH_RESULTS
-        if not rs.has_validation_errors() and is_search:
+
+        if rs.has_validation_errors():
+            # A little hack to fix displaying of errors: The form uses
+            # 'qval_<field>' as input name, the validation only returns the
+            # field's name
+            current = tuple(rs.retrieve_validation_errors())
+            rs.retrieve_validation_errors().clear()
+            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
+            rs.ignore_validation_errors()
+        elif is_search and not query.constraints:
+            rs.notify("error", n_("You have to specify some filters."))
+        elif is_search:
+
+            def restrict(constraint):
+                filter, operation, value = constraint
+                if filter == 'fulltext':
+                    value = [r"\m{}\M".format(val) if len(val) <= 3 else val
+                             for val in value]
+                elif len(str(value)) <= 3:
+                    operation = QueryOperators.equal
+                constraint = (filter, operation, value)
+                return constraint
+
+            query.constraints = [restrict(constrain)
+                                 for constrain in query.constraints]
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
@@ -200,14 +224,7 @@ class CdEFrontend(AbstractUserFrontend):
             if count > cutoff:
                 result = result[:cutoff]
                 rs.notify("info", n_("Too many query results."))
-        # A little hack to fix displaying of errors: The form uses
-        # 'qval_<field>' as input name, the validation only returns the field's
-        # name
-        elif rs.has_validation_errors():
-            current = tuple(rs.retrieve_validation_errors())
-            rs.retrieve_validation_errors().clear()
-            rs.extend_validation_errors(('qval_' + k, v) for k, v in current)
-            rs.ignore_validation_errors()
+
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result,
             'cutoff': cutoff, 'count': count,

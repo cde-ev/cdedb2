@@ -3681,6 +3681,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                                 QueryOperators.containssome,
                                 QueryOperators.containsnone):
                     vv, e = _non_regex(vv, field, _convert=_convert)
+                    errs.extend(e)
                 if e or not vv:
                     continue
                 value.append(vv)

@@ -94,4 +94,31 @@
             </div>
         </div>
     </form>
+    {% call util.bootstrap_panel(title=gettext("Properties of the search"), aclass='panel-default mosp', icon='info-sign') %}
+        <ul class="slim">
+            <li>
+                {% trans %}
+                    The search will only find those, who are currently members and set their account
+                    to be visible.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Search terms of up to three characters have to match exactly. In the full text
+                    search terms of up to three characters have to match an entire word.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Search terms of four or more characters can match anywhere.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    For example the search for "Aka" in the full text search will not match
+                    "Akademie". However the search for "Akadem" will mitch "Akademie".
+                {% endtrans %}
+            </li>
+        </ul>
+    {% endcall %}
 {% endblock %}

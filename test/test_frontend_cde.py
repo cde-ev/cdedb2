@@ -193,16 +193,17 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("Im Garten 77", div='address')
 
-        # by fulltext
+        # by fulltext (this matches wordwise, here on a number in their address)
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
-        f['qval_fulltext'] = "876 @example.cde"
+        f['qval_fulltext'] = "1"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertPresence("2 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Anton", div='result')
-        self.assertPresence("Bertålotta", div='result')
+        self.assertPresence("3 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Akira", div='result')
+        self.assertPresence("Ferdinand", div='result')
+        self.assertPresence("Inga", div='result')
 
         # by zip: upper
         self.traverse({'description': 'CdE-Mitglied suchen'})
@@ -239,7 +240,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms["membersearchform"]
-        f["qval_telephone,mobile"] = 234
+        f["qval_telephone,mobile"] = 9876
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden", div='result-count')
@@ -248,10 +249,65 @@ class TestCdEFrontend(FrontendTest):
 
         # Test error displaying for invalid search input
         f = self.response.forms['membersearchform']
-        f['qval_username'] = "[a]"
+        fields = [
+            "fulltext", "given_names,display_name", "family_name,birth_name",
+            "weblink,specialisation,affiliation,timeline,interests,free_form",
+            "username", "telephone,mobile",
+            "address,address_supplement,address2,address_supplement2",
+            "location,location2", "country,country2"]
+        for field in fields:
+            f['qval_' + field] = "[a]"
         self.submit(f, check_notification=False)
-        self.assertValidationError("qval_username",
-                                   "Darf keine verbotenen Zeichen enthalten")
+        for field in fields:
+            self.assertValidationError("qval_" + field,
+                                       "Darf keine verbotenen Zeichen enthalten")
+
+    @as_users("inga")
+    def test_member_search_restrictions(self, user):
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        # len(entry) <= 3 must equal the column entry in the database
+        f = self.response.forms['membersearchform']
+        f['qval_given_names,display_name'] = "Ant"
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertNonPresence("Ergebnis")
+
+        # len(entry) > 3 performs a wildcard search
+        f['qval_given_names,display_name'] = "Anton"
+        self.submit(f)
+        self.assertTitle("Anton Armin A. Administrator")
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+
+        # Fulltext search is a bit special: This handel every word individual
+        # len(word) <= 3 must be a word (add word boundaries in the query)
+        f = self.response.forms['membersearchform']
+        f['qval_fulltext'] = "Aka"
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertNonPresence("Ergebnis")
+
+        # len(word) > 3 can be just a part of a word
+        f['qval_fulltext'] = "Akadem"
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("2 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Annika", div='result')
+        self.assertPresence("Inga", div='result')
+
+        # handle both cases individual in the same query
+        f['qval_fulltext'] = "ich"
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertPresence("2 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Farin", div='result')
+        self.assertPresence("Inga", div='result')
+
+        f['qval_fulltext'] = "ich Akadem"
+        self.submit(f)
+        self.assertTitle("Inga Iota")
 
     @as_users("charly")
     def test_member_search_non_searchable(self, user):
