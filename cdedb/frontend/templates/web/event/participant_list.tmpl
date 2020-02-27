@@ -38,7 +38,6 @@
 
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
-    {% set nbsp = "\u00A0" %}
     {% if sortkey == last_sortkey and last_reverse == False %}
         {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': True}),
                      label + nbsp + "▲", title=gettext("Sort descending.")) }}
