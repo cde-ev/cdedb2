@@ -48,7 +48,8 @@ import zxcvbn
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
-    CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields)
+    CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields,
+    ValidationWarning)
 from cdedb.database.constants import FieldDatatypes
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,

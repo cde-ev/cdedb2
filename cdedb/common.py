@@ -166,17 +166,23 @@ class RequestState:
         self.validation_appraised = False
         self._errors.extend(errors)
 
-    def has_validation_errors(self):
+    def has_validation_errors(self, suppress_warnings=False):
         """Check whether validation errors exists.
 
         This (or its companion function) must be called in the
         lifetime of a request. Otherwise the application will throw an
         error.
 
+        :type suppress_warnings: bool
+        :param suppress_warnings: To suppress errors with kind ValidationWarning
         :rtype: bool
         """
         self.validation_appraised = True
-        return bool(self._errors)
+        if (suppress_warnings and all(isinstance(type, ValidationWarning)
+                                      for param, type in self._errors)):
+            return False
+        else:
+            return bool(self._errors)
 
     def ignore_validation_errors(self):
         """Explicitly mark validation errors as irrelevant.
@@ -487,6 +493,11 @@ class PartialImportError(RuntimeError):
 
     Making this an exception rolls back the database transaction.
     """
+    pass
+
+
+class ValidationWarning(RuntimeError):
+    """Exception which should be suppressable by the user."""
     pass
 
 
