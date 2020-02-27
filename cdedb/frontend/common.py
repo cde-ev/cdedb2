@@ -800,6 +800,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
+            'nbsp': "\u00A0",
             'query_mod': query_mod,
             'glue': glue,
             'enums': ENUMS_DICT,
