@@ -1291,7 +1291,8 @@ def _german_postal_code(val, argname=None, *, _convert=True):
         return val, errs
     val = val.strip()
     if val not in GERMAN_POSTAL_CODES:
-        errs.append((argname, ValueError(n_("Invalid german postal code."))))
+        errs.append(
+            (argname, ValidationWarning(n_("Invalid german postal code."))))
     return val, errs
 
 

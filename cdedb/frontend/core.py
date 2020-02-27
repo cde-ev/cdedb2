@@ -753,8 +753,10 @@ class CoreFrontend(AbstractFrontend):
         return self.send_json(rs, {'personas': ret})
 
     @access("persona")
-    def change_user_form(self, rs):
+    def change_user_form(self, rs, postal_warning=False):
         """Render form."""
+        # they are handled in the calling function change_user
+        rs.ignore_validation_errors()
         generation = self.coreproxy.changelog_get_generation(
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
@@ -763,11 +765,16 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
-        return self.render(rs, "change_user", {'username': data['username']})
+        return self.render(
+            rs, "change_user", {
+                'username': data['username'], 'postal_warning': postal_warning})
+
+
 
     @access("persona", modi={"POST"})
-    @REQUESTdata(("generation", "int"))
-    def change_user(self, rs, generation):
+    @REQUESTdata(("generation", "int"),
+                 ("suppress_warning", "bool_or_None"))
+    def change_user(self, rs, generation, suppress_warning):
         """Change own data set."""
         REALM_ATTRIBUTES = {
             'persona': {
@@ -793,8 +800,11 @@ class CoreFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, "persona", data)
-        if rs.has_validation_errors():
-            return self.change_user_form(rs)
+        failed_param = [param for param, type in rs.retrieve_validation_errors()]
+        postal_warning = ('postal_code' in failed_param or
+                          'postal_code2' in failed_param)
+        if rs.has_validation_errors(suppress_warning):
+            return self.change_user_form(rs, postal_warning)
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(rs, data, generation=generation,
                                              change_note=change_note)
