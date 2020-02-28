@@ -648,6 +648,7 @@ class TestCoreFrontend(FrontendTest):
     def test_privilege_change(self):
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
+        new_admin_copy = copy.deepcopy(new_admin)
         new_privileges = {
             'is_event_admin': True,
             'is_assembly_admin': True,
@@ -661,9 +662,10 @@ class TestCoreFrontend(FrontendTest):
             'is_assembly_admin': False,
             'is_ml_admin': False,
         }
+        new_password = "ihsokdmfsod"
         self._approve_privilege_change(
-            USER_DICT["anton"], USER_DICT["martin"], new_admin,
-            new_privileges, old_privileges)
+            USER_DICT["anton"], USER_DICT["martin"], new_admin_copy,
+            new_privileges, old_privileges, new_password=new_password)
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
         self.assertTitle("Privilegien ändern für {} {}".format(
@@ -672,6 +674,14 @@ class TestCoreFrontend(FrontendTest):
         old_privileges.update(new_privileges)
         for k, v in old_privileges.items():
             self.assertEqual(f[k].checked, v)
+
+        # Check that we can login with new credentials but not with old.
+        self.logout()
+        self.login(new_admin)
+        self.assertPresence("Login fehlgeschlagen.", div="notifications")
+        self.login(new_admin_copy)
+        self.assertNonPresence("Login fehlgeschlagen.", div="notifications")
+        self.assertLogin(new_admin['display_name'])
 
     @as_users("anton")
     def test_change_privileges_dependency_error(self, user):
@@ -733,16 +743,28 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('is_cde_admin', f.fields)
         self.assertNotIn('is_finance_admin', f.fields)
 
+    @as_users("anton", "vera")
+    def test_invalidate_password(self, user):
+        other_user_name = "berta"
+        self.admin_view_profile(other_user_name)
+        f = self.response.forms["invalidatepasswordform"]
+        f["confirm_username"] = USER_DICT[other_user_name]["username"]
+        self.submit(f)
+        self.logout()
+        self.login(USER_DICT[other_user_name])
+        self.assertPresence("Login fehlgeschlagen.", div="notifications")
+
     def test_archival_admin_requirement(self):
         # First grant admin privileges to new admin.
-        new_admin = USER_DICT["berta"]
+        new_admin = copy.deepcopy(USER_DICT["berta"])
         new_privileges = {
             'is_core_admin': True,
             'is_cde_admin': True,
         }
+        new_password = "ponsdfsidnsdgj"
         self._approve_privilege_change(
             USER_DICT["anton"], USER_DICT["martin"], new_admin,
-            new_privileges)
+            new_privileges, new_password=new_password)
         # Test archival
         self.logout()
         self.login(new_admin)
@@ -803,7 +825,7 @@ class TestCoreFrontend(FrontendTest):
 
     def _approve_privilege_change(self, admin1, admin2, new_admin,
                                   new_privileges, old_privileges=None,
-                                  note="For testing."):
+                                  note="For testing.", new_password=None):
         """Helper to make a user an admin."""
         self._initialize_privilege_change(
             admin1, admin2, new_admin, new_privileges, old_privileges)
@@ -815,6 +837,16 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms["ackprivilegechangeform"]
         self.submit(f)
         self.assertPresence("Änderung wurde übernommen.", div="notifications")
+        if new_password:
+            mail = self.fetch_mail()[0]
+            link = self.fetch_link(mail)
+            self.get(link)
+            f = self.response.forms["passwordresetform"]
+            f["new_password"] = new_password
+            f["new_password2"] = new_password
+            self.submit(f)
+            # Only do this with a deepcopy of the user!
+            new_admin['password'] = new_password
 
     def _reject_privilege_change(self, admin1, admin2, new_admin,
                                  new_privileges, old_privileges=None,

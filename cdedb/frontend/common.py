@@ -1496,6 +1496,8 @@ def reconnoitre_ambience(obj, rs):
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
               'persona', t),
+        Scout(lambda anid: obj.coreproxy.get_privilege_change(rs, anid), 'privilege_change_id',
+              'privilege_change', t),
         # no case_id for genesis cases since they are special and cause
         # PrivilegeErrors
         Scout(lambda anid: obj.cdeproxy.get_lastschrift(rs, anid),

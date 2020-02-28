@@ -95,6 +95,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="admin_change_user"),
                 rule("/password/reset", methods=_POST,
                      endpoint="admin_send_password_reset_link"),
+                rule("/password/invalidate", methods=_POST,
+                     endpoint="invalidate_password"),
                 rule("/privileges", methods=_GET,
                      endpoint="change_privileges_form"),
                 rule("/privileges", methods=_POST,
@@ -156,7 +158,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
             sub('/privileges', (
                 rule("/list", methods=_GET,
                      endpoint="list_privilege_changes"),)),
-            sub('/privileges/<int:case_id>', (
+            sub('/privileges/<int:privilege_change_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_privilege_change"),
                 rule("/decide", methods=_POST,

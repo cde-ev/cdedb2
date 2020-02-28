@@ -479,6 +479,36 @@ Mitglied.</pre>
                             </p>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="p">
+                                <form action="{{ cdedblink('core/invalidate_password') }}" method="POST"
+                                      id="invalidatepasswordform">
+                                    {{ util.anti_csrf_token('core/invalidate_password') }}
+                                    <div class="form-group">
+                                        {{ util.input_submit(value=gettext("Invalidate Password"), icon="lock",
+                                                aclass="btn btn-warning btn-sm") }}
+                                    </div>
+                                    {{ util.form_input_text(name="confirm_username", small=True,
+                                            label=gettext("Provide the users's email address for confirmation."), horizontal=False) }}
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <p class="text-muted">
+                                {% trans -%}
+                                    Invalidates the users password and terminates their sessions.
+                                    They will have to set a new password.
+                                {%- endtrans %}
+                                {% trans -%}
+                                    If the user is an admin, you will need to send them a reset link to do that.
+                                {%- endtrans %}
+                                {% trans -%}
+                                    Please enter your own password to confirm this action.
+                                {%- endtrans %}
+                            </p>
+                        </div>
+                    </div>
                 {% endif %}
 
             {% else %} {# user is archived #}
