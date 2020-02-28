@@ -1194,7 +1194,7 @@ class CoreFrontend(AbstractFrontend):
                 rs.notify("success", success)
                 # Do not return this on purpose to just send the mail.
                 self.admin_send_password_reset_link(
-                    rs, privilege_change["persona_id"], email_only=True)
+                    rs, privilege_change["persona_id"], internal=True)
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
@@ -1537,13 +1537,13 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "meta_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
-    def admin_send_password_reset_link(self, rs, persona_id, email_only=False):
+    def admin_send_password_reset_link(self, rs, persona_id, internal=False):
         """Generate a password reset email for an arbitrary persona.
 
         This is the only way to reset the password of an administrator (for
         security reasons).
 
-        If the `email_only` parameter is True, this was called internally to
+        If the `internal` parameter is True, this was called internally to
         send a reset link. In that case we do not have the appropriate
         ambience dict, so we retrieve the username.
         """
@@ -1552,7 +1552,7 @@ class CoreFrontend(AbstractFrontend):
         if (not self.coreproxy.is_relative_admin(rs, persona_id)
                 and "meta_admin" not in rs.user.roles):
             raise PrivilegeError(n_("Not a relative admin."))
-        if email_only:
+        if internal:
             persona = self.coreproxy.get_persona(rs, persona_id)
             email = persona['username']
         else:
