@@ -2310,9 +2310,10 @@ class EventBackend(AbstractBackend):
 
             event_id = unwrap(events)
             regs = self.get_registrations(rs, ids)
+            user_id = rs.user.persona_id
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
-                    and not (len(ids) == 1 and unwrap(regs)['persona_id'] == rs.user.persona_id)):
+                    and {r['persona_id'] for r in regs.values()} != {user_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
             persona_ids = {e['persona_id'] for e in regs.values()}
