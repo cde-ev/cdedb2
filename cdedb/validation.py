@@ -3943,7 +3943,7 @@ def _create_assert_valid(fun):
     """
 
     @functools.wraps(fun)
-    def new_fun(*args, **kwargs):
+    def assert_valid(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
         if errs:
             e = errs[0][1]
@@ -3951,7 +3951,7 @@ def _create_assert_valid(fun):
             raise e
         return val
 
-    return new_fun
+    return assert_valid
 
 
 def _create_is_valid(fun):
@@ -3960,12 +3960,12 @@ def _create_is_valid(fun):
     """
 
     @functools.wraps(fun)
-    def new_fun(*args, **kwargs):
+    def is_valid(*args, **kwargs):
         kwargs['_convert'] = False
         _, errs = fun(*args, **kwargs)
         return not errs
 
-    return new_fun
+    return is_valid
 
 
 def _create_check_valid(fun):
@@ -3974,7 +3974,7 @@ def _create_check_valid(fun):
     """
 
     @functools.wraps(fun)
-    def new_fun(*args, **kwargs):
+    def check_valid(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
         just_warnings = all(isinstance(kind, ValidationWarning)
                             for param, kind in errs)
@@ -3984,7 +3984,7 @@ def _create_check_valid(fun):
             return None, errs
         return val, errs
 
-    return new_fun
+    return check_valid
 
 
 def _allow_None(fun):
