@@ -19,11 +19,13 @@
             {% endif %}
         </div>
 
-        {% if is_admin %}
+        {% if user.admin_views.intersection(('cde_user', 'finance')|set) %}
             <div class="list-group tear-down">
-                {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="user",
-                        active=(sidenav_active=='cde_manage_users')) }}
-                {% if "finance_admin" in user.roles %}
+                {% if "cde_user" in user.admin_views %}
+                    {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="user",
+                            active=(sidenav_active=='cde_manage_users')) }}
+                {% endif %}
+                {% if "finance" in user.admin_views %}
                     {{ util.href(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"), aclass="list-group-item",
                             icon="euro", active=(sidenav_active=='cde_lastschrift')) }}
                     {{ util.href(cdedblink("cde/parse_statement_form"), gettext("Parse Bank Statement"), aclass="list-group-item",
@@ -40,11 +42,11 @@
             </div>
         {% endif %}
 
-        {% if "member" in user.roles %}
+        {% if "member" in user.roles or "past_event" in user.admin_views %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar",
                         aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
-                {% if is_admin %}
+                {% if "past_event" in user.admin_views %}
                     {{ util.href(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), icon="briefcase",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
                     {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="list-alt",
@@ -52,10 +54,16 @@
                     </div>
                     <div class="list-group tear-down">
                 {% endif %}
-                {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
-                        aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
+                {% if "member" in user.roles %}
+                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
+                                 aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
+                {% endif %}
             </div>
         {% endif %}
+
+        {{ util.admin_views_toggle((("Show User Management", ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["cde_user"]),
+                                    ("Past Event Administration", ["past_event"], None),
+                                    ("Show Finance Administration", ["finance"], None))) }}
 
         <hr class="strong visible-xs visible-sm" />
     {% endif %}
