@@ -2133,18 +2133,26 @@ class CoreBackend(AbstractBackend):
         return success, msg
 
     @access("anonymous")
-    def genesis_request(self, rs, data):
+    def genesis_request(self, rs, data, suppress_warnings=False):
         """Log a request for a new account.
 
         This is the initial entry point for such a request.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
+        :type suppress_warnings: bool
+        :param suppress_warnings: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: id of the new request or None if the username is already
           taken
         """
-        data = affirm("genesis_case", data, creation=True)
+        try:
+            data = affirm("genesis_case", data, creation=True)
+        except ValidationWarning:
+            if not suppress_warnings:
+                raise RuntimeError(
+                    "An unsuppressed ValidationWarning try to pass.")
+
         if self.verify_existence(rs, data['username']):
             return None
         if self.conf.LOCKDOWN and not self.is_admin(rs):
@@ -2337,15 +2345,23 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    def genesis_modify_case(self, rs, data):
+    def genesis_modify_case(self, rs, data, suppress_warnings=False):
         """Modify a persona creation case.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
+        :type suppress_warnings: bool
+        :param suppress_warnings: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: default return code
         """
-        data = affirm("genesis_case", data)
+        try:
+            data = affirm("genesis_case", data)
+        except ValidationWarning:
+            if not suppress_warnings:
+                raise RuntimeError(
+                    "An unsuppressed ValidationWarning try to pass.")
+
         with Atomizer(rs):
             current = self.sql_select_one(
                 rs, "core.genesis_cases", ("case_status", "username", "realm"),

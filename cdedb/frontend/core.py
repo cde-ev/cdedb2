@@ -1765,13 +1765,14 @@ class CoreFrontend(AbstractFrontend):
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country")
-    def genesis_request(self, rs, data):
+    @REQUESTdata(("suppress_warnings", "bool_or_None"))
+    def genesis_request(self, rs, data, suppress_warnings=False):
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
         data = check(rs, "genesis_case", data, creation=True)
-        if rs.has_validation_errors():
+        if rs.has_validation_errors(suppress_warnings):
             return self.genesis_request_form(rs)
         if len(data['notes']) > self.conf.MAX_RATIONALE:
             rs.append_validation_error(
@@ -1783,7 +1784,7 @@ class CoreFrontend(AbstractFrontend):
                 rs.append_validation_error(
                     ("gender", ValueError(n_(
                         "Must specify gender for event realm."))))
-        if rs.has_validation_errors():
+        if rs.has_validation_errors(suppress_warnings):
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
             case_id = self.coreproxy.genesis_case_by_email(
@@ -1800,7 +1801,7 @@ class CoreFrontend(AbstractFrontend):
                           n_("Email address already in DB. Reset password."))
                 return self.redirect(rs, "core/index")
         else:
-            case_id = self.coreproxy.genesis_request(rs, data)
+            case_id = self.coreproxy.genesis_request(rs, data, suppress_warnings)
         if not case_id:
             rs.notify("error", n_("Failed."))
             return self.genesis_request_form(rs)
@@ -1953,11 +1954,12 @@ class CoreFrontend(AbstractFrontend):
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country")
-    def genesis_modify(self, rs, case_id, data):
+    @REQUESTdata(("suppress_warnings", "bool_or_None"))
+    def genesis_modify(self, rs, case_id, data, suppress_warnings=False):
         """Edit a case to fix potential issues before creation."""
         data['id'] = case_id
         data = check(rs, "genesis_case", data)
-        if rs.has_validation_errors():
+        if rs.has_validation_errors(suppress_warnings):
             return self.genesis_modify_form(rs, case_id)
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if (not self.is_admin(rs)
@@ -1966,7 +1968,7 @@ class CoreFrontend(AbstractFrontend):
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
-        code = self.coreproxy.genesis_modify_case(rs, data)
+        code = self.coreproxy.genesis_modify_case(rs, data, suppress_warnings)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "core/genesis_show_case")
 
