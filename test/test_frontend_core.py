@@ -85,6 +85,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Aktuelle Versammlungen", div='assembly-box')
         self.assertPresence("Internationaler Kongress", div='assembly-box')
 
+    def test_anonymous_index(self):
+        self.get('/')
+        self.assertPresence("Anmelden")
+        self.assertNonPresence("Meine Daten")
+
     @as_users("annika", "martin", "nina", "vera", "werner")
     def test_navigation(self, user):
         self.assertTitle("CdE-Datenbank")

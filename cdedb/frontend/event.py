@@ -118,10 +118,11 @@ class EventFrontend(AbstractUserFrontend):
             rs, set(other_event_list) - set(rs.user.orga))
         orga_events = self.eventproxy.get_events(rs, rs.user.orga)
 
-        for event_id, event in open_events.items():
-            registration = self.eventproxy.list_registrations(
-                rs, event_id, rs.user.persona_id)
-            event['registration'] = bool(registration)
+        if "event" in rs.user.roles:
+            for event_id, event in open_events.items():
+                registration = self.eventproxy.list_registrations(
+                    rs, event_id, rs.user.persona_id)
+                event['registration'] = bool(registration)
 
         return self.render(rs, "index", {
             'open_events': open_events, 'orga_events': orga_events,
