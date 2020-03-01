@@ -533,8 +533,10 @@ class EntitySorter:
 
     @staticmethod
     def address(persona):
-        return (persona.get('location', "") + persona.get('postal_code', "")
-                + persona.get('address', ""))
+        postal_code = persona.get('postal_code', "") or ""
+        location = persona.get('location', "") or ""
+        address = persona.get('address', "") or ""
+        return (postal_code, location, address)
 
     @staticmethod
     def event(event):
