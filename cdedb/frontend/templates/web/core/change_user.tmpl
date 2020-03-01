@@ -90,16 +90,6 @@
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {% endif %}
 
-        {% if postal_warning %}
-            <div class="form-group">
-                <div class="col-sm-8 col-sm-offset-4">
-                    <div class="checkbox">
-                        {{ util.input_checkbox(name="suppress_warning", label="Should the zip codes nevertheless been set?") }}
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-
         {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user.persona_id)) }}
     </form>
 {% endblock %}

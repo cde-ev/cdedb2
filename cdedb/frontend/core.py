@@ -753,10 +753,8 @@ class CoreFrontend(AbstractFrontend):
         return self.send_json(rs, {'personas': ret})
 
     @access("persona")
-    def change_user_form(self, rs, postal_warning=False):
+    def change_user_form(self, rs):
         """Render form."""
-        # they are handled in the calling function change_user
-        rs.ignore_validation_errors()
         generation = self.coreproxy.changelog_get_generation(
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
@@ -765,16 +763,12 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("info", n_("Change pending."))
         del data['change_note']
         merge_dicts(rs.values, data)
-        return self.render(
-            rs, "change_user", {
-                'username': data['username'], 'postal_warning': postal_warning})
-
-
+        return self.render(rs, "change_user", {'username': data['username']})
 
     @access("persona", modi={"POST"})
     @REQUESTdata(("generation", "int"),
-                 ("suppress_warning", "bool_or_None"))
-    def change_user(self, rs, generation, suppress_warning):
+                 ("suppress_warnings", "bool_or_None"))
+    def change_user(self, rs, generation, suppress_warnings=False):
         """Change own data set."""
         REALM_ATTRIBUTES = {
             'persona': {
@@ -800,14 +794,12 @@ class CoreFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, "persona", data)
-        failed_param = [param for param, type in rs.retrieve_validation_errors()]
-        postal_warning = ('postal_code' in failed_param or
-                          'postal_code2' in failed_param)
-        if rs.has_validation_errors(suppress_warning):
-            return self.change_user_form(rs, postal_warning)
+        if rs.has_validation_errors(suppress_warnings):
+            return self.change_user_form(rs)
         change_note = "Normale Änderung."
-        code = self.coreproxy.change_persona(rs, data, generation=generation,
-                                             change_note=change_note)
+        code = self.coreproxy.change_persona(
+            rs, data, generation=generation, change_note=change_note,
+            suppress_warnings=suppress_warnings)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
@@ -960,8 +952,11 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
-    @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
-    def admin_change_user(self, rs, persona_id, generation, change_note):
+    @REQUESTdata(("generation", "int"),
+                 ("change_note", "str_or_None"),
+                 ("suppress_warnings", "bool_or_None"))
+    def admin_change_user(self, rs, persona_id, generation, change_note,
+                          suppress_warnings=False):
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -993,11 +988,12 @@ class CoreFrontend(AbstractFrontend):
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, "persona", data)
-        if rs.has_validation_errors():
+        if rs.has_validation_errors(suppress_warnings):
             return self.admin_change_user_form(rs, persona_id)
 
-        code = self.coreproxy.change_persona(rs, data, generation=generation,
-                                             change_note=change_note)
+        code = self.coreproxy.change_persona(
+            rs, data, generation=generation, change_note=change_note,
+            suppress_warnings=suppress_warnings)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 

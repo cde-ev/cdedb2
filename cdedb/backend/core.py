@@ -24,7 +24,7 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter)
+    decode_parameter, ValidationWarning)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -758,7 +758,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_persona(self, rs, data, generation=None, may_wait=True,
-                       change_note=None):
+                       change_note=None, suppress_warnings=False):
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
 
@@ -772,10 +772,17 @@ class CoreBackend(AbstractBackend):
         :param may_wait: override for system requests (which may not wait)
         :type change_note: str
         :param change_note: Descriptive line for changelog
+        :type suppress_warnings: bool
+        :param suppress_warnings: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: default return code
         """
-        data = affirm("persona", data)
+        try:
+            data = affirm("persona", data)
+        except ValidationWarning:
+            if not suppress_warnings:
+                raise RuntimeError(
+                    "An unsuppressed ValidationWarning try to pass.")
         generation = affirm("int_or_None", generation)
         may_wait = affirm("bool", may_wait)
         change_note = affirm("str_or_None", change_note)
