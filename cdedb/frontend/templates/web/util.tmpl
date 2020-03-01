@@ -569,18 +569,34 @@
     {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, user.persona_id)) }}
 {% endmacro %}
 
+{# Generate a list of admin view toggle buttons. Should be used in the navigation sidebar.
+
+   The properties of the individual buttons are specified through the `views` argument, which is an iterable of
+   3-tuples. Each tuple defines (label, view_names, relevant_views) of one button:
+     * `label` (1st tuple entry) defines the caption of the button. Should be internationalized.
+     * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
+     * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
+       in the current page's context. The button is only displayed, if one of those views is available to the user.
+       For convenience, `relevant_views` may be set to None, in which case all `view_names` are considered relevant.
+       Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
+       but should only be shown to core admins, i.e. users who have the `core_user` view available.
+ #}
 {% macro admin_views_toggle(views) %}
     <form action="{{ cdedblink('core/enable_admin_view') }}" method="post" style="display: inline;">
         {% if original_request and original_request.url %}
             {{ util.input_hidden("wants", encode_parameter("core/enable_admin_view", "wants",
                                                            original_request.url, timeout=None)) }}
         {% endif %}
-        {% for label, view_names in views %}
-            {% if (view_names|set).intersection(user.available_admin_views) %}
+        {% for label, view_names, relevant_views in views %}
+            {% set relevant_views = relevant_views if relevant_views is not none else view_names %}
+            {% if (relevant_views|set).intersection(user.available_admin_views) %}
+                {# The button is "deactivated" as long as there are more "relevant views" which are available for the
+                   user but are not enabled yet. #}
+                {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) %}
                 <button type="submit"
                         name="view_specifier"
-                        value="{% if view_names|set <= user.admin_views %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
-                        class="btn btn-info btn-block {% if view_names|set <= user.admin_views %}active{% endif %}">
+                        value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
+                        class="btn btn-info btn-block {% if active %}active{% endif %}">
                     {{ util.make_icon('wrench') }} {{ label }}
                 </button>
             {% endif %}

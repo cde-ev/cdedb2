@@ -47,9 +47,9 @@
                         icon="tags", active=(sidenav_active=='core_meta')) }}
             </div>
         {% endif %}
-        {{ util.admin_views_toggle((("Show User Management", ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"]),
-                                    ("Show Admin Management", ["meta_admin"]),
-                                    ("Show Core Administration", ["core"]),)) }}
+        {{ util.admin_views_toggle((("Show User Management", ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["core_user", "genesis"]),
+                                    ("Show Admin Management", ["meta_admin"], None),
+                                    ("Show Core Administration", ["core"], None))) }}
+        <hr class="strong visible-xs visible-sm" />
     {% endif %}
-    <hr class="strong visible-xs visible-sm" />
 {% endblock %}
