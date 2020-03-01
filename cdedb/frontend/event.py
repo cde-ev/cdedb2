@@ -4028,7 +4028,7 @@ class EventFrontend(AbstractUserFrontend):
         # Calculate inhabitants and reserve_inhabitant_nums
         inhabitants = self.calculate_groups(
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
-        inhabitant_nums = {k: len(v) for k, v in inhabitants.items()}
+        regular_inhabitant_nums = {k: len(v) for k, v in inhabitants.items()}
         reserve_inhabitant_nums = {
             k: sum(
                 1 for r in v if registrations[r]['parts'][k[1]]['is_reserve'])
@@ -4038,14 +4038,13 @@ class EventFrontend(AbstractUserFrontend):
             inhabitants)
         problems_condensed = {}
 
-        # Calculate inhabitant_sum and reserve_inhabitant_sum
-        inhabitant_sum = {}
+        # Calculate regular_inhabitant_sum and reserve_inhabitant_sum per part
+        regular_inhabitant_sum = {}
         for part_id in parts:
             lodgement_sum = 0
             for lodgement_id in lodgement_ids:
-                lodgement_sum += inhabitant_nums[(lodgement_id, part_id)] - \
-                                 reserve_inhabitant_nums[(lodgement_id, part_id)]
-            inhabitant_sum[part_id] = lodgement_sum
+                lodgement_sum += regular_inhabitant_nums[(lodgement_id, part_id)]
+            regular_inhabitant_sum[part_id] = lodgement_sum
         reserve_inhabitant_sum = {}
         for part_id in parts:
             reserve_lodgement_sum = 0
@@ -4053,11 +4052,11 @@ class EventFrontend(AbstractUserFrontend):
                 reserve_lodgement_sum += reserve_inhabitant_nums[(lodgement_id, part_id)]
             reserve_inhabitant_sum[part_id] = reserve_lodgement_sum
 
-        # Calculate sum of lodgement capacities
-        capacity_sum = 0
+        # Calculate sum of lodgement regular capacities and reserve
+        regular_sum = 0
         reserve_sum = 0
         for lodgement in lodgements.values():
-            capacity_sum += lodgement['capacity']
+            regular_sum += lodgement['capacity']
             reserve_sum += lodgement['reserve']
 
         # Calculate problems_condensed (worst problem)
@@ -4081,11 +4080,12 @@ class EventFrontend(AbstractUserFrontend):
             in (keydictsort_filter(groups, EntitySorter.lodgement_group) + [(None, None)])
         }
 
-        # Calculate group_inhabitants_sum, group_reserve_inhabitants_sum,
-        # group_capacity_sum and group_reserve_sum
-        group_inhabitants_sum = {
-            (group_id, part_id): sum(inhabitant_nums[(lodgement_id, part_id)]
-                                     for lodgement_id in group)
+        # Calculate group_regular_inhabitants_sum, group_reserve_inhabitants_sum,
+        # group_regular_sum and group_reserve_sum
+        group_regular_inhabitants_sum = {
+            (group_id, part_id):
+                sum(regular_inhabitant_nums[(lodgement_id, part_id)]
+                    for lodgement_id in group)
             for part_id in parts
             for group_id, group in grouped_lodgements.items()}
         group_reserve_inhabitants_sum = {
@@ -4094,7 +4094,7 @@ class EventFrontend(AbstractUserFrontend):
                     for lodgement_id in group)
             for part_id in parts
             for group_id, group in grouped_lodgements.items()}
-        group_capacity_sum = {
+        group_regular_sum = {
             group_id: sum(lodgement['capacity'] for lodgement in group.values())
             for group_id, group in grouped_lodgements.items()}
         group_reserve_sum = {
@@ -4108,23 +4108,22 @@ class EventFrontend(AbstractUserFrontend):
             if sort.is_used_sorting(sortkey):
                 if sort_part_id not in parts.keys():
                     raise werkzeug.exceptions.NotFound(n_("Invalid part id."))
-                capacity = inhabitant_nums[(id, sort_part_id)]
+                regular = regular_inhabitant_nums[(id, sort_part_id)]
                 reserve = reserve_inhabitant_nums[(id, sort_part_id)]
-                primary_sort = (capacity - reserve
-                                if sortkey == sort.used_regular else reserve)
+                primary_sort = (regular if sortkey == sort.used_regular
+                                else reserve)
             elif sort.is_total_sorting(sortkey):
-                capacity = (lodgement_group[id]['capacity']
+                regular = (lodgement_group[id]['capacity']
                             if id in lodgement_group else 0)
                 reserve = (lodgement_group[id]['reserve']
                            if id in lodgement_group else 0)
-                primary_sort = (capacity - reserve
-                                if sortkey == sort.total_regular else reserve)
+                primary_sort = (regular if sortkey == sort.total_regular
+                                else reserve)
             elif sortkey == sort.moniker:
                 primary_sort = EntitySorter.lodgement(lodgement)
             else:
                 primary_sort = 0
             secondary_sort = EntitySorter.lodgement(lodgement)
-            lodgements
             return (primary_sort, secondary_sort)
 
         # now sort the lodgements inside their group
@@ -4141,19 +4140,17 @@ class EventFrontend(AbstractUserFrontend):
         ])
 
         return self.render(rs, "lodgements", {
-            'lodgements': lodgements,
             'groups': groups,
             'grouped_lodgements': sorted_grouped_lodgements,
-            'registrations': registrations, 'personas': personas,
-            'inhabitants': inhabitant_nums,
-            'inhabitants_sum': inhabitant_sum,
-            'group_inhabitants_sum': group_inhabitants_sum,
+            'regular_inhabitants': regular_inhabitant_nums,
+            'regular_inhabitants_sum': regular_inhabitant_sum,
+            'group_regular_inhabitants_sum': group_regular_inhabitants_sum,
             'reserve_inhabitants': reserve_inhabitant_nums,
             'reserve_inhabitants_sum': reserve_inhabitant_sum,
             'group_reserve_inhabitants_sum': group_reserve_inhabitants_sum,
-            'group_capacity_sum': group_capacity_sum,
+            'group_regular_sum': group_regular_sum,
             'group_reserve_sum': group_reserve_sum,
-            'capacity_sum': capacity_sum,
+            'regular_sum': regular_sum,
             'reserve_sum': reserve_sum,
             'problems': problems_condensed,
             'last_sortkey': sortkey,
