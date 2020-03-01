@@ -231,8 +231,6 @@ class EventFrontend(AbstractUserFrontend):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = (self.conf.STORAGE_DIR / 'minor_form'
                                             / str(event_id)).exists()
-            params['logo_present'] = (self.conf.STORAGE_DIR / "event_logo" /
-                                      str(event_id)).exists()
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(
                 n_("The event is not published yet."))
@@ -440,90 +438,6 @@ class EventFrontend(AbstractUserFrontend):
                 f.write(minor_form)
             rs.notify("success", n_("Minor form updated."))
         return self.redirect(rs, "event/show_event")
-
-    @access("event")
-    def get_event_logo(self, rs, event_id):
-        """Retrieve event logo."""
-        path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
-        mimetype = magic.from_file(str(path), mime=True)
-        return self.send_file(rs, path=path, mimetype=mimetype)
-
-    @access("event", modi={"POST"})
-    @REQUESTfile("event_logo")
-    @REQUESTdata(("delete", "bool"), ("logo_ack_delete", "bool"))
-    @event_guard(check_offline=True)
-    def set_event_logo(self, rs, event_id, event_logo, delete, logo_ack_delete):
-        """Change the logo of the event.
-
-        This is used in the pdf downloads provided in the DB.
-        """
-        event_logo = check(rs, 'pdffile_or_None', event_logo, "event_logo")
-        if not event_logo and not delete:
-            rs.append_validation_error(
-                ("event_logo", ValueError(n_("Mustn’t be empty."))))
-        if rs.has_validation_errors():
-            return self.show_event(rs, event_id)
-        path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
-        if delete and not event_logo:
-            if not logo_ack_delete:
-                rs.append_validation_error(
-                    ("logo_ack_delete", ValueError(n_("Must be checked."))))
-                rs.ignore_validation_errors()
-                return self.show_event(rs, event_id)
-
-            if path.exists():
-                path.unlink()
-                rs.notify("success", n_("Logo has been removed."))
-            else:
-                rs.notify("info", n_("Nothing to remove."))
-        elif event_logo:
-            with open(str(path), 'wb') as f:
-                f.write(event_logo)
-            rs.notify("success", n_("Logo has been updated."))
-        return self.redirect(rs, "event/show_event")
-
-    @access("event")
-    def get_course_logo(self, rs, event_id, course_id):
-        """Retrieve course logo."""
-        path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
-        mimetype = magic.from_file(str(path), mime=True)
-        return self.send_file(rs, path=path, mimetype=mimetype)
-
-    @access("event", modi={"POST"})
-    @REQUESTfile("course_logo")
-    @REQUESTdata(("delete", "bool"), ("logo_ack_delete", "bool"))
-    @event_guard(check_offline=True)
-    def set_course_logo(self, rs, event_id, course_id, course_logo, delete,
-                        logo_ack_delete):
-        """
-        Set or change a course logo.
-
-        These are used in the PDF downloads provided by the DB.
-        """
-        course_logo = check(rs, 'pdffile_or_None', course_logo, "course_logo")
-        if not course_logo and not delete:
-            rs.append_validation_error(
-                ("course_logo", ValueError(n_("Mustn't be empty."))))
-        if rs.has_validation_errors():
-            return self.show_course(rs, event_id, course_id)
-        path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
-        if delete and not course_logo:
-            if not logo_ack_delete:
-                rs.append_validation_error(
-                    ("logo_ack_delete", ValueError(n_("Must be checked."))))
-                rs.ignore_validation_errors()
-                return self.show_event(rs, event_id)
-
-            if path.exists():
-                path.unlink()
-                rs.notify("success", n_("Logo has been removed."))
-            else:
-                rs.notify("info", n_("Nothing to remove."))
-        elif course_logo:
-            with open(str(path), 'wb') as f:
-                f.write(course_logo)
-            rs.notify("success", n_("Logo has been updated."))
-        return self.redirect(rs, "event/show_course")
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("orga_id", "cdedbid"))
@@ -1083,8 +997,6 @@ class EventFrontend(AbstractUserFrontend):
             params['blockers'] = self.eventproxy.delete_course_blockers(
                 rs, course_id).keys() - {"instructors", "course_choices",
                                          "course_segments"}
-            params['logo_present'] = (self.conf.STORAGE_DIR / "course_logo" /
-                                      str(course_id)).exists()
             instructor_ids = {reg['persona_id']
                               for reg in all_registrations.values()
                               if any(t['course_instructor'] == course_id
@@ -2161,11 +2073,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname'])
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
-            path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
-            if path.exists():
-                src = path
-            else:
-                src = self.conf.REPOSITORY_PATH / "misc/logo.png"
+            src = self.conf.REPOSITORY_PATH / "misc/blank.png"
             shutil_copy(src, work_dir / "aka-logo.png")
             shutil_copy(src, work_dir / "orga-logo.png")
             shutil_copy(src, work_dir / "minor-pictogram.png")
@@ -2352,11 +2260,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname'])
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
-            path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
-            if path.exists():
-                src = path
-            else:
-                src = self.conf.REPOSITORY_PATH / "misc/logo.png"
+            src = self.conf.REPOSITORY_PATH / "misc/blank.png"
             shutil_copy(src, work_dir / "event-logo.png")
             for course_id in courses:
                 dest = work_dir / "course-logo-{}.png".format(course_id)
@@ -2401,11 +2305,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname'])
             with open(work_dir / filename, 'w') as f:
                 f.write(tex)
-            path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
-            if path.exists():
-                src = path
-            else:
-                src = self.conf.REPOSITORY_PATH / "misc/logo.png"
+            src = self.conf.REPOSITORY_PATH / "misc/blank.png"
             shutil_copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
@@ -2591,40 +2491,6 @@ class EventFrontend(AbstractUserFrontend):
             rs, data=json, inline=False,
             filename="{}_partial_export_event.json".format(
                 rs.ambience['event']['shortname']))
-
-    @access("event")
-    @event_guard()
-    def download_assets(self, rs, event_id):
-        """Retrieve all assets for this event and provide download."""
-        courses = self.eventproxy.list_db_courses(rs, event_id)
-        shortname = rs.ambience['event']['shortname']
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
-            work_dir.mkdir()
-            asset_dir = work_dir / "assets"
-            asset_dir.mkdir()
-
-            # Get event logo
-            path = self.conf.STORAGE_DIR / "event_logo" / str(event_id)
-            if path.exists():
-                shutil_copy(path, asset_dir / "aka-logo.pdf")
-
-            for course_id in courses:
-                path = self.conf.STORAGE_DIR / "course_logo" / str(course_id)
-                if path.exists():
-                    shutil_copy(
-                        path, asset_dir / "{}.pdf".format(str(course_id)))
-
-            target = pathlib.Path(
-                tmp_dir, "{}.tar.gz".format(shortname))
-            args = ("tar", "-vczf", str(target), shortname)
-            self.logger.info("Invoking {}".format(args))
-            subprocess.check_call(args, stdout=subprocess.DEVNULL,
-                                  cwd=str(tmp_dir))
-            return self.send_file(
-                rs, path=target, inline=False,
-                filename="{}_assets.tar.gz".format(shortname))
 
     @access("event")
     @event_guard()

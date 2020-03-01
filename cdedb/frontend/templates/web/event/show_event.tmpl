@@ -290,47 +290,6 @@
                     {% endif %}
                 {% endcall %}
             </div>
-
-            <div class="col-md-6" id="event-logo">
-                {% call util.bootstrap_panel(title=gettext("Event Logo"), icon="picture") %}
-                    <div class="alert alert-info" role="alert">
-                        {% trans %}
-                            This functionality is deprecated and will be removed soon.
-                            Do not use it anymore.
-                        {% endtrans %}
-                    </div>
-                    {% if logo_present %}
-                        <embed src="{{ cdedblink('event/get_event_logo') }}#view=Fit&scrollbar=0&toolbar=0"
-                               type="application/pdf" width="150px" height="150px" />
-                        <form action="{{ cdedblink('event/set_event_logo') }}" method="POST"
-                                id="removeeventlogoform">
-                            {{ util.anti_csrf_token('event/set_event_logo') }}
-                            {{ util.input_hidden(name="delete", value=True) }}
-                            {{ util.input_checkbox(name="logo_ack_delete", label=gettext("Are you sure?")) }}
-                            {{ util.input_submit(value=gettext("Remove Logo"), readonly=is_locked,
-                                                 icon='trash', aclass='btn btn-danger') }}
-                        </form>
-                        <script type="text/javascript" nonce="{{ csp_nonce }}">
-                            $('#removeeventlogoform').cdedbProtectAction("{{ gettext("The event logo will be permanently deleted.") }}");
-                            $('#removeeventlogoform').find('[name="logo_ack_delete"]').prop('checked', true).parent().hide();
-                        </script>
-                    {% else %}
-                        {% trans %}No logo set.{% endtrans %}
-                    {% endif %}
-                    <form action="{{ cdedblink('event/set_event_logo') }}" method="POST" enctype="multipart/form-data"
-                          id="seteventlogoform" {% if "event_logo" in errors %}class="has-error"{% endif %}>
-                        {{ util.anti_csrf_token('event/set_event_logo') }}
-                        {{ util.input_hidden(name="delete", value=False) }}
-                        <div class="input-group">
-                            {{ util.input_file(name="event_logo", accept="image/*") }}
-                            <div class="input-group-btn">
-                                {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='upload') }}
-                            </div>
-                        </div>
-                        {{ util.output_errors("event_logo") }}
-                    </form>
-                {% endcall %}
-            </div>
         </div>
     {% endif %}
 

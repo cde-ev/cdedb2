@@ -177,7 +177,6 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn("quickregistrationform", self.response.forms)
         self.assertNotIn("changeminorformform", self.response.forms)
         self.assertNotIn("lockform", self.response.forms)
-        self.assertNotIn("seteventlogoform", self.response.forms)
         self.assertNotIn("createorgalistform", self.response.forms)
 
     @as_users("annika", "garcia")
@@ -901,55 +900,6 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Formular vorhanden")
-
-    @as_users("annika", "garcia")
-    def test_set_event_logo(self, user):
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
-        f = self.response.forms['seteventlogoform']
-        with open("/tmp/cdedb-store/testfiles/picture.pdf", 'rb') as datafile:
-            data = datafile.read()
-        f['event_logo'] = webtest.Upload("picture.pdf", data, "application/octet-stream")
-        self.submit(f)
-        self.get('/event/event/1/logo')
-        with open("/tmp/cdedb-store/testfiles/picture.pdf", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
-        # Remove the logo again
-        self.get("/event/event/1/show")
-        self.assertTitle("Große Testakademie 2222")
-        self.assertNonPresence("Kein Logo.")
-        f = self.response.forms['removeeventlogoform']
-        f['logo_ack_delete'].checked = True
-        self.submit(f)
-        self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Kein Logo.")
-
-    @as_users("annika", "garcia")
-    def test_set_course_logo(self, user):
-        self.get("/event/event/1/course/1/show")
-        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.assertPresence("Kein Logo.")
-        f = self.response.forms['setcourselogoform']
-        with open("/tmp/cdedb-store/testfiles/picture.pdf", 'rb') as datafile:
-            data = datafile.read()
-        f['course_logo'] = webtest.Upload("picture.pdf", data,
-                                          "application/octet-stream")
-        self.submit(f)
-        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.assertNonPresence("Kein Logo.")
-        self.get('/event/event/1/course/1/logo')
-        with open("/tmp/cdedb-store/testfiles/picture.pdf", 'rb') as f:
-            self.assertEqual(f.read(), self.response.body)
-        # Remove the logo again
-        self.get("/event/event/1/course/1/show")
-        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.assertNonPresence("Kein Logo.")
-        f = self.response.forms['removecourselogoform']
-        f['logo_ack_delete'].checked = True
-        self.submit(f)
-        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.assertPresence("Kein Logo.")
 
     @as_users("annika", "ferdinand")
     def test_create_event(self, user):
@@ -2168,10 +2118,6 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertLess(1000, len(self.response.body))
-
-        self.response = save.click(href='/event/event/1/download/assets')
-        self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
-        self.assertLess(100, len(self.response.body))
 
     @as_users("garcia")
     def test_download_export(self, user):

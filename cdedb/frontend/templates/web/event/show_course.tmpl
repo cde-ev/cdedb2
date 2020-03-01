@@ -159,44 +159,6 @@
     {% call util.bootstrap_panel(title=gettext("Description"), icon="pushpin", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
-    {% call util.bootstrap_panel(title=gettext("Course Logo"), icon="picture") %}
-        <div class="alert alert-info" role="alert">
-            {% trans %}
-                This functionality is deprecated and will be removed soon.
-                Do not use it anymore.
-            {% endtrans %}
-        </div>
-        {% if logo_present %}
-            <embed src="{{ cdedblink('event/get_course_logo') }}#view=Fit&scrollbar=0&toolbar=0"
-                   type="application/pdf" width="150px" height="150px" />
-            <form action="{{ cdedblink('event/set_course_logo') }}" method="POST"
-                    id="removecourselogoform">
-                {{ util.anti_csrf_token('event/set_course_logo') }}
-                {{ util.input_hidden(name="delete", value=True) }}
-                {{ util.input_checkbox("logo_ack_delete", label=gettext("Are you sure?")) }}
-                {{ util.input_submit(value=gettext("Remove Logo"), readonly=is_locked,
-                                     icon='trash', aclass='btn btn-danger') }}
-            </form>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
-                $('#removecourselogoform').cdedbProtectAction("{{ gettext("The course logo will be permanently deleted.") }}");
-                $('#removecourselogoform').find('[name="logo_ack_delete"]').prop('checked', true).parent().hide();
-            </script>
-        {% else %}
-            {% trans %}No logo set.{% endtrans %}
-        {% endif %}
-        <form action="{{ cdedblink('event/set_course_logo') }}" method="POST" enctype="multipart/form-data"
-              id="setcourselogoform" {% if "course_logo" in errors %}class="has-error"{% endif %}>
-            {{ util.anti_csrf_token('event/set_course_logo') }}
-            {{ util.input_hidden(name="delete", value=False) }}
-            <div class="input-group">
-                {{ util.input_file(name="course_logo", accept="image/*") }}
-                <div class="input-group-btn">
-                    {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='upload') }}
-                </div>
-            </div>
-            {{ util.output_errors("course_logo") }}
-        </form>
-    {% endcall %}
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">
