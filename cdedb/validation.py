@@ -1044,8 +1044,6 @@ def _persona(val, argname=None, *, creation=False, transition=False,
         optional_fields = _PERSONA_COMMON_FIELDS()
     val, errs = _examine_dictionary_fields(val, mandatory_fields,
                                            optional_fields, _convert=_convert)
-    if errs:
-        return val, errs
     for suffix in ("", "2"):
         if ((not val.get('country' + suffix)
              or val.get('country' + suffix) == "Deutschland")
@@ -1362,8 +1360,6 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert,
         allow_superfluous=True)
     errs.extend(e)
-    if errs:
-        return val, errs
 
     # TODO this is duplicate code from _persona, maybe generalize this.
     if ((not val.get('country') or val.get('country') == "Deutschland")
@@ -3980,9 +3976,11 @@ def _create_check_valid(fun):
     @functools.wraps(fun)
     def new_fun(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
-        if errs:
-            _LOGGER.debug("VALIDATION ERROR for '{}' with input {}, {}.".format(
-                fun.__name__, args, kwargs))
+        just_warnings = all(isinstance(kind, ValidationWarning)
+                            for param, kind in errs)
+        if errs and not just_warnings:
+            _LOGGER.debug("{} for '{}' with input {}, {}.".format(
+                errs, fun.__name__, args, kwargs))
             return None, errs
         return val, errs
 

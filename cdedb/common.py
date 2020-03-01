@@ -178,9 +178,10 @@ class RequestState:
         :rtype: bool
         """
         self.validation_appraised = True
-        if (suppress_warnings and all(isinstance(type, ValidationWarning)
-                                      for param, type in self._errors)):
-            return False
+        if suppress_warnings:
+            just_warnings = all(isinstance(kind, ValidationWarning)
+                                for param, kind in self._errors)
+            return not just_warnings
         else:
             return bool(self._errors)
 
@@ -496,7 +497,7 @@ class PartialImportError(RuntimeError):
     pass
 
 
-class ValidationWarning(RuntimeError):
+class ValidationWarning(BaseException):
     """Exception which should be suppressable by the user."""
     pass
 
