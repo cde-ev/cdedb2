@@ -2173,7 +2173,7 @@ msgstr "Ausstehende Änderung der Admin-Privilegien."
 #: cdedb/backend/core.py:873
 msgid "User does not fit the requirements for this admin privilege."
 msgstr ""
-"Nutzer hat nicht die notwendigen Vorraussetzungen für diese "
+"Nutzer hat nicht die notwendigen Voraussetzungen für diese "
 "Adminprivilegien."
 
 #: cdedb/backend/core.py:928
@@ -7047,7 +7047,7 @@ msgstr "Deine Mitgliedschaft läuft in wenigen Tagen aus."
 #: cdedb/frontend/templates/web/cde/index.tmpl:96
 #, python-format
 msgid "This will presumably last until %(date)s."
-msgstr "Damit bist du vorraussichtlich Mitglied bis zum %(date)s."
+msgstr "Damit bist du voraussichtlich Mitglied bis zum %(date)s."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:103
 msgid ""
