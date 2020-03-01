@@ -19,7 +19,8 @@
 {% if not preview %}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
                             readonly=not (ambience['event']['is_visible']
-                                          or ambience['event']['id'] in user.orga or is_admin)) }}
+                                          or ambience['event']['id'] in user.orga
+                                          or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
                             gettext("Questionnaire"), active=True) }}
 {% else %}
