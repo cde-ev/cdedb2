@@ -40,7 +40,7 @@
                         {% endtrans %}
                     {% endif %}
                     <br />
-                    {% if event['registration'] %}
+                    {% if "event" in user.roles and event['registration'] %}
                         {% trans link=util.href(cdedblink('event/registration_status', {'event_id': event_id}),
                                      gettext("registered")) -%}
                             (already {{ link }})
@@ -50,7 +50,7 @@
                             {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
                                          gettext("Questionnaire"), icon='edit') -}}
                         {% endif -%}
-                    {% elif event['is_open'] %}
+                    {% elif "event" in user.roles and event['is_open'] %}
                         {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
                             gettext("Register"), icon='log-in') }}
                         {% if not event['registration_soft_limit'] is none %}
