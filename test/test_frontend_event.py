@@ -22,6 +22,13 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("PfingstAkademie 2014")
         self.assertNonPresence("CdE-Party 2050")
 
+    def test_anonymous_index(self):
+        self.get('/')
+        self.traverse({'description': 'Veranstaltungen'})
+        self.assertPresence("Große Testakademie 2222", div='current-events')
+        self.assertNonPresence("PfingstAkademie 2014")
+        self.assertNonPresence("CdE-Party 2050")
+
     @as_users("anton", "berta")
     def test_index_orga(self, user):
         self.traverse({'description': 'Veranstaltungen'})
