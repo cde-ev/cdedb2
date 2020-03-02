@@ -4025,10 +4025,13 @@ class EventFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
 
-        # Calculate inhabitants and reserve_inhabitant_nums
+        # All inhabitants (regular and reserve) of all lodgements and all parts
         inhabitants = self.calculate_groups(
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
-        regular_inhabitant_nums = {k: len(v) for k, v in inhabitants.items()}
+        regular_inhabitant_nums = {
+            k: sum(
+                1 for r in v if not registrations[r]['parts'][k[1]]['is_reserve'])
+            for k, v in inhabitants.items()}
         reserve_inhabitant_nums = {
             k: sum(
                 1 for r in v if registrations[r]['parts'][k[1]]['is_reserve'])
