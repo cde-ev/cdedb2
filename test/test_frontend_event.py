@@ -1749,10 +1749,10 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
 
         expectations = {
-            "group_regular_inhabitants_3_1": "3",
+            "group_regular_inhabitants_3_1": "2",
             "lodge_reserve_inhabitants_3_2": "1",
             "group_regular_capacity_1": "11",
-            "total_inhabitants_3": "5",
+            "total_inhabitants_3": "4",
             "total_reserve": "103",
             "total_regular": "16",
         }
