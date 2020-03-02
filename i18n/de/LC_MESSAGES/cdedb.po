@@ -10596,7 +10596,7 @@ msgstr "Veranstaltung ist vorbei"
 #: cdedb/frontend/templates/web/event/index.tmpl:44
 #, python-format
 msgid "(already %(link)s)"
-msgstr "(bereits %(link)s"
+msgstr "(bereits %(link)s)"
 
 #: cdedb/frontend/templates/web/event/index.tmpl:57
 #: cdedb/frontend/templates/web/event/index.tmpl:70

@@ -1699,12 +1699,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Unterkünfte (Große Testakademie 2222)")
 
         expectations = {
-            "group_inhabitants_3_1": "2",
+            "group_regular_inhabitants_3_1": "2",
             "lodge_reserve_inhabitants_3_2": "1",
-            "group_capacity_1": "11",
-            "total_inhabitants_3": "3",
-            "total_reserve_capacity": "103",
-            "total_capacity": "16",
+            "group_regular_capacity_1": "11",
+            "total_inhabitants_3": "4",
+            "total_reserve": "103",
+            "total_regular": "16",
         }
 
         for k, v in expectations.items():
@@ -1716,8 +1716,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.traverse({'href': '/event/event/1/lodgement/overview'})
 
-        self.assertPresence("42", "group_capacity_2")
-        self.assertPresence("53", "total_capacity")
+        self.assertPresence("42", "group_regular_capacity_2")
+        self.assertPresence("53", "total_regular")
 
     @as_users("garcia")
     def test_lodgement_groups(self, user):

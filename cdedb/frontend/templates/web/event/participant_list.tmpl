@@ -115,9 +115,9 @@
                         <td>{{ util.username_mailto(personas[registration['persona_id']]) }}</td>
                         <td>
                             {{ personas[registration['persona_id']]['postal_code'] }}
-                            {{ personas[registration['persona_id']]['location'] }}
-                            {% if personas[registration['persona_id']]['country'] != "Deutschland" -%}
-                                {{- personas[registration['persona_id']]['country'] -}}
+                            {{ personas[registration['persona_id']]['location'] -}}
+                            {%- if personas[registration['persona_id']]['country'] and personas[registration['persona_id']]['country'] != "Deutschland" -%}
+                                {{- ", " + personas[registration['persona_id']]['country'] -}}
                             {% endif %}
                         </td>
                         {% if parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
@@ -161,9 +161,9 @@
                         <td>{{ util.username_mailto(personas[registration['persona_id']]) }}</td>
                         <td>
                             {{ personas[registration['persona_id']]['postal_code'] }}
-                            {{ personas[registration['persona_id']]['location'] }}
-                            {% if personas[registration['persona_id']]['country'] != "Deutschland" -%}
-                                {{- personas[registration['persona_id']]['country'] -}}
+                            {{ personas[registration['persona_id']]['location'] -}}
+                            {%- if personas[registration['persona_id']]['country'] and personas[registration['persona_id']]['country'] != "Deutschland" -%}
+                                {{- ", " + personas[registration['persona_id']]['country'] -}}
                             {% endif %}
                         </td>
                         <td>

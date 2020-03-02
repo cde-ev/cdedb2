@@ -18,15 +18,15 @@
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
                     <br />
                     {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }},
-                    {% if not event['registration_start'] is none and now() <= event['registration_start'] %}
+                    {% if event['registration_start'] is none or now() <= event['registration_start'] %}
                         {% trans %}
                             Registration in future.
                         {% endtrans %}
-                    {% elif not event['registration_soft_limit'] is none and now() <= event['registration_soft_limit'] %}
+                    {% elif event['registration_soft_limit'] is none or now() <= event['registration_soft_limit'] %}
                         {% trans %}
                             Registration is open.
                         {% endtrans %}
-                    {% elif not event['registration_hard_limit'] is none and now() <= event['registration_hard_limit'] %}
+                    {% elif event['registration_hard_limit'] is none or now() <= event['registration_hard_limit'] %}
                         {% trans %}
                             Late-Registration is open.
                         {% endtrans %}
