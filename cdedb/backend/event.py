@@ -544,6 +544,7 @@ class EventBackend(AbstractBackend):
                 ) AS base
                 {segment_table}
                 {attendees_table}
+                {instructors_table}
                 {choices_tables}
             ) AS track{track_id} ON course.id = track{track_id}.base_id"""
 
@@ -584,6 +585,25 @@ class EventBackend(AbstractBackend):
                 GROUP BY
                     c.id
             ) AS attendees{track_id} ON base_id = attendees{track_id}.id"""
+
+            # Retrieve instructor count.
+            instructors_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    c.id, COUNT(registration_id) as instructors
+                FROM
+                 {base}
+                 LEFT OUTER JOIN (
+                    SELECT
+                        registration_id, course_instructor
+                    FROM
+                        event.registration_tracks
+                    WHERE
+                        track_id = {track_id}
+                    ) as rt on c.id = rt.course_instructor
+                GROUP BY
+                    c.id
+            ) as instructors{track_id} ON base_id = instructors{track_id}.id"""
 
             # Retrieve course choice count. Limit to regs with relevant stati.
             choices_table = \
@@ -629,6 +649,9 @@ class EventBackend(AbstractBackend):
                         track_id=track['id'], base=base,
                     ),
                     attendees_table=attendees_table.format(
+                        track_id=track['id'], base=base,
+                    ),
+                    instructors_table=instructors_table.format(
                         track_id=track['id'], base=base,
                     ),
                     choices_tables=" ".join(

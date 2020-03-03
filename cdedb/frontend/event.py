@@ -4950,6 +4950,7 @@ class EventFrontend(AbstractUserFrontend):
         for track_id, track in tracks.items():
             spec["track{0}.is_active".format(track_id)] = "bool"
             spec["track{0}.attendees".format(track_id)] = "int"
+            spec["track{0}.instructors".format(track_id)] = "int"
             for rank in range(track['num_choices']):
                 spec["track{0}.num_choices{1}".format(track_id, rank)] = "int"
 
@@ -5024,6 +5025,8 @@ class EventFrontend(AbstractUserFrontend):
                     prefix + gettext("takes place"),
                 "track{0}.attendees".format(track_id):
                     prefix + gettext("attendees"),
+                "track{0}.instructors".format(track_id):
+                    prefix + gettext("instructors"),
             })
             for rank in range(track['num_choices']):
                 titles.update({
