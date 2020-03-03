@@ -582,10 +582,13 @@ class EventBackend(AbstractBackend):
                     name, kind)
                  for name, kind in course_fields.items()]
             )
+            if course_field_columns:
+                course_field_columns += ", "
             course_fields_table = \
             """LEFT OUTER JOIN (
                 SELECT
-                    {course_field_columns}, id
+                    {course_field_columns}
+                    id
                 FROM
                     event.courses
                 WHERE
