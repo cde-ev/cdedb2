@@ -383,10 +383,14 @@ class EventBackend(AbstractBackend):
                 ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
                     name, kind)
                     for name, kind in reg_fields.items()])
+
+            if reg_field_columns:
+                reg_field_columns += ", "
             registration_fields_table = \
                 """LEFT OUTER JOIN (
                     SELECT
-                        {reg_field_columns}, id
+                        {reg_field_columns}
+                        id
                     FROM
                         event.registrations
                     WHERE
@@ -406,8 +410,10 @@ class EventBackend(AbstractBackend):
                     name, kind)
                  for name, kind in lodgement_fields.items()]
             )
+            if lodge_field_columns:
+                lodge_field_columns += ", "
             lodge_view = """SELECT
-                {lodge_field_columns}, 
+                {lodge_field_columns}
                 moniker, notes, id
             FROM
                 event.lodgements
@@ -447,9 +453,11 @@ class EventBackend(AbstractBackend):
                     name, kind)
                  for name, kind in course_fields.items()]
             )
+            if course_field_columns:
+                course_field_columns += ", "
             course_view = \
             """SELECT
-                {course_field_columns}, 
+                {course_field_columns}
                 id, nr, title, shortname, notes, instructors
             FROM
                 event.courses
