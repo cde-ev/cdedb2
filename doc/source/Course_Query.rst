@@ -28,6 +28,27 @@ The final view will be constructed as follows. ::
 
 ``course_field_columns`` will contain a JSON-cast from the ``fields`` column for every relevant course field. ``track_tableX`` is an example for one of the dynamic tables that are all joined as described.
 
+The following columns will be available in this view:
+
+* ``course.id``
+* ``course.event_id``
+* ``course.nr``
+* ``course.title``
+* ``course.description``
+* ``course.shortname``
+* ``course.instructors``
+* ``course.min_size``
+* ``course.max_size``
+* ``course.notes``
+* ``course_fields.xfield_{field_name}`` *This is available for every custom data field with course association.*
+* ``track{track_id}.is_active``
+* ``track[track_id}.attendees``
+* ``track[track_id}.intructors``
+* ``track{track_id].num_choices{rank}`` *This is available for every available rank in that track.*
+
+*Note that some additional columns are present but omitted here, since they are not really useful like ``track{track_id}.base_id``.*
+
+
 The Track Tables
 ----------------
 
@@ -149,7 +170,7 @@ In the outer layer we then count the registration ids while grouping by course i
 
 
 The Complete View
-=================
+-----------------
 
 The final view for course queries looks something like this::
 
