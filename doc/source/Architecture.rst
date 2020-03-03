@@ -10,6 +10,7 @@ Architecture
    Architecture_Events
    Architecture_Mailinglists
    Course_Query
+   Registration_Query
 
 
 

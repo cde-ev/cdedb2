@@ -360,115 +360,166 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
 
-            lodgement_fields = {
-                e['field_name']:
-                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
-                for e in event['fields'].values()
-                if e['association'] == const.FieldAssociations.lodgement
-            }
-            lodge_columns_gen = lambda part_id: ", ".join(
-                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
-                    name, kind)
-                 for name, kind in lodgement_fields.items()]
-                + [col for col in ("id", "moniker", "notes")]
-            )
-            part_table_template = glue(
-                # first the per part table
-                "LEFT OUTER JOIN (SELECT registration_id, status,",
-                "lodgement_id, is_reserve",
-                "FROM event.registration_parts WHERE part_id = {part_id})",
-                "AS part{part_id} ON reg.id = part{part_id}.registration_id",
-                # second the associated lodgement fields
-                "LEFT OUTER JOIN (SELECT {lodge_columns} FROM",
-                "event.lodgements WHERE event_id={event_id})",
-                "AS lodgement{part_id}",
-                "ON part{part_id}.lodgement_id",
-                "= lodgement{part_id}.id",
-            )
-            course_fields = {
-                e['field_name']:
-                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
-                for e in event['fields'].values()
-                if e['association'] == const.FieldAssociations.course
-            }
-            course_columns_gen = lambda track_id, identifier: ", ".join(
-                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
-                    name, kind)
-                 for name, kind in course_fields.items()]
-                + [col for col in ("id", "nr", "title", "shortname", "notes")]
-            )
-            track_table_template = glue(
-                # first the per track table
-                "LEFT OUTER JOIN (SELECT registration_id, course_id,",
-                "course_instructor, ",
-                "(NOT(course_id IS NULL AND course_instructor IS NOT NULL)",
-                "AND course_id = course_instructor)",
-                "AS is_course_instructor",
-                "FROM event.registration_tracks WHERE track_id = {track_id})",
-                "AS track{track_id} ON",
-                "reg.id = track{track_id}.registration_id",
-                # second the associated course fields
-                "LEFT OUTER JOIN (SELECT {course_columns} FROM",
-                "event.courses WHERE event_id={event_id})",
-                "AS course{track_id}",
-                "ON track{track_id}.course_id",
-                "= course{track_id}.id",
-                # third the fields for the instructed course
-                "LEFT OUTER JOIN (SELECT {course_instructor_columns} FROM",
-                "event.courses WHERE event_id={event_id})",
-                "AS course_instructor{track_id}",
-                "ON track{track_id}.course_instructor",
-                "= course_instructor{track_id}.id",
-            )
-            creation_date = glue(
-                "LEFT OUTER JOIN",
-                "(SELECT persona_id, MAX(ctime) AS creation_time",
-                "FROM event.log",
-                "WHERE event_id = {event_id} AND code = {reg_create_code}",
-                "GROUP BY persona_id)",
-                "AS ctime ON ctime.persona_id = reg.persona_id").format(
-                event_id=event_id,
-                reg_create_code=const.EventLogCodes.registration_created)
-            modification_date = glue(
-                "LEFT OUTER JOIN",
-                "(SELECT persona_id, MAX(ctime) AS modification_time",
-                "FROM event.log",
-                "WHERE event_id = {event_id} AND code = {reg_mod_code}",
-                "GROUP BY persona_id)",
-                "AS mtime ON mtime.persona_id = reg.persona_id").format(
-                event_id=event_id,
-                reg_mod_code=const.EventLogCodes.registration_changed)
+            # For more details about this see `doc/Registration_Query`.
+            # The template for the final view.
+            registration_table = \
+            """event.registrations AS reg
+            LEFT OUTER JOIN
+                core.personas AS persona ON reg.persona_id = persona.id
+            {registration_fields_table}
+            {part_tables}
+            {track_tables}
+            {creation_date_table}
+            {modification_date_table}"""
+
+            # Dynamically construct columns for custom registration datafields.
             reg_fields = {
                 e['field_name']:
                     PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.registration
             }
-            reg_columns = ", ".join(
+            reg_field_columns = ", ".join(
                 ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
                     name, kind)
-                 for name, kind in reg_fields.items()]
-                + ["id AS reg_id"])
-            part_table_gen = lambda part_id: part_table_template.format(
-                part_id=part_id,
-                lodge_columns=lodge_columns_gen(part_id),
-                event_id=event_id)
-            track_table_gen = lambda track_id: track_table_template.format(
-                course_columns=course_columns_gen(track_id, "course"),
-                course_instructor_columns=course_columns_gen(
-                    track_id, "course_instructor"),
-                track_id=track_id, event_id=event_id)
-            view = _REGISTRATION_VIEW_TEMPLATE.format(
-                event_id=event_id,
-                part_tables=" ".join(part_table_gen(part_id)
-                                     for part_id in event['parts']),
-                track_tables=" ".join(track_table_gen(track_id)
-                                      for part in event['parts'].values()
-                                      for track_id in part['tracks']),
-                creation_date=creation_date,
-                modification_date=modification_date,
-                reg_columns=reg_columns,
+                    for name, kind in reg_fields.items()])
+            registration_fields_table = \
+                """LEFT OUTER JOIN (
+                    SELECT
+                        {reg_field_columns}, id
+                    FROM
+                        event.registrations
+                    WHERE
+                        event_id = {event_id}
+                ) AS reg_fields ON reg.id = reg_fields.id""".format(
+                    event_id=event_id, reg_field_columns=reg_field_columns)
+
+            # Dynamically construct the columns for custom lodgement fields.
+            lodgement_fields = {
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.lodgement
+            }
+            lodge_field_columns = ", ".join(
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
+                 for name, kind in lodgement_fields.items()]
             )
+            lodge_view = """SELECT
+                {lodge_field_columns}, 
+                moniker, notes, id
+            FROM
+                event.lodgements
+            WHERE
+                event_id = {event_id}""".format(
+                event_id=event_id, lodge_field_columns=lodge_field_columns)
+
+            # The template for registration part and lodgment information.
+            part_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    registration_id, status, lodgement_id, is_reserve
+                FROM
+                    event.registration_parts
+                WHERE
+                    part_id = {part_id}
+            ) AS part{part_id} ON reg.id = part{part_id}.registration_id
+            LEFT OUTER JOIN (
+                {lodge_view}
+            ) AS lodgement{part_id}
+            ON part{part_id}.lodgement_id = lodgement{part_id}.id"""
+
+            part_tables = " ".join(
+                part_table.format(
+                    part_id=part['id'], lodge_view=lodge_view)
+                for part in event['parts'].values()
+            )
+            # Dynamically construct columns for custom course fields.
+            course_fields = {
+                e['field_name']:
+                    PYTHON_TO_SQL_MAP[const.FieldDatatypes(e['kind']).name]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.course
+            }
+            course_field_columns = ", ".join(
+                ['''(fields->>'{0}')::{1} AS "xfield_{0}"'''.format(
+                    name, kind)
+                 for name, kind in course_fields.items()]
+            )
+            course_view = \
+            """SELECT
+                {course_field_columns}, 
+                id, nr, title, shortname, notes, instructors
+            FROM
+                event.courses
+            WHERE
+                event_id = {event_id}""".format(
+                event_id=event_id, course_field_columns=course_field_columns)
+
+            track_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    registration_id, course_id, course_instructor,
+                    (NOT(course_id IS NULL AND course_instructor IS NOT NULL)
+                     AND course_id = course_instructor) AS is_course_instructor
+                FROM
+                    event.registration_tracks
+                WHERE
+                    track_id = {track_id}
+            ) AS track{track_id} ON reg.id = track{track_id}.registration_id
+            LEFT OUTER JOIN (
+                {course_view}
+            ) AS course{track_id}
+            ON track{track_id}.course_id = course{track_id}.id
+            LEFT OUTER JOIN (
+                {course_view}
+            ) AS course_instructor{track_id}
+            ON track{track_id}.course_instructor = course_instructor{track_id}.id"""
+
+            track_tables = " ".join(
+                track_table.format(
+                    track_id=track['id'], course_view=course_view,
+                )
+                for track in event['tracks'].values()
+            )
+
+            # Retrieve creation and modification timestamps from log.
+            creation_date_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    persona_id, MAX(ctime) AS creation_time
+                FROM
+                    event.log
+                WHERE
+                    event_id = {event_id} AND code = {reg_create_code}
+                GROUP BY
+                    persona_id
+            ) AS ctime ON reg.persona_id = ctime.persona_id""".format(
+                event_id=event_id,
+                reg_create_code=const.EventLogCodes.registration_created.value)
+            modification_date_table = \
+            """LEFT OUTER JOIN (
+                SELECT
+                    persona_id, MAX(ctime) AS modification_time
+                FROM
+                    event.log
+                WHERE
+                    event_id = {event_id} AND code = {reg_changed_code}
+                GROUP BY
+                    persona_id
+            ) AS mtime ON reg.persona_id = mtime.persona_id""".format(
+                event_id=event_id,
+                reg_changed_code=const.EventLogCodes.registration_changed.value)
+
+            view = registration_table.format(
+                registration_fields_table=registration_fields_table,
+                part_tables=part_tables,
+                track_tables=track_tables,
+                creation_date_table=creation_date_table,
+                modification_date_table=modification_date_table,
+            )
+
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
