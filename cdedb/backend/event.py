@@ -586,6 +586,8 @@ class EventBackend(AbstractBackend):
                 course_field_columns=course_field_columns, event_id=event_id)
 
             # Template for retrieving course information for one specific track.
+            # We don't use the {base} table from below, because we need
+            # the id to be distinct.
             track_table = \
             """LEFT OUTER JOIN (
                 (
