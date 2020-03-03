@@ -1366,6 +1366,30 @@ class TestEventBackend(BackendTest):
              'reg_fields.xfield_transportation': 'pedes'})
         self.assertEqual(expectation, result)
 
+    @as_users("annika")
+    def test_queries_without_fields(self, user):
+        # Check that the query views work if there are no custom fields.
+        event = self.event.get_event(self.key, 2)
+        self.assertFalse(event["fields"])
+        query = Query(
+            scope="qview_registration",
+            spec=dict(QUERY_SPECS["qview_registration"]),
+            fields_of_interest=["reg.id"],
+            constraints=[],
+            order=[],
+        )
+        result = self.event.submit_general_query(self.key, query, event_id=2)
+        self.assertEqual(tuple(), result)
+        query = Query(
+            scope="qview_event_course",
+            spec=dict(QUERY_SPECS["qview_event_course"]),
+            fields_of_interest=["course.id"],
+            constraints=[],
+            order=[],
+        )
+        result = self.event.submit_general_query(self.key, query, event_id=2)
+        self.assertEqual(tuple(), result)
+
     @as_users("garcia")
     def test_course_query(self, user):
         query = Query(
