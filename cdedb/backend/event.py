@@ -503,6 +503,7 @@ class EventBackend(AbstractBackend):
             event = self.get_event(rs, event_id)
 
             # Template for the final view.
+            # For more in depth information see `doc/Course_Query`.
             # We retrieve general course, custom field and track specific info.
             course_table = """
             event.courses AS course
