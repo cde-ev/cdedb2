@@ -211,8 +211,7 @@ class TestCdEFrontend(FrontendTest):
         f['postal_upper'] = 20000
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertPresence("3 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Akira Abukara", div='result')
+        self.assertPresence("2 Mitglieder gefunden", div='result-count')
         self.assertPresence("Anton Armin A. Administrator", div='result')
         self.assertPresence("Inga Iota", div='result')
 

@@ -1611,7 +1611,7 @@ class TestEventBackend(BackendTest):
                                   'location': 'Tokyo',
                                   'mobile': None,
                                   'name_supplement': None,
-                                  'postal_code': '100-8798',
+                                  'postal_code': None,
                                   'telephone': '+81 (314) 159263',
                                   'title': None,
                                   'username': 'akira@example.cde'}
@@ -3015,7 +3015,7 @@ class TestEventBackend(BackendTest):
                                               'location': 'Tokyo',
                                               'mobile': None,
                                               'name_supplement': None,
-                                              'postal_code': '100-8798',
+                                              'postal_code': None,
                                               'telephone': '+81 (314) 159263',
                                               'title': None,
                                               'username': 'akira@example.cde'},

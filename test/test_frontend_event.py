@@ -1639,7 +1639,7 @@ etc;anything else""", f['entries_2'].value)
         # self.assertPresence("Mitgliedschaft")
         self.assertNonPresence("Sichtbarkeit")
         self.assertPresence("28.12.2019")
-        self.assertPresence("100-8798 Tokyo")
+        self.assertPresence("Tokyo Japan")
         self.assertNonPresence("Ich bin ein „Künstler“; im weiteren Sinne.")
 
     @as_users("garcia")
@@ -2937,7 +2937,7 @@ etc;anything else""", f['entries_2'].value)
                                                 'location': 'Tokyo',
                                                 'mobile': None,
                                                 'name_supplement': None,
-                                                'postal_code': '100-8798',
+                                                'postal_code': None,
                                                 'telephone': '+81 (314) 159263',
                                                 'title': None,
                                                 'username': 'akira@example.cde'},
