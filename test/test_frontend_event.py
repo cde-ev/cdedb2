@@ -1335,6 +1335,60 @@ etc;anything else""", f['entries_2'].value)
         self.get('/event/event/2/registration/list?part_id=5000', status=404)
         self.get('/event/event/2/registration/list?part_id=3', status=404)
 
+    def _sort_appearance(self, userlist):
+        row = 1
+        for user in userlist:
+            self.assertPresence(user['given_names'], div="row-" + str(row))
+            row += 1
+
+    @as_users("garcia")
+    def test_participant_list_sorting(self, user):
+        # first, show courses on participant list
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'},
+                      {'description': 'Konfiguration'})
+        f = self.response.forms['changeeventform']
+        f['courses_in_participant_list'].checked = True
+        self.submit(f)
+
+        # now, check the sorting
+        self.traverse({'description': 'Teilnehmerliste'})
+        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        akira = USER_DICT['akira']
+        anton = USER_DICT['anton']
+        emilia = USER_DICT['emilia']
+
+        # default sort is by given names
+        self._sort_appearance([akira, anton, emilia])
+        # explicit sort by given names, ascending
+        self.traverse({'description': "Vorname(n)*"})
+        self._sort_appearance([akira, anton, emilia])
+        # explicit sort by given names, descending
+        self.traverse({'description': "Vorname(n)*"})
+        self._sort_appearance([emilia, anton, akira])
+        # ... and again, ascending
+        self.traverse({'description': "Vorname(n)*"})
+        self._sort_appearance([akira, anton, emilia])
+        self.traverse({'description': "Nachname*"})
+        self._sort_appearance([akira, anton, emilia])
+        self.traverse({'description': "E-Mail-Adresse*"})
+        self._sort_appearance([akira, anton, emilia])
+        self.traverse({'description': "Postleitzahl, Stadt*"})
+        self._sort_appearance([akira, anton, emilia])
+
+        self.traverse({'description': "Zweite Hälfte"})
+        self.traverse({'description': "Vorname(n)*"})
+        self._sort_appearance([akira, anton, emilia])
+        self.traverse({'description': "Nachname*"})
+        self._sort_appearance([akira, anton, emilia])
+        self.traverse({'description': "E-Mail-Adresse*"})
+        self._sort_appearance([akira, anton, emilia])
+        self.traverse({'description': "Postleitzahl, Stadt*"})
+        self._sort_appearance([akira, anton, emilia])
+        # this is a bit hacky to not match "Kurseinteilung" or "Kursliste"
+        self.traverse({'description': "Kurs[^el] *"})
+        self._sort_appearance([akira, emilia, anton])
+
     @as_users("garcia")
     def test_batch_fee(self, user):
         self.traverse({'href': '/event/$'},
