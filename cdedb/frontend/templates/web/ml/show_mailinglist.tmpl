@@ -4,7 +4,7 @@
 {% block title %}{{ ambience['mailinglist']['title'] }}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-    {% if not ambience['is_active'] %}
+    {% if is_admin or not ambience['mailinglist']['is_active'] %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'],
