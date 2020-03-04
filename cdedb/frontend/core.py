@@ -23,7 +23,7 @@ from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields,
-    privilege_tier)
+    privilege_tier, ALL_ADMIN_VIEWS)
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
@@ -283,7 +283,7 @@ class CoreFrontend(AbstractFrontend):
             disabled_views.update(changed_views)
         rs.response.set_cookie(
             "disabled_admin_views",
-            ",".join(disabled_views),
+            ",".join(disabled_views & ALL_ADMIN_VIEWS),
             expires=now() + datetime.timedelta(days=10 * 365))
         return rs.response
 

@@ -164,26 +164,7 @@ class User:
 
     @property
     def available_admin_views(self):
-        result = set()
-        if "meta_admin" in self.roles:
-            result |= {"meta_admin"}
-        if "core_admin" in self.roles:
-            result |= {"core_user", "core"}
-        if "cde_admin" in self.roles:
-            result |= {"cde_user", "past_event"}
-        if "finance_admin" in self.roles:
-            result |= {"finance"}
-        if "event_admin" in self.roles:
-            result |= {"event_user", "event_mgmt", "event_orga"}
-        if "ml_admin" in self.roles:
-            result |= {"ml_user", "ml_mgmt", "ml_moderator"}
-        if "assembly_admin" in self.roles:
-            result |= {"assembly_user", "assembly_mgmt", "assembly_contents"}
-        if self.roles & ({'core_admin'} | set(
-                "{}_admin".format(realm)
-                for realm in realm_specific_genesis_fields)):
-            result |= {"genesis"}
-        return result
+        return roles_to_admin_views(self.roles)
 
     def init_admin_views_from_cookie(self, disabled_views_cookie):
         disabled_views = disabled_views_cookie.split(',')
@@ -1489,6 +1470,41 @@ def roles_to_db_role(roles):
     for role in DB_ROLE_MAPPING:
         if role in roles:
             return DB_ROLE_MAPPING[role]
+
+
+ALL_ADMIN_VIEWS = {
+    "meta_admin", "core_user", "core", "cde_user", "past_event", "finance",
+    "event_user", "event_mgmt", "event_orga", "ml_user", "ml_mgmt",
+    "ml_moderator", "assembly_user", "assembly_mgmt", "assembly_contents",
+    "genesis"}
+
+
+def roles_to_admin_views(roles):
+    """ Get the set of available admin views for a user with given roles.
+    
+    :type roles: {str} 
+    :return: {str}
+    """
+    result = set()
+    if "meta_admin" in roles:
+        result |= {"meta_admin"}
+    if "core_admin" in roles:
+        result |= {"core_user", "core"}
+    if "cde_admin" in roles:
+        result |= {"cde_user", "past_event"}
+    if "finance_admin" in roles:
+        result |= {"finance"}
+    if "event_admin" in roles:
+        result |= {"event_user", "event_mgmt", "event_orga"}
+    if "ml_admin" in roles:
+        result |= {"ml_user", "ml_mgmt", "ml_moderator"}
+    if "assembly_admin" in roles:
+        result |= {"assembly_user", "assembly_mgmt", "assembly_contents"}
+    if roles & ({'core_admin'} | set(
+            "{}_admin".format(realm)
+            for realm in realm_specific_genesis_fields)):
+        result |= {"genesis"}
+    return result
 
 
 #: Version tag, so we know that we don't run out of sync with exported event
