@@ -103,7 +103,7 @@
                              active=(sidenav_active == 'event_index')) }}
             {% endif %}
         </div>
-        {% if user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
+        {% if user.admin_views.intersection(('event_mgmt', 'event_user')) %}
             <div class="list-group tear-down">
                 {% if 'event_user' in user.admin_views %}
                         {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
