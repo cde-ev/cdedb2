@@ -273,6 +273,10 @@ class CoreFrontend(AbstractFrontend):
         else:
             self.redirect(rs, "core/index")
 
+        # Exit early on validation errors
+        if rs.errors:
+            return rs.response
+
         disabled_views = set(rs.request.cookies.get('disabled_admin_views', "")
                              .split(','))
         changed_views = set(view_specifier[1:].split(','))
