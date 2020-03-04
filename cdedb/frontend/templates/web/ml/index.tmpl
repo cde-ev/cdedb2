@@ -17,7 +17,7 @@
     </li>
 {% endmacro %}
 {% block content %}
-    {% if is_admin %}
+    {% if 'ml_mgmt' in user.admin_views %}
         <div class="p">
             {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
