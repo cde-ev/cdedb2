@@ -256,15 +256,15 @@ class CoreFrontend(AbstractFrontend):
     @access("persona", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata(("view_specifier", "printable_ascii"),
                  ("wants", "#str_or_None"))
-    def enable_admin_view(self, rs, view_specifier, wants):
+    def modify_active_admin_views(self, rs, view_specifier, wants):
         """
         Enable or disable admin views for the current user.
 
         A list of possible admin views for the current user is returned by
         User.available_admin_views. The user may enable or disable any of them.
 
-        :param admin_view: A "+" or "-", followed by a commaseperated string of
-            admin view names. If prefixed by "+", they are enabled, otherwise
+        :param view_specifier: A "+" or "-", followed by a commaseperated string
+            of admin view names. If prefixed by "+", they are enabled, otherwise
             they are disabled.
         :param wants: URL to redirect to (typically URL of the previous page)
         """

@@ -582,9 +582,9 @@
        but should only be shown to core admins, i.e. users who have the `core_user` view available.
  #}
 {% macro admin_views_toggle(views) %}
-    <form action="{{ cdedblink('core/enable_admin_view') }}" method="post" style="display: inline;">
+    <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" style="display: inline;">
         {% if original_request and original_request.url %}
-            {{ util.input_hidden("wants", encode_parameter("core/enable_admin_view", "wants",
+            {{ util.input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
                                                            original_request.url, timeout=None)) }}
         {% endif %}
         {% for label, view_names, relevant_views in views %}
