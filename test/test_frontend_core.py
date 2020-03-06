@@ -1198,6 +1198,57 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
         self.assertPresence("21.06.1977", div='personal-information')
 
+    @as_users("vera")
+    def test_ignore_warning_postal_code(self, user):
+        self.admin_view_profile("vera")
+        self.traverse({'description': 'Bearbeiten \\(normal\\)'})
+        f = self.response.forms['changedataform']
+        f['postal_code'] = "ABC-123"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Ungültige Postleitzahl")
+        f = self.response.forms['changedataform']
+        f['ignore_warning'].checked = True
+        self.submit(f)
+        self.assertTitle("Vera Verwaltung")
+        self.traverse({'description': 'Bearbeiten \\(mit Adminrechten\\)'})
+        f = self.response.forms['changedataform']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Ungültige Postleitzahl")
+        f = self.response.forms['changedataform']
+        f['ignore_warning'].checked = True
+        self.submit(f)
+        self.get("/core/genesis/request")
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "for testing"
+        f['birthday'] = "2000-01-01"
+        f['address'] = "Auf dem Hügel"
+        f['postal_code'] = "ABC-123"
+        f['location'] = "Überall"
+        self.submit(f, check_notification=False)
+        self.assertPresence("Ungültige Postleitzahl")
+        f = self.response.forms['genesisform']
+        f['ignore_warning'].checked = True
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = self.fetch_link(mail)
+        self.get(link)
+        self.follow()
+        self.traverse({'description': 'Accountanfragen'},
+                      {'description': 'Details'},
+                      {'description': 'Bearbeiten'})
+        f = self.response.forms['genesismodifyform']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Ungültige Postleitzahl")
+        f = self.response.forms['genesismodifyform']
+        f['ignore_warning'].checked = True
+        self.submit(f)
+        f = self.response.forms['genesiseventapprovalform']
+        self.submit(f)
+
     def test_genesis_event(self):
         user = USER_DICT['vera']
         self.get('/')
