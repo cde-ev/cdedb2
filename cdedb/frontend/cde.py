@@ -758,11 +758,12 @@ class CdEFrontend(AbstractUserFrontend):
         """
         data = data or {}
         merge_dicts(rs.values, data)
-        event_list = sorted(self.eventproxy.list_db_events(rs).items(),
-                            key=lambda x: x[1])
+        event_list = self.eventproxy.list_db_events(rs)
+        event_entries = sorted(event_list.items(), key=lambda x: x[1])
         params = {
             'data': data,
             'TransactionType': parse.TransactionType,
+            'event_entries': event_entries,
             'events': event_list,
         }
         return self.render(rs, "parse_statement", params)

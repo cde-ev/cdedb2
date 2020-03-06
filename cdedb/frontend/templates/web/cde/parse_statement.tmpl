@@ -87,7 +87,7 @@
                         {{ util.input_hidden(name="event_id_confidence{}".format(t_id)) }}
                     </div>
                     <div class="col-md-11">
-                        {{ util.form_input_select(name="event_id{}".format(t_id), entries=events, small=True,
+                        {{ util.form_input_select(name="event_id{}".format(t_id), entries=event_entries, small=True,
                                     nulloption="", label=gettext("Event"), horizontal=False) }}
                     </div>
                 </div>
@@ -100,9 +100,7 @@
 {% block content %}
     <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform" enctype="multipart/form-data">
         {{ util.anti_csrf_token('cde/parse_statement') }}
-        {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv") }}
-        {{ util.form_input_textarea(name="statement", horizontal=False,
-                rows=8, anid="input-data",
+        {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv",
                 info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft here.")) }}
 
         {{ util.form_input_submit(value=gettext("Parse"), horizontal=False) }}
@@ -175,7 +173,7 @@
                 {% endif %}
                 {% for event_id in data["events"] %}
                     <button type="submit" name="event" value="{{ event_id }}" class="btn btn-primary">
-                        {{ util.make_icon("download") }} {% trans shortname=event_id %}Download {{ shortname }}{% endtrans %}
+                        {{ util.make_icon("download") }} {% trans shortname=events[event_id] %}Download {{ shortname }}{% endtrans %}
                     </button>
                 {% endfor %}
             {% endif %}
