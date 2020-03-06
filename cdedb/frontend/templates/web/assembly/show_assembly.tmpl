@@ -10,7 +10,7 @@
 {% endblock %}
 {% block content %}
     <div class="p">
-        {% if is_admin and ambience['assembly']['is_active'] %}
+        {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
             {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
                          icon="cog") }}
         {% endif %}
@@ -37,16 +37,16 @@
         </dd>
     </dl>
 
-    {% if is_admin and ambience['assembly']['notes'] %}
+    {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['assembly']['notes']|md }}
         {% endcall %}
     {% endif %}
 
-    {% if attachments or is_admin or has_ballot_attachments %}
+    {% if attachments or "assembly_contents" in user.admin_views or has_ballot_attachments %}
         {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         <div class="row">
-            {% if attachments or is_admin %}
+            {% if attachments or "assembly_contents" in user.admin_views %}
                 <div class="col-sm-6">
                     <h4>{% trans -%}General Files{%- endtrans %}</h4>
                     <ul class="slim">
@@ -54,7 +54,7 @@
                             <li class="hide-hover-container clearfix-after">
                                 {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                         attachment['title']) }}
-                                {% if is_admin %}
+                                {% if "assembly_contents" in user.admin_views %}
                                     <form action="{{ cdedblink('assembly/remove_attachment',
                                                                {'attachment_id': attachment_id}) }}"
                                             method="POST" id="removeattachmentform{{ attachment_id }}",
@@ -72,7 +72,7 @@
                             </li>
                         {% endfor %}
                     </ul>
-                    {% if is_admin %}
+                    {% if "assembly_contents" in user.admin_views %}
                         <div class="p">
                             {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Attach File"),
                                          aclass="btn btn-success btn-sm", icon="plus") }}
@@ -107,7 +107,7 @@
         {% endcall %}
     {% endif %}
 
-    {% if is_admin %}
+    {% if "assembly_mgmt" in user.admin_views %}
         {% if ambience['assembly']['is_active'] or "vote_begin" not in delete_blockers %}
             {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
                 {% if ambience['assembly']['is_active'] %}

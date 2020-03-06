@@ -584,8 +584,8 @@
 {% macro admin_views_toggle(views) %}
     <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" style="display: inline;">
         {% if original_request and original_request.url %}
-            {{ util.input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
-                                                           original_request.url, timeout=None)) }}
+            {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
+                                                      original_request.url, timeout=None)) }}
         {% endif %}
         {% for label, view_names, relevant_views in views %}
             {% set relevant_views = relevant_views if relevant_views is not none else view_names %}
@@ -597,7 +597,7 @@
                         name="view_specifier"
                         value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
                         class="btn btn-info btn-block {% if active %}active{% endif %}">
-                    {{ util.make_icon('wrench') }} {{ label }}
+                    {{ make_icon('wrench') }} {{ label }}
                 </button>
             {% endif %}
         {% endfor %}
