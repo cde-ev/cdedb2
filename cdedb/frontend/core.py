@@ -469,15 +469,14 @@ class CoreFrontend(AbstractFrontend):
 
         # Check if the current user has the right admin *views* activated to
         # show the admin-only information and controls of this persona
-        # TODO make nicer code
-        #   This is basically a modified version of
-        #   CoreBackend.is_relative_admin() with a string-replace hack to make
-        #   use of cdedb.common.privilege_tier()
+        # This code is basically a modified version of
+        # CoreBackend.is_relative_admin() with a string-replace hack to make
+        # use of cdedb.common.privilege_tier()
         is_relative_admin_view = any(
             admin_views <= {v.replace('_user', '_admin')
                             for v in rs.user.admin_views}
             for admin_views in privilege_tier(
-                extract_roles(rs.ambience['persona'])))
+                extract_roles(rs.ambience['persona'], introspection_only=True)))
 
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,

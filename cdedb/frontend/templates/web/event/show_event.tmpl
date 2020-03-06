@@ -339,10 +339,7 @@
     </div>
 
 
-    {% if "event_mgmt" in user.admin_views
-            and ("cde_admin" in user.roles and not ambience['event']['is_archived']
-                 or "ml_admin" in user.roles and (not ambience['event']['orga_address']
-                                                  or not participant_list)) %}
+    {% if "event_mgmt" in user.admin_views %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             {% if "ml_admin" in user.roles %}
                 {% if not ambience['event']['orga_address'] %}
@@ -390,7 +387,7 @@
                     </div>
                 {% endif %}
             {% endif %}
-            {% if 'event_mgmt' in user.admin_views and "cde_admin" in user.roles %}
+            {% if "cde_admin" in user.roles and not ambience['event']['is_archived']%}
                 <div class="row">
                     <div class="col-sm-4">
                         <div class="p">
