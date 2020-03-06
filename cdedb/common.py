@@ -955,9 +955,9 @@ def deduct_years(date, years):
     Dates are nasty, in theory this should be a simple subtraction, but
     leap years create problems.
 
-    :type date: datetime.datetime
+    :type date: datetime.date
     :type years: int
-    :rtype: datetime.datetime
+    :rtype: datetime.date
     """
     try:
         return date.replace(year=date.year - years)

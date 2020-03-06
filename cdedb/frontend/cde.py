@@ -462,7 +462,8 @@ class CdEFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def _perform_one_batch_admission(self, rs, datum, trial_membership, consent):
+    def _perform_one_batch_admission(self, rs, datum, trial_membership,
+                                     consent):
         """Uninlined code from perform_batch_admission().
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -477,7 +478,7 @@ class CdEFrontend(AbstractUserFrontend):
             'family_name', 'given_names', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
-            'mobile', 'birthday') # email omitted as it is handled separately
+            'mobile', 'birthday')  # email omitted as it is handled separately
         persona_id = None
         if datum['resolution'] == LineResolutions.skip:
             return ret
@@ -554,7 +555,6 @@ class CdEFrontend(AbstractUserFrontend):
                 rs, datum['pevent_id'], datum['pcourse_id'],
                 persona_id, is_instructor=False, is_orga=False)
         return ret
-
 
     def perform_batch_admission(self, rs, data, trial_membership, consent,
                                 sendmail):
@@ -721,7 +721,7 @@ class CdEFrontend(AbstractUserFrontend):
         if not membership:
             rs.append_validation_error(
                 ("membership",
-                  ValueError(n_("Only member admission supported."))))
+                 ValueError(n_("Only member admission supported."))))
         open_issues = any(
             e['resolution'] is None
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
@@ -767,7 +767,8 @@ class CdEFrontend(AbstractUserFrontend):
         }
         return self.render(rs, "parse_statement", params)
 
-    def organize_transaction_data(self, rs, transactions, start, end, timestamp):
+    def organize_transaction_data(self, rs, transactions, start, end,
+                                  timestamp):
         data = {"{}{}".format(k, t.t_id): v
                 for t in transactions
                 for k, v in t.to_dict(rs, self.coreproxy.get_persona,
@@ -900,7 +901,7 @@ class CdEFrontend(AbstractUserFrontend):
         )
 
         transactions = []
-        for i in range(1, count+1):
+        for i in range(1, count + 1):
             t = request_extractor(rs, params(i))
             t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
             t.inspect()
@@ -909,7 +910,8 @@ class CdEFrontend(AbstractUserFrontend):
         data = self.organize_transaction_data(
             rs, transactions, start, end, timestamp)
 
-        if rs.request.values.get("validate") or data["has_error"] or data["has_warning"]:
+        if rs.request.values.get("validate") or data["has_error"] \
+                or data["has_warning"]:
             return self.parse_statement_form(rs, data)
         elif rs.request.values.get("membership"):
             filename = "Mitgliedsbeiträge"
@@ -992,7 +994,6 @@ class CdEFrontend(AbstractUserFrontend):
             datum['raw']['note'], "note")
         problems.extend(p)
 
-        persona = None
         if persona_id:
             try:
                 persona = self.coreproxy.get_persona(rs, persona_id)
@@ -2038,7 +2039,8 @@ class CdEFrontend(AbstractUserFrontend):
                     persona_id = rrs.user.persona_id
                 if not persona_id or expuls['addresscheck_done']:
                     if not expuls['addresscheck_done']:
-                        self.cdeproxy.finish_expuls_addresscheck(rrs, skip=False)
+                        self.cdeproxy.finish_expuls_addresscheck(rrs,
+                                                                 skip=False)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
@@ -2278,7 +2280,7 @@ class CdEFrontend(AbstractUserFrontend):
             "qview_past_event_user", QUERY_SPECS['qview_past_event_user'],
             ("personas.id", "given_names", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
-            [("pevent_id", QueryOperators.equal, pevent_id),],
+            [("pevent_id", QueryOperators.equal, pevent_id), ],
             (("family_name", True), ("given_names", True),
              ("personas.id", True)))
 
@@ -2337,7 +2339,8 @@ class CdEFrontend(AbstractUserFrontend):
         events = self.pasteventproxy.list_past_events(rs)
         shortnames = {
             pevent_id: value['shortname']
-            for pevent_id, value in self.pasteventproxy.get_past_events(rs, events).items()
+            for pevent_id, value in
+            self.pasteventproxy.get_past_events(rs, events).items()
         }
         stats = self.pasteventproxy.past_event_stats(rs)
         institution_ids = self.pasteventproxy.list_institutions(rs)
@@ -2353,7 +2356,8 @@ class CdEFrontend(AbstractUserFrontend):
         # Using idea from http://stackoverflow.com/a/8983196
         years = {}
         for anid in stats_sorter:
-            if institution_id and stats[anid]['institution_id'] != institution_id:
+            if institution_id \
+                    and stats[anid]['institution_id'] != institution_id:
                 continue
             years.setdefault(stats[anid]['tempus'].year, []).append(anid)
 

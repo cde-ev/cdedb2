@@ -51,7 +51,8 @@ POSTING_DIRECT_DEBIT = re.compile(
 
 # Match a refund of an event participant fee.
 REFERENCE_REFUND_EVENT_FEE = re.compile(
-    r"Erstattung\s*(Teiln(ahme|ehmer)beitrag|(Erste|Zweite)\s*Rate|Anzahlung)", flags=re.I)
+    r"Erstattung\s*(Teiln(ahme|ehmer)beitrag|(Erste|Zweite)\s*Rate|Anzahlung)",
+    flags=re.I)
 
 # Match a instructor refund.
 REFERENCE_REFUND_INSTRUCTOR = re.compile(
@@ -252,18 +253,18 @@ class ConfidenceLevel(enum.IntEnum):
     High = 3
     Full = 4
 
-    @staticmethod
-    def destroy():
-        return __class__.Null
+    @classmethod
+    def destroy(cls):
+        return cls.Null
 
     def decrease(self, amount=1):
-        if self.value - amount > __class__.Null.value:
+        if self.value - amount > self.__class__.Null.value:
             return self.__class__(self.value - amount)
         else:
             return self.__class__.Null
 
     def increase(self, amount=1):
-        if self.value + amount < __class__.Full.value:
+        if self.value + amount < self.__class__.Full.value:
             return self.__class__(self.value + amount)
         else:
             return self.__class__.Full
@@ -302,23 +303,23 @@ class Transaction:
             self.persona_id = data.get("persona_id")
 
         # We can be confident in our data if it was manually confirmed.
-        CL = ConfidenceLevel
+        cl = ConfidenceLevel
         if data.get("transaction_type_confirm"):
-            self.type_confidence = CL.Full
+            self.type_confidence = cl.Full
         elif data.get("transaction_type_confidence"):
-            self.type_confidence = CL(data["transaction_type_confidence"])
+            self.type_confidence = cl(data["transaction_type_confidence"])
         else:
             self.type_confidence = None
         if data.get("persona_id_confirm"):
-            self.persona_id_confidence = CL.Full
+            self.persona_id_confidence = cl.Full
         elif data.get("persona_id_confidence"):
-            self.persona_id_confidence = CL(data["persona_id_confidence"])
+            self.persona_id_confidence = cl(data["persona_id_confidence"])
         else:
             self.persona_id_confidence = None
         if data.get("event_id_confirm"):
-            self.event_id_confidence = CL.Full
+            self.event_id_confidence = cl.Full
         elif data.get("event_id_confidence"):
-            self.event_id_confidence = CL(data["event_id_confidence"])
+            self.event_id_confidence = cl(data["event_id_confidence"])
         else:
             self.event_id_confidence = None
 
@@ -403,7 +404,8 @@ class Transaction:
             else:
                 data["reference"] = "".join(raw[STATEMENT_CSV_RESTKEY])
                 data["reference_parts"] = {
-                    STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]: data["reference"]
+                    STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]:
+                        data["reference"]
                 }
         else:
             data["reference"] = ""
@@ -601,6 +603,7 @@ class Transaction:
                     if not persona.get("is_cde_realm"):
                         p = ("persona_id",
                              ValueError(n_("Not a CdE-Account.")))
+                        self.errors.append(p)
                     d_p = diacritic_patterns
                     given_names = persona.get('given_names', "")
                     gn_pattern = d_p(escape(given_names),
@@ -704,10 +707,10 @@ class Transaction:
 
     def inspect(self):
         """Inspect transaction for problems."""
-        CL = ConfidenceLevel
+        cl = ConfidenceLevel
 
         if self.type and self.type_confidence \
-                and self.type_confidence >= CL.High:
+                and self.type_confidence >= cl.High:
             pass
         elif not self.type or self.type == TransactionType.Unknown:
             self.errors.append(
@@ -721,7 +724,7 @@ class Transaction:
 
         if self.type.has_event:
             if self.event_id and self.event_id_confidence \
-                    and self.event_id_confidence >= CL.High:
+                    and self.event_id_confidence >= cl.High:
                 pass
             elif self.event_id:
                 self.errors.append(
@@ -734,7 +737,7 @@ class Transaction:
 
         if self.type.has_member:
             if self.persona_id and self.persona_id_confidence \
-                    and self.persona_id_confidence >= CL.High:
+                    and self.persona_id_confidence >= cl.High:
                 pass
             elif self.persona_id:
                 self.errors.append(
@@ -773,7 +776,8 @@ class Transaction:
             "category": str(self.type),
             "transaction_type_confidence": self.type_confidence.value,
             "transaction_type_confidence_str": str(self.type_confidence),
-            "cdedbid": cdedbid_filter(self.persona_id) if self.persona_id else None,
+            "cdedbid":
+                cdedbid_filter(self.persona_id) if self.persona_id else None,
             "persona_id": self.persona_id,
             "persona_id_confidence": gv(self.persona_id_confidence),
             "persona_id_confidence_str": str(self.persona_id_confidence),
