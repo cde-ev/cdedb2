@@ -1134,18 +1134,18 @@ class Accounts(enum.Enum):
 @enum.unique
 class TransactionType(enum.IntEnum):
     """Store the type of a Transactions."""
-    MembershipFee = enum.auto()
-    EventFee = enum.auto()
-    Donation = enum.auto()
-    I25p = enum.auto()
-    Other = enum.auto()
+    MembershipFee = 1
+    EventFee = 2
+    Donation = 3
+    I25p = 4
+    Other = 5
 
-    EventFeeRefund = enum.auto()
-    InstructorRefund = enum.auto()
-    EventExpenses = enum.auto()
-    Expenses = enum.auto()
-    AccountFee = enum.auto()
-    OtherPayment = enum.auto()
+    EventFeeRefund = 10
+    InstructorRefund = 11
+    EventExpenses = 12
+    Expenses = 13
+    AccountFee = 14
+    OtherPayment = 15
 
     Unknown = 1000
 
