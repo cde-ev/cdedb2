@@ -8,6 +8,10 @@ from cdedb.common import diacritic_patterns, Accounts, TransactionType, now, n_
 from cdedb.frontend.common import cdedbid_filter
 import cdedb.validation as validate
 
+# This is the specification of the order of the fields in the input.
+# This could be changed in the online banking, but we woud lose backwards
+# compability with multiple years of saved csv exports.
+# Note that "reference" is a `restkey` rather thatn a real key.
 STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
                         "statementDate", "currency", "valuta", "date",
                         "currency2", "amount", "textKey",
@@ -15,27 +19,58 @@ STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
                         "transaction", "posting", "primanota",
                         "textKey2", "BLZ", "KontoNr", "BIC", "IBAN",
                         "accHolder", "accHolder2")
-GNUCASH_EXPORT_FIELDS = ("statement_date", "account", "t_id", "posting",
-                         "category", "reference", "summary")
+# Since the reference is split over multiple columns, gather all of them here.
+STATEMENT_CSV_RESTKEY = "reference"
+# Specification for how the date is formatted in the input.
+STATEMENT_INPUT_DATEFORMAT = "%d.%m.%y"
+
+# This specifies the export fields for the (eventual) use with GnuCash.
+# Since this is not yet currently in use this is very much subject to change.
+GNUCASH_EXPORT_FIELDS = ("statement_date", "amount", "account", "t_id",
+                         "posting", "category", "reference", "summary")
+
+# This is the specification for how the export for membership fees should look
+# like. The first five fields are a requirement by the reimport functionality in
+# `cdedb.frontend.cde::money_transfers`, everything after that is curretnly
+# ignored.
 MEMBERSHIP_EXPORT_FIELDS = ("amount", "cdedbid", "family_name", "given_names",
                             "statement_date")
+
+# This is the specification for how the export for event fees should look like.
+# The first five fields are a requirement by the reimport funtionality in
+# `cdedb.frontend.event::batch_fees`, everything after that is currently
+# ignored.
 EVENT_EXPORT_FIELDS = ("amount", "cdedbid", "family_name", "given_names",
                        "statement_date", "persona_id_confidence_str",
                        "transaction_type", "transaction_type_confidence_str",
                        "event_name", "event_id_confidence_str")
+
+# This is the specification for how the export to be used in our (old)
+# Excel-based bookkeeping should look like.
 EXCEL_EXPORT_FIELDS = ("statement_date", "amount_german", "cdedbid",
                        "family_name", "given_names", "category_old", "account",
                        "reference", "account_holder", "iban", "bic")
+
+# These are the available delimiter available in a SEPA reference as per SEPA
+# specification.
 STATEMENT_REFERENCE_DELIMITERS = ["ABWE", "ABWA", "SVWZ", "OAMT", "COAM",
                                   "DEBT", "CRED", "MREF", "KREF", "EREF"]
+
+# The are the parts of the reference, that we actually care about.
+# First the general free text reference (SVWZ) used in most cases.
+# Second we have the End-To-End reference, which would in theory be great for
+# including structured data like DB-IDs, but most bank don't actually allow
+# their users to specify this. Still we should check it, because some banks do.
+# Note that the order should be the same as in the above SEPA-specification
+# (which is reverse of the actual order in the reference).
 STATEMENT_RELEVANT_REFERENCE_DELIMITERS = ["SVWZ", "EREF"]
-STATEMENT_CSV_RESTKEY = "reference"
-STATEMENT_GIVEN_NAMES_UNKNOWN = "VORNAME"
-STATEMENT_FAMILY_NAME_UNKNOWN = "NACHNAME"
-STATEMENT_INPUT_DATEFORMAT = "%d.%m.%y"
+
+# Specification for the output date format.
+# Note how this differs from the input in that we use 4 digit years.
 OUTPUT_DATEFORMAT = "%d.%m.%Y"
-STATEMENT_DB_ID_EXTERN = "DB-EXTERN"
-STATEMENT_DB_ID_UNKNOWN = "DB-UNKNOWN"
+
+# The following are some regEx definitions to match some expected
+# postings and references:
 
 # Match the Posting for the Account fee special case.
 POSTING_ACCOUNT_FEE = re.compile(
@@ -70,9 +105,6 @@ REFERENCE_MEMBERSHIP = re.compile(
 REFERENCE_DONATION = re.compile(
     r"Spende", flags=re.I)
 
-# Minimum amount for us to consider a transaction an Event fee.
-AMOUNT_MIN_EVENT_FEE = 20
-
 # This matches the old reference used by external participants. We keep this
 # in case some people keep using the old format, although we cannot extract a
 # DB-ID to do the persona lookup.
@@ -92,15 +124,18 @@ STATEMENT_DB_ID_REMOVE = (
     re.compile(r"[-.\s]", flags=re.I),
 )
 
+# Minimum amount for us to consider a transaction an Event fee.
+AMOUNT_MIN_EVENT_FEE = 20
+
 
 def dates_from_filename(filename):
     """
     Use the known format of the inputfile name to find out the date range.
 
+    Example filename from BSF: "20200223_bis_20200229_20200229160818.csv"
     :type filename: str
     :rtype: (datetime.date, datetime.date, datetime.datetime)
     """
-
     try:
         start, sep, end, timestamp = filename.split("_", 3)
         if sep != "bis" or timestamp[-4:] != ".csv":
@@ -124,7 +159,7 @@ def get_event_name_pattern(event):
     """
     y_p = re.compile(r"(\d\d)(\d\d)")
     replacements = [
-        ("Pseudo", r"Pseudo"),
+        ("Pseudo", r"Pseudo"),  # For testing purposes.
         ("Winter", r"Winter"),
         ("Sommer", r"Sommer"),
         ("Musik", r"Musik"),
@@ -140,8 +175,8 @@ def get_event_name_pattern(event):
         ("Ski(freizeit)?", r"Ski(freizeit|fahrt)?"),
         ("Segeln", r"Segeln"),
         ("Seminar", "rSeminar"),
-        ("Test", r"Test"),
-        ("Party", r"Party"),
+        ("Test", r"Test"),  # For testing purposes.
+        ("Party", r"Party"),  # For testing purposes.
         ("Biomodels", r"Biomodels"),
         ("Academy", r"(Academy|Akademie)"),
         ("Aka(demie)?", r"Aka(demie)?"),
@@ -191,26 +226,13 @@ def parse_amount(amount):
     return ret
 
 
-def escape(s):
-    """
-    Custom escape function, because re.escape does not work as expected.
-    
-    We simply remove all re special characters since we don't expect them to
-    show up in names.
-    
-    :param s: String to make re safe
-    :type s: str
-    :return: String without re special characters
-    :rtype: str
-    """
-
-    special_characters = r".^$*+?{}()[]\|"
-    for x in special_characters:
-        s = s.replace(x, "")
-    return s
-
-
 def _reconstruct_cdedbid(db_id):
+    """
+    Uninlined code from `Transaction._find_cdedb_ids`.
+
+    This takes the match to a DB-ID found in a reference, extracts the value
+    of the persona_id and the checkdigit and then validates it.
+    """
 
     value = db_id[:-1]
     for pattern in STATEMENT_DB_ID_REMOVE:
@@ -225,6 +247,12 @@ def _reconstruct_cdedbid(db_id):
 
 
 def number_to_german(number):
+    """
+    Helper to convert an input to a number in german format.
+
+    :type number: decimal.Decimal or int or str.
+    :rtype: str
+    """
     if isinstance(number, decimal.Decimal):
         ret = "{:,.2f}".format(number)
     else:
@@ -234,6 +262,12 @@ def number_to_german(number):
 
 
 def number_from_german(number):
+    """
+    Helper to convert a number in german format to english format.
+
+    :type number: str
+    :rtype: str
+    """
     if not isinstance(number, str):
         raise ValueError
     ret = number.replace(".", "_").replace(",", ".")
@@ -241,6 +275,7 @@ def number_from_german(number):
 
 
 def simplify_amount(amt):
+    """Helper to convert a number to german and strip decimal zeros."""
     return str(number_to_german(amt)).rstrip("0").rstrip(",")
 
 
@@ -277,6 +312,7 @@ class Transaction:
     """Class to hold all transaction information,"""
 
     def __init__(self, data):
+        """We reconstruct a Transaction from the validation form dict here."""
         # These fields are all very essential and need to be present.
         self.t_id = data["t_id"]
         self.account = data["account"]
@@ -326,7 +362,7 @@ class Transaction:
     @classmethod
     def from_csv(cls, raw):
         """
-        Convert DictReader line into a Transaction.
+        Convert DictReader line of BFS import to Transaction.
         
         :param raw: DictReader line of parse_statement input.
         :type raw: {str: str}
@@ -600,16 +636,12 @@ class Transaction:
                         self.errors.append(p)
                     continue
                 else:
-                    if not persona.get("is_cde_realm"):
-                        p = ("persona_id",
-                             ValueError(n_("Not a CdE-Account.")))
-                        self.errors.append(p)
                     d_p = diacritic_patterns
                     given_names = persona.get('given_names', "")
-                    gn_pattern = d_p(escape(given_names),
+                    gn_pattern = d_p(re.escape(given_names),
                                      two_way_replace=True)
                     family_name = persona.get('family_name', "")
-                    fn_pattern = d_p(escape(family_name),
+                    fn_pattern = d_p(re.escape(family_name),
                                      two_way_replace=True)
                     try:
                         if not re.search(gn_pattern, self.reference,
@@ -683,7 +715,7 @@ class Transaction:
         for event_name, value in event_names.items():
             pattern, shortname, event_id = value
 
-            if re.search(escape(event_name), self.reference,
+            if re.search(re.escape(event_name), self.reference,
                          flags=re.IGNORECASE):
                 # Exact match to Event Name
                 matched_events.append(Event(event_id, confidence))
@@ -705,7 +737,7 @@ class Transaction:
                 self.event_id = best_match.event_id
                 self.event_id_confidence = best_confidence
 
-    def inspect(self):
+    def inspect(self, rs, get_persona):
         """Inspect transaction for problems."""
         cl = ConfidenceLevel
 
@@ -748,13 +780,33 @@ class Transaction:
                     ("cdedbid", ValueError(n_(
                         "Needs member match."))))
 
+        if self.type == TransactionType.MembershipFee:
+            if self.persona_id:
+                try:
+                    persona = get_persona(rs, self.persona_id)
+                except KeyError as e:
+                    if self.persona_id in e.args:
+                        p = ("persona_id",
+                             KeyError(n_("No Member with ID %(p_id)s found."),
+                                      {"p_id": self.persona_id}))
+                        self.errors.append(p)
+                    else:
+                        p = ("persona_id", e)
+                        self.errors.append(p)
+                else:
+                    if not persona.get("is_cde_realm"):
+                        p = ("persona_id",
+                             ValueError(n_("Not a CdE-Account.")))
+                        self.errors.append(p)
+
     @property
     def amount_german(self):
-        """English way of writing the amount (without thousands separators)"""
+        """German way of writing the amount (without thousands separators)"""
         return number_to_german(self.amount)
 
     @property
     def amount_english(self):
+        """English way of writing the amount."""
         return "{:,.2f}".format(self.amount)
 
     @property
@@ -763,6 +815,14 @@ class Transaction:
         return simplify_amount(self.amount)
 
     def to_dict(self, rs, get_persona, get_event):
+        """
+        Convert the transaction to a dict to be displayed in the validation
+        form or to be written to a csv file.
+
+        This contains a whole bunsch of information, not all of which is needed.
+        Rather the specific user can choose which of these fields to use.
+        See also the export definitons at the top of this file.
+        """
         gv = lambda e: e.value if e else None
         ret = {
             "reference": self.reference,

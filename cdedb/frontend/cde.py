@@ -860,7 +860,7 @@ class CdEFrontend(AbstractUserFrontend):
             line["id"] = i
             t = parse.Transaction.from_csv(line)
             t.analyze(rs, events, self.coreproxy.get_persona)
-            t.inspect()
+            t.inspect(rs, self.coreproxy.get_persona)
 
             transactions.append(t)
 
@@ -904,7 +904,7 @@ class CdEFrontend(AbstractUserFrontend):
         for i in range(1, count + 1):
             t = request_extractor(rs, params(i))
             t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
-            t.inspect()
+            t.inspect(rs, self.coreproxy.get_persona)
             transactions.append(t)
 
         data = self.organize_transaction_data(
