@@ -976,7 +976,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
 
 @_addvalidator
 def _persona(val, argname=None, *, creation=False, transition=False,
-             _convert=True):
+             _convert=True, _ignore_warning=False):
     """Check a persona data set.
 
     This is a bit tricky since attributes have different constraints
@@ -988,6 +988,8 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warning: bool
+    :param _ignore_warning: If True, ignore ValidationWarnings.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1044,15 +1046,18 @@ def _persona(val, argname=None, *, creation=False, transition=False,
         optional_fields = _PERSONA_COMMON_FIELDS()
     val, errs = _examine_dictionary_fields(val, mandatory_fields,
                                            optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
     for suffix in ("", "2"):
-        if ((not val.get('country' + suffix)
-             or val.get('country' + suffix) == "Deutschland")
-                and val.get('postal_code' + suffix)):
+        if val.get('postal_code' + suffix):
             postal_code, e = _german_postal_code(
                 val['postal_code' + suffix], 'postal_code' + suffix,
-                _convert=_convert)
+                aux=val.get('country' + suffix), _convert=_convert,
+                _ignore_warning=_ignore_warning)
             val['postal_code' + suffix] = postal_code
             errs.extend(e)
+    if errs:
+        return None, errs
     return val, errs
 
 
@@ -1277,20 +1282,27 @@ def _phone(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _german_postal_code(val, argname=None, *, _convert=True):
+def _german_postal_code(val, argname=None, *, aux=None, _convert=True,
+                        _ignore_warning=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type aux: str or None
+    :param aux: Additional information. In this case the country belonging
+        to the postal code.
+    :type _ignore_warning: bool
+    :param _ignore_warning: If True, ignore ValidationWarnings.
     :rtype: (str or None, [(str or None, exception)])
     """
     val, errs = _printable_ascii(val, argname, _convert=_convert)
     if errs:
         return val, errs
     val = val.strip()
-    if val not in GERMAN_POSTAL_CODES:
-        errs.append(
-            (argname, ValidationWarning(n_("Invalid german postal code."))))
+    if aux is None or aux == "" or aux == "Deutschland":
+        if val not in GERMAN_POSTAL_CODES and not _ignore_warning:
+            errs.append(
+                (argname, ValidationWarning(n_("Invalid german postal code."))))
     return val, errs
 
 
@@ -1319,11 +1331,14 @@ _GENESIS_CASE_ADDITIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _genesis_case(val, argname=None, *, creation=False, _convert=True):
+def _genesis_case(val, argname=None, *, creation=False, _convert=True,
+                  _ignore_warning=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warning: bool
+    :param _ignore_warning: If True, ignore ValidationWarnings.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1343,6 +1358,7 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
                 k: v for k, v in _GENESIS_CASE_ADDITIONAL_FIELDS().items()
                 if k in realm_specific_genesis_fields[val['realm']]}
     else:
+        raise ValueError(n_("Must specify realm."))
         additional_fields = {}
 
     if creation:
@@ -1360,12 +1376,13 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert,
         allow_superfluous=True)
     errs.extend(e)
+    if errs:
+        return val, errs
 
-    # TODO this is duplicate code from _persona, maybe generalize this.
-    if ((not val.get('country') or val.get('country') == "Deutschland")
-            and val.get('postal_code')):
+    if val.get('postal_code'):
         postal_code, e = _german_postal_code(
-            val['postal_code'], 'postal_code', _convert=_convert)
+            val['postal_code'], 'postal_code', aux=val.get('country'),
+            _convert=_convert, _ignore_warning=_ignore_warning)
         val['postal_code'] = postal_code
         errs.extend(e)
 
@@ -3976,9 +3993,7 @@ def _create_check_valid(fun):
     @functools.wraps(fun)
     def check_valid(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
-        just_warnings = all(isinstance(kind, ValidationWarning)
-                            for param, kind in errs)
-        if errs and not just_warnings:
+        if errs:
             _LOGGER.debug("{} for '{}' with input {}, {}.".format(
                 errs, fun.__name__, args, kwargs))
             return None, errs

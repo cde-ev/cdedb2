@@ -514,7 +514,7 @@
         small=False, horizontal=True, distinct_warnings=True) %}
     <div class="form-group mosp">
         {% if distinct_warnings and has_warnings() %}
-            {{ util.form_input_checkbox(name="suppress_warnings", label="Should the warnings be ignored?") }}
+            {{ util.form_input_checkbox(name="ignore_warning", label="Should the warnings be ignored?") }}
         {% endif %}
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>

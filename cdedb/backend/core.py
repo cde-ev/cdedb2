@@ -758,7 +758,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_persona(self, rs, data, generation=None, may_wait=True,
-                       change_note=None, suppress_warnings=False):
+                       change_note=None, ignore_warning=False):
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
 
@@ -772,17 +772,12 @@ class CoreBackend(AbstractBackend):
         :param may_wait: override for system requests (which may not wait)
         :type change_note: str
         :param change_note: Descriptive line for changelog
-        :type suppress_warnings: bool
-        :param suppress_warnings: Ignore errors with kind ValidationWarning
+        :type ignore_warnings: bool
+        :param ignore_warnings: Ignore errors of type ValidationWarning.
         :rtype: int
         :returns: default return code
         """
-        try:
-            data = affirm("persona", data)
-        except ValidationWarning:
-            if not suppress_warnings:
-                raise RuntimeError(
-                    "An unsuppressed ValidationWarning try to pass.")
+        data = affirm("persona", data, _ignore_warning=ignore_warning)
         generation = affirm("int_or_None", generation)
         may_wait = affirm("bool", may_wait)
         change_note = affirm("str_or_None", change_note)
@@ -1640,7 +1635,7 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
-    def create_persona(self, rs, data, submitted_by=None):
+    def create_persona(self, rs, data, submitted_by=None, ignore_warning=False):
         """Instantiate a new data set.
 
         This does the house-keeping and inserts the corresponding entry in
@@ -1653,7 +1648,8 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: The id of the newly created persona.
         """
-        data = affirm("persona", data, creation=True)
+        data = affirm(
+            "persona", data, creation=True, _ignore_warning=ignore_warning)
         # zap any admin attempts
         data.update({
             'is_meta_admin': False,
@@ -2133,25 +2129,21 @@ class CoreBackend(AbstractBackend):
         return success, msg
 
     @access("anonymous")
-    def genesis_request(self, rs, data, suppress_warnings=False):
+    def genesis_request(self, rs, data, ignore_warning=False):
         """Log a request for a new account.
 
         This is the initial entry point for such a request.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
-        :type suppress_warnings: bool
-        :param suppress_warnings: Ignore errors with kind ValidationWarning
+        :type ignore_warning: bool
+        :param ignore_warning: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: id of the new request or None if the username is already
           taken
         """
-        try:
-            data = affirm("genesis_case", data, creation=True)
-        except ValidationWarning:
-            if not suppress_warnings:
-                raise RuntimeError(
-                    "An unsuppressed ValidationWarning try to pass.")
+        data = affirm(
+            "genesis_case", data, creation=True, _ignore_warning=ignore_warning)
 
         if self.verify_existence(rs, data['username']):
             return None
@@ -2345,22 +2337,17 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    def genesis_modify_case(self, rs, data, suppress_warnings=False):
+    def genesis_modify_case(self, rs, data, ignore_warning=False):
         """Modify a persona creation case.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
-        :type suppress_warnings: bool
-        :param suppress_warnings: Ignore errors with kind ValidationWarning
+        :type ignore_warning: bool
+        :param ignore_warning: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: default return code
         """
-        try:
-            data = affirm("genesis_case", data)
-        except ValidationWarning:
-            if not suppress_warnings:
-                raise RuntimeError(
-                    "An unsuppressed ValidationWarning try to pass.")
+        data = affirm("genesis_case", data, _ignore_warning=ignore_warning)
 
         with Atomizer(rs):
             current = self.sql_select_one(
@@ -2426,7 +2413,7 @@ class CoreBackend(AbstractBackend):
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(ACCESS_BITS[case['realm']])
-            data = affirm("persona", data, creation=True)
+            data = affirm("persona", data, creation=True, _ignore_warning=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
@@ -2434,7 +2421,7 @@ class CoreBackend(AbstractBackend):
                     ({case['realm']} | implied_realms(case['realm'])):
                 raise PrivilegeError(n_("Wrong target realm."))
             ret = self.create_persona(
-                rs, data, submitted_by=case['reviewer'])
+                rs, data, submitted_by=case['reviewer'], ignore_warning=True)
             update = {
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,

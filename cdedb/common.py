@@ -166,24 +166,17 @@ class RequestState:
         self.validation_appraised = False
         self._errors.extend(errors)
 
-    def has_validation_errors(self, suppress_warnings=False):
+    def has_validation_errors(self):
         """Check whether validation errors exists.
 
         This (or its companion function) must be called in the
         lifetime of a request. Otherwise the application will throw an
         error.
 
-        :type suppress_warnings: bool
-        :param suppress_warnings: To suppress errors with kind ValidationWarning
         :rtype: bool
         """
         self.validation_appraised = True
-        if suppress_warnings:
-            just_warnings = all(isinstance(kind, ValidationWarning)
-                                for param, kind in self._errors)
-            return not just_warnings
-        else:
-            return bool(self._errors)
+        return bool(self._errors)
 
     def ignore_validation_errors(self):
         """Explicitly mark validation errors as irrelevant.
@@ -497,7 +490,7 @@ class PartialImportError(RuntimeError):
     pass
 
 
-class ValidationWarning(BaseException):
+class ValidationWarning(Exception):
     """Exception which should be suppressable by the user."""
     pass
 
