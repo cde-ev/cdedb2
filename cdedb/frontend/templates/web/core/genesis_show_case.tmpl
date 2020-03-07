@@ -73,7 +73,7 @@
         <dt>{% trans %}E-Mail{% endtrans %}</dt>
         <dd id="username">
             {% if ambience['genesis_case']['username'] %}
-                {{ util.username_mailto(case) }}
+                {{ util.username_mailto(ambience['genesis_case']) }}
             {% else %}
                 —
             {% endif %}
