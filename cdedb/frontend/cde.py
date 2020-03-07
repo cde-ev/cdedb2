@@ -841,7 +841,6 @@ class CdEFrontend(AbstractUserFrontend):
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
 
-        self.logger.debug(rs.request.values)
         # The statements from BFS are encoded in latin-1
         statement_file = check(rs, "csvfile", statement_file,
                                "statement_file", encoding="latin-1")
