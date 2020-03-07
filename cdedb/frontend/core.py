@@ -1800,23 +1800,32 @@ class CoreFrontend(AbstractFrontend):
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country", "birth_name")
+    @REQUESTdata(("attachment_hash", "str_or_None"))
     @REQUESTfile("attachment")
-    def genesis_request(self, rs, data, attachment):
+    def genesis_request(self, rs, data, attachment, attachment_hash):
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
         if attachment:
             attachment = check(rs, 'pdffile', attachment, 'attachment')
+        attachment_base_path = self.conf.STORAGE_DIR / 'genesis_attachment'
         if attachment:
             myhash = hashlib.sha512()
             myhash.update(attachment)
             myhash = myhash.hexdigest()
-            path = self.conf.STORAGE_DIR / 'genesis_attachments' / myhash
+            path = attachment_base_path / myhash
             if not path.exists():
                 with open(path, 'wb') as f:
                     f.write(attachment)
             data['attachment'] = myhash
+            rs.values['attachment_hash'] = myhash
+        elif attachment_hash:
+            path = attachment_base_path / attachment_hash
+            if not path.exists():
+                data['attachment'] = None
+            else:
+                data['attachment'] = attachment_hash
         data = check(rs, "genesis_case", data, creation=True)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
@@ -1949,7 +1958,7 @@ class CoreFrontend(AbstractFrontend):
                             if "attachment" in fields))
     def genesis_get_attachment(self, rs, attachment):
         """Retrieve attachment for genesis case."""
-        path = self.conf.STORAGE_DIR / 'genesis_attachments' / attachment
+        path = self.conf.STORAGE_DIR / 'genesis_attachment' / attachment
         mimetype = magic.from_file(str(path), mime=True)
         return self.send_file(rs, path=path, mimetype=mimetype)
 

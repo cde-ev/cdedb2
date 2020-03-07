@@ -65,8 +65,14 @@
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="country", label=gettext("Country"), small=True,
                                     aclass="genesis-realm-specific") }}
+
+            {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
+            {% if values["attachment_hash"] %}
+                {{ util.input_hidden(name="attachment_hash") }}
+                {% set attachment_info = gettext("We already saved your uploaded file, but you can provide a different file instead.") %}
+            {% endif %}
             {{ util.form_input_file(name="attachment", label=gettext("Attachment"), small=True, accept="text/*",
-                                    aclass="genesis-realm-specific") }}
+                                    aclass="genesis-realm-specific", info=attachment_info) }}
 
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
