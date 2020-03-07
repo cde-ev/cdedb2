@@ -17,7 +17,7 @@
 {% macro print_transaction(t_id) %}
     <strong>
         <span class="row-key" data-row="{{ t_id }}">
-            {% trans lineno=t_id -%}Line {{ lineno }}{%- endtrans -%}
+            {% trans lineno=t_id %}Line {{ lineno }}{% endtrans %}
         </span>:
     </strong>
     {% with transaction_keys =
@@ -107,7 +107,7 @@
     </form>
 
     {% if data %}
-        <h2>{% trans -%}Validation results{%- endtrans %}</h2>
+        <h2>{% trans %}Validation results{% endtrans %}</h2>
         <form action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
             {{ util.anti_csrf_token("cde/parse_download") }}
             {{ util.input_hidden(name="count") }}
@@ -116,7 +116,7 @@
             {{ util.input_hidden(name="timestamp") }}
             {% if params["has_error"] %}
                 <h3 class="heading-underline" id="has_error_summary">
-                    {% trans count=params["has_error"]|length -%}{{ count }} Transactions with Errors{%- endtrans %}
+                    {% trans count=params["has_error"]|length %}{{ count }} Transactions with Errors{% endtrans %}
                 </h3>
                 {% for t_id in params["has_error"] %}
                     {{ print_transaction(t_id) }}
@@ -124,7 +124,7 @@
             {% endif %}
             {% if params["has_warning"] %}
                 <h3 class="heading-underline" id="has_warning_summary">
-                    {% trans count=params["has_warning"]|length -%}{{ count }} Transactions with Warnings{%- endtrans %}
+                    {% trans count=params["has_warning"]|length %}{{ count }} Transactions with Warnings{% endtrans %}
                 </h3>
                 {% for t_id in params["has_warning"] %}
                     {{ print_transaction(t_id) }}
@@ -132,7 +132,7 @@
             {% endif %}
             {% if params["has_none"] %}
                 <h3 class="heading-underline" id="has_none_summary">
-                    {% trans count=params["has_none"]|length -%}{{ count }} Successful Transactions{%- endtrans %}
+                    {% trans count=params["has_none"]|length %}{{ count }} Successful Transactions{% endtrans %}
                 </h3>
                 {% for t_id in params["has_none"] %}
                     {{ print_transaction(t_id) }}
