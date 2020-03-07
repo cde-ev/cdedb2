@@ -1315,7 +1315,7 @@ _GENESIS_CASE_ADDITIONAL_FIELDS = lambda: {
     'postal_code': _printable_ascii_or_None,
     'location': _str,
     'country': _str_or_None,
-    'birthname': _str_or_None,
+    'birth_name': _str_or_None,
     'attachment': _str,
 }
 

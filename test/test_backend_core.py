@@ -7,7 +7,8 @@ import decimal
 import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.common import (
-    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now, merge_dicts)
+    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PrivilegeError, now, merge_dicts,
+    PERSONA_CDE_FIELDS)
 from cdedb.validation import (_PERSONA_CDE_CREATION, _PERSONA_EVENT_CREATION)
 
 PERSONA_TEMPLATE = {
@@ -682,6 +683,91 @@ class TestCoreBackend(BackendTest):
             'name_supplement': None,
             'title': None,
         })
+        self.assertEqual(expectation, value)
+
+    @as_users("vera")
+    def test_genesis_cde(self, user):
+        data = {
+            'family_name': "Zeruda-Hime",
+            'given_names': "Zelda",
+            'birth_name': "Ganondorf",
+            'username': 'zelda@example.cde',
+            'realm': "cde",
+            'notes': "Some blah",
+            'gender': const.Genders.female,
+            'birthday': datetime.date(1987, 6, 5),
+            'telephone': None,
+            'mobile': None,
+            'address_supplement': None,
+            'address': "An der Eiche",
+            'postal_code': "12345",
+            'location': "Marcuria",
+            'country': "Arkadien",
+            'attachment': 'really_cool_filename',
+        }
+        case_id = self.core.genesis_request(None, data)
+        self.assertLess(0, case_id)
+        self.assertEqual((1, 'cde'), self.core.genesis_verify(None, case_id))
+        self.assertEqual(1, len(self.core.genesis_list_cases(
+            self.key, realms=["cde"], stati=(const.GenesisStati.to_review,))))
+        expectation = data
+        expectation.update({
+            'id': case_id,
+            'case_status': const.GenesisStati.to_review,
+            'reviewer': None,
+        })
+        value = self.core.genesis_get_case(self.key, case_id)
+        del value['ctime']
+        self.assertEqual(expectation, value)
+        update = {
+            'id': case_id,
+            'case_status': const.GenesisStati.approved,
+            'reviewer': user['id'],
+        }
+        self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
+        expectation.update(update)
+        new_id = self.core.genesis(self.key, case_id)
+        self.assertLess(0, new_id)
+        expectation = {k: v for k, v in expectation.items() if
+                       k in PERSONA_CDE_FIELDS}
+        expectation.update({
+            'is_meta_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_cde_admin': False,
+            'is_finance_admin': False,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_member': True,
+            'is_ml_admin': False,
+            'id': new_id,
+            'display_name': 'Zelda',
+            'is_active': True,
+            'is_assembly_realm': True,
+            'is_cde_realm': True,
+            'is_event_realm': True,
+            'is_ml_realm': True,
+            'is_searchable': False,
+            'name_supplement': None,
+            'title': None,
+            'balance': decimal.Decimal("0.00"),
+            'trial_member': True,
+            'decided_search': False,
+            'bub_search': False,
+            'address2': None,
+            'address_supplement2': None,
+            'postal_code2': None,
+            'location2': None,
+            'country2': None,
+            'foto': None,
+            'affiliation': None,
+            'free_form': None,
+            'weblink': None,
+            'interests': None,
+            'specialisation': None,
+            'timeline': None,
+        })
+        value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
 
     @as_users("vera")
