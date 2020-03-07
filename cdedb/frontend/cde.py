@@ -885,8 +885,14 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("count", "int"), ("start", "date"), ("end", "date"),
-                 ("timestamp", "datetime"))
-    def parse_download(self, rs, count, start, end, timestamp):
+                 ("timestamp", "datetime"),
+                 ("validate", "str_or_None"),
+                 ("event", "id_or_None"),
+                 ("membership", "str_or_None"),
+                 ("excel", "str_or_None"),
+                 ("gnucash", "str_or_None"))
+    def parse_download(self, rs, count, start, end, timestamp, validate=None,
+                       event=None, membership=None, excel=None, gnucash=None):
         """
         Provide data as CSV-Download with the given filename.
 
@@ -924,17 +930,17 @@ class CdEFrontend(AbstractUserFrontend):
         data, params = self.organize_transaction_data(
             rs, transactions, start, end, timestamp)
 
-        if rs.request.values.get("validate") or params["has_error"] \
+        if validate is not None or params["has_error"] \
                 or params["has_warning"]:
             return self.parse_statement_form(rs, data, params)
-        elif rs.request.values.get("membership"):
+        elif membership is not None:
             filename = "Mitgliedsbeiträge"
             transactions = [t for t in transactions
                             if t.type == TransactionType.MembershipFee]
             fields = parse.MEMBERSHIP_EXPORT_FIELDS
             write_header = False
-        elif rs.request.values.get("event"):
-            aux = int(rs.request.values.get("event"))
+        elif event is not None:
+            aux = int(event)
             event = self.eventproxy.get_event(rs, aux)
             filename = event["shortname"]
             transactions = [t for t in transactions
@@ -942,12 +948,12 @@ class CdEFrontend(AbstractUserFrontend):
                             and t.type == TransactionType.EventFee]
             fields = parse.EVENT_EXPORT_FIELDS
             write_header = False
-        elif rs.request.values.get("gnucash"):
+        elif gnucash is not None:
             filename = "gnucash"
             fields = parse.GNUCASH_EXPORT_FIELDS
             write_header = True
-        elif rs.request.values.get("excel"):
-            aux = rs.request.values.get("excel")
+        elif excel is not None:
+            aux = excel
             filename = "transactions_" + aux
             transactions = [t for t in transactions
                             if str(t.account) == aux]
