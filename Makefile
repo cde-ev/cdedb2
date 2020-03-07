@@ -72,6 +72,7 @@ endif
 	sudo mkdir -p "/var/lib/cdedb/ballot_result/"
 	sudo mkdir -p "/var/lib/cdedb/assembly_attachment/"
 	sudo mkdir -p "/var/lib/cdedb/mailman_templates/"
+	sudo mkdir -p "/var/lib/cdedb/genesis_attachment/"
 	sudo cp test/ancillary_files/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9 /var/lib/cdedb/foto/
 	sudo chown --recursive www-data:www-data /var/lib/cdedb
 
@@ -84,6 +85,7 @@ storage-test:
 	mkdir -p "/tmp/cdedb-store/course_logo/"
 	mkdir -p "/tmp/cdedb-store/ballot_result/"
 	mkdir -p "/tmp/cdedb-store/assembly_attachment/"
+	mkdir -p "/tmp/cdedb-store/genesis_attachment/"
 	mkdir -p "/tmp/cdedb-store/mailman_templates/"
 	mkdir -p "/tmp/cdedb-store/testfiles/"
 	cp test/ancillary_files/{picture.pdf,picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv,partial_event_import.json} /tmp/cdedb-store/testfiles/
