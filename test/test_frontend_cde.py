@@ -1487,7 +1487,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("DdE", div='navigation')
 
         # Institution CdE
-        self.traverse({'description': '^CdE$'}, verbose=True)
+        self.traverse({'description': '^CdE$'})
         self.assertPresence("PfingstAkademie 2014", div='events-2014')
         self.assertNonPresence("Geburtstagsfete")
         self.assertNonPresence("2019")
