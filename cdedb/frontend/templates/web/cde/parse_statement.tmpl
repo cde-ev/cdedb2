@@ -131,47 +131,47 @@
             {{ util.input_hidden(name="start") }}
             {{ util.input_hidden(name="end") }}
             {{ util.input_hidden(name="timestamp") }}
-            {% if data["has_error"] %}
+            {% if params["has_error"] %}
                 <h3 class="heading-underline" id="has_error_summary">
-                    {% trans count=data["has_error"]|length -%}{{ count }} Transactions with Errors{%- endtrans %}
+                    {% trans count=params["has_error"]|length -%}{{ count }} Transactions with Errors{%- endtrans %}
                 </h3>
-                {% for t_id in data["has_error"] %}
+                {% for t_id in params["has_error"] %}
                     {{ print_transaction(t_id) }}
                 {% endfor %}
             {% endif %}
-            {% if data["has_warning"] %}
+            {% if params["has_warning"] %}
                 <h3 class="heading-underline" id="has_warning_summary">
-                    {% trans count=data["has_warning"]|length -%}{{ count }} Transactions with Warnings{%- endtrans %}
+                    {% trans count=params["has_warning"]|length -%}{{ count }} Transactions with Warnings{%- endtrans %}
                 </h3>
-                {% for t_id in data["has_warning"] %}
+                {% for t_id in params["has_warning"] %}
                     {{ print_transaction(t_id) }}
                 {% endfor %}
             {% endif %}
-            {% if data["has_none"] %}
+            {% if params["has_none"] %}
                 <h3 class="heading-underline" id="has_none_summary">
-                    {% trans count=data["has_none"]|length -%}{{ count }} Successful Transactions{%- endtrans %}
+                    {% trans count=params["has_none"]|length -%}{{ count }} Successful Transactions{%- endtrans %}
                 </h3>
-                {% for t_id in data["has_none"] %}
+                {% for t_id in params["has_none"] %}
                     {{ print_transaction(t_id) }}
                 {% endfor %}
             {% endif %}
-            {% if data["has_error"] %}
+            {% if params["has_error"] %}
                 {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
             {% else %}
                 <button type="submit" name="gnucash" value="gnucash" class="btn btn-primary">
                     {{ util.make_icon("download") }} {% trans %}GnuCash Download{% endtrans %}
                 </button>
-                {% for account in data["accounts"]|sort %}
+                {% for account in params["accounts"]|sort %}
                     <button type="submit" name="excel" value="{{ account }}" class="btn btn-primary">
                         {{ util.make_icon("download") }} {% trans %}Excel Download ({{ account }}){% endtrans %}
                     </button>
                 {% endfor %}
-                {% if data["memberships"] %}
+                {% if params["memberships"] %}
                     <button type="submit" name="membership" value="membership" class="btn btn-primary">
                         {{ util.make_icon("download") }} {% trans %}Download Membership Fees{% endtrans %}
                     </button>
                 {% endif %}
-                {% for event_id in data["events"] %}
+                {% for event_id in params["events"] %}
                     <button type="submit" name="event" value="{{ event_id }}" class="btn btn-primary">
                         {{ util.make_icon("download") }} {% trans shortname=events[event_id] %}Download {{ shortname }}{% endtrans %}
                     </button>

@@ -747,20 +747,22 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("finance_admin")
-    def parse_statement_form(self, rs, data=None):
+    def parse_statement_form(self, rs, data=None, params=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: list({str: obj}) or None
+        :type data: {str: obj} or None
+        :type params: {str: obj} or None
         """
         data = data or {}
         merge_dicts(rs.values, data)
         event_list = self.eventproxy.list_db_events(rs)
         event_entries = sorted(event_list.items(), key=lambda x: x[1])
         params = {
+            'params': params or None,
             'data': data,
             'TransactionType': parse.TransactionType,
             'event_entries': event_entries,
@@ -770,6 +772,16 @@ class CdEFrontend(AbstractUserFrontend):
 
     def organize_transaction_data(self, rs, transactions, start, end,
                                   timestamp):
+        """
+        Organize transactions into data and params usable in the form.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type transactions: [parse.Transaction]
+        :type start: datetime.date or None
+        :type end: datetime.date or None
+        :type timestamp: datetime.time
+        :rtype: {str: object}, {str: object}
+        """
         data = {"{}{}".format(k, t.t_id): v
                 for t in transactions
                 for k, v in t.to_dict(rs, self.coreproxy.get_persona,
@@ -778,25 +790,27 @@ class CdEFrontend(AbstractUserFrontend):
         data["start"] = start
         data["end"] = end
         data["timestamp"] = timestamp
-        data["has_error"] = []
-        data["has_warning"] = []
-        data["has_none"] = []
-        data["accounts"] = defaultdict(int)
-        data["events"] = defaultdict(int)
-        data["memberships"] = 0
+        params = {
+            "has_error": [],
+            "has_warning": [],
+            "has_none": [],
+            "accounts": defaultdict(int),
+            "events": defaultdict(int),
+            "memberships": 0,
+        }
         for t in transactions:
             if t.errors:
-                data["has_error"].append(t.t_id)
+                params["has_error"].append(t.t_id)
             elif t.warnings:
-                data["has_warning"].append(t.t_id)
+                params["has_warning"].append(t.t_id)
             else:
-                data["has_none"].append(t.t_id)
-            data["accounts"][str(t.account)] += 1
+                params["has_none"].append(t.t_id)
+            params["accounts"][str(t.account)] += 1
             if t.event_id:
-                data["events"][t.event_id] += 1
+                params["events"][t.event_id] += 1
             if t.type == TransactionType.MembershipFee:
-                data["memberships"] += 1
-        return data
+                params["memberships"] += 1
+        return data, params
 
     @access("finance_admin", modi={"POST"})
     @REQUESTfile("statement_file")
@@ -865,10 +879,10 @@ class CdEFrontend(AbstractUserFrontend):
 
             transactions.append(t)
 
-        data = self.organize_transaction_data(
+        data, params = self.organize_transaction_data(
             rs, transactions, start, end, timestamp)
 
-        return self.parse_statement_form(rs, data)
+        return self.parse_statement_form(rs, data, params)
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("count", "int"), ("start", "date"), ("end", "date"),
@@ -908,12 +922,12 @@ class CdEFrontend(AbstractUserFrontend):
             t.inspect(rs, self.coreproxy.get_persona)
             transactions.append(t)
 
-        data = self.organize_transaction_data(
+        data, params = self.organize_transaction_data(
             rs, transactions, start, end, timestamp)
 
-        if rs.request.values.get("validate") or data["has_error"] \
-                or data["has_warning"]:
-            return self.parse_statement_form(rs, data)
+        if rs.request.values.get("validate") or params["has_error"] \
+                or params["has_warning"]:
+            return self.parse_statement_form(rs, data, params)
         elif rs.request.values.get("membership"):
             filename = "Mitgliedsbeiträge"
             transactions = [t for t in transactions
@@ -942,7 +956,7 @@ class CdEFrontend(AbstractUserFrontend):
             write_header = False
         else:
             rs.notify("error", n_("Unknown action."))
-            return self.parse_statement_form(rs, data)
+            return self.parse_statement_form(rs, data, params)
         if start != end:
             filename += "_{}_bis_{}.csv".format(start, end)
         else:
