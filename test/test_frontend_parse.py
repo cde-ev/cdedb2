@@ -1,9 +1,7 @@
 import re
 import csv
 
-import sys
 import webtest
-import subprocess
 
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.common import now
@@ -13,18 +11,6 @@ from datetime import datetime
 
 
 class TestParseFrontend(FrontendTest):
-
-    # Only to sample data setup once.
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        subprocess.check_call(("make", "sample-data-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
-        cls.app.reset()
-
-    def setUp(self):
-        self.response = None
 
     def csv_submit(self, form, button=None, value=None):
         super().submit(form, button=button, value=value, check_notification=False)
