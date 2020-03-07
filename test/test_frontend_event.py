@@ -1563,6 +1563,29 @@ etc;anything else""", f['entries_2'].value)
             self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement2.moniker"]')[0].text.strip(),
             "")
 
+    @as_users("annika")
+    def test_course_query(self, user):
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'},
+                      {'description': 'Kurssuche'})
+        self.assertTitle('Kurssuche (Große Testakademie 2222)')
+        f = self.response.forms['queryform']
+        for field in f.fields:
+            if field and field.startswith('qsel_'):
+                f[field].checked = True
+        f['qop_track3.takes_place'] = QueryOperators.equal.value
+        f['qval_track3.takes_place'] = True
+        f['qop_track3.num_choices1'] = QueryOperators.greaterequal.value
+        f['qval_track3.num_choices1'] = 2
+        f['qord_primary'] = 'track2.num_choices0'
+        self.submit(f)
+        self.assertTitle('Kurssuche (Große Testakademie 2222)')
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Lang", div="result-container")
+        self.assertPresence("Seminarraum 23", div="result-container")
+        self.assertPresence("Kabarett", div="result-container")
+        self.assertPresence("Theater", div="result-container")
+
     @as_users("garcia")
     def test_multiedit(self, user):
         self.traverse({'href': '/event/$'},
