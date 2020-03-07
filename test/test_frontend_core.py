@@ -1366,6 +1366,100 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("Zelda Zeruda-Hime")
 
+    @as_users("vera")
+    def test_genesis_cde(self, user):
+        self.get('/core/genesis/request')
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['birth_name'] = "Ganondorf"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "cde"
+        f['gender'] = "1"
+        f['birthday'] = "5.6.1987"
+        f['address'] = "An der Eiche"
+        f['postal_code'] = "12345"
+        f['location'] = "Marcuria"
+        f['country'] = "Arkadien"
+        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+            data = datafile.read()
+        f['attachment'] = webtest.Upload(
+            "my_participation_certificate.pdf", data, content_type="application/pdf")
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = self.fetch_link(mail)
+        self.get(link)
+        self.follow()
+        self.traverse({'href': '/core'},
+                      {'href': '/core/genesis/list'})
+        self.assertTitle("Accountanfragen")
+        self.assertPresence("zelda@example.cde")
+        self.assertNonPresence("zorro@example.cde")
+        self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+        self.traverse({'href': '/core/genesis/1001/modify'})
+        self.assertTitle("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['username'] = 'zorro@example.cde'
+        f['realm'] = 'ml'
+        self.submit(f)
+        self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
+        self.assertPresence("Ganondorf")
+        self.assertPresence("Download Attachment")
+        save = self.response
+        self.traverse({'description': 'Download Attachment'})
+        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
+            self.assertEqual(f.read(), self.response.body)
+        self.response = save
+        self.assertNonPresence("zelda@example.cde")
+        self.assertPresence("zorro@example.cde")
+        self.traverse({'href': '/core/genesis/list'})
+        self.assertTitle("Accountanfragen")
+        self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+        self.traverse({'href': '/core/genesis/1001/modify'})
+        f = self.response.forms['genesismodifyform']
+        f['realm'] = 'cde'
+        self.submit(f)
+        self.traverse({'href': '/core/genesis/list'})
+        self.assertTitle("Accountanfragen")
+        self.assertPresence("Aktuell stehen keine Veranstaltungs-Account-Anfragen zur Bestätigung aus.")
+        self.assertPresence("Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
+        self.assertNonPresence("Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
+        self.traverse({'href': '/core/genesis/1001/show'})
+        self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
+        f = self.response.forms['genesiseventapprovalform']
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = self.fetch_link(mail)
+        self.logout()
+        self.get(link)
+        self.assertTitle("Neues Passwort setzen")
+        new_password = "long_saFe_37pass"
+        f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f)
+        new_user = {
+            'id': 9,
+            'username': "zorro@example.cde",
+            'password': new_password,
+            'display_name': "Zelda",
+            'given_names': "Zelda",
+            'family_name': "Zeruda-Hime",
+        }
+        self.login(new_user)
+        self.traverse({'href': '/core/self/show'})
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("12345")
+        self.traverse({'href': '/cde'})
+        self.assertTitle('CdE-Mitgliederbereich')
+        self.traverse({'description': 'Sonstiges'})
+
     def test_genesis_name_collision(self):
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
