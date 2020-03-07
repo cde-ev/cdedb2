@@ -24,7 +24,7 @@
         {% for realm, cases in cases_by_realm.items() %}
             <h3>{{ REALM_REQUEST_TITLES[realm] }}</h3>
             {% for genesis_case_id, entry in cases|xdictsort('ctime') %}
-                <div class="row" id="request-{{ case_id }}">
+                <div class="row" id="request-{{ genesis_case_id }}">
                     <div class="col-sm-3">
                         <p>
                             {{ entry['given_names'] }} {{ entry['family_name'] }}
