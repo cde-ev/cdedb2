@@ -41,7 +41,8 @@ The following columns will be available in this view:
 * ``course.max_size``
 * ``course.notes``
 * ``course_fields.xfield_{field_name}`` *This is available for every custom data field with course association.*
-* ``track{track_id}.is_active``
+* ``track{track_id}.is_offered``
+* ``track{track_id}.takes_place``
 * ``track[track_id}.attendees``
 * ``track[track_id}.intructors``
 * ``track{track_id].num_choices{rank}`` *This is available for every available rank in that track.*
@@ -75,7 +76,8 @@ This part conatins two layers. In the inner layer we start with the usual base t
 Afterwards we select the actual information we need from that joined table, while coalescing the ``is_active`` column so we get a bool instead of ``NULL`` ::
 
   SELECT
-      c.id, COALESCE(is_active, False) AS is_active
+      c.id, COALESCE(is_active, False) AS takes_place,
+      is_active IS NOT NULL AS is_offered
   FROM
       (SELECT id FROM event.courses WHERE event_id = X) AS c
       LEFT OUTER JOIN (

@@ -518,7 +518,8 @@ class EventBackend(AbstractBackend):
             segment_table = \
             """LEFT OUTER JOIN (
                 SELECT
-                    c.id, COALESCE(is_active, False) AS is_active
+                    c.id, COALESCE(is_active, False) AS takes_place,
+                    is_active IS NOT NULL AS is_offered
                 FROM
                     {base}
                     LEFT OUTER JOIN (

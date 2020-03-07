@@ -4948,7 +4948,8 @@ class EventFrontend(AbstractUserFrontend):
         })
 
         for track_id, track in tracks.items():
-            spec["track{0}.is_active".format(track_id)] = "bool"
+            spec["track{0}.is_offered".format(track_id)] = "bool"
+            spec["track{0}.takes_place".format(track_id)] = "bool"
             spec["track{0}.attendees".format(track_id)] = "int"
             spec["track{0}.instructors".format(track_id)] = "int"
             for rank in range(track['num_choices']):
@@ -5011,7 +5012,7 @@ class EventFrontend(AbstractUserFrontend):
             "course.notes": gettext("course notes"),
         }
         titles.update({
-            "course.xfield_{}".format(field['field_name']):
+            "course_fields.xfield_{}".format(field['field_name']):
                 field['field_name']
             for field in course_fields.values()
         })
@@ -5021,8 +5022,10 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 prefix = ""
             titles.update({
-                "track{0}.is_active".format(track_id):
+                "track{0}.takes_place".format(track_id):
                     prefix + gettext("takes place"),
+                "track{0}.is_offered".format(track_id):
+                    prefix + gettext("is offered"),
                 "track{0}.attendees".format(track_id):
                     prefix + gettext("attendees"),
                 "track{0}.instructors".format(track_id):
@@ -5031,7 +5034,8 @@ class EventFrontend(AbstractUserFrontend):
             for rank in range(track['num_choices']):
                 titles.update({
                     "track{0}.num_choices{1}".format(track_id, rank):
-                        prefix + gettext("number of {}. choices").format(rank),
+                        prefix + gettext("number of {}. choices").format(
+                            rank+1),
                 })
 
         return choices, titles
@@ -5056,12 +5060,17 @@ class EventFrontend(AbstractUserFrontend):
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
 
+        tracks = rs.ambience['event']['tracks']
+        selection_default = ["course.shortname", ]
+        for col in ("is_offered", "takes_place", "attendees"):
+            selection_default += list("track{}.{}".format(t_id, col)
+                                      for t_id in tracks)
         default_queries = []
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'query': query, 'default_queries': default_queries,
-            'titles': titles,
+            'titles': titles, 'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search:

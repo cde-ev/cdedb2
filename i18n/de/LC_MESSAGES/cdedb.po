@@ -1376,22 +1376,13 @@ msgid "Not a pending subscription request."
 msgstr "Keine Abonnement-Anfrage."
 
 #: cdedb/ml_type_aux.py:25
-#, fuzzy
 msgid "Cannot determine ml_type from {}"
-msgstr ""
-"#-#-#-#-#  merge-po.Ur88.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"ml_type kann nicht durch {} bestimmt werden\n"
-"#-#-#-#-#  merge-po.Ur88.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Kann aus {} keinen ml_type bestimmen"
+msgstr "Kann aus {} keinen ml_type bestimmen"
 
 #: cdedb/ml_type_aux.py:32
-#, fuzzy, python-format
+#, python-format
 msgid "Cannot determine full address for %s."
-msgstr ""
-"#-#-#-#-#  merge-po.Ur88.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Vollständige Adresse für %s kann nicht bestimmt werden.\n"
-"#-#-#-#-#  merge-po.Ur88.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Kann keine vollständige Mailadresse für %s bestimmen."
+msgstr "Kann keine vollständige Mailadresse für %s bestimmen."
 
 #: cdedb/ml_type_aux.py:323 cdedb/ml_type_aux.py:381 cdedb/ml_type_aux.py:320
 #: cdedb/ml_type_aux.py:377
@@ -1574,14 +1565,9 @@ msgstr "Passwort ist zu schwach für einen Admin-Account."
 msgid "Must be a valid email address."
 msgstr "Muss eine valide E-Mail-Adresse sein."
 
-#: cdedb/validation.py:916 cdedb/validation.py:828
-#, fuzzy
+#: cdedb/validation.py:828
 msgid "Must be a valid email local part."
-msgstr ""
-"#-#-#-#-#  merge-po.Ur88.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Muss ein zulässiger local part für Emailadressen sein.\n"
-"#-#-#-#-#  merge-po.Ur88.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Muss ein gültiger E-Mail-Lokalteil sein."
+msgstr "Muss ein gültiger E-Mail-Lokalteil sein."
 
 #: cdedb/validation.py:1095 cdedb/validation.py:1004 cdedb/validation.py:980
 msgid "Only one of creation, transition may be specified."
@@ -1847,25 +1833,13 @@ msgstr "Falsche Veranstaltung referenziert."
 msgid "Only partial exports are supported."
 msgstr "Nur partielle Exporte sind unterstützt."
 
-#: cdedb/validation.py:3562 cdedb/validation.py:3248 cdedb/validation.py:3247
-#: cdedb/validation.py:3251
-#, fuzzy
+#: cdedb/validation.py:3247
 msgid "Must specify mailinglist type to change domain."
-msgstr ""
-"#-#-#-#-#  merge-po.Ur88.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Mailinglistentyp muss angegeben werden um die Domain zu wechseln.\n"
-"#-#-#-#-#  merge-po.Ur88.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Mailinglistentyp muss angegeben werden um Domain zu ändern."
+msgstr "Mailinglistentyp muss angegeben werden um Domain zu ändern."
 
-#: cdedb/validation.py:3567 cdedb/validation.py:3253 cdedb/validation.py:3252
-#: cdedb/validation.py:3256
-#, fuzzy
+#: cdedb/validation.py:3252
 msgid "Invalid domain for this mailinglist type."
-msgstr ""
-"#-#-#-#-#  merge-po.Ur88.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Unzulässige Domain für diesen Mailinglistentyp.\n"
-"#-#-#-#-#  merge-po.Ur88.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Ungültige Domain für diesen Mailinglistentyp."
+msgstr "Ungültige Domain für diesen Mailinglistentyp."
 
 #: cdedb/validation.py:3735 cdedb/validation.py:3400 cdedb/validation.py:3399
 #: cdedb/validation.py:3403 cdedb/validation.py:3353
@@ -3496,16 +3470,9 @@ msgstr "Adressabfrage noch nicht erledigt."
 msgid "New expuls started."
 msgstr "Nächster Expuls initialisiert."
 
-#: cdedb/frontend/cde.py:2373 cdedb/frontend/cde.py:2366
-#: cdedb/frontend/cde.py:2358 cdedb/frontend/cde.py:2368
 #: cdedb/frontend/cde.py:2341
-#, fuzzy
 msgid "Institution parameter got lost."
-msgstr ""
-"#-#-#-#-#  merge-po.Ur88.local (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Der Institutionsparameter ist verloren gegangen.\n"
-"#-#-#-#-#  merge-po.Ur88.remote (CdEDBv2 2.0)  #-#-#-#-#\n"
-"Organisationsangabe ist verlorengegangen."
+msgstr "Organisationsangabe ist verlorengegangen."
 
 #: cdedb/frontend/cde.py:2383 cdedb/frontend/cde.py:2376
 #: cdedb/frontend/cde.py:2367 cdedb/frontend/cde.py:2378
@@ -4716,7 +4683,7 @@ msgstr "Kurstitel"
 #: cdedb/frontend/event.py:4713 cdedb/frontend/event.py:4758
 #: cdedb/frontend/event.py:5042
 msgid "course shortname"
-msgstr "Kurskurzname"
+msgstr "Kurzname"
 
 #: cdedb/frontend/event.py:4725 cdedb/frontend/event.py:4717
 #: cdedb/frontend/event.py:4851 cdedb/frontend/event.py:4718
@@ -15530,7 +15497,7 @@ msgstr "Anzal Kursleiter"
 
 #: cdedb/frontend/event.py:5069
 msgid "number of {}. choices"
-msgstr "Anzahl an {}.-Wahlen"
+msgstr "Anzahl an {}. Wahlen"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:45
 msgid "Course Query"
@@ -15540,6 +15507,12 @@ msgstr "Kurssuche"
 #, python-format
 msgid "Courses (%(title)s)"
 msgstr "Kurse (%(title)s)"
+
+msgid "is offered"
+msgstr "wird angeboten"
+
+msgid "Course Query (%(title)s)"
+msgstr "Kurssuche (%(title)s)"
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
