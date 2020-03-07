@@ -582,24 +582,36 @@
        but should only be shown to core admins, i.e. users who have the `core_user` view available.
  #}
 {% macro admin_views_toggle(views) %}
-    <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" style="display: inline;">
-        {% if original_request and original_request.url %}
-            {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
-                                                      original_request.url, timeout=None)) }}
-        {% endif %}
-        {% for label, view_names, relevant_views in views %}
-            {% set relevant_views = relevant_views if relevant_views is not none else view_names %}
-            {% if (relevant_views|set).intersection(user.available_admin_views) %}
-                {# The button is "deactivated" as long as there are more "relevant views" which are available for the
-                   user but are not enabled yet. #}
-                {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) %}
-                <button type="submit"
-                        name="view_specifier"
-                        value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
-                        class="btn btn-info btn-block {% if active %}active{% endif %}">
-                    {{ make_icon('wrench') }} {{ label }}
-                </button>
+    {% set inner = _admin_views_toggle_inner(views) %}
+    {% if inner %}
+        <hr />
+        <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post">
+            {% if original_request and original_request.url %}
+                {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
+                                                          original_request.url, timeout=None)) }}
             {% endif %}
-        {% endfor %}
-    </form>
+            <div class="list-group tear-down">
+                {{ inner }}
+            </div>
+        </form>
+    {% endif %}
+{% endmacro %}
+
+{# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
+   jinja #}
+{% macro _admin_views_toggle_inner(views) -%}
+    {% for label, view_names, relevant_views in views -%}
+        {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
+        {% if (relevant_views|set).intersection(user.available_admin_views) %}
+            {# The button is "deactivated" as long as there are more "relevant views" which are available for the
+               user but are not enabled yet. #}
+            {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) -%}
+            <button type="submit"
+                    name="view_specifier"
+                    value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
+                    class="list-group-item list-group-item-info {% if active %}active{% endif %}">
+                {{- make_icon('wrench') }} {{ label -}}
+            </button>
+        {% endif -%}
+    {% endfor -%}
 {% endmacro %}
