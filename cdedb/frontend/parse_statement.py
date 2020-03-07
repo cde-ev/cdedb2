@@ -144,7 +144,7 @@ def dates_from_filename(filename):
         end = datetime.datetime.strptime(end, "%Y%m%d").date()
         timestamp = datetime.datetime.strptime(timestamp[:-4], "%Y%m%d%H%M%S")
     except ValueError:
-        return now().date(), now().date(), now()
+        return now().date(), None, now()
     else:
         return start, end, timestamp
 

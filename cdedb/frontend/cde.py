@@ -962,10 +962,10 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             rs.notify("error", n_("Unknown action."))
             return self.parse_statement_form(rs, data, params)
-        if start != end:
-            filename += "_{}_bis_{}.csv".format(start, end)
-        else:
+        if end is None:
             filename += "_{}".format(start)
+        else:
+            filename += "_{}_bis_{}.csv".format(start, end)
         csv_data = [t.to_dict(rs, self.coreproxy.get_persona,
                               self.eventproxy.get_event)
                     for t in transactions]
