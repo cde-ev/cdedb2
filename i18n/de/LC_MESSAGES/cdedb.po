@@ -1223,6 +1223,7 @@ msgstr "Abbrechen"
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:131
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:196
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:76
+#: cdedb/frontend/templates/web/event/change_event.tmpl:122
 msgid "Save"
 msgstr "Speichern"
 
@@ -4824,6 +4825,7 @@ msgstr "Notizen"
 #: cdedb/frontend/templates/web/event/change_event.tmpl:85
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:47
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:51
+#: cdedb/frontend/templates/web/event/change_event.tmpl:86
 #, python-format
 msgid "Supports %(infolink)s."
 msgstr "Unterstützt %(infolink)s."
@@ -4875,6 +4877,7 @@ msgstr "Unterstützt %(infolink)s."
 #: cdedb/frontend/templates/web/event/change_event.tmpl:86
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:48
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:52
+#: cdedb/frontend/templates/web/event/change_event.tmpl:87
 msgid "Markdown"
 msgstr "Markdown"
 
@@ -4925,6 +4928,7 @@ msgstr "Markdown"
 #: cdedb/frontend/templates/web/event/change_event.tmpl:87
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:49
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:53
+#: cdedb/frontend/templates/web/event/change_event.tmpl:88
 msgid "Short Markdown summary"
 msgstr "Kurze Markdown-Zusammenfassung"
 
@@ -10441,6 +10445,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/show_event.tmpl:101
 #: cdedb/frontend/templates/web/event/change_event.tmpl:84
 #: cdedb/frontend/templates/web/event/show_event.tmpl:104
+#: cdedb/frontend/templates/web/event/change_event.tmpl:85
 msgid "Registration page free text"
 msgstr "Freitext Anmeldeseite"
 
@@ -10448,21 +10453,25 @@ msgstr "Freitext Anmeldeseite"
 #: cdedb/frontend/templates/web/event/show_event.tmpl:108
 #: cdedb/frontend/templates/web/event/change_event.tmpl:88
 #: cdedb/frontend/templates/web/event/show_event.tmpl:111
+#: cdedb/frontend/templates/web/event/change_event.tmpl:89
 msgid "Registration mail free text"
 msgstr "Freitext Anmeldebestätigung"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:89
 #: cdedb/frontend/templates/web/event/change_event.tmpl:90
+#: cdedb/frontend/templates/web/event/change_event.tmpl:91
 msgid "Special Purpose Custom Fields"
 msgstr "Datenfelder mit besonderem Zweck"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:91
 #: cdedb/frontend/templates/web/event/change_event.tmpl:97
+#: cdedb/frontend/templates/web/event/change_event.tmpl:98
 msgid "Field for Rooming Preferences"
 msgstr "Feld für Hauswünsche"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:92
 #: cdedb/frontend/templates/web/event/change_event.tmpl:98
+#: cdedb/frontend/templates/web/event/change_event.tmpl:99
 msgid ""
 "The custom field in which the participants’ rooming preferences will be "
 "saved. It is used for the PDF lodgement puzzle download. Fieldtype: Text"
@@ -10472,11 +10481,13 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:96
 #: cdedb/frontend/templates/web/event/change_event.tmpl:107
+#: cdedb/frontend/templates/web/event/change_event.tmpl:108
 msgid "Field for Camping Mat"
 msgstr "Feld für Isomatte"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:97
 #: cdedb/frontend/templates/web/event/change_event.tmpl:108
+#: cdedb/frontend/templates/web/event/change_event.tmpl:109
 msgid ""
 "The custom field in which the participants’ willingness to sleep on a "
 "camping mat will be saved. It is used for the PDF lodgement puzzle download. "
@@ -10488,11 +10499,13 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:101
 #: cdedb/frontend/templates/web/event/change_event.tmpl:117
+#: cdedb/frontend/templates/web/event/change_event.tmpl:118
 msgid "Field for Course Room"
 msgstr "Feld für Kursraum"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:102
 #: cdedb/frontend/templates/web/event/change_event.tmpl:118
+#: cdedb/frontend/templates/web/event/change_event.tmpl:119
 msgid ""
 "The custom field in which the course’s assigned course room will be saved. "
 "It is used for PDF participant lists and nametags. Fieldtype: Text"
@@ -13389,6 +13402,14 @@ msgstr ""
 "%(fee)s bezahlen und somit wieder Mitglied werden, woraufhin Du den "
 "zusätzlichen Beitrag nicht bezahlen musst. Wenn Du dies tust, überweise "
 "Mitgliedsbeitrag und Teilnahmebeitrag bitte separat."
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:84
+msgid ""
+"Participants who are not currently members will have to pay this additional "
+"fee."
+msgstr ""
+"Teilnehmer die derzeit keine CdE-Mitglieder sind müssen diesen zusätzlichen "
+"Beitrag bezahlen."
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
