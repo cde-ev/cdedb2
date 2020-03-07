@@ -570,6 +570,8 @@ class TestCoreBackend(BackendTest):
             'id': case_id,
             'case_status': const.GenesisStati.to_review,
             'reviewer': None,
+            'attachment': None,
+            'birth_name': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
@@ -639,6 +641,8 @@ class TestCoreBackend(BackendTest):
             'mobile': None,
             'postal_code': None,
             'telephone': None,
+            'attachment': None,
+            'birth_name': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
