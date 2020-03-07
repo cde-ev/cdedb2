@@ -1656,9 +1656,9 @@ genesis_realm_access_bits = {
         'is_event_realm': True,
         'is_assembly_realm': True,
         'is_ml_realm': True,
-        'is_member': False,
+        'is_member': True,
         'is_searchable': False,
-        'trial_member': False,
+        'trial_member': True,
         'decided_search': False,
         'bub_search': False,
     }
