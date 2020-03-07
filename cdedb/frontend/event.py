@@ -2799,12 +2799,13 @@ class EventFrontend(AbstractUserFrontend):
                            or (not event['is_course_state_visible']
                                and track_id in course['segments'])]
             for track_id in tracks}
+        semester_fee = self.conf.MEMBERSHIP_FEE
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
         return self.render(rs, "register", {
             'persona': persona, 'age': age, 'courses': courses,
-            'course_choices': course_choices})
+            'course_choices': course_choices, 'semester_fee': semester_fee})
 
     @staticmethod
     def process_registration_input(rs, event, courses, parts=None):
@@ -2934,6 +2935,7 @@ class EventFrontend(AbstractUserFrontend):
         new_id = self.eventproxy.create_registration(rs, registration)
         meta_info = self.coreproxy.get_meta_info(rs)
         fee = self.eventproxy.calculate_fee(rs, new_id)
+        semester_fee = self.conf.MEMBERSHIP_FEE
 
         subject = "[CdE] Anmeldung für {}".format(rs.ambience['event']['title'])
         reply_to = (rs.ambience['event']['orga_address'] or
@@ -2943,7 +2945,8 @@ class EventFrontend(AbstractUserFrontend):
             {'To': (rs.user.username,),
              'Subject': subject,
              'Reply-To': reply_to},
-            {'fee': fee, 'age': age, 'meta_info': meta_info})
+            {'fee': fee, 'age': age, 'meta_info': meta_info,
+             'semester_fee': semester_fee})
         self.notify_return_code(rs, new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")
 
@@ -2964,6 +2967,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         meta_info = self.coreproxy.get_meta_info(rs)
         fee = self.eventproxy.calculate_fee(rs, registration_id)
+        semester_fee = self.conf.MEMBERSHIP_FEE
         part_order = sorted(
             registration['parts'].keys(),
             key=lambda anid:
@@ -2972,7 +2976,7 @@ class EventFrontend(AbstractUserFrontend):
             (part_id, registration['parts'][part_id]) for part_id in part_order)
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
-            'meta_info': meta_info, 'fee': fee})
+            'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee})
 
     @access("event")
     def amend_registration_form(self, rs, event_id):
