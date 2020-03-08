@@ -1904,6 +1904,18 @@ class CoreBackend(AbstractBackend):
         return tuple(key for key, value in roles.items()
                      if value >= required_roles)
 
+    @access("core_admin")
+    def genesis_attachment_usage(self, rs, attachment_hash):
+        """Check whether a genesis attachment is still referenced in a case.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type attachment_hash: str
+        :rtype: bool
+        """
+        attachment_hash = affirm("str", attachment_hash)
+        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment = %s"
+        return bool(self.query_one(rs, query, (attachment_hash,))['count'])
+
     @access("anonymous")
     def verify_existence(self, rs, email):
         """Check wether a certain email belongs to any persona.
@@ -2276,14 +2288,6 @@ class CoreBackend(AbstractBackend):
                 ret *= self.sql_delete_one(rs, "core.genesis_cases", case_id)
                 self.core_log(rs, const.CoreLogCodes.genesis_deleted,
                               persona_id=None, additional_info=case["username"])
-                if case["attachment"]:
-                    query = ("SELECT COUNT(*) as num FROM core.genesis_cases "
-                             "WHERE attachment = %s")
-                    if unwrap(self.query_one(rs, query, (case["attachment"],))):
-                        path = (self.conf.STORAGE_DIR / 'genesis_attachments' /
-                                case['attachment'])
-                        if path.exists():
-                            path.unlink()
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),

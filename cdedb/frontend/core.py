@@ -1946,9 +1946,18 @@ class CoreFrontend(AbstractFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        if count:
-            self.logger.info(
-                "genesis_forget: Deleted {} genesis cases.".format(count))
+        genesis_attachment_path : pathlib.Path = self.conf.STORAGE_DIR / "genesis_attachment"
+
+        attachment_count = 0
+        for attachment in genesis_attachment_path.iterdir():
+            if not attachment.is_dir():
+                if not self.coreproxy.genesis_attachment_usage(rs, attachment):
+                    attachment.unlink()
+                    attachment_count += 1
+
+        if count or attachment_count:
+            msg = "genesis_forget: Deleted {} genesis cases and {} attachments"
+            self.logger.info(msg.format(count, attachment_count))
 
         return store
 

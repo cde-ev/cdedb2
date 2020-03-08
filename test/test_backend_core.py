@@ -687,6 +687,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_genesis_cde(self, user):
+        attachment_hash = "really_cool_filename"
         data = {
             'family_name': "Zeruda-Hime",
             'given_names': "Zelda",
@@ -703,9 +704,11 @@ class TestCoreBackend(BackendTest):
             'postal_code': "12345",
             'location': "Marcuria",
             'country': "Arkadien",
-            'attachment': 'really_cool_filename',
+            'attachment': attachment_hash,
         }
+        self.assertFalse(self.core.genesis_attachment_usage(self.key, attachment_hash))
         case_id = self.core.genesis_request(None, data)
+        self.assertTrue(self.core.genesis_attachment_usage(self.key, attachment_hash))
         self.assertLess(0, case_id)
         self.assertEqual((1, 'cde'), self.core.genesis_verify(None, case_id))
         self.assertEqual(1, len(self.core.genesis_list_cases(
@@ -769,6 +772,8 @@ class TestCoreBackend(BackendTest):
         })
         value = self.core.get_cde_user(self.key, new_id)
         self.assertEqual(expectation, value)
+        self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
+        self.assertFalse(self.core.genesis_attachment_usage(self.key, attachment_hash))
 
     @as_users("vera")
     def test_verify_personas(self, user):
