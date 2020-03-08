@@ -632,14 +632,7 @@ class FrontendTest(unittest.TestCase):
         return content.text_content()
 
     def assertPresence(self, s, div="content", regex=False, exact=False):
-        if self.response.content_type == "text/plain":
-            target = self.response.text
-        else:
-            tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
-            if not tmp:
-                raise AssertionError("Div not found.", div)
-            content = tmp[0]
-            target = content.text_content()
+        target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
             self.assertTrue(re.search(s.strip(), normalized))
