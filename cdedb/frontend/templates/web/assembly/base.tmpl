@@ -23,8 +23,8 @@
             {% endif %}
         </div>
 
-        {{ util.admin_views_toggle((("Show Assembly Configuration", ["assembly_contents"], None),
-                                    ("Show Assembly Management", ["assembly_mgmt"], None))) }}
+        {{ util.admin_views_toggle(((gettext("Assembly Configuration"), ["assembly_contents"], None),
+                                    (gettext("Assembly Management"), ["assembly_mgmt"], None))) }}
 {% endmacro %}
 
 {% block breadcrumb %}
@@ -58,8 +58,8 @@
             </div>
         {% endif %}
 
-        {{ util.admin_views_toggle((("Show User Management", ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
-                                    ("Show Assembly Management", ["assembly_mgmt"], None))) }}
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["assembly_user"]),
+                                    (gettext("Assembly Management"), ["assembly_mgmt"], None))) }}
     {% endif %}
 
     <hr class="strong visible-xs visible-sm" />

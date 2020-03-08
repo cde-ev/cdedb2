@@ -22,8 +22,8 @@
             {% endif %}
         </div>
 
-    {{ util.admin_views_toggle((("Show Mailinglist Management", ["ml_mgmt"], None),
-                                ("Show Moderator Controls", ["ml_moderator"], None))) }}
+    {{ util.admin_views_toggle(((gettext("Mailinglist Management"), ["ml_mgmt"], None),
+                                (gettext("Moderator Controls"), ["ml_moderator"], None))) }}
 {% endmacro %}
 
 {% block breadcrumb %}
@@ -69,8 +69,8 @@
             </div>
         {% endif %}
 
-        {{ util.admin_views_toggle((("Show User Management", ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["ml_user"]),
-                                    ("Show Mailinglist Management", ["ml_mgmt"], None))) }}
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["ml_user"]),
+                                    (gettext("Mailinglist Management"), ["ml_mgmt"], None))) }}
     {% endif %}
 
     <hr class="strong visible-xs visible-sm" />

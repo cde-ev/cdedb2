@@ -73,8 +73,8 @@
         </div>
     {% endif %}
 
-    {{ util.admin_views_toggle((("Show Event Management", ["event_mgmt"], None),
-                                ("Show Event Orga Controls", ["event_orga"], None))) }}
+    {{ util.admin_views_toggle(((gettext("Event Management"), ["event_mgmt"], None),
+                                (gettext("Orga Controls"), ["event_orga"], None))) }}
 {% endmacro %}
 
 {% block breadcrumb %}
@@ -116,8 +116,8 @@
             </div>
         {% endif %}
 
-        {{ util.admin_views_toggle((("Show User Management", ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["event_user"]),
-                                    ("Show Event Management", ["event_mgmt"], None))) }}
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["event_user"]),
+                                    (gettext("Event Management"), ["event_mgmt"], None))) }}
     {% endif %}
     <hr class="strong visible-xs visible-sm" />
 {% endblock %}

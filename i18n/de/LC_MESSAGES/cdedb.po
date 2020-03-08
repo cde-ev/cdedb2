@@ -5231,6 +5231,20 @@ msgstr "bis"
 msgid "%s to"
 msgstr "%s bis"
 
+#: cdedb/frontend/templates/web/util.tmpl:613
+#, python-format
+msgid "Hide %(label)s"
+msgstr "%(label)s ausblenden"
+
+#: cdedb/frontend/templates/web/util.tmpl:613
+#, python-format
+msgid "Show %(label)s"
+msgstr "%(label)s anzeigen"
+
+#: cdedb/frontend/templates/web/util.tmpl:615
+msgid "(enabled)"
+msgstr "(aktiv)"
+
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:2
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:112
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:121
@@ -6004,6 +6018,15 @@ msgstr "Konfiguration"
 msgid "Log"
 msgstr "Log"
 
+#: cdedb/frontend/templates/web/assembly/base.tmpl:26
+msgid "Assembly Configuration"
+msgstr "Versammlungs-Konfig."
+
+#: cdedb/frontend/templates/web/assembly/base.tmpl:27
+#: cdedb/frontend/templates/web/assembly/base.tmpl:62
+msgid "Assembly Management"
+msgstr "Versammlungs-Verwaltung"
+
 #: cdedb/frontend/templates/web/assembly/base.tmpl:33
 msgid "Assembly-Overview"
 msgstr "Versammlungs-Übersicht"
@@ -6027,6 +6050,14 @@ msgstr "Versammlungs-Übersicht"
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:12
 msgid "Manage Users"
 msgstr "Nutzer verwalten"
+
+#: cdedb/frontend/templates/web/assembly/base.tmpl:61
+#: cdedb/frontend/templates/web/cde/base.tmpl:64
+#: cdedb/frontend/templates/web/core/base.tmpl:50
+#: cdedb/frontend/templates/web/event/base.tmpl:119
+#: cdedb/frontend/templates/web/ml/base.tmpl:72
+msgid "User Administration"
+msgstr "Benutzer-Administration"
 
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:7
 #, python-format
@@ -6460,6 +6491,14 @@ msgstr "Organisationen verwalten"
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:18
 msgid "Past Events Log"
 msgstr "Verg.-Veranstaltungen-Log"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:65
+msgid "Past Event Management"
+msgstr "Verwaltung verg. Veranst."
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:66
+msgid "Finance Administration"
+msgstr "Finanz-Administration"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:6
 msgid "Create Accounts"
@@ -7865,6 +7904,14 @@ msgstr "Nutzerdaten-Log"
 msgid "Metadata"
 msgstr "Metadaten"
 
+#: cdedb/frontend/templates/web/core/base.tmpl:51
+msgid "Admin Administration"
+msgstr "Admin-Administration"
+
+#: cdedb/frontend/templates/web/core/base.tmpl:52
+msgid "Core Administration"
+msgstr "Index-Administration"
+
 #: cdedb/frontend/templates/web/core/change_password.tmpl:5
 #: cdedb/frontend/templates/web/core/change_password.tmpl:13
 #: cdedb/frontend/templates/web/core/show_user.tmpl:53
@@ -9265,6 +9312,15 @@ msgstr "Fragebogen konfigurieren"
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:48
 msgid "Checkin"
 msgstr "Checkin"
+
+#: cdedb/frontend/templates/web/event/base.tmpl:76
+#: cdedb/frontend/templates/web/event/base.tmpl:120
+msgid "Event Management"
+msgstr "Veranst.-Verwaltung"
+
+#: cdedb/frontend/templates/web/event/base.tmpl:77
+msgid "Orga Controls"
+msgstr "Orga-Schaltflächen"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:84
 msgid "Event-Overview"
@@ -11704,6 +11760,15 @@ msgstr "Verwaltung"
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:23
 msgid "Advanced Management"
 msgstr "Erweiterte Verwaltung"
+
+#: cdedb/frontend/templates/web/ml/base.tmpl:25
+#: cdedb/frontend/templates/web/ml/base.tmpl:73
+msgid "Mailinglist Management"
+msgstr "Mailinglisten-Verwaltung"
+
+#: cdedb/frontend/templates/web/ml/base.tmpl:26
+msgid "Moderator Controls"
+msgstr "Moderator-Schaltflächen"
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:30
 #: cdedb/frontend/templates/web/ml/base.tmpl:33

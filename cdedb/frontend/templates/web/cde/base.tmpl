@@ -61,9 +61,9 @@
             </div>
         {% endif %}
 
-        {{ util.admin_views_toggle((("Show User Management", ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["cde_user"]),
-                                    ("Past Event Administration", ["past_event"], None),
-                                    ("Show Finance Administration", ["finance"], None))) }}
+        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["cde_user"]),
+                                    (gettext("Past Event Management"), ["past_event"], None),
+                                    (gettext("Finance Administration"), ["finance"], None))) }}
 
         <hr class="strong visible-xs visible-sm" />
     {% endif %}

@@ -609,8 +609,10 @@
             <button type="submit"
                     name="view_specifier"
                     value="{% if active %}-{% else %}+{% endif %}{{ view_names|join(',') }}"
-                    class="list-group-item list-group-item-info {% if active %}active{% endif %}">
+                    class="list-group-item list-group-item-info {% if active %}active{% endif %}"
+                    title="{{ (gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label) }}">
                 {{- make_icon('wrench') }} {{ label -}}
+                {% if active %} <span class="sr-only">{% trans %}(enabled){% endtrans %}</span>{% endif -%}
             </button>
         {% endif -%}
     {% endfor -%}
