@@ -1902,22 +1902,30 @@ class CoreFrontend(AbstractFrontend):
         old = set(store.get('ids', [])) & set(data)
         new = set(data) - set(old)
         remind = False
-        if any(data[id]['ctime'] + datetime.timedelta(hours=4) < current
-               for id in new):
+        if any(data[anid]['ctime'] + datetime.timedelta(hours=4) < current
+               for anid in new):
             remind = True
         if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
             remind = True
         if remind:
+            stati = (const.GenesisStati.to_review,)
+            cde_count = len(self.coreproxy.genesis_list_cases(
+                rs, stati=stati, realms=["cde"]))
             event_count = len(self.coreproxy.genesis_list_cases(
-                rs, stati=(const.GenesisStati.to_review,), realms=["event"]))
+                rs, stati=stati, realms=["event"]))
             ml_count = len(self.coreproxy.genesis_list_cases(
-                rs, stati=(const.GenesisStati.to_review,), realms=["ml"]))
+                rs, stati=stati, realms=["ml"]))
+            assembly_count = len(self.coreproxy.genesis_list_cases(
+                rs, stati=stati, realms=["assembly"]))
             notify = {self.conf.MANAGEMENT_ADDRESS}
+            if cde_count:
+                notify |= {self.conf.CDE_ADMIN_ADDRESS}
             if event_count:
                 notify |= {self.conf.EVENT_ADMIN_ADDRESS}
             if ml_count:
                 notify |= {self.conf.ML_ADMIN_ADDRESS}
-            # TODO add support for CdE and assembly genesis requests
+            if assembly_count:
+                notify |= {self.conf.ASSEMBLY_ADMIN_ADDRESS}
             self.do_mail(
                 rs, "genesis_requests_pending",
                 {'To': tuple(notify),
