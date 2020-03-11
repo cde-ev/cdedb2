@@ -355,7 +355,7 @@ class EventBackend(AbstractBackend):
             event_id = affirm("id", event_id)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
-                    and not "ml_admin" in rs.user.roles):
+                    and "ml_admin" not in rs.user.roles):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             # Fix for custom fields with uppercase letters so they do not
@@ -970,8 +970,8 @@ class EventBackend(AbstractBackend):
                         self.event_log(rs, const.EventLogCodes.orga_added,
                                        data['id'], persona_id=anid)
                 if deleted:
-                    query = glue("DELETE FROM event.orgas",
-                                 "WHERE persona_id = ANY(%s) AND event_id = %s")
+                    query = ("DELETE FROM event.orgas"
+                             " WHERE persona_id = ANY(%s) AND event_id = %s")
                     ret *= self.query_exec(rs, query, (deleted, data['id']))
                     for anid in deleted:
                         self.event_log(rs, const.EventLogCodes.orga_removed,
@@ -1416,8 +1416,8 @@ class EventBackend(AbstractBackend):
                         ret *= self.sql_insert(rs, "event.course_segments",
                                                insert)
                 if deleted:
-                    query = glue("DELETE FROM event.course_segments",
-                                 "WHERE course_id = %s AND track_id = ANY(%s)")
+                    query = ("DELETE FROM event.course_segments"
+                             " WHERE course_id = %s AND track_id = ANY(%s)")
                     ret *= self.query_exec(rs, query, (data['id'], deleted))
                 if new or deleted:
                     self.event_log(
@@ -1617,9 +1617,8 @@ class EventBackend(AbstractBackend):
                             "SELECT id, course_id, track_id, registration_id "
                             "FROM event.course_choices "
                             "WHERE track_id = {} AND registration_id = ANY(%s) "
-                            "ORDER BY registration_id, rank ASC ")
-                        choices.extend(self.query_all(
-                            rs, query.format(track_id), (reg_ids,)))
+                            "ORDER BY registration_id, rank").format(track_id)
+                        choices.extend(self.query_all(rs, query, (reg_ids,)))
 
                     deletion_ids = {e['id'] for e in choices}
 
@@ -1677,7 +1676,7 @@ class EventBackend(AbstractBackend):
         is_limited = (persona_id != rs.user.persona_id
                       and not self.is_orga(rs, event_id=event_id)
                       and not self.is_admin(rs)
-                      and not "ml_admin" in rs.user.roles)
+                      and "ml_admin" not in rs.user.roles)
         if is_limited:
             query = ("SELECT DISTINCT regs.id, regs.persona_id "
                      "FROM event.registrations AS regs "
@@ -1745,10 +1744,10 @@ class EventBackend(AbstractBackend):
 
         return ret
 
-
     @access("event")
-    def registrations_by_course(self, rs, event_id, course_id=None,
-            track_id=None, position=None, reg_ids=None,
+    def registrations_by_course(
+            self, rs, event_id, course_id=None, track_id=None, position=None,
+            reg_ids=None,
             reg_states=(const.RegistrationPartStati.participant,)):
         """List registrations of an event pertaining to a certain course.
 
@@ -1763,7 +1762,7 @@ class EventBackend(AbstractBackend):
         :param reg_ids: List of registration ids to filter for
         :type reg_ids: [int] or None
         :param reg_ids: List of registration states (in any part) to filter for
-        :type reg_ids: [const.RegistrationPartStati]
+        :type reg_states: [const.RegistrationPartStati]
         :rtype: {int: int}
         """
         event_id = affirm("id", event_id)
@@ -1982,8 +1981,8 @@ class EventBackend(AbstractBackend):
             if track_id not in course_segments[course_id]:
                 raise ValueError(n_("Wrong track for course."))
         if not new_registration:
-            query = glue("DELETE FROM event.course_choices",
-                         "WHERE registration_id = %s AND track_id = %s")
+            query = ("DELETE FROM event.course_choices"
+                     " WHERE registration_id = %s AND track_id = %s")
             self.query_exec(rs, query, (registration_id, track_id))
         for rank, course_id in enumerate(choices):
             new_choice = {
@@ -2478,7 +2477,7 @@ class EventBackend(AbstractBackend):
         """Delete a lodgement group.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type group: int
+        :type group_id: int
         :type cascade: bool
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
@@ -2488,7 +2487,7 @@ class EventBackend(AbstractBackend):
         group_id = affirm("id", group_id)
         blockers = self.delete_lodgement_group_blockers(rs, group_id)
         if not cascade:
-            cascade= set()
+            cascade = set()
         cascade = affirm_set("str", cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
@@ -3065,7 +3064,8 @@ class EventBackend(AbstractBackend):
                 del course['id']
                 del course['event_id']
                 course['segments'] = lookup[course_id]
-                course['fields'] = cast_fields(course['fields'], event['fields'])
+                course['fields'] = cast_fields(
+                    course['fields'], event['fields'])
             ret['courses'] = courses
             # lodgement groups
             lodgement_groups = list_to_dict(self.sql_select(
@@ -3459,7 +3459,7 @@ class EventBackend(AbstractBackend):
             for registration_id in mes(data_regs.keys()):
                 new_registration = data_regs[registration_id]
                 if (registration_id < 0
-                    and dup.get(new_registration.get('persona_id'))):
+                        and dup.get(new_registration.get('persona_id'))):
                     # the process got out of sync and the registration was
                     # already created, so we fix this
                     registration_id = dup[new_registration.get('persona_id')]
