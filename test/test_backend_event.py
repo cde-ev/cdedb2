@@ -3338,6 +3338,61 @@ class TestEventBackend(BackendTest):
                          const.RegistrationPartStati.rejected)
 
     @as_users("annika")
+    def test_fee_modifiers(self, user):
+        event_id = 1
+        field_name = 'is_child'
+        data = {
+            'id': event_id,
+            'fields': {
+                -1: {
+                    'field_name': field_name,
+                    'association': const.FieldAssociations.registration,
+                    'kind': const.FieldDatatypes.bool,
+                    'entries': None,
+                }
+            }
+        }
+        self.assertTrue(self.event.set_event(self.key, data))
+        event = self.event.get_event(self.key, event_id)
+        new_field_id = None,
+        for field in event['fields'].values():
+            if field['field_name'] == field_name:
+                new_field_id = field['id']
+        field_links = ((2, ValueError, "Fee modifier linked to non-bool field."),
+                       (5, ValueError, "Fee modifier linked to non-registration field."),
+                       (new_field_id, None, None))
+        for field_id, error, error_msg in field_links:
+            data = {
+                'id': event_id,
+                'fee_modifiers': {
+                    -1: {
+                        'modifier_name': 'child',
+                        'amount': decimal.Decimal("-12.50"),
+                        'field_id': field_id,
+                        'part_id': 2,
+                    }
+                }
+            }
+            if error:
+                with self.assertRaises(error) as cm:
+                    self.event.set_event(self.key, data)
+                self.assertEqual(error_msg, cm.exception.args[0])
+            else:
+                self.assertTrue(self.event.set_event(self.key, data))
+        reg_id = 2
+        self.assertEqual(self.event.calculate_fee(self.key, reg_id),
+                         decimal.Decimal("589.49"))
+        data = {
+            'id': reg_id,
+            'fields': {
+                field_name: True,
+            }
+        }
+        self.assertTrue(self.event.set_registration(self.key, data))
+        self.assertEqual(self.event.calculate_fee(self.key, reg_id),
+                         decimal.Decimal("576.99"))
+
+    @as_users("annika")
     def test_log(self, user):
         # first generate some data
         data = {

@@ -649,7 +649,7 @@ CREATE TABLE event.field_definitions (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         field_name              varchar NOT NULL,
-        -- anything allowed as type in a query spec
+        -- anything allowed as type in a query spec, see cdedb.database.constants.FieldDatatypes
         kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
@@ -669,6 +669,21 @@ GRANT SELECT ON event.field_definitions TO cdb_anonymous;
 ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (reserve_field) REFERENCES event.field_definitions(id);
 ALTER TABLE event.events ADD FOREIGN KEY (course_room_field) REFERENCES event.field_definitions(id);
+
+CREATE TABLE event.fee_modifiers (
+        id                      serial PRIMARY KEY,
+        -- the event part this modifier is available in.
+        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
+        modifier_name           varchar NOT NULL,
+        -- the amount to modify the fee by. Can be negative.
+        amount                  decimal(8,2) NOT NULL,
+        -- in which field do we save the information whether the modifier has been selected:
+        field_id                integer NOT NULL REFERENCES event.field_definitions(id)
+);
+CREATE UNIQUE INDEX idx_fee_modifiers_part_id ON event.fee_modifiers(part_id, modifier_name);
+GRANT INSERT, UPDATE, DELETE ON event.fee_modifiers TO cdb_persona;
+GRANT SELECT ON event.fee_modifiers TO cdb_anonymous;
+GRANT SELECT, UPDATE ON event.fee_modifiers_id_seq TO cdb_persona;
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,

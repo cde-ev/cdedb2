@@ -13,15 +13,14 @@ from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
     affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
     cast_fields, internal_access)
-from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_GROUP_FIELDS,
-    LODGEMENT_FIELDS, COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim,
+    LODGEMENT_FIELDS, COURSE_SEGMENT_FIELDS, unwrap, now,
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter, deep_update)
+    mixed_existence_sorter, deep_update, FEE_MODIFIER_FIELDS)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -129,6 +128,7 @@ _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations WHERE event_id={event_id}) AS reg_fields",
     "ON reg.id = reg_fields.reg_id",
 )
+
 
 class EventBackend(AbstractBackend):
     """Take note of the fact that some personas are orgas and thus have
@@ -562,17 +562,23 @@ class EventBackend(AbstractBackend):
                 parts = {d['id']: d for d in data if d['event_id'] == anid}
                 assert ('parts' not in ret[anid])
                 ret[anid]['parts'] = parts
-            data = self.sql_select(rs, "event.course_tracks",
-                                   COURSE_TRACK_FIELDS,
-                                   all_parts, entity_key="part_id")
+            track_data = self.sql_select(
+                rs, "event.course_tracks", COURSE_TRACK_FIELDS,
+                all_parts, entity_key="part_id")
+            fee_modifier_data = self.sql_select(
+                rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
+                all_parts, entity_key="part_id")
             for anid in ids:
                 for part_id in ret[anid]['parts']:
-                    tracks = {d['id']: d for d in data
+                    tracks = {d['id']: d for d in track_data
                               if d['part_id'] == part_id}
                     assert ('tracks' not in ret[anid]['parts'][part_id])
                     ret[anid]['parts'][part_id]['tracks'] = tracks
-                ret[anid]['tracks'] = {d['id']: d for d in data
+                ret[anid]['tracks'] = {d['id']: d for d in track_data
                                        if d['part_id'] in ret[anid]['parts']}
+                ret[anid]['fee_modifiers'] = {
+                    d['id']: d for d in fee_modifier_data
+                    if d['part_id'] in ret[anid]['parts']}
             data = self.sql_select(
                 rs, "event.orgas", ("persona_id", "event_id"), ids,
                 entity_key="event_id")
@@ -1081,6 +1087,64 @@ class EventBackend(AbstractBackend):
                         self.event_log(
                             rs, const.EventLogCodes.field_removed, data['id'],
                             additional_info=field_data[x]['field_name'])
+
+            if 'fee_modifiers' in data:
+                fee_modifiers = data['fee_modifiers']
+                # Do some dynamic validation.
+                event_fields = {e['id']: e for e in self.sql_select(
+                    rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
+                    (data['id'],), entity_key="event_id")}
+                for fee_modifier in fee_modifiers.values():
+                    if 'field_id' in fee_modifier:
+                        field = event_fields.get(fee_modifier['field_id'])
+                        if not field:
+                            raise ValueError(n_(
+                                "Fee modifier linked to unknown field."))
+                        if not field['association'] == \
+                               const.FieldAssociations.registration:
+                            raise ValueError(n_(
+                                "Fee modifier linked to non-registration "
+                                "field."))
+                        if not field['kind'] == const.FieldDatatypes.bool:
+                            raise ValueError(n_(
+                                "Fee modifier linked to non-bool field."))
+                # Do the actual work.
+                part_ids = {e['id'] for e in self.sql_select(
+                    rs, "event.event_parts", ("id",), (data['id'],),
+                    entity_key="event_id")}
+                current = self.sql_select(
+                    rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS, part_ids,
+                    entity_key="part_id")
+                existing = {e['id'] for e in current}
+                if not (existing >= {x for x in fee_modifiers if x > 0}):
+                    raise ValueError(n_("Non-existing fee modifier specified."))
+                new = {x for x in fee_modifiers if x < 0}
+                updated = {x for x in fee_modifiers
+                           if x > 0 and fee_modifiers[x] is not None}
+                deleted = {x for x in fee_modifiers
+                           if x > 0 and fee_modifiers[x] is None}
+                fee_modifier_data = {e['id']: e for e in current}
+                elc = const.EventLogCodes
+                for x in new:
+                    ret *= self.sql_insert(
+                        rs, "event.fee_modifiers", fee_modifiers[x])
+                    self.event_log(
+                        rs, elc.fee_modifier_created, data['id'],
+                        additional_info=fee_modifiers[x]['modifier_name'])
+                for x in updated:
+                    ret *= self.sql_update(
+                        rs, "event.fee_modifiers", fee_modifiers[x])
+                    self.event_log(
+                        rs, elc.fee_modifier_changed, data['id'],
+                        additional_info=fee_modifier_data[x]['modifier_name'])
+                if deleted:
+                    ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
+                    for x in deleted:
+                        modifier_name = fee_modifier_data[x]['modifier_name']
+                        self.event_log(
+                            rs, elc.fee_modifier_deleted,
+                            data['id'], additional_info=modifier_name)
+
         return ret
 
     @access("event_admin")
@@ -2323,6 +2387,13 @@ class EventBackend(AbstractBackend):
             if rps(rpart['status']).is_involved():
                 fee += part['fee']
 
+        for fee_modifier in event['fee_modifiers'].values():
+            field = event['fields'][fee_modifier['field_id']]
+            status = rps(reg['parts'][fee_modifier['part_id']]['status'])
+            if status.is_involved():
+                if reg['fields'].get(field['field_name']):
+                    fee += fee_modifier['amount']
+
         if is_member is None:
             is_member = self.core.get_persona(
                 rs, reg['persona_id'])['is_member']
@@ -2885,6 +2956,7 @@ class EventBackend(AbstractBackend):
                     'id', 'persona_id', 'event_id',)),
                 ('event.field_definitions', "event_id",
                  FIELD_DEFINITION_FIELDS),
+                ('event.fee_modifiers', "part_id", FEE_MODIFIER_FIELDS),
                 ('event.lodgement_groups', "event_id", LODGEMENT_GROUP_FIELDS),
                 ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
@@ -3222,6 +3294,17 @@ class EventBackend(AbstractBackend):
                 del field['event_id']
                 del field['id']
             export_event['fields'] = new_fields
+            new_fee_modifers = {
+                mod['modifier_name']: mod
+                for mod in export_event['fee_modifiers'].values()
+            }
+            for mod in new_fee_modifers.values():
+                del mod['id']
+                del mod['modifier_name']
+                mod['part'] = event['parts'][mod['event_part']]['shortname']
+                del mod['part_id']
+                mod['field'] = event['fields'][mod['field_id']]['field_name']
+                del mod['field_id']
             ret['event'] = export_event
             # personas
             persona_ids = tuple(reg['persona_id']

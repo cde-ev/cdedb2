@@ -63,7 +63,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
     CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields,
     ValidationWarning)
-from cdedb.database.constants import FieldDatatypes
+from cdedb.database.constants import FieldDatatypes, FieldAssociations
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
     ITU_CODES)
@@ -2111,6 +2111,7 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
     'mail_text': _str_or_None,
     'parts': _mapping,
     'fields': _mapping,
+    'fee_modifiers': _mapping,
     'registration_text': _str_or_None,
     'orga_address': _email_or_None,
     'lodge_field': _id_or_None,
@@ -2208,6 +2209,21 @@ def _event(val, argname=None, *, creation=False, _convert=True,
                 else:
                     newfields[anid] = field
         val['fields'] = newfields
+    if 'fee_modifiers' in val:
+        new_modifiers = {}
+        for anid, fee_modifier in val['fee_modifiers'].items():
+            anid, e = _int(anid, 'fee_modifiers', _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                fee_modifier, ee = _event_fee_modifier_or_None(
+                    fee_modifier, 'fee_modifiers',
+                    creation=creation,_convert=_convert)
+                if ee:
+                    errs.extend(ee)
+                else:
+                    new_modifiers[anid] = fee_modifier
     return val, errs
 
 
@@ -2408,6 +2424,33 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                     entries.append((value, description))
                     seen_values.add(value)
             val[entries_key] = entries
+    return val, errs
+
+
+_EVENT_FEE_MODIFIER_COMMON_FIELDS = lambda extra_suffix: {
+    "modifier_name{}".format(extra_suffix): _restrictive_identifier,
+    "amount{}".format(extra_suffix): _decimal,
+    "part_id{}".format(extra_suffix): _id,
+    "field_id{}".format(extra_suffix): _id,
+}
+
+@_addvalidator
+def _event_fee_modifier(val, argname=None, *, creation=False,
+                        _convert=True, extra_suffix=''):
+    argname = argname or "fee_modifiers"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
+        optional_fields = {}
+    else:
+        mandatory_fields = {}
+        optional_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
     return val, errs
 
 

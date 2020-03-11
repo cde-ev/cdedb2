@@ -1820,6 +1820,9 @@ COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
 FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",
                            "association", "entries")
 
+#: Fields of a modifier for an event_parts fee.
+FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
+
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
 

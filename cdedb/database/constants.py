@@ -424,6 +424,9 @@ class EventLogCodes(enum.IntEnum):
     lodgement_group_created = 70  #:
     lodgement_group_changed = 71  #:
     lodgement_group_deleted = 72  #:
+    fee_modifier_created = 80  #:
+    fee_modifier_changed = 81  #:
+    fee_modifier_deleted = 82  #:
 
 
 @enum.unique
