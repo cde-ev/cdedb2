@@ -21,7 +21,7 @@
 {# The following macro generates the diff table for a changed registration, lodgement or course. It takes the (flattened)
 diff of the item and shows a table with all changed attributes, old and new values. #}
 {% macro diff_table(diff, titles, choices) %}
-    <table class="table table-slim small" style="clear: right;">
+    <table class="table table-layout-fixed small">
         <thead>
             <tr>
                 <th>{% trans %}Attribute{% endtrans %}</th>

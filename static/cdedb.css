@@ -74,6 +74,9 @@ body{
 .table-slim {
     width: auto;
 }
+.table-layout-fixed {
+    table-layout: fixed;
+}
 .input-slim, .input-group>.input-slim {
     width: auto;
 }
