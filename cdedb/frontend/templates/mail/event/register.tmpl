@@ -22,9 +22,9 @@ Verwendungszweck: {{ user['given_names'] }} {{ user['family_name'] }}, {{ user['
                   {{ ambience['event']['title'] }}
 
 
-{% if "member" not in user.roles %}
-Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe von {{ fee }} bezahlen
-(bereits in der obigen Summe enthalten).
+{% if "member" not in user.roles and ambience["event"]["additional_external_fee"] > 0 %}
+Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe von {{ ambience["event"]["additional_external_fee"] }}
+bezahlen (bereits in der obigen Summe enthalten).
 {% if "cde" in user.roles %}
 Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von {{ semester_fee }} bezahlen
 und somit wieder Mitglied werden, woraufhin Du den zusätzlichen Beitrag nicht bezahlen musst.

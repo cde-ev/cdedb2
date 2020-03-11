@@ -1070,12 +1070,34 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertPresence("Outside")
 
-    @as_users("berta")
+    @as_users("berta", "daniel", "nina")
     def test_register(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/register'})
         self.assertTitle("Anmeldung für Große Testakademie 2222")
+        if user["id"] == 2:
+            self.assertNonPresence("Da Du kein CdE-Mitglied bist, musst du "
+                                   "einen zusätzlichen Beitrag")
+            self.assertNonPresence("Du kannst auch stattdessen Deinen "
+                                   "regulären Mitgliedsbeitrag")
+        elif user["id"] == 4:
+            self.assertPresence("Da Du kein CdE-Mitglied bist, musst du "
+                                "einen zusätzlichen Beitrag",
+                                div="additional-external-fee")
+            self.assertPresence("Du kannst auch stattdessen Deinen "
+                                "regulären Mitgliedsbeitrag",
+                                div="additional-external-fee")
+        elif user["id"] == 14:
+            self.assertPresence("Da Du kein CdE-Mitglied bist, musst du "
+                                "einen zusätzlichen Beitrag",
+                                div="additional-external-fee")
+            self.assertNonPresence("Du kannst auch stattdessen Deinen "
+                                   "regulären Mitgliedsbeitrag",
+                                   div="additional-external-fee")
+        else:
+            self.fail("Please reconfigure the users for the above checks.")
+
         f = self.response.forms['registerform']
         f['parts'] = ['1', '3']
         f['mixed_lodging'] = 'True'
@@ -1103,7 +1125,24 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
         text = mail.get_body().get_content()
-        self.assertIn("461.49", text)
+        if user["id"] == 2:
+            self.assertIn("461.49", text)
+        elif user["id"] == 4:
+            self.assertIn("466.49", text)
+            self.assertIn("Da Du kein CdE-Mitglied bist, musst du einen "
+                          "zusätzlichen Beitrag",
+                          text)
+            self.assertIn("Du kannst auch stattdessen Deinen "
+                          "regulären Mitgliedsbeitrag",
+                          text)
+        elif user["id"] == 14:
+            self.assertIn("466.49", text)
+            self.assertIn("Da Du kein CdE-Mitglied bist, musst du einen "
+                          "zusätzlichen Beitrag",
+                          text)
+            self.assertNotIn("Du kannst auch stattdessen Deinen "
+                             "regulären Mitgliedsbeitrag",
+                             text)
         self.assertPresence("Ich freu mich schon so zu kommen")
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")

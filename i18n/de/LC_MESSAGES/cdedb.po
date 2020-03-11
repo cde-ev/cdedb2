@@ -13385,21 +13385,21 @@ msgstr "Zusatzbeitrag für externe Teilnehmer."
 #, python-format
 msgid ""
 "Because you are not a CdE-Member, you will have to pay an additional fee of "
-"%(fee)s (already included in the above figure)."
+"%(additional_fee)s (already included in the above figure)."
 msgstr ""
 "Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe "
-"von %(fee)s bezahlen (bereits in der obigen Summe enthalten)."
+"von %(additional_fee)s bezahlen (bereits in der obigen Summe enthalten)."
 
 #: cdedb/frontend/templates/web/event/register.tmpl:105
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:78
 #, python-format
 msgid ""
-"You can instead just pay your regular membership fee of %(fee)s per semester "
+"You can instead just pay your regular membership fee of %(semester_fee)s per semester "
 "and you won't have to pay the additional fee. If you choose to do so, please "
 "do so with two separate payments."
 msgstr ""
 "Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von "
-"%(fee)s bezahlen und somit wieder Mitglied werden, woraufhin Du den "
+"%(semester_fee)s bezahlen und somit wieder Mitglied werden, woraufhin Du den "
 "zusätzlichen Beitrag nicht bezahlen musst. Wenn Du dies tust, überweise "
 "Mitgliedsbeitrag und Teilnahmebeitrag bitte separat."
 

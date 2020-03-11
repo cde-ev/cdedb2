@@ -93,17 +93,17 @@
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
-        {% if not persona["is_member"] %}
+        {% if not persona["is_member"] and ambience["event"]["additional_external_fee"] > 0 %}
             <div class="heading-underline text-info" id="additional-external-fee"><strong>
                 <p>
-                {% trans fee=ambience["event"]["additional_external_fee"]|money(lang=lang) %}
-                    Because you are not a CdE-Member, you will have to pay an additional fee of {{ fee }} (already included in the above figure).
+                {% trans additional_fee=ambience["event"]["additional_external_fee"]|money(lang=lang) %}
+                    Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
                 {% endtrans %}
                 </p>
                 {% if persona["is_cde_realm"] %}
                     <p>
-                    {% trans fee=semester_fee|money(lang=lang) %}
-                        You can instead just pay your regular membership fee of {{ fee }} per semester and you won't have to pay the additional fee.
+                    {% trans semester_fee=semester_fee|money(lang=lang) %}
+                        You can instead just pay your regular membership fee of {{ semester_fee }} per semester and you won't have to pay the additional fee.
                         If you choose to do so, please do so with two separate payments.
                     {% endtrans %}
                     </p>
