@@ -518,6 +518,10 @@ class EventFrontend(AbstractUserFrontend):
                           'sortkey'):
                     current["track_{}_{}_{}".format(k, part_id, track_id)] = \
                         track[k]
+        for mod in rs.ambience['event']['fee_modifiers'].values():
+            for k in ('modifier_name', 'amount', 'field_id'):
+                current['fee_modifier_{}_{}_{}'.format(
+                    k, mod['part_id'], mod['id'])] = mod[k]
         merge_dicts(rs.values, current)
         referenced_parts = set()
         referenced_tracks = set()
@@ -529,14 +533,31 @@ class EventFrontend(AbstractUserFrontend):
         # referenced tracks block part deletion
         for track_id in referenced_tracks:
             referenced_parts.add(tracks[track_id]['part_id'])
+
+        fee_modifier_fields = [
+            (field['id'], field['field_name'])
+            for field in rs.ambience['event']['fields'].values()
+            if field['association'] == const.FieldAssociations.registration
+            and field['kind'] == const.FieldDatatypes.bool
+        ]
+        fee_modifiers_by_part = {
+            part_id: {
+                e['id']: e
+                for e in rs.ambience['event']['fee_modifiers'].values()
+                if e['part_id'] == part_id
+            }
+            for part_id in rs.ambience['event']['parts']
+        }
         return self.render(rs, "part_summary", {
+            'fee_modifier_fields': fee_modifier_fields,
+            'fee_modifiers_by_part': fee_modifiers_by_part,
             'referenced_parts': referenced_parts,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
             'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
     @staticmethod
-    def process_part_input(rs, parts, has_registrations):
+    def process_part_input(rs, has_registrations):
         """This handles input to configure the parts.
 
         Since this covers a variable number of rows, we cannot do this
@@ -548,6 +569,9 @@ class EventFrontend(AbstractUserFrontend):
         :type has_registrations: bool
         :rtype: {int: {str: object}}
         """
+        parts = rs.ambience['event']['parts']
+        fee_modifiers = rs.ambience['event']['fee_modifiers']
+
         # Handle basic part data
         delete_flags = request_extractor(
             rs, (("delete_{}".format(part_id), "bool") for part_id in parts))
@@ -692,6 +716,99 @@ class EventFrontend(AbstractUserFrontend):
                 marker += 1
             rs.values['track_create_last_index'][-new_part_id] = marker - 1
 
+        def fee_modifier_params(part_id, fee_modifier_id):
+            """
+            Helper function to create the parameter extraction configuration
+            for the data of a single fee modifier.
+            """
+            return (
+                ("fee_modifier_{}_{}_{}".format(k, part_id, fee_modifier_id), t)
+                for k, t in (('modifier_name', 'str'),
+                             ('amount', 'decimal'),
+                             ('field_id', 'id')))
+
+        def fee_modifier_excavator(req_data, part_id, fee_modifier_id):
+            """
+            Helper function to create a single fee modifier's data dict from the
+            extracted request data.
+            """
+            ret = {
+                k: req_data['fee_modifier_{}_{}_{}'.format(
+                    k, part_id, fee_modifier_id)]
+                for k in ('modifier_name', 'amount', 'field_id')}
+            ret['part_id'] = part_id
+            if fee_modifier_id > 0:
+                ret['id'] = fee_modifier_id
+            return ret
+
+        # Handle fee modifier data
+        fee_modifier_delete_flags = request_extractor(
+            rs, (("fee_modifier_delete_{}_{}".format(mod['part_id'], mod['id']),
+                  "bool")
+                 for mod in fee_modifiers.values()))
+        fee_modifier_deletes = {
+            mod['id']
+            for mod in fee_modifiers.values()
+            if fee_modifier_delete_flags['fee_modifier_delete_{}_{}'.format(
+                mod['part_id'], mod['id'])]
+        }
+        if has_registrations and fee_modifier_deletes:
+            raise ValueError(n_("Registrations exist, no deletion."))
+        params = tuple(itertools.chain.from_iterable(
+            fee_modifier_params(mod['part_id'], mod['id'])
+            for mod in fee_modifiers.values()
+            if mod['id'] not in fee_modifier_deletes))
+
+        def constraint_maker(part_id, fee_modifier_id):
+            key = "fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id)
+            fields = rs.ambience['event']['fields']
+            ret = [
+                (lambda d: fields[d[key]]['association'] ==
+                           const.FieldAssociations.registration,
+                 (key, ValueError(n_(
+                     "Fee Modifier linked to non-registration field.")))),
+                (lambda d: fields[d[key]]['kind'] == const.FieldDatatypes.bool,
+                 (key, ValueError(n_(
+                     "Fee Modifier linked to non-bool field."))))
+                ]
+            return ret
+
+        constraints = tuple(itertools.chain.from_iterable(
+            constraint_maker(mod['part_id'], mod['id'])
+            for mod in fee_modifiers.values()
+            if mod['id'] not in fee_modifier_deletes))
+
+        data = request_extractor(rs, params, constraints)
+        # raise ValueError(rs.request.values)
+        rs.values['fee_modifier_create_last_index'] = {}
+        ret_fee_modifiers = {
+            mod['id']: (fee_modifier_excavator(data, mod['part_id'], mod['id'])
+                        if mod['part_id'] not in deletes
+                        and mod['id'] not in track_deletes else None)
+            for mod in fee_modifiers.values()}
+        for part_id in parts:
+            marker = 1
+            while marker < 2 ** 5:
+                will_create = unwrap(request_extractor(
+                    rs, (("fee_modifier_create_{}_-{}".format(part_id, marker),
+                          "bool"),)))
+                if will_create:
+                    if has_registrations:
+                        raise ValueError(n_(
+                            "Registrations exist, no creation."))
+                    params = tuple(fee_modifier_params(part_id, -marker))
+                    constraints = constraint_maker(part_id, -marker)
+                    new_fee_modifier = fee_modifier_excavator(
+                        request_extractor(rs, params, constraints),
+                        part_id, -marker)
+                    ret_fee_modifiers[-marker] = new_fee_modifier
+                else:
+                    break
+                marker += 1
+            rs.values['fee_modifier_create_last_index'][part_id] = marker - 1
+
+        # Don't allow fee modifiers for newly created parts.
+
         # Handle deleted parts
         for part_id in deletes:
             ret[part_id] = None
@@ -699,15 +816,14 @@ class EventFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 (None, ValueError(n_("At least one event part required."))))
             rs.notify("error", n_("At least one event part required."))
-        return ret
+        return ret, ret_fee_modifiers
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def part_summary(self, rs, event_id):
         """Manipulate the parts of an event."""
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-        parts = self.process_part_input(
-            rs, rs.ambience['event']['parts'], has_registrations)
+        parts, fee_modifiers = self.process_part_input(rs, has_registrations)
         if rs.has_validation_errors():
             return self.part_summary_form(rs, event_id)
         for part_id, part in rs.ambience['event']['parts'].items():
@@ -716,7 +832,8 @@ class EventFrontend(AbstractUserFrontend):
                 del parts[part_id]
         event = {
             'id': event_id,
-            'parts': parts
+            'parts': parts,
+            'fee_modifiers': fee_modifiers,
         }
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)

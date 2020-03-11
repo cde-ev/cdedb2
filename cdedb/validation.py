@@ -2445,7 +2445,7 @@ def _event_fee_modifier(val, argname=None, *, creation=False,
         mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
         optional_fields = {}
     else:
-        mandatory_fields = {}
+        mandatory_fields = {'id': _id}
         optional_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
