@@ -173,6 +173,32 @@ class MailinglistTypes(enum.IntEnum):
     cdelokal = 60
 
 
+class MailinglistDomain(enum.IntEnum):
+    lists = 1
+    aka = 2
+    general = 3
+    cdelokal = 4
+
+    cdemuenchen = 10
+    dokuforge = 11
+
+    def __str__(self):
+        if self not in _DOMAIN_STR_MAP:
+            raise NotImplementedError(n_("This domain is not supported."))
+        return _DOMAIN_STR_MAP[self]
+
+
+# Instead of importing this, call str() on a MailinglistDomain.
+_DOMAIN_STR_MAP = {
+    MailinglistDomain.lists: "lists.cde-ev.de",
+    MailinglistDomain.aka: "aka.cde-ev.de",
+    MailinglistDomain.general: "cde-ev.de",
+    MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
+    MailinglistDomain.cdemuenchen: "cde-muenchen.de",
+    MailinglistDomain.dokuforge: "dokuforge.de",
+}
+
+
 @enum.unique
 class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
@@ -313,6 +339,7 @@ class CoreLogCodes(enum.IntEnum):
     password_change = 10  #:
     password_reset_cookie = 11  #:
     password_reset = 12  #:
+    password_invalidated = 13  #:
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
@@ -328,8 +355,14 @@ class CoreLogCodes(enum.IntEnum):
 @enum.unique
 class CdeLogCodes(enum.IntEnum):
     """Available log messages cde.log."""
-    advance_semester = 1  #:
-    advance_expuls = 2  #:
+    semester_bill = 10
+    semester_bill_with_addresscheck = 11
+    semester_ejection = 12
+    semester_balance_update = 13
+    semester_advance = 1
+    expuls_addresscheck = 20
+    expuls_addresscheck_skipped = 21
+    expuls_advance = 2
 
 
 @enum.unique

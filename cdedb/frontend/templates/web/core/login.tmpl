@@ -6,9 +6,9 @@
     {% if 'core_admin' in user.roles %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{% endif %}
 {% endblock %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	CdE-Datenbank
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
@@ -17,8 +17,8 @@
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
         <div class="alert alert-info">
             <p>
-                {{ util.make_icon('info-sign') }} <strong>{% trans -%}Info{%- endtrans %}</strong>
-                {% trans -%}This is an Offline-Instance of the CdE-DB{%- endtrans %}
+                {{ util.make_icon('info-sign') }} <strong>{% trans %}Info{% endtrans %}</strong>
+                {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
             </p>
             
             <p class=nosp>{# TODO Erklärtext #}</p>

@@ -83,6 +83,19 @@ class CoreBackend(AbstractBackend):
                               introspection_only=True)
         return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
+    def verify_persona_password(self, rs, password, persona_id):
+        """Helper to retrieve a personas password hash and verify the password.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type password: str
+        :type persona_id: int
+        :rtype bool:
+        """
+        persona_id = affirm("id", persona_id)
+        password_hash = unwrap(self.sql_select_one(
+            rs, "core.personas", ("password_hash",), persona_id))
+        return self.verify_password(password, password_hash)
+
     @staticmethod
     def verify_password(password, password_hash):
         """Central function, so that the actual implementation may be easily
@@ -418,7 +431,7 @@ class CoreBackend(AbstractBackend):
             self.sql_insert(rs, "core.changelog", insert)
 
             # resolve change if it doesn't require review
-            if not requires_review:
+            if not requires_review or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
                 ret = self.changelog_resolve_change(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
@@ -592,15 +605,18 @@ class CoreBackend(AbstractBackend):
         return {d['id']: d for d in data}
 
     @internal_access("ml")
-    def list_current_members(self, rs):
+    def list_current_members(self, rs, is_active=False):
         """Helper to list all current members.
 
         Used to determine subscribers of mandatory/opt-out member mailinglists.
 
         :type rs: :py:class:`cdedb.common.RequestState`
+        :type is_active: bool
         :rtype: {int}
         """
         query = "SELECT id from core.personas WHERE is_member = True"
+        if is_active:
+            query += " AND is_active = True"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
@@ -746,16 +762,12 @@ class CoreBackend(AbstractBackend):
             raise RuntimeError(n_("Editing archived member impossible."))
 
         with Atomizer(rs):
-            # reroute through the changelog if necessary
-            if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                ret = self.changelog_submit_change(
-                    rs, data, generation=generation,
-                    may_wait=may_wait, change_note=change_note)
-                if allow_specials and ret < 0:
-                    raise RuntimeError(n_("Special change not committed."))
-                return ret
-
-            return self.commit_persona(rs, data, change_note)
+            ret = self.changelog_submit_change(
+                rs, data, generation=generation,
+                may_wait=may_wait, change_note=change_note)
+            if allow_specials and ret < 0:
+                raise RuntimeError(n_("Special change not committed."))
+            return ret
 
     @access("persona")
     def change_persona(self, rs, data, generation=None, may_wait=True,
@@ -843,45 +855,46 @@ class CoreBackend(AbstractBackend):
         data['status'] = const.PrivilegeChangeStati.pending
         data = affirm("privilege_change", data)
 
-        if "is_meta_admin" in data and data['persona_id'] == rs.user.persona_id:
-            raise PrivilegeError(n_("Cannot modify own meta admin privileges."))
-        if self.list_privilege_changes(
-                rs, persona_id=data['persona_id'],
-                stati=(const.PrivilegeChangeStati.pending,)):
-            raise ValueError(n_("Pending privilege change."))
+        with Atomizer(rs):
+            if ("is_meta_admin" in data
+                    and data['persona_id'] == rs.user.persona_id):
+                raise PrivilegeError(n_(
+                    "Cannot modify own meta admin privileges."))
+            if self.list_privilege_changes(
+                    rs, persona_id=data['persona_id'],
+                    stati=(const.PrivilegeChangeStati.pending,)):
+                raise ValueError(n_("Pending privilege change."))
 
-        persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
+            persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
 
-        # see also cdedb.frontend.templates.core.change_privileges
-        # and change_privileges in cdedb.frontend.core
+            # see also cdedb.frontend.templates.core.change_privileges
+            # and change_privileges in cdedb.frontend.core
 
-        realms = {"cde", "event", "ml", "assembly"}
-        for realm in realms:
-            if not persona['is_{}_realm'.format(realm)]:
-                if data.get('is_{}_admin'.format(realm)):
-                    raise ValueError(n_(
-                        "User does not fit the requirements for this "
-                        "admin privilege."))
+            errormsg = n_("User does not fit the requirements for this"
+                          " admin privilege.")
+            realms = {"cde", "event", "ml", "assembly"}
+            for realm in realms:
+                if not persona['is_{}_realm'.format(realm)]:
+                    if data.get('is_{}_admin'.format(realm)):
+                        raise ValueError(errormsg)
 
-        if data.get('is_finance_admin'):
-            if (data.get('is_cde_admin') is False
-                or (not persona['is_cde_admin']
-                    and not data.get('is_cde_admin'))):
-                raise ValueError(n_(
-                    "User does not fit the requirements for this "
-                    "admin privilege."))
+            if data.get('is_finance_admin'):
+                if (data.get('is_cde_admin') is False
+                    or (not persona['is_cde_admin']
+                        and not data.get('is_cde_admin'))):
+                    raise ValueError(errormsg)
 
-        if data.get('is_core_admin') or data.get('is_meta_admin'):
-            if not persona['is_cde_realm']:
-                raise ValueError(n_(
-                    "User does not fit the requirements for this "
-                    "admin privilege."))
+            if data.get('is_core_admin') or data.get('is_meta_admin'):
+                if not persona['is_cde_realm']:
+                    raise ValueError(errormsg)
 
-        self.core_log(
-            rs, const.CoreLogCodes.privilege_change_pending, data['persona_id'],
-            additional_info="Änderung der Admin-Privilegien angestoßen.")
+            self.core_log(
+                rs, const.CoreLogCodes.privilege_change_pending,
+                data['persona_id'],
+                additional_info="Änderung der Admin-Privilegien angestoßen.")
+            ret = self.sql_insert(rs, "core.privilege_changes", data)
 
-        return self.sql_insert(rs, "core.privilege_changes", data)
+        return ret
 
     @access("meta_admin")
     def finalize_privilege_change(self, rs, case_id, case_status):
@@ -889,19 +902,18 @@ class CoreBackend(AbstractBackend):
 
         This has to be done by a different admin.
 
+        If the user had no admin privileges previously, we require a password
+        reset afterwards.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type case_id: int
         :type case_status: int
         :rtype: int
-        :returns: default return code
+        :returns: default return code. A neegative return indicates, that the
+            users password was invalidated and will need to be changed.
         """
         case_id = affirm("id", case_id)
         case_status = affirm("enum_privilegechangestati", case_status)
-
-        case = self.get_privilege_change(rs, case_id)
-        if case['status'] != const.PrivilegeChangeStati.pending:
-            raise ValueError(n_("Invalid privilege change state: %(status)s."),
-                             {"status": case["status"]})
 
         data = {
             "id": case_id,
@@ -910,9 +922,14 @@ class CoreBackend(AbstractBackend):
             "status": case_status,
         }
         with Atomizer(rs):
+            case = self.get_privilege_change(rs, case_id)
+            if case['status'] != const.PrivilegeChangeStati.pending:
+                raise ValueError(
+                    n_("Invalid privilege change state: %(status)s."),
+                    {"status": case["status"]})
             if case_status == const.PrivilegeChangeStati.approved:
                 if (case["is_meta_admin"] is not None
-                    and case['persona_id'] == rs.user.persona_id):
+                        and case['persona_id'] == rs.user.persona_id):
                     raise PrivilegeError(
                         n_("Cannot modify own meta admin privileges."))
                 if case['submitted_by'] == rs.user.persona_id:
@@ -926,6 +943,8 @@ class CoreBackend(AbstractBackend):
                     rs, const.CoreLogCodes.privilege_change_approved,
                     persona_id=case['persona_id'],
                     additional_info="Änderung der Admin-Privilegien bestätigt.")
+
+                old = self.get_persona(rs, case["persona_id"])
                 data = {
                     "id": case["persona_id"]
                 }
@@ -942,6 +961,12 @@ class CoreBackend(AbstractBackend):
                 ret *= self.set_persona(
                     rs, data, may_wait=False,
                     change_note=note, allow_specials=("admins",))
+
+                # Force password reset if non-admin has gained admin privileges.
+                if (not any(old[key] for key in admin_keys)
+                        and any(data.get(key) for key in admin_keys)):
+                    ret *= self.invalidate_password(rs, case["persona_id"])
+                    ret *= -1
 
                 # Mark case as successful
                 data = {
@@ -1128,6 +1153,42 @@ class CoreBackend(AbstractBackend):
                 allow_specials=("membership", "finance"))
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
+
+    @access("core_admin", "meta_admin")
+    def invalidate_password(self, rs, persona_id):
+        """Replace a users password with an unknown one.
+
+        This forces the user to set a new password and also invalidates all
+        current sessions.
+
+        This is to be used when granting admin privileges to a user who has
+        not previously had any, hence we allow backend access for all
+        meta_admins.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :rtype: int
+        :returns: default return code
+        """
+        persona_id = affirm("id", persona_id)
+
+        # modified version of hash for 'secret' and thus
+        # safe/unknown plaintext
+        password_hash = (
+            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
+            "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
+        query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+        ret = self.query_exec(rs, query, (password_hash, persona_id))
+
+        # Invalidate alle active sessions.
+        query = ("UPDATE core.sessions SET is_active = False "
+                 "WHERE persona_id = %s AND is_active = True")
+        self.query_exec(rs, query, (persona_id,))
+
+        ret *= self.core_log(rs, code=const.CoreLogCodes.password_invalidated,
+                             persona_id=persona_id)
+
+        return ret
 
     @access("core_admin", "cde_admin")
     def archive_persona(self, rs, persona_id, note):
@@ -1440,9 +1501,7 @@ class CoreBackend(AbstractBackend):
             if self.is_relative_admin(rs, persona_id):
                 authorized = True
             elif password:
-                data = self.sql_select_one(rs, "core.personas",
-                                           ("password_hash",), persona_id)
-                if data and self.verify_password(password, unwrap(data)):
+                if self.verify_persona_password(rs, password, persona_id):
                     authorized = True
             if authorized:
                 new = {
@@ -1686,8 +1745,7 @@ class CoreBackend(AbstractBackend):
             # remove unlogged attributes
             del data['password_hash']
             del data['fulltext']
-            if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                self.sql_insert(rs, "core.changelog", data)
+            self.sql_insert(rs, "core.changelog", data)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
         return new_id
 
@@ -1881,7 +1939,7 @@ class CoreBackend(AbstractBackend):
         :rtype: str
         """
         with Atomizer(rs):
-            if not self.is_admin(rs):
+            if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
                 roles = unwrap(self.get_roles_multi(rs, (persona_id,)))
                 if any("admin" in role for role in roles):
                     raise PrivilegeError(n_("Preventing reset of admin."))
@@ -1949,9 +2007,7 @@ class CoreBackend(AbstractBackend):
         if not old_password and not reset_cookie:
             return False, n_("No authorization provided.")
         if old_password:
-            password_hash = unwrap(self.sql_select_one(
-                rs, "core.personas", ("password_hash",), persona_id))
-            if not self.verify_password(old_password, password_hash):
+            if not self.verify_persona_password(rs, old_password, persona_id):
                 return False, n_("Password verification failed.")
         if reset_cookie:
             success, msg = self.verify_reset_cookie(

@@ -3,9 +3,9 @@
 {% set jshint='weak' %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
-        Partial Import Validation ({{ title }})
-    {%- endtrans %}
+    {% trans title=ambience['event']['title'] %}
+    	Partial Import Validation ({{ title }})
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -88,10 +88,10 @@ diff of the item and shows a table with all changed attributes, old and new valu
 {% block content %}
     <p class="text-warning">
         {{ util.make_icon('warning-sign') }}
-        {% trans manual=util.href(docurl('Handbuch_partieller_Import'), gettext('manual')) -%}
+        {% trans manual=util.href(docurl('Handbuch_partieller_Import'), gettext('manual')) %}
             Carefully check the summary below, as this tool has the potential to do irreversible damage
             to your event. (You read the {{ manual }}, right?)
-        {%- endtrans %}
+        {% endtrans %}
     </p>
 
     <h2>{% trans %}Summary of Changes{% endtrans %}</h2>

@@ -162,12 +162,12 @@ class CdEBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
-        if ("finance_admin" not in rs.user.roles
+        if ("cde_admin" not in rs.user.roles
                 and any(e['persona_id'] != rs.user.persona_id for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
-    @access("finance_admin")
+    @access("cde_admin")
     def set_lastschrift(self, rs, data):
         """Modify a direct debit permit.
 
@@ -192,7 +192,7 @@ class CdEBackend(AbstractBackend):
             self.core.finance_log(rs, log_code, persona_id, None, None)
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin")
     def create_lastschrift(self, rs, data):
         """Make a new direct debit permit.
 
@@ -231,7 +231,7 @@ class CdEBackend(AbstractBackend):
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
         lastschrift_ids = affirm_set("id", lastschrift_ids, allow_None=True)
-        if "finance_admin" not in rs.user.roles:
+        if "cde_admin" not in rs.user.roles:
             # Don't allow None for non admins.
             if lastschrift_ids is None:
                 raise PrivilegeError(n_("Not privileged."))
@@ -599,12 +599,89 @@ class CdEBackend(AbstractBackend):
                 'billing_done': None,
                 'ejection_state': None,
                 'ejection_done': None,
+                'ejection_count': 0,
+                'ejection_balance': decimal.Decimal(0),
                 'balance_state': None,
                 'balance_done': None,
+                'balance_trialmembers': 0,
+                'balance_total': decimal.Decimal(0),
             }
             ret = self.sql_insert(rs, "cde.org_period", new_period)
-            self.cde_log(rs, const.CdeLogCodes.advance_semester,
+            self.cde_log(rs, const.CdeLogCodes.semester_advance,
                          persona_id=None, additional_info=ret)
+            return ret
+
+    @access("finance_admin")
+    def finish_semester_bill(self, rs, addresscheck=False):
+        """Conclude the semester bill step.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type addresscheck: bool
+        :returns: default return code
+        """
+        addresscheck = affirm("bool", addresscheck)
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period_update = {
+                'id': period_id,
+                'billing_state': None,
+                'billing_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            if addresscheck:
+                self.cde_log(
+                    rs, const.CdeLogCodes.semester_bill_with_addresscheck,
+                    persona_id=None, additional_info=None)
+            else:
+                self.cde_log(
+                    rs, const.CdeLogCodes.semester_bill,
+                    persona_id=None, additional_info=None)
+            return ret
+
+    @access("finance_admin")
+    def finish_semester_ejection(self, rs):
+        """Conclude the semester ejection step.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :returns: default return code
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            period_update = {
+                'id': period_id,
+                'ejection_state': None,
+                'ejection_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            self.cde_log(
+                rs, const.CdeLogCodes.semester_ejection, persona_id=None,
+                additional_info="{} inaktive Mitglieder gestrichen."
+                                "{} € Guthaben eingezogen.".format(
+                    period['ejection_count'], period['ejection_balance']))
+            return ret
+
+    @access("finance_admin")
+    def finish_semester_balance_update(self, rs):
+        """Conclude the semester balance update step.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :returns: default return code
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            period_update = {
+                'id': period_id,
+                'balance_state': None,
+                'balance_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            msg = "{} Probemitgliedschaften beendet, {} € Guthaben abgebucht."
+            self.cde_log(
+                rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
+                additional_info=msg.format(period['balance_trialmembers'],
+                                           period['balance_total']))
             return ret
 
     @access("cde")
@@ -665,8 +742,33 @@ class CdEBackend(AbstractBackend):
                 'addresscheck_done': None,
             }
             ret = self.sql_insert(rs, "cde.expuls_period", new_expuls)
-            self.cde_log(rs, const.CdeLogCodes.advance_expuls,
+            self.cde_log(rs, const.CdeLogCodes.expuls_advance,
                          persona_id=None, additional_info=ret)
+            return ret
+
+    @access("finance_admin")
+    def finish_expuls_addresscheck(self, rs, skip=False):
+        """Conclude the expuls addresscheck step.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type skip: bool
+        :returns: default return code
+        """
+        skip = affirm("bool", skip)
+        with Atomizer(rs):
+            expuls_id = self.current_expuls(rs)
+            expuls_update = {
+                'id': expuls_id,
+                'addresscheck_state': None,
+                'addresscheck_done': now(),
+            }
+            ret = self.set_expuls(rs, expuls_update)
+            if skip:
+                self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck_skipped,
+                             persona_id=None, additional_info=None)
+            else:
+                self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck,
+                             persona_id=None, additional_info=None)
             return ret
 
     @access("searchable", "cde_admin")

@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}{% trans -%}Create Past Event{%- endtrans %}{% endblock %}
+{% block title %}{% trans %}Create Past Event{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}

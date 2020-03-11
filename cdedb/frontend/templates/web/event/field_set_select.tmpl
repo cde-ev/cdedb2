@@ -2,15 +2,15 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Select Field ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}
+        {% trans %}
             Select Field
-        {%- endtrans %}
+        {% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -35,7 +35,7 @@
     </form>
 
     {% if reg_ids %}
-        <h4 class="mosp">{% trans -%}Participants/Registrations to be changed{%- endtrans %}</h4>
+        <h4 class="mosp">{% trans %}Participants/Registrations to be changed{% endtrans %}</h4>
         <ul>
             {% for reg_id, registration in registrations.items() %}
                 <li>{{ personas[registration['persona_id']]['given_names'] }}

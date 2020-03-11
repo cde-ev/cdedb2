@@ -164,7 +164,7 @@ class TestCron(CronTest):
         + cron_template(
             moniker="genesis_remind",
             store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
-                   "ids": [1]}))
+                   "ids": [1001]}))
     def test_genesis_remind_old(self):
         self.execute('genesis_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -172,7 +172,7 @@ class TestCron(CronTest):
     @prepsql(
         genesis_template(ctime=(now() - datetime.timedelta(hours=6)))
         + cron_template(moniker="genesis_remind",
-                        store={"tstamp": 1, "ids": [1]}))
+                        store={"tstamp": 1, "ids": [1001]}))
     def test_genesis_remind_older(self):
         self.execute('genesis_remind')
         self.assertEqual(["genesis_requests_pending"],
@@ -184,7 +184,7 @@ class TestCron(CronTest):
     @prepsql(genesis_template())
     def test_genesis_forget_unrelated(self):
         self.execute('genesis_forget')
-        self.assertEqual({1}, set(self.core.genesis_list_cases()))
+        self.assertEqual({1001}, set(self.core.genesis_list_cases()))
 
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
@@ -204,7 +204,7 @@ class TestCron(CronTest):
         case_status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_recent_unconfirmed(self):
         self.execute('genesis_forget')
-        self.assertEqual({1}, set(self.core.genesis_list_cases()))
+        self.assertEqual({1001}, set(self.core.genesis_list_cases()))
 
     def test_changelog_remind_empty(self):
         self.cron.execute(['pending_changelog_remind'])
@@ -249,21 +249,27 @@ class TestCron(CronTest):
 
     def test_subscription_request_remind_new(self):
         # Mailinglist 7 has pending subscription for persona 6
-        self.execute('subscription_request_remind')
-        self.assertEqual(["subscription_request_remind"],
-                         [mail.template for mail in self.mails])
-
-    @prepsql(subscription_request_template(persona_id=3, mailinglist_id=4)
-             + subscription_request_template(persona_id=5, mailinglist_id=4)
-             + subscription_request_template(persona_id=2, mailinglist_id=7)
-             + subscription_request_template(persona_id=3, mailinglist_id=8))
-    def test_subscription_request_remind_multiple(self):
+        # Mailinglist 54 for 2 and Mailinglist 56 for 7
         self.execute('subscription_request_remind')
         self.assertEqual(["subscription_request_remind"] * 3,
                          [mail.template for mail in self.mails])
 
+    @prepsql(subscription_request_template(persona_id=9, mailinglist_id=4)
+             + subscription_request_template(persona_id=27, mailinglist_id=4)
+             + subscription_request_template(persona_id=2, mailinglist_id=7)
+             + subscription_request_template(persona_id=3, mailinglist_id=8))
+    def test_subscription_request_remind_multiple(self):
+        self.execute('subscription_request_remind')
+        # 7, 54 and 56 have pending subscriptions
+        self.assertEqual(["subscription_request_remind"] * 5,
+                         [mail.template for mail in self.mails])
+
     @prepsql(cron_template(moniker="subscription_request_remind",
                            store={7: {'persona_ids': [6],
+                                      'tstamp': now().timestamp()},
+                                  54: {'persona_ids': [2],
+                                      'tstamp': now().timestamp()},
+                                  56: {'persona_ids': [7],
                                       'tstamp': now().timestamp()}}))
     def test_subscription_request_remind_old(self):
         self.execute('subscription_request_remind')
@@ -292,7 +298,7 @@ class TestCron(CronTest):
         + cron_template(
             moniker="privilege_change_remind",
             store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
-                   "ids": [1]}))
+                   "ids": [1001]}))
     def test_privilege_change_remind_old(self):
         self.execute('privilege_change_remind')
         self.assertEqual([],
@@ -303,7 +309,7 @@ class TestCron(CronTest):
                                   ctime=now() - datetime.timedelta(hours=6))
         + cron_template(
             moniker="privilege_change_remind",
-            store={"tstamp": 1, "ids": [1]}))
+            store={"tstamp": 1, "ids": [1001]}))
     def test_privilege_change_remind_older(self):
         self.execute('privilege_change_remind')
         self.assertEqual(['privilege_change_remind'],
@@ -334,27 +340,27 @@ class TestCron(CronTest):
         }
         mm_lists = {
             'zombie': unittest.mock.MagicMock(
-                fqdn_listname='zombie@example.cde'),
+                fqdn_listname='zombie@lists.cde-ev.de'),
             'announce': unittest.mock.MagicMock(
-                fqdn_listname='announce@example.cde',
+                fqdn_listname='announce@lists.cde-ev.de',
                 settings=SaveDict(
                     **base_settings,
                     **{'display_name': "Announce name",
                        'description': "Announce description",
                        'info': "Announce info",
-                       'subject_prefix': "[ann]",
+                       'subject_prefix': "[ann] ",
                        'max_message_size': 1024,
                        'default_member_action': 'hold',
                        'default_nonmember_action': 'hold',}
                 )),
             'witz': unittest.mock.MagicMock(
-                fqdn_listname='witz@example.cde',
+                fqdn_listname='witz@lists.cde-ev.de',
                 settings=SaveDict(
                     **base_settings,
                     **{'display_name': "Witz name",
                        'description': "Witz description",
                        'info': "Witz info",
-                       'subject_prefix': "[witz]",
+                       'subject_prefix': "[witz] ",
                        'max_message_size': 512,
                        'default_member_action': 'hold',
                        'default_nonmember_action': 'hold',}
@@ -367,6 +373,21 @@ class TestCron(CronTest):
             'werbung': unittest.mock.MagicMock(),
             'aka': unittest.mock.MagicMock(),
             'opt': unittest.mock.MagicMock(),
+            'party50-all': unittest.mock.MagicMock(),
+            'party50': unittest.mock.MagicMock(),
+            'info': unittest.mock.MagicMock(),
+            'mitgestaltung': unittest.mock.MagicMock(),
+            'all': unittest.mock.MagicMock(),
+            'gutscheine': unittest.mock.MagicMock(),
+            'bau': unittest.mock.MagicMock(),
+            'wal': unittest.mock.MagicMock(),
+            'test-gast': unittest.mock.MagicMock(),
+            'kanonisch': unittest.mock.MagicMock(),
+            '42': unittest.mock.MagicMock(),
+            'dsa': unittest.mock.MagicMock(),
+            'platin': unittest.mock.MagicMock(),
+            'geheim': unittest.mock.MagicMock(),
+            'hogwarts': unittest.mock.MagicMock(),
         }
 
         client = client_class.return_value
@@ -397,7 +418,23 @@ class TestCron(CronTest):
                          umcall('werbung'),
                          umcall('aktivenforum'),
                          umcall('kongress'),
-                         umcall('participants'),])))
+                         umcall('participants'),
+                         umcall('party50-all'),
+                         umcall('party50'),
+                         umcall('info'),
+                         umcall('mitgestaltung'),
+                         umcall('all'),
+                         umcall('gutscheine'),
+                         umcall('bau'),
+                         umcall('wal'),
+                         umcall('test-gast'),
+                         umcall('kanonisch'),
+                         umcall('42'),
+                         umcall('dsa'),
+                         umcall('platin'),
+                         umcall('geheim'),
+                         umcall('hogwarts'),
+                         ])))
         # Meta update
         expectation = {
             'advertised': True,
@@ -406,7 +443,7 @@ class TestCron(CronTest):
             'display_name': 'Witz des Tages',
             'info': 'Einer geht noch ...',
             'max_message_size': 2048,
-            'subject_prefix': '[[witz]] ',
+            'subject_prefix': '[witz] ',
         }
         for key, value in expectation.items():
             self.assertEqual(mm_lists['witz'].settings[key], value)
@@ -434,4 +471,4 @@ class TestCron(CronTest):
 
         # Deletion
         self.assertEqual(client.delete_list.call_args_list,
-                         [umcall('zombie@example.cde')])
+                         [umcall('zombie@lists.cde-ev.de')])

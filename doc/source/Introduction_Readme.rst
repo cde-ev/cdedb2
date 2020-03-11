@@ -125,5 +125,6 @@ it right away.
   those named remove_foo are always feasible. Second those name delete_foo
   are dependent on the foo not being referenced anywhere. They may provide a
   cascade parameter which allows to automatically remove all references.
-* The file ``/DBVM`` is used to mark the live server instance. There are
-  some sanity checks to prevent a big catastrophe.
+* The file ``/PRODUCTIONVM`` is used to mark the live server instance. There
+  are some sanity checks to prevent a big catastrophe. Similarily
+  ``/OFFLINEVM`` is used for offline deployments at events.

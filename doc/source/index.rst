@@ -7,6 +7,7 @@ Contents:
    :maxdepth: 2
 
    Introduction
+   Architecture
    Frontend
    Backend
    Database

@@ -133,6 +133,7 @@
     },
     "event.registrations": {
         "2": {
+            "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 5,
@@ -150,6 +151,7 @@
             "real_persona_id": null
         },
         "1": {
+            "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 1,
@@ -166,6 +168,7 @@
             "real_persona_id": null
         },
         "3": {
+            "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 7,
@@ -182,6 +185,7 @@
             "real_persona_id": null
         },
         "4": {
+            "amount_paid": "0.00",
             "event_id": 1,
             "checkin": null,
             "persona_id": 9,
@@ -200,6 +204,7 @@
             "real_persona_id": null
         },
         "5": {
+            "amount_paid": "0.00",
             "checkin": null,
             "event_id": 1,
             "fields": {"transportation": "pedes"},
@@ -293,7 +298,7 @@
             "association": 2
         }
     },
-    "CDEDB_EXPORT_EVENT_VERSION": 6,
+    "CDEDB_EXPORT_EVENT_VERSION": 8,
     "event.registration_parts": {
         "2": {
             "is_reserve": false,
@@ -535,7 +540,7 @@
         },
         "1": {
             "event_id": 1,
-            "min_size": 3,
+            "min_size": 2,
             "nr": "\u03b1",
             "description": "Wir werden die B\u00e4ume dr\u00fccken.",
             "shortname": "Heldentum",
@@ -1099,7 +1104,7 @@
             "location": "Tokyo",
             "mobile": null,
             "name_supplement": null,
-            "postal_code": "100-8798",
+            "postal_code": null,
             "telephone": "+81 (314) 159263",
             "title": null,
             "username": "akira@example.cde"

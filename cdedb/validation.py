@@ -58,6 +58,7 @@ from cdedb.query import (
     NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS, ENUMS_DICT
+import cdedb.ml_type_aux as ml_type
 
 _BASICCONF = BasicConfig()
 
@@ -213,6 +214,9 @@ def _None(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (object or None, [(str or None, exception)])
     """
+    if _convert:
+        if isinstance(val, str) and not val:
+            val = None
     if val is None:
         return val, []
     return None, [(argname, ValueError(n_("Must be None.")))]
@@ -242,7 +246,7 @@ def _int(val, argname=None, *, _convert=True):
     :rtype: (int or None, [(str or None, exception)])
     """
     if _convert:
-        if isinstance(val, str):
+        if isinstance(val, str) or isinstance(val, bool):
             try:
                 val = int(val)
             except ValueError:
@@ -252,7 +256,7 @@ def _int(val, argname=None, *, _convert=True):
             if abs(val - int(val)) > EPSILON:
                 return None, [(argname, ValueError(n_("Precision loss.")))]
             val = int(val)
-    if not isinstance(val, int):
+    if not isinstance(val, int) or isinstance(val, bool):
         return None, [(argname, TypeError(n_("Must be an integer.")))]
     return val, []
 
@@ -273,9 +277,8 @@ def _non_negative_int(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _id(val, argname=None, *, _convert=True):
-    """A numeric ID as in a database key.
-
+def _positive_int(val, argname=None, *, _convert=True):
+    """
     :type val: object
     :type argname: str or None
     :type _convert: bool
@@ -287,6 +290,22 @@ def _id(val, argname=None, *, _convert=True):
             val = None
             errs.append((argname, ValueError(n_("Must be positive."))))
     return val, errs
+
+
+@_addvalidator
+def _id(val, argname=None, *, _convert=True):
+    """A numeric ID as in a database key.
+
+    This is just a wrapper around `_positive_int`, to differentiate this
+    semantically.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (int or None, [(str or None, exception)])
+    """
+    return _positive_int(val, argname, _convert=_convert)
+
 
 @_addvalidator
 def _partial_import_id(val, argname=None, *, _convert=True):
@@ -353,6 +372,21 @@ def _non_negative_decimal(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
+def _positive_decimal(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (decimal.Decimal or None, [(str or None, exception)])
+    """
+    val, err = _decimal(val, argname, _convert=_convert)
+    if not err and val <= 0:
+        val = None
+        err.append((argname, ValueError(n_("Transfer saldo is negative."))))
+    return val, err
+
+
+@_addvalidator
 def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
     """
     :type val: object
@@ -393,7 +427,7 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True):
     :rtype: (str or None, [(str or None, exception)])
     """
     val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert)
-    if val is not None and not val.strip():
+    if val is not None and not val:
         errs.append((argname, ValueError(n_("Mustn’t be empty."))))
     return val, errs
 
@@ -478,6 +512,24 @@ def _empty_dict(val, argname=None, *, _convert=True):
     """
     if val != {}:
         return None, [(argname, ValueError(n_("Must be an empty dict.")))]
+    return val, []
+
+
+@_addvalidator
+def _empty_list(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (list or None, [(str or None, expection)])
+    """
+    if _convert:
+        val, errs = _iterable(val, argname, _convert=_convert)
+        if errs:
+            return None, errs
+        val = list(val)
+    if val != []:
+        return None, [(argname, ValueError(n_("Must be an empty list.")))]
     return val, []
 
 
@@ -753,6 +805,30 @@ def _email(val, argname=None, *, _convert=True):
     return val, errs
 
 
+_EMAIL_LOCAL_PART_REGEX = re.compile(r'^[a-z0-9._+-]+$')
+
+
+@_addvalidator
+def _email_local_part(val, argname=None, *, _convert=True):
+    """We accept only a subset of valid email addresses.
+    Here we only care about the local part.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return None, errs
+    # normalize to lower case
+    val = val.strip().lower()
+    if not _EMAIL_LOCAL_PART_REGEX.match(val):
+        errs.append(
+            (argname, ValueError(n_("Must be a valid email local part."))))
+    return val, errs
+
+
 _PERSONA_TYPE_FIELDS = {
     'is_cde_realm': _bool,
     'is_event_realm': _bool,
@@ -889,7 +965,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
     'timeline': _str_or_None,
     'interests': _str_or_None,
     'free_form': _str_or_None,
-    'balance': _decimal,
+    'balance': _non_negative_decimal,
     'trial_member': _bool,
     'decided_search': _bool,
     'bub_search': _bool,
@@ -1436,8 +1512,12 @@ def _period(val, argname=None, *, _convert=True):
         'billing_done': _datetime,
         'ejection_state': _id_or_None,
         'ejection_done': _datetime,
+        'ejection_count': _non_negative_int,
+        'ejection_balance': _non_negative_decimal,
         'balance_state': _id_or_None,
         'balance_done': _datetime,
+        'balance_trialmembers': _non_negative_int,
+        'balance_total': _non_negative_decimal,
     }
     return _examine_dictionary_fields(val, {'id': _id}, optional_fields,
                                       _convert=_convert)
@@ -1464,7 +1544,7 @@ def _expuls(val, argname=None, *, _convert=True):
 
 
 _LASTSCHRIFT_COMMON_FIELDS = lambda: {
-    'amount': _non_negative_decimal,
+    'amount': _positive_decimal,
     'iban': _iban,
     'account_owner': _str_or_None,
     'account_address': _str_or_None,
@@ -1552,7 +1632,7 @@ def _iban(val, argname=None, *, _convert=True):
 
 
 _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
-    'amount': _decimal,
+    'amount': _positive_decimal,
     'status': _enum_lastschrifttransactionstati,
     'issued_at': _datetime,
     'processed_at': _datetime_or_None,
@@ -1596,7 +1676,7 @@ _SEPA_TRANSACTIONS_FIELDS = {
     'lastschrift_id': _id,
     'period_id': _id,
     'mandate_reference': _str,
-    'amount': _decimal,
+    'amount': _positive_decimal,
     'iban': _iban,
     'mandate_date': _date,
     'account_owner': _str,
@@ -1653,7 +1733,7 @@ def _sepa_transactions(val, argname=None, *, _convert=True):
 
 _SEPA_META_FIELDS = {
     'message_id': _str,
-    'total_sum': _decimal,
+    'total_sum': _positive_decimal,
     'partial_sums': _mapping,
     'count': _int,
     'sender': _mapping,
@@ -1955,7 +2035,7 @@ _EVENT_PART_COMMON_FIELDS = {
     'shortname': _str,
     'part_begin': _date,
     'part_end': _date,
-    'fee': _decimal,
+    'fee': _non_negative_decimal,
     'tracks': _mapping,
 }
 
@@ -2173,8 +2253,8 @@ _COURSE_COMMON_FIELDS = lambda: {
     'nr': _str,
     'shortname': _str,
     'instructors': _str_or_None,
-    'max_size': _int_or_None,
-    'min_size': _int_or_None,
+    'max_size': _non_negative_int_or_None,
+    'min_size': _non_negative_int_or_None,
     'notes': _str_or_None,
 }
 _COURSE_OPTIONAL_FIELDS = {
@@ -2250,6 +2330,7 @@ _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'real_persona_id': _id_or_None,
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
+    'amount_paid': _non_negative_decimal,
     'checkin': _datetime_or_None,
     'fields': _mapping
 }
@@ -2952,6 +3033,7 @@ _PARTIAL_REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'parental_agreement': _bool_or_None,
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
+    'amount_paid': _non_negative_decimal,
     'checkin': _datetime_or_None,
     'fields': _mapping,
 }
@@ -3077,29 +3159,32 @@ def _partial_registration_track(val, argname=None, *, _convert=True):
 
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
-    'address': _email,
+    'local_part': _email_local_part,
+    'domain': _enum_mailinglistdomain,
     'description': _str_or_None,
-    'sub_policy': _enum_mailinglistinteractionpolicy,
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
-    'audience_policy': _enum_audiencepolicy,
     'ml_type': _enum_mailinglisttypes,
     'subject_prefix': _str_or_None,
-    'maxsize': _int_or_None,
+    'maxsize': _id_or_None,
     'is_active': _bool,
-    'event_id': _id_or_None,
-    'registration_stati': _iterable,
-    'assembly_id': _id_or_None,
     'notes': _str_or_None,
 }
-_MAILINGLIST_OPTIONAL_FIELDS = {
-    'moderators': _iterable,
-    'whitelist': _iterable,
+_MAILINGLIST_OPTIONAL_FIELDS = lambda: {
+    'assembly_id': _None,
+    'event_id': _None,
+    'registration_stati': _empty_list,
+}
+_MAILINGLIST_READONLY_FIELDS = {
+    'address',
+    'domain_str',
+    'ml_type_class',
 }
 
 
 @_addvalidator
-def _mailinglist(val, argname=None, *, creation=False, _convert=True):
+def _mailinglist(val, argname=None, *, creation=False, _convert=True,
+                 _allow_readonly=False):
     """
     :type val: object
     :type argname: str or None
@@ -3113,45 +3198,59 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
+    mandatory_validation_fields = (('moderators', '[id]'),)
+    optional_validation_fields = (('whitelist', '[email]'),)
+    if "ml_type" in val:
+        atype = ml_type.get_type(val["ml_type"])
+        mandatory_validation_fields += atype.mandatory_validation_fields
+        optional_validation_fields += atype.optional_validation_fields
+    mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
+    optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
+    iterable_fields = []
+    for source, target in ((mandatory_validation_fields, mandatory_fields),
+                           (optional_validation_fields, optional_fields)):
+        for key, validator_str in source:
+            if validator_str.startswith('[') and validator_str.endswith(']'):
+                target[key] = _iterable
+                iterable_fields.append((key, "_" + validator_str[1:-1]))
+            else:
+                target[key] = getattr(current_module, "_" + validator_str)
+    # Optionally remove readonly attributes, take care to keep the original.
+    if _allow_readonly:
+        val = copy.deepcopy(val)
+        for key in _MAILINGLIST_READONLY_FIELDS:
+            if key in val:
+                del val[key]
     if creation:
-        mandatory_fields = _MAILINGLIST_COMMON_FIELDS()
-        optional_fields = _MAILINGLIST_OPTIONAL_FIELDS
+        pass
     else:
+        # The order is important here, so that mandatory fields take precedence.
+        optional_fields = dict(optional_fields, **mandatory_fields)
         mandatory_fields = {'id': _id}
-        optional_fields = dict(_MAILINGLIST_COMMON_FIELDS(),
-                               **_MAILINGLIST_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    specials = sum(1 for x in (val.get('event_id'),
-                               val.get('assembly_id')) if x)
-    if specials > 1:
-        error = ValueError(n_("Only one allowed of event_id and assembly_id."))
-        errs.append(('event_id', error))
-        errs.append(('assembly_id', error))
-    apol = ENUMS_DICT['AudiencePolicy']
-    if (val.get('assembly_id')
-            and val.get('audience_policy') != apol.require_assembly):
-        error = ValueError(n_("Linked assembly requires assembly audience."))
-        errs.append(('assembly_id', error))
-        errs.append(('audience_policy', error))
-    if (val.get('event_id')
-            and val.get('audience_policy') != apol.require_event):
-        error = ValueError(n_("Linked event requires event audience."))
-        errs.append(('event_id', error))
-        errs.append(('audience_policy', error))
-    for key, validator in (('registration_stati', _enum_registrationpartstati),
-                           ('moderators', _id), ('whitelist', _email)):
+    for key, validator_str in iterable_fields:
+        validator = getattr(current_module, validator_str)
+        newarray = []
         if key in val:
-            newarray = []
-            for anid in val[key]:
-                v, e = validator(anid, key, _convert=_convert)
+            for x in val[key]:
+                v, e = validator(x, _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
                     newarray.append(v)
             val[key] = newarray
+    if "domain" in val:
+        if "ml_type" not in val:
+            errs.append(("domain", ValueError(n_(
+                "Must specify mailinglist type to change domain."))))
+        else:
+            atype = ml_type.get_type(val["ml_type"])
+            if val["domain"].value not in atype.domains:
+                errs.append(("domain", ValueError(n_(
+                    "Invalid domain for this mailinglist type."))))
     return val, errs
 
 
@@ -3582,6 +3681,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                                 QueryOperators.containssome,
                                 QueryOperators.containsnone):
                     vv, e = _non_regex(vv, field, _convert=_convert)
+                    errs.extend(e)
                 if e or not vv:
                     continue
                 value.append(vv)

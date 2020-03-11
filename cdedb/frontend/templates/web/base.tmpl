@@ -78,24 +78,24 @@
                         {% if jshint == 'strong' %}
                             <div class="jshint pull-right text-danger">
                                 {{ util.make_icon('warning-sign') }}
-                                {% trans -%}This site provides additional functionality with JavaScript enabled.{%- endtrans %}
+                                {% trans %}This site provides additional functionality with JavaScript enabled.{% endtrans %}
                             </div>
                         {% else %}
                             <div class="jshint pull-right text-warning">
                                 {{ util.make_icon('warning-sign') }}
-                                {% trans -%}This site can be used more easily with JavaScript enabled.{%- endtrans %}
+                                {% trans %}This site can be used more easily with JavaScript enabled.{% endtrans %}
                             </div>
                         {% endif %}
                     </noscript>
                 {% endif %}
             </div>
             <!-- main navigation bar -->
-            <nav class="navbar navbar-default" aria-label="{% trans -%}Main Menu{%- endtrans %}">
+            <nav class="navbar navbar-default" aria-label="{% trans %}Main Menu{% endtrans %}">
                 <div class="navbar-header">
-                    <p class="navbar-collapse-header">{% trans -%}Main Menu{%- endtrans %}</p>
+                    <p class="navbar-collapse-header">{% trans %}Main Menu{% endtrans %}</p>
                     <button type="button" class="navbar-toggle collapsed hide" data-toggle="collapse"
                             data-target="#navbar-collapse-1" aria-expanded="false" id="button-navbar-toggle">
-                        <span class="sr-only">{% trans -%}Display Main Menu{%- endtrans %}</span>
+                        <span class="sr-only">{% trans %}Display Main Menu{% endtrans %}</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
@@ -109,15 +109,15 @@
                                 <form action="{{ cdedblink("core/logout") }}" method="POST" id="logoutform"
                                   class="navbar-form">
                                     <p class="navbar-text">
-                                        <span class="sr-only">{% trans -%}Logged-In as{%- endtrans %}</span>
+                                        <span class="sr-only">{% trans %}Logged-In as{% endtrans %}</span>
                                         <span id="displayname">
                                             {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
                                         </span>
                                     </p>
-                                    <button type="submit" name="submitlogout" value="{% trans -%}Logout{%- endtrans %}"
-                                      class="btn navbar-button btn-default" title="{% trans -%}Logout{%- endtrans %}">
+                                    <button type="submit" name="submitlogout" value="{% trans %}Logout{% endtrans %}"
+                                      class="btn navbar-button btn-default" title="{% trans %}Logout{% endtrans %}">
                                         <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
-                                        <span class="visible-xs-inline-block">{% trans -%}Logout{%- endtrans %}</span>
+                                        <span class="visible-xs-inline-block">{% trans %}Logout{% endtrans %}</span>
                                     </button>
                                 </form>
                             {% elif not login_form and original_request %}
@@ -159,13 +159,13 @@
             </script>
 
             <div class="row">
-                <div class="col-md-3" role="navigation" id="sidebar" aria-label="{% trans -%}Sub Menu{%- endtrans %}">
+                <div class="col-md-3" role="navigation" id="sidebar" aria-label="{% trans %}Sub Menu{% endtrans %}">
                     {% block navigation %}
                     {% endblock %}
                 </div>
                 <div class="col-md-9">
                     {% if self.breadcrumb %}
-                        <h6 id="bc-title" class="sr-only">{% trans -%}You are here:{%- endtrans %}</h6>
+                        <h6 id="bc-title" class="sr-only">{% trans %}You are here:{% endtrans %}</h6>
                         <ol class="breadcrumb breadcrumb-hanging" role="navigation" aria-labelledby="bc-title">
                             {% block breadcrumb %}{% endblock %}
                         </ol>
@@ -190,12 +190,12 @@
 
                     <div role="main">
                         {% block heading %}
-                            <h1 class="title">{{ gettext(self.title()) }}</h1>
+                            <h1 class="title" id="title">{{ gettext(self.title()) }}</h1>
                         {% endblock %}
 
                         <div id="content">
                             {% block content %}
-                                {% trans -%}This should not be visible.{%- endtrans %}
+                                {% trans %}This should not be visible.{% endtrans %}
                             {% endblock %}
                         </div>
                     </div>
@@ -205,10 +205,10 @@
         <div id="footer" class="container">
             {% block footer %}
                 © <a href="https://www.cde-ev.de/">
-                    {% trans -%}Club der Ehemaligen e.V.{%- endtrans %}</a> – {% trans -%}CdE-Datenbank development team{%- endtrans %}
-                <a href="mailto:{% trans -%}CdE-Datenbank development team{%- endtrans %} <cdedb@lists.cde-ev.de>">
+                    {% trans %}Club der Ehemaligen e.V.{% endtrans %}</a> – {% trans %}CdE-Datenbank development team{% endtrans %}
+                <a href="mailto:{% trans %}CdE-Datenbank development team{% endtrans %} <cdedb@lists.cde-ev.de>">
                     &lt;cdedb@lists.cde-ev.de&gt;</a>
-                <br /> {% trans -%}Version{%- endtrans %} {{ GIT_COMMIT }}
+                <br /> {% trans %}Version{% endtrans %} {{ GIT_COMMIT }}
                 {% if CDEDB_DEV %}
                     <br /><br />
                     <div style="word-wrap: break-word;">{{ debugstring }} ; time taken: {{ generation_time() }}</div>

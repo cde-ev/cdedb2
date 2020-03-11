@@ -4,15 +4,15 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_dynamicrow.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Configure Event-Parts ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}
+        {% trans %}
         	Configure Event-Parts
-        {%- endtrans %}
+        {% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -118,28 +118,21 @@
                             </span>
                         </div>
                     </div>
-                    {% call util.form_input_general("fee_{}".format(part_id), gettext("Event-Part Fee"),
-                                                    anid="input-text-fee_".format(part_id)) %}
-                        <div class="input-group">
-                            {{ util.input_text(name="fee_{}".format(part_id),
-                                               attributes=('data-basename="fee_"'|s if newrow else ''),
-                                               aclass='drow-input form-control', anid="input-text-fee_".format(part_id)) }}
-                            <span class="input-group-addon">
-                                €
-                            </span>
-                        </div>
-                    {% endcall %}
+                    {{ util.form_input_text(name="fee_{}".format(part_id), label=gettext("Event-Part Fee"),
+                                            attributes=('data-basename="fee_"'|s if newrow else ''),
+                                            aclass='drow-input form-control', anid="input-text-fee_".format(part_id),
+                                            addon='€') }}
                 </div>
             </div>
                 <hr />
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>{% trans -%}Coursetrack{%- endtrans %}</th>
-                        <th>{% trans -%}Shortname{%- endtrans %}</th>
-                        <th>{% trans -%}Course Choices{%- endtrans %}</th>
-                        <th>{% trans -%}Req. Choices{%- endtrans %}</th>
-                        <th>{% trans -%}Sortkey{%- endtrans %}</th>
+                        <th>{% trans %}Coursetrack{% endtrans %}</th>
+                        <th>{% trans %}Shortname{% endtrans %}</th>
+                        <th>{% trans %}Course Choices{% endtrans %}</th>
+                        <th>{% trans %}Req. Choices{% endtrans %}</th>
+                        <th>{% trans %}Sortkey{% endtrans %}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -160,7 +153,7 @@
             {% if not has_registrations %}
                 <div class="pull-right p">
                     <button type="button" class="btn btn-success btn-xs add-track-button softhide">
-                        {{ util.make_icon('plus') }} {% trans -%}Add Coursetrack{%- endtrans %}</button>
+                        {{ util.make_icon('plus') }} {% trans %}Add Coursetrack{% endtrans %}</button>
                 </div>
             {% endif %}
         </div>
@@ -169,11 +162,11 @@
 
 {% block content %}
     <p class="text-warning">{{ util.make_icon('warning-sign') }}
-        {% trans -%}
+        {% trans %}
             Event parts and course tracks can only be created or deleted if no
             registrations are present yet. Course tracks can only be deleted, if
             there are no courses associated with them.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
     <form action="{{ cdedblink('event/part_summary') }}" method="POST" id="partsummaryform" class="form-horizontal">
         {{ util.anti_csrf_token('event/part_summary') }}
@@ -195,7 +188,7 @@
         {% if not has_registrations %}
             <p>
                 <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                    {{ util.make_icon('plus') }} {% trans -%}Add Event-Part{%- endtrans %}
+                    {{ util.make_icon('plus') }} {% trans %}Add Event-Part{% endtrans %}
                 </button>
             </p>
         {% endif %}

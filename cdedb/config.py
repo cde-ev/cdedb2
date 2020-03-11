@@ -313,7 +313,7 @@ _DEFAULTS = {
     # maximal number of data sets a normal user is allowed to view per day
     "QUOTA_VIEWS_PER_DAY": 42,
     # maximal number of results for a member search
-    "MAX_MEMBER_SEARCH_RESULTS": 42,
+    "MAX_MEMBER_SEARCH_RESULTS": 200,
     # amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
     # probably always 1 or 2

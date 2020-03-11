@@ -3,9 +3,9 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{% endblock %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
         Parse Bank Statement
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -29,9 +29,9 @@
                     {{ util.anti_csrf_token('cde/parse_download') }}
                     {{- util.input_hidden("data", value=value) -}}
                     {{- util.input_hidden("filename", value="{}.csv".format(key)) -}}
-                    {%- trans count=(value.split("\n")|length - (2 if key == "other_transactions" else 1)) -%}
+                    {%- trans count=(value.split("\n")|length - (2 if key == "other_transactions" else 1)) %}
                         {{ count }} entries.
-                    {%- endtrans -%}
+                    {% endtrans -%}
                     {{- util.form_input_submit(value=gettext("Download %s.csv ")|format(key),
                         aclass="btn btn-info btn-sm", icon="download", horizontal=False) -}}
                 </form>
@@ -45,9 +45,9 @@
         {% for key, value in data|dictsort %}
             {% if key != "files" %}
                 <li>
-                    {% trans count=value|length, key=key -%}
+                    {% trans count=value|length, key=key %}
                         {{ count }} Transactions found for {{ key }}.
-                    {%- endtrans %}
+                    {% endtrans %}
                 </li>
             {% endif %}
         {% endfor %}
@@ -55,7 +55,7 @@
     {% endif %}
     <br>
     {% if problems %}
-        {% trans -%}Problems:{%- endtrans %}
+        {% trans %}Problems:{% endtrans %}
         <ul>
         {% for lineno, key, error in problems %}
             <li>Line {{ lineno }}: {{ key }}: {{ util.format_error(error) }}</li>

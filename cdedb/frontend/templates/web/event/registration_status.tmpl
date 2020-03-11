@@ -2,9 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Your Registration ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -13,7 +13,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Your Registration{%- endtrans %}
+        {% trans %}Your Registration{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -21,66 +21,66 @@
     {% if ambience['event']['use_questionnaire'] %}
         <div class="alert alert-info">
              {{ util.make_icon('info-sign') }}
-             {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("questionnaire")) -%}
+             {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("questionnaire")) %}
             	Please fill in the {{ link }} now.
-            {%- endtrans %}
+            {% endtrans %}
         </div>
     {% endif %}
     {% if not registration['payment'] %}
     {% if ambience['event']['iban'] %}
-        <h3 class="heading-underline">{% trans -%}Bank Transfer{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Bank Transfer{% endtrans %}</h3>
         <p>
-            {% trans fee=fee|money(lang=lang) -%}
+            {% trans fee=fee|money(lang=lang) %}
             	Please keep in mind that your Registration will only be complete, once
                 you pay your participation fee. Please transfer {{ fee }} to the following
                 Account. Please make sure, the recipient does not have to pay any fees,
                 especially when paying internationally.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         <table class="table table-condensed">
             <tbody>
                 <tr>
-                    <td>{% trans -%}Account holder{%- endtrans %}</td>
+                    <td>{% trans %}Account holder{% endtrans %}</td>
                     <td>{{ meta_info['CdE_Konto_Inhaber'] }}</td>
                 </tr>
                 <tr>
-                    <td>{% trans -%}IBAN{%- endtrans %}</td>
+                    <td>{% trans %}IBAN{% endtrans %}</td>
                     <td>{{ ambience['event']['iban']|iban }}</td>
                 </tr>
                 <tr>
-                    <td>{% trans -%}BIC{%- endtrans %}</td>
+                    <td>{% trans %}BIC{% endtrans %}</td>
                     <td>{{ meta_info['CdE_Konto_BIC'] }}</td>
                 </tr>
                 <tr>
-                    <td>{% trans -%}Bank{%- endtrans %}</td>
+                    <td>{% trans %}Bank{% endtrans %}</td>
                     <td>{{ meta_info['CdE_Konto_Institut'] }}</td>
                 </tr>
                 <tr>
-                    <td>{% trans -%}Amount{%- endtrans %}</td>
+                    <td>{% trans %}Amount{% endtrans %}</td>
                     <td>{{ fee|money(lang=lang) }}</td>
                 </tr>
                 <tr>
-                    <td>{% trans -%}Reference{%- endtrans %}</td>
+                    <td>{% trans %}Reference{% endtrans %}</td>
                     <td>{{ user['given_names'] }} {{ user['family_name'] }}, {{ user['persona_id']|cdedbid }}, {{ ambience['event']['title'] }}</td>
                 </tr>
             </tbody>
         </table>
     {% else %}
-        <h3 class="heading-underline">{% trans -%}Payment{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
         <p>
-            {% trans -%}
+            {% trans %}
                 The orgas will tell you separately how to pay your fee of {{ fee }}€.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% endif %}
     {% endif %}
 
     {% if age.is_minor() and not registration['parental_agreement'] %}
-        <h3 class="heading-underline">{% trans -%}Parental Consent{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Parental Consent{% endtrans %}</h3>
         <p>
-            {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("here"), icon='file') -%}
+            {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("here"), icon='file') %}
                 You need to send the parental consent form to the Orgas. You can find the form {{ link }}.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% endif %}
 
@@ -91,59 +91,59 @@
                 {% if ambience['event']['parts']|length > 1 %}
                     {{ ambience['event']['parts'][part_id]['title'] }}
                 {% else %}
-                    {% trans -%}Registration Status{%- endtrans %}
+                    {% trans %}Registration Status{% endtrans %}
                 {% endif %}
             </dt>
             <dd>{{ gettext(part['status']|enum(enums['RegistrationPartStati'])) }}</dd>
         {% endfor %}
     </dl>
 
-    <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
+    <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
     {% if ambience['event']['registration_soft_limit'] is none or
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning",
                          icon='pencil') }}
             {% if not ambience['event']['registration_soft_limit'] is none %}
-                {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)-%}
+                {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
                     Changes can be made until the registration end({{ date }}).
-                {%- endtrans %}
+                {% endtrans %}
             {% endif %}
         </p>
     {% else %}
         <p>
-            {% trans -%}
+            {% trans %}
                 Registration has ended, therefore no more changes are possible.
                 Please contact the Orgas per E-Mail, if you need to change something about your registration.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% endif %}
 
     <dl class="dl-horizontal">
-        <dt>{% trans -%}Mixed Lodging{%- endtrans %}</dt>
+        <dt>{% trans %}Mixed Lodging{% endtrans %}</dt>
         <dd>
             {% if not age.may_mix() %}
-                {% trans -%}Mixed Lodging not possible.{%- endtrans %}
+                {% trans %}Mixed Lodging not possible.{% endtrans %}
             {% else %}
                 {% if registration['mixed_lodging'] %}
-                    {% trans -%}I agree to mixed lodging.{%- endtrans %}
+                    {% trans %}I agree to mixed lodging.{% endtrans %}
                 {% else %}
-                    {% trans -%}I want to be lodged seperated by gender.{%- endtrans %}
+                    {% trans %}I want to be lodged seperated by gender.{% endtrans %}
                 {% endif %}
             {% endif %}
         </dd>
-        <dt>{% trans -%}Participant List Consent{%- endtrans %}</dt>
+        <dt>{% trans %}Participant List Consent{% endtrans %}</dt>
         <dd>
             {% trans consent="<strong>{}</strong> ".format(gettext("do not"))
                             if not registration['list_consent'] else "" -%}
                 I {{ consent }}agree that my data, including my name, address and my email, may be sent
                 to other participants of this event beforehand.
-            {%- endtrans %}
+            {% endtrans %}
         </dd>
     </dl>
     {% if registration['notes'] %}
         <dl class="dl-horizontal">
-            <dt>{% trans -%}Notes{%- endtrans %}</dt>
+            <dt>{% trans %}Notes{% endtrans %}</dt>
             <dd>
                 {{ registration['notes']|md }}
             </dd>
@@ -154,7 +154,7 @@
         {% set reg_track = registration['tracks'][track_id] %}
         {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
             <h4>
-                {% trans -%}Course Choices for{%- endtrans %}
+                {% trans %}Course Choices for{% endtrans %}
                 {% if ambience['event']['tracks']|length > 1 %}
                     {{ track['title'] }}
                 {% endif %}
@@ -162,7 +162,7 @@
 
             <dl class="dl-horizontal">
                 {% if reg_track['course_instructor'] %}
-                    <dt>{% trans -%}Instructor of{%- endtrans %}</dt>
+                    <dt>{% trans %}Instructor of{% endtrans %}</dt>
                     <dd><em>{{ courses[reg_track['course_instructor']]['title'] }}</em>.</dd>
                 {% endif %}
                 {% for i in range(track['num_choices']) %}

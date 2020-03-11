@@ -1,8 +1,9 @@
-Hinweise für Orgas
-==================
+Einführung für Orgas
+====================
 
-Hier findet ihr Hinweise um mittels der Datenbank eine Veranstaltung zu
-organisieren.
+Hier findet ihr allgemeine Hinweise um mittels der Datenbank eine
+Veranstaltung zu organisieren. Unter :ref:`orga-specific-hints` finden
+sich noch Detailhinweise zu spezifischen Aspekten.
 
 Einleitung
 ----------
@@ -55,7 +56,7 @@ können auf
 :ref:`der Seite mit den Email-Templates <email-templates-for-realm-event>`
 eingesehen werden.
 
-Eine Veranstaltung Planen - ein Ablaufplan
+Planung einer Veranstaltung
 ------------------------------------------
 
 Der Veranstaltungsleitfaden wurde im

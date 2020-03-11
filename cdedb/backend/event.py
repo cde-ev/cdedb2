@@ -138,7 +138,8 @@ class EventBackend(AbstractBackend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    def is_orga(self, rs, *, event_id=None, course_id=None):
+    def is_orga(self, rs, *, event_id=None, course_id=None,
+                registration_id=None):
         """Check for orga privileges as specified in the event.orgas table.
 
         Exactly one of the inputs has to be provided.
@@ -146,15 +147,21 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int or None
         :type course_id: int or None
+        :type registration_id: int or None
         :rtype: bool
         """
-        if event_id is None and course_id is None:
+        num_inputs = sum(1 for anid in (event_id, course_id, registration_id)
+                         if anid is not None)
+        if num_inputs < 1:
             raise ValueError(n_("No input specified."))
-        if event_id is not None and course_id is not None:
+        if num_inputs > 1:
             raise ValueError(n_("Too many inputs specified."))
         if course_id is not None:
-            event_id = unwrap(self.sql_select_one(rs, "event.courses",
-                                                  ("event_id",), course_id))
+            event_id = unwrap(self.sql_select_one(
+                rs, "event.courses", ("event_id",), course_id))
+        elif registration_id is not None:
+            event_id = unwrap(self.sql_select_one(
+                rs, "event.registrations", ("event_id",), registration_id))
         return event_id in rs.user.orga
 
     @access("event")
@@ -1090,13 +1097,13 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
+            self.event_log(rs, const.EventLogCodes.event_created, new_id)
             update_data = {aspect: data[aspect]
                            for aspect in ('parts', 'orgas', 'fields')
                            if aspect in data}
             if update_data:
                 update_data['id'] = new_id
                 self.set_event(rs, update_data)
-        self.event_log(rs, const.EventLogCodes.event_created, new_id)
         return new_id
 
     @access("event_admin")
@@ -1687,11 +1694,10 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
-    @access("event")
+    @internal_access("persona")
     def check_registration_status(self, rs, persona_id, event_id, stati):
         """Check if any status for a given event matches one of the given stati.
 
-        If stati is empty check is_orga instead.
         This is mostly used to determine mailinglist eligibility.
 
         A user may do this for themselves, an orga for their event and an
@@ -1710,12 +1716,6 @@ class EventBackend(AbstractBackend):
                 or self.is_admin(rs)
                 or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
-
-        if not stati:
-            query = ("SELECT persona_id from event.orgas "
-                     "WHERE persona_id = %s AND event_id = %s")
-            params = (persona_id, event_id)
-            return bool(self.query_all(rs, query, params))
 
         registration_ids = self.list_registrations(
             rs, event_id, persona_id)
@@ -2280,6 +2280,54 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
+    def calculate_fees(self, rs, ids):
+        """Calculate the total fees for some registrations.
+
+        This should be called once for multiple registrations, as it would be
+        somewhat expensive if called per registration.
+
+        All registrations need to belong to the same event.
+
+        The caller must have priviliged acces to that event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ids: [int]
+        :rtype: {int: decimal.Decimal}
+        """
+        ids = affirm_set("id", ids)
+
+        ret = {}
+        with Atomizer(rs):
+            associated = self.sql_select(rs, "event.registrations",
+                                         ("event_id",), ids)
+            if not associated:
+                return {}
+            events = {e['event_id'] for e in associated}
+            if len(events) > 1:
+                raise ValueError(n_(
+                    "Only registrations from exactly one event allowed."))
+
+            event_id = unwrap(events)
+            if (not self.is_orga(rs, event_id=event_id)
+                    and not self.is_admin(rs)):
+                raise PrivilegeError(n_("Not privileged."))
+
+            regs = self.get_registrations(rs, ids)
+            event = self.get_event(rs, event_id)
+            relevant_stati = (const.RegistrationPartStati.applied,
+                              const.RegistrationPartStati.waitlist,
+                              const.RegistrationPartStati.participant,)
+
+            ret = {
+                reg_id: sum(event['parts'][part_id]['fee']
+                            for part_id, part in reg['parts'].items()
+                            if part['status'] in relevant_stati)
+                for reg_id, reg in regs.items()
+                }
+        return ret
+
+
+    @access("event")
     def check_orga_addition_limit(self, rs, event_id):
         """Implement a rate limiting check for orgas adding persons.
 
@@ -2821,6 +2869,8 @@ class EventBackend(AbstractBackend):
                 for e in ret[table].values():
                     if e.get('persona_id'):
                         personas.add(e['persona_id'])
+                    if e.get('submitted_by'):  # for log entries
+                        personas.add(e['submitted_by'])
             ret['core.personas'] = list_to_dict(self.sql_select(
                 rs, "core.personas", PERSONA_EVENT_FIELDS, personas))
             return ret
@@ -2884,7 +2934,11 @@ class EventBackend(AbstractBackend):
         extra_translations = extra_translations or {}
         ret = 1
         for anid in set(current) - set(data):
-            ret *= self.sql_delete_one(rs, table, anid)
+            # we do not delete additional log messages; this can mainly
+            # happen if somebody gets the order of downloading an export and
+            # locking the event wrong
+            if table != 'event.log':
+                ret *= self.sql_delete_one(rs, table, anid)
         for e in data.values():
             if e != current.get(e['id']):
                 new_e = self.translate(e, translations, extra_translations)

@@ -2,9 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']-%}
+    {% trans title=ambience['event']['title']%}
         Course Assignment Checks ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -14,7 +14,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Course Assignment Checks{%- endtrans %}
+        {% trans %}Course Assignment Checks{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}

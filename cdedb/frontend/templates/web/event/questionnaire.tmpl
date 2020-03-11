@@ -5,13 +5,13 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% if preview %}
-        {% trans title=ambience['event']['title'] -%}
+        {% trans title=ambience['event']['title'] %}
             Questionnaire Preview ({{ title }})
-        {%- endtrans %}
+        {% endtrans %}
     {% else %}
-        {% trans title=ambience['event']['title'] -%}
+        {% trans title=ambience['event']['title'] %}
             Questionnaire ({{ title }})
-        {%- endtrans %}
+        {% endtrans %}
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
@@ -32,9 +32,9 @@
 {% block heading %}
     <h1 class="title">
         {% if preview %}
-            {% trans -%}Questionnaire Preview{%- endtrans %}
+            {% trans %}Questionnaire Preview{% endtrans %}
         {% else %}
-            {% trans -%}Participant Questionnaire{%- endtrans %}
+            {% trans %}Participant Questionnaire{% endtrans %}
         {% endif %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>

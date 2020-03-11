@@ -1,9 +1,9 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] -%}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
     	Change Realms for {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -32,10 +32,10 @@
 
         {% if not values['target_realm'] %}
             <p>
-                {% trans -%}
+                {% trans %}
                     With this Form You can add the User to new Realms in the CdEDB.
                     They will gain access to the respective Sites and they may gain additional User-Attributes.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
             <form action="{{ cdedblink('core/promote_user_form') }}" method="GET" id="realmselectionform"
                     class="form-horizontal">
@@ -70,7 +70,7 @@
                     </ul>
                 {% endcall %}
 
-            <h3 class="heading-underline">{% trans -%}Additional Data{%- endtrans %}</h3>
+            <h3 class="heading-underline">{% trans %}Additional Data{% endtrans %}</h3>
                 {{ util.input_hidden(name="target_realm") }}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
                     {{ util.form_input_text(name="title", label=gettext("Title")) }}

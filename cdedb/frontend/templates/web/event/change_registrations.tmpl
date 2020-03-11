@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Edit Registrations ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -16,7 +16,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Edit Registrations{%- endtrans %}
+        {% trans %}Edit Registrations{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -37,13 +37,13 @@
         <div class="col-sm-1 text-center {% if not label %}col-sm-offset-4{% endif %}">
             <div class="checkbox" title="
                 {%- if label -%}
-                    {% trans label=label -%}
+                    {% trans label=label %}
                         Overwrite “{{ label }}”
-                    {%- endtrans %}
+                    {% endtrans %}
                 {%- else -%}
-                    {% trans -%}
+                    {% trans %}
                         Overwrite this field
-                    {%- endtrans %}
+                    {% endtrans %}
                 {%- endif -%}
             ">
                 <label>
@@ -52,13 +52,13 @@
                            {% if values.get("enable_{}".format(name), False) %}checked="checked"{% endif %} />
                     <span class="sr-only">
                         {% if label %}
-                            {% trans label=label -%}
+                            {% trans label=label %}
                                 Overwrite ”{{ label }}”
-                            {%- endtrans %}
+                            {% endtrans %}
                         {% else %}
-                            {% trans -%}
+                            {% trans %}
                                 Overwrite this field
-                            {%- endtrans %}
+                            {% endtrans %}
                         {% endif %}
                     </span>
                 </label>
@@ -81,7 +81,7 @@
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_registrations') }}
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
-        <h3 class="heading-underline">{% trans -%}Registrations{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Registrations{% endtrans %}</h3>
         {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}
             {% for reg_id, reg in registrations.items() %}
                 {{ util.input_static(value=output_name(personas[reg['persona_id']])) }}
@@ -97,18 +97,22 @@
             {{ util.input_textarea("reg.orga_notes", rows=5, anid="input_reg_orga_notes") }}
         {% endcall %}
 
-        <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
 
         <p class="text-info">
             {{ util.make_icon('info-sign') }}
-            {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) -%}
+            {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
                 The registered people are able to see their current registration status, the payment status and – for
                 minors – the status of the parental consent at “{{ my_registration }}”.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
 
         {% call form_input_optional('reg.payment', label=gettext("Fee paid"), anid="input_reg_payment") %}
             {{ util.input_text(name="reg.payment", type="date", placeholder="YYYY-MM-DD", anid="input_reg_payment") }}
+        {% endcall %}
+        {% call form_input_optional('reg.amount_paid', label=gettext("Amount Paid"), anid="input_reg_amount_paid") %}
+            {{ util.input_text(name="reg.amount_paid", type="number", attributes='step="0.01"'|s,
+                               anid="input_reg_amount_paid") }}
         {% endcall %}
         {% call form_input_optional('reg.parental_agreement', anid="input_reg_parental_agreement") %}
             <div class="checkbox">
@@ -160,7 +164,7 @@
             {% endfor %}
         {% endfor %}
 
-        <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         {% call form_input_optional("reg.mixed_lodging", anid="input_reg_mixed_lodging") %}
             <div class="checkbox">
                 {{ util.input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging"),
@@ -190,7 +194,7 @@
         {% endfor %}
 
         {% if ambience['event']['fields']|length > 0 %}
-            <h3 class="heading-underline">{% trans -%}Custom Fields{%- endtrans %}</h3>
+            <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
             {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
                    if field['association'] == enums['FieldAssociations'].registration %}
                 {% call form_input_optional("fields.{}".format(field['field_name']),

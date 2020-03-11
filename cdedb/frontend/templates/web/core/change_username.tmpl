@@ -2,9 +2,9 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Change Your Email Address
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -14,10 +14,10 @@
 {% endblock %}
 {% block content %}
     <p>
-        {% trans -%}
+        {% trans %}
         	To change Your email address, You will have to confirm Your new email address by clicking a link in the
             verification mail sent to the new E-Mail.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
 
     <form action="{{ cdedblink('core/send_username_change_link') }}" method="GET" id="usernamechangeform"

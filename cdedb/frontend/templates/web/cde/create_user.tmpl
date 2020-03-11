@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% import "web/generic.tmpl" as generic with context %}
-{% block title %}{% trans -%}Create New Member{%- endtrans %}{% endblock %}
+{% block title %}{% trans %}Create New Member{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}

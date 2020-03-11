@@ -75,8 +75,10 @@ def populate_table(cur, table, data):
                                  placeholders=", ".join(("%s",) * len(keys)))
             params = tuple(entry[key] for key in keys)
             cur.execute(query, params)
+        # include a small buffer of 1000 (mainly to allow for the log
+        # messages of locking the event if somebody gets the ordering wrong)
         query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
-            table, max(int(id) for id in data) + 1)
+            table, max(int(id) for id in data) + 1000)
         # we need elevated privileges for sequences
         subprocess.run(
             ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-c",
@@ -109,12 +111,12 @@ def update_event(cur, event):
 
 def work(args):
     db_name = 'cdb_test' if args.test else 'cdb'
-    
+
     print("Loading exported event")
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data["CDEDB_EXPORT_EVENT_VERSION"] != 6:
+    if data["CDEDB_EXPORT_EVENT_VERSION"] != 8:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -122,10 +124,20 @@ def work(args):
         data['event.events'][str(data['id'])]['title'], data['timestamp']))
 
     if not data['event.events'][str(data['id'])]['offline_lock']:
-        print("Event not locked in online instance. Fixing for offline use.")
+        print("Event not locked in online instance at time of export."
+              "\nIn case of simultaneous changes in offline and online"
+              " instance there will be data loss."
+              "\nIf this is just a test run and you intend to scrap this"
+              " offline instance you can ignore this warning.")
+        if not args.test:
+            if (input("Continue anyway (type uppercase USE ANYWAY)? ").strip()
+                    != "USE ANYWAY"):
+                print("Aborting.")
+                sys.exit()
+        print("Fixing for offline use.")
         data['event.events'][str(data['id'])]['offline_lock'] = True
 
-    print("Clean current instance")
+    print("Clean current instance (deleting all data)")
     if not args.test:
         if input("Are you sure (type uppercase YES)? ").strip() != "YES":
             print("Aborting.")
@@ -191,6 +203,29 @@ def work(args):
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
 
+            # Create a surrogate changelog that can be used for the
+            # duration of the offline deployment
+            print("Instantiating changelog.")
+            for persona in data['core.personas'].values():
+                datum = {**DEFAULTS['core.personas'], **persona}
+                del datum['id']
+                del datum['password_hash']
+                del datum['fulltext']
+                datum['notes'] = ('This is just a copy, changes to profiles'
+                                  ' will not be persisted.')
+                datum['submitted_by'] = persona['id']
+                datum['generation'] = 1
+                datum['change_note'] = 'Create surrogate changelog.'
+                datum['change_status'] = 2  # MemberChangeStati.committed
+                datum['persona_id'] = persona['id']
+                keys = tuple(key for key in datum)
+                query = ("INSERT INTO core.changelog ({keys})"
+                         " VALUES ({placeholders})").format(
+                             table=table, keys=", ".join(keys),
+                             placeholders=", ".join(("%s",) * len(keys)))
+                params = tuple(datum[key] for key in keys)
+                cur.execute(query, params)
+
     print("Checking whether everything was transferred.")
     fails = []
     with conn as con:
@@ -222,9 +257,12 @@ def work(args):
     with open(str(config_path), 'a', encoding='UTF-8') as conf:
         conf.write("\nCDEDB_OFFLINE_DEPLOYMENT = True\n")
 
+    print("Protecting data from accidental reset")
+    subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
+
     print("Restarting application to make offline mode effective")
     subprocess.run(["make", "reload"], check=True, cwd=args.repopath)
-    
+
     print("Finished")
 
 

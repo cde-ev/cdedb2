@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans lodgement=ambience['lodgement']['moniker'], title=ambience['event']['title'] -%}
+    {% trans lodgement=ambience['lodgement']['moniker'], title=ambience['event']['title'] %}
     	Lodgement {{ lodgement }} ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -32,11 +32,11 @@
     <div class="row">
         <div class="col-md-6">
             <dl class="dl-horizontal">
-                <dt>{% trans -%}Regular Capacity{%- endtrans %}</dt>
+                <dt>{% trans %}Regular Capacity{% endtrans %}</dt>
                 <dd>{{ ambience['lodgement']['capacity'] }}</dd>
-                <dt>{% trans -%}Camping Mat Capacity{%- endtrans %}</dt>
+                <dt>{% trans %}Camping Mat Capacity{% endtrans %}</dt>
                 <dd>{{ ambience['lodgement']['reserve'] }}</dd>
-                <dt>{% trans -%}Lodgement Group{%- endtrans %}</dt>
+                <dt>{% trans %}Lodgement Group{% endtrans %}</dt>
                 <dd>
                     {% if ambience['lodgement']['group_id'] %}
                         {{ groups[ambience['lodgement']['group_id']]['moniker'] }}
@@ -87,7 +87,7 @@
         {% endif %}
     </div>
     
-    <h2>{% trans -%}Inhabitants{%- endtrans %}</h2>
+    <h2>{% trans %}Inhabitants{% endtrans %}</h2>
     <div class="row">
         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
             <div class="col-md-4">
@@ -98,7 +98,7 @@
                             {% if ambience['event']['parts']|length > 1 %}
                                 {{ part['title'] }}
                             {% else %}
-                                {% trans -%}Inhabitants{%- endtrans %}
+                                {% trans %}Inhabitants{% endtrans %}
                             {% endif %}
                         </h3>
                     </div>
@@ -159,10 +159,10 @@
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans -%}
+                    {% trans %}
                         Deletes the Lodgement with all assosiated information
                         and leaves the inhabitants without lodgement.
-                    {%- endtrans %}
+                    {% endtrans %}
                 </p>
             </div>
         </div>

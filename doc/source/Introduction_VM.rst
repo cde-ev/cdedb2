@@ -32,10 +32,16 @@ from ``kvm``)::
   kvm -m 1G -enable-kvm -device virtio-rng-pci -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443 -drive file=cdedb.qcow2,if=virtio,cache=writethrough
 
 If ``cdedb.vdi`` is the downloaded image, then the VM can be run with
-VirtualBox via the GUI.
+VirtualBox via the GUI. Thereby, choose the unpacked ``cdedb.vi`` image as hard
+disk. Furthermore, you would like to set some port forwarding (which is included
+in the kvm command).
 
-Accessing
----------
+If you dont know how to do this, take a look at the first point in
+:ref:`accessing-vm-windows`. Note that there are two existing port forwarding, one
+for ``20022`` and one for ``20443``.
+
+Accessing -- Linux
+------------------
 
 Once the VM is up and running you can access it in the following ways. The
 password for the ``cdedb`` user (used for access via ssh etc.) is
@@ -59,6 +65,57 @@ password for the ``cdedb`` user (used for access via ssh etc.) is
 For ease of use it may be advisable to put these commands into script
 files. Additionally it helps to put your ssh public key into the (new)
 file ``/home/cdedb2/.ssh/authorized_keys`` to suppress password queries.
+
+.. _accessing-vm-windows:
+
+Accessing -- Windows
+--------------------
+
+Das Ansprechen der VM ist unter Windows etwas komplizierter als unter Linux.
+Im Folgenden werden die Arbeitsschritte einmal für VirtualBox durchgegangen.
+Das Passwort für den Nutzer ``cdedb`` der VM ist ``akademie``.
+
+* Web: Im VirtualBox Manager, bearbeite die VM
+    * Netzwerkadapter / Adapter1: Angeschlossen an ``NAT``
+    * Erweitert / Port-Weiterleitung: Neue Regel::
+
+        Protokoll:TCP, Host-ID:127.0.0.1, Host-Port:20443, Gast-Port:223
+
+  Jetzt lässt sich die VM unter https://localhost:20443/ im Browser ansprechen.
+* ssh
+    * VirtualBox Manager / Datei / Host-only Netzwerk-Manager / Erzeuge::
+
+        NAME, IPv4:192.168.56.1/24, DHCP-Server:enable
+
+    * Im VirtualBox Manager, bearbeite die VM / Netzwerkadapter / Adapter 2::
+
+        Angeschlossen an:Hostonly-Adapter, Name:NAME
+
+    * Starte die VM, melde dich an
+        * ``id a`` sollte einen Eintrag ``enp0s8`` oder ähnlich zeigen, der leer ist::
+
+            sudo nano /etc/network/interfaces
+
+        * Am Ende der Datei hinzufügen::
+
+            auto enp0s8
+            iface enp0s8 inet static
+            address 192.168.56.10
+            netmask 255.255.255.0
+
+  Jetzt sollte die VM über die CMD erreichbar sein::
+
+    ssh.exe cdedb@192.168.56.10
+
+* mounten: Hierfür gibt es keine Windows eigene Lösung. So funktionierts trotzdem.
+    * Führe die Schritte unter ``ssh`` aus.
+    * Installiere https://github.com/billziss-gh/sshfs-win -- mindestens
+      ``SSHFS-Win 3.5 BETA``
+    * Navigiere zum Desktop im Explorer / Rechtsklick ``Dieser Pc`` / Netzlaufwerk verbinden... ::
+
+        \\sshfs.r\cdedb@192.168.56.10\cdedb2
+
+  Nun sollte die VM als Netzlaufwerk eingehängt worden sein.
 
 Developing
 ----------

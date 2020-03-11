@@ -3,9 +3,9 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{% endblock %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
         Enter Money Transfers
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -21,26 +21,26 @@
         {{ util.form_input_textarea(name="transfers", horizontal=False, rows=8, anid="input-data") }}
 
         <p class="help-block">
-            {{ util.make_icon('info-sign') }} {% trans -%}Enter one dataset per line.{%- endtrans %}
-            {% trans -%}Use the following format:{%- endtrans %}
+            {{ util.make_icon('info-sign') }} {% trans %}Enter one dataset per line.{% endtrans %}
+            {% trans %}Use the following format:{% endtrans %}
         </p>
         <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
                 format(_("Amount"), _("ID"), _("Family Name"), _("Given Names"), _("Comment"))|s }}</pre>
         <p class="help-block">
-            {{ util.make_icon('info-sign') }} {% trans -%}The Comment is optional.{%- endtrans %}
+            {{ util.make_icon('info-sign') }} {% trans %}The Comment is optional.{% endtrans %}
         </p>
 
         {% if data %}
-            <h2>{% trans -%}Validation results{%- endtrans %}</h2>
+            <h2>{% trans %}Validation results{% endtrans %}</h2>
             {% for dataset in data %}
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
-                        {% trans lineno=dataset['lineno'] -%}Line {{ lineno }}{%- endtrans -%}
+                        {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {% trans amount=dataset['amount']|money(lang=lang), given_names=dataset['raw']['given_names'],
                              family_name=dataset['raw']['family_name'] -%}
                         {{ amount }} for {{ given_names }} {{ family_name }}
-                    {%- endtrans %}
+                    {% endtrans %}
                 </strong>
                 <div class="batch-line-body">
                     {% if dataset['problems'] or dataset['warnings'] %}
@@ -87,13 +87,15 @@
         {% endif %}
 
         {% if saldo %}
-            {% trans -%}Saldo{%- endtrans %}: {{ saldo|money(lang=lang) }}
+             <div id="saldo">
+                 {% trans %}Saldo{% endtrans %}: {{ saldo|money(lang=lang) }}
+             </div>
         {% endif %}
 
         {% if values['checksum'] %}
             <p class="help-block">
                 {{ util.make_icon('info-sign') }}
-                {% trans -%}If the input changed, the validation results will be displayed again.{%- endtrans %}
+                {% trans %}If the input changed, the validation results will be displayed again.{% endtrans %}
             </p>
             {{ util.form_input_submit(value=gettext("Confirm"), horizontal=False) }}
         {% else %}

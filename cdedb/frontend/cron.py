@@ -44,10 +44,11 @@ class CronFrontend(BaseApp):
                 'cdedb', languages=(lang,),
                 localedir=str(self.conf.REPOSITORY_PATH / 'i18n'))
             for lang in self.conf.I18N_LANGUAGES}
-        if pathlib.Path("/DBVM").is_file():
+        if pathlib.Path("/PRODUCTIONVM").is_file():
             # Sanity checks for the live instance
             if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                raise RuntimeError(n_("Refusing to start in debug mode."))
+                raise RuntimeError(
+                    n_("Refusing to start in debug/offline mode."))
 
         self.core = CoreFrontend(configpath)
         self.cde = CdEFrontend(configpath)

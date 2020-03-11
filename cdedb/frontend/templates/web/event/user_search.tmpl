@@ -5,7 +5,7 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
-    {% trans -%}Event-User Search{%- endtrans %}
+    {% trans %}Event-User Search{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -20,9 +20,9 @@
                              aclass="btn btn-success btn-sm") }}
             </div>
             <p class="text-muted">{{ util.make_icon('info-sign') }}
-                {% trans -%}
+                {% trans %}
                     This User Search will only find Event-Users.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
         </div>
         <div class="col-md-8">
@@ -33,7 +33,7 @@
     {{ generic.user_search_mask("event", ("pevent_id", "pcourse_id")) }}
 
     {% if values['is_search'] %}
-        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         {{ generic.user_search_result(result, "event") }}
     {% endif %}
 {% endblock %}

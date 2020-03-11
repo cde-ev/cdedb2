@@ -38,7 +38,7 @@
                 displayed above, the current time ({{ time }}) and a detailed description of your actions: What were you
                 about to do? Which links and buttons did you click to get here? Have you changed any settings before the
                 error occurred?
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% elif error.code in (404, 405) %}
         <p>
@@ -47,13 +47,13 @@
                            |format(moniker=gettext("CdE-Datenbank development team"))) -%}
                 If you reached this page via an internal link of the CdE-Datenbank, please contact the {{ team }} at
                 {{ mail }} and describe how you got here.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         <p>
-            {% trans frontpage_link=util.href(cdedblink('core/index'), gettext("frontpage")) -%}
+            {% trans frontpage_link=util.href(cdedblink('core/index'), gettext("frontpage")) %}
                 Use the navigation buttons of your browser to get back to the previous page or go to the
                 {{ frontpage_link }} of the CdE-Datenbank.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% else %}
             {% if not help is none %}
@@ -70,7 +70,7 @@
                 Please contact the {{ team }} at {{ mail }} with the error message displayed above, the current time
                 ({{ time }}) and a detailed description of your actions: What were you about to do? Which links and
                 buttons did you click to get here? Have you changed any settings before the error occurred?
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% endif %}
 {% endblock %}

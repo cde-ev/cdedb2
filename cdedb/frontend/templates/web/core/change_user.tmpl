@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Edit Your Data
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -24,7 +24,7 @@
         {{ util.anti_csrf_token('core/change_user') }}
         {{ util.input_hidden(name="generation") }}
 
-        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
@@ -34,7 +34,7 @@
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
         {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
 
-        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
@@ -46,11 +46,11 @@
         {% endif %}
 
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
-            <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
             <p>
-            {% trans -%}
+            {% trans %}
                 This should be your primary address. The exPuls will be sent here.
-            {%- endtrans %}
+            {% endtrans %}
             </p>
             {{ util.form_input_text(name="address", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
@@ -61,10 +61,10 @@
         {% if values['is_cde_realm'] %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
             <p>
-            {% trans -%}
+            {% trans %}
                 This address is meant to be a “backup”,, should the primary address not work. Please give an address where
                 you can be reached long-term, e.g. your parents' address.
-            {%- endtrans %}
+            {% endtrans %}
             </p>
             {{ util.form_input_text(name="address2", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
@@ -72,7 +72,7 @@
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
             {{ util.form_input_text(name="country2", label=gettext("Country")) }}
 
-            <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
+            <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
                                         info=gettext("Supports %(infolink)s.")|format(
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}

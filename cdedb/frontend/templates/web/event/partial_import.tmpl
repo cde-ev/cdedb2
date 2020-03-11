@@ -2,9 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Partial Import for Event {{ title }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -22,10 +22,10 @@
         {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel panel-warning',
                                      icon='exclamation-sign') %}
             <p class="text-warning">
-                {% trans -%}
+                {% trans %}
                     Your upload contained errors and was not processed.
                     The following is a list of the observed violations.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
             <ul>
                 {%- for argname, errorlist in errors|dictsort %}
@@ -44,17 +44,17 @@
         {% endcall %}
     {% endif %}
     <p>
-        {% trans -%}
+        {% trans %}
             Update of event data with prefabricated changesets (e.g. known
             list of lodgements) or external programms. In the latter case,
             please read the documentation first.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
     <p>
-        {% trans -%}
+        {% trans %}
             After the upload a summary of the changes will be displayed and
             the import must be approved.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
 
     <form action="{{ cdedblink('event/partial_import') }}" method="POST" id="importform"

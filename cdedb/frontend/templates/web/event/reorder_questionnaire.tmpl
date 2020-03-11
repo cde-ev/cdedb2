@@ -4,9 +4,9 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_orderrow.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Reorder Questionnaire ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -16,7 +16,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Reorder Questionnaire{%- endtrans %}
+        {% trans %}Reorder Questionnaire{% endtrans %}
         <small>{{ util.make_icon('blackboard', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}

@@ -2,9 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title']-%}
+    {% trans title=ambience['event']['title']%}
     	Statistics ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -13,12 +13,12 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Statistics{%- endtrans %}
+        {% trans %}Statistics{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
-    <h3>{% trans -%}Participant Statistics{%- endtrans %}</h3>
+    <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
     {% with HEADINGS = {
         'total': gettext("Total Registrations"),
         'pending': gettext("Open Registrations"),
@@ -49,7 +49,7 @@
                             {% if ambience['event']['parts']|length > 1 %}
                                 {{ part['title'] }}
                             {% else %}
-                                {% trans -%}Count{%- endtrans %}
+                                {% trans %}Count{% endtrans %}
                             {% endif %}
                         </th>
                     {% endfor %}
@@ -81,7 +81,7 @@
         </table>
     {% endwith %}
     {% if ambience['event']['tracks'] %}
-        <h3>{% trans -%}Course Statistics{%- endtrans %}</h3>
+        <h3>{% trans %}Course Statistics{% endtrans %}</h3>
         {% with HEADINGS = {
             'courses': gettext("Course Offers"),
             'cancelled courses': gettext("Cancelled Courses"),
@@ -99,7 +99,7 @@
                                 {% if ambience['event']['tracks']|length > 1 %}
                                     {{ track['title'] }}
                                 {% else %}
-                                    {% trans -%}Count{%- endtrans %}
+                                    {% trans %}Count{% endtrans %}
                                 {% endif %}
                             </th>
                         {% endfor %}

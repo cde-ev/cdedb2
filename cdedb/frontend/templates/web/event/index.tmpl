@@ -2,34 +2,89 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Events
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events"), active=True) }}
 {% endblock %}
 {% block content %}
-    <h3>{% trans -%}Current Events{%- endtrans %}</h3>
+    <h3>{% trans %}Current Events{% endtrans %}</h3>
     {% if open_events %}
-        <ul class="spaced">
+        <ul class="spaced" id="current-events">
             {% for event_id, event in open_events|keydictsort(EntitySorter.event) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
                     <br />
-                    {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
+                    {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }},
+                    {% if event['registration_start'] is none or now() <= event['registration_start'] %}
+                        {% trans %}
+                            Registration in future.
+                        {% endtrans %}
+                    {% elif event['registration_soft_limit'] is none or now() <= event['registration_soft_limit'] %}
+                        {% trans %}
+                            Registration is open.
+                        {% endtrans %}
+                    {% elif event['registration_hard_limit'] is none or now() <= event['registration_hard_limit'] %}
+                        {% trans %}
+                            Late-Registration is open.
+                        {% endtrans %}
+                    {% elif event['begin'] <= now().date() <= event['end'] %}
+                        {% trans %}
+                            Event is happening.
+                        {% endtrans %}
+                    {% elif event['end'] <= now().date() %}
+                        {% trans %}
+                            Event is past.
+                        {% endtrans %}
+                    {% endif %}
+                    <br />
+                    {% if "event" in user.roles and event['registration'] %}
+                        {% trans link=util.href(cdedblink('event/registration_status', {'event_id': event_id}),
+                                     gettext("registered")) -%}
+                            (already {{ link }})
+                        {% endtrans %}
+                        {%- if event['use_questionnaire'] %}
+                            &bull;
+                            {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
+                                         gettext("Questionnaire"), icon='edit') -}}
+                        {% endif -%}
+                    {% elif "event" in user.roles and event['is_open'] %}
+                        {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
+                            gettext("Register"), icon='log-in') }}
+                        {% if not event['registration_soft_limit'] is none %}
+                            {% if now() <= event['registration_soft_limit'] %}
+                                {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
+                                    (until {{ date }})
+                                {% endtrans %}
+                            {% elif event['registration_hard_limit'] %}
+                                {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
+                                    (late registrations until {{ date }})
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    (only late registrations possible)
+                                {% endtrans %}
+                            {% endif %}
+                        {% elif not event['registration_hard_limit'] is none %}
+                            {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
+                                (until {{ date }})
+                            {% endtrans %}
+                        {% endif %}
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
     {% else %}
         <p class="text-muted">
-            {% trans -%}There are currently no event registrations open.{%- endtrans %}
+            {% trans %}There are currently no event registrations open.{% endtrans %}
         </p>
     {% endif %}
 
     {% if orga_events %}
-        <h3>{% trans -%}Organized Events{%- endtrans %}</h3>
-        <ul class="spaced">
+        <h3>{% trans %}Organized Events{% endtrans %}</h3>
+        <ul class="spaced" id="organized-events">
             {% for event_id, entry in orga_events|keydictsort(EntitySorter.event) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
@@ -54,8 +109,8 @@
     {% endif %}
 
     {% if other_events %}
-        <h3>{% trans -%}Other Events{%- endtrans %}</h3>
-        <ul class="spaced">
+        <h3>{% trans %}Other Events{% endtrans %}</h3>
+        <ul class="spaced" id="other-events">
             {% for event_id, event in other_events|keydictsort(EntitySorter.event) %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
@@ -68,10 +123,10 @@
 
     {% if 'cde' in user.roles %}
         <h3>{% trans %}Past Events (long){% endtrans %}</h3>
-        <p>
-            {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events (long)'))|s -%}
+        <p id="past-events">
+            {% trans link=util.href(cdedblink('cde/list_past_events'), gettext('Past Events (long)'))|s %}
                 Previous CdE events, including their courses and participants, can be found at {{ link }} – together with Junior- and SchülerAkademien.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% endif %}
 {% endblock %}

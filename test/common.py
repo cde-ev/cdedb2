@@ -137,6 +137,67 @@ class BackendShim(ProxyShim):
         return new_fun
 
 
+class MyTextTestResult(unittest.TextTestResult):
+    """Subclasing the TestResult object to fix the CLI reporting."""
+    def __init__(self, *args, **kwargs):
+        super(MyTextTestResult, self).__init__(*args, **kwargs)
+        self._subTestErrors = []
+        self._subTestFailures = []
+        self._subTestSkips = []
+
+    def startTest(self, test):
+        super(MyTextTestResult, self).startTest(test)
+        self._subTestErrors = []
+        self._subTestFailures = []
+        self._subTestSkips = []
+
+    def addSubTest(self, test, subtest, err):
+        super(MyTextTestResult, self).addSubTest(test, subtest, err)
+        if err is not None:
+            if issubclass(err[0], subtest.failureException):
+                errors = self._subTestFailures
+            else:
+                errors = self._subTestErrors
+            errors.append(err)
+
+    def stopTest(self, test):
+        super(MyTextTestResult, self).stopTest(test)
+        # Print a comprehensive list of failures and errors in subTests.
+        output = []
+        if self._subTestErrors:
+            l = len(self._subTestErrors)
+            if self.showAll:
+                s = "ERROR" + ("({})".format(l) if l > 1 else "")
+            else:
+                s = "E" * l
+            output.append(s)
+        if self._subTestFailures:
+            l = len(self._subTestFailures)
+            if self.showAll:
+                s = "FAIL" + ("({})".format(l) if l > 1 else "")
+            else:
+                s = "F" * l
+            output.append(s)
+        if self._subTestSkips:
+            if self.showAll:
+                s = "skipped {}".format(", ".join(
+                    "{0!r}".format(r) for r in self._subTestSkips))
+            else:
+                s = "s" * len(self._subTestSkips)
+            output.append(s)
+        if output:
+            if self.showAll:
+                self.stream.writeln(", ".join(output))
+            else:
+                self.stream.write("".join(output))
+                self.stream.flush()
+
+    def addSkip(self, test, reason):
+        # Purposely override the parents method, to not print the skip here.
+        super(unittest.TextTestResult, self).addSkip(test, reason)
+        self._subTestSkips.append(reason)
+
+
 class BackendUsingTest(unittest.TestCase):
     used_backends = None
 
@@ -314,8 +375,8 @@ USER_DICT = {
         'DB-ID': "DB-14-0",
         'username': 'nina@example.cde',
         'password': "secret",
-        'display_name': "nina",
-        'given_names': "nina",
+        'display_name': "Nina",
+        'given_names': "Nina",
         'family_name': "Neubauer",
     },
     "olaf": {
@@ -473,14 +534,20 @@ class FrontendTest(unittest.TestCase):
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
-            self.assertIn("alert alert-success", self.response.text)
+            success_str = "alert alert-success"
+            target = self.response.text
+            if verbose:
+                self.assertIn(success_str, target)
+            elif success_str not in target:
+                raise AssertionError(
+                    "Post request did not produce success notification.")
 
     def traverse(self, *links, verbose=False):
         for link in links:
             if 'index' not in link:
                 link['index'] = 0
             try:
-                self.response = self.response.click(**link)
+                self.response = self.response.click(**link, verbose=verbose)
             except IndexError as e:
                 e.args += ('Error during traversal of {}'.format(link),)
                 raise
@@ -555,15 +622,20 @@ class FrontendTest(unittest.TestCase):
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
         self.assertEqual(title.strip(), normalized)
 
-    def assertPresence(self, s, div="content", regex=False):
+    def assertPresence(self, s, div="content", regex=False, exact=False):
         if self.response.content_type == "text/plain":
             target = self.response.text
         else:
-            content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
+            tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
+            if not tmp:
+                raise AssertionError("Div not found.", div)
+            content = tmp[0]
             target = content.text_content()
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
             self.assertTrue(re.search(s.strip(), normalized))
+        elif exact:
+            self.assertEqual(s.strip(), normalized.strip())
         else:
             self.assertIn(s.strip(), normalized)
 

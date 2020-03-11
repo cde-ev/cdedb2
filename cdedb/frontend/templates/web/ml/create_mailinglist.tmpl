@@ -8,7 +8,7 @@
 {% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans -%}Create Mailinglist{%- endtrans %}
+    {% trans %}Create Mailinglist{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -22,10 +22,11 @@
     </script>
     <form action="{{ cdedblink('ml/create_mailinglist') }}" method="POST" id="createlistform" class="form-horizontal">
         {{ util.anti_csrf_token('ml/create_mailinglist') }}
-        <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), defaultvalue='True') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_text(name="address", label=gettext("Address")) }}
+        {{ util.form_input_text(name="local_part", label=gettext("Address")) }}
+        {{ util.form_input_select(name="domain", entries=enums['MailinglistDomain']|enum_entries(processing=gettext, prefix="@"), label=gettext("Domain")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
@@ -33,13 +34,9 @@
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
-        <h4 class="heading-underline">{% trans -%}Moderation & Subscribers{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
                 entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="audience_policy", label=gettext("Audience"),
-                entries=enums['AudiencePolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="sub_policy", label=gettext("Subscription"),
-                entries=enums['MailinglistInteractionPolicy']|enum_entries(processing=gettext)) }}
         {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"),
                 entries=enums['MailinglistTypes']|enum_entries(processing=gettext)) }}
         {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=sorted_events,
@@ -51,7 +48,7 @@
                 entries=sorted_assemblies,
                 info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
 
-        <h4 class="heading-underline">{% trans -%}Moderators{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Moderators{% endtrans %}</h4>
 
         {{ util.form_input_text(name="moderator_ids", label=gettext("Moderators"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-moderators") }}
@@ -65,7 +62,7 @@
             );
         </script>
 
-        <h4 class="heading-underline">{% trans -%}Mails{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Mails{% endtrans %}</h4>
         {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix")) }}
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
                 entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}

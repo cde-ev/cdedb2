@@ -2,9 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Participant List {{ title }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -14,7 +14,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Participant List{%- endtrans %}
+        {% trans %}Participant List{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -25,6 +25,9 @@
         {% with course_id = registration['tracks'][track_id]['course_id'] %}
             {% if course_id %}
                 {{ courses[course_id]['nr'] }}.&nbsp;{{ courses[course_id]['shortname'] }}
+                {% if registration['tracks'][track_id]['course_instructor'] == course_id %}
+                    {{ "(KL)" }}
+                {% endif %}
                 {% if not loop.last %}
                     <br />
                 {% endif %}
@@ -34,13 +37,27 @@
 {% endmacro %}
 
 
+{% macro display_sorting_header(part_id, sortkey, label) %}
+    {% if sortkey == last_sortkey and last_reverse == False %}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': True}),
+                     label + nbsp + "▲", title=gettext("Sort descending.")) }}
+    {% elif sortkey == last_sortkey and last_reverse == True %}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
+                     label + nbsp + "▼", title=gettext("Sort ascending.")) }}
+    {% else %}
+        {{ util.href(cdedblink('event/participant_list', {'part_id': part_id, 'sortkey': sortkey, 'reverse': False}),
+                     label + nbsp + "♦", title=gettext("Sort ascending.")) }}
+    {% endif %}
+{% endmacro %}
+
+
 {% block content %}
     {% if not ambience['event']['is_participant_list_visible'] %}
         <div class="alert alert-info" role="alert">
             {{ util.make_icon('info-sign') }}
-            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
-                {% trans -%}The Participant List is currently only visible to Orgas and Admins.{%- endtrans %}
+                {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
             </span>
         </div>
     {% endif %}
@@ -66,29 +83,41 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>{% trans -%}Given Names{%- endtrans %}</th>
-                        <th>{% trans -%}Family Name{%- endtrans %}</th>
-                        <th>{% trans -%}Email Address{%- endtrans %}</th>
-                        <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
+                        <th>
+                            {{ display_sorting_header(part_id, "given_names", gettext("Given Names")) }}
+                        </th>
+                        <th>
+                            {{ display_sorting_header(part_id, "family_name", gettext("Family Name")) }}
+                        </th>
+                        <th>
+                            {{ display_sorting_header(part_id, "email", gettext("Email Address")) }}
+                        </th>
+                        <th>
+                            {{ display_sorting_header(part_id, "address", gettext("Postal Code, City")) }}
+                        </th>
                         {% if parts[part_id]['tracks']|length > 1 and ambience['event']['courses_in_participant_list'] %}
-                            <th>{% trans -%}Courses{%- endtrans %}</th>
+                            <th>
+                            {{ display_sorting_header(part_id, "course", gettext("Courses")) }}
+                            </th>
                         {% elif parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
-                            <th>{% trans -%}Course{%- endtrans %}</th>
+                            <th>
+                            {{ display_sorting_header(part_id, "course", gettext("Course")) }}
+                            </th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                 {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
                     {% with registration = registrations[registration_id] %}
-                    <tr>
+                    <tr id="row-{{ loop.index }}">
                         <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
                         <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
-                        <td>{{ personas[registration['persona_id']]['username'] }}</td>
+                        <td>{{ util.username_mailto(personas[registration['persona_id']]) }}</td>
                         <td>
                             {{ personas[registration['persona_id']]['postal_code'] }}
-                            {{ personas[registration['persona_id']]['location'] }}
-                            {% if personas[registration['persona_id']]['country'] != "Deutschland" -%}
-                                {{- personas[registration['persona_id']]['country'] -}}
+                            {{ personas[registration['persona_id']]['location'] -}}
+                            {%- if personas[registration['persona_id']]['country'] and personas[registration['persona_id']]['country'] != "Deutschland" -%}
+                                {{- ", " + personas[registration['persona_id']]['country'] -}}
                             {% endif %}
                         </td>
                         {% if parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
@@ -108,25 +137,33 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>{% trans -%}Given Names{%- endtrans %}</th>
-                        <th>{% trans -%}Family Name{%- endtrans %}</th>
-                        <th>{% trans -%}Email Address{%- endtrans %}</th>
-                        <th>{% trans -%}Postal Code, City{%- endtrans %}</th>
-                        <th>{% trans -%}Event Parts{%- endtrans %}</th>
+                        <th>
+                            {{ display_sorting_header(None, "given_names", gettext("Given Names")) }}
+                        </th>
+                        <th>
+                            {{ display_sorting_header(None, "family_name", gettext("Family Name")) }}
+                        </th>
+                        <th>
+                            {{ display_sorting_header(None, "email", gettext("Email Address")) }}
+                        </th>
+                        <th>
+                            {{ display_sorting_header(None, "address", gettext("Postal Code, City")) }}
+                        </th>
+                        <th>{% trans %}Event Parts{% endtrans %}</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
                     {% with registration = registrations[registration_id] %}
-                    <tr>
+                    <tr id="row-{{ loop.index }}">
                         <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
                         <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
-                        <td>{{ personas[registration['persona_id']]['username'] }}</td>
+                        <td>{{ util.username_mailto(personas[registration['persona_id']]) }}</td>
                         <td>
                             {{ personas[registration['persona_id']]['postal_code'] }}
-                            {{ personas[registration['persona_id']]['location'] }}
-                            {% if personas[registration['persona_id']]['country'] != "Deutschland" -%}
-                                {{- personas[registration['persona_id']]['country'] -}}
+                            {{ personas[registration['persona_id']]['location'] -}}
+                            {%- if personas[registration['persona_id']]['country'] and personas[registration['persona_id']]['country'] != "Deutschland" -%}
+                                {{- ", " + personas[registration['persona_id']]['country'] -}}
                             {% endif %}
                         </td>
                         <td>
@@ -134,7 +171,7 @@
                                    if registration['parts'][part_id]['status'] == enums['RegistrationPartStati']['participant'] -%}
                                 {% if not loop.first %}
                                     {%- if loop.last %}
-                                        {% trans -%}and{%- endtrans %}
+                                        {% trans %}and{% endtrans %}
                                     {% else -%}
                                         ,
                                     {% endif %}
@@ -149,24 +186,24 @@
             </table>
         {% endif %}
         <p>
-            {% trans count=registrations|length -%}There are {{ count }} participants in total.{%- endtrans %}
+            {% trans count=registrations|length %}There are {{ count }} participants in total.{% endtrans %}
         </p>
 
 
     {% elif not list_consent %}
         <div class="alert alert-info" role="alert">
             {{ util.make_icon('info-sign') }}
-            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
-                {% trans -%}
+                {% trans %}
                     You can not access the Participant List as you have not agreed to have your own data
                     sent to other participants before the event.
-                {%- endtrans %}
+                {% endtrans %}
             </span>
         </div>
 
 
     {% else %}
-        {% trans -%}There are no participants yet.{%- endtrans %}
+        {% trans %}There are no participants yet.{% endtrans %}
     {% endif %}
 {% endblock %}

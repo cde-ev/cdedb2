@@ -1,9 +1,9 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=data['given_names'], family_name=data['family_name'] -%}
+    {% trans given_names=data['given_names'], family_name=data['family_name'] %}
         Edit Email Address for {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}

@@ -5,9 +5,9 @@
     {% if 'core_admin' in user.roles %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{% endif %}
 {% endblock %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	CdE-Datenbank
-    {%- endtrans %}{% endblock %}
+    {% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
 {% endblock %}
@@ -15,8 +15,8 @@
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
         <div class="alert alert-info">
             <p>
-                {{ util.make_icon('info-sign') }} <strong>{% trans -%}Info{%- endtrans %}</strong>
-                {% trans -%}This is an Offline-Instance of the CdE-DB{%- endtrans %}
+                {{ util.make_icon('info-sign') }} <strong>{% trans %}Info{% endtrans %}</strong>
+                {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
             </p>
 
             <p class=nosp>{# TODO Erklärtext #}</p>
@@ -35,10 +35,10 @@
             {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='user',
                                          aclass="panel-warning", anid="adminshowuser-box") %}
                 <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
-                    <div class="sr-only">{% trans -%}Search for Users by ID or Name{%- endtrans %}</div>
+                    <div class="sr-only">{% trans %}Search for Users by ID or Name{% endtrans %}</div>
                     <div class="input-group">
                         <input type="text" name="phrase" class="form-control" id="input-showuser-id"
-                               aria-label="{% trans -%}CdEDB-ID, Name or E-Mail{%- endtrans %}"/>
+                               aria-label="{% trans %}CdEDB-ID, Name or E-Mail{% endtrans %}"/>
                         <span class="input-group-btn">
                             {{ util.input_submit("", icon='search', title=gettext("Search")) }}
                         </span>
@@ -74,7 +74,7 @@
                         	There is currently {{ count }} {{ link }} to review.
                         {%- pluralize -%}
                         	There are currently {{ count }} {{ link }} to review.
-                        {%- endtrans %}
+                        {% endtrans %}
                     </p>
                 {% endif %}
 
@@ -86,7 +86,7 @@
                         	There is currently {{ count }} {{ link }} to review.
                         {%- pluralize -%}
                             There are currently {{ count }} {{ link }} to review.
-                        {%- endtrans %}
+                        {% endtrans %}
                     </p>
                 {% endif %}
 
@@ -99,7 +99,7 @@
                             There is currently {{ count }} {{ link }} to review.
                         {%- pluralize -%}
                             There are currently {{ count }} {{ link }} to review.
-                        {%- endtrans %}
+                        {% endtrans %}
                     </p>
                 {% endif %}
             {% endcall %}
@@ -118,36 +118,36 @@
                             {% if event['registration_start'] %}
                                 <br />
                                 {% if event['registration_start'] <= dashboard['present'] %}
-                                    {% trans count=event['registrations'] -%}
+                                    {% trans count=event['registrations'] %}
                                     	{{ count }} Registrations
-                                    {%- endtrans %}
+                                    {% endtrans %}
                                     {% if not event['registration_hard_limit'] and not event['registration_soft_limit'] %}
-                                        {% trans -%}
+                                        {% trans %}
                                             (Registration open)
-                                        {%- endtrans %}
+                                        {% endtrans %}
                                     {% elif not event['registration_hard_limit'] and event['registration_soft_limit'] and event['registration_soft_limit'] >= dashboard['present'] %}
-                                        {% trans date=event['registration_soft_limit']|datetime(lang=lang) -%}
+                                        {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
                                             (Registration until {{ date }}, late registration open.)
-                                        {%- endtrans %}
+                                        {% endtrans %}
                                     {% elif event['registration_hard_limit'] and event['registration_soft_limit'] and event['registration_soft_limit'] >= dashboard['present'] %}
                                         {% if event['registration_hard_limit'] == event['registration_soft_limit'] %}
-                                            {% trans date=event['registration_soft_limit']|datetime(lang=lang) -%}
+                                            {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
                                                 (Registration until {{ date }})
-                                            {%- endtrans %}
+                                            {% endtrans %}
                                         {% else %}
-                                            {% trans date=event['registration_soft_limit']|datetime(lang=lang), date2=event['registration_soft_limit']|datetime(lang=lang) -%}
+                                            {% trans date=event['registration_soft_limit']|datetime(lang=lang), date2=event['registration_soft_limit']|datetime(lang=lang) %}
                                                 (Registration until {{ date }}, late registration until {{ date2 }}.)
-                                            {%- endtrans %}
+                                            {% endtrans %}
                                         {% endif %}
                                     {% elif event['registration_hard_limit'] and event['registration_hard_limit'] >= dashboard['present'] %}
-                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang) -%}
+                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
                                             (Late registration until {{ date }})
-                                        {%- endtrans %}
+                                        {% endtrans %}
                                     {% endif %}
                                 {% else %}
-                                    {% trans date=event['registration_start']|datetime(lang=lang) -%}
+                                    {% trans date=event['registration_start']|datetime(lang=lang) %}
                                     	(Registration starts {{ date }})
-                                    {%- endtrans %}
+                                    {% endtrans %}
                                 {% endif %}
                             {% endif %}
                             <br />
@@ -209,7 +209,7 @@
                                 {% trans link=util.href(cdedblink('event/registration_status', {'event_id': event_id}),
                                              gettext("registered")) -%}
                                 	(Already {{ link }})
-                                {%- endtrans %}
+                                {% endtrans %}
                                 {%- if event['use_questionnaire'] %}
                                     &bull;
                                     {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
@@ -220,22 +220,22 @@
                                     gettext("Register"), icon='log-in') }}
                                 {% if not event['registration_soft_limit'] is none %}
                                     {% if now() <= event['registration_soft_limit'] %}
-                                        {% trans date=event['registration_soft_limit']|datetime(lang=lang) -%}
+                                        {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
                                         	(Until {{ date }})
-                                        {%- endtrans %}
+                                        {% endtrans %}
                                     {% elif event['registration_hard_limit'] %}
-                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang) -%}
+                                        {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
                                         	(Late Registrations until {{ date }})
-                                        {%- endtrans %}
+                                        {% endtrans %}
                                     {% else %}
-                                        {% trans -%}
+                                        {% trans %}
                                         	(Only late Registrations possible)
-                                        {%- endtrans %}
+                                        {% endtrans %}
                                     {% endif %}
                                 {% elif not event['registration_hard_limit'] is none %}
-                                    {% trans date=event['registration_hard_limit']|datetime(lang=lang) -%}
+                                    {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
                                     	(Until {{ date }})
-                                    {%- endtrans %}
+                                    {% endtrans %}
                                 {% endif %}
                             {% endif %}
                         </li>
@@ -256,13 +256,13 @@
                                          assembly['title'], icon='bullhorn') }}
                             <br />
                             {% if assembly['does_attend'] %}
-                                {% trans -%}
+                                {% trans %}
                                 	(Already attending)
-                                {%- endtrans %}
+                                {% endtrans %}
                             {% else %}
-                                {% trans date=assembly['signup_end']|datetime(lang=lang) -%}
+                                {% trans date=assembly['signup_end']|datetime(lang=lang) %}
                                 	(Registration possible until {{ date }})
-                                {%- endtrans %}
+                                {% endtrans %}
                             {% endif %}
                         </li>
                     {% endfor %}

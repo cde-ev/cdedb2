@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_member_search' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{% trans -%}CdE-Member Search{%- endtrans %}{% endblock %}
+{% block title %}{% trans %}CdE-Member Search{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/member_search"), gettext("CdE-Member Search"), active="True") }}
@@ -11,22 +11,22 @@
         <div class="p">
             {{ util.href("#membersearchform", gettext("Go to Search."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
         </div>
-        <h2>
-            {% trans -%}Result{%- endtrans %}
+        <h2 id="result-count">
+            {% trans %}Result{% endtrans %}
             <small>
-            {% trans count=count -%}
+            {% trans count=count %}
                 {{ count }} Member found
             {%- pluralize count -%}
                 {{ count }} Members found
-            {%- endtrans %}
+            {% endtrans %}
             {% if count > cutoff %}
-                ({% trans -%}
+                ({% trans %}
                 	Only the first {{ cutoff }} results are displayed
-                {%- endtrans %})
+                {% endtrans %})
             {% endif %}
             </small>
         </h2>
-        <ul>
+        <ul id="result">
             {% for dataset in result %}
                 <li>
                     {{ util.href(show_user_link(dataset['id'], quote_me=True),
@@ -43,7 +43,7 @@
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary mosp">
             <div class="panel-heading">
-                <h2 class="panel-title">{{ util.make_icon('search') }} {% trans -%}Search Mask{%- endtrans %}</h2>
+                <h2 class="panel-title">{{ util.make_icon('search') }} {% trans %}Search Mask{% endtrans %}</h2>
             </div>
             <div class="panel-body">
                 <div class="row">
@@ -65,7 +65,7 @@
                         {% else %}
                             <div class="help-block text-muted">
                                 {{ util.make_icon("info-sign") }}
-                                {% trans -%}Course choices will be displayed after first search.{%- endtrans %}
+                                {% trans %}Course choices will be displayed after first search.{% endtrans %}
                             </div>
                         {% endif %}
                     </div>
@@ -94,4 +94,31 @@
             </div>
         </div>
     </form>
+    {% call util.bootstrap_panel(title=gettext("Properties of the search"), aclass='panel-default mosp', icon='info-sign') %}
+        <ul class="slim">
+            <li>
+                {% trans %}
+                    The search will only find those, who are currently members and set their account
+                    to be visible.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Search terms of up to three characters have to match exactly. In the full text
+                    search terms of up to three characters have to match an entire word.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    Search terms of four or more characters can match anywhere.
+                {% endtrans %}
+            </li>
+            <li>
+                {% trans %}
+                    For example the search for "Aka" in the full text search will not match
+                    "Akademie". However the search for "Akadem" will mitch "Akademie".
+                {% endtrans %}
+            </li>
+        </ul>
+    {% endcall %}
 {% endblock %}

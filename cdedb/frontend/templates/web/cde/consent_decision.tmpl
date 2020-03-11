@@ -2,9 +2,9 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans -%}
+    {% trans %}
     	Consent to Member Search
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -12,28 +12,28 @@
 {% endblock %}
 {% block content %}
     <p>
-        {% trans -%}
+        {% trans %}
     	    The CdE-Datenbank provides several capabilities, one of which is
             an electronical member index.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
     {% if not decided_search %}
         <p>
-            {% trans -%}
+            {% trans %}
             	You have not yet decided, whether you want to be visible in this index.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% elif "searchable" in user.roles %}
         <p>
-            {% trans -%}
+            {% trans %}
                 You have decided to be visible in this index.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% else %}
         <p>
-            {% trans -%}
+            {% trans %}
             	You have decided you do not want to be visible in this index.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     {% endif %}
 
@@ -41,37 +41,37 @@
         <p>{{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="time", aclass="btn btn-default") }}</p>
     {% endif %}
 
-    <h1>{% trans -%}Consent{%- endtrans %}</h1>
+    <h1>{% trans %}Consent{% endtrans %}</h1>
 
     <p> 
-        {% trans -%}
+        {% trans %}
         	The CdE-Datenbank relies on the principle of mutuality:
             Only if you consent to the following, others can access your data
             and you can search for and access others.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
 
     <div class="well">
         <p>
-            {% trans -%}
+            {% trans %}
             	I accept that my data may be mailed to other CdE-Members by post.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
 
         <p>
-            {% trans -%}
+            {% trans %}
                 I accept that my personal information can be accessed by other CdE-Members via the internet.
                 (All data is encrypted and password-protected. The CdE can only contact you per E-Mail to give
                 you important information and to remind you about outstanding fees, if you consent to the
                 storage of your data.)
-            {%- endtrans %}
+            {% endtrans %}
         </p>
 
         <p>
-            {% trans -%}
+            {% trans %}
             	I hereby declare that I will not pass the data of CdE-Members to third parties
                 and that I will will not use it for any purpose, that is not in the sense and purpose of the CdE.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
     </div>
 

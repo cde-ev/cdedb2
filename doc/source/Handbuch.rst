@@ -11,8 +11,8 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
 .. toctree::
    :maxdepth: 3
 
-   Handbuch_Orga_Hinweise
-   Handbuch_Veranstaltungsleitfaden
+   Handbuch_Orga_Allgemeines
+   Handbuch_Orga_Spezielles
    Handbuch_partieller_Import
    Handbuch_Markdown
    Handbuch_elektronisches_Wahlverfahren

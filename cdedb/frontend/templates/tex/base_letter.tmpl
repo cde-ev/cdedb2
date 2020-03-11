@@ -11,17 +11,27 @@
     \documentclass[12pt,DIN]{scrlttr2}
     \KOMAoptions{paper=A4,pagesize,DIV=16}
 
-    \usepackage[T1]{fontenc}
-    \usepackage[utf8]{inputenc}
+    \usepackage{iftex}
+
+    \ifLuaTeX
+        \usepackage{fontspec}
+    \else
+        \usepackage[T1]{fontenc}
+        \usepackage[utf8]{inputenc}
+    \fi
+
     \usepackage[ngerman]{babel}
     \usepackage{graphicx}
     \usepackage{microtype}
 
-    %% fix euro symbol
     \usepackage[gen]{eurosym}
-    \DeclareUnicodeCharacter{20AC}{\euro{}}
-    %% fix nonbreaking halfspace
-    \DeclareUnicodeCharacter{202F}{\,}
+    \ifLuaTeX
+    \else
+        %% fix euro symbol
+        \DeclareUnicodeCharacter{20AC}{\euro{}}
+        %% fix nonbreaking halfspace
+        \DeclareUnicodeCharacter{202F}{\,}
+    \fi
 
     %%
     %% addresses and other data details

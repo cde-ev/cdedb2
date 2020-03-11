@@ -35,10 +35,10 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("charly")
     def test_list_attendees(self, user):
-        expectation = {1, 2, 9, 11, 100}
+        expectation = {1, 2, 9, 11, 23, 100}
         self.assertEqual(expectation, self.assembly.list_attendees(self.key, 1))
 
-    @as_users("anton")
+    @as_users("werner")
     def test_entity_assembly(self, user):
         expectation = {
             1: {
@@ -94,7 +94,7 @@ class TestAssemblyBackend(BackendTest):
             self.key, new_id, ("ballots", "attendees", "attachments", "log",
                                "mailinglists")))
 
-    @as_users("anton")
+    @as_users("werner")
     def test_ticket_176(self, user):
         data = {
             'description': None,
@@ -105,7 +105,7 @@ class TestAssemblyBackend(BackendTest):
         new_id = self.assembly.create_assembly(self.key, data)
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
-    @as_users("anton")
+    @as_users("werner")
     def test_entity_ballot(self, user):
         assembly_id = 1
         expectation = {1: 'Antwort auf die letzte aller Fragen',
@@ -331,7 +331,7 @@ class TestAssemblyBackend(BackendTest):
         self.assembly.set_ballot(self.key, data)
 
     def test_extension(self):
-        self.login(USER_DICT['anton'])
+        self.login(USER_DICT['werner'])
         future = now() + datetime.timedelta(seconds=.5)
         farfuture = now() + datetime.timedelta(seconds=1)
         data = {
@@ -401,8 +401,8 @@ class TestAssemblyBackend(BackendTest):
             with open("/tmp/cdedb-store/ballot_result/1", 'rb') as g:
                 self.assertEqual(f.read(), g.read())
 
-    def test_conclusion(self):
-        self.login(USER_DICT['anton'])
+    @as_users("werner")
+    def test_conclusion(self, user):
         data = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
@@ -437,10 +437,10 @@ class TestAssemblyBackend(BackendTest):
             'signup_end': now(),
         }
         self.assembly.set_assembly(self.key, update)
-        self.assertEqual({1, 11}, self.assembly.list_attendees(self.key, new_id))
+        self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
-    @as_users("anton")
+    @as_users("werner")
     def test_entity_attachments(self, user):
         expectation = {}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
@@ -463,32 +463,33 @@ class TestAssemblyBackend(BackendTest):
             "filename": "beschluss.pdf",
         }
         self.assertLess(0, self.assembly.add_attachment(self.key, data, b'123'))
-        expectation = {1: 'Rechenschaftsbericht', 2: 'Verfassung des Staates der CdEler'}
+        expectation = {1001: 'Rechenschaftsbericht',
+                       1002: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
-        expectation = {3: 'Beschlussvorlage'}
+        expectation = {1003: 'Beschlussvorlage'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))
         expectation = {
-            1: {'assembly_id': 1,
-                'ballot_id': None,
-                'filename': 'rechen.pdf',
-                'id': 1,
-                'title': 'Rechenschaftsbericht'},
-            2: {'assembly_id': 1,
-                'ballot_id': None,
-                'filename': 'verf.pdf',
-                'id': 2,
-                'title': 'Verfassung des Staates der CdEler'},
-            3: {'assembly_id': None,
-                'ballot_id': 2,
-                'filename': 'beschluss.pdf',
-                'id': 3,
-                'title': 'Beschlussvorlage'}}
-        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1, 2, 3)))
-        self.assertLess(0, self.assembly.remove_attachment(self.key, 1))
-        expectation = {2: 'Verfassung des Staates der CdEler'}
+            1001: {'assembly_id': 1,
+                   'ballot_id': None,
+                   'filename': 'rechen.pdf',
+                   'id': 1001,
+                   'title': 'Rechenschaftsbericht'},
+            1002: {'assembly_id': 1,
+                   'ballot_id': None,
+                   'filename': 'verf.pdf',
+                   'id': 1002,
+                   'title': 'Verfassung des Staates der CdEler'},
+            1003: {'assembly_id': None,
+                   'ballot_id': 2,
+                   'filename': 'beschluss.pdf',
+                   'id': 1003,
+                   'title': 'Beschlussvorlage'}}
+        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
+        self.assertLess(0, self.assembly.remove_attachment(self.key, 1001))
+        expectation = {1002: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
 
-    @as_users("anton")
+    @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
         (title, description, mail_address, signup_end) VALUES
         ('Umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
@@ -507,7 +508,7 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 
-    @as_users("anton")
+    @as_users("werner")
     def test_log(self, user):
         # first generate some data
         self.test_entity_assembly()
@@ -515,71 +516,72 @@ class TestAssemblyBackend(BackendTest):
         self.test_entity_ballot()
 
         # now check it
+        sub_id = USER_DICT['werner']['id']
         expectation = (
             {'additional_info': 'Farbe des Logos',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': 'Verstehen wir Spaß',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_created,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': 'Verstehen wir Spaß',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': 'n',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': 'j',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': 'gelb',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_removed,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': 'rot',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_updated,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': 'aqua',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': 'Farbe des Logos',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': "Außerordentliche Mitgliederversammlung",
              'assembly_id': None,
              'code': const.AssemblyLogCodes.assembly_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1},
+             'submitted_by': sub_id},
             {'additional_info': None,
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.assembly_changed,
              'ctime': nearly_now(),
              'persona_id': None,
-             'submitted_by': 1})
+             'submitted_by': sub_id})
         self.assertEqual(expectation, self.assembly.retrieve_log(self.key))

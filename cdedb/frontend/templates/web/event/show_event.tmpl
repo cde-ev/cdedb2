@@ -20,13 +20,13 @@
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
-        {{ ambience['event']['description']|md }}
+        <div id="description">{{ ambience['event']['description']|md }}</div>
     {% endif %}
 
     <dl class="dl-horizontal">
         {% if ambience['event']['parts']|length > 0 %}
-            <dt>{% trans -%}Timeframe{%- endtrans %}</dt>
-            <dd>
+            <dt>{% trans %}Timeframe{% endtrans %}</dt>
+            <dd id="timeframe-parts">
                 {% if ambience['event']['parts']|length == 1 %}
                     {% with part = (ambience['event']['parts'].values()|list)[0] %}
                         <span class="nowrap">{{ part['part_begin']|date(lang=lang,verbosity='full') }}</span>&#8239;–
@@ -42,33 +42,35 @@
             </dd>
         {% endif %}
         {% if not ambience['event']['registration_start'] is none %}
-            <dt>{% trans -%}Registration{%- endtrans %}</dt>
-            <dd>
+            <dt>{% trans %}Registration{% endtrans %}</dt>
+            <dd id="timeframe-registration">
                 {% set soft_limit = ambience['event']['registration_soft_limit'] %}
                 {% set hard_limit = ambience['event']['registration_hard_limit'] %}
                 {% if soft_limit is none and hard_limit is none %}
-                    {% trans date=ambience['event']['registration_start']|datetime(lang=lang)-%}
+                    {% trans date=ambience['event']['registration_start']|datetime(lang=lang)%}
                     	starts {{ date }}
-                    {%- endtrans %}
+                    {% endtrans %}
                 {% else %}
                     {{ ambience['event']['registration_start']|datetime(lang=lang) }}&#8239;–&#8239;
                     {{- hard_limit if soft_limit is none else soft_limit|datetime(lang=lang) }}
                     {% if ((values['event_id'] in user.orga or is_admin)
                         or now() > soft_limit) and soft_limit != hard_limit %}
-                        {% trans date=hard_limit|datetime(lang=lang) -%}
+                        {% trans date=hard_limit|datetime(lang=lang) %}
                         	(Late registrations until {{ date }})
-                        {%- endtrans %}
+                        {% endtrans %}
                     {% endif %}
                 {% endif %}
             </dd>
         {% endif %}
         {% if ambience['event']['orga_address'] %}
             <dt>{% trans %}Orga Address{% endtrans %}</dt>
-            <dd><a href="mailto:{{ ambience['event']['orga_address'] }}">{{ ambience['event']['orga_address'] }}</a></dd>
+            <dd id="orga-address">
+                <a href="mailto:{{ ambience['event']['orga_address'] }}">{{ ambience['event']['orga_address'] }}</a>
+            </dd>
         {% endif %}
         {% if "event" in user.roles %}
-            <dt>{% trans -%}Orgas{%- endtrans %}</dt>
-            <dd>
+            <dt>{% trans %}Orgas{% endtrans %}</dt>
+            <dd id="orgas">
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                     {{util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
                 {% endfor %}
@@ -77,14 +79,14 @@
     </dl>
     {% if values['event_id'] in user.orga or is_admin %}
         <dl class="dl-horizontal">
-            <dt>{% trans -%}Shortname{%- endtrans %}</dt>
-            <dd>{{ ambience['event']['shortname'] }}</dd>
-            <dt>{% trans -%}Institution{%- endtrans %}</dt>
-            <dd>{{ institutions[ambience['event']['institution']] }}</dd>
-            <dt>{% trans -%}CdE-Account IBAN{%- endtrans %}</dt>
-            <dd>{{ ambience['event']['iban']|iban }}</dd>
-            <dt>{% trans -%}Questionnaire active{%- endtrans %}</dt>
-            <dd>{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire'],
+            <dt>{% trans %}Shortname{% endtrans %}</dt>
+            <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
+            <dt>{% trans %}Institution{% endtrans %}</dt>
+            <dd id="institution">{{ institutions[ambience['event']['institution']] }}</dd>
+            <dt>{% trans %}CdE-Account IBAN{% endtrans %}</dt>
+            <dd id="cde-iban">{{ ambience['event']['iban']|iban }}</dd>
+            <dt>{% trans %}Questionnaire active{% endtrans %}</dt>
+            <dd id="questionnaire-active">{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire'],
                         titles=[gettext("No"),gettext("Yes")]) }}</dd>
         </dl>
     {% endif %}
@@ -94,21 +96,21 @@
         {% if ambience['event']['notes'] %}
             {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['notes']|md }}
+                <div id="orga-notes">{{ ambience['event']['notes']|md }}</div>
             {% endcall %}
         {% endif %}
 
         {% if ambience['event']['registration_text'] %}
             {% call util.bootstrap_panel(title=gettext("Registration page free text"), icon="log-in",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['registration_text']|md }}
+                <div id="registration-text">{{ ambience['event']['registration_text']|md }}</div>
             {% endcall %}
         {% endif %}
 
         {% if ambience['event']['mail_text'] %}
             {% call util.bootstrap_panel(title=gettext("Registration mail free text"), icon="envelope",
                                          aclass="panel-default panel-condensed") %}
-                {{ ambience['event']['mail_text']|linebreaks }}
+                <div id="mail-text">{{ ambience['event']['mail_text']|linebreaks }}</div>
             {% endcall %}
         {% endif %}
 
@@ -116,10 +118,10 @@
             <div class="col-md-6">
                 {% call util.bootstrap_panel(title=gettext("Registration Quick-Access"), aclass="panel-warning", icon='list') %}
                     <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
-                        <div class="sr-only">{% trans -%}Search for registration by ID or name{%- endtrans %}</div>
+                        <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
                         <div class="input-group">
                             <input type="text" name="phrase" class="form-control" id="input-showregistration-id"
-                                   aria-label="{% trans -%}ID, name or email{%- endtrans %}"/>
+                                   aria-label="{% trans %}ID, name or email{% endtrans %}"/>
                             <span class="input-group-btn">
                                 {{ util.input_submit("", icon='search', title=gettext("Search")) }}
                             </span>
@@ -142,7 +144,7 @@
             </div>
 
             {% if is_admin %}
-                <div class="col-md-6">
+                <div class="col-md-6" id="manage-orgas">
                     {% call util.bootstrap_panel(title="Orgas", icon='user') %}
                     <ul>
                         {% for anid, entry in orgas.items() %} {# This is already sorted. #}
@@ -182,14 +184,14 @@
                 </div>
             {% endif %}
 
-            <div class="col-md-6">
+            <div class="col-md-6" id="minor-form">
                 {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}
                     <p>
                         {% if minor_form_present %}
                             {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("current Form"),
                                                     icon='file') -%}
                             	Form present: {{ link }}
-                            {%- endtrans %}
+                            {% endtrans %}
                             <form action="{{ cdedblink("event/change_minor_form") }}" method="POST"
                                 id="removeminorformform">
                                 {{ util.anti_csrf_token("event/change_minor_form") }}
@@ -204,7 +206,7 @@
                             </script>
                         {% else %}
                             <strong>{{ util.make_icon('warning-sign') }}
-                                {% trans -%}No Form present – Minors cannot register{%- endtrans %}
+                                {% trans %}No Form present – Minors cannot register{% endtrans %}
                             </strong>
                         {% endif %}
                     </p>
@@ -224,21 +226,21 @@
                 {% endcall %}
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-6" id="offline-use">
                 {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download', aclass='panel-danger') %}
                     {% if ambience['event']['offline_lock'] != CDEDB_OFFLINE_DEPLOYMENT %}
                         {% if CDEDB_OFFLINE_DEPLOYMENT %}
                             <p>
-                                {% trans -%}The event is in offline mode, but locked to be used in another instance.{%- endtrans %}
-                                {% trans -%}
+                                {% trans %}The event is in offline mode, but locked to be used in another instance.{% endtrans %}
+                                {% trans %}
                                     To unlock it, run the offline initialization script inside the VM with
                                     the event data you would like to use.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         {% else %}
                             <p>
-                                {% trans -%}The event is locked for offline use.{%- endtrans %}
-                                {% trans -%}To unlock it, upload the export of the Offline-DB here.{%- endtrans %}
+                                {% trans %}The event is locked for offline use.{% endtrans %}
+                                {% trans %}To unlock it, upload the export of the Offline-DB here.{% endtrans %}
                             </p>
                             <form action="{{ cdedblink('event/unlock_event') }}" method="POST"
                                   enctype="multipart/form-data" id="unlockform"
@@ -258,9 +260,9 @@
                     {% else %}
                         <p>
                             {% if CDEDB_OFFLINE_DEPLOYMENT %}
-                                {% trans -%}The event is in offline mode.{%- endtrans %}
+                                {% trans %}The event is in offline mode.{% endtrans %}
                             {% endif %}
-                            {% trans -%}The event is not locked.{%- endtrans %}
+                            {% trans %}The event is not locked.{% endtrans %}
                         </p>
                         <div class="p">
                             <form action="{{ cdedblink('event/lock_event') }}" method="POST" id="lockform">
@@ -270,57 +272,22 @@
                         </div>
                         <p class="text-muted">
                             {{ util.make_icon('info-sign') }}
-                            {% trans -%}By locking the event, all changes are prevented.{%- endtrans %}
+                            {% trans %}By locking the event, all changes are prevented.{% endtrans %}
                             {% if CDEDB_OFFLINE_DEPLOYMENT %}
-                                {% trans -%}
+                                {% trans %}
                                     This way the event can be imported from here into another
                                     offline instance without causing conflicts. Be aware that
                                     unlocking can not be done here, but must be done by running the
                                     offline initialization script.
-                                {%- endtrans %}
+                                {% endtrans %}
                             {% else %}
-                                {% trans -%}
+                                {% trans %}
                                     This way the event can be managed in offline mode without
                                     causing conflicts.
-                                {%- endtrans %}
+                                {% endtrans %}
                             {% endif %}
                         </p>
                     {% endif %}
-                {% endcall %}
-            </div>
-
-            <div class="col-md-6">
-                {% call util.bootstrap_panel(title=gettext("Event Logo"), icon="picture") %}
-                    {% if logo_present %}
-                        <embed src="{{ cdedblink('event/get_event_logo') }}#view=Fit&scrollbar=0&toolbar=0"
-                               type="application/pdf" width="150px" height="150px" />
-                        <form action="{{ cdedblink('event/set_event_logo') }}" method="POST"
-                                id="removeeventlogoform">
-                            {{ util.anti_csrf_token('event/set_event_logo') }}
-                            {{ util.input_hidden(name="delete", value=True) }}
-                            {{ util.input_checkbox(name="logo_ack_delete", label=gettext("Are you sure?")) }}
-                            {{ util.input_submit(value=gettext("Remove Logo"), readonly=is_locked,
-                                                 icon='trash', aclass='btn btn-danger') }}
-                        </form>
-                        <script type="text/javascript" nonce="{{ csp_nonce }}">
-                            $('#removeeventlogoform').cdedbProtectAction("{{ gettext("The event logo will be permanently deleted.") }}");
-                            $('#removeeventlogoform').find('[name="logo_ack_delete"]').prop('checked', true).parent().hide();
-                        </script>
-                    {% else %}
-                        {% trans -%}No logo set.{%- endtrans %}
-                    {% endif %}
-                    <form action="{{ cdedblink('event/set_event_logo') }}" method="POST" enctype="multipart/form-data"
-                          id="seteventlogoform" {% if "event_logo" in errors %}class="has-error"{% endif %}>
-                        {{ util.anti_csrf_token('event/set_event_logo') }}
-                        {{ util.input_hidden(name="delete", value=False) }}
-                        <div class="input-group">
-                            {{ util.input_file(name="event_logo", accept="image/*") }}
-                            <div class="input-group-btn">
-                                {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='upload') }}
-                            </div>
-                        </div>
-                        {{ util.output_errors("event_logo") }}
-                    </form>
                 {% endcall %}
             </div>
         </div>
@@ -334,7 +301,7 @@
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             {% if "ml_admin" in user.roles %}
                 {% if not ambience['event']['orga_address'] %}
-                    <div class="row">
+                    <div class="row" id="create-orga-list">
                         <div class="col-sm-4">
                             <div class="p">
                                 <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
@@ -348,18 +315,18 @@
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                     Create an orga mailinglist for this event with a default configuration.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>
                 {% endif %}
                 {% if not participant_list %}
-                    <div class="row">
+                    <div class="row" id="create-participant-list">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createorgalistform"
+                                <form action="{{ cdedblink('event/create_event_mailinglist') }}" method="POST" id="createparticipantlistform"
                                         style="display: inline;">
                                     {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                     {{ util.input_hidden("orgalist", value=False) }}
@@ -370,16 +337,16 @@
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                {% trans -%}
+                                {% trans %}
                                     Create a participant mailinglist for this event with a default configuration.
-                                {%- endtrans %}
+                                {% endtrans %}
                             </p>
                         </div>
                     </div>
                 {% endif %}
             {% endif %}
             {% if is_admin and "cde_admin" in user.roles %}
-                <div class="row">
+                <div class="row" id="archive-event">
                     <div class="col-sm-4">
                         <div class="p">
                             <form action="{{ cdedblink('event/archive_event') }}" method="POST" id="archiveeventform"
@@ -394,10 +361,10 @@
                     </div>
                     <div class="col-sm-8">
                         <p class="text-muted">
-                            {% trans -%}
+                            {% trans %}
                                 Archives the event. This creates a new “Past Event” in the CdE-Realm and transfers
                                 course and participant information there.
-                            {%- endtrans %}
+                            {% endtrans %}
                         </p>
                     </div>
                 </div>
@@ -406,7 +373,7 @@
                     $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
                 </script>
             {% endif %}
-            <div class="row">
+            <div class="row" id="delete-event">
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"
@@ -421,10 +388,10 @@
                 </div>
                 <div class="col-sm-8">
                     <div class="p text-muted">
-                        {% trans -%}
+                        {% trans %}
                             Deletes the event, including all course and participant information.
                             This should usually not be done before the event has been archived and fully concluded.
-                        {%- endtrans %}
+                        {% endtrans %}
                     </div>
                 </div>
             </div>

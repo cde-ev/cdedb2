@@ -58,8 +58,11 @@ sample-data-xss:
 	make sql-xss
 
 storage:
-ifeq ($(wildcard /DBVM),/DBVM)
+ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
+endif
+ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+	$(error Refusing to touch orga instance)
 endif
 	sudo rm -rf "/var/lib/cdedb/"
 	sudo mkdir -p "/var/lib/cdedb/foto/"
@@ -86,8 +89,11 @@ storage-test:
 	cp test/ancillary_files/{picture.pdf,picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv,partial_event_import.json} /tmp/cdedb-store/testfiles/
 
 sql:
-ifeq ($(wildcard /DBVM),/DBVM)
+ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
+endif
+ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+	$(error Refusing to touch orga instance)
 endif
 	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
@@ -111,8 +117,11 @@ sql-test-shallow:
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
 
 sql-xss:
-ifeq ($(wildcard /DBVM),/DBVM)
+ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
+endif
+ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
+	$(error Refusing to touch orga instance)
 endif
 	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
