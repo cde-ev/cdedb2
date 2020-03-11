@@ -94,6 +94,12 @@ body{
 ul.slim {
     padding-left: 15px;
 }
+.details-list {
+    list-style-type: none;
+}
+.details-list > li > details >  summary {
+    margin-left: -15px;
+}
 .list-group-item {
     padding: 7px 8px;
 }

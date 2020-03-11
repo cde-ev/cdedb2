@@ -135,7 +135,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info',
                                                  icon='user', anid='box-changed-registrations') %}
-                        <ul class="slim">
+                        <ul class="slim details-list">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
                                 <li>
                                     <details>
@@ -207,7 +207,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book',
                                                  anid='box-changed-courses') %}
-                        <ul class="slim">
+                        <ul class="slim details-list">
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
                                 <li>
                                     <details>
@@ -280,7 +280,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home',
                                                  anid='box-changed-lodgements') %}
-                        <ul class="slim">
+                        <ul class="slim details-list">
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
                                 <li>
                                     <details>
