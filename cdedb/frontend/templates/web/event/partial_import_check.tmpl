@@ -137,10 +137,12 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  icon='user', anid='box-changed-registrations') %}
                         <ul class="slim">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
-                                <li class="clearfix-after">
-                                    {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                    {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
-                                    <details class="pull-right">
+                                <li>
+                                    <details>
+                                        <summary>
+                                            {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
+                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                        </summary>
                                         {{ diff_table(reg_diff, reg_titles, reg_choices) }}
                                     </details>
                                 </li>
@@ -207,12 +209,14 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  anid='box-changed-courses') %}
                         <ul class="slim">
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
-                                <li class="clearfix-after">
-                                    {{ courses[course_id]['nr'] }}.{# -#}
-                                    {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
-                                    {{ courses[course_id]['shortname'] }}{# -#}
-                                    {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
-                                    <details class="pull-right">
+                                <li>
+                                    <details>
+                                        <summary>
+                                            {{ courses[course_id]['nr'] }}.{# -#}
+                                            {% if 'nr' in course_diff %}/{{ course_diff['nr'][1] }}.{% endif %}
+                                            {{ courses[course_id]['shortname'] }}{# -#}
+                                            {% if 'shortname' in course_diff %}/{{ course_diff['shortname'][1] }}{% endif %}
+                                        </summary>
                                         {{ diff_table(course_diff, course_titles, course_choices) }}
                                     </details>
                                 </li>
@@ -278,10 +282,12 @@ diff of the item and shows a table with all changed attributes, old and new valu
                                                  anid='box-changed-lodgements') %}
                         <ul class="slim">
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
-                                <li class="clearfix-after">
-                                    {{ lodgements[lodgement_id]['moniker'] }}{# -#}
-                                    {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
-                                    <details class="pull-right">
+                                <li>
+                                    <details>
+                                        <summary>
+                                            {{ lodgements[lodgement_id]['moniker'] }}{# -#}
+                                            {% if 'moniker' in lodgement_diff %}/{{ lodgement_diff['moniker'][1] }}{% endif %}
+                                        </summary>
                                         {{ diff_table(lodgement_diff, lodgement_titles, {}) }}
                                    </details>
                                 </li>
