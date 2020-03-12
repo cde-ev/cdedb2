@@ -3,13 +3,13 @@
     \parindent 0pt\relax
     \newcommand\course[7]{
         \section*{#1 (#2)}
-        Kursleiter: #3
+        \BLOCK{ trans } Kursleiter \BLOCK{ endtrans }: #3
         \par
-        Minimalgröße/Maximalgröße: #4/#5
+        \BLOCK{ trans } Minimalgröße/Maximalgröße \BLOCK{ endtrans }: #4/#5
         \par
-        Notizen: #6
+        \BLOCK{ trans } Notizen \BLOCK{ endtrans }: #6
         \par
-        Erst-/Zweit-/Drittwahlen: #7}
+        \BLOCK{ trans } Erst-/Zweit-/Drittwahlen \BLOCK{ endtrans }: #7}
     \newcommand\participant[6]{
         \section*{#1 (#2)}
         #3
@@ -36,11 +36,11 @@
                                  \VAR{ personas[registration['persona_id']]['family_name']|te }}%
                                 {\VAR{ track['title']|te }}%
                                 {\BLOCK{ if registration['tracks'][track_id]['course_instructor'] -}
-                                    Kursleiter:
+                                    \BLOCK{ trans } Kursleiter \BLOCK{ endtrans }:
                                     \VAR{ courses[registration['tracks'][track_id]['course_instructor']]['title']|te }
                                     \par
                                 \BLOCK{- endif }}%
-                    \BLOCK{ for label in ("Erstwahl", "Zweitwahl", "Drittwahl") -}
+                    \BLOCK{ for label in (_("Erstwahl"), _("Zweitwahl"), _("Drittwahl")) -}
                                 {\BLOCK{ if registration['tracks'][track_id]['choices']|length > loop.index0 -}
                                     \VAR{ label|te }:
                                     \VAR{ courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te }

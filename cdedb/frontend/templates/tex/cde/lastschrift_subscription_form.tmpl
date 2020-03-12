@@ -22,8 +22,8 @@
 \BLOCK{ endblock }
 \BLOCK{ block backaddress_oneline }
     \BLOCK{ if data["full_name"] and data["address"] and data["postal_code"] and data["location"] }
-        <<< "{}, {} {}, {} {} {}".format(data["full_name"], data["address_supplement"],
-                                      data["address"], data["postal_code"], data["location"], data["country"])|te >>>
+        \VAR{ "{}, {} {}, {} {} {}".format(data["full_name"], data["address_supplement"],
+                                      data["address"], data["postal_code"], data["location"], data["country"])|te }
     \BLOCK{ else }
         \makebox[10cm]{}
     \BLOCK{ endif }

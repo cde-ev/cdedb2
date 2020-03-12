@@ -6,11 +6,11 @@
     \parindent 0pt\relax
     \newcommand\lodgement[5]{
         \section*{#1 (#2)}
-        Kapazität: #3
+        \BLOCK{ trans } Kapazität \BLOCK{ endtrans }: #3
         \par
-        Reserve: #4
+        \BLOCK{ trans } Reserve \BLOCK{ endtrans }: #4
         \par
-        Notizen: #5
+        \BLOCK{ trans } Notizen \BLOCK{ endtrans }: #5
         \par
         \vspace{.5cm}
         \hrule
@@ -41,26 +41,28 @@
                     {\BLOCK{ if ambience['event']['parts']|length > 1 }\VAR{ part['title']|te }; \BLOCK{ endif }%
                      \VAR{ personas[registration['persona_id']]['birthday'].year|te }%
                      \BLOCK{ if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -}
-                        ~[Gast]
+                        ~[\BLOCK{ trans } Gast \BLOCK{ endtrans }]
                      \BLOCK{- endif }}%
                     {\VAR{ gettext(enums['Genders'](personas[registration['persona_id']]['gender'])|string)|te }}%
-                    {\BLOCK{ if not registration['mixed_lodging'] }getrennt\BLOCK{ endif }}%
+                    {\BLOCK{ if not registration['mixed_lodging'] }
+                        \BLOCK{- trans } getrennt \BLOCK{ endtrans -}
+                    \BLOCK{ endif }}%
                     {\BLOCK{ if registration['age'] == enums['AgeClasses'].u18 }U18\BLOCK{ endif -}
                      \BLOCK{ if registration['age'] == enums['AgeClasses'].u16 }U16\BLOCK{ endif -}
                      \BLOCK{ if registration['age'] == enums['AgeClasses'].u14 }U14\BLOCK{ endif -}}%
-                    {<<% if ambience['event']['reserve_field'] and
+                    {\BLOCK{ if ambience['event']['reserve_field'] and
                             registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
-                        Isomatte
+                                ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -}
+                        \BLOCK{ trans } Isomatte \BLOCK{ endtrans }
                      \BLOCK{- endif }}% ID \VAR{ registration_id|te }
-                    {<<% if ambience['event']['lodge_field']
+                    {\BLOCK{ if ambience['event']['lodge_field']
                             and registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
-                        Wunsch: <<< registration['fields'].get(
-                                    ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>
+                                ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -}
+                        \BLOCK{ trans } Wunsch \BLOCK{ endtrans }: \VAR{ registration['fields'].get(
+                                    ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te }
                      \BLOCK{ endif -}}%
                     {\BLOCK{ if reverse_wish.get(registration_id) -}%
-                        Revers-Wunsch-Heuristik: \VAR{ reverse_wish[registration_id]|te }
+                        \BLOCK{ trans } Revers-Wunsch-Heuristik \BLOCK{ endtrans }: \VAR{ reverse_wish[registration_id]|te }
                      \BLOCK{ endif -}}
             \BLOCK{ endif }
         \BLOCK{ endfor }

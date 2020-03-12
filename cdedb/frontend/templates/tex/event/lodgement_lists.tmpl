@@ -21,7 +21,7 @@
                         \VAR{ personas[registrations[registration_id]['persona_id']]['given_names']|te }
                         \VAR{ personas[registrations[registration_id]['persona_id']]['family_name']|te }
                 \BLOCK{ else }
-                    \item niemand
+                    \item \BLOCK{ trans } niemand \BLOCK{ endtrans }
                 \BLOCK{ endfor }
             \end{itemize}
             \clearpage

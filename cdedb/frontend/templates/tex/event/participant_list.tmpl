@@ -19,8 +19,12 @@
 
     \definecolor{design}{HTML}{000000}
 
-    \chead{\Large\textbf{\textsf{Teilnehmerliste \VAR{ ambience['event']['title']|te }}}}
-    \cfoot{Seite \thepage{} von \pageref{LastPage}}
+    \chead{\Large\textbf{\textsf{\BLOCK{ trans title=ambience['event']['title']|te }
+        Teilnehmerliste \VAR{ title }
+    \BLOCK{ endtrans }}}}}
+    \cfoot{\BLOCK{ trans curr_page="\thepage{}", total_pages="\pageref{LastPage}" }
+        Seite \VAR{ curr_page } von \VAR{ total_pages }
+    \BLOCK{ endtrans }}
 
 \BLOCK{ endblock }
 \BLOCK{ block content }
@@ -39,10 +43,10 @@
     |}
             \hline
             \rowcolor{design}
-			  \head{Vorname}
-			& \head{Nachname}
-			& \head{E-Mail}
-			& \head{PLZ \& Ort}
+			  \head{\BLOCK{ trans } Given Names \BLOCK{ endtrans }}
+			& \head{\BLOCK{ trans } Family Name \BLOCK{ endtrans }}
+			& \head{\BLOCK{ trans } Email Address \BLOCK{ endtrans }}
+			& \head{\BLOCK{ trans } Postal Code, City \BLOCK{ endtrans }}
             % Kursschienen/Eventparts
             \BLOCK{ for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -}
 			    \BLOCK{ if ep['tracks']|length < 1 -}
@@ -84,8 +88,8 @@
                     & % \VAR{ t['shortname']|te }
                     \BLOCK{ if registration['parts'][t['part_id']]['status'] == participant -}
                         \BLOCK{ if registration['tracks'][t_id]['course_id'] -}
-                            <<% if registration['tracks'][t_id]['course_instructor']
-                                    == registration['tracks'][t_id]['course_id'] -%>>
+                            \BLOCK{ if registration['tracks'][t_id]['course_instructor']
+                                    == registration['tracks'][t_id]['course_id'] -}
                                 \emph{
                                     \VAR{- courses[registration['tracks'][t_id]['course_id']]['shortname']|te -}
                                 }
@@ -93,7 +97,7 @@
                                 \VAR{- courses[registration['tracks'][t_id]['course_id']]['shortname']|te -}
                             \BLOCK{ endif -}
                         \BLOCK{ elif registration['persona_id'] in ambience['event']['orgas'] -}
-                            \emph{Orga}
+                            \emph{\BLOCK{ trans } Orga \BLOCK{ endtrans }}
                         \BLOCK{ else -}
                             \checkmark
                         \BLOCK{ endif -}

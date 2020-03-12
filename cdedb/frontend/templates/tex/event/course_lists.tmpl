@@ -23,8 +23,8 @@
                 \BLOCK{ if ambience['event']['tracks']|length > 1 -}
                     \emph{\VAR{ ambience['event']['tracks'][track_id]['shortname']|te }}\\
                 \BLOCK{- endif }
-                \VAR{ (attendees[key]|length - instructors[key]|length)|te } Teilnehmer
-                , \VAR{ instructors[key]|length|te } Kursleiter
+                \VAR{ (attendees[key]|length - instructors[key]|length)|te } \BLOCK{ trans } Teilnehmer \BLOCK{ endtrans }
+                , \VAR{ instructors[key]|length|te } \BLOCK{ trans } Kursleiter \BLOCK{ endtrans }
             \end{minipage}
             \begin{minipage}[c][\logosize\textwidth][t]{\logosize\linewidth}
                 \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./course-logo-\VAR{ course_id|te }}
@@ -47,13 +47,13 @@
                             \BLOCK{ endif }
                     \BLOCK{ endwith }
                 \BLOCK{ else }
-                    \item \emph{niemand}
+                    \item \emph{\BLOCK{ trans } niemand \BLOCK{ endtrans }}
                 \BLOCK{ endfor }
             \end{itemize}
             \vspace{\fill}
             \begin{minipage}[t]{\textwidth}
                 \BLOCK{ if course_room_field -}
-                    Kursraum: \VAR{ course['fields'].get(course_room_field, "")|te }
+                    \BLOCK{ trans } Kursraum \BLOCK{ endtrans }: \VAR{ course['fields'].get(course_room_field, "")|te }
                 \BLOCK{- endif }
             \end{minipage}
             \clearpage

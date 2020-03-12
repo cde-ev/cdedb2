@@ -75,8 +75,8 @@
             \BLOCK{ if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() -}
                 \COMMENT{ jinja does not support list comprehension ... -}
                 \BLOCK{ set mycourses = [] -}
-                <<% for track_id, track in registration['tracks'].items()
-                        if ambience['event']['tracks'][track_id]['part_id'] == part_id and track['course_id'] -%>>
+                \BLOCK{ for track_id, track in registration['tracks'].items()
+                        if ambience['event']['tracks'][track_id]['part_id'] == part_id and track['course_id'] -}
                     \BLOCK{ do mycourses.append((track_id, track['course_id']))|te -}
                 \BLOCK{ endfor -}
                 \nametag{\VAR{ personas[registration['persona_id']]['given_names']|te }}%
@@ -93,7 +93,7 @@
                                 \BLOCK{- endif -}
                             \BLOCK{- endfor -}
                         \BLOCK{- elif registration['persona_id'] in ambience['event']['orgas'] -}
-                            \emph{Orga}
+                            \emph{\BLOCK{ trans } Orga \BLOCK{ endtrans }}
                         \BLOCK{- endif -}
                     }{
                         \BLOCK{- if registration['parts'][part_id]['lodgement_id'] -}
