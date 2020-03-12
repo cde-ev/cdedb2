@@ -345,7 +345,7 @@
                     </div>
                 {% endif %}
             {% endif %}
-            {% if is_admin and "cde_admin" in user.roles %}
+            {% if is_admin and "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
                 <div class="row" id="archive-event">
                     <div class="col-sm-4">
                         <div class="p">
