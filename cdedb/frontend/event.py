@@ -3790,7 +3790,7 @@ class EventFrontend(AbstractUserFrontend):
         }
 
     @classmethod
-    def check_lodgment_problems(cls, event, lodgements,
+    def check_lodgement_problems(cls, event, lodgements,
                                 registrations, personas, inhabitants):
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
@@ -3901,7 +3901,7 @@ class EventFrontend(AbstractUserFrontend):
             k: sum(
                 1 for r in v if registrations[r]['parts'][k[1]]['is_reserve'])
             for k, v in inhabitants.items()}
-        problems = self.check_lodgment_problems(
+        problems = self.check_lodgement_problems(
             rs.ambience['event'], lodgements, registrations, personas,
             inhabitants)
         problems_condensed = {}
@@ -4141,7 +4141,7 @@ class EventFrontend(AbstractUserFrontend):
             (lodgement_id,), rs.ambience['event'], registrations,
             key="lodgement_id", personas=personas)
 
-        problems = self.check_lodgment_problems(
+        problems = self.check_lodgement_problems(
             rs.ambience['event'], {lodgement_id: rs.ambience['lodgement']},
             registrations, personas, inhabitants)
 
