@@ -775,6 +775,24 @@ class TestCoreBackend(BackendTest):
         self.assertTrue(self.core.delete_genesis_case(self.key, case_id))
         self.assertFalse(self.core.genesis_attachment_usage(self.key, attachment_hash))
 
+    def test_genesis_verify_multiple(self):
+        self.assertEqual((0, "core"), self.core.genesis_verify(None, 123))
+        genesis_data = {
+            "given_names": "Max",
+            "family_name": "Mailschreiber",
+            "realm": "ml",
+            "username": "max@mailschreiber.de",
+            "notes": "Max möchte Mails mitbekommen.",
+        }
+        case_id = self.core.genesis_request(None, genesis_data)
+        self.assertTrue(case_id)
+        ret, realm = self.core.genesis_verify(None, case_id)
+        self.assertTrue(ret > 0)
+        ret, realm = self.core.genesis_verify(None, case_id)
+        self.assertTrue(ret < 0)
+        self.login(USER_DICT["anton"])
+        self.assertEqual(1, len(self.core.retrieve_log(self.key, codes=(const.CoreLogCodes.genesis_verified,))))
+
     @as_users("vera")
     def test_verify_personas(self, user):
         self.assertEqual(

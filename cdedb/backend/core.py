@@ -2322,21 +2322,29 @@ class CoreBackend(AbstractBackend):
         :type case_id: int
         :rtype: (int, str or None)
         :returns: (default return code, realm of the case if successful)
-
+            A negative return code means, that the case was already verified.
+            A zero return code means the case was not found or another error
+            occured.
         """
         case_id = affirm("id", case_id)
         with Atomizer(rs):
+            data = self.sql_select_one(
+                rs, "core.genesis_cases", ("realm", "username", "case_status"),
+                case_id)
+            # These should be displayed as useful errors in the frontend.
+            if not data:
+                return 0, "core"
+            elif not data["case_status"] == const.GenesisStati.unconfirmed:
+                return -1, data["realm"]
             query = glue("UPDATE core.genesis_cases SET case_status = %s",
                          "WHERE id = %s AND case_status = %s")
             params = (const.GenesisStati.to_review, case_id,
                       const.GenesisStati.unconfirmed)
             ret = self.query_exec(rs, query, params)
-
-            data = self.sql_select_one(
-                rs, "core.genesis_cases", ("realm", "username"), case_id)
-            self.core_log(
-                rs, const.CoreLogCodes.genesis_verified, persona_id=None,
-                additional_info=data["username"])
+            if ret:
+                self.core_log(
+                    rs, const.CoreLogCodes.genesis_verified, persona_id=None,
+                    additional_info=data["username"])
         return ret, data["realm"]
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
