@@ -1,9 +1,9 @@
-<<% extends "tex/event/base_article.tmpl" %>>
-<<% block documentclass %>>
+\BLOCK{ extends "tex/event/base_article.tmpl" }
+\BLOCK{ block documentclass }
     \documentclass[12pt,portrait,parskip=half+,a5paper]{scrartcl}
-<<% endblock %>>
+\BLOCK{ endblock }
 
-<<% block extra_preamble %>>
+\BLOCK{ block extra_preamble }
 
     \parindent 0pt\relax
     \pagestyle{empty}
@@ -11,52 +11,52 @@
     \newcommand{\debugbox}{}
     \newcommand{\logosize}{0.2}
 
-<<% endblock %>>
-<<% block content %>>
-    <<% for course_id, course in courses|xdictsort('nr', pad=True) %>>
-        <<% for track_id in tracks_sorted if track_id in course['active_segments'] %>>
-        <<% set key = (course_id, track_id) %>>
+\BLOCK{ endblock }
+\BLOCK{ block content }
+    \BLOCK{ for course_id, course in courses|xdictsort('nr', pad=True) }
+        \BLOCK{ for track_id in tracks_sorted if track_id in course['active_segments'] }
+        \BLOCK{ set key = (course_id, track_id) }
             \begin{minipage}[c][\logosize\linewidth][c]{0.8\linewidth}
                 \raggedright
-                \Huge\textbf{<<< course['shortname']|te >>>}\\
-                \normalsize <<< course['title']|te >>>\\
-                <<% if ambience['event']['tracks']|length > 1 -%>>
-                    \emph{<<< ambience['event']['tracks'][track_id]['shortname']|te >>>}\\
-                <<%- endif %>>
-                <<< (attendees[key]|length - instructors[key]|length)|te >>> Teilnehmer
-                , <<< instructors[key]|length|te >>> Kursleiter
+                \Huge\textbf{\VAR{ course['shortname']|te }}\\
+                \normalsize \VAR{ course['title']|te }\\
+                \BLOCK{ if ambience['event']['tracks']|length > 1 -}
+                    \emph{\VAR{ ambience['event']['tracks'][track_id]['shortname']|te }}\\
+                \BLOCK{- endif }
+                \VAR{ (attendees[key]|length - instructors[key]|length)|te } Teilnehmer
+                , \VAR{ instructors[key]|length|te } Kursleiter
             \end{minipage}
             \begin{minipage}[c][\logosize\textwidth][t]{\logosize\linewidth}
-                \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./course-logo-<<< course_id|te >>>}
+                \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./course-logo-\VAR{ course_id|te }}
             \end{minipage}
             \begin{itemize}
-                <<% for reg_id, reg in registrations.items() if reg_id in attendees[(course_id, track_id)] %>>
-                    <<% with p = personas[registrations[reg_id]['persona_id']] %>>
+                \BLOCK{ for reg_id, reg in registrations.items() if reg_id in attendees[(course_id, track_id)] }
+                    \BLOCK{ with p = personas[registrations[reg_id]['persona_id']] }
                         \item
-                            <<% if reg_id in instructors[(course_id, track_id)] %>>
+                            \BLOCK{ if reg_id in instructors[(course_id, track_id)] }
                                 \emph{
-                                    <<<- personas[registrations[reg_id]['persona_id']]['given_names']|te >>>
-                                    <<< personas[registrations[reg_id]['persona_id']]['family_name']|te ->>>
+                                    \VAR{- personas[registrations[reg_id]['persona_id']]['given_names']|te }
+                                    \VAR{ personas[registrations[reg_id]['persona_id']]['family_name']|te -}
                                 }
-                            <<% else %>>
-                                <<<- personas[registrations[reg_id]['persona_id']]['given_names']|te >>>
-                                <<< personas[registrations[reg_id]['persona_id']]['family_name']|te ->>>
-                                <<% if p['age'].is_minor() %>>
-                                    \fbox{<<< p['age'].name|upper|te >>>}
-                                <<% endif %>>
-                            <<% endif %>>
-                    <<% endwith %>>
-                <<% else %>>
+                            \BLOCK{ else }
+                                \VAR{- personas[registrations[reg_id]['persona_id']]['given_names']|te }
+                                \VAR{ personas[registrations[reg_id]['persona_id']]['family_name']|te -}
+                                \BLOCK{ if p['age'].is_minor() }
+                                    \fbox{\VAR{ p['age'].name|upper|te }}
+                                \BLOCK{ endif }
+                            \BLOCK{ endif }
+                    \BLOCK{ endwith }
+                \BLOCK{ else }
                     \item \emph{niemand}
-                <<% endfor %>>
+                \BLOCK{ endfor }
             \end{itemize}
             \vspace{\fill}
             \begin{minipage}[t]{\textwidth}
-                <<% if course_room_field -%>>
-                    Kursraum: <<< course['fields'].get(course_room_field, "")|te >>>
-                <<%- endif %>>
+                \BLOCK{ if course_room_field -}
+                    Kursraum: \VAR{ course['fields'].get(course_room_field, "")|te }
+                \BLOCK{- endif }
             \end{minipage}
             \clearpage
-        <<% endfor %>>
-    <<% endfor %>>
-<<% endblock %>>
+        \BLOCK{ endfor }
+    \BLOCK{ endfor }
+\BLOCK{ endblock }

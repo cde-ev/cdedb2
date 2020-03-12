@@ -1,14 +1,14 @@
-<<% extends "tex/cde/base_letter.tmpl" %>>
-<<% block extra_preamble %>>
+\BLOCK{ extends "tex/cde/base_letter.tmpl" }
+\BLOCK{ block extra_preamble }
     \usepackage{url}
 
     \makeatletter
     \def\@mysignature{%
         \begin{tabular}{lll}
         \makebox[3cm]{\dotfill} & \makebox[6cm]{\dotfill} &
-            <<% if not data["not_minor"] == True %>>\makebox[6cm]{\dotfill} <<% endif %>> \\
-        Ort, Datum & Unterschrift & <<% if not data["not_minor"] == True %>>\emph{bei Minderjährigen:}<<% endif %>>\\
-         & & <<% if not data["not_minor"] == True %>>Unterschrift Erziehungsberechtigte/-r<<% endif %>>\\
+            \BLOCK{ if not data["not_minor"] == True }\makebox[6cm]{\dotfill} \BLOCK{ endif } \\
+        Ort, Datum & Unterschrift & \BLOCK{ if not data["not_minor"] == True }\emph{bei Minderjährigen:}\BLOCK{ endif }\\
+         & & \BLOCK{ if not data["not_minor"] == True }Unterschrift Erziehungsberechtigte/-r\BLOCK{ endif }\\
         \end{tabular}}
     \setkomavar{signature}{\@mysignature}
     \makeatother
@@ -19,91 +19,91 @@
     \def\subsection#1{\bigskip\noindent\textbf{\large #1}\smallskip}
     \usepackage{parskip}
         \parskip = 10pt
-<<% endblock %>>
-<<% block backaddress_oneline %>>
-    <<% if data["full_name"] and data["address"] and data["postal_code"] and data["location"] %>>
+\BLOCK{ endblock }
+\BLOCK{ block backaddress_oneline }
+    \BLOCK{ if data["full_name"] and data["address"] and data["postal_code"] and data["location"] }
         <<< "{}, {} {}, {} {} {}".format(data["full_name"], data["address_supplement"],
                                       data["address"], data["postal_code"], data["location"], data["country"])|te >>>
-    <<% else %>>
+    \BLOCK{ else }
         \makebox[10cm]{}
-    <<% endif %>>
-<<% endblock %>>
-<<% block content %>>
+    \BLOCK{ endif }
+\BLOCK{ endblock }
+\BLOCK{ block content }
     \begin{letter}{Club der Ehemaligen e.\,V.\\
-                   c/o <<< meta_info['Finanzvorstand_Name']|te  >>>
-                   <<% for i in ("2", "3", "4") -%>>
-                       <<% if meta_info['Finanzvorstand_Adresse_Zeile{}'.format(i)] -%>>
-                           \\ <<< meta_info['Finanzvorstand_Adresse_Zeile{}'.format(i)]|te >>>
-                       <<% endif -%>>
-                   <<% endfor %>>}
+                   c/o \VAR{ meta_info['Finanzvorstand_Name']|te  }
+                   \BLOCK{ for i in ("2", "3", "4") -}
+                       \BLOCK{ if meta_info['Finanzvorstand_Adresse_Zeile{}'.format(i)] -}
+                           \\ \VAR{ meta_info['Finanzvorstand_Adresse_Zeile{}'.format(i)]|te }
+                       \BLOCK{ endif -}
+                   \BLOCK{ endfor }}
 
         \opening{}
 
         \begin{tabular}{ll}
             Name &
-                <<% if data["full_name"] %>>
-                    <<< data["full_name"]|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["full_name"] }
+                    \VAR{ data["full_name"]|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
             Adresszusatz &
-                <<% if data["address_supplement"] %>>
-                    <<< data["address_supplement"]|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["address_supplement"] }
+                    \VAR{ data["address_supplement"]|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
             Straße &
-                <<% if data["address"] %>>
-                    <<< data["address"]|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["address"] }
+                    \VAR{ data["address"]|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
             PLZ, Ort &
-                <<% if data["postal_code"] and data["location"] %>>
-                    <<< "{} {}".format(data["postal_code"], data["location"])|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["postal_code"] and data["location"] }
+                    \VAR{ "{} {}".format(data["postal_code"], data["location"])|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
             Land &
-                <<% if data["country"] %>>
-                    <<< data["country"]|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["country"] }
+                    \VAR{ data["country"]|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
             E-Mail &
-                <<% if data["username"] %>>
-                    <<< data["username"]|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["username"] }
+                    \VAR{ data["username"]|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
             Datenbank-ID &
-                <<% if data["db_id"] %>>
-                    <<< data["db_id"]|cdedbid|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["db_id"] }
+                    \VAR{ data["db_id"]|cdedbid|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
             Kontoinhaber (falls abweichend) &
-                <<% if data["account_holder"] %>>
-                    <<< data["acount_holder"]|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["account_holder"] }
+                    \VAR{ data["acount_holder"]|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
             IBAN &
-                <<% if data["iban"] %>>
-                    <<< data["iban"]|iban|te >>>\\
-                <<% else %>>
+                \BLOCK{ if data["iban"] }
+                    \VAR{ data["iban"]|iban|te }\\
+                \BLOCK{ else }
                     \makebox[10cm]{\dotfill}\\
-                <<% endif %>>
+                \BLOCK{ endif }
         \end{tabular}
 
         \emph{SEPA-Lastschriftmandat:} Hiermit ermächtige ich den Club der Ehemaligen der Deutschen SchülerAkademien
         e.\,V., von meinem oben angegebenem Konto mittels Lastschrift jährlich
         \begin{center}
-            <<% if data["amount"] %>>
-                <<< data["amount"]|money|te >>>
-            <<% else %>>
+            \BLOCK{ if data["amount"] }
+                \VAR{ data["amount"]|money|te }
+            \BLOCK{ else }
                 \makebox[4cm]{\dotfill}€ (mindestens 25\,€)
-            <<% endif %>>
+            \BLOCK{ endif }
         \end{center}
         einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von dem Club der Ehemaligen der Deutschen
         SchülerAkademien e.\,V.  gezogenen Lastschriften einzulösen.
@@ -154,4 +154,4 @@
 
         \thispagestyle{empty}
     \end{letter}
-<<% endblock %>>
+\BLOCK{ endblock }

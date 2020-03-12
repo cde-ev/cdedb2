@@ -1,5 +1,5 @@
-<<# This is just a part of a tex document, so we do not inherit the base template. #>>
+\COMMENT{ This is just a part of a tex document, so we do not inherit the base template. }
 
-<<%- for id, attendee in attendees.items() -%>>
-\participant{<<< attendee['given_names'] >>>}{<<< attendee['family_name'] >>>}
-<<% endfor %>>
+\BLOCK{- for id, attendee in attendees.items() -}
+\participant{\VAR{ attendee['given_names'] }}{\VAR{ attendee['family_name'] }}
+\BLOCK{ endfor }

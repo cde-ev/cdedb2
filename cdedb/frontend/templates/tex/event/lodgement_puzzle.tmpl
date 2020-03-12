@@ -1,8 +1,8 @@
-<<% extends "tex/event/base_article.tmpl" %>>
-<<% block documentclass %>>
+\BLOCK{ extends "tex/event/base_article.tmpl" }
+\BLOCK{ block documentclass }
     \documentclass[12pt,twocolumn]{scrartcl}
-<<% endblock %>>
-<<% block extra_preamble %>>
+\BLOCK{ endblock }
+\BLOCK{ block extra_preamble }
     \parindent 0pt\relax
     \newcommand\lodgement[5]{
         \section*{#1 (#2)}
@@ -24,45 +24,45 @@
         \hrule}
 
     \usepackage[top=.5cm,bottom=.5cm, left=.5cm, right=.5cm]{geometry}
-<<% endblock %>>
-<<% block content %>>
-    <<% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %>>
-        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
-            \lodgement{<<< lodgement['moniker']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['capacity']|te >>>}%
-                      {<<< lodgement['reserve']|te >>>}{<<< lodgement['notes']|te >>>}
-        <<% endfor %>>
-    <<% endfor %>>
+\BLOCK{ endblock }
+\BLOCK{ block content }
+    \BLOCK{ for lodgement_id, lodgement in lodgements|xdictsort('moniker') }
+        \BLOCK{ for part_id, part in ambience['event']['parts']|xdictsort('part_begin') }
+            \lodgement{\VAR{ lodgement['moniker']|te }}{\VAR{ part['title']|te }}{\VAR{ lodgement['capacity']|te }}%
+                      {\VAR{ lodgement['reserve']|te }}{\VAR{ lodgement['notes']|te }}
+        \BLOCK{ endfor }
+    \BLOCK{ endfor }
     \clearpage
-    <<% for registration_id, registration in registrations.items() %>> <<# This is already sorted. #>>
-        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
-            <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %>>
-                \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
-                             <<< personas[registration['persona_id']]['family_name']|te >>>}%
-                    {<<% if ambience['event']['parts']|length > 1 %>><<< part['title']|te >>>; <<% endif %>>%
-                     <<< personas[registration['persona_id']]['birthday'].year|te >>>%
-                     <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>
+    \BLOCK{ for registration_id, registration in registrations.items() } \COMMENT{ This is already sorted. }
+        \BLOCK{ for part_id, part in ambience['event']['parts']|xdictsort('part_begin') }
+            \BLOCK{ if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() }
+                \participant{\VAR{ personas[registration['persona_id']]['given_names']|te }
+                             \VAR{ personas[registration['persona_id']]['family_name']|te }}%
+                    {\BLOCK{ if ambience['event']['parts']|length > 1 }\VAR{ part['title']|te }; \BLOCK{ endif }%
+                     \VAR{ personas[registration['persona_id']]['birthday'].year|te }%
+                     \BLOCK{ if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -}
                         ~[Gast]
-                     <<%- endif %>>}%
-                    {<<< gettext(enums['Genders'](personas[registration['persona_id']]['gender'])|string)|te >>>}%
-                    {<<% if not registration['mixed_lodging'] %>>getrennt<<% endif %>>}%
-                    {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
-                     <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
-                     <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
+                     \BLOCK{- endif }}%
+                    {\VAR{ gettext(enums['Genders'](personas[registration['persona_id']]['gender'])|string)|te }}%
+                    {\BLOCK{ if not registration['mixed_lodging'] }getrennt\BLOCK{ endif }}%
+                    {\BLOCK{ if registration['age'] == enums['AgeClasses'].u18 }U18\BLOCK{ endif -}
+                     \BLOCK{ if registration['age'] == enums['AgeClasses'].u16 }U16\BLOCK{ endif -}
+                     \BLOCK{ if registration['age'] == enums['AgeClasses'].u14 }U14\BLOCK{ endif -}}%
                     {<<% if ambience['event']['reserve_field'] and
                             registration['fields'].get(
                                 ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
                         Isomatte
-                     <<%- endif %>>}% ID <<< registration_id|te >>>
+                     \BLOCK{- endif }}% ID \VAR{ registration_id|te }
                     {<<% if ambience['event']['lodge_field']
                             and registration['fields'].get(
                                 ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
                         Wunsch: <<< registration['fields'].get(
                                     ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>
-                     <<% endif -%>>}%
-                    {<<% if reverse_wish.get(registration_id) -%>>%
-                        Revers-Wunsch-Heuristik: <<< reverse_wish[registration_id]|te >>>
-                     <<% endif -%>>}
-            <<% endif %>>
-        <<% endfor %>>
-    <<% endfor %>>
-<<% endblock %>>
+                     \BLOCK{ endif -}}%
+                    {\BLOCK{ if reverse_wish.get(registration_id) -}%
+                        Revers-Wunsch-Heuristik: \VAR{ reverse_wish[registration_id]|te }
+                     \BLOCK{ endif -}}
+            \BLOCK{ endif }
+        \BLOCK{ endfor }
+    \BLOCK{ endfor }
+\BLOCK{ endblock }
