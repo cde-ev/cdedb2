@@ -791,17 +791,25 @@ class CdEFrontend(AbstractUserFrontend):
         data["end"] = end
         data["timestamp"] = timestamp
         params = {
+            "all": [],
             "has_error": [],
             "has_warning": [],
+            "jump_order": {},
             "has_none": [],
             "accounts": defaultdict(int),
             "events": defaultdict(int),
             "memberships": 0,
         }
+        prev_jump = None
         for t in transactions:
+            params["all"].append(t.t_id)
             if t.errors:
+                params["jump_order"][prev_jump] = t.t_id
+                prev_jump = t.t_id
                 params["has_error"].append(t.t_id)
             elif t.warnings:
+                params["jump_order"][prev_jump] = t.t_id
+                prev_jump = t.t_id
                 params["has_warning"].append(t.t_id)
             else:
                 params["has_none"].append(t.t_id)

@@ -15,11 +15,18 @@
 {{ util.breadcrumb_link(cdedblink("cde/parse_statement_form"), gettext("Parse Bank Statement"), active=True) }}
 {% endblock %}
 {% macro print_transaction(t_id) %}
-    <strong>
-        <span class="row-key" data-row="{{ t_id }}">
-            {% trans lineno=t_id %}Line {{ lineno }}{% endtrans %}
-        </span>:
-    </strong>
+    {% if data["errors{}".format(t_id)] %}
+        {% set aclass="panel-danger" %}
+        {% set anicon="exclamation-sign" %}
+    {% elif data["warnings{}".format(t_id)] %}
+        {% set aclass="panel-warning" %}
+        {% set anicon="warning-sign" %}
+    {% else %}
+        {% set aclass="panel-default" %}
+        {% set anicon="info-sign" %}
+    {% endif %}
+    {% call util.bootstrap_panel(title=gettext("Line %(lineno)s")|format(lineno=t_id), aclass=aclass,
+                                 icon=anicon, anid="transaction-container{}".format(t_id)) %}
     {% with transaction_keys =
         ("reference", "account", "statement_date", "amount",
         "account_holder", "posting", "iban", "t_id") %}
@@ -93,8 +100,17 @@
                 </div>
             </div>
         </div>
+        {% if params["jump_order"][t_id] %}
+            <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][t_id] }}">
+                {{ util.make_icon("arrow-down") }}
+                {% trans %}
+                    Go to next Error.
+                {% endtrans %}
+            </a>
+        {% endif %}
     </div>
     {% endwith %}
+    {% endcall %}
 {% endmacro %}
 
 {% block content %}
@@ -108,36 +124,40 @@
 
     {% if data %}
         <h2>{% trans %}Validation results{% endtrans %}</h2>
-        <form action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
+        <p action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
             {{ util.anti_csrf_token("cde/parse_download") }}
             {{ util.input_hidden(name="count") }}
             {{ util.input_hidden(name="start") }}
             {{ util.input_hidden(name="end") }}
             {{ util.input_hidden(name="timestamp") }}
+            <p>
             {% if params["has_error"] %}
-                <h3 class="heading-underline" id="has_error_summary">
+                <div id="has_error_summary">
                     {% trans count=params["has_error"]|length %}{{ count }} Transactions with Errors{% endtrans %}
-                </h3>
-                {% for t_id in params["has_error"] %}
-                    {{ print_transaction(t_id) }}
-                {% endfor %}
+                </div>
             {% endif %}
             {% if params["has_warning"] %}
-                <h3 class="heading-underline" id="has_warning_summary">
+                <div id="has_warning_summary">
                     {% trans count=params["has_warning"]|length %}{{ count }} Transactions with Warnings{% endtrans %}
-                </h3>
-                {% for t_id in params["has_warning"] %}
-                    {{ print_transaction(t_id) }}
-                {% endfor %}
+                </div>
             {% endif %}
             {% if params["has_none"] %}
-                <h3 class="heading-underline" id="has_none_summary">
+                <div id="has_none_summary">
                     {% trans count=params["has_none"]|length %}{{ count }} Successful Transactions{% endtrans %}
-                </h3>
-                {% for t_id in params["has_none"] %}
-                    {{ print_transaction(t_id) }}
-                {% endfor %}
+                </div>
             {% endif %}
+            {% if params["jump_order"][None] %}
+                <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][None] }}">
+                    {{ util.make_icon("arrow-down") }}
+                    {% trans %}
+                        Go to first Error.
+                    {% endtrans %}
+                </a>
+            {% endif %}
+            </p>
+            {% for t_id in params["all"] %}
+                {{ print_transaction(t_id) }}
+            {% endfor %}
             {% if params["has_error"] %}
                 {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
             {% else %}
