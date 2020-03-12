@@ -23,16 +23,16 @@ Verwendungszweck: {{ user['given_names'] }} {{ user['family_name'] }}, {{ user['
 
 
 {% if "member" not in user.roles and ambience["event"]["additional_external_fee"] > 0 %}
-Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe von {{ ambience["event"]["additional_external_fee"] }}
+Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag in Höhe von {{ ambience["event"]["additional_external_fee"]|money }}
 bezahlen (bereits in der obigen Summe enthalten).
 {% if "cde" in user.roles %}
-Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von {{ semester_fee }} bezahlen
+Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag in Höhe von {{ semester_fee|money }} bezahlen
 und somit wieder Mitglied werden, woraufhin Du den zusätzlichen Beitrag nicht bezahlen musst.
 Wenn Du dies tust, überweise Mitgliedsbeitrag und Teilnahmebeitrag bitte separat.
 {% endif %}
 {% endif %}
 {% else %}
-Die Orgas werden Dir separat mitteilen, wie Du den Beitrag von {{ fee }}€
+Die Orgas werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|money }}
 bezahlen kannst.
 {% endif%}
 
