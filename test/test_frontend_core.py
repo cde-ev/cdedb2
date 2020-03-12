@@ -1497,6 +1497,22 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Account-Log [0–0]")
 
+    def test_genesis_verification_mail_resend(self):
+        self.get('/')
+        self.traverse({'description': 'Account anfordern'})
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "ml"
+        self.submit(f)
+        self.assertGreater(len(self.fetch_mail()), 0)
+        self.submit(f)
+        self.assertPresence("Bestätigungsmail erneut versendet.", div="notifications")
+        self.assertGreater(len(self.fetch_mail()), 0)
+
     def test_genesis_postal_code(self):
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
