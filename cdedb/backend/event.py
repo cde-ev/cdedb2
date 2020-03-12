@@ -7,6 +7,7 @@ variant for external participants.
 import collections
 import copy
 import hashlib
+import decimal
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
@@ -2279,6 +2280,7 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
+    @singularize("calculate_fee")
     def calculate_fees(self, rs, ids):
         """Calculate the total fees for some registrations.
 
@@ -2307,24 +2309,28 @@ class EventBackend(AbstractBackend):
                     "Only registrations from exactly one event allowed."))
 
             event_id = unwrap(events)
+            regs = self.get_registrations(rs, ids)
+            user_id = rs.user.persona_id
             if (not self.is_orga(rs, event_id=event_id)
-                    and not self.is_admin(rs)):
+                    and not self.is_admin(rs)
+                    and {r['persona_id'] for r in regs.values()} != {user_id}):
                 raise PrivilegeError(n_("Not privileged."))
 
-            regs = self.get_registrations(rs, ids)
+            persona_ids = {e['persona_id'] for e in regs.values()}
+            personas = self.core.get_personas(rs, persona_ids)
             event = self.get_event(rs, event_id)
-            relevant_stati = (const.RegistrationPartStati.applied,
-                              const.RegistrationPartStati.waitlist,
-                              const.RegistrationPartStati.participant,)
-
-            ret = {
-                reg_id: sum(event['parts'][part_id]['fee']
-                            for part_id, part in reg['parts'].items()
-                            if part['status'] in relevant_stati)
-                for reg_id, reg in regs.items()
-                }
+            rps = const.RegistrationPartStati
+            ret = {}
+            for reg_id, reg in regs.items():
+                fee = decimal.Decimal(0)
+                for part_id, rpart in reg['parts'].items():
+                    part = event['parts'][part_id]
+                    if rps(rpart['status']).is_involved():
+                        fee += part['fee']
+                if not personas[reg['persona_id']]['is_member']:
+                    fee += event['nonmember_surcharge']
+                ret[reg_id] = fee
         return ret
-
 
     @access("event")
     def check_orga_addition_limit(self, rs, event_id):

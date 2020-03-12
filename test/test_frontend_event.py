@@ -936,6 +936,7 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "UnAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
+        f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
@@ -965,6 +966,7 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "AltAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
+        f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
         # TODO This should be fixed with introducing relative admins
@@ -1068,12 +1070,34 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertPresence("Outside")
 
-    @as_users("berta")
+    @as_users("berta", "daniel", "nina")
     def test_register(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/register'})
         self.assertTitle("Anmeldung für Große Testakademie 2222")
+        if user["id"] == 2:
+            self.assertNonPresence("Da Du kein CdE-Mitglied bist, musst du "
+                                   "einen zusätzlichen Beitrag")
+            self.assertNonPresence("Du kannst auch stattdessen Deinen "
+                                   "regulären Mitgliedsbeitrag")
+        elif user["id"] == 4:
+            self.assertPresence("Da Du kein CdE-Mitglied bist, musst du "
+                                "einen zusätzlichen Beitrag",
+                                div="nonmember-surcharge")
+            self.assertPresence("Du kannst auch stattdessen Deinen "
+                                "regulären Mitgliedsbeitrag",
+                                div="nonmember-surcharge")
+        elif user["id"] == 14:
+            self.assertPresence("Da Du kein CdE-Mitglied bist, musst du "
+                                "einen zusätzlichen Beitrag",
+                                div="nonmember-surcharge")
+            self.assertNonPresence("Du kannst auch stattdessen Deinen "
+                                   "regulären Mitgliedsbeitrag",
+                                   div="nonmember-surcharge")
+        else:
+            self.fail("Please reconfigure the users for the above checks.")
+
         f = self.response.forms['registerform']
         f['parts'] = ['1', '3']
         f['mixed_lodging'] = 'True'
@@ -1101,7 +1125,24 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
         text = mail.get_body().get_content()
-        self.assertIn("461.49", text)
+        if user["id"] == 2:
+            self.assertIn("461.49", text)
+        elif user["id"] == 4:
+            self.assertIn("466.49", text)
+            self.assertIn("Da Du kein CdE-Mitglied bist, musst du einen "
+                          "zusätzlichen Beitrag",
+                          text)
+            self.assertIn("Du kannst auch stattdessen Deinen "
+                          "regulären Mitgliedsbeitrag",
+                          text)
+        elif user["id"] == 14:
+            self.assertIn("466.49", text)
+            self.assertIn("Da Du kein CdE-Mitglied bist, musst du einen "
+                          "zusätzlichen Beitrag",
+                          text)
+            self.assertNotIn("Du kannst auch stattdessen Deinen "
+                             "regulären Mitgliedsbeitrag",
+                             text)
         self.assertPresence("Ich freu mich schon so zu kommen")
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
@@ -1397,18 +1438,20 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
         f = self.response.forms['batchfeesform']
         f['fee_data'] = """
-570.99;DB-1-9;Admin;Anton;01.04.18
-461.49;DB-5-1;Eventis;Emilia;01.04.18
+573.99;DB-1-9;Admin;Anton;01.04.18
+466.99;DB-5-1;Eventis;Emilia;01.04.18
+589.49;DB-9-4;Iota;Inga;30.12.19
 570.99;DB-11-6;K;Kalif;01.04.18
 0.0;DB-666-1;Y;Z;77.04.18;stuff
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Kein Account mit ID 666 gefunden.")
+        self.assertPresence("Keine Anmeldung gefunden.", div="line4_problems")
+        self.assertPresence("Kein Account mit ID 666 gefunden.", div="line5_problems")
         f = self.response.forms['batchfeesform']
         f['full_payment'].checked = True
         f['fee_data'] = """
 573.98;DB-1-9;Admin;Anton;01.04.18
-461.49;DB-5-1;Eventis;Emilia;04.01.18
+589.49;DB-5-1;Eventis;Emilia;04.01.18
 451.00;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
@@ -1442,7 +1485,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 04.01.2018")
-        self.assertPresence("Bereits bezahlter Betrag 461,49 €")
+        self.assertPresence("Bereits bezahlter Betrag 589,49 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
@@ -2693,6 +2736,7 @@ etc;anything else""", f['entries_2'].value)
                                                                 ['etc', 'anything else']],
                                                     'kind': 1}},
                       'iban': 'DE96370205000008068901',
+                      'nonmember_surcharge': "5.00",
                       'institution': 1,
                       'is_archived': False,
                       'is_participant_list_visible': False,
@@ -3005,8 +3049,8 @@ etc;anything else""", f['entries_2'].value)
                                                      'course_id': 1,
                                                      'course_instructor': None}}}
                               },
+            'timestamp': result['timestamp'],  # nearly_now() won't do
         }
-        expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
         self.assertEqual(expectation, result)
 
     @as_users("annika", "garcia")

@@ -384,7 +384,8 @@ class EventFrontend(AbstractUserFrontend):
         "mail_text", "use_questionnaire", "notes", "lodge_field",
         "reserve_field", "is_visible", "is_course_list_visible",
         "is_course_state_visible", "is_participant_list_visible",
-        "courses_in_participant_list", "course_room_field")
+        "courses_in_participant_list", "course_room_field",
+        "nonmember_surcharge")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -909,7 +910,7 @@ class EventFrontend(AbstractUserFrontend):
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
-        "iban", "notes")
+        "iban", "nonmember_surcharge", "notes")
     def create_event(self, rs, event_begin, event_end, orga_ids, data,
                      create_track, create_orga_list, create_participant_list):
         """Create a new event, organized via DB."""
@@ -2798,12 +2799,13 @@ class EventFrontend(AbstractUserFrontend):
                            or (not event['is_course_state_visible']
                                and track_id in course['segments'])]
             for track_id in tracks}
+        semester_fee = self.conf.MEMBERSHIP_FEE
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
         return self.render(rs, "register", {
             'persona': persona, 'age': age, 'courses': courses,
-            'course_choices': course_choices})
+            'course_choices': course_choices, 'semester_fee': semester_fee})
 
     @staticmethod
     def process_registration_input(rs, event, courses, parts=None):
@@ -2932,9 +2934,8 @@ class EventFrontend(AbstractUserFrontend):
                                          and age.may_mix())
         new_id = self.eventproxy.create_registration(rs, registration)
         meta_info = self.coreproxy.get_meta_info(rs)
-        fee = sum(rs.ambience['event']['parts'][part_id]['fee']
-                  for part_id, entry in registration['parts'].items()
-                  if const.RegistrationPartStati(entry['status']).is_involved())
+        fee = self.eventproxy.calculate_fee(rs, new_id)
+        semester_fee = self.conf.MEMBERSHIP_FEE
 
         subject = "[CdE] Anmeldung für {}".format(rs.ambience['event']['title'])
         reply_to = (rs.ambience['event']['orga_address'] or
@@ -2944,7 +2945,8 @@ class EventFrontend(AbstractUserFrontend):
             {'To': (rs.user.username,),
              'Subject': subject,
              'Reply-To': reply_to},
-            {'fee': fee, 'age': age, 'meta_info': meta_info})
+            {'fee': fee, 'age': age, 'meta_info': meta_info,
+             'semester_fee': semester_fee})
         self.notify_return_code(rs, new_id, success=n_("Registered for event."))
         return self.redirect(rs, "event/registration_status")
 
@@ -2964,9 +2966,8 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         meta_info = self.coreproxy.get_meta_info(rs)
-        fee = sum(rs.ambience['event']['parts'][part_id]['fee']
-                  for part_id, e in registration['parts'].items()
-                  if const.RegistrationPartStati(e['status']).is_involved())
+        fee = self.eventproxy.calculate_fee(rs, registration_id)
+        semester_fee = self.conf.MEMBERSHIP_FEE
         part_order = sorted(
             registration['parts'].keys(),
             key=lambda anid:
@@ -2975,7 +2976,7 @@ class EventFrontend(AbstractUserFrontend):
             (part_id, registration['parts'][part_id]) for part_id in part_order)
         return self.render(rs, "registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
-            'meta_info': meta_info, 'fee': fee})
+            'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee})
 
     @access("event")
     def amend_registration_form(self, rs, event_id):
@@ -3310,9 +3311,7 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         meta_info = self.coreproxy.get_meta_info(rs)
-        fee = sum(rs.ambience['event']['parts'][part_id]['fee']
-                  for part_id, e in rs.ambience['registration']['parts'].items()
-                  if const.RegistrationPartStati(e['status']).is_involved())
+        fee = self.eventproxy.calculate_fee(rs, registration_id)
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
