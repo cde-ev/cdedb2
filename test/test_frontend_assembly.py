@@ -288,6 +288,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
+        self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
         self.assertPresence("Du hast mit 2>3>_bar_>1=4 abgestimmt.",
                             div='own-vote', exact=True)
 
@@ -300,6 +301,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
+        self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
 
@@ -309,6 +311,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
+        self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
         self.assertPresence("Du nimmst nicht an der Versammlung teil.",
                             div='own-vote', exact=True)
 
