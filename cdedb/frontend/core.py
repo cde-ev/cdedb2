@@ -1850,25 +1850,32 @@ class CoreFrontend(AbstractFrontend):
                 # theory this should not happen too often (reality
                 # notwithstanding)
                 rs.notify("info", n_("Confirmation email has been resent."))
+                case_id = existing_id
             else:
                 rs.notify("error",
                           n_("Email address already in DB. Reset password."))
-            return self.redirect(rs, "core/index")
+                return self.redirect(rs, "core/index")
         else:
             new_id = self.coreproxy.genesis_request(rs, data)
             if not new_id:
                 rs.notify("error", n_("Failed."))
                 return self.genesis_request_form(rs)
-            self.do_mail(rs, "genesis_verify",
-                         {'To': (data['username'],),
-                          'Subject': "CdEDB Accountanfrage verifizieren",},
-                         {'genesis_case_id': self.encode_parameter(
-                             "core/genesis_verify", "genesis_case_id", new_id),
-                             'given_names': data['given_names'],
-                             'family_name': data['family_name'],})
-            rs.notify(
-                "success",
-                n_("Email sent. Please follow the link contained in the email."))
+            case_id = new_id
+        self.do_mail(rs, "genesis_verify",
+                     {
+                         'To': (data['username'],),
+                         'Subject': "CdEDB Accountanfrage verifizieren",
+                     },
+                     {
+                         'genesis_case_id': self.encode_parameter(
+                             "core/genesis_verify", "genesis_case_id",
+                             case_id),
+                         'given_names': data['given_names'],
+                         'family_name': data['family_name'],
+                     })
+        rs.notify(
+            "success",
+            n_("Email sent. Please follow the link contained in the email."))
         return self.redirect(rs, "core/index")
 
     @access("anonymous")
