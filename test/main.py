@@ -12,4 +12,6 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
     for arg in sys.argv[1:]:
         suite.addTests(loader.discover('./test/', pattern='*{}*.py'.format(arg)))
+    if not sys.argv[1:]:
+        suite.addTests(loader.discover('./test/', pattern='test*.py'))
     testRunner.run(suite)
