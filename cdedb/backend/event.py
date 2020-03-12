@@ -2328,7 +2328,7 @@ class EventBackend(AbstractBackend):
                     if rps(rpart['status']).is_involved():
                         fee += part['fee']
                 if not personas[reg['persona_id']]['is_member']:
-                    fee += event['additional_external_fee']
+                    fee += event['nonmember_surcharge']
                 ret[reg_id] = fee
         return ret
 

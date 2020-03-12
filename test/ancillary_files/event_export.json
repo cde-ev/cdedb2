@@ -1153,7 +1153,7 @@
             "course_room_field": 2,
             "is_visible": true,
             "iban": "DE96370205000008068901",
-            "additional_external_fee": "5.00",
+            "nonmember_surcharge": "5.00",
             "shortname": "TestAka",
             "use_questionnaire": false,
             "is_archived": false,

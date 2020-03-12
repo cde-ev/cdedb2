@@ -93,10 +93,10 @@
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
-        {% if not persona["is_member"] and ambience["event"]["additional_external_fee"] > 0 %}
-            <div class="heading-underline text-info" id="additional-external-fee"><strong>
+        {% if not persona["is_member"] and ambience["event"]["nonmember_surcharge"] > 0 %}
+            <div class="heading-underline text-info" id="nonmember-surcharge"><strong>
                 <p>
-                {% trans additional_fee=ambience["event"]["additional_external_fee"]|money(lang=lang) %}
+                {% trans additional_fee=ambience["event"]["nonmember_surcharge"]|money(lang=lang) %}
                     Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
                 {% endtrans %}
                 </p>

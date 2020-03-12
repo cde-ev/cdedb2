@@ -80,7 +80,7 @@
         <h4 class="heading-underline">{% trans %}Additional Information for Registration{% endtrans %}</h4>
         {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="",
                                 info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
-        {{ util.form_input_text(name="additional_external_fee", label=gettext("Additional Fee for External Participants."), addon='€',
+        {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."), addon='€',
                                 info=gettext("Participants who are not currently members will have to pay this additional fee.")) }}
         {{ util.form_input_textarea(name="registration_text", label=gettext("Registration page free text"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(

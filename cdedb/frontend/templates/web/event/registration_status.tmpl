@@ -67,9 +67,9 @@
         </table>
 
         {% if "member" not in user.roles %}
-            <div class="text-info" id="additional-external-fee"><strong>
+            <div class="text-info" id="nonmember-surcharge"><strong>
                 <p>
-                {% trans fee=ambience["event"]["additional_external_fee"]|money(lang=lang) %}
+                {% trans fee=ambience["event"]["nonmember_surcharge"]|money(lang=lang) %}
                     Because you are not a CdE-Member, you will have to pay an additional fee of {{ fee }} (already included in the above figure).
                 {% endtrans %}
                 </p>

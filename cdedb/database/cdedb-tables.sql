@@ -584,7 +584,7 @@ CREATE TABLE event.events (
         -- automatically warned about registering late
         registration_hard_limit     timestamp WITH TIME ZONE,
         iban                        varchar,
-        additional_external_fee     numeric(8,2) NOT NULL,
+        nonmember_surcharge         numeric(8,2) NOT NULL,
         orga_address                varchar,
         registration_text           varchar,
         mail_text                   varchar,

@@ -385,7 +385,7 @@ class EventFrontend(AbstractUserFrontend):
         "reserve_field", "is_visible", "is_course_list_visible",
         "is_course_state_visible", "is_participant_list_visible",
         "courses_in_participant_list", "course_room_field",
-        "additional_external_fee")
+        "nonmember_surcharge")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -910,7 +910,7 @@ class EventFrontend(AbstractUserFrontend):
                  ("create_participant_list", "bool"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
-        "iban", "additional_external_fee", "notes")
+        "iban", "nonmember_surcharge", "notes")
     def create_event(self, rs, event_begin, event_end, orga_ids, data,
                      create_track, create_orga_list, create_participant_list):
         """Create a new event, organized via DB."""

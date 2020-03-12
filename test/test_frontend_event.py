@@ -936,7 +936,7 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "UnAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
-        f['additional_external_fee'] = "6.66"
+        f['nonmember_surcharge'] = "6.66"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-2-7, DB-7-8"
         self.submit(f)
@@ -966,7 +966,7 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "AltAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
-        f['additional_external_fee'] = "4.20"
+        f['nonmember_surcharge'] = "4.20"
         f['orga_ids'] = "DB-1-9, DB-5-1"
         f['create_track'].checked = True
         # TODO This should be fixed with introducing relative admins
@@ -1084,17 +1084,17 @@ etc;anything else""", f['entries_2'].value)
         elif user["id"] == 4:
             self.assertPresence("Da Du kein CdE-Mitglied bist, musst du "
                                 "einen zusätzlichen Beitrag",
-                                div="additional-external-fee")
+                                div="nonmember-surcharge")
             self.assertPresence("Du kannst auch stattdessen Deinen "
                                 "regulären Mitgliedsbeitrag",
-                                div="additional-external-fee")
+                                div="nonmember-surcharge")
         elif user["id"] == 14:
             self.assertPresence("Da Du kein CdE-Mitglied bist, musst du "
                                 "einen zusätzlichen Beitrag",
-                                div="additional-external-fee")
+                                div="nonmember-surcharge")
             self.assertNonPresence("Du kannst auch stattdessen Deinen "
                                    "regulären Mitgliedsbeitrag",
-                                   div="additional-external-fee")
+                                   div="nonmember-surcharge")
         else:
             self.fail("Please reconfigure the users for the above checks.")
 
@@ -2736,7 +2736,7 @@ etc;anything else""", f['entries_2'].value)
                                                                 ['etc', 'anything else']],
                                                     'kind': 1}},
                       'iban': 'DE96370205000008068901',
-                      'additional_external_fee': "5.00",
+                      'nonmember_surcharge': "5.00",
                       'institution': 1,
                       'is_archived': False,
                       'is_participant_list_visible': False,
