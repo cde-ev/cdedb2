@@ -3074,6 +3074,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="notifications")
+        self.assertNotIn("archiveeventform", self.response.forms)
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/past/event/list'})
         self.assertPresence("Große Testakademie 2222 (Warmup)")
