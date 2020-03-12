@@ -2711,13 +2711,11 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             if cascade:
                 if "inhabitants" in cascade:
-                    for anid in blockers["inhabitants"]:
-                        deletor = {
-                            'lodgement_id': None,
-                            'id': anid,
-                        }
-                        ret *= self.sql_update(
-                            rs, "event.registration_parts", deletor)
+                    query = ("UPDATE event.registration_parts"
+                             " SET lodgement_id = NULL"
+                             " WHERE id = ANY(%s)")
+                    params = (blockers["inhabitants"])
+                    ret *= self.query_exec(rs, query, params)
 
                 blockers = self.delete_lodgement_blockers(rs, lodgement_id)
 
