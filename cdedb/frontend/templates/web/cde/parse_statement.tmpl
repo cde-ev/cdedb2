@@ -124,7 +124,7 @@
 
     {% if data %}
         <h2>{% trans %}Validation results{% endtrans %}</h2>
-        <p action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
+        <form action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
             {{ util.anti_csrf_token("cde/parse_download") }}
             {{ util.input_hidden(name="count") }}
             {{ util.input_hidden(name="start") }}
