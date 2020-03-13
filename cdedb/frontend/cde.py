@@ -892,7 +892,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.parse_statement_form(rs, data, params)
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdata(("count", "int"), ("start", "date"), ("end", "date"),
+    @REQUESTdata(("count", "int"), ("start", "date"), ("end", "date_or_None"),
                  ("timestamp", "datetime"),
                  ("validate", "str_or_None"),
                  ("event", "id_or_None"),
