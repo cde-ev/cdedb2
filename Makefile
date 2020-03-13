@@ -101,20 +101,22 @@ endif
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
+	sudo -u www-data python3 test/create_sample_data_sql.py test/ancillary_files/sample_data.json /tmp/sample_data.sql
+	sudo -u cdb psql -U cdb -d cdb -f /tmp/sample_data.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f /tmp/sample_data.sql
 	sudo systemctl start pgbouncer
 
 sql-test:
 	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
+	sudo -u www-data python3 test/create_sample_data_sql.py test/ancillary_files/sample_data.json /tmp/sample_data.sql
 	make sql-test-shallow
 	sudo systemctl start pgbouncer
 
 sql-test-shallow:
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f /tmp/sample_data.sql
 
 sql-xss:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
