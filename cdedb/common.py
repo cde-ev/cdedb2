@@ -955,9 +955,9 @@ def deduct_years(date, years):
     Dates are nasty, in theory this should be a simple subtraction, but
     leap years create problems.
 
-    :type date: datetime.datetime
+    :type date: datetime.date
     :type years: int
-    :rtype: datetime.datetime
+    :rtype: datetime.date
     """
     try:
         return date.replace(year=date.year - years)
@@ -1116,6 +1116,105 @@ class CourseChoiceToolActions(enum.IntEnum):
     specific_rank = INFINITE_ENUM_MAGIC_NUMBER
     assign_fixed = -4  #: the course is specified separately
     assign_auto = -5  #: somewhat intelligent algorithm
+
+
+@enum.unique
+class Accounts(enum.Enum):
+    """Store the existing CdE Accounts."""
+    Account0 = 8068900
+    Account1 = 8068901
+    Account2 = 8068902
+    # Fallback if Account is none of the above
+    Unknown = 0
+
+    def __str__(self):
+        return str(self.value)
+
+
+@enum.unique
+class TransactionType(enum.IntEnum):
+    """Store the type of a Transactions."""
+    MembershipFee = 1
+    EventFee = 2
+    Donation = 3
+    I25p = 4
+    Other = 5
+
+    EventFeeRefund = 10
+    InstructorRefund = 11
+    EventExpenses = 12
+    Expenses = 13
+    AccountFee = 14
+    OtherPayment = 15
+
+    Unknown = 1000
+
+    @property
+    def has_event(self):
+        return self in {TransactionType.EventFee,
+                        TransactionType.EventFeeRefund,
+                        TransactionType.InstructorRefund,
+                        TransactionType.EventExpenses,
+                        }
+
+    @property
+    def has_member(self):
+        return self in {TransactionType.MembershipFee,
+                        TransactionType.EventFee,
+                        TransactionType.I25p,
+                        }
+
+    @property
+    def is_unknown(self):
+        return self in {TransactionType.Unknown,
+                        TransactionType.Other,
+                        TransactionType.OtherPayment
+                        }
+
+    def old(self):
+        """
+        Return a string representation compatible with the old excel style.
+
+        :rtype: str
+        """
+        if self == TransactionType.MembershipFee:
+            return "Mitgliedsbeitrag"
+        if self in {TransactionType.EventFee,
+                    TransactionType.EventExpenses,
+                    TransactionType.EventFeeRefund,
+                    TransactionType.InstructorRefund}:
+            return "Teilnehmerbeitrag"
+        if self == TransactionType.I25p:
+            return "Initiative 25+"
+        if self == TransactionType.Donation:
+            return "Spende"
+        else:
+            return "Sonstiges"
+
+    def __str__(self):
+        """
+        Return a string represantation for the TransactionType.
+
+        These are _not_ translated on purpose, so that the generated download
+        is the same regardless of locale.
+        """
+        to_string = {TransactionType.MembershipFee.name: "Mitgliedsbeitrag",
+                     TransactionType.EventFee.name: "Teilnehmerbeitrag",
+                     TransactionType.Donation.name: "Spende",
+                     TransactionType.I25p.name: "Initiative25+",
+                     TransactionType.Other.name: "Sonstiges",
+                     TransactionType.EventFeeRefund.name: "Teilnehmererstattung",
+                     TransactionType.InstructorRefund.name: "KL-Erstattung",
+                     TransactionType.EventExpenses.name: "Veranstaltungsausgabe",
+                     TransactionType.Expenses.name: "Ausgabe",
+                     TransactionType.AccountFee.name: "Kontogebühr",
+                     TransactionType.OtherPayment.name: "Andere Zahlung",
+                     TransactionType.Unknown.name: "Unbekannt",
+                     }
+        if self.name in to_string:
+            return to_string[self.name]
+        else:
+            return repr(self)
 
 
 def mixed_existence_sorter(iterable):

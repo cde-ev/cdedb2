@@ -7,9 +7,16 @@ one list instead of two.
 
 import cdedb.database.constants as const
 from cdedb.query import QueryOperators
-from cdedb.common import (AgeClasses, LineResolutions, CourseFilterPositions,
-                          CourseChoiceToolActions, SubscriptionActions,
-                          LodgementsSortkeys)
+from cdedb.common import (
+    AgeClasses,
+    LineResolutions,
+    CourseFilterPositions,
+    CourseChoiceToolActions,
+    SubscriptionActions,
+    LodgementsSortkeys,
+    Accounts,
+    TransactionType,
+)
 
 #: The list of normal enums
 ALL_ENUMS = (
@@ -40,6 +47,8 @@ ALL_ENUMS = (
     LineResolutions,
     SubscriptionActions,
     LodgementsSortkeys,
+    Accounts,
+    TransactionType,
 )
 
 #: The list of infinite enums
