@@ -58,7 +58,7 @@
             "trial_member": false,
             "bub_search": true,
             "foto": null,
-            "fulltext": "anton@example.cde  Anton Armin A. Anton Administrator   1991-03-30 +49 (234) 98765  Auf der D\u00fcne 42  03205 Musterstadt  Unter dem H\u00fcgel 23  22335 Hintertupfingen"
+            "fulltext": null
         },
         {
             "id": 2,
@@ -111,7 +111,7 @@
             "trial_member": false,
             "bub_search": true,
             "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9",
-            "fulltext": "berta@example.cde Dr. Bert\u00e5lotta Bert\u00e5 Beispiel Gemeinser MdB 1981-02-11 +49 (5432) 987654321 0163/123456789 Im Garten 77 bei Spielmanns 34576 Utopia  Strange Road 9 3/4  8XA 45-$ Foreign City Far Away https://www.bundestag.cde Alles\nUnd noch mehr Jedermann \u00dcberall Immer Jede Menge Gefasel  \nGut verteilt  \n\u00dcber mehrere Zeilen"
+            "fulltext": null
         },
         {
             "id": 3,
@@ -164,7 +164,7 @@
             "trial_member": true,
             "bub_search": false,
             "foto": null,
-            "fulltext": "charly@example.cde  Charly C. Charly Clown   1984-05-13   Am Zelt 1  2345 Zirkusstadt"
+            "fulltext": null
         },
         {
             "id": 4,
@@ -217,7 +217,7 @@
             "trial_member": false,
             "bub_search": true,
             "foto": null,
-            "fulltext": "daniel@example.cde  Daniel D. Daniel Dino   1963-02-19   Am Denkmal 91  76543 Atlantis"
+            "fulltext": null
         },
         {
             "id": 5,
@@ -270,7 +270,7 @@
             "trial_member": null,
             "bub_search": null,
             "foto": null,
-            "fulltext": "emilia@example.cde Emilia Emilia E. Eventis 2012-06-02 +49 (5432) 555666777 Hohle Gasse 13 56767 Wolkenkuckuksheim Deutschland"
+            "fulltext": null
         },
         {
             "id": 6,
@@ -323,7 +323,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "ferdinand@example.cde  Ferdinand F. Ferdinand Findus   1988-01-01   Am Rathaus 1  64358 Burokratia"
+            "fulltext": null
         },
         {
             "id": 7,
@@ -376,7 +376,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "garcia@example.cde Garcia Garcia G. Generalis 1978-12-12 Bei der W\u00fcste 39 8888 Weltstadt"
+            "fulltext": null
         },
         {
             "id": 8,
@@ -429,7 +429,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "Hades Hades Hell \u039a\u03cc\u03bb\u03b1\u03c3\u03b7 1977-11-10"
+            "fulltext": null
         },
         {
             "id": 9,
@@ -482,7 +482,7 @@
             "trial_member": true,
             "bub_search": true,
             "foto": null,
-            "fulltext": "9 inga@example.cde Inga Inga Iota 2000-01-01 Zwergstra\u00dfe 1 10999 Liliput # Inga \n \n Kleines Inhaltsverzeichnis \n \n [TOC] \n \n ## Auslandsjahr \n \n Ich war ein Jahr in S\u00fcdafrika. Dort habe ich viele Dinge besucht. \n \n - den Nationalpark \n - verschiedene St\u00e4dte \n \n 1. Johannisburg \n 2. Cape Town \n \n ## Literatur \n \n Ich lese gerne \n \n - Vampirroman, \n - W\u00e4chter-Romane (nicht den >>Wachturm<<, das ist eine ganz schr\u00e4ge Zeitschrift von ziemlich dubiosen Typen), \n - Ikea-Anleitungen. \n \n ## Musik \n \n Es gibt ganz viel schreckliche *Popmusik* und so viel bessere **klassische Musik**, beispielsweise ``Bach`` und ``Beethoven`` sind vorne dabei [^1]. \n \n ## Programmieren \n \n Mein Lieblingsprogramm: \n \n int main ( int argc, char *argv[] ) { \n printf(\"Hello World\n\"); \n return 0; \n } \n \n Und hier gleich noch mal: \n \n ~~~~~~~~~~~~~~~~~~.c \n int main ( int argc, char *argv[] ) { \n printf(\"Hello World\n\"); \n return 0; \n } \n ~~~~~~~~~~~~~~~~~~ \n \n Aber alles, was etwas mit einem Buch aus Abschnitt `Literatur` zu tun hat ist auch gut. \n \n ## Referenzen \n \n Der CdE ist voll cool und hat eine Homepage <http://www.cde-ev.de>{: .btn .btn-xs .btn-warning }. Dort kann man auch jederzeit gerne eine Akademie organisieren [^2]. Au\u00dferdem gibt es verschiedene Teams, die den Verein am laufen halten\n \n Admin-Team \n : K\u00fcmmert sich um den Server f\u00fcr die Datenbank \n \n Datenbank-Team \n : Entwickelt die Datenbank \n \n Doku-Team \n : Druckt zu jeder Akademie ein Buch \n \n <script>evil();</script> \n \n -- --- ... \"\" ' \n \n [^1]: \u00dcber die Qualit\u00e4ten von ``Mozart`` kann man streiten. \n [^2]: Orga sein hat viele tolle Vorteile: \n \n - entscheide \u00fcber die Schokoladensorten \n - suche Dir Dein Lieblingshaus aus \n - werde von allen Teilnehmern angehimmelt \n - lasse Dich bestechen \n \n *[CdE]: Club der Ehemaligen"
+            "fulltext": null
         },
         {
             "id": 10,
@@ -535,7 +535,7 @@
             "trial_member": null,
             "bub_search": null,
             "foto": null,
-            "fulltext": "janis@example.cde Janis Janis Jalape\u00f1o"
+            "fulltext": null
         },
         {
             "id": 11,
@@ -588,7 +588,7 @@
             "trial_member": null,
             "bub_search": null,
             "foto": null,
-            "fulltext": "kalif@example.cde Kalif Kalif ibn al-\u1e24asan Karabatschi"
+            "fulltext": null
         },
         {
             "id": 12,
@@ -641,7 +641,7 @@
             "trial_member": true,
             "bub_search": true,
             "foto": null,
-            "fulltext": "Lisa Lost Lisa"
+            "fulltext": null
         },
         {
             "id": 13,
@@ -694,7 +694,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "martin@example.cde Martin Meister 2019-07-10"
+            "fulltext": null
         },
         {
             "id": 14,
@@ -747,7 +747,7 @@
             "trial_member": null,
             "bub_search": null,
             "foto": null,
-            "fulltext": "nina@example.cde Nina Nina Neubauer"
+            "fulltext": null
         },
         {
             "id": 15,
@@ -800,7 +800,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "olaf@example.cde Olaf Olafson 1979-07-06"
+            "fulltext": null
         },
         {
             "id": 22,
@@ -853,7 +853,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "vera@example.cde  Vera Vera Verwaltung  1989-11-09"
+            "fulltext": null
         },
         {
             "id": 23,
@@ -906,7 +906,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "werner@example.cde  Dr. med. Werner Wahlleitung  2001-09-11"
+            "fulltext": null
         },
         {
             "id": 27,
@@ -959,7 +959,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "annika@example.cde  Annika Annika Akademieteam  1966-04-17"
+            "fulltext": null
         },
         {
             "id": 32,
@@ -1012,7 +1012,7 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "fulltext": "farin@example.cde  Farin Farin Finanzvorstand  1963-10-27  Ich Fahr in Urlaub!"
+            "fulltext": null
         },
         {
             "id": 100,
@@ -1065,7 +1065,7 @@
             "trial_member": false,
             "bub_search": true,
             "foto": null,
-            "fulltext": "akira@example.cde  Akira Akira Abukara  2019-12-28  +81 (314) 159263  Kasumigaseki 1-3-2  100-8798  Tokyo  Japan"
+            "fulltext": null
         }
     ],
     "core.changelog": [

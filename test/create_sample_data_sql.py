@@ -42,8 +42,8 @@ CONSTANT_REPLACEMENTS = {
 
 # Mapping of (table, column), to replacement (function, arguments)
 ENTRY_REPLACEMENTS = {
-    ("core.personas", "full_text"): lambda e, k: core.create_fulltext(e),
-    ("core.changelog", "full_text"): lambda e, k: core.create_fulltext(e),
+    ("core.personas", "fulltext"): lambda e, k: core.create_fulltext(e),
+    ("core.changelog", "fulltext"): lambda e, k: core.create_fulltext(e),
 }
 
 commands = []
