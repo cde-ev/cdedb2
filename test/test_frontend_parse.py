@@ -123,7 +123,7 @@ class TestParseFrontend(FrontendTest):
         self.assertTitle("Kontoauszug parsen")
         self.assertPresence("3 Transaktionen mit Fehlern", div="has_error_summary")
         self.assertPresence("1 Transaktionen mit Warnungen", div="has_warning_summary")
-        self.assertPresence("8 fehlerfreie Transaktionen", div="has_none_summary")
+        self.assertPresence("9 fehlerfreie Transaktionen", div="has_none_summary")
 
         f = self.response.forms["parsedownloadform"]
 
@@ -158,7 +158,7 @@ class TestParseFrontend(FrontendTest):
         self.assertTitle("Kontoauszug parsen")
         self.assertPresence("1 Transaktionen mit Fehlern", div="has_error_summary")
         self.assertNonPresence("Transaktionen mit Warnungen")
-        self.assertPresence("11 fehlerfreie Transaktionen", div="has_none_summary")
+        self.assertPresence("12 fehlerfreie Transaktionen", div="has_none_summary")
 
         # Check new error:
 
@@ -172,7 +172,7 @@ class TestParseFrontend(FrontendTest):
         self.assertTitle("Kontoauszug parsen")
         self.assertNonPresence("Transaktionen mit Fehlern")
         self.assertNonPresence("Transaktionen mit Warnungen")
-        self.assertPresence("12 fehlerfreie Transaktionen", div="has_none_summary")
+        self.assertPresence("13 fehlerfreie Transaktionen", div="has_none_summary")
 
         save = self.response
         f = save.forms["parsedownloadform"]
@@ -327,6 +327,16 @@ class TestParseFrontend(FrontendTest):
             family_name="Eventis",
             given_names="Emilia E.",
             category_old="TestAka",
+            account="8068900",
+        )
+        self.check_dict(
+            result[7],
+            statement_date="19.12.2018",
+            amount_german="1.234,50",
+            cdedbid="",
+            family_name="",
+            given_names="",
+            category_old="Spende",
             account="8068900",
         )
 

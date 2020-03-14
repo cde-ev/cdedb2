@@ -406,14 +406,15 @@ class Transaction:
                 raise
         else:
             # Check whether the original input can be reconstructed
-            if raw["amount"] != simplify_amount(data["amount"]):
+            if raw["amount"] != number_to_german(data["amount"]):
                 errors.append(
                     ("amount",
-                     ValueError("Problem in line %(t_id)s: "
-                                "%(amt_s)s != %(amt_r)s.",
+                     ValueError("Problem in line %(t_id)s: raw value "
+                                "%(amt_r)s != parsed value %(amt_p)s.",
                                 {"t_id": t_id,
-                                 "amt_s": simplify_amount(data["amount"]),
-                                 "amt_r": raw["amount"]})))
+                                 "amt_r": raw["amount"],
+                                 "amt_p": number_to_german(data["amount"]),
+                                 })))
 
         if STATEMENT_CSV_RESTKEY in raw:
             # The complete reference might be split over multiple columns.
@@ -807,7 +808,7 @@ class Transaction:
     @property
     def amount_english(self):
         """English way of writing the amount."""
-        return "{:,.2f}".format(self.amount)
+        return "{:.2f}".format(self.amount)
 
     @property
     def amount_simplified(self):
