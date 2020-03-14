@@ -158,9 +158,8 @@
             {% for t_id in params["all"] %}
                 {{ print_transaction(t_id) }}
             {% endfor %}
-            {% if params["has_error"] %}
-                {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
-            {% else %}
+            {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
+            {% if not params["has_error"] %}
                 <button type="submit" name="gnucash" value="gnucash" class="btn btn-primary">
                     {{ util.make_icon("download") }} {% trans %}GnuCash Download{% endtrans %}
                 </button>
