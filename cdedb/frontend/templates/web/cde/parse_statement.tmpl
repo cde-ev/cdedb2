@@ -100,13 +100,22 @@
                 </div>
             </div>
         </div>
-        {% if params["jump_order"][t_id] %}
-            <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][t_id] }}">
-                {{ util.make_icon("arrow-down") }}
-                {% trans %}
-                    Go to next Error.
-                {% endtrans %}
-            </a>
+        {% if t_id in params["jump_order"] %}
+            {% if params["jump_order"][t_id] %}
+                <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][t_id] }}">
+                    {{ util.make_icon("arrow-down") }}
+                    {% trans %}
+                        Go to next Error.
+                    {% endtrans %}
+                </a>
+            {% else %}
+                <a class="btn btn-default btn-sm" href="#submit-container">
+                    {{ util.make_icon("arrow-down") }}
+                    {% trans %}
+                        Go to submit buttons.
+                    {% endtrans %}
+                </a>
+            {% endif %}
         {% endif %}
     </div>
     {% endwith %}
@@ -154,10 +163,17 @@
                     {% endtrans %}
                 </a>
             {% endif %}
+            <a class="btn btn-default btn-sm" href="#submit-container">
+                {{ util.make_icon("arrow-down") }}
+                {% trans %}
+                    Go to submit buttons.
+                {% endtrans %}
+            </a>
             </p>
             {% for t_id in params["all"] %}
                 {{ print_transaction(t_id) }}
             {% endfor %}
+            <div id="submit-container">
             {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
             {% if not params["has_error"] %}
                 <button type="submit" name="gnucash" value="gnucash" class="btn btn-primary">
@@ -179,6 +195,7 @@
                     </button>
                 {% endfor %}
             {% endif %}
+            </div>
         </form>
     {% endif %}
 {% endblock %}

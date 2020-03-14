@@ -803,12 +803,14 @@ class Transaction:
                 p = ("amount",
                      ValueError(n_(
                          "Amount higher than expected for membership fee.")))
+                self.warnings.append(p)
 
         if self.type == TransactionType.EventFee:
             if self.amount < AMOUNT_MIN_EVENT_FEE:
                 p = ("amount",
                      ValueError(n_(
                          "Amount lower than expected for event fee.")))
+                self.warnings.append(p)
 
     @property
     def amount_german(self):
