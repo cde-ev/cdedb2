@@ -49,6 +49,7 @@ class TestEventBackend(BackendTest):
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'nonmember_surcharge': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
             'use_questionnaire': False,
@@ -67,7 +68,8 @@ class TestEventBackend(BackendTest):
                     'shortname': "first",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
-                    'fee': decimal.Decimal("234.56")},
+                    'fee': decimal.Decimal("234.56"),
+                },
                 -2: {
                     'tracks': {
                         -1: {'title': "Second lecture",
@@ -80,7 +82,8 @@ class TestEventBackend(BackendTest):
                     'shortname': "second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
-                    'fee': decimal.Decimal("0.00")},
+                    'fee': decimal.Decimal("0.00"),
+                },
             },
             'fields': {
                 -1: {
@@ -166,7 +169,8 @@ class TestEventBackend(BackendTest):
             'shortname': "third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
-            'fee': decimal.Decimal("123.40")}
+            'fee': decimal.Decimal("123.40"),
+        }
         changed_part = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
@@ -1948,6 +1952,7 @@ class TestEventBackend(BackendTest):
             'event.events': {1: {'course_room_field': 2,
                                  'description': 'Everybody come!',
                                  'iban': 'DE96370205000008068901',
+                                 'nonmember_surcharge': decimal.Decimal("5.00"),
                                  'id': 1,
                                  'institution': 1,
                                  'is_archived': False,
@@ -2715,6 +2720,7 @@ class TestEventBackend(BackendTest):
                                                                 ['etc', 'anything else']],
                                                     'kind': 1}},
                       'iban': 'DE96370205000008068901',
+                      'nonmember_surcharge': decimal.Decimal("5.00"),
                       'institution': 1,
                       'is_archived': False,
                       'is_participant_list_visible': False,
@@ -3261,6 +3267,18 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.check_registration_status(self.key, 5, event_id, stati))
         self.assertFalse(self.event.check_registration_status(self.key, 9, event_id, stati))
 
+    @as_users("garcia", "annika")
+    def test_calculate_fees(self, user):
+        reg_ids = self.event.list_registrations(self.key, event_id=1)
+        expectation = {
+            1: decimal.Decimal("573.99"),
+            2: decimal.Decimal("589.49"),
+            3: decimal.Decimal("584.49"),
+            4: decimal.Decimal("450.99"),
+            5: decimal.Decimal("584.49"),
+        }
+        self.assertEqual(expectation, self.event.calculate_fees(self.key, reg_ids))
+
     @as_users("annika")
     def test_log(self, user):
         # first generate some data
@@ -3275,6 +3293,7 @@ class TestEventBackend(BackendTest):
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0, tzinfo=pytz.utc),
             'registration_hard_limit': None,
             'iban': None,
+            'nonmember_surcharge': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
             'use_questionnaire': False,
@@ -3292,7 +3311,8 @@ class TestEventBackend(BackendTest):
                     'shortname': "First",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
-                    'fee': decimal.Decimal("234.56")},
+                    'fee': decimal.Decimal("234.56"),
+                },
                 -2: {
                     'tracks': {
                         -1: {'title': "Second lecture",
@@ -3304,7 +3324,8 @@ class TestEventBackend(BackendTest):
                     'shortname': "Second",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
-                    'fee': decimal.Decimal("0.00")},
+                    'fee': decimal.Decimal("0.00"),
+                },
             },
             'fields': {
                 -1: {
@@ -3360,7 +3381,8 @@ class TestEventBackend(BackendTest):
             'shortname': "Third",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
-            'fee': decimal.Decimal("123.40")}
+            'fee': decimal.Decimal("123.40"),
+        }
         changed_part = {
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),

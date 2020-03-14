@@ -93,6 +93,24 @@
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
+        {% if not persona["is_member"] and ambience["event"]["nonmember_surcharge"] > 0 %}
+            <div class="heading-underline text-info" id="nonmember-surcharge"><strong>
+                <p>
+                {% trans additional_fee=ambience["event"]["nonmember_surcharge"]|money(lang=lang) %}
+                    Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
+                {% endtrans %}
+                </p>
+                {% if persona["is_cde_realm"] %}
+                    <p>
+                    {% trans semester_fee=semester_fee|money(lang=lang) %}
+                        You can instead just pay your regular membership fee of {{ semester_fee }} per semester and you won't have to pay the additional fee.
+                        If you choose to do so, please do so with two separate payments.
+                    {% endtrans %}
+                    </p>
+                {% endif %}
+            </strong></div>
+        {% endif %}
+
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
             {% set course_list = course_choices[track_id] %}
             {% if track['num_choices'] %}

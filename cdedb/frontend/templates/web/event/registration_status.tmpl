@@ -65,6 +65,24 @@
                 </tr>
             </tbody>
         </table>
+
+        {% if "member" not in user.roles %}
+            <div class="text-info" id="nonmember-surcharge"><strong>
+                <p>
+                {% trans additional_fee=ambience["event"]["nonmember_surcharge"]|money(lang=lang) %}
+                    Because you are not a CdE-Member, you will have to pay an additional fee of {{ additional_fee }} (already included in the above figure).
+                {% endtrans %}
+                </p>
+                {% if "cde" in user.roles %}
+                    <p>
+                    {% trans semester_fee=semester_fee|money(lang=lang) %}
+                        You can instead just pay your regular membership fee of {{ semester_fee }} per semester and you won't have to pay the additional fee.
+                        If you choose to do so, please do so with two separate payments.
+                    {% endtrans %}
+                    </p>
+                {% endif %}
+            </strong></div>
+        {% endif %}
     {% else %}
         <h3 class="heading-underline">{% trans %}Payment{% endtrans %}</h3>
         <p>

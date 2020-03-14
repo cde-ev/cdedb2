@@ -298,7 +298,7 @@
             "association": 2
         }
     },
-    "CDEDB_EXPORT_EVENT_VERSION": 8,
+    "CDEDB_EXPORT_EVENT_VERSION": 9,
     "event.registration_parts": {
         "2": {
             "is_reserve": false,
@@ -1153,6 +1153,7 @@
             "course_room_field": 2,
             "is_visible": true,
             "iban": "DE96370205000008068901",
+            "nonmember_surcharge": "5.00",
             "shortname": "TestAka",
             "use_questionnaire": false,
             "is_archived": false,

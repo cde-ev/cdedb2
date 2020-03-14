@@ -28,7 +28,7 @@
             <div class="col-md-8">
                 <ul>
                     {% for ballot_id, ballot in sample|xdictsort("title") %}
-                        <li class="hide-hover-container">
+                        <li class="hide-hover-container clearfix-after">
                             {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title']) }}
                             {% if ballot_id in votes and show_state %}
                                 ({% if votes[ballot_id] -%}

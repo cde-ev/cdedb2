@@ -38,6 +38,9 @@
         </div>
     {% endif %}
 
+    {# General information about ballot and personalized state info #}
+    {{ ambience['ballot']['description']|md }}
+
     {{ ballot_meta.show_status() }}
 
     {# Display of result #}
