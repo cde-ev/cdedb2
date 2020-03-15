@@ -1375,7 +1375,7 @@ class TestCoreFrontend(FrontendTest):
         f['family_name'] = "Zeruda-Hime"
         f['birth_name'] = "Ganondorf"
         f['username'] = "zelda@example.cde"
-        f['notes'] = "Gimme!"
+        # f['notes'] = "Gimme!"  # Do not send this to test upload permanance.
         f['realm'] = "cde"
         f['gender'] = "1"
         f['birthday'] = "5.6.1987"
@@ -1387,6 +1387,11 @@ class TestCoreFrontend(FrontendTest):
             data = datafile.read()
         f['attachment'] = webtest.Upload(
             "my_participation_certificate.pdf", data, content_type="application/pdf")
+        self.submit(f, check_notification=False)
+        self.assertPresence("Darf nicht leer sein.")
+        self.assertPresence("Anhang my_participation_certificate.pdf")
+        f = self.response.forms['genesisform']
+        f['notes'] = "Gimme!"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = self.fetch_link(mail)
