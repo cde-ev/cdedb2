@@ -502,6 +502,7 @@ class TestCoreBackend(BackendTest):
         # Reject the case.
         modify_data = {
             'id': case_id,
+            'realm': 'ml',
             'reviewer': user['id'],
             'case_status': const.GenesisStati.rejected,
         }
@@ -557,6 +558,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, value)
         update = {
             'id': case_id,
+            'realm': "event",
             'case_status': const.GenesisStati.approved,
             'reviewer': 1,
         }
@@ -626,6 +628,7 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, value)
         update = {
             'id': case_id,
+            'realm': "ml",
             'case_status': const.GenesisStati.approved,
             'reviewer': 1,
         }
@@ -898,6 +901,7 @@ class TestCoreBackend(BackendTest):
         case_id = self.core.genesis_request(None, data)
         update = {
             'id': case_id,
+            'realm': "ml",
             'case_status': const.GenesisStati.approved,
             'reviewer': 1,
         }
