@@ -1207,16 +1207,14 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
         f = self.response.forms['changedataform']
-        f['ignore_warning'].checked = True
-        self.submit(f)
+        self.submit(f, button="ignore_warnings")
         self.assertTitle("Vera Verwaltung")
         self.traverse({'description': 'Bearbeiten \\(mit Adminrechten\\)'})
         f = self.response.forms['changedataform']
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
         f = self.response.forms['changedataform']
-        f['ignore_warning'].checked = True
-        self.submit(f)
+        self.submit(f, button="ignore_warnings")
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
@@ -1231,8 +1229,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
         f = self.response.forms['genesisform']
-        f['ignore_warning'].checked = True
-        self.submit(f)
+        self.submit(f, button="ignore_warnings")
         mail = self.fetch_mail()[0]
         link = self.fetch_link(mail)
         self.get(link)
@@ -1244,8 +1241,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
         f = self.response.forms['genesismodifyform']
-        f['ignore_warning'].checked = True
-        self.submit(f)
+        self.submit(f, button="ignore_warnings")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
 

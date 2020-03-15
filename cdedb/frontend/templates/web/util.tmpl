@@ -513,12 +513,12 @@
         aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue="Cancel",
         small=False, horizontal=True, distinct_warnings=True) %}
     <div class="form-group mosp">
-        {% if distinct_warnings and has_warnings() %}
-            {{ util.form_input_checkbox(name="ignore_warning", label="Should the warnings be ignored?") }}
-        {% endif %}
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
             {{- input_submit(gettext(value), name, anid, aclass, icon, readonly) }}
+            {% if distinct_warnings and has_warnings() %}
+                {{ input_submit(gettext("Ignore Warnings"), name="ignore_warnings", anid=anid, aclass=aclass, icon=icon, readonly=readonly) }}
+            {% endif %}
             {%- if cancellink %}
                 &emsp; {{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
             {%- endif %}
