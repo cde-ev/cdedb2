@@ -555,4 +555,4 @@ class TestValidation(unittest.TestCase):
                     inv['realm'] = "event"
                     if outv is not None:
                         outv['realm'] = "event"
-            self.do_validator_test(assertion, spec, {'_ignore_warning': True})
+            self.do_validator_test(assertion, spec, {'_ignore_warnings': True})

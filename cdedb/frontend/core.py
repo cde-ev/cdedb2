@@ -767,8 +767,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona", modi={"POST"})
     @REQUESTdata(("generation", "int"),
-                 ("ignore_warning", "bool_or_None"))
-    def change_user(self, rs, generation, ignore_warning=False):
+                 ("ignore_warnings", "bool_or_None"))
+    def change_user(self, rs, generation, ignore_warnings=False):
         """Change own data set."""
         REALM_ATTRIBUTES = {
             'persona': {
@@ -793,13 +793,13 @@ class CoreFrontend(AbstractFrontend):
                 attributes = attributes.union(REALM_ATTRIBUTES[realm])
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
-        data = check(rs, "persona", data, "persona", _ignore_warning=ignore_warning)
+        data = check(rs, "persona", data, "persona", _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.change_user_form(rs)
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note,
-            ignore_warning=ignore_warning)
+            ignore_warnings=ignore_warnings)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
@@ -954,9 +954,9 @@ class CoreFrontend(AbstractFrontend):
             "assembly_admin", modi={"POST"})
     @REQUESTdata(("generation", "int"),
                  ("change_note", "str_or_None"),
-                 ("ignore_warning", "bool_or_None"))
+                 ("ignore_warnings", "bool_or_None"))
     def admin_change_user(self, rs, persona_id, generation, change_note,
-                          ignore_warning=False):
+                          ignore_warnings=False):
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -987,13 +987,13 @@ class CoreFrontend(AbstractFrontend):
                 attributes = attributes.union(REALM_ATTRIBUTES[realm])
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
-        data = check(rs, "persona", data, _ignore_warning=ignore_warning)
+        data = check(rs, "persona", data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
 
         code = self.coreproxy.change_persona(
             rs, data, generation=generation, change_note=change_note,
-            ignore_warning=ignore_warning)
+            ignore_warnings=ignore_warnings)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
@@ -1765,14 +1765,14 @@ class CoreFrontend(AbstractFrontend):
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country")
-    @REQUESTdata(("ignore_warning", "bool_or_None"))
-    def genesis_request(self, rs, data, ignore_warning=False):
+    @REQUESTdata(("ignore_warnings", "bool_or_None"))
+    def genesis_request(self, rs, data, ignore_warnings=False):
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
         data = check(rs, "genesis_case", data, creation=True,
-                     _ignore_warning=ignore_warning)
+                     _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         if len(data['notes']) > self.conf.MAX_RATIONALE:
@@ -1803,7 +1803,7 @@ class CoreFrontend(AbstractFrontend):
                 return self.redirect(rs, "core/index")
         else:
             case_id = self.coreproxy.genesis_request(
-                rs, data, ignore_warning=ignore_warning)
+                rs, data, ignore_warnings=ignore_warnings)
         if not case_id:
             rs.notify("error", n_("Failed."))
             return self.genesis_request_form(rs)
@@ -1956,11 +1956,11 @@ class CoreFrontend(AbstractFrontend):
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country")
-    @REQUESTdata(("ignore_warning", "bool_or_None"))
-    def genesis_modify(self, rs, case_id, data, ignore_warning=False):
+    @REQUESTdata(("ignore_warnings", "bool_or_None"))
+    def genesis_modify(self, rs, case_id, data, ignore_warnings=False):
         """Edit a case to fix potential issues before creation."""
         data['id'] = case_id
-        data = check(rs, "genesis_case", data, _ignore_warning=ignore_warning)
+        data = check(rs, "genesis_case", data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, case_id)
         case = self.coreproxy.genesis_get_case(rs, case_id)
@@ -1971,7 +1971,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         code = self.coreproxy.genesis_modify_case(
-            rs, data, ignore_warning=ignore_warning)
+            rs, data, ignore_warnings=ignore_warnings)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "core/genesis_show_case")
 

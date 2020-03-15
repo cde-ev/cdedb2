@@ -1199,7 +1199,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("21.06.1977", div='personal-information')
 
     @as_users("vera")
-    def test_ignore_warning_postal_code(self, user):
+    def test_ignore_warnings_postal_code(self, user):
         self.admin_view_profile("vera")
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']

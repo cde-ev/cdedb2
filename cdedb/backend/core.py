@@ -758,7 +758,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_persona(self, rs, data, generation=None, may_wait=True,
-                       change_note=None, ignore_warning=False):
+                       change_note=None, ignore_warnings=False):
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
 
@@ -777,7 +777,7 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("persona", data, _ignore_warning=ignore_warning)
+        data = affirm("persona", data, _ignore_warnings=ignore_warnings)
         generation = affirm("int_or_None", generation)
         may_wait = affirm("bool", may_wait)
         change_note = affirm("str_or_None", change_note)
@@ -1635,7 +1635,7 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
-    def create_persona(self, rs, data, submitted_by=None, ignore_warning=False):
+    def create_persona(self, rs, data, submitted_by=None, ignore_warnings=False):
         """Instantiate a new data set.
 
         This does the house-keeping and inserts the corresponding entry in
@@ -1649,7 +1649,7 @@ class CoreBackend(AbstractBackend):
         :returns: The id of the newly created persona.
         """
         data = affirm(
-            "persona", data, creation=True, _ignore_warning=ignore_warning)
+            "persona", data, creation=True, _ignore_warnings=ignore_warnings)
         # zap any admin attempts
         data.update({
             'is_meta_admin': False,
@@ -2129,21 +2129,21 @@ class CoreBackend(AbstractBackend):
         return success, msg
 
     @access("anonymous")
-    def genesis_request(self, rs, data, ignore_warning=False):
+    def genesis_request(self, rs, data, ignore_warnings=False):
         """Log a request for a new account.
 
         This is the initial entry point for such a request.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
-        :type ignore_warning: bool
-        :param ignore_warning: Ignore errors with kind ValidationWarning
+        :type ignore_warnings: bool
+        :param ignore_warnings: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: id of the new request or None if the username is already
           taken
         """
         data = affirm(
-            "genesis_case", data, creation=True, _ignore_warning=ignore_warning)
+            "genesis_case", data, creation=True, _ignore_warnings=ignore_warnings)
 
         if self.verify_existence(rs, data['username']):
             return None
@@ -2337,17 +2337,17 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    def genesis_modify_case(self, rs, data, ignore_warning=False):
+    def genesis_modify_case(self, rs, data, ignore_warnings=False):
         """Modify a persona creation case.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
-        :type ignore_warning: bool
-        :param ignore_warning: Ignore errors with kind ValidationWarning
+        :type ignore_warnings: bool
+        :param ignore_warnings: Ignore errors with kind ValidationWarning
         :rtype: int
         :returns: default return code
         """
-        data = affirm("genesis_case", data, _ignore_warning=ignore_warning)
+        data = affirm("genesis_case", data, _ignore_warnings=ignore_warnings)
 
         with Atomizer(rs):
             current = self.sql_select_one(
@@ -2413,7 +2413,7 @@ class CoreBackend(AbstractBackend):
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(ACCESS_BITS[case['realm']])
-            data = affirm("persona", data, creation=True, _ignore_warning=True)
+            data = affirm("persona", data, creation=True, _ignore_warnings=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
@@ -2421,7 +2421,7 @@ class CoreBackend(AbstractBackend):
                     ({case['realm']} | implied_realms(case['realm'])):
                 raise PrivilegeError(n_("Wrong target realm."))
             ret = self.create_persona(
-                rs, data, submitted_by=case['reviewer'], ignore_warning=True)
+                rs, data, submitted_by=case['reviewer'], ignore_warnings=True)
             update = {
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,
