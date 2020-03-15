@@ -357,7 +357,7 @@ class TestValidation(unittest.TestCase):
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
             (key_example, key_example, KeyError, False),
-            (value_example, value_example, ValueError, False),
+            (value_example, value_example, ValidationWarning, False),
             ))
 
     def test_event_user_data(self):
@@ -395,7 +395,7 @@ class TestValidation(unittest.TestCase):
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
             (key_example, None, KeyError, False),
-            (value_example, None, ValueError, False),
+            (value_example, None, ValidationWarning, False),
             ))
 
     def test_enum_validators(self):
