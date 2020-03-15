@@ -1800,14 +1800,17 @@ class CoreFrontend(AbstractFrontend):
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country", "birth_name")
-    @REQUESTdata(("attachment_hash", "str_or_None"))
+    @REQUESTdata(("attachment_hash", "str_or_None"),
+                 ("attachment_filename", "str_or_None"))
     @REQUESTfile("attachment")
-    def genesis_request(self, rs, data, attachment, attachment_hash):
+    def genesis_request(self, rs, data, attachment, attachment_hash,
+                        attachment_filename=None):
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
         if attachment:
+            attachment_filename = attachment.filename
             attachment = check(rs, 'pdffile', attachment, 'attachment')
         attachment_base_path = self.conf.STORAGE_DIR / 'genesis_attachment'
         if attachment:
@@ -1820,10 +1823,15 @@ class CoreFrontend(AbstractFrontend):
                     f.write(attachment)
             data['attachment'] = myhash
             rs.values['attachment_hash'] = myhash
+            rs.values['attachment_filename'] = attachment_filename
         elif attachment_hash:
             path = attachment_base_path / attachment_hash
             if not path.exists():
                 data['attachment'] = None
+                e = ("attachment", ValueError(n_(
+                    "It seems like you took too long and "
+                    "your previous upload was deleted.")))
+                rs.append_validation_error(e)
             else:
                 data['attachment'] = attachment_hash
         data = check(rs, "genesis_case", data, creation=True)
@@ -1838,7 +1846,8 @@ class CoreFrontend(AbstractFrontend):
             if data['gender'] == const.Genders.not_specified:
                 rs.append_validation_error(
                     ("gender", ValueError(n_(
-                        "Must specify gender for event realm."))))
+                        "Must specify gender for %(realm)s realm."),
+                        {"realm": data["realm"]})))
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
@@ -1861,6 +1870,8 @@ class CoreFrontend(AbstractFrontend):
                 rs.notify("error", n_("Failed."))
                 return self.genesis_request_form(rs)
             case_id = new_id
+
+        # Send verification mail for new case or resend for old case.
         self.do_mail(rs, "genesis_verify",
                      {
                          'To': (data['username'],),
