@@ -1408,9 +1408,9 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.assertPresence("Ganondorf")
-        self.assertPresence("Download Attachment")
+        self.assertPresence("Anhang herunterladen")
         save = self.response
-        self.traverse({'description': 'Download Attachment'})
+        self.traverse({'description': 'Anhang herunterladen'})
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         self.response = save

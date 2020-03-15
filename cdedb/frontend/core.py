@@ -1904,7 +1904,7 @@ class CoreFrontend(AbstractFrontend):
             error=n_("Verification failed. Please contact the administrators."),
             success=n_("Email verified. Wait for moderation. "
                        "You will be notified by mail."),
-            pending=n_("This account request was already ")
+            pending=n_("This account request was already verified.")
         )
         if not code:
             return self.redirect(rs, "core/genesis_request_form")
