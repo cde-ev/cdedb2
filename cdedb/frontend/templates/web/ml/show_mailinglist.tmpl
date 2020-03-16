@@ -3,8 +3,8 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}{{ ambience['mailinglist']['title'] }}{% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-    {% if is_admin or not ambience['mailinglist']['is_active'] %}
+    {{ super() }}
+    {% if is_admin %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'],
