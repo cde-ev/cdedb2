@@ -1430,6 +1430,37 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': "Kurs[^el] *"})
         self._sort_appearance([akira, emilia, anton])
 
+    @as_users("emilia", "garcia")
+    def test_participant_list_profile_link(self, user):
+        # first, show list for participants
+        if user == USER_DICT['emilia']:
+            self.logout()
+            self.login(USER_DICT['garcia'])
+            self.traverse({'description': 'Veranstaltungen'},
+                          {'description': 'Große Testakademie 2222'},
+                          {'description': 'Konfiguration'})
+            f = self.response.forms['changeeventform']
+            f['is_participant_list_visible'].checked = True
+            self.submit(f)
+            self.logout()
+            self.login(USER_DICT['emilia'])
+
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'},
+                      {'description': 'Teilnehmerliste'})
+        # emilia is no member and therefore must not be linked
+        self.assertNoLink(content='Eventis')
+        # akira is member and searchable, so there should be a link
+        self.traverse({'description': 'Akira'})
+        if user == USER_DICT['emilia']:
+            # this must be a reduced profile, since emilia is not a member
+            self.assertPresence("Akira Abukara", div='personal-information')
+            self.assertNonPresence("akira@example.cde")
+        else:
+            # this is an expanded profile, since garcia is not searchable but
+            # orga of this event
+            self.assertPresence("akira@example.cde", div='contact-email')
+
     @as_users("garcia")
     def test_batch_fee(self, user):
         self.traverse({'href': '/event/$'},
