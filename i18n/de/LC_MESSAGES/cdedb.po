@@ -18,6 +18,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
 
+msgid "Please confirm to download a full export of an unlocked event."
+msgstr "Bestätige, das du einen Export herunterladen willst, obwohl die Veranstaltung nicht gesperrt ist."
+
+msgid "Are you sure to download a full export before locking?"
+msgstr "Bist du sicher, das du nicht zuerst die Veranstaltung sperren möchtest?"
+
 #: bin/archive/migrate_execute.py:393
 msgid "Initial import."
 msgstr "Ursprünglicher Import."

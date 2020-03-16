@@ -124,29 +124,11 @@
         <tbody>
             <tr>
                 <td>
-                    {% if ambience['event']['offline_lock'] %}
-                        <div class="alert alert-info" role="alert">
-                            {% trans %}
-                                The event is locked. You can download more images.
-                            {% endtrans %}
-                        </div>
-                    {% endif %}
-                    {% trans %}Full Event Export{% endtrans %}<br />
-                    <small>({% trans %}for initilization of the offline-VM{% endtrans %})</small>
-                </td>
-                <td>
-                    <form action="{{ cdedblink('event/download_export') }}" method="POST" id="fullexportform"
-                        class="display-inline">
-                        {{ util.anti_csrf_token('event/download_export') }}
-                        {{ util.input_submit(value=gettext("JSON file"), icon='download') }}
-                        {{ util.input_checkbox(name="do_lock", label=gettext("Lock the event?")) }}
-                    </form>
-                    {#
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
-                        $('#fullexportform').cdedbProtectAction("{{ gettext("Lock the event?") }}");
-                        $('#fullexportform').find('[name="do_lock"]').parent().hide();
-                    </script>
-                    #}
+                    <div class="alert alert-info" role="alert">
+                        {% trans %}
+                            The full export is now on event overview.
+                        {% endtrans %}
+                    </div>
                 </td>
             </tr>
             <tr>
