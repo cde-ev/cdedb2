@@ -2176,10 +2176,19 @@ etc;anything else""", f['entries_2'].value)
     @as_users("garcia")
     def test_download_export(self, user):
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/download'},)
-        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
-        self.traverse({'href': '/event/event/1/download/export$'})
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        # test mechanism to reduce unwanted exports of unlocked events
+        f = self.response.forms['fullexportform']
+        f['agree_unlocked_download'].checked = False
+        self.submit(f, check_notification=False)
+        info_msg = ("Bestätige, das du einen Export herunterladen willst, "
+                    "obwohl die Veranstaltung nicht gesperrt ist.")
+        self.assertPresence(info_msg, div='notifications')
+
+        f['agree_unlocked_download'].checked = True
+        self.submit(f)
         with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
@@ -2426,16 +2435,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         f = self.response.forms["lockform"]
         self.submit(f)
-        self.traverse({'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/download'},)
-        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         saved = self.response
-        data = saved.click(href='/event/event/1/download/export$').body
+        data = saved.click(href='/event/event/1/export$').body
         data = data.replace(b"Gro\\u00dfe Testakademie 2222",
                             b"Mittelgro\\u00dfe Testakademie 2222")
         self.response = saved
-        self.traverse({'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
         self.assertPresence(
             "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
         f = self.response.forms['unlockform']
