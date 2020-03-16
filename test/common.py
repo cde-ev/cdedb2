@@ -261,6 +261,7 @@ USER_DICT = {
         'display_name': "Anton",
         'given_names': "Anton Armin A.",
         'family_name': "Administrator",
+        'url': '/core/persona/1/show?confirm_id=e473ed4768eb86ca72d2f25b4c39820f955333998ebab46ae7515d605aad99337165bca54b79ddbac55c969fa29e7c864f40b5925ab0828242dd460a5ad9296e--........................--1',
     },
     "berta": {
         'id': 2,
@@ -270,6 +271,7 @@ USER_DICT = {
         'display_name': "Bertå",
         'given_names': "Bertålotta",
         'family_name': "Beispiel",
+        'url': '/core/persona/2/show?confirm_id=3e95048cf6ddb0e7f52c3763e8d526c8aa0a40fe76e6e25119c0d151f280e43aef945a7fe1c639e4bc8cee5bb2e1bb8d31b5fb143593452c8799d3888da42ab4--........................--2',
     },
     "charly": {
         'id': 3,
@@ -279,6 +281,7 @@ USER_DICT = {
         'display_name': "Charly",
         'given_names': "Charly C.",
         'family_name': "Clown",
+        'url': '/core/persona/3/show?confirm_id=68a0f06c859a7043918078d335e4c30de57e443bd0df7e4db4f00146b826a8a5a5b41d90a76fb1796a4ce27853351f67677b33ac5abd10fb6aa0e3ec43fb3522--........................--3',
     },
     "daniel": {
         'id': 4,
@@ -288,6 +291,7 @@ USER_DICT = {
         'display_name': "Daniel",
         'given_names': "Daniel D.",
         'family_name': "Dino",
+        'url': '/core/persona/4/show?confirm_id=eb44903b67e6d24ab7b83d4894a936e69d901b0d2ff422316df0389fbdd2b172779eef5e73c763fe087653736e9ef259c25c3282eb01a63ee47b034da6d5deb9--........................--4',
     },
     "emilia": {
         'id': 5,
@@ -297,6 +301,7 @@ USER_DICT = {
         'display_name': "Emilia",
         'given_names': "Emilia E.",
         'family_name': "Eventis",
+        'url': '/core/persona/5/show?confirm_id=2dca2e7caff601a6ff6fcfb416bb0e858b9a5b2fb163d06c3896848d9da767e214d53783c851a22dfacebe96f1092b40b3073291c9bb4698ca12131a807d3b12--........................--5',
     },
     "ferdinand": {
         'id': 6,
@@ -306,6 +311,7 @@ USER_DICT = {
         'display_name': "Ferdinand",
         'given_names': "Ferdinand F.",
         'family_name': "Findus",
+        'url': '/core/persona/6/show?confirm_id=e1c873304f28662bfbb4cca239e46afa4345f531c4b1de5254bea21459f9214d186656d051644f011c86605d2cd56c41b9a4b3cd1e94a1f75bb03b15b079575a--........................--6',
     },
     "garcia": {
         'id': 7,
@@ -315,6 +321,7 @@ USER_DICT = {
         'display_name': "Garcia",
         'given_names': "Garcia G.",
         'family_name': "Generalis",
+        'url': '/core/persona/7/show?confirm_id=0dc9fd23f3680f7da0dd58637f36aa464c778174dc3b429c62efa357ea3dc238492377b370e95e9a9cbb2a9d594ab86cf5384d75dfb1828d33d3c38f2b337526--........................--7',
     },
     "hades": {
         'id': 8,
@@ -324,6 +331,7 @@ USER_DICT = {
         'display_name': None,
         'given_names': "Hades",
         'family_name': "Hell",
+        'url': '/core/persona/8/show?confirm_id=d8a2fe52388652f2f6567668d8bbd53d3a502c4246dcbfe21476093e70c389d812c0c794e76ac77ebec36b98eafe957d533595708c8ac3ff5bd08f551c08d613--........................--8',
     },
     "inga": {
         'id': 9,
@@ -333,6 +341,7 @@ USER_DICT = {
         'display_name': "Inga",
         'given_names': "Inga",
         'family_name': "Iota",
+        'url': '/core/persona/9/show?confirm_id=c6fdba0e5972459120e7a6959b66500cf6cdddeb98d6cc4d32e008de598f9b7259b60d6c837ec6f437f5d0e1e66f4ae5c0d6b77c6d54257c858200b0aaf2b827--........................--9',
     },
     "janis": {
         'id': 10,
@@ -342,6 +351,7 @@ USER_DICT = {
         'display_name': "Janis",
         'given_names': "Janis",
         'family_name': "Jalapeño",
+        'url': '/core/persona/10/show?confirm_id=a83fda0f360d7c721d691f5de0756847de2b978215e640030b0d4a9fff81731ecce5bdb592b08010845805233f6ab1c19c8428ce0f115dfc52a33a4898d2651d--........................--10',
     },
     "kalif": {
         'id': 11,
@@ -351,6 +361,7 @@ USER_DICT = {
         'display_name': "Kalif",
         'given_names': "Kalif ibn al-Ḥasan",
         'family_name': "Karabatschi",
+        'url': '/core/persona/11/show?confirm_id=63659c73d3726ca05f2921e4cbf653b93f7d64c257bed6a7ff1a3c7e0ab316255ae1ab2b43cc0f8d4d1ebb34f93d687ec35c6e6a0255a32ba3f05bcd22c51836--........................--11',
     },
     "lisa": {
         'id': 12,
@@ -360,6 +371,7 @@ USER_DICT = {
         'display_name': "Lisa",
         'given_names': "Lisa",
         'family_name': "Lost",
+        'url': '/core/persona/12/show?confirm_id=6f79cd8bd417975952b50e1f76818f028e181f0f27e4ba02f521d28084370c14adbb9648aac73d1c3fd39aad7e261f9ea3db6ef6aac3cc2d6843541dc8ed3dd7--........................--12',
     },
     "martin": {
         'id': 13,
@@ -369,6 +381,7 @@ USER_DICT = {
         'display_name': "Martin",
         'given_names': "Martin",
         'family_name': "Meister",
+        'url': '/core/persona/13/show?confirm_id=92997c0b746b3b1af469ffe2e66d46fec3be496f5837fafc36585068a0ea88a6ad698611b7e90352f5fbad24e50266ba22daf2b89f041e6b29058a49b0c6d5a0--........................--13',
     },
     "nina": {
         'id': 14,
@@ -378,6 +391,7 @@ USER_DICT = {
         'display_name': "Nina",
         'given_names': "Nina",
         'family_name': "Neubauer",
+        'url': '/core/persona/14/show?confirm_id=ecb8159a33dfbbece4739f19d54e82730fea0c05310c7420340cd1a1700d27811f8593952099e15c8ffffd049892fe2b88428dc99f14b5f34ba2610d81d5ba58--........................--14',
     },
     "olaf": {
         'id': 15,
@@ -387,6 +401,7 @@ USER_DICT = {
         'display_name': "Olaf",
         'given_names': "Olaf",
         'family_name': "Olafson",
+        'url': '/core/persona/15/show?confirm_id=eafa312e68323aed7f782c56213a1d16bca7db362d7114d78f1f248246d2c1c052bda0caf2cce7c713b372ee5ad769acac977da3d0b9781a2ce44686233422d8--........................--15',
     },
     "vera": {
         'id': 22,
@@ -396,6 +411,7 @@ USER_DICT = {
         'display_name': "Vera",
         'given_names': "Vera",
         'family_name': "Verwaltung",
+        'url': '/core/persona/22/show?confirm_id=e5f45f87cc90d3b757759a5338cfff429073cc9c764e476ede103f46e6566165d0d37fb9502f11008ff6be704fc2d470bfe99ef82d64556f2826246ab90a3b7a--........................--22',
     },
     "werner": {
         'id': 23,
@@ -405,6 +421,7 @@ USER_DICT = {
         'display_name': "Werner",
         'given_names': "Werner",
         'family_name': "Wahlleitung",
+        'url': '/core/persona/23/show?confirm_id=eddec5b8de0e99312c0703c4e79974e25ef7736f2da7d7f5d750258543022eb0bc2f56801108c9db77bd2797f4820981f84d882001823391abc408f78b7b6cd4--........................--23',
     },
     "annika": {
         'id': 27,
@@ -414,6 +431,7 @@ USER_DICT = {
         'display_name': "Annika",
         'given_names': "Annika",
         'family_name': "Akademieteam",
+        'url': '/core/persona/27/show?confirm_id=a901d4e174592bee3de675413c5a10e578f04205ec2fe9a4527238f2502a2ea3f4202237eddd06dfc10dd05b17338a9afd4afec2735f1e888b36df5352c19c3b--........................--27',
     },
     "farin": {
         'id': 32,
@@ -423,6 +441,7 @@ USER_DICT = {
         'display_name': "Farin",
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
+        'url': '/core/persona/32/show?confirm_id=fded21fb67399bdf3d7d091ade52be13663d8be45f444fc3a94488fccf8fc3980a1f5a5a83dc2a4967563f8d733cd740939b544e7c1042880429a7109a21343e--........................--32',
     },
     "akira": {
         'id': 100,
@@ -432,6 +451,7 @@ USER_DICT = {
         'display_name': "Akira",
         'given_names': "Akira",
         'family_name': "Abukara",
+        'url': '/core/persona/100/show?confirm_id=4d5235e5867d9d5fc4e0e472609ca4b7417c5c9b80b0e5de0c2aa976e09a0eab3e82f10eac65615ea4678dcc2f0853af4f45df1699814ff07fecb3305ec22c0d--........................--100',
     },
 }
 
