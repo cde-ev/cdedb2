@@ -115,9 +115,9 @@
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
 
                         <form action="{{ cdedblink('ml/remove_unsubscription_override') }}"
-                              method="POST"
+                              method="POST" style="display: inline;"
                               id="removemodunsubscriberform{{ unsubscription_override }}"
-                              style="hide-hover display-inline">
+                              class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                             {{ util.input_hidden(name="modunsubscriber_id", value=unsubscription_override) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
