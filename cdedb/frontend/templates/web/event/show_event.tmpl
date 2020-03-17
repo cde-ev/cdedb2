@@ -228,6 +228,20 @@
 
             <div class="col-md-6" id="offline-use">
                 {% call util.bootstrap_panel(title=gettext("Offline Use"), icon='cloud-download', aclass='panel-danger') %}
+                    <p>
+                        {% trans %}Full Event Export{% endtrans %}<br />
+                        <small>({% trans %}for initilization of the offline-VM{% endtrans %})</small>
+                    </p>
+                    <div class="p">
+                        {% if ambience['event']['offline_lock'] %}
+                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-primary') }}
+                        {% else %}
+                            <form action="{{ cdedblink('event/download_export') }}" method="GET" id="fullexportform" class="display-inline">
+                                {{ util.input_submit(value=gettext("JSON file"), icon='download') }}
+                                {{ util.input_checkbox(name="agree_unlocked_download", label=gettext("Are you sure to download a full export before locking?")) }}
+                            </form>
+                        {% endif %}
+                    </div>
                     {% if ambience['event']['offline_lock'] != CDEDB_OFFLINE_DEPLOYMENT %}
                         {% if CDEDB_OFFLINE_DEPLOYMENT %}
                             <p>
@@ -398,6 +412,10 @@
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
                 $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+            </script>
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                $('#fullexportform').cdedbProtectAction("{{ gettext("Are you sure to download a full export before locking?") }}");
+                $('#fullexportform').find('[name="agree_unlocked_download"]').prop('checked', true).parent().hide();
             </script>
         {% endcall %}
     {% endif %}

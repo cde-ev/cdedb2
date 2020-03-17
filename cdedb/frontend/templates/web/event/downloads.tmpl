@@ -120,10 +120,12 @@
         <tbody>
             <tr>
                 <td>
-                    {% trans %}Full Event Export{% endtrans %}<br />
-                    <small>({% trans %}for initilization of the offline-VM{% endtrans %})</small>
+                    <div class="alert alert-info" role="alert">
+                        {% trans %}
+                            The full export is now on event overview.
+                        {% endtrans %}
+                    </div>
                 </td>
-                <td>{{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download') }}</td>
             </tr>
             <tr>
                 <td>
