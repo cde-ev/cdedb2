@@ -1370,6 +1370,7 @@ class TestCoreFrontend(FrontendTest):
     def test_genesis_cde(self, user):
         self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
+        self.assertPresence("Die maximale Dateigröße ist 8 MB.")
         f = self.response.forms['genesisform']
         f['given_names'] = "Zelda"
         f['family_name'] = "Zeruda-Hime"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-03-15 01:14+0100\n"
+"POT-Creation-Date: 2020-03-17 21:56+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -3145,7 +3145,7 @@ msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 
 #: cdedb/frontend/core.py:1907
-msgid "This account request was already "
+msgid "This account request was already verified."
 msgstr ""
 
 #: cdedb/frontend/core.py:2039 cdedb/frontend/core.py:2067
@@ -7924,26 +7924,30 @@ msgid ""
 "for an event."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:72
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:78
-msgid "Attachment"
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:69
+msgid "The maximum allowed filesize is 8 MB."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:73
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:79
+msgid "Attachment"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:74
 msgid ""
 "We already saved your uploaded file, but you can provide a different file"
 " instead."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:74
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:75
 msgid "New Attachment"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:77
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:78
 msgid "Please upload a participation certificate from your DSA, DJA, etc. here."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:99
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:100
 msgid "Confirm Request"
 msgstr ""
 
@@ -12757,5 +12761,8 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "The event logo will be permanently deleted."
+#~ msgstr ""
+
+#~ msgid "This account request was already "
 #~ msgstr ""
 

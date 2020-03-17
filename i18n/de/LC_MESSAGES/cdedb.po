@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-03-15 01:14+0100\n"
+"POT-Creation-Date: 2020-03-17 21:56+0100\n"
 "PO-Revision-Date: 2020-01-15 21:24+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -3158,7 +3158,9 @@ msgstr "E-Mail-Adresse geändert."
 
 #: cdedb/frontend/core.py:1831
 msgid "It seems like you took too long and your previous upload was deleted."
-msgstr "Es scheint als hättest Du Dir zu viel Zeit gelassen und Deine Datei wurde mittlerweile wieder gelöscht."
+msgstr ""
+"Es scheint als hättest Du Dir zu viel Zeit gelassen und Deine Datei wurde"
+" mittlerweile wieder gelöscht."
 
 #: cdedb/frontend/core.py:1842
 msgid "Rationale too long."
@@ -8250,27 +8252,32 @@ msgstr ""
 "Diese Felder sind nur relevant, falls Du einen Account für eine "
 "Veranstaltung beantragst."
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:72
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:78
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:69
+msgid "The maximum allowed filesize is 8 MB."
+msgstr "Die maximale Dateigröße ist 8 MB."
+
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:73
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:79
 msgid "Attachment"
 msgstr "Anhang"
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:73
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:74
 msgid ""
 "We already saved your uploaded file, but you can provide a different file"
 " instead."
 msgstr ""
-"Wir haben die von Dir hochgeladene Datei bereits gespeichert, aber Du kannst stattdessen auch eine neue hochladen."
+"Wir haben die von Dir hochgeladene Datei bereits gespeichert, aber Du "
+"kannst stattdessen auch eine neue hochladen."
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:74
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:75
 msgid "New Attachment"
 msgstr "Neuer Anhang"
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:77
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:78
 msgid "Please upload a participation certificate from your DSA, DJA, etc. here."
 msgstr "Bitte lade hier eine Teilnahmeurkunde von deiner DSA, DJA, etc. hoch."
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:99
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:100
 msgid "Confirm Request"
 msgstr "Anfrage abschicken"
 
