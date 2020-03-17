@@ -106,43 +106,35 @@ class TestPrivacyFrontend(FrontendTest):
 
     def test_profile_base(self):
         # non-searchable user views normal account
-        self.login(USER_DICT['charly'])
-        inspected = USER_DICT['anton']
-        self.get(inspected['url'])
-        found = self._profile_base_view(inspected)
-        # The username must not be visible, although "Email" occurs as field
-        self.assertNonPresence(inspected['username'])
-        for field in self.ALL_FIELDS - found:
-            self.assertNonPresence(field)
-        self.logout()
-
+        case1 = {
+            'viewer': USER_DICT['charly'],
+            'inspected': USER_DICT['anton'],
+        }
         # normal user views non-searchable account
-        self.login(USER_DICT['inga'])
-        inspected = USER_DICT['charly']
-        self.get(inspected['url'])
-        found = self._profile_base_view(inspected)
-        # The username must not be visible, although "Email" occurs as field
-        self.assertNonPresence(inspected['username'])
-        for field in self.ALL_FIELDS - found:
-            self.assertNonPresence(field)
-
+        case2 = {
+            'viewer': USER_DICT['inga'],
+            'inspected': USER_DICT['charly'],
+        }
         # normal user views non-member account
-        inspected = USER_DICT['daniel']
-        self.get(inspected['url'])
-        found = self._profile_base_view(inspected)
-        # The username must not be visible, although "Email" occurs as field
-        self.assertNonPresence(inspected['username'])
-        for field in self.ALL_FIELDS - found:
-            self.assertNonPresence(field)
+        case3 = {
+            'viewer': USER_DICT['inga'],
+            'inspected': USER_DICT['daniel'],
+        }
+        # normal user views inactive account
+        case4 = {
+            'viewer': USER_DICT['inga'],
+            'inspected': USER_DICT['olaf'],
+        }
 
-        # normal user views inacitve account
-        inspected = USER_DICT['olaf']
-        self.get(inspected['url'])
-        found = self._profile_base_view(inspected)
-        # The username must not be visible, although "Email" occurs as field
-        self.assertNonPresence(inspected['username'])
-        for field in self.ALL_FIELDS - found:
-            self.assertNonPresence(field)
+        for case in [case1, case2, case3, case4]:
+            self.login(case['viewer'])
+            self.get(case['inspected']['url'])
+            found = self._profile_base_view(case['inspected'])
+            # The username must not be visible, although "Email" occurs as field
+            self.assertNonPresence(case['inspected']['username'])
+            for field in self.ALL_FIELDS - found:
+                self.assertNonPresence(field)
+            self.logout()
 
     @as_users("nina")
     def test_profile_ml_admin(self, user):
