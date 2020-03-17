@@ -57,8 +57,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 2,
@@ -110,8 +109,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9",
-            "fulltext": null
+            "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9"
         },
         {
             "id": 3,
@@ -163,8 +161,7 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 4,
@@ -216,8 +213,7 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": true,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 5,
@@ -269,8 +265,7 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 6,
@@ -322,8 +317,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 7,
@@ -375,8 +369,7 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 8,
@@ -428,8 +421,7 @@
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 9,
@@ -481,8 +473,7 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": true,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 10,
@@ -534,8 +525,7 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 11,
@@ -587,8 +577,7 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 12,
@@ -640,8 +629,7 @@
             "decided_search": true,
             "trial_member": true,
             "bub_search": true,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 13,
@@ -693,8 +681,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 14,
@@ -746,8 +733,7 @@
             "decided_search": null,
             "trial_member": null,
             "bub_search": null,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 15,
@@ -799,8 +785,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 22,
@@ -852,8 +837,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 23,
@@ -905,8 +889,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 27,
@@ -958,8 +941,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 32,
@@ -1011,8 +993,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         },
         {
             "id": 100,
@@ -1064,8 +1045,7 @@
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
-            "foto": null,
-            "fulltext": null
+            "foto": null
         }
     ],
     "core.changelog": [
