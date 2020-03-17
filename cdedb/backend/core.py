@@ -24,7 +24,7 @@ from cdedb.common import (
     PRIVILEGE_CHANGE_FIELDS, privilege_tier, now, QuotaException,
     PERSONA_STATUS_FIELDS, PsycoJson, merge_dicts, PERSONA_DEFAULTS,
     ArchiveError, extract_realms, implied_realms, encode_parameter,
-    decode_parameter)
+    decode_parameter, genesis_realm_access_bits)
 from cdedb.security import secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -1904,6 +1904,18 @@ class CoreBackend(AbstractBackend):
         return tuple(key for key, value in roles.items()
                      if value >= required_roles)
 
+    @access("core_admin")
+    def genesis_attachment_usage(self, rs, attachment_hash):
+        """Check whether a genesis attachment is still referenced in a case.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type attachment_hash: str
+        :rtype: bool
+        """
+        attachment_hash = affirm("str", attachment_hash)
+        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment = %s"
+        return bool(self.query_one(rs, query, (attachment_hash,))['count'])
+
     @access("anonymous")
     def verify_existence(self, rs, email):
         """Check wether a certain email belongs to any persona.
@@ -2310,21 +2322,29 @@ class CoreBackend(AbstractBackend):
         :type case_id: int
         :rtype: (int, str or None)
         :returns: (default return code, realm of the case if successful)
-
+            A negative return code means, that the case was already verified.
+            A zero return code means the case was not found or another error
+            occured.
         """
         case_id = affirm("id", case_id)
         with Atomizer(rs):
+            data = self.sql_select_one(
+                rs, "core.genesis_cases", ("realm", "username", "case_status"),
+                case_id)
+            # These should be displayed as useful errors in the frontend.
+            if not data:
+                return 0, "core"
+            elif not data["case_status"] == const.GenesisStati.unconfirmed:
+                return -1, data["realm"]
             query = glue("UPDATE core.genesis_cases SET case_status = %s",
                          "WHERE id = %s AND case_status = %s")
             params = (const.GenesisStati.to_review, case_id,
                       const.GenesisStati.unconfirmed)
             ret = self.query_exec(rs, query, params)
-
-            data = self.sql_select_one(
-                rs, "core.genesis_cases", ("realm", "username"), case_id)
-            self.core_log(
-                rs, const.CoreLogCodes.genesis_verified, persona_id=None,
-                additional_info=data["username"])
+            if ret:
+                self.core_log(
+                    rs, const.CoreLogCodes.genesis_verified, persona_id=None,
+                    additional_info=data["username"])
         return ret, data["realm"]
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
@@ -2435,24 +2455,6 @@ class CoreBackend(AbstractBackend):
         :returns: The id of the newly created persona.
         """
         case_id = affirm("id", case_id)
-        ACCESS_BITS = {
-            'event': {
-                'is_cde_realm': False,
-                'is_event_realm': True,
-                'is_assembly_realm': False,
-                'is_ml_realm': True,
-                'is_member': False,
-                'is_searchable': False,
-            },
-            'ml': {
-                'is_cde_realm': False,
-                'is_event_realm': False,
-                'is_assembly_realm': False,
-                'is_ml_realm': True,
-                'is_member': False,
-                'is_searchable': False,
-            },
-        }
         with Atomizer(rs):
             case = unwrap(self.genesis_get_cases(rs, (case_id,)))
             data = {k: v for k, v in case.items()
@@ -2460,7 +2462,7 @@ class CoreBackend(AbstractBackend):
             data['display_name'] = data['given_names']
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
-            data.update(ACCESS_BITS[case['realm']])
+            data.update(genesis_realm_access_bits[case['realm']])
             data = affirm("persona", data, creation=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))

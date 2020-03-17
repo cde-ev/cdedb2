@@ -1315,6 +1315,8 @@ _GENESIS_CASE_ADDITIONAL_FIELDS = lambda: {
     'postal_code': _printable_ascii_or_None,
     'location': _str,
     'country': _str_or_None,
+    'birth_name': _str_or_None,
+    'attachment': _str,
 }
 
 
@@ -1489,6 +1491,8 @@ def _pdffile(val, argname=None, *, _convert=True):
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
+    if len(val) > 2 ** 23:  # Disallow files bigger than 8 MB.
+        errs.append((argname, ValueError(n_("Filesize too large."))))
     mime = magic.from_buffer(val, mime=True)
     if mime != "application/pdf":
         errs.append((argname, ValueError(n_("Only pdf allowed."))))
