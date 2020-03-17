@@ -490,6 +490,11 @@ class PartialImportError(RuntimeError):
     pass
 
 
+class ValidationWarning(Exception):
+    """Exception which should be suppressable by the user."""
+    pass
+
+
 def pad(value):
     """Pad strings to sort numerically.
 

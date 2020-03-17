@@ -49,7 +49,8 @@ from cdedb.common import (
     n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, ANTI_CSRF_TOKEN_NAME, encode_parameter,
-    decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields)
+    decode_parameter, ProxyShim, EntitySorter, realm_specific_genesis_fields,
+    ValidationWarning)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -912,6 +913,26 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 params['ml_id'] = ml_id
             return cdedburl(rs, 'core/show_user', params)
 
+        def _is_warning(parameter_name):
+            """Determine if a given error is a warning.
+
+            They can be suppressed by the user.
+
+            :type parameter_name: str
+            :param parameter_name: of the interesting field
+            """
+            all_errors = rs.retrieve_validation_errors()
+            return all(
+                isinstance(kind, ValidationWarning)
+                for param, kind in all_errors if param == parameter_name)
+
+        def _has_warnings():
+            """Determine if there are any warnings among the errors."""
+            all_errors = rs.retrieve_validation_errors()
+            return any(
+                isinstance(kind, ValidationWarning)
+                for param, kind in all_errors)
+
         errorsdict = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
@@ -923,7 +944,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
             'gettext': rs.gettext,
+            'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
+            'is_warning': _is_warning,
             'lang': rs.lang,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,

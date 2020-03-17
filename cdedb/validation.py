@@ -18,12 +18,25 @@ We offer three variants.
   things like dates mustn't be strings)
 
 The raw validator implementations are functions with signature ``(val,
-argname, *, _convert, **kwargs)`` which are wrapped into the three variants
-above. They return the tuple ``(mangled_value, errors)``, where
+argname, *, _convert, _ignore_warnings, **kwargs)`` which are wrapped into the
+three variants above.
+
+They return the tuple ``(mangled_value, errors)``, where
 ``errors`` is a list containing tuples ``(argname, exception)``. Each
 exception may have one or two arguments. The first is the error string
 and the second optional may be a {str: object} dict describing
 substitutions to the error string done after i18n.
+
+The parameter ``_convert`` is present in every validator and is usually passed
+along from the original caller to every validation inside. If ``True``,
+validators may try to convert the value into the apporpirate type. For instance
+``_int`` will try to convert the input into an int which woulb be useful for
+string inputs especially.
+
+The paramter ``_ignore_warnings`` is present in every validator. If ``True``,
+certain Errors of type ``ValidationWarning`` may be ignored instead of returned.
+Think of this like a toggle to enable less strict validation of some constants
+which might change externally like german postal codes.
 """
 
 import collections.abc
@@ -48,7 +61,8 @@ import zxcvbn
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER,
-    CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields)
+    CDEDB_EXPORT_EVENT_VERSION, realm_specific_genesis_fields,
+    ValidationWarning)
 from cdedb.database.constants import FieldDatatypes
 from cdedb.validationdata import (
     IBAN_LENGTHS, FREQUENCY_LISTS, GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES,
@@ -57,7 +71,7 @@ from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
-from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS, ENUMS_DICT
+from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 import cdedb.ml_type_aux as ml_type
 
 _BASICCONF = BasicConfig()
@@ -81,7 +95,8 @@ def _addvalidator(fun):
 
 
 def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
-                               *, allow_superfluous=False, _convert=True):
+                               *, allow_superfluous=False, _convert=True,
+                               _ignore_warnings=False):
     """Check more complex dictionaries.
 
     :type adict: dict
@@ -98,6 +113,9 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
       :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
     :type _convert: bool
     :param _convert: If ``True`` do type conversions.
+    :type _ignore_warnings: bool
+    :param _ignore_warnings: If ``True`` skip Errors
+        of type ``ValidationWarning``.
     """
     optional_fields = optional_fields or {}
     errs = []
@@ -105,14 +123,16 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
     mandatory_fields_found = []
     for key, value in adict.items():
         if key in mandatory_fields:
-            v, e = mandatory_fields[key](value, argname=key, _convert=_convert)
+            v, e = mandatory_fields[key](value, argname=key, _convert=_convert,
+                                         _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
                 mandatory_fields_found.append(key)
                 retval[key] = v
         elif key in optional_fields:
-            v, e = optional_fields[key](value, argname=key, _convert=_convert)
+            v, e = optional_fields[key](value, argname=key, _convert=_convert,
+                                        _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
@@ -147,17 +167,19 @@ def _augment_dict_validator(validator, augmentation, strict=True):
     """
 
     @functools.wraps(validator)
-    def new_validator(val, argname=None, *, _convert=True):
+    def new_validator(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
         mandatory_fields = augmentation if strict else {}
         optional_fields = {} if strict else augmentation
         ret, errs = _examine_dictionary_fields(
             val, mandatory_fields, optional_fields, allow_superfluous=True,
-            _convert=_convert)
+            _convert=_convert, _ignore_warnings=_ignore_warnings)
         tmp = copy.deepcopy(val)
         for field in augmentation:
             if field in tmp:
                 del tmp[field]
-        v, e = validator(tmp, argname, _convert=_convert)
+        v, e = validator(tmp, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
         errs.extend(e)
         if ret is not None and v is not None:
             ret.update(v)
@@ -204,7 +226,7 @@ def escaped_split(s, delim, escape='\\'):
 #
 
 @_addvalidator
-def _None(val, argname=None, *, _convert=True):
+def _None(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """Force a None.
 
     This is mostly for ensuring proper population of dicts.
@@ -212,6 +234,7 @@ def _None(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (object or None, [(str or None, exception)])
     """
     if _convert:
@@ -223,7 +246,7 @@ def _None(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _any(val, argname=None, *, _convert=True):
+def _any(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """Dummy to allow arbitrary things.
 
     This is mostly for deferring checks to a later point if they require
@@ -232,17 +255,19 @@ def _any(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (object or None, [(str or None, exception)])
     """
     return val, []
 
 
 @_addvalidator
-def _int(val, argname=None, *, _convert=True):
+def _int(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (int or None, [(str or None, exception)])
     """
     if _convert:
@@ -262,14 +287,17 @@ def _int(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _non_negative_int(val, argname=None, *, _convert=True):
+def _non_negative_int(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (int or None, [(str or None, exception)])
     """
-    val, err = _int(val, argname, _convert=_convert)
+    val, err = _int(val, argname, _convert=_convert,
+                    _ignore_warnings=_ignore_warnings)
     if not err and val < 0:
         val = None
         err.append((argname, ValueError(n_("Must not be negative."))))
@@ -277,14 +305,16 @@ def _non_negative_int(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _positive_int(val, argname=None, *, _convert=True):
+def _positive_int(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (int or None, [(str or None, exception)])
     """
-    val, errs = _int(val, argname, _convert=_convert)
+    val, errs = _int(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if not errs:
         if val <= 0:
             val = None
@@ -293,7 +323,7 @@ def _positive_int(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _id(val, argname=None, *, _convert=True):
+def _id(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """A numeric ID as in a database key.
 
     This is just a wrapper around `_positive_int`, to differentiate this
@@ -302,27 +332,33 @@ def _id(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (int or None, [(str or None, exception)])
     """
-    return _positive_int(val, argname, _convert=_convert)
+    return _positive_int(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _partial_import_id(val, argname=None, *, _convert=True):
+def _partial_import_id(val, argname=None, *, _convert=True,
+                       _ignore_warnings=False):
     """A numeric id or a negative int as a placeholder."""
-    val, errs = _int(val, argname, _convert=_convert)
+    val, errs = _int(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if not errs:
         if val == 0:
             val = None
             errs.append((argname, ValueError(n_("Must not be zero."))))
     return val, errs
 
+
 @_addvalidator
-def _float(val, argname=None, *, _convert=True):
+def _float(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (float or None, [(str or None, exception)])
     """
     if _convert:
@@ -338,11 +374,12 @@ def _float(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _decimal(val, argname=None, *, _convert=True):
+def _decimal(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (decimal.Decimal or None, [(str or None, exception)])
     """
     if _convert and isinstance(val, str):
@@ -357,14 +394,17 @@ def _decimal(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _non_negative_decimal(val, argname=None, *, _convert=True):
+def _non_negative_decimal(val, argname=None, *, _convert=True,
+                          _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (decimal.Decimal or None, [(str or None, exception)])
     """
-    val, err = _decimal(val, argname, _convert=_convert)
+    val, err = _decimal(val, argname, _convert=_convert,
+                        _ignore_warnings=_ignore_warnings)
     if not err and val < 0:
         val = None
         err.append((argname, ValueError(n_("Transfer saldo is negative."))))
@@ -372,14 +412,17 @@ def _non_negative_decimal(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _positive_decimal(val, argname=None, *, _convert=True):
+def _positive_decimal(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (decimal.Decimal or None, [(str or None, exception)])
     """
-    val, err = _decimal(val, argname, _convert=_convert)
+    val, err = _decimal(val, argname, _convert=_convert,
+                        _ignore_warnings=_ignore_warnings)
     if not err and val <= 0:
         val = None
         err.append((argname, ValueError(n_("Transfer saldo is negative."))))
@@ -387,11 +430,13 @@ def _positive_decimal(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
+def _str_type(val, argname=None, *, zap='', sieve='', _convert=True,
+              _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type zap: str
     :param zap: delete all characters in this from the result
     :type sieve: str
@@ -415,29 +460,33 @@ def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
 
 
 @_addvalidator
-def _str(val, argname=None, *, zap='', sieve='', _convert=True):
+def _str(val, argname=None, *, zap='', sieve='', _convert=True,
+         _ignore_warnings=False):
     """ Like :py:class:`_str_type` (parameters see there), but mustn't be
     empty (whitespace doesn't count).
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type zap: str
     :type sieve: str
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert)
+    val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
     if val is not None and not val:
         errs.append((argname, ValueError(n_("Mustn’t be empty."))))
     return val, errs
 
 
 @_addvalidator
-def _mapping(val, argname=None, *, _convert=True):
+def _mapping(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :param _convert: is ignored since no useful default conversion is available
     :rtype: (dict or None, [(str or None, exception)])
     """
@@ -447,11 +496,12 @@ def _mapping(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _iterable(val, argname=None, *, _convert=True):
+def _iterable(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :param _convert: is ignored since no useful default conversion is available
     :rtype: ([object] or None, [(str or None, exception)])
     """
@@ -461,11 +511,12 @@ def _iterable(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _sequence(val, argname=None, *, _convert=True):
+def _sequence(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: ([object] or None, [(str or None, exception)])
     """
     if _convert:
@@ -480,11 +531,12 @@ def _sequence(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _bool(val, argname=None, *, _convert=True):
+def _bool(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (bool or None, [(str or None, exception)])
     """
     if _convert and val is not None:
@@ -503,11 +555,12 @@ def _bool(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _empty_dict(val, argname=None, *, _convert=True):
+def _empty_dict(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     if val != {}:
@@ -516,15 +569,17 @@ def _empty_dict(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _empty_list(val, argname=None, *, _convert=True):
+def _empty_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (list or None, [(str or None, expection)])
     """
     if _convert:
-        val, errs = _iterable(val, argname, _convert=_convert)
+        val, errs = _iterable(val, argname, _convert=_convert,
+                              _ignore_warnings=_ignore_warnings)
         if errs:
             return None, errs
         val = list(val)
@@ -534,15 +589,17 @@ def _empty_list(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _realm(val, argname=None, *, _convert=True):
+def _realm(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """A realm in the sense of the DB.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if val not in ("session", "core", "cde", "event", "ml", "assembly"):
         val = None
         errs.append((argname, ValueError(n_("Not a valid realm."))))
@@ -553,14 +610,16 @@ _CDEDBID = re.compile('^DB-([0-9]*)-([0-9X])$')
 
 
 @_addvalidator
-def _cdedbid(val, argname=None, *, _convert=True):
+def _cdedbid(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (int or None, [(str or None, exception)])
     """
-    val, errs = _str(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mo = _CDEDBID.search(val)
@@ -568,7 +627,8 @@ def _cdedbid(val, argname=None, *, _convert=True):
         return None, [(argname, ValueError(n_("Wrong formatting.")))]
     value = mo.group(1)
     checkdigit = mo.group(2)
-    value, errs = _id(value, argname, _convert=True)
+    value, errs = _id(value, argname, _convert=True,
+                      _ignore_warnings=_ignore_warnings)
     if not errs and compute_checkdigit(value) != checkdigit:
         errs.append((argname, ValueError(n_("Checksum failure."))))
     return value, errs
@@ -578,30 +638,36 @@ _PRINTABLE_ASCII = re.compile('^[ -~]*$')
 
 
 @_addvalidator
-def _printable_ascii_type(val, argname=None, *, _convert=True):
+def _printable_ascii_type(val, argname=None, *, _convert=True,
+                          _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str_type(val, argname, _convert=_convert)
+    val, errs = _str_type(val, argname, _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
     if not errs and not _PRINTABLE_ASCII.search(val):
         errs.append((argname, ValueError(n_("Must be printable ASCII."))))
     return val, errs
 
 
 @_addvalidator
-def _printable_ascii(val, argname=None, *, _convert=True):
+def _printable_ascii(val, argname=None, *, _convert=True,
+                     _ignore_warnings=False):
     """Like :py:func:`_printable_ascii_type` (parameters see there), but
     mustn't be empty (whitespace doesn't count).
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii_type(val, argname, _convert=_convert)
+    val, errs = _printable_ascii_type(val, argname, _convert=_convert,
+                                      _ignore_warnings=_ignore_warnings)
     if val is not None and not val.strip():
         errs.append((argname, ValueError(n_("Mustn’t be empty."))))
     return val, errs
@@ -611,14 +677,16 @@ _ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+$')
 
 
 @_addvalidator
-def _alphanumeric(val, argname=None, *, _convert=True):
+def _alphanumeric(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if not _ALPHANUMERIC_REGEX.search(val):
@@ -630,14 +698,17 @@ _CSV_ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$')
 
 
 @_addvalidator
-def _csv_alphanumeric(val, argname=None, *, _convert=True):
+def _csv_alphanumeric(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if not _CSV_ALPHANUMERIC_REGEX.search(val):
@@ -650,16 +721,18 @@ _IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+$')
 
 
 @_addvalidator
-def _identifier(val, argname=None, *, _convert=True):
+def _identifier(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """Identifiers encompass everything from file names to short names for
     events.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if not _IDENTIFIER_REGEX.search(val):
@@ -673,7 +746,8 @@ _RESTRICTIVE_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_]+$')
 
 
 @_addvalidator
-def _restrictive_identifier(val, argname=None, *, _convert=True):
+def _restrictive_identifier(val, argname=None, *, _convert=True,
+                            _ignore_warnings=False):
     """Restrictive identifiers are for situations, where normal identifiers
     are too lax.
 
@@ -682,9 +756,11 @@ def _restrictive_identifier(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if not _RESTRICTIVE_IDENTIFIER_REGEX.search(val):
@@ -698,14 +774,17 @@ _CSV_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$')
 
 
 @_addvalidator
-def _csv_identifier(val, argname=None, *, _convert=True):
+def _csv_identifier(val, argname=None, *, _convert=True,
+                    _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if not _CSV_IDENTIFIER_REGEX.search(val):
@@ -715,11 +794,12 @@ def _csv_identifier(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _int_csv_list(val, argname=None, *, _convert=True):
+def _int_csv_list(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: ([int] or None, [(str or None, exception)])
     """
     if _convert:
@@ -730,7 +810,8 @@ def _int_csv_list(val, argname=None, *, _convert=True):
                 if not entry:
                     # skip empty entries which can be produced by Javscript
                     continue
-                entry, errs = _int(entry, argname, _convert=_convert)
+                entry, errs = _int(entry, argname, _convert=_convert,
+                                   _ignore_warnings=_ignore_warnings)
                 if errs:
                     return val, errs
                 val.append(entry)
@@ -744,7 +825,7 @@ def _int_csv_list(val, argname=None, *, _convert=True):
 
 @_addvalidator
 def _password_strength(val, argname=None, *, _convert=True, admin=False,
-                       inputs=None):
+                       inputs=None, _ignore_warnings=False):
     """Implement a password policy.
 
     This has the strictly competing goals of security and usability.
@@ -757,10 +838,12 @@ def _password_strength(val, argname=None, *, _convert=True, admin=False,
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
     inputs = inputs or []
-    val, errors = _str(val, argname=argname, _convert=_convert)
+    val, errors = _str(val, argname=argname, _convert=_convert,
+                       _ignore_warnings=_ignore_warnings)
     if val:
         results = zxcvbn.zxcvbn(val, list(filter(None, inputs)))
         # if user is admin in any realm, require a score of 4. After
@@ -786,16 +869,18 @@ _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
 
 
 @_addvalidator
-def _email(val, argname=None, *, _convert=True):
+def _email(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """We accept only a subset of valid email addresses since implementing the
     full standard is horrendous. Also we normalize emails to lower case.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return None, errs
     # normalize email addresses to lower case
@@ -809,16 +894,19 @@ _EMAIL_LOCAL_PART_REGEX = re.compile(r'^[a-z0-9._+-]+$')
 
 
 @_addvalidator
-def _email_local_part(val, argname=None, *, _convert=True):
+def _email_local_part(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
     """We accept only a subset of valid email addresses.
     Here we only care about the local part.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return None, errs
     # normalize to lower case
@@ -975,7 +1063,7 @@ _PERSONA_COMMON_FIELDS = lambda: {
 
 @_addvalidator
 def _persona(val, argname=None, *, creation=False, transition=False,
-             _convert=True):
+             _convert=True, _ignore_warnings=False):
     """Check a persona data set.
 
     This is a bit tricky since attributes have different constraints
@@ -987,6 +1075,8 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -996,7 +1086,8 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "persona"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation and transition:
@@ -1005,7 +1096,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     if creation:
         temp, errs = _examine_dictionary_fields(
             val, _PERSONA_TYPE_FIELDS, {}, allow_superfluous=True,
-            _convert=_convert)
+            _convert=_convert, _ignore_warnings=_ignore_warnings)
         if errs:
             return temp, errs
         temp.update({
@@ -1042,18 +1133,20 @@ def _persona(val, argname=None, *, creation=False, transition=False,
         mandatory_fields = {'id': _id}
         optional_fields = _PERSONA_COMMON_FIELDS()
     val, errs = _examine_dictionary_fields(val, mandatory_fields,
-                                           optional_fields, _convert=_convert)
+                                           optional_fields, _convert=_convert,
+                                           _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     for suffix in ("", "2"):
-        if ((not val.get('country' + suffix)
-             or val.get('country' + suffix) == "Deutschland")
-                and val.get('postal_code' + suffix)):
+        if val.get('postal_code' + suffix):
             postal_code, e = _german_postal_code(
                 val['postal_code' + suffix], 'postal_code' + suffix,
-                _convert=_convert)
+                aux=val.get('country' + suffix), _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             val['postal_code' + suffix] = postal_code
             errs.extend(e)
+    if errs:
+        return None, errs
     return val, errs
 
 
@@ -1082,11 +1175,12 @@ def parse_date(val):
 
 
 @_addvalidator
-def _date(val, argname=None, *, _convert=True):
+def _date(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (datetime.date or None, [(str or None, exception)])
     """
     if _convert and isinstance(val, str) and len(val.strip()) >= 6:
@@ -1102,15 +1196,18 @@ def _date(val, argname=None, *, _convert=True):
         val = val.date()
     return val, []
 
+
 @_addvalidator
-def _birthday(val, argname=None, *, _convert=True):
+def _birthday(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
         :type val: object
         :type argname: str or None
         :type _convert: bool
+        :type _ignore_warnings: bool
         :rtype: (datetime.date or None, [(str or None, exception)])
     """
-    val, errs = _date(val, argname=argname,  _convert=_convert)
+    val, errs = _date(val, argname=argname, _convert=_convert,
+                      _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if now().date() < val:
@@ -1161,11 +1258,13 @@ def parse_datetime(val, default_date=None):
 
 
 @_addvalidator
-def _datetime(val, argname=None, *, _convert=True, default_date=None):
+def _datetime(val, argname=None, *, _convert=True, default_date=None,
+              _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type default_date: datetime.date or None
     :param default_date: If the user-supplied value specifies only a time, this
       parameter allows to fill in the necessary date information to fill
@@ -1184,15 +1283,18 @@ def _datetime(val, argname=None, *, _convert=True, default_date=None):
 
 
 @_addvalidator
-def _single_digit_int(val, argname=None, *, _convert=True):
+def _single_digit_int(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
     """Like _int, but between +9 and -9.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (int or None, [(str or None, exception)])
     """
-    val, errs = _int(val, argname, _convert=_convert)
+    val, errs = _int(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if val > 9 or val < -9:
@@ -1201,14 +1303,16 @@ def _single_digit_int(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _phone(val, argname=None, *, _convert=True):
+def _phone(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     orig = val.strip()
@@ -1278,19 +1382,29 @@ def _phone(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _german_postal_code(val, argname=None, *, _convert=True):
+def _german_postal_code(val, argname=None, *, aux=None, _convert=True,
+                        _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
+    :type aux: str or None
+    :param aux: Additional information. In this case the country belonging
+        to the postal code.
+    :type _ignore_warnings: bool
+    :param _ignore_warnings: If True, ignore invalid german postcodes.
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     val = val.strip()
-    if val not in GERMAN_POSTAL_CODES:
-        errs.append((argname, ValueError(n_("Invalid german postal code."))))
+    if aux is None or aux == "" or aux == "Deutschland":
+        if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
+            errs.append(
+                (argname, ValidationWarning(n_("Invalid german postal code."))))
     return val, errs
 
 
@@ -1321,18 +1435,23 @@ _GENESIS_CASE_ADDITIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _genesis_case(val, argname=None, *, creation=False, _convert=True):
+def _genesis_case(val, argname=None, *, creation=False, _convert=True,
+                  _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+   :type _ignore_warnings: bool
+    :type _ignore_warnings: bool
+    :param _ignore_warnings: If True, ignore ValidationWarnings.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "genesis_case"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     additional_fields = {}
@@ -1345,7 +1464,7 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
                 k: v for k, v in _GENESIS_CASE_ADDITIONAL_FIELDS().items()
                 if k in realm_specific_genesis_fields[val['realm']]}
     else:
-        additional_fields = {}
+        raise ValueError(n_("Must specify realm."))
 
     if creation:
         mandatory_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
@@ -1360,16 +1479,15 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
     # allow_superflous=True will result in superfluous keys being removed.
     val, e = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert,
-        allow_superfluous=True)
+        allow_superfluous=True, _ignore_warnings=_ignore_warnings)
     errs.extend(e)
     if errs:
         return val, errs
 
-    # TODO this is duplicate code from _persona, maybe generalize this.
-    if ((not val.get('country') or val.get('country') == "Deutschland")
-            and val.get('postal_code')):
+    if val.get('postal_code'):
         postal_code, e = _german_postal_code(
-            val['postal_code'], 'postal_code', _convert=_convert)
+            val['postal_code'], 'postal_code', aux=val.get('country'),
+            _convert=_convert, _ignore_warnings=_ignore_warnings)
         val['postal_code'] = postal_code
         errs.extend(e)
 
@@ -1395,32 +1513,37 @@ _PRIVILEGE_CHANGE_OPTIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _privilege_change(val, argname=None, *, _convert=True):
+def _privilege_change(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)]
     """
     argname = argname or "privilege_change"
 
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
 
     val, errs = _examine_dictionary_fields(
         val, _PRIVILEGE_CHANGE_COMMON_FIELDS(),
-        _PRIVILEGE_CHANGE_OPTIONAL_FIELDS(), _convert=_convert)
+        _PRIVILEGE_CHANGE_OPTIONAL_FIELDS(), _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
     return val, errs
 
 
 @_addvalidator
-def _input_file(val, argname=None, *, _convert=True):
+def _input_file(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (bytes or None, [(str or None, exception)])
     """
     if not isinstance(val, werkzeug.datastructures.FileStorage):
@@ -1432,14 +1555,17 @@ def _input_file(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _csvfile(val, argname=None, *, encoding="utf-8", _convert=True):
+def _csvfile(val, argname=None, *, encoding="utf-8", _convert=True,
+             _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)]
     """
-    val, errs = _input_file(val, argname, _convert=_convert)
+    val, errs = _input_file(val, argname, _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mime = magic.from_buffer(val, mime=True)
@@ -1447,19 +1573,22 @@ def _csvfile(val, argname=None, *, encoding="utf-8", _convert=True):
         errs.append((argname, ValueError(n_("Only text/csv allowed."))))
     if errs:
         return None, errs
-    val , errs = _str(val.decode(encoding).strip(), argname, _convert=_convert)
+    val, errs = _str(val.decode(encoding).strip(), argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     return val, errs
 
 
 @_addvalidator
-def _profilepic(val, argname=None, *, _convert=True):
+def _profilepic(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (bytes or None, [(str or None, exception)])
     """
-    val, errs = _input_file(val, argname, _convert=_convert)
+    val, errs = _input_file(val, argname, _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if len(val) < 2 ** 10:
@@ -1481,14 +1610,16 @@ def _profilepic(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _pdffile(val, argname=None, *, _convert=True):
+def _pdffile(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (bytes or None, [(str or None, exception)])
     """
-    val, errs = _input_file(val, argname, _convert=_convert)
+    val, errs = _input_file(val, argname, _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if len(val) > 2 ** 23:  # Disallow files bigger than 8 MB.
@@ -1500,15 +1631,17 @@ def _pdffile(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _period(val, argname=None, *, _convert=True):
+def _period(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "period"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     optional_fields = {
@@ -1523,28 +1656,32 @@ def _period(val, argname=None, *, _convert=True):
         'balance_trialmembers': _non_negative_int,
         'balance_total': _non_negative_decimal,
     }
-    return _examine_dictionary_fields(val, {'id': _id}, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, {'id': _id}, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _expuls(val, argname=None, *, _convert=True):
+def _expuls(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "expuls"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     optional_fields = {
         'addresscheck_state': _id_or_None,
         'addresscheck_done': _datetime,
     }
-    return _examine_dictionary_fields(val, {'id': _id}, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, {'id': _id}, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 _LASTSCHRIFT_COMMON_FIELDS = lambda: {
@@ -1561,18 +1698,21 @@ _LASTSCHRIFT_OPTIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _lastschrift(val, argname=None, *, creation=False, _convert=True):
+def _lastschrift(val, argname=None, *, creation=False, _convert=True,
+                 _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "lastschrift"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -1583,22 +1723,25 @@ def _lastschrift(val, argname=None, *, creation=False, _convert=True):
         optional_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(),
                                **_LASTSCHRIFT_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     return val, errs
 
 
 @_addvalidator
-def _iban(val, argname=None, *, _convert=True):
+def _iban(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
     argname = argname or "iban"
-    val, errs = _str(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     val = val.upper().replace(' ', '')
@@ -1646,18 +1789,20 @@ _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
 
 @_addvalidator
 def _lastschrift_transaction(val, argname=None, *, creation=False,
-                             _convert=True):
+                             _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "lastschrift_transaction"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -1671,7 +1816,8 @@ def _lastschrift_transaction(val, argname=None, *, creation=False,
         optional_fields = dict(_LASTSCHRIFT_TRANSACTION_COMMON_FIELDS,
                                **_LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     return val, errs
 
 
@@ -1697,27 +1843,32 @@ _SEPA_TRANSACTIONS_LIMITS = {
 
 
 @_addvalidator
-def _sepa_transactions(val, argname=None, *, _convert=True):
+def _sepa_transactions(val, argname=None, *, _convert=True,
+                       _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (tuple or None, [(str or None, exception)])
     """
     argname = argname or "sepa_transactions"
-    val, errs = _iterable(val, argname, _convert=_convert)
+    val, errs = _iterable(val, argname, _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mandatory_fields = _SEPA_TRANSACTIONS_FIELDS
     optional_fields = {}
     ret = []
     for entry in val:
-        entry, e = _mapping(entry, argname, _convert=_convert)
+        entry, e = _mapping(entry, argname, _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
         if e:
             errs.extend(e)
             continue
         entry, e = _examine_dictionary_fields(
-            entry, mandatory_fields, optional_fields, _convert=_convert)
+            entry, mandatory_fields, optional_fields, _convert=_convert,
+            _ignore_warnings=_ignore_warnings)
         if e:
             errs.extend(e)
             continue
@@ -1759,26 +1910,30 @@ _SEPA_META_LIMITS = {
 
 
 @_addvalidator
-def _sepa_meta(val, argname=None, *, _convert=True):
+def _sepa_meta(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "sepa_meta"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mandatory_fields = _SEPA_META_FIELDS
     optional_fields = {}
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mandatory_fields = _SEPA_SENDER_FIELDS
     val['sender'], errs = _examine_dictionary_fields(
-        val['sender'], mandatory_fields, optional_fields, _convert=_convert)
+        val['sender'], mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     for attribute, validator in _SEPA_META_FIELDS.items():
@@ -1807,16 +1962,18 @@ def _sepa_meta(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _safe_str(val, argname=None, *, _convert=True):
+def _safe_str(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """This allows alpha-numeric, whitespace and known good others.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     ALLOWED = ".,-+()/"
-    val, errs = _str(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     for char in val:
@@ -1829,22 +1986,26 @@ def _safe_str(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _meta_info(val, keys, argname=None, *, _convert=True):
+def _meta_info(val, keys, argname=None, *, _convert=True,
+               _ignore_warnings=False):
     """
     :type val: object
     :type keys: [str]
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "meta_info"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mandatory_fields = {}
     optional_fields = {key: _str_or_None for key in keys}
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     return val, errs
 
 
@@ -1855,18 +2016,21 @@ _INSTITUTION_COMMON_FIELDS = lambda: {
 
 
 @_addvalidator
-def _institution(val, argname=None, *, creation=False, _convert=True):
+def _institution(val, argname=None, *, creation=False, _convert=True,
+                 _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "institution"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -1875,8 +2039,9 @@ def _institution(val, argname=None, *, creation=False, _convert=True):
     else:
         mandatory_fields = {'id': _id}
         optional_fields = _INSTITUTION_COMMON_FIELDS()
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 _PAST_EVENT_COMMON_FIELDS = lambda: {
@@ -1892,18 +2057,21 @@ _PAST_EVENT_OPTIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _past_event(val, argname=None, *, creation=False, _convert=True):
+def _past_event(val, argname=None, *, creation=False, _convert=True,
+                _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "past_event"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -1913,8 +2081,9 @@ def _past_event(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = {'id': _id}
         optional_fields = dict(_PAST_EVENT_COMMON_FIELDS(),
                                **_PAST_EVENT_OPTIONAL_FIELDS())
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 _EVENT_COMMON_FIELDS = lambda: {
@@ -1951,18 +2120,21 @@ _EVENT_OPTIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _event(val, argname=None, *, creation=False, _convert=True):
+def _event(val, argname=None, *, creation=False, _convert=True,
+           _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "event"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -1973,7 +2145,8 @@ def _event(val, argname=None, *, creation=False, _convert=True):
         optional_fields = dict(_EVENT_COMMON_FIELDS(),
                                **_EVENT_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if 'registration_soft_limit' in val and 'registration_hard_limit' in val:
@@ -1994,7 +2167,8 @@ def _event(val, argname=None, *, creation=False, _convert=True):
     if 'orgas' in val:
         orgas = set()
         for anid in val['orgas']:
-            v, e = _id(anid, 'orgas', _convert=_convert)
+            v, e = _id(anid, 'orgas', _convert=_convert,
+                       _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
@@ -2003,14 +2177,15 @@ def _event(val, argname=None, *, creation=False, _convert=True):
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():
-            anid, e = _int(anid, 'parts', _convert=_convert)
+            anid, e = _int(anid, 'parts', _convert=_convert,
+                           _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
                 creation = (anid < 0)
                 part, ee = _event_part_or_None(
                     part, 'parts', creation=creation,
-                    _convert=_convert)
+                    _convert=_convert, _ignore_warnings=_ignore_warnings)
                 if ee:
                     errs.extend(ee)
                 else:
@@ -2019,14 +2194,15 @@ def _event(val, argname=None, *, creation=False, _convert=True):
     if 'fields' in val:
         newfields = {}
         for anid, field in val['fields'].items():
-            anid, e = _int(anid, 'fields', _convert=_convert)
+            anid, e = _int(anid, 'fields', _convert=_convert,
+                           _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
                 creation = (anid < 0)
                 field, ee = _event_field_or_None(
                     field, 'fields', creation=creation,
-                    _convert=_convert)
+                    _convert=_convert, _ignore_warnings=_ignore_warnings)
                 if ee:
                     errs.extend(ee)
                 else:
@@ -2046,18 +2222,21 @@ _EVENT_PART_COMMON_FIELDS = {
 
 
 @_addvalidator
-def _event_part(val, argname=None, *, creation=False, _convert=True):
+def _event_part(val, argname=None, *, creation=False, _convert=True,
+                _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "event_part"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2066,25 +2245,28 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
     else:
         mandatory_fields = {}
         optional_fields = _EVENT_PART_COMMON_FIELDS
-    val, errs = _examine_dictionary_fields(val, mandatory_fields,
-                                           optional_fields,
-                                           _convert=_convert)
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():
-            anid, e = _int(anid, 'tracks', _convert=_convert)
+            anid, e = _int(anid, 'tracks', _convert=_convert,
+                           _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
                 creation = (anid < 0)
                 if creation:
                     track, ee = _event_track(
-                        track, 'tracks', _convert=_convert, creation=True)
+                        track, 'tracks', _convert=_convert, creation=True,
+                        _ignore_warnings=_ignore_warnings)
                 else:
                     track, ee = _event_track_or_None(
-                        track, 'tracks', _convert=_convert)
+                        track, 'tracks', _convert=_convert,
+                        _ignore_warnings=_ignore_warnings)
                 if ee:
                     errs.extend(ee)
                 else:
@@ -2103,18 +2285,21 @@ _EVENT_TRACK_COMMON_FIELDS = {
 
 
 @_addvalidator
-def _event_track(val, argname=None, *, creation=False, _convert=True):
+def _event_track(val, argname=None, *, creation=False, _convert=True,
+                 _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "tracks"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2124,7 +2309,8 @@ def _event_track(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = {}
         optional_fields = _EVENT_TRACK_COMMON_FIELDS
     val, errs = _examine_dictionary_fields(val, mandatory_fields,
-                                           optional_fields, _convert=_convert)
+                                           optional_fields, _convert=_convert,
+                                           _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if ('num_choices' in val and 'min_choices' in val
@@ -2145,11 +2331,13 @@ _EVENT_FIELD_COMMON_FIELDS = lambda extra_suffix: {
 
 @_addvalidator
 def _event_field(val, argname=None, *, creation=False, _convert=True,
+                 _ignore_warnings=False,
                  extra_suffix=''):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -2159,7 +2347,8 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "event_field"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     field_name_key = "field_name{}".format(extra_suffix)
@@ -2172,7 +2361,8 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
         mandatory_fields = {}
         optional_fields = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     entries_key = "entries{}".format(extra_suffix)
@@ -2184,7 +2374,8 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
             val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
                                      for x in val[entries_key].split('\n'))
         oldentries, e = _iterable(val[entries_key], entries_key,
-                                  _convert=_convert)
+                                  _convert=_convert,
+                                  _ignore_warnings=_ignore_warnings)
         seen_values = set()
         if e:
             errs.extend(e)
@@ -2203,9 +2394,10 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                     value, e = _by_field_datatype(
                         value, entries_key,
                         kind=val.get(kind_key, FieldDatatypes.str),
-                        _convert=_convert)
-                    description, ee = _str(description, entries_key,
-                                           _convert=_convert)
+                        _convert=_convert, _ignore_warnings=_ignore_warnings)
+                    description, ee = _str(
+                        description, entries_key, _convert=_convert,
+                        _ignore_warnings=_ignore_warnings)
                     if value in seen_values:
                         e.append((entries_key,
                                   ValueError(n_("Duplicate value."))))
@@ -2227,18 +2419,21 @@ _PAST_COURSE_COMMON_FIELDS = lambda: {
 
 
 @_addvalidator
-def _past_course(val, argname=None, *, creation=False, _convert=True):
+def _past_course(val, argname=None, *, creation=False, _convert=True,
+                 _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "past_course"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2248,8 +2443,9 @@ def _past_course(val, argname=None, *, creation=False, _convert=True):
         # no pevent_id, since the associated event should be fixed
         mandatory_fields = {'id': _id}
         optional_fields = _PAST_COURSE_COMMON_FIELDS()
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 _COURSE_COMMON_FIELDS = lambda: {
@@ -2270,18 +2466,21 @@ _COURSE_OPTIONAL_FIELDS = {
 
 
 @_addvalidator
-def _course(val, argname=None, *, creation=False, _convert=True):
+def _course(val, argname=None, *, creation=False, _convert=True,
+            _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "course"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2293,13 +2492,15 @@ def _course(val, argname=None, *, creation=False, _convert=True):
         optional_fields = dict(_COURSE_COMMON_FIELDS(),
                                **_COURSE_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if 'segments' in val:
         segments = set()
         for anid in val['segments']:
-            v, e = _id(anid, 'segments', _convert=_convert)
+            v, e = _id(anid, 'segments', _convert=_convert,
+                       _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
@@ -2308,7 +2509,8 @@ def _course(val, argname=None, *, creation=False, _convert=True):
     if 'active_segments' in val:
         active_segments = set()
         for anid in val['active_segments']:
-            v, e = _id(anid, 'active_segments', _convert=_convert)
+            v, e = _id(anid, 'active_segments', _convert=_convert,
+                       _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
@@ -2342,11 +2544,13 @@ _REGISTRATION_OPTIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _registration(val, argname=None, *, creation=False, _convert=True):
+def _registration(val, argname=None, *, creation=False, _convert=True,
+                  _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -2354,7 +2558,8 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
     """
     argname = argname or "registration"
 
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2376,8 +2581,9 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
         newparts = {}
         for anid, part in val['parts'].items():
             anid, e = _id(anid, 'parts', _convert=_convert)
-            part, ee = _registration_part_or_None(part, 'parts',
-                                                  _convert=_convert)
+            part, ee = _registration_part_or_None(
+                part, 'parts', _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
@@ -2387,21 +2593,24 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():
-            anid, e = _id(anid, 'tracks', _convert=_convert)
-            track, ee = _registration_track_or_None(track, 'tracks',
-                                                  _convert=_convert)
+            anid, e = _id(anid, 'tracks', _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
+            track, ee = _registration_track_or_None(
+                track, 'tracks', _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
             else:
                 newtracks[anid] = track
         val['tracks'] = newtracks
-    ## the check of fields is delegated to _event_associated_fields
+    # the check of fields is delegated to _event_associated_fields
     return val, errs
 
 
 @_addvalidator
-def _registration_part(val, argname=None, *, _convert=True):
+def _registration_part(val, argname=None, *, _convert=True,
+                       _ignore_warnings=False):
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
@@ -2410,10 +2619,12 @@ def _registration_part(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "registration_part"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     optional_fields = {
@@ -2421,12 +2632,14 @@ def _registration_part(val, argname=None, *, _convert=True):
         'lodgement_id': _id_or_None,
         'is_reserve': _bool,
     }
-    return _examine_dictionary_fields(val, {}, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, {}, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _registration_track(val, argname=None, *, _convert=True):
+def _registration_track(val, argname=None, *, _convert=True,
+                        _ignore_warnings=False):
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
@@ -2435,10 +2648,12 @@ def _registration_track(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "registration_track"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     optional_fields = {
@@ -2446,12 +2661,14 @@ def _registration_track(val, argname=None, *, _convert=True):
         'course_instructor': _id_or_None,
         'choices': _iterable,
     }
-    val, errs = _examine_dictionary_fields(val, {}, optional_fields,
-                                           _convert=_convert)
+    val, errs = _examine_dictionary_fields(
+        val, {}, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if 'choices' in val:
         newchoices = []
         for choice in val['choices']:
-            choice, e = _id(choice, 'choices', _convert=_convert)
+            choice, e = _id(choice, 'choices', _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
                 break
@@ -2463,7 +2680,7 @@ def _registration_track(val, argname=None, *, _convert=True):
 
 @_addvalidator
 def _event_associated_fields(val, argname=None, fields=None, association=None,
-                             *, _convert=True):
+                             *, _convert=True, _ignore_warnings=False):
     """Check fields associated to an event entity.
 
     This can be used for all different kinds of entities (currently
@@ -2476,19 +2693,22 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
     :type association: cdedb.constants.FieldAssociations
     :param fields: definition of the event specific fields which are available
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
 
     """
     argname = argname or "fields"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     raw = copy.deepcopy(val)
     datatypes = {}
     for field in fields.values():
         if field['association'] == association:
-            dt, errs = _enum_fielddatatypes(field['kind'], field['field_name'],
-                                            _convert=_convert)
+            dt, errs = _enum_fielddatatypes(
+                field['kind'], field['field_name'], _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             if errs:
                 return val, errs
             datatypes[field['field_name']] = getattr(
@@ -2497,8 +2717,9 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
         field['field_name']: datatypes[field['field_name']]
         for field in fields.values() if field['association'] == association
     }
-    val, errs = _examine_dictionary_fields(val, {}, optional_fields,
-                                           _convert=_convert)
+    val, errs = _examine_dictionary_fields(
+        val, {}, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     lookup = {v['field_name']: k for k, v in fields.items()}
@@ -2511,24 +2732,28 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
                     (field, ValueError(n_("Entry not in definition list."))))
     return val, errs
 
+
 _LODGEMENT_GROUP_FIELDS = lambda: {
     'moniker': _str,
 }
 
 
 @_addvalidator
-def _lodgement_group(val, argname=None, *, creation=False, _convert=True):
+def _lodgement_group(val, argname=None, *, creation=False, _convert=True,
+                     _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set for fitness for creation
         of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "lodgement group"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2538,8 +2763,9 @@ def _lodgement_group(val, argname=None, *, creation=False, _convert=True):
         # no event_id, since the associated event should be fixed.
         mandatory_fields = {'id': _id}
         optional_fields = _LODGEMENT_GROUP_FIELDS()
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
@@ -2555,18 +2781,21 @@ _LODGEMENT_OPTIONAL_FIELDS = {
 
 
 @_addvalidator
-def _lodgement(val, argname=None, *, creation=False, _convert=True):
+def _lodgement(val, argname=None, *, creation=False, _convert=True,
+               _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "lodgement"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2578,22 +2807,26 @@ def _lodgement(val, argname=None, *, creation=False, _convert=True):
         optional_fields = dict(_LODGEMENT_COMMON_FIELDS(),
                                **_LODGEMENT_OPTIONAL_FIELDS)
     # the check of fields is delegated to _event_associated_fields
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _by_field_datatype(val, argname=None, *, kind=None, _convert=True):
+def _by_field_datatype(val, argname=None, *, kind=None, _convert=True,
+                       _ignore_warnings=False):
     """
     :type val: object
     :type kind: FieldDatatypes or int
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
     kind = FieldDatatypes(kind)
     validator = getattr(current_module, "_{}".format(kind.name))
-    val, errs = validator(val, argname, _convert=_convert)
+    val, errs = validator(val, argname, _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if kind == FieldDatatypes.date:
@@ -2606,21 +2839,25 @@ def _by_field_datatype(val, argname=None, *, kind=None, _convert=True):
 
 
 @_addvalidator
-def _questionnaire(val, field_definitions, argname=None, *, _convert=True):
+def _questionnaire(val, field_definitions, argname=None, *, _convert=True,
+                   _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type field_definitions: Dict[int, Dict]
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: ([dict] or None, [(str or None, exception)])
     """
     argname = argname or "questionnaire"
-    val, errs = _iterable(val, argname, _convert=_convert)
+    val, errs = _iterable(val, argname, _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     ret = []
     for value in val:
-        value, e = _mapping(value, argname, _convert=_convert)
+        value, e = _mapping(value, argname, _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
         if e:
             errs.extend(e)
         else:
@@ -2633,7 +2870,8 @@ def _questionnaire(val, field_definitions, argname=None, *, _convert=True):
                 'default_value': _str_or_None,
             }
             value, e = _examine_dictionary_fields(
-                value, mandatory_fields, {}, _convert=_convert)
+                value, mandatory_fields, {}, _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
                 continue
@@ -2646,14 +2884,14 @@ def _questionnaire(val, field_definitions, argname=None, *, _convert=True):
                 value['default_value'], e = _by_field_datatype(
                     value['default_value'], "default_value",
                     kind=field.get('kind', FieldDatatypes.str),
-                    _convert=_convert)
+                    _convert=_convert, _ignore_warnings=_ignore_warnings)
                 errs.extend(e)
             ret.append(value)
     return ret, errs
 
 
 @_addvalidator
-def _json(val, argname=None, *, _convert=True):
+def _json(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """Deserialize a JSON payload.
 
     This is a bit different from many other validatiors in that it is not
@@ -2662,6 +2900,7 @@ def _json(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
 
     """
@@ -2673,7 +2912,8 @@ def _json(val, argname=None, *, _convert=True):
             val = val.decode("utf-8")
         except UnicodeDecodeError:
             return None, [(argname, ValueError(n_("Invalid UTF-8 sequence.")))]
-    val, errs = _str(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if not val:
@@ -2688,35 +2928,44 @@ def _json(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _serialized_event_upload(val, argname=None, *, _convert=True):
+def _serialized_event_upload(val, argname=None, *, _convert=True,
+                             _ignore_warnings=False):
     """Check an event data set for import after offline usage.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "serialized_event_upload"
-    val, errs = _input_file(val, argname, _convert=_convert)
+    val, errs = _input_file(val, argname, _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    val, errs = _json(val, argname, _convert=_convert)
+    val, errs = _json(val, argname, _convert=_convert,
+                      _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    return _serialized_event(val, argname, _convert=_convert)
+    return _serialized_event(val, argname, _convert=_convert,
+                             _ignore_warnings=_ignore_warnings)
+
 
 @_addvalidator
-def _serialized_event(val, argname=None, *, _convert=True):
+def _serialized_event(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
     """Check an event data set for import after offline usage.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "serialized_event"
     # First a basic check
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if 'kind' not in val or val['kind'] != "full":
@@ -2745,7 +2994,8 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.questionnaire_rows': _mapping,
     }
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, {'core.personas': _mapping}, _convert=_convert)
+        val, mandatory_fields, {'core.personas': _mapping}, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if val['CDEDB_EXPORT_EVENT_VERSION'] != CDEDB_EXPORT_EVENT_VERSION:
@@ -2801,8 +3051,9 @@ def _serialized_event(val, argname=None, *, _convert=True):
         new_table = {}
         for key, entry in val[table].items():
             new_entry, e = validator(entry, table, _convert=_convert)
-            new_key, ee = _int(key, table,
-                               _convert=True)  # fix JSON key restriction
+            # _convert=True to fix JSON key restriction
+            new_key, ee = _int(
+                key, table, _convert=True, _ignore_warnings=_ignore_warnings)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
@@ -2827,36 +3078,46 @@ def _serialized_event(val, argname=None, *, _convert=True):
         val = None
     return val, errs
 
+
 @_addvalidator
-def _serialized_partial_event_upload(val, argname=None, *, _convert=True):
+def _serialized_partial_event_upload(val, argname=None, *, _convert=True,
+                                     _ignore_warnings=False):
     """Check an event data set for delta import.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "serialized_partial_event_upload"
-    val, errs = _input_file(val, argname, _convert=_convert)
+    val, errs = _input_file(val, argname, _convert=_convert,
+                            _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    val, errs = _json(val, argname, _convert=_convert)
+    val, errs = _json(val, argname, _convert=_convert,
+                      _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
-    return _serialized_partial_event(val, argname, _convert=_convert)
+    return _serialized_partial_event(
+        val, argname, _convert=_convert, _ignore_warnings=_ignore_warnings)
+
 
 @_addvalidator
-def _serialized_partial_event(val, argname=None, *, _convert=True):
+def _serialized_partial_event(val, argname=None, *, _convert=True,
+                              _ignore_warnings=False):
     """Check an event data set for delta import.
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "serialized_partial_event"
-    ## First a basic check
-    val, errs = _mapping(val, argname, _convert=_convert)
+    # First a basic check
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if 'kind' not in val or val['kind'] != "partial":
@@ -2876,7 +3137,8 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
         'registrations': _mapping,
     }
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if val['CDEDB_EXPORT_EVENT_VERSION'] != CDEDB_EXPORT_EVENT_VERSION:
@@ -2893,13 +3155,15 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
         new_dict = {}
         for key, entry in val[domain].items():
             # fix JSON key restriction
-            new_key, e = _int(key, domain, _convert=True)
+            new_key, e = _int(key, domain, _convert=True,
+                              _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
                 continue
             creation = (new_key < 0)
-            new_entry, e = validator(entry, domain, _convert=_convert,
-                                     creation=creation)
+            new_entry, e = validator(
+                entry, domain, _convert=_convert, creation=creation,
+                _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
@@ -2908,6 +3172,7 @@ def _serialized_partial_event(val, argname=None, *, _convert=True):
     if errs:
         val = None
     return val, errs
+
 
 _PARTIAL_COURSE_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -2923,19 +3188,24 @@ _PARTIAL_COURSE_OPTIONAL_FIELDS = {
     'segments': _mapping,
     'fields': _mapping,
 }
+
+
 @_addvalidator
-def _partial_course(val, argname=None, *, creation=False, _convert=True):
+def _partial_course(val, argname=None, *, creation=False, _convert=True,
+                    _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "course"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2946,40 +3216,48 @@ def _partial_course(val, argname=None, *, creation=False, _convert=True):
         optional_fields = dict(_PARTIAL_COURSE_COMMON_FIELDS(),
                                **_PARTIAL_COURSE_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if 'segments' in val:
         new_dict = {}
         for key, entry in val['segments'].items():
-            new_key, e = _int(key, 'segments', _convert=True)
-            new_entry, ee = _bool_or_None(entry, 'segments', _convert=_convert)
+            new_key, e = _int(key, 'segments', _convert=True,
+                              _ignore_warnings=_ignore_warnings)
+            new_entry, ee = _bool_or_None(entry, 'segments', _convert=_convert,
+                                          _ignore_warnings=_ignore_warnings)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
             else:
                 new_dict[new_key] = new_entry
         val['segments'] = new_dict
-    ## the check of fields is delegated to _event_associated_fields
+    # the check of fields is delegated to _event_associated_fields
     return val, errs
+
 
 _PARTIAL_LODGEMENT_GROUP_FIELDS = lambda: {
     'moniker': _str,
 }
+
+
 @_addvalidator
-def _partial_lodgement_group(
-        val, argname=None, *, creation=False, _convert=True):
+def _partial_lodgement_group(val, argname=None, *, creation=False,
+                             _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "lodgement group"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -2988,8 +3266,10 @@ def _partial_lodgement_group(
     else:
         mandatory_fields = {}
         optional_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
+
 
 _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
@@ -3001,19 +3281,24 @@ _PARTIAL_LODGEMENT_COMMON_FIELDS = lambda: {
 _PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
     'fields': _mapping,
 }
+
+
 @_addvalidator
-def _partial_lodgement(val, argname=None, *, creation=False, _convert=True):
+def _partial_lodgement(val, argname=None, *, creation=False, _convert=True,
+                       _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "lodgement"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -3023,9 +3308,11 @@ def _partial_lodgement(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = {}
         optional_fields = dict(_PARTIAL_LODGEMENT_COMMON_FIELDS(),
                                **_PARTIAL_LODGEMENT_OPTIONAL_FIELDS)
-    ## the check of fields is delegated to _event_associated_fields
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    # the check of fields is delegated to _event_associated_fields
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
+
 
 _PARTIAL_REGISTRATION_COMMON_FIELDS = lambda: {
     'mixed_lodging': _bool,
@@ -3042,12 +3329,16 @@ _PARTIAL_REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'checkin': _datetime_or_None,
     'fields': _mapping,
 }
+
+
 @_addvalidator
-def _partial_registration(val, argname=None, *, creation=False, _convert=True):
+def _partial_registration(val, argname=None, *, creation=False, _convert=True,
+                          _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -3055,30 +3346,34 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True):
     """
     argname = argname or "registration"
 
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
-        ## creation does not allow fields for sake of simplicity
+        # creation does not allow fields for sake of simplicity
         mandatory_fields = dict(_PARTIAL_REGISTRATION_COMMON_FIELDS(),
                                 persona_id=_id)
         optional_fields = _PARTIAL_REGISTRATION_OPTIONAL_FIELDS()
     else:
-        ## no event_id/persona_id, since associations should be fixed
+        # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {}
         optional_fields = dict(
             _PARTIAL_REGISTRATION_COMMON_FIELDS(),
             **_PARTIAL_REGISTRATION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if 'parts' in val:
         newparts = {}
         for anid, part in val['parts'].items():
-            anid, e = _id(anid, 'parts', _convert=_convert)
+            anid, e = _id(anid, 'parts', _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
             part, ee = _partial_registration_part(
-                part, 'parts', _convert=_convert)
+                part, 'parts', _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
@@ -3088,21 +3383,24 @@ def _partial_registration(val, argname=None, *, creation=False, _convert=True):
     if 'tracks' in val:
         newtracks = {}
         for anid, track in val['tracks'].items():
-            anid, e = _id(anid, 'tracks', _convert=_convert)
+            anid, e = _id(anid, 'tracks', _convert=_convert,
+                          _ignore_warnings=_ignore_warnings)
             track, ee = _partial_registration_track(
-                track, 'tracks', _convert=_convert)
+                track, 'tracks', _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
             else:
                 newtracks[anid] = track
         val['tracks'] = newtracks
-    ## the check of fields is delegated to _event_associated_fields
+    # the check of fields is delegated to _event_associated_fields
     return val, errs
 
 
 @_addvalidator
-def _partial_registration_part(val, argname=None, *, _convert=True):
+def _partial_registration_part(val, argname=None, *, _convert=True,
+                               _ignore_warnings=False):
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
@@ -3111,10 +3409,12 @@ def _partial_registration_part(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "partial_registration_part"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     optional_fields = {
@@ -3122,12 +3422,14 @@ def _partial_registration_part(val, argname=None, *, _convert=True):
         'lodgement_id': _partial_import_id_or_None,
         'is_reserve': _bool,
     }
-    return _examine_dictionary_fields(val, {}, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, {}, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _partial_registration_track(val, argname=None, *, _convert=True):
+def _partial_registration_track(val, argname=None, *, _convert=True,
+                                _ignore_warnings=False):
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
@@ -3136,10 +3438,12 @@ def _partial_registration_track(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "partial_registration_track"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     optional_fields = {
@@ -3147,12 +3451,14 @@ def _partial_registration_track(val, argname=None, *, _convert=True):
         'course_instructor': _partial_import_id_or_None,
         'choices': _iterable,
     }
-    val, errs = _examine_dictionary_fields(val, {}, optional_fields,
-                                           _convert=_convert)
+    val, errs = _examine_dictionary_fields(
+        val, {}, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if 'choices' in val:
         newchoices = []
         for choice in val['choices']:
-            choice, e = _partial_import_id(choice, 'choices', _convert=_convert)
+            choice, e = _partial_import_id(choice, 'choices', _convert=_convert,
+                                           _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
                 break
@@ -3189,18 +3495,20 @@ _MAILINGLIST_READONLY_FIELDS = {
 
 @_addvalidator
 def _mailinglist(val, argname=None, *, creation=False, _convert=True,
-                 _allow_readonly=False):
+                 _ignore_warnings=False, _allow_readonly=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "mailinglist"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mandatory_validation_fields = (('moderators', '[id]'),)
@@ -3233,7 +3541,8 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
         optional_fields = dict(optional_fields, **mandatory_fields)
         mandatory_fields = {'id': _id}
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     for key, validator_str in iterable_fields:
@@ -3241,7 +3550,8 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True,
         newarray = []
         if key in val:
             for x in val[key]:
-                v, e = validator(x, _convert=_convert)
+                v, e = validator(x, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
                 if e:
                     errs.extend(e)
                 else:
@@ -3274,46 +3584,59 @@ _SUBSCRIPTION_ADDRESS_FIELDS = {
 
 
 @_addvalidator
-def _subscription_identifier(val, argname=None, *, _convert=True):
+def _subscription_identifier(val, argname=None, *, _convert=True,
+                             _ignore_warnings=False):
     argname = argname or "subscription identifier"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
-    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _subscription_state(val, argname=None, *, _convert=True):
+def _subscription_state(val, argname=None, *, _convert=True,
+                        _ignore_warnings=False):
     argname = argname or "subscription state"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
     mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_STATE_FIELDS())
-    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _subscription_address(val, argname=None, *, _convert=True):
+def _subscription_address(val, argname=None, *, _convert=True,
+                          _ignore_warnings=False):
     argname = argname or "subscription address"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
     mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
-    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 @_addvalidator
-def _subscription_request_resolution(val, argname=None, *, _convert=True):
+def _subscription_request_resolution(val, argname=None, *, _convert=True,
+                                     _ignore_warnings=False):
     argname = argname or "subscription request resolution"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
     mandatory_fields = copy.deepcopy(_SUBSCRIPTION_ID_FIELDS)
     mandatory_fields.update(_SUBSCRIPTION_REQUEST_RESOLUTION_FIELDS())
-    return _examine_dictionary_fields(val, mandatory_fields, _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 _ASSEMBLY_COMMON_FIELDS = lambda: {
@@ -3329,18 +3652,21 @@ _ASSEMBLY_OPTIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _assembly(val, argname=None, *, creation=False, _convert=True):
+def _assembly(val, argname=None, *, creation=False, _convert=True,
+              _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "assembly"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -3350,8 +3676,9 @@ def _assembly(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = {'id': _id}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS())
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
 
 
 _BALLOT_COMMON_FIELDS = lambda: {
@@ -3373,18 +3700,21 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
 
 
 @_addvalidator
-def _ballot(val, argname=None, *, creation=False, _convert=True):
+def _ballot(val, argname=None, *, creation=False, _convert=True,
+            _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "ballot"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -3395,7 +3725,8 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
         optional_fields = dict(_BALLOT_COMMON_FIELDS(),
                                **_BALLOT_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if 'vote_begin' in val:
@@ -3418,14 +3749,15 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
     if 'candidates' in val:
         newcandidates = {}
         for anid, candidate in val['candidates'].items():
-            anid, e = _int(anid, 'candidates', _convert=_convert)
+            anid, e = _int(anid, 'candidates', _convert=_convert,
+                           _ignore_warnings=_ignore_warnings)
             if e:
                 errs.extend(e)
             else:
                 creation = (anid < 0)
                 candidate, ee = _ballot_candidate_or_None(
                     candidate, 'candidates', creation=creation,
-                    _convert=_convert)
+                    _convert=_convert, _ignore_warnings=_ignore_warnings)
                 if ee:
                     errs.extend(ee)
                 else:
@@ -3457,18 +3789,21 @@ _BALLOT_CANDIDATE_COMMON_FIELDS = {
 
 
 @_addvalidator
-def _ballot_candidate(val, argname=None, *, creation=False, _convert=True):
+def _ballot_candidate(val, argname=None, *, creation=False, _convert=True,
+                      _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "ballot_candidate"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if creation:
@@ -3478,7 +3813,8 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = {}
         optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if val.get('moniker') == ASSEMBLY_BAR_MONIKER:
@@ -3497,21 +3833,25 @@ _ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS = {
 
 
 @_addvalidator
-def _assembly_attachment(val, argname=None, *, _convert=True):
+def _assembly_attachment(val, argname=None, *, _convert=True,
+                         _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "assembly_attachment"
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     mandatory_fields = _ASSEMBLY_ATTACHMENT_COMMON_FIELDS
     optional_fields = _ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert,
+        _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     if "assembly_id" in val and "ballot_id" in val:
@@ -3524,7 +3864,8 @@ def _assembly_attachment(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _vote(val, argname=None, ballot=None, *, _convert=True):
+def _vote(val, argname=None, ballot=None, *, _convert=True,
+          _ignore_warnings=False):
     """Validate a single voters intent.
 
     This is mostly made complicated by the fact that we offer to emulate
@@ -3535,10 +3876,12 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
     :type ballot: {str: object}
     :param ballot: Ballot the vote was cast for.
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
     argname = argname or "vote"
-    val, errs = _str(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     entries = tuple(y for x in val.split('>') for y in x.split('='))
@@ -3569,14 +3912,16 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
 
 
 @_addvalidator
-def _regex(val, argname=None, *, _convert=True):
+def _regex(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     try:
@@ -3589,14 +3934,16 @@ def _regex(val, argname=None, *, _convert=True):
 
 
 @_addvalidator
-def _non_regex(val, argname=None, *, _convert=True):
+def _non_regex(val, argname=None, *, _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type _ignore_warnings: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str(val, argname, _convert=_convert)
+    val, errs = _str(val, argname, _convert=_convert,
+                     _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
     forbidden_chars = r'\*+?{}()[]|'
@@ -3609,7 +3956,8 @@ def _non_regex(val, argname=None, *, _convert=True):
 
 @_addvalidator
 def _query_input(val, argname=None, *, spec=None, allow_empty=False,
-                 _convert=True, separator=',', escape='\\'):
+                 _convert=True, _ignore_warnings=False, separator=',',
+                 escape='\\'):
     """This is for the queries coming from the web.
 
     It is not usable with decorators since the spec is often only known at
@@ -3627,6 +3975,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     :type allow_empty: bool
     :param allow_empty: Toggles whether no selected output fields is an error.
     :type _convert: bool
+    :type _ignore_warnings: bool
     :type separator: char
     :param separator: Defines separator for multi-value-inputs.
     :type escape: char
@@ -3636,14 +3985,16 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     """
     if spec is None:
         raise RuntimeError(n_("Query must be specified."))
-    val, errs = _mapping(val, argname, _convert=_convert)
+    val, errs = _mapping(val, argname, _convert=_convert,
+                         _ignore_warnings=_ignore_warnings)
     fields_of_interest = []
     constraints = []
     order = []
     for field, validator in spec.items():
         # First the selection of fields of interest
-        selected, e = _bool(val.get("qsel_{}".format(field), "False"), field,
-                            _convert=_convert)
+        selected, e = _bool(
+            val.get("qsel_{}".format(field), "False"), field, _convert=_convert,
+            _ignore_warnings=_ignore_warnings)
         errs.extend(e)
         if selected:
             fields_of_interest.append(field)
@@ -3651,7 +4002,8 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
         # Second the constraints (filters)
         # Get operator
         operator, e = _enum_queryoperators_or_None(
-            val.get("qop_{}".format(field)), field, _convert=_convert)
+            val.get("qop_{}".format(field)), field, _convert=_convert,
+            _ignore_warnings=_ignore_warnings)
         errs.extend(e)
         if e or not operator:
             # Skip if invalid or empty operator
@@ -3678,14 +4030,16 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                 # Validate every single value
                 vv, e = getattr(current_module,
                                 "_{}_or_None".format(validator))(
-                    v, field, _convert=_convert)
+                    v, field, _convert=_convert,
+                    _ignore_warnings=_ignore_warnings)
                 errs.extend(e)
                 if e or not vv:
                     continue
                 if operator in (QueryOperators.containsall,
                                 QueryOperators.containssome,
                                 QueryOperators.containsnone):
-                    vv, e = _non_regex(vv, field, _convert=_convert)
+                    vv, e = _non_regex(vv, field, _convert=_convert,
+                                       _ignore_warnings=_ignore_warnings)
                     errs.extend(e)
                 if e or not vv:
                     continue
@@ -3697,18 +4051,21 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                 errs.append((field, ValueError(n_("Two endpoints required."))))
                 continue
         elif operator in (QueryOperators.match, QueryOperators.unmatch):
-            value, e = _non_regex_or_None(value, field, _convert=_convert)
+            value, e = _non_regex_or_None(value, field, _convert=_convert,
+                                          _ignore_warnings=_ignore_warnings)
             errs.extend(e)
             if e or not value:
                 continue
         elif operator in (QueryOperators.regex, QueryOperators.notregex):
-            value, e = _regex_or_None(value, field, _convert=_convert)
+            value, e = _regex_or_None(value, field, _convert=_convert,
+                                      _ignore_warnings=_ignore_warnings)
             errs.extend(e)
             if e or not value:
                 continue
         else:
             value, e = getattr(current_module, "_{}_or_None".format(validator))(
-                value, field, _convert=_convert)
+                value, field, _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             errs.extend(e)
             if e:
                 continue
@@ -3721,11 +4078,13 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     for postfix in ("primary", "secondary", "tertiary"):
         if "qord_" + postfix not in val:
             continue
-        value, e = _csv_identifier_or_None(val["qord_" + postfix],
-                                           "qord_" + postfix, _convert=_convert)
+        value, e = _csv_identifier_or_None(
+            val["qord_" + postfix], "qord_" + postfix, _convert=_convert,
+            _ignore_warnings=_ignore_warnings)
         errs.extend(e)
         tmp = "qord_" + postfix + "_ascending"
-        ascending, e = _bool(val.get(tmp, "True"), tmp, _convert=_convert)
+        ascending, e = _bool(val.get(tmp, "True"), tmp, _convert=_convert,
+                             _ignore_warnings=_ignore_warnings)
         errs.extend(e)
         if value:
             order.append((value, ascending))
@@ -3734,8 +4093,9 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     return Query(None, spec, fields_of_interest, constraints, order), errs
 
 
+# TODO ignore _ignore_warnings here too?
 @_addvalidator
-def _query(val, argname=None, *, _convert=None):
+def _query(val, argname=None, *, _convert=None, _ignore_warnings=False):
     """Check query object for consistency.
 
     This is a tad weird, since the specification against which we check
@@ -3751,18 +4111,22 @@ def _query(val, argname=None, *, _convert=None):
     if not isinstance(val, Query):
         return None, [(argname, TypeError(n_("Not a Query.")))]
     # scope
-    _, errs = _identifier(val.scope, "scope", _convert=False)
+    _, errs = _identifier(val.scope, "scope", _convert=False,
+                          _ignore_warnings=_ignore_warnings)
     if not val.scope.startswith("qview_"):
         errs.append(("scope", ValueError(n_("Must start with “qview_”."))))
     # spec
     for field, validator in val.spec.items():
-        _, e = _csv_identifier(field, "spec", _convert=False)
+        _, e = _csv_identifier(field, "spec", _convert=False,
+                               _ignore_warnings=_ignore_warnings)
         errs.extend(e)
-        _, e = _printable_ascii(validator, "spec", _convert=False)
+        _, e = _printable_ascii(validator, "spec", _convert=False,
+                                _ignore_warnings=_ignore_warnings)
         errs.extend(e)
     # fields_of_interest
     for field in val.fields_of_interest:
-        _, e = _csv_identifier(field, "fields_of_interest", _convert=False)
+        _, e = _csv_identifier(field, "fields_of_interest", _convert=False,
+                               _ignore_warnings=_ignore_warnings)
         errs.extend(e)
     if not val.fields_of_interest:
         errs.append(("fields_of_interest", ValueError(n_("Mustn’t be empty."))))
@@ -3774,13 +4138,15 @@ def _query(val, argname=None, *, _convert=None):
             msg = n_("Invalid constraint number %(index)s")
             errs.append(("constraints", ValueError(msg, {"index": idx})))
             continue
-        field, e = _csv_identifier(field, "constraints", _convert=False)
+        field, e = _csv_identifier(field, "constraints", _convert=False,
+                                   _ignore_warnings=_ignore_warnings)
         errs.extend(e)
         if field not in val.spec:
             errs.append(("constraints", KeyError(n_("Invalid field."))))
             continue
         operator, e = _enum_queryoperators(
-            operator, "constraints/{}".format(field), _convert=False)
+            operator, "constraints/{}".format(field), _convert=False,
+            _ignore_warnings=_ignore_warnings)
         errs.extend(e)
         if operator not in VALID_QUERY_OPERATORS[val.spec[field]]:
             errs.append(("constraints/{}".format(field),
@@ -3791,16 +4157,19 @@ def _query(val, argname=None, *, _convert=None):
         elif operator in MULTI_VALUE_OPERATORS:
             validator = getattr(current_module, "_{}".format(val.spec[field]))
             for v in value:
-                v, e = validator(v, "constraints/{}".format(field),
-                                 _convert=False)
+                v, e = validator(
+                    v, "constraints/{}".format(field), _convert=False,
+                    _ignore_warnings=_ignore_warnings)
                 errs.extend(e)
         else:
             _, e = getattr(current_module, "_{}".format(val.spec[field]))(
-                value, "constraints/{}".format(field), _convert=False)
+                value, "constraints/{}".format(field), _convert=False,
+                _ignore_warnings=_ignore_warnings)
             errs.extend(e)
     # order
     for idx, entry in enumerate(val.order):
-        entry, e = _iterable(entry, 'order', _convert=False)
+        entry, e = _iterable(entry, 'order', _convert=False,
+                             _ignore_warnings=_ignore_warnings)
         errs.extend(e)
         if e:
             continue
@@ -3810,8 +4179,10 @@ def _query(val, argname=None, *, _convert=None):
             msg = n_("Invalid ordering condition number %(index)s")
             errs.append(('order', ValueError(msg, {'index': idx})))
         else:
-            _, e = _csv_identifier(field, "order", _convert=False)
-            _, ee = _bool(ascending, "order", _convert=False)
+            _, e = _csv_identifier(field, "order", _convert=False,
+                                   _ignore_warnings=_ignore_warnings)
+            _, ee = _bool(ascending, "order", _convert=False,
+                          _ignore_warnings=_ignore_warnings)
             errs.extend(e)
             errs.extend(ee)
     if errs:
@@ -3835,15 +4206,19 @@ def _enum_validator_maker(anenum, name=None, internal=False):
     """
     error_msg = n_("Invalid input for the enumeration %(enum)s")
 
-    def the_validator(val, argname=None, *, _convert=True):
+    def the_validator(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
         """
         :type val: object
         :type argname: str or None
         :type _convert: bool
+       :type _ignore_warnings: bool
+        :type _ignore_warnings: bool
         :rtype: (enum or None, [(str or None, exception)])
         """
         if _convert and not isinstance(val, anenum):
-            val, errs = _int(val, argname=argname, _convert=_convert)
+            val, errs = _int(val, argname=argname, _convert=_convert,
+                             _ignore_warnings=_ignore_warnings)
             if errs:
                 return val, errs
             try:
@@ -3892,28 +4267,33 @@ def _infinite_enum_validator_maker(anenum, name=None):
     raw_validator = _enum_validator_maker(anenum, internal=True)
     error_msg = n_("Invalid input for the enumeration %(enum)s")
 
-    def the_validator(val, argname=None, *, _convert=True):
+    def the_validator(val, argname=None, *, _convert=True,
+                      _ignore_warnings=False):
         """
         :type val: object
         :type argname: str or None
         :type _convert: bool
+        :type _ignore_warnings: bool
         :rtype: (InfiniteEnum or None, [(str or None, exception)])
         """
         if isinstance(val, InfiniteEnum):
             val_enum, errs = raw_validator(
-                val.enum, argname=argname, _convert=_convert)
+                val.enum, argname=argname, _convert=_convert,
+                _ignore_warnings=_ignore_warnings)
             if errs:
                 return None, errs
             if val.enum.value == INFINITE_ENUM_MAGIC_NUMBER:
                 val_int, errs = _non_negative_int(
-                    val.int, argname=argname, _convert=_convert)
+                    val.int, argname=argname, _convert=_convert,
+                    _ignore_warnings=_ignore_warnings)
             else:
                 val_int = None
             if errs:
                 return None, errs
         else:
             if _convert:
-                val, errs = _int(val, argname=argname, _convert=_convert)
+                val, errs = _int(val, argname=argname, _convert=_convert,
+                                 _ignore_warnings=_ignore_warnings)
                 if errs:
                     return None, errs
                 val_int = None
@@ -3951,7 +4331,7 @@ def _create_assert_valid(fun):
     """
 
     @functools.wraps(fun)
-    def new_fun(*args, **kwargs):
+    def assert_valid(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
         if errs:
             e = errs[0][1]
@@ -3959,7 +4339,7 @@ def _create_assert_valid(fun):
             raise e
         return val
 
-    return new_fun
+    return assert_valid
 
 
 def _create_is_valid(fun):
@@ -3968,12 +4348,12 @@ def _create_is_valid(fun):
     """
 
     @functools.wraps(fun)
-    def new_fun(*args, **kwargs):
+    def is_valid(*args, **kwargs):
         kwargs['_convert'] = False
         _, errs = fun(*args, **kwargs)
         return not errs
 
-    return new_fun
+    return is_valid
 
 
 def _create_check_valid(fun):
@@ -3982,15 +4362,15 @@ def _create_check_valid(fun):
     """
 
     @functools.wraps(fun)
-    def new_fun(*args, **kwargs):
+    def check_valid(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
         if errs:
-            _LOGGER.debug("VALIDATION ERROR for '{}' with input {}, {}.".format(
-                fun.__name__, args, kwargs))
+            _LOGGER.debug("{} for '{}' with input {}, {}.".format(
+                errs, fun.__name__, args, kwargs))
             return None, errs
         return val, errs
 
-    return new_fun
+    return check_valid
 
 
 def _allow_None(fun):
