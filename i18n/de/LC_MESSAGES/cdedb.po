@@ -8595,7 +8595,7 @@ msgid "Next exPuls"
 msgstr "Nächster exPuls"
 
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:7
-msgid "CdE-Usermanagement"
+msgid "CdE-User Management"
 msgstr "CdE-Nutzerverwaltung"
 
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:22
@@ -9809,7 +9809,7 @@ msgstr ""
 "wiederherzustellen."
 
 #: cdedb/frontend/templates/web/core/user_search.tmpl:12
-msgid "core_usermanagement"
+msgid "General-User Management"
 msgstr "Allgemeine Nutzerverwaltung"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:15
@@ -12833,8 +12833,8 @@ msgid "No Course"
 msgstr "Kein Kurs"
 
 #: cdedb/frontend/templates/web/event/user_search.tmpl:8
-msgid "Event-User Search"
-msgstr "Veranstaltungsnutzersuche"
+msgid "Event-User Management"
+msgstr "Veranstaltungs-Nutzerverwaltung"
 
 #: cdedb/frontend/templates/web/event/user_search.tmpl:23
 msgid "This User Search will only find Event-Users."
