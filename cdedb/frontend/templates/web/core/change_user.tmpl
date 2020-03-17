@@ -90,6 +90,6 @@
                                         infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
         {% endif %}
 
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user.persona_id)) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user.persona_id), differentiate_warnings=True) }}
     </form>
 {% endblock %}
