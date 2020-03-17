@@ -1,10 +1,6 @@
 {% set sidenav_active='event_downloads' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}
-    {{ util.cdedb_script('cdedb_helper.js') }}
-{% endblock %}
-{% set jshint='strong' %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
         Downloads for Event {{ title }}

@@ -237,7 +237,6 @@
                             {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-primary') }}
                         {% else %}
                             <form action="{{ cdedblink('event/download_export') }}" method="GET" id="fullexportform" class="display-inline">
-                                {{ util.anti_csrf_token('event/download_export') }}
                                 {{ util.input_submit(value=gettext("JSON file"), icon='download') }}
                                 {{ util.input_checkbox(name="agree_unlocked_download", label=gettext("Are you sure to download a full export before locking?")) }}
                             </form>
