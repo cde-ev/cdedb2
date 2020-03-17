@@ -312,3 +312,79 @@ class TestPrivacyFrontend(FrontendTest):
         # self.assertNonPresence(inspected['username'])
         # for field in self.ALL_FIELDS - found:
         #     self.assertNonPresence(field)
+
+    @as_users("annika", "berta", "farin", "martin", "nina", "olaf", "vera",
+              "werner")
+    def test_user_search(self, user):
+        # users who should have access to the specific user search
+        core = [
+            USER_DICT['farin'], USER_DICT['vera']
+        ]
+        archive = [
+            USER_DICT['farin'], USER_DICT['vera']
+        ]
+        # TODO make Vera core admin only
+        cde = [
+            USER_DICT['farin'], USER_DICT['olaf'], USER_DICT['vera']
+        ]
+        event = [
+            USER_DICT['farin'], USER_DICT['annika']
+        ]
+        ml = [
+            USER_DICT['farin'], USER_DICT['nina']
+        ]
+        assembly = [
+            USER_DICT['farin'], USER_DICT['werner']
+        ]
+
+        # some preparation
+        # re-activate olaf, so he can login
+        if user == USER_DICT['olaf']:
+            self.login(USER_DICT['anton'])
+            self.admin_view_profile('olaf')
+            f = self.response.forms['activitytoggleform']
+            self.submit(f)
+            self.logout()
+            self.login(USER_DICT['olaf'])
+
+        if user in core:
+            self.get('/core/search/user')
+            self.assertTitle("Allgemeine Nutzerverwaltung")
+        else:
+            self.get('/core/search/user', status="403 FORBIDDEN")
+            self.assertTitle("403: Forbidden")
+
+        if user in archive:
+            self.get('/core/search/archiveduser')
+            self.assertTitle("Archivsuche")
+        else:
+            self.get('/core/search/archiveduser', status="403 FORBIDDEN")
+            self.assertTitle("403: Forbidden")
+
+        if user in cde:
+            self.get('/cde/search/user')
+            self.assertTitle("CdE-Nutzerverwaltung")
+        else:
+            self.get('/cde/search/user', status="403 FORBIDDEN")
+            self.assertTitle("403: Forbidden")
+
+        if user in event:
+            self.get('/event/search/user')
+            self.assertTitle("Veranstaltungs-Nutzerverwaltung")
+        else:
+            self.get('/event/search/user', status="403 FORBIDDEN")
+            self.assertTitle("403: Forbidden")
+
+        if user in ml:
+            self.get('/ml/search/user')
+            self.assertTitle("Mailinglisten-Nutzerverwaltung")
+        else:
+            self.get('/ml/search/user', status="403 FORBIDDEN")
+            self.assertTitle("403: Forbidden")
+
+        if user in assembly:
+            self.get('/assembly/search/user')
+            self.assertTitle("Versammlungs-Nutzerverwaltung")
+        else:
+            self.get('/assembly/search/user', status="403 FORBIDDEN")
+            self.assertTitle("403: Forbidden")
