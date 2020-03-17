@@ -101,7 +101,7 @@ endif
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u www-data python3 test/create_sample_data_sql.py test/ancillary_files/sample_data.json /tmp/sample_data.sql
+	sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py -i test/ancillary_files/sample_data.json -o /tmp/sample_data.sql
 	sudo -u cdb psql -U cdb -d cdb -f /tmp/sample_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f /tmp/sample_data.sql
 	sudo systemctl start pgbouncer
@@ -110,7 +110,7 @@ sql-test:
 	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u www-data python3 test/create_sample_data_sql.py test/ancillary_files/sample_data.json /tmp/sample_data.sql
+	sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py -i test/ancillary_files/sample_data.json -o /tmp/sample_data.sql
 	make sql-test-shallow
 	sudo systemctl start pgbouncer
 
@@ -200,3 +200,6 @@ coverage: .coverage
 	${PYTHONBIN} /usr/bin/coverage report -m --omit='test/*,related/*'
 
 .PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint check single-check .coverage coverage
+
+sample-data-file:
+	sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py -i test/ancillary_files/sample_data.json -o /tmp/sample_data.sql
