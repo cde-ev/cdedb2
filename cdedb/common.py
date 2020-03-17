@@ -166,9 +166,9 @@ class User:
     def available_admin_views(self):
         return roles_to_admin_views(self.roles)
 
-    def init_admin_views_from_cookie(self, disabled_views_cookie):
-        disabled_views = disabled_views_cookie.split(',')
-        self.admin_views = self.available_admin_views - set(disabled_views)
+    def init_admin_views_from_cookie(self, enabled_views_cookie):
+        enabled_views = enabled_views_cookie.split(',')
+        self.admin_views = self.available_admin_views & set(enabled_views)
 
 
 def do_singularization(fun):
@@ -1471,6 +1471,8 @@ def roles_to_db_role(roles):
         if role in roles:
             return DB_ROLE_MAPPING[role]
 
+
+ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 
 ALL_ADMIN_VIEWS = {
     "meta_admin", "core_user", "core", "cde_user", "past_event", "finance",

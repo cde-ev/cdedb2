@@ -19,7 +19,8 @@ from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.frontend.application import Application
 from cdedb.frontend.cron import CronFrontend
 from cdedb.common import (
-    ProxyShim, RequestState, roles_to_db_role, PrivilegeError, glue)
+    ProxyShim, RequestState, roles_to_db_role, PrivilegeError, glue,
+    ALL_ADMIN_VIEWS, ADMIN_VIEWS_COOKIE_NAME)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.cde import CdEBackend
@@ -430,6 +431,7 @@ class FrontendTest(unittest.TestCase):
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL)
         self.app.reset()
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
         self.response = None  # type: webtest.TestResponse
 
     def basic_validate(self, verbose=False):
