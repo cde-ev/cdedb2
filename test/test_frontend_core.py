@@ -1204,15 +1204,19 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']
         f['postal_code'] = "ABC-123"
+        self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
+        self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
         self.submit(f, button="ignore_warnings")
         self.assertTitle("Vera Verwaltung")
         self.traverse({'description': 'Bearbeiten \\(mit Adminrechten\\)'})
         f = self.response.forms['changedataform']
+        self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
+        self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
         self.submit(f, button="ignore_warnings")
         self.get("/core/genesis/request")
@@ -1226,8 +1230,10 @@ class TestCoreFrontend(FrontendTest):
         f['address'] = "Auf dem Hügel"
         f['postal_code'] = "ABC-123"
         f['location'] = "Überall"
+        self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
+        self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesisform']
         self.submit(f, button="ignore_warnings")
         mail = self.fetch_mail()[0]
@@ -1238,8 +1244,10 @@ class TestCoreFrontend(FrontendTest):
                       {'description': 'Details'},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']
+        self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
+        self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesismodifyform']
         self.submit(f, button="ignore_warnings")
         f = self.response.forms['genesiseventapprovalform']
