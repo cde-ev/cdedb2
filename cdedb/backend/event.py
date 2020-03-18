@@ -20,7 +20,7 @@ from cdedb.common import (
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter, deep_update, FEE_MODIFIER_FIELDS)
+    mixed_existence_sorter, FEE_MODIFIER_FIELDS)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -2323,11 +2323,9 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
-            # We need more information for calculating the fee.
-            current = deep_update(self.get_registration(rs, data['id']), data)
-            data['amount_owed'] = self._calculate_single_fee(
-                rs, current, event=event)
             course_segments = self._get_event_course_segments(rs, event_id)
+            if "amount_owed" in data:
+                del data["amount_owed"]
 
             # now we get to do the actual work
             rdata = {k: v for k, v in data.items()
@@ -2405,9 +2403,18 @@ class EventBackend(AbstractBackend):
                                            update)
                 if deleted:
                     raise NotImplementedError(n_("This is not useful."))
-        self.event_log(
-            rs, const.EventLogCodes.registration_changed, event_id,
-            persona_id=persona_id)
+
+            # Recalculate the amount owed after all changes have been applied.
+            current = self.get_registration(rs, data['id'])
+            update = {
+                'id': data['id'],
+                'amount_owed': self._calculate_single_fee(
+                    rs, current, event=event)
+            }
+            ret *= self.sql_update(rs, "event.registrations", update)
+            self.event_log(
+                rs, const.EventLogCodes.registration_changed, event_id,
+                persona_id=persona_id)
         return ret
 
     @access("event")
