@@ -98,6 +98,6 @@
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
             </div>
         </div>
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(values['persona_id'])) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(values['persona_id']), differentiate_warnings=True) }}
     </form>
 {% endblock %}

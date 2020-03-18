@@ -1430,6 +1430,37 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': "Kurs[^el] *"})
         self._sort_appearance([akira, emilia, anton])
 
+    @as_users("emilia", "garcia")
+    def test_participant_list_profile_link(self, user):
+        # first, show list for participants
+        if user == USER_DICT['emilia']:
+            self.logout()
+            self.login(USER_DICT['garcia'])
+            self.traverse({'description': 'Veranstaltungen'},
+                          {'description': 'Große Testakademie 2222'},
+                          {'description': 'Konfiguration'})
+            f = self.response.forms['changeeventform']
+            f['is_participant_list_visible'].checked = True
+            self.submit(f)
+            self.logout()
+            self.login(USER_DICT['emilia'])
+
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'},
+                      {'description': 'Teilnehmerliste'})
+        # emilia is no member and therefore must not be linked
+        self.assertNoLink(content='Eventis')
+        # akira is member and searchable, so there should be a link
+        self.traverse({'description': 'Akira'})
+        if user == USER_DICT['emilia']:
+            # this must be a reduced profile, since emilia is not a member
+            self.assertPresence("Akira Abukara", div='personal-information')
+            self.assertNonPresence("akira@example.cde")
+        else:
+            # this is an expanded profile, since garcia is not searchable but
+            # orga of this event
+            self.assertPresence("akira@example.cde", div='contact-email')
+
     @as_users("garcia")
     def test_batch_fee(self, user):
         self.traverse({'href': '/event/$'},
@@ -2226,10 +2257,19 @@ etc;anything else""", f['entries_2'].value)
     @as_users("garcia")
     def test_download_export(self, user):
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/download'},)
-        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
-        self.traverse({'href': '/event/event/1/download/export$'})
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
+
+        # test mechanism to reduce unwanted exports of unlocked events
+        f = self.response.forms['fullexportform']
+        f['agree_unlocked_download'].checked = False
+        self.submit(f, check_notification=False)
+        info_msg = ("Bestätige, das du einen Export herunterladen willst, "
+                    "obwohl die Veranstaltung nicht gesperrt ist.")
+        self.assertPresence(info_msg, div='notifications')
+
+        f['agree_unlocked_download'].checked = True
+        self.submit(f)
         with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
@@ -2476,16 +2516,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         f = self.response.forms["lockform"]
         self.submit(f)
-        self.traverse({'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/download'},)
-        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         saved = self.response
-        data = saved.click(href='/event/event/1/download/export$').body
+        data = saved.click(href='/event/event/1/export$').body
         data = data.replace(b"Gro\\u00dfe Testakademie 2222",
                             b"Mittelgro\\u00dfe Testakademie 2222")
         self.response = saved
-        self.traverse({'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
         self.assertPresence(
             "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
         f = self.response.forms['unlockform']

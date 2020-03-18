@@ -766,8 +766,9 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "change_user", {'username': data['username']})
 
     @access("persona", modi={"POST"})
-    @REQUESTdata(("generation", "int"))
-    def change_user(self, rs, generation):
+    @REQUESTdata(("generation", "int"),
+                 ("ignore_warnings", "bool_or_None"))
+    def change_user(self, rs, generation, ignore_warnings=False):
         """Change own data set."""
         REALM_ATTRIBUTES = {
             'persona': {
@@ -792,12 +793,13 @@ class CoreFrontend(AbstractFrontend):
                 attributes = attributes.union(REALM_ATTRIBUTES[realm])
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
-        data = check(rs, "persona", data)
+        data = check(rs, "persona", data, "persona", _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.change_user_form(rs)
         change_note = "Normale Änderung."
-        code = self.coreproxy.change_persona(rs, data, generation=generation,
-                                             change_note=change_note)
+        code = self.coreproxy.change_persona(
+            rs, data, generation=generation, change_note=change_note,
+            ignore_warnings=ignore_warnings)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
@@ -950,8 +952,11 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
-    @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
-    def admin_change_user(self, rs, persona_id, generation, change_note):
+    @REQUESTdata(("generation", "int"),
+                 ("change_note", "str_or_None"),
+                 ("ignore_warnings", "bool_or_None"))
+    def admin_change_user(self, rs, persona_id, generation, change_note,
+                          ignore_warnings=False):
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -982,12 +987,13 @@ class CoreFrontend(AbstractFrontend):
                 attributes = attributes.union(REALM_ATTRIBUTES[realm])
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
-        data = check(rs, "persona", data)
+        data = check(rs, "persona", data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
 
-        code = self.coreproxy.change_persona(rs, data, generation=generation,
-                                             change_note=change_note)
+        code = self.coreproxy.change_persona(
+            rs, data, generation=generation, change_note=change_note,
+            ignore_warnings=ignore_warnings)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
@@ -1799,13 +1805,44 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdatadict(
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country")
-    def genesis_request(self, rs, data):
+        "postal_code", "location", "country", "birth_name")
+    @REQUESTdata(("attachment_hash", "str_or_None"),
+                 ("attachment_filename", "str_or_None"),
+                 ("ignore_warnings", "bool_or_None"))
+    @REQUESTfile("attachment")
+    def genesis_request(self, rs, data, attachment, attachment_hash,
+                        attachment_filename=None, ignore_warnings=False):
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
-        data = check(rs, "genesis_case", data, creation=True)
+        if attachment:
+            attachment_filename = attachment.filename
+            attachment = check(rs, 'pdffile', attachment, 'attachment')
+        attachment_base_path = self.conf.STORAGE_DIR / 'genesis_attachment'
+        if attachment:
+            myhash = hashlib.sha512()
+            myhash.update(attachment)
+            myhash = myhash.hexdigest()
+            path = attachment_base_path / myhash
+            if not path.exists():
+                with open(path, 'wb') as f:
+                    f.write(attachment)
+            data['attachment'] = myhash
+            rs.values['attachment_hash'] = myhash
+            rs.values['attachment_filename'] = attachment_filename
+        elif attachment_hash:
+            path = attachment_base_path / attachment_hash
+            if not path.exists():
+                data['attachment'] = None
+                e = ("attachment", ValueError(n_(
+                    "It seems like you took too long and "
+                    "your previous upload was deleted.")))
+                rs.append_validation_error(e)
+            else:
+                data['attachment'] = attachment_hash
+        data = check(rs, "genesis_case", data, creation=True,
+                     _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         if len(data['notes']) > self.conf.MAX_RATIONALE:
@@ -1817,55 +1854,67 @@ class CoreFrontend(AbstractFrontend):
             if data['gender'] == const.Genders.not_specified:
                 rs.append_validation_error(
                     ("gender", ValueError(n_(
-                        "Must specify gender for event realm."))))
+                        "Must specify gender for %(realm)s realm."),
+                        {"realm": data["realm"]})))
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
-            case_id = self.coreproxy.genesis_case_by_email(
+            existing_id = self.coreproxy.genesis_case_by_email(
                 rs, data['username'])
-            if case_id:
+            if existing_id:
                 # TODO this case is kind of a hack since it throws
                 # away the information entered by the user, but in
                 # theory this should not happen too often (reality
                 # notwithstanding)
-                rs.notify("info",
-                          n_("Confirmation email has been resent."))
+                rs.notify("info", n_("Confirmation email has been resent."))
+                case_id = existing_id
             else:
                 rs.notify("error",
                           n_("Email address already in DB. Reset password."))
                 return self.redirect(rs, "core/index")
         else:
-            case_id = self.coreproxy.genesis_request(rs, data)
-        if not case_id:
-            rs.notify("error", n_("Failed."))
-            return self.genesis_request_form(rs)
+            new_id = self.coreproxy.genesis_request(
+                rs, data, ignore_warnings=ignore_warnings)
+            if not new_id:
+                rs.notify("error", n_("Failed."))
+                return self.genesis_request_form(rs)
+            case_id = new_id
+
+        # Send verification mail for new case or resend for old case.
         self.do_mail(rs, "genesis_verify",
-                     {'To': (data['username'],),
-                      'Subject': "CdEDB Accountanfrage verifizieren",},
-                     {'case_id': self.encode_parameter(
-                         "core/genesis_verify", "case_id", case_id),
-                      'given_names': data['given_names'],
-                      'family_name': data['family_name'],})
+                     {
+                         'To': (data['username'],),
+                         'Subject': "CdEDB Accountanfrage verifizieren",
+                     },
+                     {
+                         'genesis_case_id': self.encode_parameter(
+                             "core/genesis_verify", "genesis_case_id",
+                             case_id),
+                         'given_names': data['given_names'],
+                         'family_name': data['family_name'],
+                     })
         rs.notify(
             "success",
             n_("Email sent. Please follow the link contained in the email."))
         return self.redirect(rs, "core/index")
 
     @access("anonymous")
-    @REQUESTdata(("case_id", "#int"))
-    def genesis_verify(self, rs, case_id):
+    @REQUESTdata(("genesis_case_id", "#int"))
+    def genesis_verify(self, rs, genesis_case_id):
         """Verify the email address entered in :py:meth:`genesis_request`.
 
         This is not a POST since the link is shared via email.
         """
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
-        code, realm = self.coreproxy.genesis_verify(rs, case_id)
+        code, realm = self.coreproxy.genesis_verify(rs, genesis_case_id)
         self.notify_return_code(
             rs, code,
             error=n_("Verification failed. Please contact the administrators."),
             success=n_("Email verified. Wait for moderation. "
-                       "You will be notified by mail."))
+                       "You will be notified by mail."),
+            pending=n_("This account request was already verified.")
+        )
         if not code:
             return self.redirect(rs, "core/genesis_request_form")
         return self.redirect(rs, "core/index")
@@ -1882,22 +1931,30 @@ class CoreFrontend(AbstractFrontend):
         old = set(store.get('ids', [])) & set(data)
         new = set(data) - set(old)
         remind = False
-        if any(data[id]['ctime'] + datetime.timedelta(hours=4) < current
-               for id in new):
+        if any(data[anid]['ctime'] + datetime.timedelta(hours=4) < current
+               for anid in new):
             remind = True
         if old and current.timestamp() > store.get('tstamp', 0) + 24*60*60:
             remind = True
         if remind:
+            stati = (const.GenesisStati.to_review,)
+            cde_count = len(self.coreproxy.genesis_list_cases(
+                rs, stati=stati, realms=["cde"]))
             event_count = len(self.coreproxy.genesis_list_cases(
-                rs, stati=(const.GenesisStati.to_review,), realms=["event"]))
+                rs, stati=stati, realms=["event"]))
             ml_count = len(self.coreproxy.genesis_list_cases(
-                rs, stati=(const.GenesisStati.to_review,), realms=["ml"]))
+                rs, stati=stati, realms=["ml"]))
+            assembly_count = len(self.coreproxy.genesis_list_cases(
+                rs, stati=stati, realms=["assembly"]))
             notify = {self.conf.MANAGEMENT_ADDRESS}
+            if cde_count:
+                notify |= {self.conf.CDE_ADMIN_ADDRESS}
             if event_count:
                 notify |= {self.conf.EVENT_ADMIN_ADDRESS}
             if ml_count:
                 notify |= {self.conf.ML_ADMIN_ADDRESS}
-            # TODO add support for CdE and assembly genesis requests
+            if assembly_count:
+                notify |= {self.conf.ASSEMBLY_ADMIN_ADDRESS}
             self.do_mail(
                 rs, "genesis_requests_pending",
                 {'To': tuple(notify),
@@ -1923,15 +1980,33 @@ class CoreFrontend(AbstractFrontend):
                        case["ctime"] < now() - self.conf.PARAMETER_TIMEOUT)
 
         count = 0
-        for case_id in delete:
-            count += self.coreproxy.delete_genesis_case(
-                rs, case_id)
+        for genesis_case_id in delete:
+            count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        if count:
-            self.logger.info(
-                "genesis_forget: Deleted {} genesis cases.".format(count))
+        genesis_attachment_path : pathlib.Path = self.conf.STORAGE_DIR / "genesis_attachment"
+
+        attachment_count = 0
+        for attachment in genesis_attachment_path.iterdir():
+            if not attachment.is_dir():
+                if not self.coreproxy.genesis_attachment_usage(rs, attachment):
+                    attachment.unlink()
+                    attachment_count += 1
+
+        if count or attachment_count:
+            msg = "genesis_forget: Deleted {} genesis cases and {} attachments"
+            self.logger.info(msg.format(count, attachment_count))
 
         return store
+
+    @access("core_admin", *("{}_admin".format(realm)
+                            for realm, fields in
+                            realm_specific_genesis_fields.items()
+                            if "attachment" in fields))
+    def genesis_get_attachment(self, rs, attachment):
+        """Retrieve attachment for genesis case."""
+        path = self.conf.STORAGE_DIR / 'genesis_attachment' / attachment
+        mimetype = magic.from_file(str(path), mime=True)
+        return self.send_file(rs, path=path, mimetype=mimetype)
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in realm_specific_genesis_fields))
@@ -1950,23 +2025,22 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in realm_specific_genesis_fields))
-    def genesis_show_case(self, rs, case_id):
+    def genesis_show_case(self, rs, genesis_case_id):
         """View a specific case."""
-        case = self.coreproxy.genesis_get_case(rs, case_id)
+        case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         reviewer = None
         if case['reviewer']:
             reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
-        return self.render(rs, "genesis_show_case", {
-            'case': case, 'reviewer': reviewer})
+        return self.render(rs, "genesis_show_case", {'reviewer': reviewer})
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in realm_specific_genesis_fields))
-    def genesis_modify_form(self, rs, case_id):
+    def genesis_modify_form(self, rs, genesis_case_id):
         """Edit a specific case it."""
-        case = self.coreproxy.genesis_get_case(rs, case_id)
+        case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1988,20 +2062,22 @@ class CoreFrontend(AbstractFrontend):
         "notes", "realm", "username", "given_names", "family_name", "gender",
         "birthday", "telephone", "mobile", "address_supplement", "address",
         "postal_code", "location", "country")
-    def genesis_modify(self, rs, case_id, data):
+    @REQUESTdata(("ignore_warnings", "bool_or_None"))
+    def genesis_modify(self, rs, genesis_case_id, data, ignore_warnings=False):
         """Edit a case to fix potential issues before creation."""
-        data['id'] = case_id
-        data = check(rs, "genesis_case", data)
+        data['id'] = genesis_case_id
+        data = check(rs, "genesis_case", data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
-            return self.genesis_modify_form(rs, case_id)
-        case = self.coreproxy.genesis_get_case(rs, case_id)
+            return self.genesis_modify_form(rs, genesis_case_id)
+        case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
-        code = self.coreproxy.genesis_modify_case(rs, data)
+        code = self.coreproxy.genesis_modify_case(
+            rs, data, ignore_warnings=ignore_warnings)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "core/genesis_show_case")
 
@@ -2009,14 +2085,14 @@ class CoreFrontend(AbstractFrontend):
                             for realm in realm_specific_genesis_fields),
             modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"))
-    def genesis_decide(self, rs, case_id, case_status):
+    def genesis_decide(self, rs, genesis_case_id, case_status):
         """Approve or decline a genensis case.
 
         This either creates a new account or declines account creation.
         """
         if rs.has_validation_errors():
             return self.genesis_list_cases(rs)
-        case = self.coreproxy.genesis_get_case(rs, case_id)
+        case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -2024,15 +2100,16 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         data = {
-            'id': case_id,
+            'id': genesis_case_id,
             'case_status': case_status,
             'reviewer': rs.user.persona_id,
+            'realm': case['realm'],
         }
         with Atomizer(rs):
             code = self.coreproxy.genesis_modify_case(rs, data)
             persona_id = bool(code)
             if code and data['case_status'] == const.GenesisStati.approved:
-                persona_id = self.coreproxy.genesis(rs, case_id)
+                persona_id = self.coreproxy.genesis(rs, genesis_case_id)
         if not persona_id:
             rs.notify("error", n_("Failed."))
             return rs.genesis_list_cases(rs)
@@ -2044,8 +2121,7 @@ class CoreFrontend(AbstractFrontend):
                 {'To': (case['username'],),
                  'Subject': "CdEDB-Account erstellt",
                  },
-                {'case': case,
-                 'email': self.encode_parameter(
+                {'email': self.encode_parameter(
                      "core/do_password_reset_form", "email", case['username'],
                      timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
                  'cookie': cookie,
@@ -2056,8 +2132,7 @@ class CoreFrontend(AbstractFrontend):
                 rs, "genesis_declined",
                 {'To': (case['username'],),
                  'Subject': "CdEDB Accountanfrage abgelehnt"},
-                {'case': case,
-                 })
+                {})
             rs.notify("info", n_("Case rejected."))
         return self.redirect(rs, "core/genesis_list_cases")
 

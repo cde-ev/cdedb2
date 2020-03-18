@@ -108,7 +108,7 @@
     {% if participants %}
         <ul id="list-participants">
             {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
-                <li>
+                <li class="hide-hover-container clearfix-after">
 
                     {% if participant['viewable'] %}
                         {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
@@ -132,11 +132,12 @@
                     {# only allow removal of participants without a course #}
                     {% if is_admin and None in participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
-                         id="removeparticipantform{{ anid }}" style="display: inline;" class="delete-participant-form">
+                              id="removeparticipantform{{ anid }}" style="display: inline;"
+                              class="delete-participant-form hide-hover display-inline">
                             {{ util.anti_csrf_token('cde/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
-                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger",
+                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                     value="") }}
                         </form>
                     {% endif %}

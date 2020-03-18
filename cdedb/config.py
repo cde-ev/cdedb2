@@ -250,6 +250,8 @@ _DEFAULTS = {
     # host to use for sending emails
     "MAIL_HOST": "localhost",
 
+    # email for cde account requests
+    "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
     # email for event account requests
     "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
     # email for ml account requests

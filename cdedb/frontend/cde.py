@@ -803,14 +803,14 @@ class CdEFrontend(AbstractUserFrontend):
         prev_jump = None
         for t in transactions:
             params["all"].append(t.t_id)
-            if t.errors:
+            if t.errors or t.warnings:
                 params["jump_order"][prev_jump] = t.t_id
+                params["jump_order"][t.t_id] = None
                 prev_jump = t.t_id
-                params["has_error"].append(t.t_id)
-            elif t.warnings:
-                params["jump_order"][prev_jump] = t.t_id
-                prev_jump = t.t_id
-                params["has_warning"].append(t.t_id)
+                if t.errors:
+                    params["has_error"].append(t.t_id)
+                else:
+                    params["has_warning"].append(t.t_id)
             else:
                 params["has_none"].append(t.t_id)
             params["accounts"][str(t.account)] += 1

@@ -2466,15 +2466,23 @@ class EventFrontend(AbstractUserFrontend):
             filename="{}_registrations.csv".format(
                 rs.ambience['event']['shortname']))
 
-    @access("event")
+    @access("event", modi={"GET"})
+    @REQUESTdata(("agree_unlocked_download", "bool_or_None"))
     @event_guard()
-    def download_export(self, rs, event_id):
+    def download_export(self, rs, event_id, agree_unlocked_download):
         """Retrieve all data for this event to initialize an offline
         instance."""
+        if rs.has_validation_errors():
+            return self.redirect(rs, "event/show_event")
+
+        if not (agree_unlocked_download or rs.ambience['event']['offline_lock']):
+            rs.notify("info", n_("Please confirm to download a full export of "
+                                 "an unlocked event."))
+            return self.redirect(rs, "event/show_event")
         data = self.eventproxy.export_event(rs, event_id)
         if not data:
             rs.notify("info", n_("Empty File."))
-            return self.redirect(rs, "event/downloads")
+            return self.redirect(rs, "event/show_event")
         json = json_serialize(data)
         return self.send_file(
             rs, data=json, inline=False, filename="{}_export_event.json".format(

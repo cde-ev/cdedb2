@@ -51,6 +51,11 @@
 {% endmacro %}
 
 
+{% macro profile_link(persona, display) %}
+    {{ util.href(show_user_link(persona['id'], quote_me=not is_admin, event_id=ambience['event']['id']), display) }}
+{% endmacro %}
+
+
 {% block content %}
     {% if not ambience['event']['is_participant_list_visible'] %}
         <div class="alert alert-info" role="alert">
@@ -83,47 +88,38 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>
-                            {{ display_sorting_header(part_id, "given_names", gettext("Given Names")) }}
-                        </th>
-                        <th>
-                            {{ display_sorting_header(part_id, "family_name", gettext("Family Name")) }}
-                        </th>
-                        <th>
-                            {{ display_sorting_header(part_id, "email", gettext("Email Address")) }}
-                        </th>
-                        <th>
-                            {{ display_sorting_header(part_id, "address", gettext("Postal Code, City")) }}
-                        </th>
+                        <th>{{ display_sorting_header(part_id, "given_names", gettext("Given Names")) }}</th>
+                        <th>{{ display_sorting_header(part_id, "family_name", gettext("Family Name")) }}</th>
+                        <th>{{ display_sorting_header(part_id, "email", gettext("Email Address")) }}</th>
+                        <th>{{ display_sorting_header(part_id, "address", gettext("Postal Code, City")) }}</th>
                         {% if parts[part_id]['tracks']|length > 1 and ambience['event']['courses_in_participant_list'] %}
-                            <th>
-                            {{ display_sorting_header(part_id, "course", gettext("Courses")) }}
-                            </th>
+                            <th>{{ display_sorting_header(part_id, "course", gettext("Courses")) }}</th>
                         {% elif parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
-                            <th>
-                            {{ display_sorting_header(part_id, "course", gettext("Course")) }}
-                            </th>
+                            <th>{{ display_sorting_header(part_id, "course", gettext("Course")) }}</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                 {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
-                    {% with registration = registrations[registration_id] %}
+                    {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
-                        <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
-                        <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
-                        <td>{{ util.username_mailto(personas[registration['persona_id']]) }}</td>
+                        {% if persona['is_searchable'] and persona['is_member'] %}
+                            <td>{{ profile_link(persona, persona['given_names']) }}</td>
+                            <td>{{ profile_link(persona, persona['family_name']) }}</td>
+                        {% else %}
+                            <td>{{ persona['given_names'] }}</td>
+                            <td>{{ persona['family_name'] }}</td>
+                        {% endif %}
+                        <td>{{ util.username_mailto(persona) }}</td>
                         <td>
-                            {{ personas[registration['persona_id']]['postal_code'] }}
-                            {{ personas[registration['persona_id']]['location'] -}}
-                            {%- if personas[registration['persona_id']]['country'] and personas[registration['persona_id']]['country'] != "Deutschland" -%}
-                                {{- ", " + personas[registration['persona_id']]['country'] -}}
+                            {{ persona['postal_code'] }}
+                            {{ persona['location'] -}}
+                            {%- if persona['country'] and persona['country'] != "Deutschland" -%}
+                                {{- ", " + persona['country'] -}}
                             {% endif %}
                         </td>
                         {% if parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
-                            <td>
-                                {{ list_courses(registration) }}
-                            </td>
+                            <td>{{ list_courses(registrations[registration_id]) }}</td>
                         {% endif %}
                     </tr>
                     {% endwith %}
@@ -137,38 +133,35 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th>
-                            {{ display_sorting_header(None, "given_names", gettext("Given Names")) }}
-                        </th>
-                        <th>
-                            {{ display_sorting_header(None, "family_name", gettext("Family Name")) }}
-                        </th>
-                        <th>
-                            {{ display_sorting_header(None, "email", gettext("Email Address")) }}
-                        </th>
-                        <th>
-                            {{ display_sorting_header(None, "address", gettext("Postal Code, City")) }}
-                        </th>
+                        <th>{{ display_sorting_header(None, "given_names", gettext("Given Names")) }}</th>
+                        <th>{{ display_sorting_header(None, "family_name", gettext("Family Name")) }}</th>
+                        <th>{{ display_sorting_header(None, "email", gettext("Email Address")) }}</th>
+                        <th>{{ display_sorting_header(None, "address", gettext("Postal Code, City")) }}</th>
                         <th>{% trans %}Event Parts{% endtrans %}</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for registration_id in ordered if registrations[registration_id]['list_consent'] %}
-                    {% with registration = registrations[registration_id] %}
+                    {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
-                        <td>{{ personas[registration['persona_id']]['given_names'] }}</td>
-                        <td>{{ personas[registration['persona_id']]['family_name'] }}</td>
-                        <td>{{ util.username_mailto(personas[registration['persona_id']]) }}</td>
+                        {% if persona['is_searchable'] and persona['is_member'] %}
+                            <td>{{ profile_link(persona, persona['given_names']) }}</td>
+                            <td>{{ profile_link(persona, persona['family_name']) }}</td>
+                        {% else %}
+                            <td>{{ persona['given_names'] }}</td>
+                            <td>{{ persona['family_name'] }}</td>
+                        {% endif %}
+                        <td>{{ util.username_mailto(persona) }}</td>
                         <td>
-                            {{ personas[registration['persona_id']]['postal_code'] }}
-                            {{ personas[registration['persona_id']]['location'] -}}
-                            {%- if personas[registration['persona_id']]['country'] and personas[registration['persona_id']]['country'] != "Deutschland" -%}
-                                {{- ", " + personas[registration['persona_id']]['country'] -}}
+                            {{ persona['postal_code'] }}
+                            {{ persona['location'] -}}
+                            {%- if persona['country'] and persona['country'] != "Deutschland" -%}
+                                {{- ", " + persona['country'] -}}
                             {% endif %}
                         </td>
                         <td>
                             {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
-                                   if registration['parts'][part_id]['status'] == enums['RegistrationPartStati']['participant'] -%}
+                                   if registrations[registration_id]['parts'][part_id]['status'] == enums['RegistrationPartStati']['participant'] -%}
                                 {% if not loop.first %}
                                     {%- if loop.last %}
                                         {% trans %}and{% endtrans %}
