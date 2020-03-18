@@ -104,7 +104,7 @@ class TestPrivacyFrontend(FrontendTest):
         self.submit(f)
         self.logout()
 
-    def test_profile_base(self):
+    def test_profile_base_information(self):
         # non-searchable user views normal account
         case1 = {
             'viewer': USER_DICT['charly'],
@@ -137,7 +137,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.logout()
 
     @as_users("nina")
-    def test_profile_ml_admin(self, user):
+    def test_profile_as_ml_admin(self, user):
         # on ml only users, ml admins get full view
         inspected = USER_DICT['janis']
         self.get(inspected['url'])
@@ -166,7 +166,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field)
 
     @as_users("werner")
-    def test_profile_assembly_admin(self, user):
+    def test_profile_as_assembly_admin(self, user):
         self._disable_searchability('werner')
 
         # on (assembly and ml) only users, assembly admins get full view
@@ -187,7 +187,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field)
 
     @as_users("annika")
-    def test_profile_event_admin(self, user):
+    def test_profile_as_event_admin(self, user):
         self._disable_searchability('annika')
 
         # on event but not cde users, event admins get full view
@@ -218,7 +218,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field)
 
     @as_users("martin")
-    def test_profile_meta_admin(self, user):
+    def test_profile_as_meta_admin(self, user):
         # meta admins get the same view for every user
         inspected = USER_DICT['berta']
         self.get(inspected['url'])
@@ -229,7 +229,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field)
 
     @as_users("inga")
-    def test_profile_member(self, user):
+    def test_profile_as_member(self, user):
         inspected = USER_DICT['berta']
         self.get(inspected['url'])
 
@@ -247,7 +247,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field)
 
     @as_users("garcia")
-    def test_profile_orga(self, user):
+    def test_profile_as_orga(self, user):
         # TODO should this also be true for "Mit-Orgas"?
         # orgas get a closer view on users associated to their event
         # TODO replace inga with berta
@@ -278,7 +278,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field)
 
     @as_users("janis")
-    def test_profile_moderator(self, user):
+    def test_profile_as_moderator(self, user):
         # moderators get a closer view on users associated to their mailinglist
         inspected = USER_DICT['berta']
         self.get(inspected['url'] + "&ml_id=2")
@@ -315,7 +315,8 @@ class TestPrivacyFrontend(FrontendTest):
         archive = [
             USER_DICT['farin'], USER_DICT['vera']
         ]
-        # TODO make Vera core admin only
+        # TODO replace vera with new core only admin
+        # TODO replace olaf with new cde only admin
         cde = [
             USER_DICT['farin'], USER_DICT['olaf'], USER_DICT['vera']
         ]
