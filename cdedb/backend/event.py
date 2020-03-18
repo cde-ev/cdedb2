@@ -662,6 +662,8 @@ class EventBackend(AbstractBackend):
     def _delete_course_track(self, rs, track_id, cascade=None):
         """Remove course track.
 
+        This has to be called from an atomized context.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type track_id: int
         :type cascade: {str} or None
@@ -684,36 +686,36 @@ class EventBackend(AbstractBackend):
                              })
 
         ret = 1
-        with Atomizer(rs):
-            if cascade:
-                if "course_segments" in cascade:
-                    ret *= self.sql_delete(rs, "event.course_segments",
-                                           blockers["course_segments"])
-                if "registration_tracks" in cascade:
-                    ret *= self.sql_delete(rs, "event.registration_tracks",
-                                           blockers["registration_tracks"])
-                if "course_choices" in cascade:
-                    ret *= self.sql_delete(rs, "event.course_choices",
-                                           blockers["course_choices"])
+        # implicit atomizd context.
+        if cascade:
+            if "course_segments" in cascade:
+                ret *= self.sql_delete(rs, "event.course_segments",
+                                       blockers["course_segments"])
+            if "registration_tracks" in cascade:
+                ret *= self.sql_delete(rs, "event.registration_tracks",
+                                       blockers["registration_tracks"])
+            if "course_choices" in cascade:
+                ret *= self.sql_delete(rs, "event.course_choices",
+                                       blockers["course_choices"])
 
-                blockers = self._delete_course_track_blockers(rs, track_id)
+            blockers = self._delete_course_track_blockers(rs, track_id)
 
-            if not blockers:
-                track = unwrap(self.sql_select(rs, "event.course_tracks",
-                                               ("part_id", "title",),
-                                               (track_id,)))
-                part = unwrap(self.sql_select(rs, "event.event_parts",
-                                              ("event_id",),
-                                              (track["part_id"],)))
-                ret *= self.sql_delete_one(
-                    rs, "event.course_tracks", track_id)
-                self.event_log(rs, const.EventLogCodes.track_removed,
-                               event_id=part["event_id"],
-                               additional_info=track["title"])
-            else:
-                raise ValueError(
-                    n_("Deletion of %(type)s blocked by %(block)s."),
-                    {"type": "course track", "block": blockers.keys()})
+        if not blockers:
+            track = unwrap(self.sql_select(rs, "event.course_tracks",
+                                           ("part_id", "title",),
+                                           (track_id,)))
+            part = unwrap(self.sql_select(rs, "event.event_parts",
+                                          ("event_id",),
+                                          (track["part_id"],)))
+            ret *= self.sql_delete_one(
+                rs, "event.course_tracks", track_id)
+            self.event_log(rs, const.EventLogCodes.track_removed,
+                           event_id=part["event_id"],
+                           additional_info=track["title"])
+        else:
+            raise ValueError(
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {"type": "course track", "block": blockers.keys()})
         return ret
 
     def _set_tracks(self, rs, event_id, part_id, data):
@@ -857,6 +859,231 @@ class EventBackend(AbstractBackend):
             }
             self.sql_update(rs, table, new)
 
+    def _delete_event_part_blockers(self, rs, part_id):
+        """Determine what keeps an event part from being deleted.
+
+        Possible blockers:
+
+        * fee_modifiers: A modification to the fee for this part depending on
+                         registration fields.
+        * course_tracks: A course track in this part.
+        * registration_part: A registration part for this part.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type part_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        part_id = affirm("id", part_id)
+        blockers = {}
+
+        fee_modifiers = self.sql_select(
+            rs, "event.fee_modifiers", ("id",), (part_id,),
+            entity_key="part_id")
+        if fee_modifiers:
+            blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
+
+        course_tracks = self.sql_select(
+            rs, "event.course_tracks", ("id",), (part_id,),
+            entity_key="part_id")
+        if course_tracks:
+            blockers["course_tracks"] = [e["id"] for e in course_tracks]
+
+        registration_parts = self.sql_select(
+            rs, "event.registration_parts", ("id",), (part_id,),
+            entity_key="part_id")
+        if registration_parts:
+            blockers["registration_parts"] = [
+                e["id"] for e in registration_parts]
+
+        return blockers
+
+    def _delete_event_part(self, rs, part_id, cascade=None):
+        """Remove event part.
+
+        This has to be called from an atomized context.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type part_id: int
+        :type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        :rtype: int
+        :returns: default return code
+        """
+        part_id = affirm("id", part_id)
+        blockers = self._delete_event_part_blockers(rs, part_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade) & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "event part",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        # Implicit atomized context.
+        if cascade:
+            if "fee_modifiers" in cascade:
+                ret *= self.sql_delete(rs, "event.fee_modifiers",
+                                       blockers["fee_modifiers"])
+            if "course_tracks" in cascade:
+                cascade = ("course_segments", "registration_tracks",
+                           "course_choices")
+                # TODO use Silencer?
+                for anid in blockers["course_tracks"]:
+                    ret *= self._delete_course_track(rs, anid, cascade)
+            if "registration_parts" in cascade:
+                ret *= self.sql_delete(rs, "event.registration_parts",
+                                       blockers["registration_parts"])
+            blockers = self._delete_event_part_blockers(rs, part_id)
+
+        if not blockers:
+            part = self.sql_select_one(rs, "event.event_parts",
+                                       ("event_id", "title"), part_id)
+            ret *= self.sql_delete_one(rs, "event.event_parts", part_id)
+            self.event_log(rs, const.EventLogCodes.part_deleted,
+                           event_id=part["event_id"],
+                           additional_info=part["title"])
+        else:
+            raise ValueError(
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {"type": "event part", "block": blockers.keys()})
+        return ret
+
+    def _delete_event_field_blockers(self, rs, field_id):
+        """Determine what keeps an event part from being deleted.
+
+        Possible blockers:
+
+        * fee_modifiers: A modification to the fee for a part depending on
+                         this event field.
+        * quetionnaire_rows: A questionnaire row that uses this field.
+        * lodge_fields: An event that uses this field for lodgement wishes.
+        * reserve_fields: An event that uses this field for reserve wishes.
+        * course_room_fields: An event that uses this field for course room
+                              assignment.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type field_id: int
+        :rtype: {str: [int]}
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        field_id = affirm("id", field_id)
+        blockers = {}
+
+        fee_modifiers = self.sql_select(
+            rs, "event.fee_modifiers", ("id",), (field_id,),
+            entity_key="field_id")
+        if fee_modifiers:
+            blockers["fee_modifiers"] = [e["id"] for e in fee_modifiers]
+
+        questionnaire_rows = self.sql_select(
+            rs, "event.questionnaire_rows", ("id",), (field_id,),
+            entity_key="field_id")
+        if questionnaire_rows:
+            blockers["questionnaire_rows"] = [
+                e["id"] for e in questionnaire_rows]
+
+        lodge_fields = self.sql_select(
+            rs, "event.events", ("id",), (field_id,),
+            entity_key="lodge_field")
+        if lodge_fields:
+            blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
+
+        reserve_fields = self.sql_select(
+            rs, "event.events", ("id",), (field_id,),
+            entity_key="reserve_field")
+        if reserve_fields:
+            blockers["reserve_fields"] = [e["id"] for e in reserve_fields]
+
+        course_room_fields = self.sql_select(
+            rs, "event.events", ("id",), (field_id,),
+            entity_key="course_room_field")
+        if course_room_fields:
+            blockers["course_room_fields"] = [
+                e["id"] for e in course_room_fields]
+
+        return blockers
+
+    def _delete_event_field(self, rs, field_id, cascade):
+        """Remove an event field.
+
+        This needs to be called from an atomized context.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type field_id: int:type cascade: {str} or None
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+
+        :rtype: int
+        :returns: default return code
+        """
+        field_id = affirm("id", field_id)
+        blockers = self._delete_event_field_blockers(rs, field_id)
+        if not cascade:
+            cascade = set()
+        cascade = affirm_set("str", cascade)
+        cascade = cascade & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "event field",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        # implicit atomized context.
+        if cascade:
+            if "fee_modifiers" in cascade:
+                ret *= self.sql_delete(rs, "event.fee_modifiers",
+                                       blockers["fee_modifiers"])
+            if "questionnaire_rows" in cascade:
+                ret *= self.sql_delete(rs, "event.questionnaire_rows",
+                                       blockers["fee_modifiers"])
+            if "lodge_fields" in cascade:
+                for anid in blockers["lodge_fields"]:
+                    deletor = {
+                        'id': anid,
+                        'lodge_field': None,
+                    }
+                    ret += self.sql_update(rs, "event.events", deletor)
+            if "reserve_fields" in cascade:
+                for anid in blockers["reserve_fields"]:
+                    deletor = {
+                        'id': anid,
+                        'reserve_field': None,
+                    }
+                    ret += self.sql_update(rs, "event.events", deletor)
+            if "course_room_fields" in cascade:
+                for anid in blockers["course_room_fields"]:
+                    deletor = {
+                        'id': anid,
+                        'course_room_field': None,
+                    }
+                    ret += self.sql_update(rs, "event.events", deletor)
+            blockers = self._delete_event_field_blockers(rs, field_id)
+
+        if not blockers:
+            current = self.sql_select_one(
+                rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
+                field_id)
+            ret *= self.sql_delete_one(rs, "event.field_definitions", field_id)
+            self._delete_field_values(rs, current)
+            self.event_log(
+                rs, const.EventLogCodes.field_removed, current["event_id"],
+                additional_info=current["field_name"])
+        else:
+            raise ValueError(
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {"type": "event part", "block": blockers.keys()})
+
+        return ret
+
     @internal_access("event")
     def set_event_archived(self, rs, data):
         """Wrapper around ``set_event()`` for archiving an event.
@@ -968,7 +1195,7 @@ class EventBackend(AbstractBackend):
                 new = data['orgas'] - existing
                 deleted = existing - data['orgas']
                 if new:
-                    for anid in new:
+                    for anid in mixed_existence_sorter(new):
                         new_orga = {
                             'persona_id': anid,
                             'event_id': data['id'],
@@ -980,7 +1207,7 @@ class EventBackend(AbstractBackend):
                     query = ("DELETE FROM event.orgas"
                              " WHERE persona_id = ANY(%s) AND event_id = %s")
                     ret *= self.query_exec(rs, query, (deleted, data['id']))
-                    for anid in deleted:
+                    for anid in mixed_existence_sorter(deleted):
                         self.event_log(rs, const.EventLogCodes.orga_removed,
                                        data['id'], persona_id=anid)
             if 'parts' in data:
@@ -1001,7 +1228,7 @@ class EventBackend(AbstractBackend):
                         n_("Registrations exist, modifications only."))
                 if deleted >= existing | new:
                     raise ValueError(n_("At least one event part required."))
-                for x in new:
+                for x in mixed_existence_sorter(new):
                     new_part = copy.deepcopy(parts[x])
                     new_part['event_id'] = data['id']
                     tracks = new_part.pop('tracks', {})
@@ -1014,7 +1241,7 @@ class EventBackend(AbstractBackend):
                 current = self.sql_select(
                     rs, "event.event_parts", ("id", "title"), updated | deleted)
                 titles = {e['id']: e['title'] for e in current}
-                for x in updated:
+                for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(parts[x])
                     update['id'] = x
                     tracks = update.pop('tracks', {})
@@ -1024,20 +1251,10 @@ class EventBackend(AbstractBackend):
                         rs, const.EventLogCodes.part_changed, data['id'],
                         additional_info=titles[x])
                 if deleted:
-                    # First delete dependent course tracks
-                    all_tracks = self.sql_select(
-                        rs, "event.course_tracks", ('id', 'part_id'), deleted,
-                        entity_key="part_id")
-                    for x in deleted:
-                        tracks = {e['id']: None for e in all_tracks
-                                  if e['part_id'] == x}
-                        self._set_tracks(rs, data['id'], x, tracks)
-                    # Second go for the parts
-                    ret *= self.sql_delete(rs, "event.event_parts", deleted)
-                    for x in deleted:
-                        self.event_log(
-                            rs, const.EventLogCodes.part_deleted, data['id'],
-                            additional_info=titles[x])
+                    for x in mixed_existence_sorter(deleted):
+                        cascade = ("fee_modifiers", "course_tracks",
+                                   "registration_parts")
+                        self._delete_event_part(rs, part_id=x, cascade=cascade)
             if 'fields' in data:
                 fields = data['fields']
                 current = self.sql_select(
@@ -1056,7 +1273,7 @@ class EventBackend(AbstractBackend):
                     updated | deleted)
                 field_data = {e['id']: e for e in current}
                 # new
-                for x in new:
+                for x in mixed_existence_sorter(new):
                     new_field = copy.deepcopy(fields[x])
                     new_field['event_id'] = data['id']
                     ret *= self.sql_insert(rs, "event.field_definitions",
@@ -1065,7 +1282,7 @@ class EventBackend(AbstractBackend):
                         rs, const.EventLogCodes.field_added, data['id'],
                         additional_info=fields[x]['field_name'])
                 # updated
-                for x in updated:
+                for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(fields[x])
                     update['id'] = x
                     if ('kind' in update
@@ -1080,13 +1297,10 @@ class EventBackend(AbstractBackend):
 
                 # deleted
                 if deleted:
-                    ret *= self.sql_delete(rs, "event.field_definitions",
-                                           deleted)
-                    for x in deleted:
-                        self._delete_field_values(rs, field_data[x])
-                        self.event_log(
-                            rs, const.EventLogCodes.field_removed, data['id'],
-                            additional_info=field_data[x]['field_name'])
+                    for x in mixed_existence_sorter(deleted):
+                        # TODO what should be cascaded here?
+                        cascade = None
+                        self._delete_event_field(rs, x, cascade)
 
             if 'fee_modifiers' in data:
                 fee_modifiers = data['fee_modifiers']
@@ -1125,13 +1339,13 @@ class EventBackend(AbstractBackend):
                            if x > 0 and fee_modifiers[x] is None}
                 fee_modifier_data = {e['id']: e for e in current}
                 elc = const.EventLogCodes
-                for x in new:
+                for x in mixed_existence_sorter(new):
                     ret *= self.sql_insert(
                         rs, "event.fee_modifiers", fee_modifiers[x])
                     self.event_log(
                         rs, elc.fee_modifier_created, data['id'],
                         additional_info=fee_modifiers[x]['modifier_name'])
-                for x in updated:
+                for x in mixed_existence_sorter(updated):
                     ret *= self.sql_update(
                         rs, "event.fee_modifiers", fee_modifiers[x])
                     self.event_log(
@@ -1139,7 +1353,7 @@ class EventBackend(AbstractBackend):
                         additional_info=fee_modifier_data[x]['modifier_name'])
                 if deleted:
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
-                    for x in deleted:
+                    for x in mixed_existence_sorter(deleted):
                         modifier_name = fee_modifier_data[x]['modifier_name']
                         self.event_log(
                             rs, elc.fee_modifier_deleted,
@@ -1313,6 +1527,12 @@ class EventBackend(AbstractBackend):
                 if "lodgement_groups" in cascade:
                     ret *= self.sql_delete(rs, "event.lodgement_groups",
                                            blockers["lodgement_groups"])
+                if "event_parts" in cascade:
+                    part_cascade = ({"course_tracks"} & cascade) \
+                                   | {"fee_modifiers"}
+                    with Silencer(rs):
+                        for anid in blockers["event_parts"]:
+                            self._delete_event_part(rs, anid, part_cascade)
                 if "questionnaire" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.questionnaire_rows",
@@ -1325,15 +1545,9 @@ class EventBackend(AbstractBackend):
                         'reserve_field': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
-                    ret *= self.sql_delete(
-                        rs, "event.field_definitions",
-                        blockers["field_definitions"])
-                if "course_tracks" in cascade:
-                    ret *= self.sql_delete(
-                        rs, "event.course_tracks", blockers["course_tracks"])
-                if "event_parts" in cascade:
-                    ret *= self.sql_delete(
-                        rs, "event.event_parts", blockers["event_parts"])
+                    field_cascade = {"fee_modifiers"} & cascade
+                    for anid in blockers["field_definitions"]:
+                        ret *= self._delete_event_field(rs, anid)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
                 if "log" in cascade:
@@ -3294,11 +3508,11 @@ class EventBackend(AbstractBackend):
                 del field['event_id']
                 del field['id']
             export_event['fields'] = new_fields
-            new_fee_modifers = {
+            new_fee_modifeirs = {
                 mod['modifier_name']: mod
                 for mod in export_event['fee_modifiers'].values()
             }
-            for mod in new_fee_modifers.values():
+            for mod in new_fee_modifiers.values():
                 del mod['id']
                 del mod['modifier_name']
                 mod['part'] = event['parts'][mod['event_part']]['shortname']

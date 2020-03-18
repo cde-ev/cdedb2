@@ -348,7 +348,7 @@ class TestEventBackend(BackendTest):
             self.key, new_id,
             ("event_parts", "course_tracks", "field_definitions", "courses",
              "orgas", "lodgement_groups", "lodgements", "registrations",
-             "questionnaire", "log", "mailinglists")))
+             "questionnaire", "log", "mailinglists", "fee_modifiers")))
 
     @as_users("annika")
     def test_aposteriori_track_creation(self, user):
