@@ -729,6 +729,7 @@ class TestCoreBackend(BackendTest):
             'id': case_id,
             'case_status': const.GenesisStati.approved,
             'reviewer': user['id'],
+            'realm': "cde",
         }
         self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
         expectation.update(update)
