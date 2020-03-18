@@ -1010,7 +1010,7 @@ class EventBackend(AbstractBackend):
 
         return blockers
 
-    def _delete_event_field(self, rs, field_id, cascade):
+    def _delete_event_field(self, rs, field_id, cascade=None):
         """Remove an event field.
 
         This needs to be called from an atomized context.
@@ -1547,8 +1547,10 @@ class EventBackend(AbstractBackend):
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
                     field_cascade = {"fee_modifiers"} & cascade
-                    for anid in blockers["field_definitions"]:
-                        ret *= self._delete_event_field(rs, anid)
+                    with Silencer(rs):
+                        for anid in blockers["field_definitions"]:
+                            ret *= self._delete_event_field(
+                                rs, anid, field_cascade)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
                 if "log" in cascade:
@@ -3511,7 +3513,7 @@ class EventBackend(AbstractBackend):
                 del field['event_id']
                 del field['id']
             export_event['fields'] = new_fields
-            new_fee_modifeirs = {
+            new_fee_modifiers = {
                 mod['modifier_name']: mod
                 for mod in export_event['fee_modifiers'].values()
             }

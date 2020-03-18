@@ -223,6 +223,7 @@
             "persona_id": 100,
             "real_persona_id": null}
     },
+    "event.fee_modifiers": {},
     "event.field_definitions": {
         "2": {
             "event_id": 1,

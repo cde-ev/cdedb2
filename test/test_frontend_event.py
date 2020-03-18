@@ -2743,6 +2743,7 @@ etc;anything else""", f['entries_2'].value)
                               'title': 'Backup-Kurs'}},
             'event': {'course_room_field': 'transportation',
                       'description': 'Everybody come!',
+                      'fee_modifiers': {},
                       'fields': {'brings_balls': {'association': 1,
                                                   'entries': None,
                                                   'kind': 2},
