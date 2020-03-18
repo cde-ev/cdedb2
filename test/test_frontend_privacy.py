@@ -305,6 +305,109 @@ class TestPrivacyFrontend(FrontendTest):
         # for field in self.ALL_FIELDS - found:
         #     self.assertNonPresence(field)
 
+    @as_users("annika", "berta", "emilia", "janis", "kalif", "nina", "olaf",
+              "vera", "werner")
+    def test_profile_of_realm_user(self, user):
+        if user == USER_DICT['olaf']:
+            self.login(USER_DICT['anton'])
+            self.admin_view_profile('olaf')
+            f = self.response.forms['activitytoggleform']
+            self.submit(f)
+            self.logout()
+            self.login(USER_DICT['olaf'])
+
+        # ... of a ml user
+        # TODO replace vera with new core only admin
+        ml_access = [
+            USER_DICT['janis'], USER_DICT['nina'], USER_DICT['vera']
+        ]
+        # TODO replace olaf with new cde only admin
+        ml_no_access = [
+            USER_DICT['annika'], USER_DICT['olaf'], USER_DICT['werner'],
+            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['emilia']
+        ]
+
+        # ... of an assembly user
+        # TODO replace vera with new core only admin
+        assembly_access = [
+            USER_DICT['kalif'], USER_DICT['vera'], USER_DICT['werner']
+        ]
+        # TODO replace olaf with new cde only admin
+        assembly_no_access = [
+            USER_DICT['annika'], USER_DICT['nina'], USER_DICT['olaf'],
+            USER_DICT['berta'], USER_DICT['janis'], USER_DICT['emilia']
+        ]
+
+        # ... of an event user
+        # TODO replace vera with new core only admin
+        event_access = [
+            USER_DICT['emilia'], USER_DICT['annika'], USER_DICT['vera']
+        ]
+        # TODO replace olaf with new cde only admin
+        event_no_access = [
+            USER_DICT['olaf'], USER_DICT['nina'], USER_DICT['werner'],
+            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['janis']
+        ]
+
+        # ... of a cde user
+        # TODO replace vera with new core only admin
+        # TODO replace olaf with new cde only admin
+        cde_access = [
+            USER_DICT['berta'], USER_DICT['olaf'], USER_DICT['vera']
+        ]
+        cde_no_access = [
+            USER_DICT['annika'], USER_DICT['nina'], USER_DICT['werner'],
+            USER_DICT['emilia'], USER_DICT['kalif'], USER_DICT['janis']
+        ]
+
+        cases = {
+            'ml': {
+                'inspected': USER_DICT['janis'],
+                'access': ml_access,
+                'no_access': ml_no_access,
+            },
+            'assembly': {
+                'inspected': USER_DICT['kalif'],
+                'access': assembly_access,
+                'no_access': assembly_no_access,
+            },
+            'event': {
+                'inspected': USER_DICT['emilia'],
+                'access': event_access,
+                'no_access': event_no_access,
+            },
+            'cde': {
+                'inspected': USER_DICT['berta'],
+                'access': cde_access,
+                'no_access': cde_no_access,
+            }
+        }
+
+        # now the actual testing
+        for realm, case in cases.items():
+            inspected = case['inspected']
+            self.get(inspected['url'])
+            if user in case['access']:
+                # username is only visible on extended profile views
+                self.assertPresence(inspected['username'])
+            elif user in case['no_access']:
+                found = self._profile_base_view(inspected)
+                # username must not be visble on base profiles
+                self.assertNonPresence(inspected['username'])
+                for field in self.ALL_FIELDS - found:
+                    self.assertNonPresence(field)
+
+    @as_users("ferdinand", "martin", "vera")
+    def test_profile_of_archived_user(self, user):
+        inspected = USER_DICT['hades']
+
+        # this should be visible to core admins only ...
+        if user == USER_DICT['vera']:
+            self.get(inspected['url'])
+        # ... not for any other admin type
+        elif user in [USER_DICT['ferdinand'], USER_DICT['martin']]:
+            self.get(inspected['url'], status="403 FORBIDDEN")
+
     @as_users("annika", "berta", "farin", "martin", "nina", "olaf", "vera",
               "werner")
     def test_user_search(self, user):
