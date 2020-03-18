@@ -1,10 +1,13 @@
 /* *********** *
  * Page layout *
  * *********** */
+html, body {
+    height: 100%;
+}
+
 body{
-    margin: 0;
     background-color: #7c868e;
-    background-image: url(bg-pattern.png);
+    background-image: repeating-linear-gradient(135deg, rgba(136,143,150,.4), rgba(126,133,140,.4) 5px, rgba(136,143,150,.4) 10px);
 }
 
 #footer {
