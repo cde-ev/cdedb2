@@ -1285,6 +1285,12 @@ class EventBackend(AbstractBackend):
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(fields[x])
                     update['id'] = x
+                    if self.sql_select_one(
+                            rs, "event.fee_modifiers", ("id",), x,
+                            entity_key="field_id"):
+                        raise ValueError(n_(
+                            "Cannot change field that is "
+                            "associated with a fee modifier."))
                     if ('kind' in update
                             and update['kind'] != field_data[x]['kind']):
                         self._cast_field_values(rs, field_data[x],
