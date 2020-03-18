@@ -1378,7 +1378,8 @@ class EventBackend(AbstractBackend):
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
             update_data = {aspect: data[aspect]
-                           for aspect in ('parts', 'orgas', 'fields')
+                           for aspect in ('parts', 'orgas', 'fields',
+                                          'fee_modifiers')
                            if aspect in data}
             if update_data:
                 update_data['id'] = new_id
@@ -2426,15 +2427,16 @@ class EventBackend(AbstractBackend):
         fdata = affirm(
             "event_associated_fields", fdata, fields=event['fields'],
             association=const.FieldAssociations.registration)
-        data['fields'] = PsycoJson(fdata)
         if (data['persona_id'] != rs.user.persona_id
                 and not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
+            data['fields'] = fdata
             data['amount_owed'] = self._calculate_single_fee(
                 rs, data, event=event)
+            data['fields'] = PsycoJson(fdata)
             course_segments = self._get_event_course_segments(rs,
                                                               data['event_id'])
             part_ids = {e['id'] for e in self.sql_select(
@@ -3339,6 +3341,7 @@ class EventBackend(AbstractBackend):
                       ('event.course_segments', None),
                       ('event.orgas', None),
                       ('event.field_definitions', 'field_id'),
+                      ('event.fee_modifiers', None),
                       ('event.lodgement_groups', 'group_id'),
                       ('event.lodgements', 'lodgement_id'),
                       ('event.registrations', 'registration_id'),

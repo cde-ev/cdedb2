@@ -3035,9 +3035,13 @@ def _serialized_event(val, argname=None, *, _convert=True,
         'event.registration_tracks': _mapping,
         'event.course_choices': _mapping,
         'event.questionnaire_rows': _mapping,
+        'event.fee_modifiers': _mapping,
+    }
+    optional_fields = {
+        'core.personas': _mapping,
     }
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, {'core.personas': _mapping}, _convert=_convert,
+        val, mandatory_fields, optional_fields, _convert=_convert,
         _ignore_warnings=_ignore_warnings)
     if errs:
         return val, errs
@@ -3090,6 +3094,7 @@ def _serialized_event(val, argname=None, *, _convert=True,
                           'info': _str_or_None, 'input_size': _int_or_None,
                           'readonly': _bool_or_None,
                           }),
+        'event.fee_modifiers': _event_fee_modifier,
     }
     for table, validator in table_validators.items():
         new_table = {}
