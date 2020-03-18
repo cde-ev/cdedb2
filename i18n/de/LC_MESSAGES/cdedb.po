@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-03-18 16:31+0100\n"
+"POT-Creation-Date: 2020-03-18 16:56+0100\n"
 "PO-Revision-Date: 2020-03-13 19:55+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -3996,23 +3996,8 @@ msgid "Page %(curr_page)s of %(total_pages)s"
 msgstr "Seite %(curr_page)s von %(total_pages)s"
 
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:46
-#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:52
-#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:28
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:29
-#: cdedb/frontend/templates/web/core/change_user.tmpl:29
-#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:23
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:30
-#: cdedb/frontend/templates/web/core/inspect_change.tmpl:53
-#: cdedb/frontend/templates/web/event/batch_fees.tmpl:38
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:87
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:141
-#: cdedb/frontend/templates/web/event/registration_query.tmpl:54
-#: cdedb/frontend/templates/web/generic.tmpl:11
-#: cdedb/frontend/templates/web/generic.tmpl:113
-#: cdedb/frontend/templates/web/generic.tmpl:179
-msgid "Given Names"
-msgstr "Vorname(n)"
+msgid "Given Name"
+msgstr "Vorname"
 
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:47
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
@@ -4323,6 +4308,24 @@ msgstr "Person"
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:27
 msgid "Title"
 msgstr "Titel"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:52
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:28
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:29
+#: cdedb/frontend/templates/web/core/change_user.tmpl:29
+#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:23
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:30
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:53
+#: cdedb/frontend/templates/web/event/batch_fees.tmpl:38
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:87
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:141
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:54
+#: cdedb/frontend/templates/web/generic.tmpl:11
+#: cdedb/frontend/templates/web/generic.tmpl:113
+#: cdedb/frontend/templates/web/generic.tmpl:179
+msgid "Given Names"
+msgstr "Vorname(n)"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:32
@@ -14707,3 +14710,4 @@ msgstr "Mailinglisten-Log"
 #~ "choose to do so, please do so "
 #~ "with two separate payments."
 #~ msgstr ""
+
