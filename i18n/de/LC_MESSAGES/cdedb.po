@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-03-13 19:55+0100\n"
+"POT-Creation-Date: 2020-03-18 15:22+0100\n"
 "PO-Revision-Date: 2020-03-13 19:55+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.6.0\n"
 
 #: bin/archive/migrate_execute.py:393
 msgid "Initial import."
@@ -2031,7 +2031,7 @@ msgstr "Versammlung hat noch offene Abstimmungen"
 msgid "Conclusion of assembly blocked by %(block)s."
 msgstr "Archivierung der Versammlung blockert durch %(block)s."
 
-#: cdedb/backend/cde.py:209 cdedb/frontend/cde.py:1349
+#: cdedb/backend/cde.py:209 cdedb/frontend/cde.py:1351
 msgid "Multiple active permits are disallowed."
 msgstr "Mehrere aktive Einzugsermächtigungen sind unzulässig."
 
@@ -2039,8 +2039,8 @@ msgstr "Mehrere aktive Einzugsermächtigungen sind unzulässig."
 msgid "Lastschrift already revoked."
 msgstr "Lastschriftmandat bereits widerrufen."
 
-#: cdedb/backend/cde.py:308 cdedb/frontend/cde.py:1487
-#: cdedb/frontend/cde.py:1556
+#: cdedb/backend/cde.py:308 cdedb/frontend/cde.py:1489
+#: cdedb/frontend/cde.py:1558
 msgid "Existing pending transaction."
 msgstr "Es liegen noch unbearbeitete Transaktionen vor."
 
@@ -2315,7 +2315,7 @@ msgstr "Passwort ist falsch."
 msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
-#: cdedb/backend/core.py:2082 cdedb/frontend/cde.py:1167
+#: cdedb/backend/core.py:2082 cdedb/frontend/cde.py:1169
 #: cdedb/frontend/event.py:1986
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
@@ -2580,7 +2580,7 @@ msgstr "Der Anti-CSRF-Token enthält keine gültige Benutzer-ID."
 
 #: cdedb/frontend/assembly.py:291 cdedb/frontend/assembly.py:402
 #: cdedb/frontend/assembly.py:564 cdedb/frontend/assembly.py:770
-#: cdedb/frontend/cde.py:2468 cdedb/frontend/cde.py:2521
+#: cdedb/frontend/cde.py:2470 cdedb/frontend/cde.py:2523
 #: cdedb/frontend/core.py:2137 cdedb/frontend/core.py:2168
 #: cdedb/frontend/event.py:1097 cdedb/frontend/event.py:3601
 #: cdedb/frontend/event.py:4231 cdedb/frontend/event.py:5144
@@ -2713,7 +2713,7 @@ msgstr "Zeilen %(first)s und %(second)s sind identisch."
 msgid "Lines %(first)s and %(second)s look the same."
 msgstr "Zeilen %(first)s und %(second)s sehen gleich aus."
 
-#: cdedb/frontend/cde.py:720 cdedb/frontend/cde.py:1189
+#: cdedb/frontend/cde.py:720 cdedb/frontend/cde.py:1191
 #: cdedb/frontend/event.py:2005
 msgid "Lines didn’t match up."
 msgstr "Daten wurden geändert."
@@ -2727,12 +2727,12 @@ msgstr "Nur Aufnahme von Mitglieder unterstützt."
 msgid "Created %(num)s accounts."
 msgstr "%(num)s Accounts erstellt."
 
-#: cdedb/frontend/cde.py:743 cdedb/frontend/cde.py:1212
+#: cdedb/frontend/cde.py:743 cdedb/frontend/cde.py:1214
 #: cdedb/frontend/event.py:2027
 msgid "DB serialization error."
 msgstr "Datenbank-Transaktions-Fehler."
 
-#: cdedb/frontend/cde.py:745 cdedb/frontend/cde.py:1214
+#: cdedb/frontend/cde.py:745 cdedb/frontend/cde.py:1216
 #, python-format
 msgid "Unexpected error on line %(num)s."
 msgstr "Unerwarteter Fehler in Zeile %(num)s."
@@ -2742,17 +2742,17 @@ msgstr "Unerwarteter Fehler in Zeile %(num)s."
 msgid "Line %(lineno)s does not have the correct number of columns."
 msgstr "Zeile %(lineno)s hat nicht die korrekte Anzahl Spalten."
 
-#: cdedb/frontend/cde.py:971
+#: cdedb/frontend/cde.py:973
 msgid "Unknown action."
 msgstr "Unbekannte Aktion."
 
-#: cdedb/frontend/cde.py:1031 cdedb/frontend/event.py:1855
-#: cdedb/frontend/parse_statement.py:631 cdedb/frontend/parse_statement.py:790
+#: cdedb/frontend/cde.py:1033 cdedb/frontend/event.py:1855
+#: cdedb/frontend/parse_statement.py:632 cdedb/frontend/parse_statement.py:791
 #, python-format
 msgid "No Member with ID %(p_id)s found."
 msgstr "Kein Account mit ID %(p_id)s gefunden."
 
-#: cdedb/frontend/cde.py:1036 cdedb/frontend/core.py:445
+#: cdedb/frontend/cde.py:1038 cdedb/frontend/core.py:445
 #: cdedb/frontend/core.py:937 cdedb/frontend/core.py:1028
 #: cdedb/frontend/core.py:1261 cdedb/frontend/core.py:1322
 #: cdedb/frontend/core.py:1374 cdedb/frontend/core.py:1398
@@ -2761,72 +2761,72 @@ msgstr "Kein Account mit ID %(p_id)s gefunden."
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
-#: cdedb/frontend/cde.py:1040
+#: cdedb/frontend/cde.py:1042
 msgid "Persona is not in CdE realm."
 msgstr "Account ist kein CdE-Account"
 
-#: cdedb/frontend/cde.py:1045 cdedb/frontend/event.py:1885
+#: cdedb/frontend/cde.py:1047 cdedb/frontend/event.py:1885
 msgid "Family name doesn’t match."
 msgstr "Nachname passt nicht."
 
-#: cdedb/frontend/cde.py:1050 cdedb/frontend/event.py:1890
+#: cdedb/frontend/cde.py:1052 cdedb/frontend/event.py:1890
 msgid "Given names don’t match."
 msgstr "Vornamen passen nicht zusammen."
 
-#: cdedb/frontend/cde.py:1158 cdedb/frontend/event.py:1977
+#: cdedb/frontend/cde.py:1160 cdedb/frontend/event.py:1977
 msgid "Only one input method allowed."
 msgstr "Nur eine Eingabe-Methode erlaubt."
 
-#: cdedb/frontend/cde.py:1182
+#: cdedb/frontend/cde.py:1184
 #, python-format
 msgid "More than one transfer for this account (lines %(first)s and %(second)s)."
 msgstr ""
 "Mehrere Überweisungen für diesen Account (Zeilen %(first)s und "
 "%(second)s)."
 
-#: cdedb/frontend/cde.py:1206
+#: cdedb/frontend/cde.py:1208
 #, python-format
 msgid "Committed %(num)s transfers. There were %(new_members)s new members."
 msgstr "%(num)s Überweisungen gebucht. %(new_members)s neue Mitglieder."
 
-#: cdedb/frontend/cde.py:1369 cdedb/frontend/core.py:1366
+#: cdedb/frontend/cde.py:1371 cdedb/frontend/core.py:1366
 msgid "Permit revoked."
 msgstr "Lastschriftmandat widerrufen."
 
-#: cdedb/frontend/cde.py:1531
+#: cdedb/frontend/cde.py:1533
 msgid "Creation of SEPA-PAIN-file failed."
 msgstr "Erstellung der SEPA-PAIN-Datei fehlgeschlagen."
 
-#: cdedb/frontend/cde.py:1592
+#: cdedb/frontend/cde.py:1594
 #, python-format
 msgid "%(num)s Direct Debits issued. Notification mails sent."
 msgstr ""
 "%(num)s Lastschriften initialisiert. Benachrichtigungsmails wurden "
 "verschickt."
 
-#: cdedb/frontend/cde.py:1609
+#: cdedb/frontend/cde.py:1611
 msgid "Unable to skip transaction."
 msgstr "Einzug kann nicht pausiert werden."
 
-#: cdedb/frontend/cde.py:1611
+#: cdedb/frontend/cde.py:1613
 msgid "Skipped."
 msgstr "Pausiert."
 
-#: cdedb/frontend/cde.py:1663
+#: cdedb/frontend/cde.py:1665
 msgid "Wrong number of actions."
 msgstr "Falsche Anzahl an Aktionen."
 
-#: cdedb/frontend/cde.py:1667
+#: cdedb/frontend/cde.py:1669
 msgid "No transactions selected."
 msgstr "Keine Transaktionen ausgewählt."
 
-#: cdedb/frontend/cde.py:1744
+#: cdedb/frontend/cde.py:1746
 msgid "LaTeX compiliation failed. This might be due to special characters."
 msgstr ""
 "Der LaTeX-Code konnte nicht kompiliert werden. Das liegt wahrscheinlich "
 "an nicht unterstützten Sonderzeichen."
 
-#: cdedb/frontend/cde.py:1807
+#: cdedb/frontend/cde.py:1809
 msgid ""
 "Form could not be created. Please refrain from using special characters "
 "if possible."
@@ -2834,84 +2834,84 @@ msgstr ""
 "Formular konnte nicht erstellt werden. Bitte wenn möglich Sonderzeichen "
 "vermeiden."
 
-#: cdedb/frontend/cde.py:1845
+#: cdedb/frontend/cde.py:1847
 msgid "Billing already done."
 msgstr "Zahlungserinnerung bereits erledigt."
 
-#: cdedb/frontend/cde.py:1909 cdedb/frontend/cde.py:2107
+#: cdedb/frontend/cde.py:1911 cdedb/frontend/cde.py:2109
 msgid "Started sending mail."
 msgstr "E-Mail-Versand hat begonnen."
 
-#: cdedb/frontend/cde.py:1918
+#: cdedb/frontend/cde.py:1920
 msgid "Wrong timing for ejection."
 msgstr "Falscher Zeitpunkt für Bereinigung."
 
-#: cdedb/frontend/cde.py:1963
+#: cdedb/frontend/cde.py:1965
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
 
-#: cdedb/frontend/cde.py:1972
+#: cdedb/frontend/cde.py:1974
 msgid "Wrong timing for balance update."
 msgstr "Falscher Zeitpunkt für Guthabenaktualisierung."
 
-#: cdedb/frontend/cde.py:1997
+#: cdedb/frontend/cde.py:1999
 msgid "Balance too low."
 msgstr "Guthaben zu niedrig."
 
-#: cdedb/frontend/cde.py:2025
+#: cdedb/frontend/cde.py:2027
 msgid "Started updating balance."
 msgstr "Aktualisierung der Guthaben gestartet."
 
-#: cdedb/frontend/cde.py:2034
+#: cdedb/frontend/cde.py:2036
 msgid "Wrong timing for advancing the semester."
 msgstr "Falscher Zeitpunkt für Beendigung des Semesters."
 
-#: cdedb/frontend/cde.py:2037
+#: cdedb/frontend/cde.py:2039
 msgid "New period started."
 msgstr "Nächstes Semester initialisiert."
 
-#: cdedb/frontend/cde.py:2054
+#: cdedb/frontend/cde.py:2056
 msgid "Addresscheck already done."
 msgstr "Adressabfrage bereits erledigt."
 
-#: cdedb/frontend/cde.py:2103
+#: cdedb/frontend/cde.py:2105
 msgid "Not sending mail."
 msgstr "Keine E-Mail verschickt."
 
-#: cdedb/frontend/cde.py:2118
+#: cdedb/frontend/cde.py:2120
 msgid "Addresscheck not done."
 msgstr "Adressabfrage noch nicht erledigt."
 
-#: cdedb/frontend/cde.py:2121
+#: cdedb/frontend/cde.py:2123
 msgid "New expuls started."
 msgstr "Nächster Expuls initialisiert."
 
-#: cdedb/frontend/cde.py:2366
+#: cdedb/frontend/cde.py:2368
 msgid "Institution parameter got lost."
 msgstr "Der Institutionsparameter ist verloren gegangen."
 
-#: cdedb/frontend/cde.py:2376
+#: cdedb/frontend/cde.py:2378
 msgid "Invalid institution id."
 msgstr "Nicht-existente Institution."
 
-#: cdedb/frontend/cde.py:2450
+#: cdedb/frontend/cde.py:2452
 #, python-format
 msgid "Line %(lineno)s is faulty."
 msgstr "Zeile %(lineno)s ist fehlerhaft."
 
-#: cdedb/frontend/cde.py:2459 cdedb/frontend/event.py:972
+#: cdedb/frontend/cde.py:2461 cdedb/frontend/event.py:972
 msgid "Event created."
 msgstr "Veranstaltung erstellt."
 
-#: cdedb/frontend/cde.py:2509 cdedb/frontend/event.py:1087
+#: cdedb/frontend/cde.py:2511 cdedb/frontend/event.py:1087
 msgid "Course created."
 msgstr "Kurs erstellt"
 
-#: cdedb/frontend/cde.py:2547
+#: cdedb/frontend/cde.py:2549
 msgid "Participant already present."
 msgstr "Teilnehmer bereits vorhanden."
 
-#: cdedb/frontend/cde.py:2580
+#: cdedb/frontend/cde.py:2582
 msgid "*Nothing here yet.*"
 msgstr "*Hier gibt es noch nichts.*"
 
@@ -3832,52 +3832,192 @@ msgstr "Nicht abonniert."
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
-#: cdedb/frontend/parse_statement.py:619
+#: cdedb/frontend/parse_statement.py:620
 #, python-format
 msgid "Multiple (%(count)s) DB-IDs found in line %(t_id)s."
 msgstr "Mehrere (%(count)s) DB-IDs in Zeile %(t_id)s gefunden."
 
-#: cdedb/frontend/parse_statement.py:651 cdedb/frontend/parse_statement.py:667
+#: cdedb/frontend/parse_statement.py:652 cdedb/frontend/parse_statement.py:668
 #, python-format
 msgid "(%(p)s) not found in (%(ref)s)."
 msgstr "(%(p)s) nicht in (%(ref)s) gefunden."
 
-#: cdedb/frontend/parse_statement.py:658 cdedb/frontend/parse_statement.py:674
+#: cdedb/frontend/parse_statement.py:659 cdedb/frontend/parse_statement.py:675
 #, python-format
 msgid "(%(p)s) is not a valid regEx (%(e)s)."
 msgstr "(%(p)s) is kein gültiger regulärer Ausdruck (%(e)s)."
 
-#: cdedb/frontend/parse_statement.py:749
+#: cdedb/frontend/parse_statement.py:750
 msgid "Could not determine transaction type."
 msgstr "Konnte Transaktionstyp nicht ermitteln."
 
-#: cdedb/frontend/parse_statement.py:754
+#: cdedb/frontend/parse_statement.py:755
 msgid "Not confident about transaction type."
 msgstr "Unsicher über Transaktionstyp."
 
-#: cdedb/frontend/parse_statement.py:763
+#: cdedb/frontend/parse_statement.py:764
 msgid "Not confident about event match."
 msgstr "Unwischer über Veranstaltungszuordnung."
 
-#: cdedb/frontend/parse_statement.py:767
+#: cdedb/frontend/parse_statement.py:768
 msgid "Needs event match."
 msgstr "Braucht Veranstaltungszuordnung."
 
-#: cdedb/frontend/parse_statement.py:776
+#: cdedb/frontend/parse_statement.py:777
 msgid "Not confident about member match."
 msgstr "Unsicher über Mitgliedszuordnung."
 
-#: cdedb/frontend/parse_statement.py:780
+#: cdedb/frontend/parse_statement.py:781
 msgid "Needs member match."
 msgstr "Braucht Mitgliedszuordnung."
 
-#: cdedb/frontend/parse_statement.py:799
+#: cdedb/frontend/parse_statement.py:800
 msgid "Not a CdE-Account."
 msgstr "Kein CdE-Account."
 
 #: cdedb/frontend/uncommon.py:73
 msgid "User created."
 msgstr "Account erstellt."
+
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:26
+msgid "Teilnehmer"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:39
+msgid "Kursleiter"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:50
+#: cdedb/frontend/templates/tex/event/lodgement_lists.tmpl:24
+msgid "niemand"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:56
+msgid "Kursraum"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:8
+msgid "Minimalgröße/Maximalgröße"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:10
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:13
+msgid "Notizen"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:12
+msgid "Erst-/Zweit-/Drittwahlen"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
+msgid "Erstwahl"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
+msgid "Zweitwahl"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
+msgid "Drittwahl"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:9
+msgid "Kapazität"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:11
+msgid "Reserve"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:44
+msgid "Gast"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:48
+msgid "getrennt"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:56
+msgid "Isomatte"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:61
+msgid "Wunsch"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:65
+msgid "Revers-Wunsch-Heuristik"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/nametags.tmpl:96
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:100
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:60
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:97
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:130
+msgid "Orga"
+msgstr "Orga"
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:22
+#, python-format
+msgid "Teilnehmerliste %(title)s"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:25
+#, python-format
+msgid "Seite %(curr_page)s von %(total_pages)s"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:46
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:52
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:28
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:29
+#: cdedb/frontend/templates/web/core/change_user.tmpl:29
+#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:23
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:30
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:53
+#: cdedb/frontend/templates/web/event/batch_fees.tmpl:38
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:87
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:141
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:54
+#: cdedb/frontend/templates/web/generic.tmpl:11
+#: cdedb/frontend/templates/web/generic.tmpl:113
+#: cdedb/frontend/templates/web/generic.tmpl:179
+msgid "Given Names"
+msgstr "Vorname(n)"
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:47
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:54
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:28
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:30
+#: cdedb/frontend/templates/web/core/change_user.tmpl:30
+#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:24
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:31
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:54
+#: cdedb/frontend/templates/web/event/batch_fees.tmpl:38
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:90
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:144
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:53
+#: cdedb/frontend/templates/web/generic.tmpl:12
+#: cdedb/frontend/templates/web/generic.tmpl:111
+#: cdedb/frontend/templates/web/generic.tmpl:177
+msgid "Family Name"
+msgstr "Nachname"
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:48
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:93
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:147
+msgid "Email Address"
+msgstr "E-Mail-Adresse"
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:49
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:96
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:150
+msgid "Postal Code, City"
+msgstr "Postleitzahl, Stadt"
 
 #: cdedb/frontend/templates/web/base.tmpl:31
 msgid "View E-Mail in Browser"
@@ -4157,42 +4297,6 @@ msgstr "Person"
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:27
 msgid "Title"
 msgstr "Titel"
-
-#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:52
-#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:28
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:29
-#: cdedb/frontend/templates/web/core/change_user.tmpl:29
-#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:23
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:30
-#: cdedb/frontend/templates/web/core/inspect_change.tmpl:53
-#: cdedb/frontend/templates/web/event/batch_fees.tmpl:38
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:87
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:141
-#: cdedb/frontend/templates/web/event/registration_query.tmpl:54
-#: cdedb/frontend/templates/web/generic.tmpl:11
-#: cdedb/frontend/templates/web/generic.tmpl:113
-#: cdedb/frontend/templates/web/generic.tmpl:179
-msgid "Given Names"
-msgstr "Vorname(n)"
-
-#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:54
-#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:28
-#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:30
-#: cdedb/frontend/templates/web/core/change_user.tmpl:30
-#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:24
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:31
-#: cdedb/frontend/templates/web/core/inspect_change.tmpl:54
-#: cdedb/frontend/templates/web/event/batch_fees.tmpl:38
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:90
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:144
-#: cdedb/frontend/templates/web/event/registration_query.tmpl:53
-#: cdedb/frontend/templates/web/generic.tmpl:12
-#: cdedb/frontend/templates/web/generic.tmpl:111
-#: cdedb/frontend/templates/web/generic.tmpl:177
-msgid "Family Name"
-msgstr "Nachname"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:32
@@ -5835,6 +5939,10 @@ msgstr ""
 " mit gleicher Präferenz gewertet. Bewegst Du einen Kandidaten in den "
 "Zwischenraum ober- und unterhalb der Boxen, entsteht dort eine neue Box."
 
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:220
+msgid "Space"
+msgstr "Leertaste"
+
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:218
 msgid "TAB"
 msgstr "TAB"
@@ -5842,10 +5950,6 @@ msgstr "TAB"
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:219
 msgid "ENTER"
 msgstr "Enter"
-
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:220
-msgid "Space"
-msgstr "Leertaste"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:229
 msgid ""
@@ -6577,7 +6681,7 @@ msgstr "Erneut validieren"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:19
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:102
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:162
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:161
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:134
 #: cdedb/frontend/templates/web/event/partial_import.tmpl:64
 msgid "Validate"
@@ -6928,15 +7032,15 @@ msgstr ""
 "verwendet werden."
 
 #: cdedb/frontend/templates/web/cde/i25p_index.tmpl:23
-msgid "Deutsche SchülerAkademie"
-msgstr "Deutschen SchülerAkademie"
-
-#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:23
 #: cdedb/frontend/templates/web/cde/i25p_index.tmpl:46
 #: cdedb/frontend/templates/web/cde/index.tmpl:50
 #: cdedb/frontend/templates/web/cde/index.tmpl:68
 msgid "Idee SchülerAkademie"
 msgstr "Idee SchülerAkademie"
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:23
+msgid "Deutsche SchülerAkademie"
+msgstr "Deutschen SchülerAkademie"
 
 #: cdedb/frontend/templates/web/cde/i25p_index.tmpl:31
 msgid "For what does the CdE need donations?"
@@ -7641,20 +7745,20 @@ msgstr "%(count)s fehlerfreie Transaktionen"
 msgid "Go to first Error."
 msgstr "Gehe zum ersten Fehler"
 
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:165
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:164
 msgid "GnuCash Download"
 msgstr "GnuCash Download"
 
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:169
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:168
 #, python-format
 msgid "Excel Download (%(account)s)"
 msgstr "Excel Donload (%(account)s)"
 
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:174
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:173
 msgid "Download Membership Fees"
 msgstr "Download (Mitgliedsbeiträge)"
 
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:179
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:178
 #, python-format
 msgid "Download %(shortname)s"
 msgstr "Download (%(shortname)s)"
@@ -7667,12 +7771,6 @@ msgstr "Teilnehmer zu diesem Kurs hinzufügen"
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:86
 msgid "ID of the new Participant"
 msgstr "ID des neuen Teilnehmers"
-
-#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:60
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:97
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:130
-msgid "Orga"
-msgstr "Orga"
 
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:89
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:139
@@ -10069,10 +10167,6 @@ msgstr "Filter: Kursschiene"
 msgid "Show only participants who %(select3)s the course %(select2)s %(select1)s"
 msgstr "Nur Teilnehmer anzeigen, die %(select1)s %(select2)s %(select3)s."
 
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:80
-msgid "Filter: Course"
-msgstr "Filter: Kurs"
-
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:82
 msgid "— no Filter —"
 msgstr "— kein Filter —"
@@ -10080,6 +10174,10 @@ msgstr "— kein Filter —"
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:83
 msgid "Filter: Course Operator"
 msgstr "Filter Kursoperator"
+
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:80
+msgid "Filter: Course"
+msgstr "Filter: Kurs"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:90
 msgid "Filter: Registration IDs"
@@ -10121,17 +10219,17 @@ msgstr "in Kurschienen"
 msgid "%(assign)s %(participants)s %(course)s %(tracks)s %(submit)s"
 msgstr "%(participants)s %(tracks)s %(course)s %(assign)s %(submit)s"
 
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:122
-msgid "Assign"
-msgstr "einteilen."
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:126
+msgid "Assignment Method"
+msgstr "Einteilungsverfahren"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:123
 msgid "selected participants"
 msgstr "Die ausgewählten Teilnehmer"
 
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:126
-msgid "Assignment Method"
-msgstr "Einteilungsverfahren"
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:122
+msgid "Assign"
+msgstr "einteilen."
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:152
 msgid "View Registrations"
@@ -11172,16 +11270,6 @@ msgstr "Teilnehmerliste"
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:60
 msgid "The Participant List is currently only visible to Orgas and Admins."
 msgstr "Die Teilnehmerliste ist aktuell nur für Orgas und Admins sichtbar."
-
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:93
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:147
-msgid "Email Address"
-msgstr "E-Mail-Adresse"
-
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:96
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:150
-msgid "Postal Code, City"
-msgstr "Postleitzahl, Stadt"
 
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:152
 msgid "Event Parts"
@@ -12640,11 +12728,11 @@ msgstr "Mailinglisten-Log"
 #~ "                        preference across all participants."
 #~ msgstr ""
 #~ "Die Zusammenfassung zeigt die kombinierte "
-#~ "Präferenzliste aller Teilnehmer. Das "
-#~ "Größer-als-Zeichen %(gt)s gibt an, "
-#~ "dass der Kandidat auf der linken "
-#~ "Seite des Zeichens insgesamt mit höherer"
-#~ " Präferenz eingestuft wurde als der "
+#~ "Präferenzliste aller Teilnehmer. Das Gr"
+#~ "ößer-als-Zeichen %(gt)s gibt an, dass"
+#~ " der Kandidat auf der linken Seite"
+#~ " des Zeichens insgesamt mit höherer "
+#~ "Präferenz eingestuft wurde als der "
 #~ "Kandidate auf der rechten Seite. Das "
 #~ "Gleichheits-Zeichen %(eq)s gibt an, dass"
 #~ " zwei oder mehr Kandidaten die "
@@ -12739,9 +12827,9 @@ msgstr "Mailinglisten-Log"
 #~ " Kandidaten Du ablehnst. Kandidaten, die"
 #~ " Du für geeignet hältst, solltest Du"
 #~ " höher als %(abm)s bewerten, Kandidaten,"
-#~ " die Du ablehnst, niedriger, d. h."
-#~ " rechts von %(abm)s. Sollte in der"
-#~ " Auszählung kein Kandidat gegen die "
+#~ " die Du ablehnst, niedriger, d. h. "
+#~ "rechts von %(abm)s. Sollte in der "
+#~ "Auszählung kein Kandidat gegen die "
 #~ "Ablehnungsgrenze gewinnen, so kann der "
 #~ "Vorstand ggf. weitere Maßnahmen ergreifen."
 
@@ -12975,9 +13063,9 @@ msgstr "Mailinglisten-Log"
 #~ " Kandidaten Du ablehnst. Kandidaten, die"
 #~ " Du für geeignet hältst, solltest Du"
 #~ " höher als %(abm)s bewerten, Kandidaten,"
-#~ " die Du ablehnst, niedriger, d. h."
-#~ " rechts von %(abm)s. Sollte in der"
-#~ " Auszählung kein Kandidat gegen die "
+#~ " die Du ablehnst, niedriger, d. h. "
+#~ "rechts von %(abm)s. Sollte in der "
+#~ "Auszählung kein Kandidat gegen die "
 #~ "Ablehnungsgrenze gewinnen, so kann der "
 #~ "Vorstand ggf. weitere Maßnahmen ergreifen."
 
@@ -13103,11 +13191,11 @@ msgstr "Mailinglisten-Log"
 #~ "                    preference across all participants."
 #~ msgstr ""
 #~ "Die Zusammenfassung zeigt die kombinierte "
-#~ "Präferenzliste aller Teilnehmer. Das "
-#~ "Größer-als-Zeichen %(gt)s gibt an, "
-#~ "dass der Kandidat auf der linken "
-#~ "Seite des Zeichens insgesamt mit höherer"
-#~ " Präferenz eingestuft wurde als der "
+#~ "Präferenzliste aller Teilnehmer. Das Gr"
+#~ "ößer-als-Zeichen %(gt)s gibt an, dass"
+#~ " der Kandidat auf der linken Seite"
+#~ " des Zeichens insgesamt mit höherer "
+#~ "Präferenz eingestuft wurde als der "
 #~ "Kandidate auf der rechten Seite. Das "
 #~ "Gleichheits-Zeichen %(eq)s gibt an, dass"
 #~ " zwei oder mehr Kandidaten die "
@@ -13282,11 +13370,11 @@ msgstr "Mailinglisten-Log"
 #~ "                preference across all participants."
 #~ msgstr ""
 #~ "Die Zusammenfassung zeigt die kombinierte "
-#~ "Präferenzliste aller Teilnehmer. Das "
-#~ "Größer-als-Zeichen %(gt)s gibt an, "
-#~ "dass der Kandidat auf der linken "
-#~ "Seite des Zeichens insgesamt mit höherer"
-#~ " Präferenz eingestuft wurde als der "
+#~ "Präferenzliste aller Teilnehmer. Das Gr"
+#~ "ößer-als-Zeichen %(gt)s gibt an, dass"
+#~ " der Kandidat auf der linken Seite"
+#~ " des Zeichens insgesamt mit höherer "
+#~ "Präferenz eingestuft wurde als der "
 #~ "Kandidate auf der rechten Seite. Das "
 #~ "Gleichheits-Zeichen %(eq)s gibt an, dass"
 #~ " zwei oder mehr Kandidaten die "
@@ -13378,9 +13466,9 @@ msgstr "Mailinglisten-Log"
 #~ " Kandidaten Du ablehnst. Kandidaten, die"
 #~ " Du für geeignet hältst, solltest Du"
 #~ " höher als %(abm)s bewerten, Kandidaten,"
-#~ " die Du ablehnst, niedriger, d. h."
-#~ " rechts von %(abm)s. Sollte in der"
-#~ " Auszählung kein Kandidat gegen die "
+#~ " die Du ablehnst, niedriger, d. h. "
+#~ "rechts von %(abm)s. Sollte in der "
+#~ "Auszählung kein Kandidat gegen die "
 #~ "Ablehnungsgrenze gewinnen, so kann der "
 #~ "Vorstand ggf. weitere Maßnahmen ergreifen."
 
@@ -13977,10 +14065,10 @@ msgstr "Mailinglisten-Log"
 #~ "achieve using the “Reset Password”\n"
 #~ "                                        form on the login page."
 #~ msgstr ""
-#~ "Sendet eine E-Mail mit einem "
-#~ "Passwort-Rücksetz-Link an den Benutzer. "
-#~ "Das kommt aufs Gleiche hinaus, wie "
-#~ "wenn der Benutzer das „Passwort "
+#~ "Sendet eine E-Mail mit einem Passwort-R"
+#~ "ücksetz-Link an den Benutzer. Das "
+#~ "kommt aufs Gleiche hinaus, wie wenn "
+#~ "der Benutzer das „Passwort "
 #~ "zurücksetzen“-Formular auf der Login-Seite "
 #~ "nutzt."
 
@@ -14028,8 +14116,8 @@ msgstr "Mailinglisten-Log"
 #~ "und die meisten Informationen werden "
 #~ "gelöscht. Nur Informationen, die für "
 #~ "eine Wiederaufnahme der CdE-Mitgliedschaft "
-#~ "von Bedeutung sind (z. B. Name und"
-#~ " Akademieteilnahme), bleiben bestehen. Andere "
+#~ "von Bedeutung sind (z. B. Name und "
+#~ "Akademieteilnahme), bleiben bestehen. Andere "
 #~ "Benutzer können den Account nicht mehr"
 #~ " finden."
 

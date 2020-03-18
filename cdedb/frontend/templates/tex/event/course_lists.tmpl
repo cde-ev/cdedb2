@@ -23,8 +23,8 @@
                 <<% if ambience['event']['tracks']|length > 1 -%>>
                     \emph{<<< ambience['event']['tracks'][track_id]['shortname']|te >>>}\\
                 <<%- endif %>>
-                <<< (attendees[key]|length - instructors[key]|length)|te >>> <<% trans %>> Teilnehmer <<% endtrans %>>
-                , <<< instructors[key]|length|te >>> <<% trans %>> Kursleiter <<% endtrans %>>
+                <<< (attendees[key]|length - instructors[key]|length)|te >>> <<% trans %>> Participants <<% endtrans %>>
+                , <<< instructors[key]|length|te >>> <<% trans %>> Instructors <<% endtrans %>>
             \end{minipage}
             \begin{minipage}[c][\logosize\textwidth][t]{\logosize\linewidth}
                 \includegraphics[keepaspectratio=true, width=\textwidth,height=\textwidth]{./course-logo-<<< course_id|te >>>}
@@ -47,13 +47,13 @@
                             <<% endif %>>
                     <<% endwith %>>
                 <<% else %>>
-                    \item \emph{<<% trans %>> niemand <<% endtrans %>>}
+                    \item \emph{<<% trans %>> nobody <<% endtrans %>>}
                 <<% endfor %>>
             \end{itemize}
             \vspace{\fill}
             \begin{minipage}[t]{\textwidth}
                 <<% if course_room_field -%>>
-                    <<% trans %>> Kursraum <<% endtrans %>>: <<< course['fields'].get(course_room_field, "")|te >>>
+                    <<% trans %>> Course room <<% endtrans %>>: <<< course['fields'].get(course_room_field, "")|te >>>
                 <<%- endif %>>
             \end{minipage}
             \clearpage

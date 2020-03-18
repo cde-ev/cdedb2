@@ -3,13 +3,13 @@
     \parindent 0pt\relax
     \newcommand\course[7]{
         \section*{#1 (#2)}
-        <<% trans %>> Kursleiter <<% endtrans %>>: #3
+        <<% trans %>> Instructors <<% endtrans %>>: #3
         \par
-        <<% trans %>> Minimalgröße/Maximalgröße <<% endtrans %>>: #4/#5
+        <<% trans %>> Minimum size/maximum size <<% endtrans %>>: #4/#5
         \par
-        <<% trans %>> Notizen <<% endtrans %>>: #6
+        <<% trans %>> Notes <<% endtrans %>>: #6
         \par
-        <<% trans %>> Erst-/Zweit-/Drittwahlen <<% endtrans %>>: #7}
+        <<% trans %>> First/second/third choice <<% endtrans %>>: #7}
     \newcommand\participant[6]{
         \section*{#1 (#2)}
         #3
@@ -36,11 +36,11 @@
                                  <<< personas[registration['persona_id']]['family_name']|te >>>}%
                                 {<<< track['title']|te >>>}%
                                 {<<% if registration['tracks'][track_id]['course_instructor'] -%>>
-                                    <<% trans %>> Kursleiter <<% endtrans %>>:
+                                    <<% trans %>> Instructor <<% endtrans %>>:
                                     <<< courses[registration['tracks'][track_id]['course_instructor']]['title']|te >>>
                                     \par
                                 <<%- endif %>>}%
-                    <<% for label in (_("Erstwahl"), _("Zweitwahl"), _("Drittwahl")) -%>>
+                    <<% for label in (_("First choice"), _("Second choice"), _("Third choice")) -%>>
                                 {<<% if registration['tracks'][track_id]['choices']|length > loop.index0 -%>>
                                     <<< label|te >>>:
                                     <<< courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te >>>

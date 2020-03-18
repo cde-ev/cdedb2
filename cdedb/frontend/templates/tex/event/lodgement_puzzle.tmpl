@@ -6,11 +6,11 @@
     \parindent 0pt\relax
     \newcommand\lodgement[5]{
         \section*{#1 (#2)}
-        <<% trans %>> Kapazität <<% endtrans %>>: #3
+        <<% trans %>> Capacity <<% endtrans %>>: #3
         \par
         <<% trans %>> Reserve <<% endtrans %>>: #4
         \par
-        <<% trans %>> Notizen <<% endtrans %>>: #5
+        <<% trans %>> Notes <<% endtrans %>>: #5
         \par
         \vspace{.5cm}
         \hrule
@@ -41,11 +41,11 @@
                     {<<% if ambience['event']['parts']|length > 1 %>><<< part['title']|te >>>; <<% endif %>>%
                      <<< personas[registration['persona_id']]['birthday'].year|te >>>%
                      <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>
-                        ~[<<% trans %>> Gast <<% endtrans %>>]
+                        ~[<<% trans %>> guest <<% endtrans %>>]
                      <<%- endif %>>}%
                     {<<< gettext(enums['Genders'](personas[registration['persona_id']]['gender'])|string)|te >>>}%
                     {<<% if not registration['mixed_lodging'] %>>
-                        <<%- trans %>> getrennt <<% endtrans -%>>
+                        <<%- trans %>> separated <<% endtrans -%>>
                     <<% endif %>>}%
                     {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
@@ -53,16 +53,16 @@
                     {<<% if ambience['event']['reserve_field'] and
                             registration['fields'].get(
                                 ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
-                        <<% trans %>> Isomatte <<% endtrans %>>
+                        <<% trans %>> sleeping pad <<% endtrans %>>
                      <<%- endif %>>}% ID <<< registration_id|te >>>
                     {<<% if ambience['event']['lodge_field']
                             and registration['fields'].get(
                                 ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
-                        <<% trans %>> Wunsch <<% endtrans %>>: <<< registration['fields'].get(
+                        <<% trans %>> Wish <<% endtrans %>>: <<< registration['fields'].get(
                                     ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>
                      <<% endif -%>>}%
                     {<<% if reverse_wish.get(registration_id) -%>>%
-                        <<% trans %>> Revers-Wunsch-Heuristik <<% endtrans %>>: <<< reverse_wish[registration_id]|te >>>
+                        <<% trans %>> Reverse wish heuristic <<% endtrans %>>: <<< reverse_wish[registration_id]|te >>>
                      <<% endif -%>>}
             <<% endif %>>
         <<% endfor %>>
