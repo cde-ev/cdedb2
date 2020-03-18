@@ -1,14 +1,14 @@
-\COMMENT{
+<<#
     This is the base template to be extended by (nearly) all tex templates
     which produce letters. It provides a skeleton where only the content
     needs to be filled in.
 
     Note that we change the syntax for TeX templates so that curly braces
     aren't overloaded that much. Mor specifically comments (see this),
-    blocks (\BLOCK{ if }) and variables (\VAR{ datum|te }) change.
-}
+    blocks (<<% if %>>) and variables (<<< datum|te >>>) change.
+#>>
 
-\BLOCK{ block preamble }
+<<% block preamble %>>
     \documentclass[12pt,DIN]{scrlttr2}
     \KOMAoptions{paper=A4,pagesize,DIV=16}
 
@@ -38,41 +38,41 @@
     %% addresses and other data details
     %%
     \setkomavar{backaddress}{%
-        \BLOCK{ block backaddress_oneline -}
+        <<% block backaddress_oneline -%>>
             CdE e. V., c/o Rechtsanwalt Manger, Goseriede 13, 30159 Hannover
-        \BLOCK{- endblock }}
+        <<%- endblock %>>}
     \setkomavar{firsthead}{\centerline{\includegraphics[height=3cm]{./cde-logo.jpg}}}
     \setkomavar{firstfoot}{\hrule\scriptsize\centerline{%
         \begin{tabular}{p{.2\textwidth}p{.2\textwidth}p{.3\textwidth}p{.2\textwidth}}
             \textbf{Antwortadresse:} & \textbf{Internet:} & \textbf{Bankverbindung:} & \textbf{Vereinsadresse:} \\
-            \BLOCK{ block backaddress_line1 }CdE e. V.\BLOCK{ endblock } &
+            <<% block backaddress_line1 %>>CdE e. V.<<% endblock %>> &
             \url{www.cde-ev.de} &
-            \BLOCK{ block bankaddress_line1 }CdE e. V.\BLOCK{ endblock } &
+            <<% block bankaddress_line1 %>>CdE e. V.<<% endblock %>> &
             CdE e. V. \\
-            \BLOCK{ block backaddress_line2 }c/o Rechtsanwalt Manger\BLOCK{ endblock } &
+            <<% block backaddress_line2 %>>c/o Rechtsanwalt Manger<<% endblock %>> &
             \url{info@cde-ev.de} &
-            \BLOCK{ block bankaddress_line2 }IBAN: DE26 3702 0500 0008 0689 00\BLOCK{ endblock } &
+            <<% block bankaddress_line2 %>>IBAN: DE26 3702 0500 0008 0689 00<<% endblock %>> &
             c/o Rechtsanwalt Manger \\
-            \BLOCK{ block backaddress_line3 }Goseriede 13\BLOCK{ endblock } &
+            <<% block backaddress_line3 %>>Goseriede 13<<% endblock %>> &
             \textbf{Vereinsregister:} &
-            \BLOCK{ block bankaddress_line3 }BIC: BFSWDE33XXX\BLOCK{ endblock } &
+            <<% block bankaddress_line3 %>>BIC: BFSWDE33XXX<<% endblock %>> &
             Goseriede 13 \\
-            \BLOCK{ block backaddress_line4 }30159 Hannover\BLOCK{ endblock } &
+            <<% block backaddress_line4 %>>30159 Hannover<<% endblock %>> &
             VR 202126, AG Hannover &
-            \BLOCK{ block bankaddress_line4 }Bank für Sozialwirtschaft\BLOCK{ endblock } &
+            <<% block bankaddress_line4 %>>Bank für Sozialwirtschaft<<% endblock %>> &
             30159 Hannover \\
         \end{tabular}}}
     \makeatletter
     \@addtoplength{firstfootvpos}{-10mm}
     \makeatother
-\BLOCK{ endblock }
+<<% endblock %>>
 
-\BLOCK{ block extra_preamble }
+<<% block extra_preamble %>>
     % no extras
-\BLOCK{ endblock }
+<<% endblock %>>
 
 \begin{document}
-\BLOCK{ block content }
+<<% block content %>>
     % no content
-\BLOCK{ endblock }
+<<% endblock %>>
 \end{document}

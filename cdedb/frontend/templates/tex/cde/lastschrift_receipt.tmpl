@@ -1,36 +1,36 @@
-\BLOCK{ extends "tex/cde/base_letter.tmpl" }
-\BLOCK{ block extra_preamble }
+<<% extends "tex/cde/base_letter.tmpl" %>>
+<<% block extra_preamble %>>
     \usepackage{url}
     \usepackage{multicol}
 
-    \setkomavar{signature}{\VAR{ meta_info['Finanzvorstand_Vorname']|te }\\ Vorstand CdE e.\,V.}
+    \setkomavar{signature}{<<< meta_info['Finanzvorstand_Vorname']|te >>>\\ Vorstand CdE e.\,V.}
     \setkomavar{subject}{Zuwendungsbestätigung Initiative 25+}
-\BLOCK{ endblock }
-\BLOCK{ block backaddress_line1 -}
-    \VAR{ meta_info['Finanzvorstand_Name']|te }
-\BLOCK{- endblock }
-\BLOCK{ block backaddress_line2 -}
-    \VAR{ meta_info['Finanzvorstand_Adresse_Zeile2']|te }
-\BLOCK{- endblock }
-\BLOCK{ block backaddress_line3 -}
-    \VAR{ meta_info['Finanzvorstand_Adresse_Zeile3']|te }
-\BLOCK{- endblock }
-\BLOCK{ block backaddress_line4 -}
-    \VAR{ meta_info['Finanzvorstand_Adresse_Zeile4']|te }
-\BLOCK{- endblock }
-\BLOCK{ block backaddress_oneline -}
-    \VAR{ meta_info['Finanzvorstand_Adresse_Einzeiler']|te }
-\BLOCK{- endblock }
-\BLOCK{ block content }
+<<% endblock %>>
+<<% block backaddress_line1 -%>>
+    <<< meta_info['Finanzvorstand_Name']|te >>>
+<<%- endblock %>>
+<<% block backaddress_line2 -%>>
+    <<< meta_info['Finanzvorstand_Adresse_Zeile2']|te >>>
+<<%- endblock %>>
+<<% block backaddress_line3 -%>>
+    <<< meta_info['Finanzvorstand_Adresse_Zeile3']|te >>>
+<<%- endblock %>>
+<<% block backaddress_line4 -%>>
+    <<< meta_info['Finanzvorstand_Adresse_Zeile4']|te >>>
+<<%- endblock %>>
+<<% block backaddress_oneline -%>>
+    <<< meta_info['Finanzvorstand_Adresse_Einzeiler']|te >>>
+<<%- endblock %>>
+<<% block content %>>
     \begin{letter}{
-        \BLOCK{- for line in addressee -}
-            \VAR{ line|te }
-            \BLOCK{- if not loop.last -}
+        <<%- for line in addressee -%>>
+            <<< line|te >>>
+            <<%- if not loop.last -%>>
                 \\
-            \BLOCK{- endif -}
-        \BLOCK{- endfor -}}
+            <<%- endif -%>>
+        <<%- endfor -%>>}
 
-        \opening{Liebe\VAR{ persona['gender']|genus('', 'r')|te } \VAR{ persona['given_names']|te },}
+        \opening{Liebe<<< persona['gender']|genus('', 'r')|te >>> <<< persona['given_names']|te >>>,}
 
         für deine Unterstützung der gemeinnützigen Arbeit des CdE durch die Initiative 25+ möchten wir uns herzlich
         bedanken.
@@ -58,16 +58,16 @@
         Name und Anschrift des Zuwendenden:
         \par\smallskip
         \begin{center}
-            \VAR{ ", ".join(addressee)|te }
+            <<< ", ".join(addressee)|te >>>
         \end{center}
         \par\smallskip
         \begin{tabular}{l|l|l}
             \multicolumn{2}{@{}l|}{Betrag der Zuwendung}&\\
             -- in Ziffern -- & -- in Buchstaben -- & Tag der Zuwendung:\\
-            \VAR{ "{:.2f}".format(ambience['transaction']['amount'])|te }\,€
-                & \VAR{ ambience['transaction']['amount_words'][0]|te } Euro
-                  \VAR{ ambience['transaction']['amount_words'][1]|te } Cent
-                & \VAR{ ambience['transaction']['processed_at']|date(lang=lang)|te }
+            <<< "{:.2f}".format(ambience['transaction']['amount'])|te >>>\,€
+                & <<< ambience['transaction']['amount_words'][0]|te >>> Euro
+                  <<< ambience['transaction']['amount_words'][1]|te >>> Cent
+                & <<< ambience['transaction']['processed_at']|date(lang=lang)|te >>>
         \end{tabular}
         \par\bigskip
         Es handelt sich nicht um den Verzicht auf Erstattung von Aufwendungen.
@@ -86,8 +86,8 @@
 
         \vspace{15mm}\par
         \begin{tabular}{@{}lc}
-            \VAR{ meta_info['Finanzvorstand_Ort']|te },  den \VAR{ now()|date(lang=lang)|te } & \makebox[7cm]{\dotfill} \\
-            & {\small \VAR{ meta_info['Finanzvorstand_Name']|te }, Vorstand}
+            <<< meta_info['Finanzvorstand_Ort']|te >>>,  den <<< now()|date(lang=lang)|te >>> & \makebox[7cm]{\dotfill} \\
+            & {\small <<< meta_info['Finanzvorstand_Name']|te >>>, Vorstand}
         \end{tabular}
         \par\vfill
         \begin{footnotesize}
@@ -105,4 +105,4 @@
             \par
         \end{footnotesize}
     \end{letter}
-\BLOCK{ endblock }
+<<% endblock %>>

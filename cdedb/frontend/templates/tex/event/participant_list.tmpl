@@ -1,6 +1,6 @@
-\BLOCK{ extends "tex/event/base_article.tmpl" }
-\BLOCK{ block extra_preamble }
-    \KOMAoptions{fontsize=10pt,paper=\VAR{ orientation|te },DIV=21}
+<<% extends "tex/event/base_article.tmpl" %>>
+<<% block extra_preamble %>>
+    \KOMAoptions{fontsize=10pt,paper=<<< orientation|te >>>,DIV=21}
     \usepackage[left=.5cm,right=.5cm,top=1.5cm,bottom=1cm,foot=1ex]{geometry}
         \parindent 0pt\relax
 
@@ -19,96 +19,96 @@
 
     \definecolor{design}{HTML}{000000}
 
-    \chead{\Large\textbf{\textsf{\BLOCK{ trans title=ambience['event']['title']|te }
-        Teilnehmerliste \VAR{ title }
-    \BLOCK{ endtrans }}}}}
-    \cfoot{\BLOCK{ trans curr_page="\thepage{}", total_pages="\pageref{LastPage}" }
-        Seite \VAR{ curr_page } von \VAR{ total_pages }
-    \BLOCK{ endtrans }}
+    \chead{\Large\textbf{\textsf{<<% trans title=ambience['event']['title']|te %>>
+        Teilnehmerliste <<< title >>>
+    <<% endtrans %>>}}}}
+    \cfoot{<<% trans curr_page="\thepage{}", total_pages="\pageref{LastPage}" %>>
+        Seite <<< curr_page >>> von <<< total_pages >>>
+    <<% endtrans %>>}
 
-\BLOCK{ endblock }
-\BLOCK{ block content }
+<<% endblock %>>
+<<% block content %>>
 	\rowcolors{2}{gray!25}{white}
     \begin{longtable}{
     |llll
-    \BLOCK{- if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -}
-        \BLOCK{- for ep_id, ep in parts.items() -}
-            \BLOCK{- if ep['tracks']|length > 1 -}
-                \VAR{- ('l'*ep['tracks']|length) -}
-            \BLOCK{- else -}
-                \VAR{- 'l' -}
-            \BLOCK{- endif -}
-        \BLOCK{- endfor -}
-    \BLOCK{- endif -}
+    <<%- if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+        <<%- for ep_id, ep in parts.items() -%>>
+            <<%- if ep['tracks']|length > 1 -%>>
+                <<<- ('l'*ep['tracks']|length) ->>>
+            <<%- else -%>>
+                <<<- 'l' ->>>
+            <<%- endif -%>>
+        <<%- endfor -%>>
+    <<%- endif -%>>
     |}
             \hline
             \rowcolor{design}
-			  \head{\BLOCK{ trans } Given Names \BLOCK{ endtrans }}
-			& \head{\BLOCK{ trans } Family Name \BLOCK{ endtrans }}
-			& \head{\BLOCK{ trans } Email Address \BLOCK{ endtrans }}
-			& \head{\BLOCK{ trans } Postal Code, City \BLOCK{ endtrans }}
+			  \head{<<% trans %>> Given Names <<% endtrans %>>}
+			& \head{<<% trans %>> Family Name <<% endtrans %>>}
+			& \head{<<% trans %>> Email Address <<% endtrans %>>}
+			& \head{<<% trans %>> Postal Code, City <<% endtrans %>>}
             % Kursschienen/Eventparts
-            \BLOCK{ for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -}
-			    \BLOCK{ if ep['tracks']|length < 1 -}
-                    & \head{\VAR{ ep.shortname|te }}
-                \BLOCK{ endif -}
-                \BLOCK{ for t_id, t in ep['tracks']|dictsort('sortkey') -}
-				    & \head{\VAR{ t.shortname|te }}
-			    \BLOCK{ endfor -}
-            \BLOCK{ endfor -}
+            <<% for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+			    <<% if ep['tracks']|length < 1 -%>>
+                    & \head{<<< ep.shortname|te >>>}
+                <<% endif -%>>
+                <<% for t_id, t in ep['tracks']|dictsort('sortkey') -%>>
+				    & \head{<<< t.shortname|te >>>}
+			    <<% endfor -%>>
+            <<% endfor -%>>
             \\
 			\hline
 		\endhead
-    \BLOCK{ set participant = enums['RegistrationPartStati'].participant -}
-    \BLOCK{ for reg_id in ordered if orgas_only or registrations[reg_id]['list_consent'] -}
-        \BLOCK{ with registration = registrations[reg_id] -}
+    <<% set participant = enums['RegistrationPartStati'].participant -%>>
+    <<% for reg_id in ordered if orgas_only or registrations[reg_id]['list_consent'] -%>>
+        <<% with registration = registrations[reg_id] -%>>
             % Vorname
-            \VAR{ personas[registration['persona_id']]['given_names']|te } &
+            <<< personas[registration['persona_id']]['given_names']|te >>> &
             % Nachname
-            \VAR{ personas[registration['persona_id']]['family_name']|te } &
+            <<< personas[registration['persona_id']]['family_name']|te >>> &
             % E-Mail
-            \VAR{ personas[registration['persona_id']]['username']|te } &
+            <<< personas[registration['persona_id']]['username']|te >>> &
             % PLZ, Ort (Land)
-            \VAR{ personas[registration['persona_id']]['postal_code']|te }
-            \VAR{ personas[registration['persona_id']]['location']|te }
-            \BLOCK{ if personas[registration['persona_id']]['country'] != "Deutschland" -}
-                \VAR{- personas[registration['persona_id']]['country']|te -}
-            \BLOCK{ endif -}
+            <<< personas[registration['persona_id']]['postal_code']|te >>>
+            <<< personas[registration['persona_id']]['location']|te >>>
+            <<% if personas[registration['persona_id']]['country'] != "Deutschland" -%>>
+                <<<- personas[registration['persona_id']]['country']|te ->>>
+            <<% endif -%>>
             % Kurse
-            \BLOCK{ for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -}
-                \BLOCK{ if ep['tracks']|length < 1 -}
-                    \BLOCK{ if registration['parts'][ep_id]['status'] == participant -}
+            <<% for ep_id, ep in parts|dictsort('part_begin') if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
+                <<% if ep['tracks']|length < 1 -%>>
+                    <<% if registration['parts'][ep_id]['status'] == participant -%>>
                         & \checkmark
-                    \BLOCK{- else -}
+                    <<%- else -%>>
                         & ---
-                    \BLOCK{- endif -}
-                    % \VAR{ ep['shortname']|te }
-                \BLOCK{ endif -}
-                \BLOCK{ for t_id, t in ep['tracks']|dictsort('sortkey') -}
-                    & % \VAR{ t['shortname']|te }
-                    \BLOCK{ if registration['parts'][t['part_id']]['status'] == participant -}
-                        \BLOCK{ if registration['tracks'][t_id]['course_id'] -}
-                            \BLOCK{ if registration['tracks'][t_id]['course_instructor']
-                                    == registration['tracks'][t_id]['course_id'] -}
+                    <<%- endif -%>>
+                    % <<< ep['shortname']|te >>>
+                <<% endif -%>>
+                <<% for t_id, t in ep['tracks']|dictsort('sortkey') -%>>
+                    & % <<< t['shortname']|te >>>
+                    <<% if registration['parts'][t['part_id']]['status'] == participant -%>>
+                        <<% if registration['tracks'][t_id]['course_id'] -%>>
+                            <<% if registration['tracks'][t_id]['course_instructor']
+                                    == registration['tracks'][t_id]['course_id'] -%>>
                                 \emph{
-                                    \VAR{- courses[registration['tracks'][t_id]['course_id']]['shortname']|te -}
+                                    <<<- courses[registration['tracks'][t_id]['course_id']]['shortname']|te ->>>
                                 }
-                            \BLOCK{- else -}
-                                \VAR{- courses[registration['tracks'][t_id]['course_id']]['shortname']|te -}
-                            \BLOCK{ endif -}
-                        \BLOCK{ elif registration['persona_id'] in ambience['event']['orgas'] -}
-                            \emph{\BLOCK{ trans } Orga \BLOCK{ endtrans }}
-                        \BLOCK{ else -}
+                            <<%- else -%>>
+                                <<<- courses[registration['tracks'][t_id]['course_id']]['shortname']|te ->>>
+                            <<% endif -%>>
+                        <<% elif registration['persona_id'] in ambience['event']['orgas'] -%>>
+                            \emph{<<% trans %>> Orga <<% endtrans %>>}
+                        <<% else -%>>
                             \checkmark
-                        \BLOCK{ endif -}
-                    \BLOCK{ else -}
+                        <<% endif -%>>
+                    <<% else -%>>
                         ---
-                    \BLOCK{ endif -}
-                \BLOCK{ endfor -}
-            \BLOCK{ endfor -}
+                    <<% endif -%>>
+                <<% endfor -%>>
+            <<% endfor -%>>
             \\
-        \BLOCK{ endwith -}
-    \BLOCK{ endfor -}
+        <<% endwith -%>>
+    <<% endfor -%>>
         \hline
     \end{longtable}
-\BLOCK{ endblock }
+<<% endblock %>>

@@ -1,53 +1,53 @@
-\BLOCK{ extends "tex/event/base_article.tmpl" }
-\BLOCK{ block extra_preamble }
+<<% extends "tex/event/base_article.tmpl" %>>
+<<% block extra_preamble %>>
     \parindent 0pt\relax
     \newcommand\course[7]{
         \section*{#1 (#2)}
-        \BLOCK{ trans } Kursleiter \BLOCK{ endtrans }: #3
+        <<% trans %>> Kursleiter <<% endtrans %>>: #3
         \par
-        \BLOCK{ trans } Minimalgröße/Maximalgröße \BLOCK{ endtrans }: #4/#5
+        <<% trans %>> Minimalgröße/Maximalgröße <<% endtrans %>>: #4/#5
         \par
-        \BLOCK{ trans } Notizen \BLOCK{ endtrans }: #6
+        <<% trans %>> Notizen <<% endtrans %>>: #6
         \par
-        \BLOCK{ trans } Erst-/Zweit-/Drittwahlen \BLOCK{ endtrans }: #7}
+        <<% trans %>> Erst-/Zweit-/Drittwahlen <<% endtrans %>>: #7}
     \newcommand\participant[6]{
         \section*{#1 (#2)}
         #3
         #4
         #5
         #6}
-\BLOCK{ endblock }
-\BLOCK{ block content }
-    \BLOCK{ for course_id, course in courses|xdictsort('title') }
-        \BLOCK{ for track_id in tracks_sorted if track_id in course['active_segments'] }
-            \course{\VAR{ course['title']|te }}{\VAR{ ambience['event']['tracks'][track_id]['title']|te }}%
-                   {\VAR{ course['instructors']|te }}{\VAR{ course['min_size']|te }}{\VAR{ course['max_size']|te }}%
-                   {\VAR{ course['notes']|te }}{\VAR{ counts[course_id][(track_id, 0)]|te }/%
-                                                \VAR{ counts[course_id][(track_id, 1)]|te }/%
-                                                \VAR{ counts[course_id][(track_id, 2)]|te }}
-        \BLOCK{ endfor }
-    \BLOCK{ endfor }
+<<% endblock %>>
+<<% block content %>>
+    <<% for course_id, course in courses|xdictsort('title') %>>
+        <<% for track_id in tracks_sorted if track_id in course['active_segments'] %>>
+            \course{<<< course['title']|te >>>}{<<< ambience['event']['tracks'][track_id]['title']|te >>>}%
+                   {<<< course['instructors']|te >>>}{<<< course['min_size']|te >>>}{<<< course['max_size']|te >>>}%
+                   {<<< course['notes']|te >>>}{<<< counts[course_id][(track_id, 0)]|te >>>/%
+                                                <<< counts[course_id][(track_id, 1)]|te >>>/%
+                                                <<< counts[course_id][(track_id, 2)]|te >>>}
+        <<% endfor %>>
+    <<% endfor %>>
     \clearpage
-    \BLOCK{ for registration_id, registration in registrations.items() }
-        \BLOCK{ for track_id in tracks_sorted }
-            \BLOCK{ set track = ambience['event']['tracks'][track_id] }
-                \BLOCK{ if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant }
-                    \participant{\VAR{ personas[registration['persona_id']]['given_names']|te }
-                                 \VAR{ personas[registration['persona_id']]['family_name']|te }}%
-                                {\VAR{ track['title']|te }}%
-                                {\BLOCK{ if registration['tracks'][track_id]['course_instructor'] -}
-                                    \BLOCK{ trans } Kursleiter \BLOCK{ endtrans }:
-                                    \VAR{ courses[registration['tracks'][track_id]['course_instructor']]['title']|te }
+    <<% for registration_id, registration in registrations.items() %>>
+        <<% for track_id in tracks_sorted %>>
+            <<% set track = ambience['event']['tracks'][track_id] %>>
+                <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
+                    \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
+                                 <<< personas[registration['persona_id']]['family_name']|te >>>}%
+                                {<<< track['title']|te >>>}%
+                                {<<% if registration['tracks'][track_id]['course_instructor'] -%>>
+                                    <<% trans %>> Kursleiter <<% endtrans %>>:
+                                    <<< courses[registration['tracks'][track_id]['course_instructor']]['title']|te >>>
                                     \par
-                                \BLOCK{- endif }}%
-                    \BLOCK{ for label in (_("Erstwahl"), _("Zweitwahl"), _("Drittwahl")) -}
-                                {\BLOCK{ if registration['tracks'][track_id]['choices']|length > loop.index0 -}
-                                    \VAR{ label|te }:
-                                    \VAR{ courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te }
+                                <<%- endif %>>}%
+                    <<% for label in (_("Erstwahl"), _("Zweitwahl"), _("Drittwahl")) -%>>
+                                {<<% if registration['tracks'][track_id]['choices']|length > loop.index0 -%>>
+                                    <<< label|te >>>:
+                                    <<< courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te >>>
                                     \par
-                                 \BLOCK{ endif }}%
-                    \BLOCK{ endfor }
-                \BLOCK{ endif }
-        \BLOCK{ endfor }
-    \BLOCK{ endfor }
-\BLOCK{ endblock }
+                                 <<% endif %>>}%
+                    <<% endfor %>>
+                <<% endif %>>
+        <<% endfor %>>
+    <<% endfor %>>
+<<% endblock %>>

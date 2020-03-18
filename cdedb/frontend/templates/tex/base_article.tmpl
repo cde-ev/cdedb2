@@ -1,18 +1,18 @@
-\COMMENT{
+<<#
     This is the base template to be extended by (nearly) all tex templates
     not being a letter.  It provides a skeleton where only the content needs
     to be filled in.
 
     Note that we change the syntax for TeX templates so that curly braces
     aren't overloaded that much. Mor specifically comments (see this),
-    blocks (\BLOCK{ if }) and variables (\VAR{ datum|te }) change.
-}
+    blocks (<<% if %>>) and variables (<<< datum|te >>>) change.
+#>>
 
-\BLOCK{ block preamble }
-    \BLOCK{ block documentclass }
+<<% block preamble %>>
+    <<% block documentclass %>>
         \documentclass[12pt]{scrartcl}
         \KOMAoptions{paper=A4,pagesize,DIV=16}
-    \BLOCK{ endblock }
+    <<% endblock %>>
 
     \usepackage{iftex}
 
@@ -25,14 +25,14 @@
 
     \usepackage[ngerman]{babel}
     \usepackage{graphicx}
-\BLOCK{ endblock }
+<<% endblock %>>
 
-\BLOCK{ block extra_preamble }
+<<% block extra_preamble %>>
     % no extras
-\BLOCK{ endblock }
+<<% endblock %>>
 
 \begin{document}
-\BLOCK{ block content }
+<<% block content %>>
     % no content
-\BLOCK{ endblock }
+<<% endblock %>>
 \end{document}

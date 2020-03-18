@@ -821,12 +821,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,
-            block_start_string="\BLOCK{",
-            block_end_string="}",
-            variable_start_string="\VAR{",
-            variable_end_string="}",
-            comment_start_string="\COMMENT{",
-            comment_end_string="}",
+            block_start_string="<<%",
+            block_end_string="%>>",
+            variable_start_string="<<<",
+            variable_end_string=">>>",
+            comment_start_string="<<#",
+            comment_end_string="#>>",
         )
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,

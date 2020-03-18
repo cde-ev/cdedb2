@@ -1,16 +1,16 @@
-\BLOCK{ extends "tex/event/base_article.tmpl" }
-\BLOCK{ block documentclass }
+<<% extends "tex/event/base_article.tmpl" %>>
+<<% block documentclass %>>
     \documentclass[12pt,twocolumn]{scrartcl}
-\BLOCK{ endblock }
-\BLOCK{ block extra_preamble }
+<<% endblock %>>
+<<% block extra_preamble %>>
     \parindent 0pt\relax
     \newcommand\lodgement[5]{
         \section*{#1 (#2)}
-        \BLOCK{ trans } Kapazität \BLOCK{ endtrans }: #3
+        <<% trans %>> Kapazität <<% endtrans %>>: #3
         \par
-        \BLOCK{ trans } Reserve \BLOCK{ endtrans }: #4
+        <<% trans %>> Reserve <<% endtrans %>>: #4
         \par
-        \BLOCK{ trans } Notizen \BLOCK{ endtrans }: #5
+        <<% trans %>> Notizen <<% endtrans %>>: #5
         \par
         \vspace{.5cm}
         \hrule
@@ -24,47 +24,47 @@
         \hrule}
 
     \usepackage[top=.5cm,bottom=.5cm, left=.5cm, right=.5cm]{geometry}
-\BLOCK{ endblock }
-\BLOCK{ block content }
-    \BLOCK{ for lodgement_id, lodgement in lodgements|xdictsort('moniker') }
-        \BLOCK{ for part_id, part in ambience['event']['parts']|xdictsort('part_begin') }
-            \lodgement{\VAR{ lodgement['moniker']|te }}{\VAR{ part['title']|te }}{\VAR{ lodgement['capacity']|te }}%
-                      {\VAR{ lodgement['reserve']|te }}{\VAR{ lodgement['notes']|te }}
-        \BLOCK{ endfor }
-    \BLOCK{ endfor }
+<<% endblock %>>
+<<% block content %>>
+    <<% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %>>
+        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
+            \lodgement{<<< lodgement['moniker']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['capacity']|te >>>}%
+                      {<<< lodgement['reserve']|te >>>}{<<< lodgement['notes']|te >>>}
+        <<% endfor %>>
+    <<% endfor %>>
     \clearpage
-    \BLOCK{ for registration_id, registration in registrations.items() } \COMMENT{ This is already sorted. }
-        \BLOCK{ for part_id, part in ambience['event']['parts']|xdictsort('part_begin') }
-            \BLOCK{ if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() }
-                \participant{\VAR{ personas[registration['persona_id']]['given_names']|te }
-                             \VAR{ personas[registration['persona_id']]['family_name']|te }}%
-                    {\BLOCK{ if ambience['event']['parts']|length > 1 }\VAR{ part['title']|te }; \BLOCK{ endif }%
-                     \VAR{ personas[registration['persona_id']]['birthday'].year|te }%
-                     \BLOCK{ if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -}
-                        ~[\BLOCK{ trans } Gast \BLOCK{ endtrans }]
-                     \BLOCK{- endif }}%
-                    {\VAR{ gettext(enums['Genders'](personas[registration['persona_id']]['gender'])|string)|te }}%
-                    {\BLOCK{ if not registration['mixed_lodging'] }
-                        \BLOCK{- trans } getrennt \BLOCK{ endtrans -}
-                    \BLOCK{ endif }}%
-                    {\BLOCK{ if registration['age'] == enums['AgeClasses'].u18 }U18\BLOCK{ endif -}
-                     \BLOCK{ if registration['age'] == enums['AgeClasses'].u16 }U16\BLOCK{ endif -}
-                     \BLOCK{ if registration['age'] == enums['AgeClasses'].u14 }U14\BLOCK{ endif -}}%
-                    {\BLOCK{ if ambience['event']['reserve_field'] and
+    <<% for registration_id, registration in registrations.items() %>> <<# This is already sorted. #>>
+        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
+            <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %>>
+                \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
+                             <<< personas[registration['persona_id']]['family_name']|te >>>}%
+                    {<<% if ambience['event']['parts']|length > 1 %>><<< part['title']|te >>>; <<% endif %>>%
+                     <<< personas[registration['persona_id']]['birthday'].year|te >>>%
+                     <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>
+                        ~[<<% trans %>> Gast <<% endtrans %>>]
+                     <<%- endif %>>}%
+                    {<<< gettext(enums['Genders'](personas[registration['persona_id']]['gender'])|string)|te >>>}%
+                    {<<% if not registration['mixed_lodging'] %>>
+                        <<%- trans %>> getrennt <<% endtrans -%>>
+                    <<% endif %>>}%
+                    {<<% if registration['age'] == enums['AgeClasses'].u18 %>>U18<<% endif -%>>
+                     <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
+                     <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
+                    {<<% if ambience['event']['reserve_field'] and
                             registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -}
-                        \BLOCK{ trans } Isomatte \BLOCK{ endtrans }
-                     \BLOCK{- endif }}% ID \VAR{ registration_id|te }
-                    {\BLOCK{ if ambience['event']['lodge_field']
+                                ambience['event']['fields'][ambience['event']['reserve_field']]['field_name']) -%>>
+                        <<% trans %>> Isomatte <<% endtrans %>>
+                     <<%- endif %>>}% ID <<< registration_id|te >>>
+                    {<<% if ambience['event']['lodge_field']
                             and registration['fields'].get(
-                                ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -}
-                        \BLOCK{ trans } Wunsch \BLOCK{ endtrans }: \VAR{ registration['fields'].get(
-                                    ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te }
-                     \BLOCK{ endif -}}%
-                    {\BLOCK{ if reverse_wish.get(registration_id) -}%
-                        \BLOCK{ trans } Revers-Wunsch-Heuristik \BLOCK{ endtrans }: \VAR{ reverse_wish[registration_id]|te }
-                     \BLOCK{ endif -}}
-            \BLOCK{ endif }
-        \BLOCK{ endfor }
-    \BLOCK{ endfor }
-\BLOCK{ endblock }
+                                ambience['event']['fields'][ambience['event']['lodge_field']]['field_name']) -%>>
+                        <<% trans %>> Wunsch <<% endtrans %>>: <<< registration['fields'].get(
+                                    ambience['event']['fields'][ambience['event']['lodge_field']]['field_name'])|te >>>
+                     <<% endif -%>>}%
+                    {<<% if reverse_wish.get(registration_id) -%>>%
+                        <<% trans %>> Revers-Wunsch-Heuristik <<% endtrans %>>: <<< reverse_wish[registration_id]|te >>>
+                     <<% endif -%>>}
+            <<% endif %>>
+        <<% endfor %>>
+    <<% endfor %>>
+<<% endblock %>>

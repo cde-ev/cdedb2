@@ -1,12 +1,12 @@
-\BLOCK{ extends "tex/event/base_article.tmpl" }
-\BLOCK{ block extra_preamble }
+<<% extends "tex/event/base_article.tmpl" %>>
+<<% block extra_preamble %>>
     \usepackage{wrapfig}
     \parindent 0pt\relax
     \pagestyle{empty}
-\BLOCK{ endblock }
-\BLOCK{ block content }
-    \BLOCK{ for lodgement_id, lodgement in lodgements|xdictsort('moniker') }
-        \BLOCK{ for part_id, part in ambience['event']['parts']|xdictsort('part_begin') }
+<<% endblock %>>
+<<% block content %>>
+    <<% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %>>
+        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
                 \begin{center}
@@ -14,17 +14,17 @@
                 \end{center}
                 \vspace{-2\baselineskip}
             \end{wrapfigure}
-            \section*{\VAR{ lodgement['moniker']|te } (\VAR{ part['title']|te })}
+            \section*{<<< lodgement['moniker']|te >>> (<<< part['title']|te >>>)}
             \begin{itemize}
-                \BLOCK{ for registration_id in inhabitants[(lodgement_id, part_id)] }
+                <<% for registration_id in inhabitants[(lodgement_id, part_id)] %>>
                     \item
-                        \VAR{ personas[registrations[registration_id]['persona_id']]['given_names']|te }
-                        \VAR{ personas[registrations[registration_id]['persona_id']]['family_name']|te }
-                \BLOCK{ else }
-                    \item \BLOCK{ trans } niemand \BLOCK{ endtrans }
-                \BLOCK{ endfor }
+                        <<< personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
+                        <<< personas[registrations[registration_id]['persona_id']]['family_name']|te >>>
+                <<% else %>>
+                    \item <<% trans %>> niemand <<% endtrans %>>
+                <<% endfor %>>
             \end{itemize}
             \clearpage
-        \BLOCK{ endfor }
-    \BLOCK{ endfor }
-\BLOCK{ endblock }
+        <<% endfor %>>
+    <<% endfor %>>
+<<% endblock %>>
