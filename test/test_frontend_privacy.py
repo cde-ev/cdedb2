@@ -484,3 +484,53 @@ class TestPrivacyFrontend(FrontendTest):
         else:
             self.get('/assembly/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
+
+    @as_users("anton")
+    def test_member_search_result(self, user):
+        # first, test berta is accessible
+        self.traverse({'description': "Mitglieder"})
+        f = self.response.forms['membersearchform']
+        f['qval_fulltext'] = "Berta"
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+
+        # first, make berta not-searchable
+        self.traverse({'href': '/core/persona/2/adminchange'})
+        f = self.response.forms['changedataform']
+        f['is_searchable'].checked = False
+        self.submit(f)
+
+        self.traverse({'description': "Mitglieder"})
+        f = self.response.forms['membersearchform']
+        f['qval_fulltext'] = "Berta"
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertNonPresence("Ergebnis")
+
+        # second, make berta searchable again ...
+        self.admin_view_profile('berta')
+        self.traverse({'href': '/core/persona/2/adminchange'})
+        f = self.response.forms['changedataform']
+        f['is_searchable'].checked = True
+        self.submit(f)
+        # ... and then non-member
+        self.traverse({'href': '/core/persona/2/membership/change'})
+        f = self.response.forms['modifymembershipform']
+        self.submit(f)
+
+        self.traverse({'description': "Mitglieder"})
+        f = self.response.forms['membersearchform']
+        f['qval_fulltext'] = "Berta"
+        self.submit(f)
+        self.assertTitle("CdE-Mitglied suchen")
+        self.assertNonPresence("Ergebnis")
+
+    @as_users("charly", "daniel")
+    def test_member_search_access(self, user):
+        # they should not see the shortcut on the member index page ...
+        self.traverse({'description': 'Mitglieder'})
+        with self.assertRaises(KeyError) as exc:
+            self.response.forms['membersearchform']
+
+        # ... nor the member search page itself
+        self.get('/cde/search/member', status="403 FORBIDDEN")
