@@ -851,6 +851,7 @@ class EventFrontend(AbstractUserFrontend):
             for key, value in field.items() if key != 'id'}
         merge_dicts(rs.values, current)
         is_referenced = set()
+        is_fee_modifier = set()
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         for row in questionnaire:
             if row['field_id']:
@@ -859,8 +860,13 @@ class EventFrontend(AbstractUserFrontend):
             is_referenced.add(rs.ambience['event']['lodge_field'])
         if rs.ambience['event']['reserve_field']:
             is_referenced.add(rs.ambience['event']['reserve_field'])
+        if rs.ambience['event']['course_room_field']:
+            is_referenced.add(rs.ambience['event']['course_room_field'])
+        for mod in rs.ambience['event']['fee_modifiers'].values():
+            is_referenced.add(mod['field_id'])
+            is_fee_modifier.add(mod['field_id'])
         return self.render(rs, "field_summary", {
-            'is_referenced': is_referenced})
+            'is_referenced': is_referenced, 'is_fee_modifier': is_fee_modifier})
 
     @staticmethod
     def process_field_input(rs, fields):

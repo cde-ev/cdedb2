@@ -25,7 +25,7 @@
    non-deletable rows have a disabled 'delete'-checkbox,
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro print_field(field_id, association, deletable, aclass="", newrow=False) %}
+{% macro print_field(field_id, association, deletable, changeable, aclass="", newrow=False) %}
     <div class="col-md-6 {{ aclass }}" role="group">
         <div class="panel panel-default panel-condensed">
             <div class="panel-heading {% if "field_name_{}".format(field_id) in errors %}has-error{% endif %}">
@@ -43,7 +43,7 @@
                     </label>
                     <div class="col-sm-5 {% if "kind_{}".format(field_id) in errors %}has-error{% endif %}">
                         {{ util.input_select(name="kind_{}".format(field_id), entries=enums['FieldDatatypes']|enum_entries(processing=gettext),
-                            attributes=('data-basename="kind_"'|s if newrow else ''), aclass='drow-input form-control',
+                            attributes=('data-basename="kind_"'|s if newrow else ('readonly' if not changeable else '')), aclass='drow-input form-control',
                             anid="input-select-kind_{}".format(field_id)) }}
                         {{ util.output_errors("kind_{}".format(field_id)) }}
                     </div>
@@ -66,7 +66,7 @@
                         {{ util.form_input_select(label=gettext("Fields for"),
                                                   name="association_{}".format(field_id),
                                                   entries=enums['FieldAssociations']|enum_entries(processing=gettext),
-                                                  attributes=('data-basename="association_"'|s if newrow else ''),
+                                                  attributes=('data-basename="association_"'|s if newrow else ('readonly' if not changeable else '')),
                                                   aclass='drow-input form-control association-input')
                         }}
                     </div>
@@ -74,7 +74,7 @@
                     {{ util.input_hidden(name="association_{}".format(field_id), value=association.value) }}
                 {% endif %}
                 {{ util.form_input_textarea(name="entries_{}".format(field_id), label=gettext("Options"),
-                                            attributes=('data-basename="entries_"'|s if newrow else ''),
+                                            attributes=('data-basename="entries_"'|s if newrow else ('readonly' if not changeable else '')),
                                             aclass='drow-input') }}
             </div>
         </div>
@@ -102,14 +102,14 @@
                         {# Old items, already stored in the database #}
                         {% for field_id, entry in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                             {% if entry['association'] == association %}
-                                {{ print_field(field_id, association, field_id not in is_referenced, 'drow-row') }}
+                                {{ print_field(field_id, association, field_id not in is_referenced, field_id not in is_fee_modifier, 'drow-row') }}
                             {% endif %}
                         {% endfor %}
 
                         {# Items that were added by the user but failed validation. They are still new and have no official id. #}
                         {% for i in range(1, values.get('create_last_index', 0) + 1) %}
                             {% if values.get("association_{}".format(-i), '')|int == association.value %}
-                                {{ print_field(-i, association, False, 'drow-new', newrow=True) }}
+                                {{ print_field(-i, association, False, True, 'drow-new', newrow=True) }}
                             {% endif %}
                         {% endfor %}
                     </div>
@@ -120,7 +120,7 @@
         <h3 class="heading-underline">{% trans %}New Field{% endtrans %}</h3>
         {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
         <div class="row">
-            {{ print_field(-values.get('create_last_index', 0) - 1, None, False, 'drow-prototype', newrow=True) }}
+            {{ print_field(-values.get('create_last_index', 0) - 1, None, False, True, 'drow-prototype', newrow=True) }}
         </div>
 
         {{ util.input_hidden("active_tab", anid="input_active_tab") }}
