@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-03-18 15:22+0100\n"
+"POT-Creation-Date: 2020-03-18 16:31+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -3380,6 +3380,7 @@ msgid "Course"
 msgstr ""
 
 #: cdedb/frontend/event.py:2732
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:39
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:55
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:64
 #: cdedb/frontend/templates/web/event/create_course.tmpl:35
@@ -3827,51 +3828,76 @@ msgid "User created."
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:26
-msgid "Teilnehmer"
+#: cdedb/frontend/templates/web/assembly/base.tmpl:10
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:33
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:71
+#: cdedb/frontend/templates/web/event/stats.tmpl:25
+msgid "Participants"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
-#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:39
-msgid "Kursleiter"
+#: cdedb/frontend/templates/web/event/change_course.tmpl:38
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:76
+msgid "Instructors"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:50
 #: cdedb/frontend/templates/tex/event/lodgement_lists.tmpl:24
-msgid "niemand"
+msgid "nobody"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_lists.tmpl:56
-msgid "Kursraum"
+msgid "Course room"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:8
-msgid "Minimalgröße/Maximalgröße"
+msgid "Minimum size/maximum size"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:10
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:13
-msgid "Notizen"
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:44
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:62
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:39
+#: cdedb/frontend/templates/web/event/add_registration.tmpl:74
+#: cdedb/frontend/templates/web/event/amend_registration.tmpl:46
+#: cdedb/frontend/templates/web/event/change_course.tmpl:75
+#: cdedb/frontend/templates/web/event/change_lodgement.tmpl:33
+#: cdedb/frontend/templates/web/event/change_registration.tmpl:90
+#: cdedb/frontend/templates/web/event/change_registrations.tmpl:180
+#: cdedb/frontend/templates/web/event/create_lodgement.tmpl:32
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:63
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:79
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:85
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:42
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:164
+#: cdedb/frontend/templates/web/event/show_registration.tmpl:223
+#: cdedb/frontend/templates/web/generic.tmpl:67
+msgid "Notes"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:12
-msgid "Erst-/Zweit-/Drittwahlen"
+msgid "First/second/third choice"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
-msgid "Erstwahl"
+msgid "First choice"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
-msgid "Zweitwahl"
+msgid "Second choice"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
-msgid "Drittwahl"
+msgid "Third choice"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:9
-msgid "Kapazität"
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:51
+msgid "Capacity"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:11
@@ -3879,23 +3905,23 @@ msgid "Reserve"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:44
-msgid "Gast"
+msgid "guest"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:48
-msgid "getrennt"
+msgid "separated"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:56
-msgid "Isomatte"
+msgid "sleeping pad"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:61
-msgid "Wunsch"
+msgid "Wish"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:65
-msgid "Revers-Wunsch-Heuristik"
+msgid "Reverse wish heuristic"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/nametags.tmpl:96
@@ -3908,12 +3934,12 @@ msgstr ""
 
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:22
 #, python-format
-msgid "Teilnehmerliste %(title)s"
+msgid "Participant list %(title)s"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:25
 #, python-format
-msgid "Seite %(curr_page)s von %(total_pages)s"
+msgid "Page %(curr_page)s of %(total_pages)s"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:46
@@ -4592,27 +4618,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:141
 #: cdedb/frontend/templates/web/generic.tmpl:207
 msgid "Trial Member"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:31
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:44
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:62
-#: cdedb/frontend/templates/web/core/change_privileges.tmpl:39
-#: cdedb/frontend/templates/web/event/add_registration.tmpl:74
-#: cdedb/frontend/templates/web/event/amend_registration.tmpl:46
-#: cdedb/frontend/templates/web/event/change_course.tmpl:75
-#: cdedb/frontend/templates/web/event/change_lodgement.tmpl:33
-#: cdedb/frontend/templates/web/event/change_registration.tmpl:90
-#: cdedb/frontend/templates/web/event/change_registrations.tmpl:180
-#: cdedb/frontend/templates/web/event/create_lodgement.tmpl:32
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:63
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:79
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:85
-#: cdedb/frontend/templates/web/event/registration_query.tmpl:42
-#: cdedb/frontend/templates/web/event/registration_status.tmpl:164
-#: cdedb/frontend/templates/web/event/show_registration.tmpl:223
-#: cdedb/frontend/templates/web/generic.tmpl:67
-msgid "Notes"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:28
@@ -5985,14 +5990,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/base.tmpl:55
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:179
 msgid "Overview"
-msgstr ""
-
-#: cdedb/frontend/templates/web/assembly/base.tmpl:10
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
-#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:33
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:71
-#: cdedb/frontend/templates/web/event/stats.tmpl:25
-msgid "Participants"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:18
@@ -9235,11 +9232,6 @@ msgstr ""
 msgid "Long Title"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_course.tmpl:38
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:76
-msgid "Instructors"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/change_course.tmpl:39
 #: cdedb/frontend/templates/web/event/create_course.tmpl:36
 #: cdedb/frontend/templates/web/event/show_course.tmpl:47
@@ -10370,10 +10362,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:90
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:101
 msgid "Inhabitants"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:51
-msgid "Capacity"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:58
@@ -12055,5 +12043,59 @@ msgstr ""
 #~ "pay the additional fee. If you "
 #~ "choose to do so, please do so "
 #~ "with two separate payments."
+#~ msgstr ""
+
+#~ msgid "Teilnehmer"
+#~ msgstr ""
+
+#~ msgid "Kursleiter"
+#~ msgstr ""
+
+#~ msgid "niemand"
+#~ msgstr ""
+
+#~ msgid "Kursraum"
+#~ msgstr ""
+
+#~ msgid "Minimalgröße/Maximalgröße"
+#~ msgstr ""
+
+#~ msgid "Notizen"
+#~ msgstr ""
+
+#~ msgid "Erst-/Zweit-/Drittwahlen"
+#~ msgstr ""
+
+#~ msgid "Erstwahl"
+#~ msgstr ""
+
+#~ msgid "Zweitwahl"
+#~ msgstr ""
+
+#~ msgid "Drittwahl"
+#~ msgstr ""
+
+#~ msgid "Kapazität"
+#~ msgstr ""
+
+#~ msgid "Gast"
+#~ msgstr ""
+
+#~ msgid "getrennt"
+#~ msgstr ""
+
+#~ msgid "Isomatte"
+#~ msgstr ""
+
+#~ msgid "Wunsch"
+#~ msgstr ""
+
+#~ msgid "Revers-Wunsch-Heuristik"
+#~ msgstr ""
+
+#~ msgid "Teilnehmerliste %(title)s"
+#~ msgstr ""
+
+#~ msgid "Seite %(curr_page)s von %(total_pages)s"
 #~ msgstr ""
 
