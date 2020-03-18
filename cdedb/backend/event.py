@@ -2629,7 +2629,7 @@ class EventBackend(AbstractBackend):
             is_member = self.core.get_persona(
                 rs, reg['persona_id'])['is_member']
         if not is_member:
-            fee += event['additional_external_fee']
+            fee += event['nonmember_surcharge']
 
         return fee
 
