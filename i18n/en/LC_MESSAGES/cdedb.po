@@ -1009,7 +1009,7 @@ msgstr "Team (Moderated Opt-in)"
 
 #: cdedb/i18n_additional.py:247
 msgid "MailinglistTypes.event_associated"
-msgstr "Participants(Registrations (Opt-out)"
+msgstr "Participants/Registrations (Opt-out)"
 
 #: cdedb/i18n_additional.py:248
 msgid "MailinglistTypes.event_orga"
