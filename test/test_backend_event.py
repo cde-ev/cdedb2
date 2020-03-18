@@ -99,7 +99,21 @@ class TestEventBackend(BackendTest):
                     'entries': [["2109-08-16", "In the first coming"],
                                 ["2110-08-16", "During the second coming"]],
                 },
+                -3: {
+                    'association': const.FieldAssociations.registration,
+                    'field_name': "is_child",
+                    'kind': const.FieldDatatypes.bool,
+                    'entries': None,
+                }
             },
+            'fee_modifiers': {
+                -1: {
+                    'amount': decimal.Decimal("-7.00"),
+                    'field_id': 1003,  # TODO allow specifying a negative id here?
+                    'modifier_name': "is_child",
+                    'part_id': 1002,  # TODO allow specifying a negative id here?
+                }
+            }
         }
         new_id = self.event.create_event(self.key, data)
         ## back to normal mode
@@ -152,6 +166,16 @@ class TestEventBackend(BackendTest):
                     data['fields'][field]['event_id'] = new_id
                     break
             del data['fields'][oldfield]
+        fee_modifier_map = {}
+        for mod in tmp['fee_modifiers']:
+            for oldmod in data['fee_modifiers']:
+                if (tmp['fee_modifiers'][mod]['modifier_name']
+                        == data['fee_modifiers'][oldmod]['modifier_name']):
+                    fee_modifier_map[tmp['fee_modifiers'][mod]['modifier_name']] = mod
+                    data['fee_modifiers'][mod] = data['fee_modifiers'][oldmod]
+                    data['fee_modifiers'][mod]['id'] = mod
+                    break
+            del data['fee_modifiers'][oldmod]
 
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
@@ -2462,16 +2486,75 @@ class TestEventBackend(BackendTest):
             'payment': None,
             'persona_id': 2000,
             'real_persona_id': 2,
-            'amount_paid': decimal.Decimal(42),
+            'amount_paid': decimal.Decimal("42.00"),
             'amount_owed': decimal.Decimal("666.66"),
         }
         ## registration parts
-        new_data['event.registration_parts'][5000] = {
-            'id': 5000,
-            'lodgement_id': 6000,
-            'part_id': 4000,
-            'registration_id': 1000,
-            'status': 1}
+        new_data['event.registration_parts'].update({
+            5000: {
+                'id': 5000,
+                'lodgement_id': 6000,
+                'part_id': 4000,
+                'registration_id': 1000,
+                'status': 1,
+            },
+            5001: {
+                'id': 5001,
+                'lodgement_id': None,
+                'part_id': 1,
+                'registration_id': 1000,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            5002: {
+                'id': 5002,
+                'lodgement_id': None,
+                'part_id': 2,
+                'registration_id': 1000,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            5003: {
+                'id': 5003,
+                'lodgement_id': None,
+                'part_id': 3,
+                'registration_id': 1000,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            5004: {
+                'id': 5004,
+                'lodgement_id': None,
+                'part_id': 4000,
+                'registration_id': 1,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            5005: {
+                'id': 5005,
+                'lodgement_id': None,
+                'part_id': 4000,
+                'registration_id': 2,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            5006: {
+                'id': 5006,
+                'lodgement_id': None,
+                'part_id': 4000,
+                'registration_id': 3,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            5007: {
+                'id': 5007,
+                'lodgement_id': None,
+                'part_id': 4000,
+                'registration_id': 4,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            5008: {
+                'id': 5008,
+                'lodgement_id': None,
+                'part_id': 4000,
+                'registration_id': 5,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+        })
         ## registration parts
         new_data['event.registration_tracks'][1200] = {
             'course_id': 3000,
@@ -2510,15 +2593,26 @@ class TestEventBackend(BackendTest):
         new_data['event.course_choices'][10000] = {
             'course_id': 3000, 'id': 10000, 'track_id': 1100, 'rank': 0, 'registration_id': 1000}
         ## field definitions
-        new_data['event.field_definitions'][11000] = {
-            'association': 1,
-            'entries': [['good', 'good'],
-                        ['neutral', 'so so'],
-                        ['bad', 'not good']],
-            'event_id': 1,
-            'field_name': 'behaviour',
-            'id': 11000,
-            'kind': 1}
+        new_data['event.field_definitions'].update({
+            11000: {
+                'association': 1,
+                'entries': [['good', 'good'],
+                            ['neutral', 'so so'],
+                            ['bad', 'not good']],
+                'event_id': 1,
+                'field_name': 'behaviour',
+                'id': 11000,
+                'kind': 1,
+            },
+            11001: {
+                'association': const.FieldAssociations.registration,
+                'entries': None,
+                'event_id': 1,
+                'field_name': "is_child",
+                'id': 11001,
+                'kind': const.FieldDatatypes.bool,
+            }
+        })
         ## questionnaire rows
         new_data['event.questionnaire_rows'][12000] = {
             'event_id': 1,
@@ -2529,6 +2623,13 @@ class TestEventBackend(BackendTest):
             'pos': 1,
             'readonly': True,
             'title': 'Vorsätze'}
+        new_data['event.fee_modifiers'][13000] = {
+            'id': 13000,
+            'part_id': 4000,
+            'field_id': 11001,
+            'modifier_name': 'is_child',
+            'amount': decimal.Decimal("-12.50"),
+        }
         ## Note that the changes above are not entirely consistent/complete (as
         ## in some stuff is missing and another part may throw an error if we
         ## used the resulting data set for real)
@@ -2582,16 +2683,83 @@ class TestEventBackend(BackendTest):
             'payment': None,
             'persona_id': 2,
             'real_persona_id': None,
-            'amount_paid': decimal.Decimal(42),
+            'amount_paid': decimal.Decimal("42.00"),
             'amount_owed': decimal.Decimal("666.66"),
         }
-        stored_data['event.registration_parts'][1001] = {
-            'id': 1001,
-            'is_reserve': False,
-            'lodgement_id': 1001,
-            'part_id': 1001,
-            'registration_id': 1001,
-            'status': 1}
+        stored_data['event.registration_parts'].update({
+            1001: {
+                'id': 1001,
+                'is_reserve': False,
+                'lodgement_id': 1001,
+                'part_id': 1001,
+                'registration_id': 1001,
+                'status': 1,
+            },
+            1002: {
+                'id': 1002,
+                'is_reserve': False,
+                'lodgement_id': None,
+                'part_id': 1,
+                'registration_id': 1001,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            1003: {
+                'id': 1003,
+                'is_reserve': False,
+                'lodgement_id': None,
+                'part_id': 2,
+                'registration_id': 1001,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            1004: {
+                'id': 1004,
+                'is_reserve': False,
+                'lodgement_id': None,
+                'part_id': 3,
+                'registration_id': 1001,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            1005: {
+                'id': 1005,
+                'is_reserve': False,
+                'lodgement_id': None,
+                'part_id': 1001,
+                'registration_id': 1,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            1006: {
+                'id': 1006,
+                'is_reserve': False,
+                'lodgement_id': None,
+                'part_id': 1001,
+                'registration_id': 2,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            1007: {
+                'id': 1007,
+                'is_reserve': False,
+                'lodgement_id': None,
+                'part_id': 1001,
+                'registration_id': 3,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            1008: {
+                'id': 1008,
+                'is_reserve': False,
+                'lodgement_id': None,
+                'part_id': 1001,
+                'registration_id': 4,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+            1009: {
+                'id': 1009,
+                'is_reserve': False,
+                'lodgement_id': None,
+                'part_id': 1001,
+                'registration_id': 5,
+                'status': const.RegistrationPartStati.not_applied,
+            },
+        })
         stored_data['event.registration_tracks'][1001] = {
             'course_id': 1001,
             'course_instructor': None,
@@ -2621,15 +2789,33 @@ class TestEventBackend(BackendTest):
             'course_id': 1001, 'id': 1002, 'track_id': 1001, 'rank': 0, 'registration_id': 1001}
         stored_data['event.course_choices'][1001] = {
             'course_id': 4, 'id': 1001, 'track_id': 3, 'rank': 1, 'registration_id': 4}
-        stored_data['event.field_definitions'][1001] = {
-            'association': 1,
-            'entries': [['good', 'good'],
-                        ['neutral', 'so so'],
-                        ['bad', 'not good']],
-            'event_id': 1,
-            'field_name': 'behaviour',
+        stored_data['event.field_definitions'].update({
+            1001: {
+                'association': const.FieldAssociations.registration,
+                'entries': [['good', 'good'],
+                            ['neutral', 'so so'],
+                            ['bad', 'not good']],
+                'event_id': 1,
+                'field_name': 'behaviour',
+                'id': 1001,
+                'kind': const.FieldDatatypes.str,
+            },
+            1002: {
+                'association': const.FieldAssociations.registration,
+                'entries': None,
+                'event_id': 1,
+                'field_name': 'is_child',
+                'id': 1002,
+                'kind': const.FieldDatatypes.bool,
+            },
+        })
+        stored_data['event.fee_modifiers'][1001] = {
             'id': 1001,
-            'kind': 1}
+            'modifier_name': "is_child",
+            'field_id': 1002,
+            'amount': decimal.Decimal("-12.50"),
+            'part_id': 1001,
+        }
         stored_data['event.questionnaire_rows'][1001] = {
             'event_id': 1,
             'field_id': 1001,
