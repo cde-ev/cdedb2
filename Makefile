@@ -88,7 +88,7 @@ storage-test:
 	mkdir -p "/tmp/cdedb-store/testfiles/"
 	cp test/ancillary_files/{picture.pdf,picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv,partial_event_import.json} /tmp/cdedb-store/testfiles/
 
-sql:
+sql: test/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
@@ -101,22 +101,20 @@ endif
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py -i test/ancillary_files/sample_data.json -o /tmp/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb -f /tmp/sample_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f /tmp/sample_data.sql
+	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
 	sudo systemctl start pgbouncer
 
 sql-test:
 	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
-	sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py -i test/ancillary_files/sample_data.json -o /tmp/sample_data.sql
 	make sql-test-shallow
 	sudo systemctl start pgbouncer
 
-sql-test-shallow:
+sql-test-shallow: test/ancillary_files/sample_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f /tmp/sample_data.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
 
 sql-xss:
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -201,5 +199,10 @@ coverage: .coverage
 
 .PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint check single-check .coverage coverage
 
-sample-data-file:
-	sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py -i test/ancillary_files/sample_data.json -o /tmp/sample_data.sql
+test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json
+	SQLTEMPFILE=`sudo -u www-data mktemp` \
+		; sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
+		; sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py \
+			-i test/ancillary_files/sample_data.json -o "$${SQLTEMPFILE}" \
+		; cp "$${SQLTEMPFILE}" test/ancillary_files/sample_data.sql \
+		; sudo -u www-data rm "$${SQLTEMPFILE}"
