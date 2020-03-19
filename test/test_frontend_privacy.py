@@ -257,6 +257,45 @@ class TestPrivacyFrontend(FrontendTest):
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field)
 
+    @as_users("anton")
+    def test_profile_as_cde_admin(self, user):
+        # TODO replace anton with new cde only admin
+        # TODO correct olafs given and family name in sample data
+        self.admin_view_profile('olaf', check=False)
+        f = self.response.forms['activitytoggleform']
+        self.submit(f)
+        self.logout()
+        self.login(USER_DICT['olaf'])
+
+        self._disable_searchability('olaf')
+
+        # on cde users, cde admins get full view
+        self.login(user)
+        inspected = USER_DICT['berta']
+        self.get(inspected['url'])
+        found = self._profile_cde_admin_view(inspected)
+        for field in self.ALL_FIELDS - found:
+            self.assertNonPresence(field)
+
+    @as_users("vera")
+    def test_profile_as_core_admin(self, user):
+        # TODO replace vera with new core only admin
+        self._disable_searchability('vera')
+
+        # core admin gets full access to all users...
+        self.login(user)
+        inspected = USER_DICT['berta']
+        self.get(inspected['url'])
+        found = self._profile_core_admin_view(inspected)
+        self.assertEqual((self.ALL_FIELDS - found), set())
+
+        # ... especially also on archived users.
+        inspected = USER_DICT['hades']
+        self.get(inspected['url'])
+        found = self._profile_core_admin_view(inspected)
+        for field in self.ALL_FIELDS - found:
+            self.assertNonPresence(field)
+
     @as_users("martin")
     def test_profile_as_meta_admin(self, user):
         # meta admins get the same view for every user
