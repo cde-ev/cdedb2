@@ -3093,7 +3093,7 @@ class EventBackend(AbstractBackend):
         data = self.sql_select(
             rs, "event.questionnaire_rows",
             ("field_id", "pos", "title", "info", "input_size", "readonly",
-             "default_value"),
+             "default_value", "usage"),
             (event_id,), entity_key="event_id")
         return sorted(data, key=lambda x: x['pos'])
 
@@ -3124,7 +3124,7 @@ class EventBackend(AbstractBackend):
                 new_row['pos'] = pos
                 new_row['event_id'] = event_id
                 ret *= self.sql_insert(rs, "event.questionnaire_rows", new_row)
-        self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
+            self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 
     @access("event")
@@ -3201,7 +3201,7 @@ class EventBackend(AbstractBackend):
                     'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
                 ('event.questionnaire_rows', "event_id", (
                     'id', 'event_id', 'field_id', 'pos', 'title', 'info',
-                    'input_size', 'readonly',)),
+                    'input_size', 'readonly', 'usage')),
                 ('event.log', "event_id", (
                     'id', 'ctime', 'code', 'submitted_by', 'event_id',
                     'persona_id', 'additional_info')),

@@ -42,6 +42,7 @@ ALL_ENUMS = (
     const.FieldDatatypes,
     const.MailinglistTypes,
     const.MailinglistDomain,
+    const.QuestionnaireUsages,
     QueryOperators,
     AgeClasses,
     LineResolutions,

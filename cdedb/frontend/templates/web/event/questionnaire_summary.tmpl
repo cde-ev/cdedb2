@@ -59,6 +59,10 @@
                         "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
                         attributes=('data-basename="default_value_"'|s if newrow else ''),
                         aclass='input-defaultvalue drow-input', horizontal=False) }}
+                    {{ util.form_input_select(
+                        "usage_{}".format(part_id), label=gettext("Usage"), entries=enums['QuestionnaireUsages']|enum_entries,
+                        attributes=('data-basename="usage_"'|s if newrow else ''),
+                        aclass='input-usage drow-input', horizontal=False) }}
                     <div class="form-group row">
                         <div class="col-sm-8">
                             <div class="checkbox">

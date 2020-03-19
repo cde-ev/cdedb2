@@ -779,7 +779,6 @@ class EventFrontend(AbstractUserFrontend):
             if mod['id'] not in fee_modifier_deletes))
 
         data = request_extractor(rs, params, constraints)
-        # raise ValueError(rs.request.values)
         rs.values['fee_modifier_create_last_index'] = {}
         ret_fee_modifiers = {
             mod['id']: (fee_modifier_excavator(data, mod['part_id'], mod['id'])
@@ -3268,7 +3267,8 @@ class EventFrontend(AbstractUserFrontend):
             (f(entry)['field_name'],
              "{}_or_None".format(const.FieldDatatypes(f(entry)['kind']).name))
             for entry in questionnaire
-            if entry['field_id'] and not entry['readonly'])
+            if entry['field_id'] and not entry['readonly']
+            and entry['usage'] == const.QuestionnaireUsages.questionnaire)
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
             return self.questionnaire_form(rs, event_id, internal=True)
@@ -3320,6 +3320,7 @@ class EventFrontend(AbstractUserFrontend):
             'input_size': "int_or_None",
             'readonly': "bool_or_None",
             'default_value': "str_or_None",
+            'usage': "enum_questionnaireusages",
         }
         marker = 1
         while marker < 2 ** 10:
@@ -3398,7 +3399,7 @@ class EventFrontend(AbstractUserFrontend):
         :rtype: {str: object}
         """
         whitelist = ('field_id', 'title', 'info', 'input_size', 'readonly',
-                     'default_value')
+                     'default_value', 'usage')
         return {k: v for k, v in row.items() if k in whitelist}
 
     @access("event")

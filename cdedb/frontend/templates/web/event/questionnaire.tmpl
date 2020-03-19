@@ -48,48 +48,9 @@
         {{ util.anti_csrf_token('event/questionnaire') }}
     {% endif %}
         {% for entry in questionnaire %}
-            {# Field entry #}
-            {% if entry['field_id'] %}
-                {% with FIELD = ambience['event']['fields'][entry['field_id']],
-                        readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
-                    {% if FIELD['entries'] %}
-                        {{ util.form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
-                                                  label=entry['title'], info=entry['info'],
-                                                  readonly=readonly,
-                                                  defaultvalue=entry['default_value'] if not readonly else "") }}
-                    {% else %}
-                        {% set datatypes = enums['FieldDatatypes'] %}
-                        {% if FIELD['kind'] == datatypes.bool %}
-                            {{ util.form_input_checkbox(
-                                name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                                readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                        {% elif FIELD['kind'] == datatypes.str  %}
-                            {% if entry['input_size'] %}
-                                {{ util.form_input_textarea(
-                                    name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                                    readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
-                                    rows=(1+entry['input_size']*2)) }}
-                            {% else %}
-                                {{ util.form_input_text(
-                                    name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                                    readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                            {% endif %}
-                        {% else %}
-                            {{ util.form_event_field_input(
-                                FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
-                                readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
-                        {% endif %}
-                    {% endif %}
-                {% endwith %}
-
-            {# Text-only entry #}
-            {% else %}
-                {% if entry['title'] %}
-                    <h3 class="heading-underline">{{ entry['title'] }}</h3>
-                {% endif %}
-                {% if entry['info'] %}
-                    {{ entry['info']|md }}
-                {% endif %}
+            {# TODO maybe filter this in python? #}
+            {% if entry['usage'] == enums['QuestionnaireUsages'].questionnaire %}
+                {{ util.print_questionnaire_entry(entry) }}
             {% endif %}
         {% endfor %}
         {% if not preview %}

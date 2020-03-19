@@ -8,7 +8,8 @@
             "input_size": null,
             "field_id": 1,
             "id": 2,
-            "title": "B\u00e4lle"
+            "title": "B\u00e4lle",
+            "usage": 2
         },
         "6": {
             "readonly": false,
@@ -18,7 +19,8 @@
             "input_size": 3,
             "field_id": 3,
             "id": 6,
-            "title": "Hauswunsch"
+            "title": "Hauswunsch",
+            "usage": 2
         },
         "4": {
             "readonly": null,
@@ -28,7 +30,8 @@
             "input_size": null,
             "field_id": null,
             "id": 4,
-            "title": "Weitere \u00dcberschrift"
+            "title": "Weitere \u00dcberschrift",
+            "usage": 2
         },
         "1": {
             "readonly": null,
@@ -38,7 +41,8 @@
             "input_size": null,
             "field_id": null,
             "id": 1,
-            "title": "Unter\u00fcberschrift"
+            "title": "Unter\u00fcberschrift",
+            "usage": 2
         },
         "3": {
             "readonly": null,
@@ -48,7 +52,8 @@
             "input_size": null,
             "field_id": null,
             "id": 3,
-            "title": null
+            "title": null,
+            "usage": 2
         },
         "5": {
             "readonly": false,
@@ -58,7 +63,8 @@
             "input_size": null,
             "field_id": 2,
             "id": 5,
-            "title": "Vehikel"
+            "title": "Vehikel",
+            "usage": 2
         }
     },
     "kind": "full",

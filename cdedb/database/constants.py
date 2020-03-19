@@ -94,6 +94,13 @@ class FieldDatatypes(enum.IntEnum):
 
 
 @enum.unique
+class QuestionnaireUsages(enum.IntEnum):
+    """Where a questionnaire row will be displayed."""
+    registration = 1
+    questionnaire = 2
+
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed
