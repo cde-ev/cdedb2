@@ -269,7 +269,16 @@ class TestPrivacyFrontend(FrontendTest):
 
         self._disable_searchability('olaf')
 
-        # on cde users, cde admins get full view
+        # on cde users, cde admins get full view ...
+        self.login(user)
+        inspected = USER_DICT['berta']
+        self.get(inspected['url'])
+        found = self._profile_cde_admin_view(inspected)
+        for field in self.ALL_FIELDS - found:
+            self.assertNonPresence(field)
+
+        # ... even if they are not searchable
+        self._disable_searchability('berta')
         self.login(user)
         inspected = USER_DICT['berta']
         self.get(inspected['url'])
