@@ -44,16 +44,63 @@ class TestPrivacyFrontend(FrontendTest):
         checked = self._profile_relative_admin_view(inspected)
         return expected | checked
 
-    def _profile_event_admin_view(self, inspected):
+    def _profile_event_context_view(self, inspected):
         expected = {
             "Geburtsdatum", "Geschlecht", "Telefon", "Mobiltelefon", "Adresse"
         }
         for field in expected:
             self.assertPresence(field)
-        checked = self._profile_relative_admin_view(inspected)
+        # actual username should be displayed
+        self.assertPresence(inspected['username'])
+        checked = self._profile_base_view(inspected)
         return expected | checked
 
+    def _profile_event_admin_view(self, inspected):
+        expected = set()
+        for field in expected:
+            self.assertPresence(field)
+        checked = self._profile_relative_admin_view(inspected)
+        checked.update(self._profile_event_context_view(inspected))
+        return expected | checked
+
+    def _profile_cde_context_view(self, inspected):
+        expected = {
+            "Geburtsname", "Geburtsdatum", "Telefon", "Mobiltelefon", "WWW",
+            "Adresse", "Zweitadresse", "Fachgebiet", "Schule, Uni, …",
+            "Jahrgang, Matrikel, …", "Interessen", "Sonstiges",
+            "Verg. Veranstaltungen"
+        }
+        for field in expected:
+            self.assertPresence(field)
+        checked = self._profile_base_view(inspected)
+        # actual username should be displayed
+        self.assertPresence(inspected['username'])
+        return expected | checked
+
+    def _profile_cde_admin_view(self, inspected):
+        expected = {
+            "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit"
+        }
+        for field in expected:
+            self.assertPresence(field)
+        checked = self._profile_relative_admin_view(inspected)
+        checked.update(self._profile_cde_context_view(inspected))
+        return expected | checked
+
+    def _profile_core_admin_view(self, inspected):
+        # Core Admins should view all Fields. This is used, to test if any field
+        # was forgotten to test
+        checked = set()
+        checked.update(self._profile_relative_admin_view(inspected))
+        checked.update(self._profile_ml_admin_view(inspected))
+        checked.update(self._profile_assembly_admin_view(inspected))
+        checked.update(self._profile_event_admin_view(inspected))
+        checked.update(self._profile_cde_admin_view(inspected))
+        checked.update(self._profile_meta_admin_view(inspected))
+        return checked
+
     def _profile_meta_admin_view(self, inspected):
+        # TODO give meta admin a relative admin view for all personas
         expected = {"Bereiche", "Admin-Privilegien"}
         for field in expected:
             self.assertPresence(field)
@@ -63,33 +110,35 @@ class TestPrivacyFrontend(FrontendTest):
         return expected | checked
 
     def _profile_member_view(self, inspected):
-        expected = {
-            "Geburtsname", "Geburtsdatum", "Telefon", "Mobiltelefon", "WWW",
-            "Adresse", "Zweitadresse", "Fachgebiet", "Schule, Uni, …",
-            "Jahrgang, Matrikel, …", "Interessen", "Sonstiges", "Verg. Veranstaltungen"
-        }
+        # Note that event context is no subset of this, because missing gender
+        expected = set()
         for field in expected:
             self.assertPresence(field)
-        # actual username should be displayed
-        self.assertPresence(inspected['username'])
-        checked = self._profile_base_view(inspected)
+        checked = self._profile_cde_context_view(inspected)
         return expected | checked
 
     def _profile_orga_view(self, inspected):
-        expected = {
-            "Geburtsdatum", "Geschlecht", "Telefon", "Mobiltelefon", "Adresse"
-        }
+        expected = set()
         for field in expected:
             self.assertPresence(field)
-        # actual username should be displayed
-        self.assertPresence(inspected['username'])
-        checked = self._profile_base_view(inspected)
+        checked = self._profile_event_context_view(inspected)
         return expected | checked
 
     def _profile_moderator_view(self, inspected):
         expected = set()
         # actual username should be displayed
         self.assertPresence(inspected['username'])
+        checked = self._profile_base_view(inspected)
+        return expected | checked
+
+    def _profile_of_archived(self, inspected):
+        expected = {
+            "Account aktiv", "Bereiche", "Admin-Privilegien"
+        }
+        for field in expected:
+            self.assertPresence(field)
+        # username should have been deleted via archiving
+        self.assertNonPresence(inspected['username'])
         checked = self._profile_base_view(inspected)
         return expected | checked
 
@@ -174,15 +223,6 @@ class TestPrivacyFrontend(FrontendTest):
         inspected = USER_DICT['kalif']
         self.get(inspected['url'])
         found = self._profile_assembly_admin_view(inspected)
-        for field in self.ALL_FIELDS - found:
-            self.assertNonPresence(field)
-
-        # on other users, they get no special view
-        inspected = USER_DICT['berta']
-        self.get(inspected['url'])
-        found = self._profile_base_view(inspected)
-        # The username must not be visible, although "Email" occurs as field
-        self.assertNonPresence(inspected['username'])
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field)
 
