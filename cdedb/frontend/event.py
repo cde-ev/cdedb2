@@ -2933,12 +2933,14 @@ class EventFrontend(AbstractUserFrontend):
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event['parts'])
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         return self.render(rs, "register", {
             'persona': persona, 'age': age, 'courses': courses,
-            'course_choices': course_choices, 'semester_fee': semester_fee})
+            'course_choices': course_choices, 'semester_fee': semester_fee,
+            'questionnaire': questionnaire})
 
     @staticmethod
-    def process_registration_input(rs, event, courses, parts=None):
+    def process_registration_input(rs, event, courses, questionnaire, parts=None):
         """Helper to handle input by participants.
 
         This takes care of extracting the values and validating them. Which
@@ -2947,6 +2949,7 @@ class EventFrontend(AbstractUserFrontend):
         :type rs: :py:class:`FrontendRequestState`
         :type event: {str: object}
         :type courses: {int: {str: object}}
+        :type questionnaire: [{str: object}]
         :type parts: [int] or None
         :param parts: If not None this specifies the ids of the parts this
           registration applies to (since you can apply for only some of the
@@ -3021,12 +3024,23 @@ class EventFrontend(AbstractUserFrontend):
                 choice_getter(track_id, i)
                 for i in range(tracks[track_id]['num_choices'])
                 if choice_getter(track_id, i) is not None)
+
+        f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
+        params = tuple(
+            (f(entry)['field_name'],
+             "{}".format(const.FieldDatatypes(f(entry)['kind']).name))
+            for entry in questionnaire
+            if entry['field_id'] and not entry['readonly']
+            and entry['usage'] == const.QuestionnaireUsages.registration)
+        field_data = request_extractor(rs, params)
+
         registration = {
             'mixed_lodging': standard['mixed_lodging'],
             'list_consent': standard['list_consent'],
             'notes': standard['notes'],
             'parts': reg_parts,
             'tracks': reg_tracks,
+            'fields': field_data,
         }
         return registration
 
@@ -3044,8 +3058,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         registration = self.process_registration_input(rs, rs.ambience['event'],
-                                                       courses)
+                                                       courses, questionnaire)
         if rs.has_validation_errors():
             return self.register_form(rs, event_id)
         registration['event_id'] = event_id
@@ -3151,14 +3166,17 @@ class EventFrontend(AbstractUserFrontend):
         for track_id, entry in registration['tracks'].items():
             param = "course_instructor{}".format(track_id)
             non_trivials[param] = entry['course_instructor']
+        for k, v in registration['fields'].items():
+            non_trivials[k] = v
         stat = lambda track: registration['parts'][track['part_id']]['status']
         involved_tracks = {
             track_id for track_id, track in tracks.items()
             if const.RegistrationPartStati(stat(track)).is_involved()}
         merge_dicts(rs.values, non_trivials, registration)
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         return self.render(rs, "amend_registration", {
             'age': age, 'courses': courses, 'course_choices': course_choices,
-            'involved_tracks': involved_tracks,
+            'involved_tracks': involved_tracks, 'questionnaire': questionnaire,
         })
 
     @access("event", modi={"POST"})
@@ -3186,8 +3204,10 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         stored = self.eventproxy.get_registration(rs, registration_id)
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         registration = self.process_registration_input(
-            rs, rs.ambience['event'], courses, parts=stored['parts'])
+            rs, rs.ambience['event'], courses, questionnaire,
+            parts=stored['parts'])
         if rs.has_validation_errors():
             return self.amend_registration_form(rs, event_id)
 
