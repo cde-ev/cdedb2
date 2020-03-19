@@ -40,7 +40,7 @@
                                     <<< courses[registration['tracks'][track_id]['course_instructor']]['title']|te >>>
                                     \par
                                 <<%- endif %>>}%
-                    <<% for label in (_("First choice"), _("Second choice"), _("Third choice")) -%>>
+                    <<% for label in (gettext("First choice"), gettext("Second choice"), gettext("Third choice")) -%>>
                                 {<<% if registration['tracks'][track_id]['choices']|length > loop.index0 -%>>
                                     <<< label|te >>>:
                                     <<< courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te >>>
