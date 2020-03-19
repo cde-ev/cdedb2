@@ -12,13 +12,13 @@
         <title>CdEDB – {% block title %}CdEDB{% endblock %}</title>
         <link rel="shortcut icon" type="image/x-icon" href="{{ staticurl("favicon.ico") }}" media="print" />
 
-        <script type="text/javascript" src="{{ staticurl("jquery-3.min.js") }}"></script>
-        <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css") }}" rel="stylesheet" media="all" />
-        <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js") }}"></script>
-        <script type="text/javascript" src="{{ staticurl("cdedb-general.js") }}"></script>
+        <script src="{{ staticurl("jquery-3.min.js") }}"></script>
+        <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css") }}" rel="stylesheet" />
+        <script src="{{ staticurl("bootstrap-3/js/bootstrap.min.js") }}"></script>
+        <script src="{{ staticurl("cdedb-general.js") }}"></script>
         {% if CDEDB_DEV %}
             <!-- script for adding links to view emails -->
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $(function() {
                     $("div.alert-info").append(function(index, html){
                         /* search for paths of temporary mail files and create link */
@@ -37,8 +37,8 @@
 
         {% block scripts %}{% endblock %}
 
-        <link rel="stylesheet" type="text/css" href="{{ staticurl("cdedb.css") }}" media="all" />
-        <link rel="stylesheet" type="text/css" href="{{ staticurl("print.css") }}" media="print" />
+        <link rel="stylesheet" href="{{ staticurl("cdedb.css") }}" />
+        <link rel="stylesheet" href="{{ staticurl("print.css") }}" media="print" />
     </head>
     <body class="{% if CDEDB_DEV %}development{% elif CDEDB_OFFLINE_DEPLOYMENT %}offline{% endif %}">
         <div class="container page" id="maincontainer">
@@ -70,7 +70,7 @@
                     {% endif %}
                 </div>
                 <div class="logo pull-left">
-                    <a href={{ cdedblink("core/index") }} ><img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" }}/></a>
+                    <a href={{ cdedblink("core/index") }} ><img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" /></a>
                 </div>
 
                 {% if jshint %}
@@ -153,22 +153,24 @@
                     </ul>
                 </div><!-- /.navbar-collapse -->
             </nav>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#navbar-collapse-1').removeClass('in');
                 $('#button-navbar-toggle').removeClass('hide');
             </script>
 
             <div class="row">
-                <div class="col-md-3" role="navigation" id="sidebar" aria-label="{% trans %}Sub Menu{% endtrans %}">
+                <nav class="col-md-3" id="sidebar" aria-label="{% trans %}Sub Menu{% endtrans %}">
                     {% block navigation %}
                     {% endblock %}
-                </div>
+                </nav>
                 <div class="col-md-9">
                     {% if self.breadcrumb %}
                         <h6 id="bc-title" class="sr-only">{% trans %}You are here:{% endtrans %}</h6>
-                        <ol class="breadcrumb breadcrumb-hanging" role="navigation" aria-labelledby="bc-title">
-                            {% block breadcrumb %}{% endblock %}
-                        </ol>
+                        <nav>
+                            <ol class="breadcrumb breadcrumb-hanging" aria-labelledby="bc-title">
+                                {% block breadcrumb %}{% endblock %}
+                            </ol>
+                        </nav>
                     {% endif %}
 
                     <div id="notifications">

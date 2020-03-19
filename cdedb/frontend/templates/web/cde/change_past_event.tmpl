@@ -17,7 +17,7 @@
         active=True) }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changeeventform').cdedbProtectChanges();
         });

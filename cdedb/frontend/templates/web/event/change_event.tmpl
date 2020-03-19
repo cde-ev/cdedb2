@@ -121,7 +121,7 @@
                                   "nametags. Fieldtype: Text")) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#changeeventform').cdedbProtectChanges();
     </script>
 {% endblock %}

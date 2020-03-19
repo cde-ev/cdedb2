@@ -20,7 +20,7 @@
                 {{ util.make_icon('info-sign') }} <strong>{% trans %}Info{% endtrans %}</strong>
                 {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
             </p>
-            
+
             <p class=nosp>{# TODO Erklärtext #}</p>
         </div>
     {% endif %}
@@ -31,7 +31,7 @@
                                     anid="login_name") }}
             {{ util.form_input_text(name="password", label=gettext("Password"), small=True, anid="login_password",
                                     type="password") }}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $(function() {
                     $('#login_name').focus();
                 });

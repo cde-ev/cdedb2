@@ -95,7 +95,7 @@
             </div>
         {% endfor %}
     </div>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('.event_course_id').dblclick(function() {
             location.href =
                 "{{ cdedblink('event/show_course', magic_placeholders=['course_id']) }}"

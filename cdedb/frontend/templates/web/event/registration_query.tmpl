@@ -7,7 +7,7 @@
 {% block title %}
     {% trans title=ambience['event']['title'] %}
     	Registrations ({{ title }})
-    {% endtrans %}    
+    {% endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -103,7 +103,7 @@
             <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
                 {{ util.make_icon('pencil') }} {% trans %}Edit{% endtrans %}
             </button>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#btn-course-choices').click(function(){
                     var list = [];
                     $('#query-result').find('.ls-selected').each(function(){

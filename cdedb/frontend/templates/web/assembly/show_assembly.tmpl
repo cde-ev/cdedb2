@@ -70,7 +70,7 @@
                                         {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash",
                                                 title=gettext("Delete File")) }}
                                     </form>
-                                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                    <script nonce="{{ csp_nonce }}">
                                         $('#removeattachmentform{{ attachment_id }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
                                         $('#removeattachmentform{{ attachment_id }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
                                     </script>
@@ -163,7 +163,7 @@
                     </div>
                 {% endif %}
             {% endcall %}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $(function() {
                     $('#concludeassemblyform').cdedbProtectAction("{{ gettext("The assembly will be permanently archived.") }}");
                     $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();

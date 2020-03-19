@@ -284,7 +284,7 @@ Verwendungszweck:   {{ persona['given_names'] }} {{ persona['family_name'] }}, {
                                              icon='trash') }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                     </form>
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    <script nonce="{{ csp_nonce }}">
                         $('#deleteregistrationform').cdedbProtectAction(
                             "{{ gettext("The registration will be permanently deleted.") }}");
                         $('#deleteregistrationform').find('[name="ack_delete"]').prop('checked', true).parent().hide();

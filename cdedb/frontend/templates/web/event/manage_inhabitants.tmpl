@@ -70,7 +70,7 @@
                     {% endcall %}
                 </div>
             {% endfor %}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 var lodgement_names = {{ lodgement_names|json|s }};
                 {% for part_id in ambience['event']['parts'] %}
                     $('#input_new_{{ part_id }}').cdedbSearchParticipant(

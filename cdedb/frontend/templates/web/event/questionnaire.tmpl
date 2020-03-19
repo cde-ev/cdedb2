@@ -100,7 +100,7 @@
         </div>
     {% else %}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#questionnaireform').cdedbProtectChanges();
     </script>
     {% endif %}

@@ -195,7 +195,7 @@
         {% endif %}
         {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         function initialize_track_dynrow() {
             $(this).cdedbDynamicRow({
                 addButton: $(this).closest('.panel-body').find('.add-track-button'),

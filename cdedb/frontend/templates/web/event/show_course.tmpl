@@ -179,7 +179,7 @@
             </div>
         </div>
     {% endcall %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#deletecourseform').cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}");
         $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
     </script>

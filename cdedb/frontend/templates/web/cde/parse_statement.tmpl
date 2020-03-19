@@ -80,7 +80,7 @@
                     <div class="col-md-11">
                         {{ util.form_input_text(name="cdedbid{}".format(t_id), small=True, horizontal=False,
                                     label=gettext("Member"), anid="input-cdedbid-{}".format(t_id)) }}
-                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            <script nonce="{{ csp_nonce }}">
                                 $('#input-cdedbid-{{ t_id }}').cdedbSearchPerson(
                                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}',
                                     [], false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"

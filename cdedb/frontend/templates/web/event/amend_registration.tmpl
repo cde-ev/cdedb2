@@ -69,7 +69,7 @@
         {{ util.form_input_submit(value=gettext("Save"), readonly=readonly,
                                   cancellink=cdedblink("event/registration_status")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#amendregistrationform').cdedbProtectChanges();
     </script>
 {% endblock %}

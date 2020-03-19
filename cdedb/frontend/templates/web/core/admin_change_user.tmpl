@@ -15,7 +15,7 @@
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changedataform').cdedbProtectChanges();
         });

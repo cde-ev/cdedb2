@@ -23,7 +23,7 @@
         </ul>
     </div>
     {% if edit_mode %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The candidate will be removed.") }}");
         </script>
     {% endif %}
@@ -50,13 +50,13 @@
         {% endif %}
         {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         {% if ambience['ballot']['votes'] > 1 %}
             $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_MONIKER }}');
         {% endif %}
         $('#voteform').cdedbProtectChanges();
     </script>
-    
+
     <div class="form-horizontal">
         <div class="form-group">
             <div class="col-sm-2 control-label">
@@ -102,7 +102,7 @@
         </ul>
     </div>
     {% if edit_mode %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $('.remove-candiate-form').cdedbProtectAction("{{ gettext("The candidate will be removed.") }}");
         </script>
     {% endif %}
@@ -274,7 +274,7 @@
                                         anid='input-preferencelist') }}
                 {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
             </form>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#voteform').cdedbProtectChanges();
             </script>
             {{ show_manual_for_text_preferential_voting() }}
@@ -298,7 +298,7 @@
                     {{ util.make_icon('ok') }} {% trans %}Vote{% endtrans %}
                 </button>
             </div>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 /* Show tabs */
                 $('#tablist-formselect').show();
                 /* Initialize JS Fancy form */

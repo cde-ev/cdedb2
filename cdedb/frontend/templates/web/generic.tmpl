@@ -72,7 +72,7 @@
 
         {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#newuserform').cdedbProtectChanges();
     </script>
 {% endmacro %}
@@ -414,7 +414,7 @@
                     </span>
                 </p>
                 {{ util.output_errors('query', wrapper=True) }}
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                <script nonce="{{ csp_nonce }}">
                     {
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
@@ -476,7 +476,7 @@
                 {% endfor %}
             </div>
         {% endcall %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $('.default-query').each(function(){
                 var url = $(this).attr('href');
                 var $link = $('<a></a>', {'href':'#',
@@ -498,7 +498,7 @@
     {% if not result|length %}
         {% trans %}No search results!{% endtrans %}
     {% else %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $(function(){
                 $('.ls-list').cdedbListSelect({
                     'callback': function () {
@@ -637,7 +637,7 @@
                         anid="input-submitted_by") }}
             {{ util.form_input_text(name="persona_id", label=gettext("Affected"), small=True,
                         anid="input-persona_id") }}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#input-submitted_by').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
@@ -662,7 +662,7 @@
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                <script nonce="{{ csp_nonce }}">
                     $('#input-reviewed_by').cdedbSearchPerson(
                         '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
                                              false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"

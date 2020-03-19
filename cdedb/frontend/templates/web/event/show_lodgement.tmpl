@@ -86,7 +86,7 @@
             </div>
         {% endif %}
     </div>
-    
+
     <h2>{% trans %}Inhabitants{% endtrans %}</h2>
     <div class="row">
         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
@@ -150,7 +150,7 @@
                                 icon='trash') }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                     </form>
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    <script nonce="{{ csp_nonce }}">
                         $('#deletelodgementform').cdedbProtectAction(
                             "{{ gettext("The Lodgement will be permanently deleted.") }}");
                         $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
