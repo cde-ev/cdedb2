@@ -90,7 +90,7 @@ storage-test:
 	mkdir -p "/tmp/cdedb-store/testfiles/"
 	cp test/ancillary_files/{picture.pdf,picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv,partial_event_import.json} /tmp/cdedb-store/testfiles/
 
-sql:
+sql: test/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
@@ -114,7 +114,7 @@ sql-test:
 	make sql-test-shallow
 	sudo systemctl start pgbouncer
 
-sql-test-shallow:
+sql-test-shallow: test/ancillary_files/sample_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
 
@@ -200,3 +200,11 @@ coverage: .coverage
 	${PYTHONBIN} /usr/bin/coverage report -m --omit='test/*,related/*'
 
 .PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql sql-test sql-test-shallow lint check single-check .coverage coverage
+
+test/ancillary_files/sample_data.sql: test/ancillary_files/sample_data.json test/create_sample_data_sql.py
+	SQLTEMPFILE=`sudo -u www-data mktemp` \
+		; sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
+		; sudo -u www-data ${PYTHONBIN} test/create_sample_data_sql.py \
+			-i test/ancillary_files/sample_data.json -o "$${SQLTEMPFILE}" \
+		; cp "$${SQLTEMPFILE}" test/ancillary_files/sample_data.sql \
+		; sudo -u www-data rm "$${SQLTEMPFILE}"
