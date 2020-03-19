@@ -1285,6 +1285,8 @@ class EventBackend(AbstractBackend):
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(fields[x])
                     update['id'] = x
+                    if all(field_data[x][k] == update[k] for k in update):
+                        continue
                     if self.sql_select_one(
                             rs, "event.fee_modifiers", ("id",), x,
                             entity_key="field_id"):
