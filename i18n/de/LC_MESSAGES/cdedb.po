@@ -4407,7 +4407,7 @@ msgid "separated"
 msgstr "getrennt"
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:56
-msgid "sleeping pad"
+msgid "camping mat"
 msgstr "Isomatte"
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:61

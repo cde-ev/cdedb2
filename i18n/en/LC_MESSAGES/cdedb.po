@@ -4039,7 +4039,7 @@ msgid "separated"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:56
-msgid "sleeping pad"
+msgid "camping mat"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:61
