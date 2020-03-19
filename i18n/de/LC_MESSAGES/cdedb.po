@@ -13388,8 +13388,8 @@ msgid "This account request was already verified."
 msgstr "Diese Accountanfrage wurde bereits bestätigt."
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:69
-msgid "The maximum allowed filesize is 8 MB."
-msgstr "Die maximale Dateigröße ist 8 MB."
+msgid "The file must be a PDF. The maximum allowed filesize is 8 MB."
+msgstr "Die Datei muss ein PDF sein. Die maximale Dateigröße ist 8 MB."
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:73
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:79
