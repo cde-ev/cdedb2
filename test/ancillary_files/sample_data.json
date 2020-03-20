@@ -2568,6 +2568,73 @@
             "course_room_field": null
         }
     ],
+    "event.event_parts": [
+        {
+            "id": 1,
+            "event_id": 1,
+            "title": "Warmup",
+            "shortname": "Wu",
+            "part_begin": "2222-02-02",
+            "part_end": "2222-02-02",
+            "fee": "10.50"
+        },
+        {
+            "id": 2,
+            "event_id": 1,
+            "title": "Erste H\u00e4lfte",
+            "shortname": "1.H.",
+            "part_begin": "2222-11-01",
+            "part_end": "2222-11-11",
+            "fee": "123.00"
+        },
+        {
+            "id": 3,
+            "event_id": 1,
+            "title": "Zweite H\u00e4lfte",
+            "shortname": "2.H.",
+            "part_begin": "2222-11-11",
+            "part_end": "2222-11-30",
+            "fee": "450.99"
+        },
+        {
+            "id": 4,
+            "event_id": 2,
+            "title": "Party",
+            "shortname": "Party",
+            "part_begin": "2050-01-15",
+            "part_end": "2050-01-15",
+            "fee": "15.00"
+        }
+    ],
+    "event.course_tracks": [
+        {
+            "id": 1,
+            "part_id": 2,
+            "title": "Morgenkreis (Erste H\u00e4lfte)",
+            "shortname": "Morgenkreis",
+            "num_choices": 4,
+            "min_choices": 4,
+            "sortkey": 1
+        },
+        {
+            "id": 2,
+            "part_id": 2,
+            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
+            "shortname": "Kaffee",
+            "num_choices": 1,
+            "min_choices": 1,
+            "sortkey": 2
+        },
+        {
+            "id": 3,
+            "part_id": 3,
+            "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
+            "shortname": "Sitzung",
+            "num_choices": 3,
+            "min_choices": 2,
+            "sortkey": 3
+        }
+    ],
     "event.orgas": [
         {
             "id": 1,
@@ -2668,11 +2735,26 @@
                     "no radiation"
                 ]
             ]
+        },
+        {
+            "id": 7,
+            "event_id": 2,
+            "field_name": "is_child",
+            "kind": 2,
+            "association": 1,
+            "entries": null
+        }
+    ],
+    "event.fee_modifiers": [
+        {
+            "amount": "-7.00",
+            "field_id": 7,
+            "modifier_name": "is_child",
+            "part_id": 4
         }
     ],
     "event.questionnaire_rows": [
         {
-            "id": 1,
             "event_id": 1,
             "field_id": null,
             "pos": 0,
@@ -2680,10 +2762,10 @@
             "info": "mit Text darunter",
             "input_size": null,
             "readonly": null,
-            "default_value": null
+            "default_value": null,
+            "usage": 2
         },
         {
-            "id": 2,
             "event_id": 1,
             "field_id": 1,
             "pos": 1,
@@ -2691,10 +2773,10 @@
             "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
             "input_size": null,
             "readonly": false,
-            "default_value": "True"
+            "default_value": "True",
+            "usage": 2
         },
         {
-            "id": 3,
             "event_id": 1,
             "field_id": null,
             "pos": 2,
@@ -2702,10 +2784,10 @@
             "info": "nur etwas Text",
             "input_size": null,
             "readonly": null,
-            "default_value": null
+            "default_value": null,
+            "usage": 2
         },
         {
-            "id": 4,
             "event_id": 1,
             "field_id": null,
             "pos": 3,
@@ -2713,10 +2795,10 @@
             "info": null,
             "input_size": null,
             "readonly": null,
-            "default_value": null
+            "default_value": null,
+            "usage": 2
         },
         {
-            "id": 5,
             "event_id": 1,
             "field_id": 2,
             "pos": 4,
@@ -2724,10 +2806,10 @@
             "info": null,
             "input_size": null,
             "readonly": false,
-            "default_value": "etc"
+            "default_value": "etc",
+            "usage": 2
         },
         {
-            "id": 6,
             "event_id": 1,
             "field_id": 3,
             "pos": 5,
@@ -2735,74 +2817,19 @@
             "info": null,
             "input_size": 3,
             "readonly": false,
-            "default_value": null
-        }
-    ],
-    "event.event_parts": [
-        {
-            "id": 1,
-            "event_id": 1,
-            "title": "Warmup",
-            "shortname": "Wu",
-            "part_begin": "2222-02-02",
-            "part_end": "2222-02-02",
-            "fee": "10.50"
+            "default_value": null,
+            "usage": 2
         },
         {
-            "id": 2,
-            "event_id": 1,
-            "title": "Erste H\u00e4lfte",
-            "shortname": "1.H.",
-            "part_begin": "2222-11-01",
-            "part_end": "2222-11-11",
-            "fee": "123.00"
-        },
-        {
-            "id": 3,
-            "event_id": 1,
-            "title": "Zweite H\u00e4lfte",
-            "shortname": "2.H.",
-            "part_begin": "2222-11-11",
-            "part_end": "2222-11-30",
-            "fee": "450.99"
-        },
-        {
-            "id": 4,
             "event_id": 2,
-            "title": "Party",
-            "shortname": "Party",
-            "part_begin": "2050-01-15",
-            "part_end": "2050-01-15",
-            "fee": "15.00"
-        }
-    ],
-    "event.course_tracks": [
-        {
-            "id": 1,
-            "part_id": 2,
-            "title": "Morgenkreis (Erste H\u00e4lfte)",
-            "shortname": "Morgenkreis",
-            "num_choices": 4,
-            "min_choices": 4,
-            "sortkey": 1
-        },
-        {
-            "id": 2,
-            "part_id": 2,
-            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
-            "shortname": "Kaffee",
-            "num_choices": 1,
-            "min_choices": 1,
-            "sortkey": 2
-        },
-        {
-            "id": 3,
-            "part_id": 3,
-            "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
-            "shortname": "Sitzung",
-            "num_choices": 3,
-            "min_choices": 2,
-            "sortkey": 3
+            "field_id": 7,
+            "pos": 1,
+            "title": "Ich bin unter 13 Jahre alt.",
+            "info": null,
+            "input_size": null,
+            "readonly": false,
+            "default_value": false,
+            "usage": 1
         }
     ],
     "event.courses": [
@@ -3009,6 +3036,7 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
+            "amount_owed": "573.99",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": true,
@@ -3024,6 +3052,7 @@
             "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "payment": "2014-02-02",
+            "amount_owed": "589.49",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": true,
@@ -3039,6 +3068,7 @@
             "notes": null,
             "orga_notes": null,
             "payment": "2014-03-03",
+            "amount_owed": "584.49",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": true,
@@ -3054,6 +3084,7 @@
             "notes": null,
             "orga_notes": null,
             "payment": "2014-04-04",
+            "amount_owed": "450.99",
             "amount_paid": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
@@ -3069,6 +3100,7 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
+            "amount_owed": "584.49",
             "amount_paid": "0.00",
             "parental_agreement": true,
             "mixed_lodging": false,
