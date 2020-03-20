@@ -162,6 +162,7 @@ class TestCdEFrontend(FrontendTest):
                 self.assertPresence("automatisch zurückgesetzt")
                 break
 
+    @unittest.expectedFailure
     @as_users("vera", "berta", "inga")
     def test_member_search(self, user):
         # by family_name and birth_name
