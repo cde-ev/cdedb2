@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2020-03-13 19:55+0100\n"
+"POT-Creation-Date: 2020-03-18 16:56+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.6.0\n"
 
 #: bin/archive/migrate_execute.py:393
 msgid "Initial import."
@@ -2616,7 +2616,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:291 cdedb/frontend/assembly.py:402
 #: cdedb/frontend/assembly.py:564 cdedb/frontend/assembly.py:770
-#: cdedb/frontend/cde.py:2468 cdedb/frontend/cde.py:2521
+#: cdedb/frontend/cde.py:2470 cdedb/frontend/cde.py:2523
 #: cdedb/frontend/core.py:2137 cdedb/frontend/core.py:2168
 #: cdedb/frontend/event.py:1097 cdedb/frontend/event.py:3601
 #: cdedb/frontend/event.py:4231 cdedb/frontend/event.py:5144
@@ -2790,7 +2790,7 @@ msgstr ""
 msgid "Line %(lineno)s does not have the correct number of columns."
 msgstr ""
 
-#: cdedb/frontend/cde.py:971
+#: cdedb/frontend/cde.py:973
 msgid "Unknown action."
 msgstr ""
 
@@ -2801,7 +2801,7 @@ msgstr ""
 msgid "No Member with ID %(p_id)s found."
 msgstr ""
 
-#: cdedb/frontend/cde.py:1036 cdedb/frontend/core.py:445
+#: cdedb/frontend/cde.py:1038 cdedb/frontend/core.py:445
 #: cdedb/frontend/core.py:937 cdedb/frontend/core.py:1028
 #: cdedb/frontend/core.py:1261 cdedb/frontend/core.py:1322
 #: cdedb/frontend/core.py:1374 cdedb/frontend/core.py:1398
@@ -3485,6 +3485,7 @@ msgid "Course"
 msgstr ""
 
 #: cdedb/frontend/event.py:2732
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:39
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:55
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:64
 #: cdedb/frontend/templates/web/event/create_course.tmpl:35
@@ -3905,51 +3906,201 @@ msgstr ""
 msgid "Disallowed to change address."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:619
+#: cdedb/frontend/parse_statement.py:620
 #, python-format
 msgid "Multiple (%(count)s) DB-IDs found in line %(t_id)s."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:651 cdedb/frontend/parse_statement.py:667
+#: cdedb/frontend/parse_statement.py:652 cdedb/frontend/parse_statement.py:668
 #, python-format
 msgid "(%(p)s) not found in (%(ref)s)."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:658 cdedb/frontend/parse_statement.py:674
+#: cdedb/frontend/parse_statement.py:659 cdedb/frontend/parse_statement.py:675
 #, python-format
 msgid "(%(p)s) is not a valid regEx (%(e)s)."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:749
+#: cdedb/frontend/parse_statement.py:750
 msgid "Could not determine transaction type."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:754
+#: cdedb/frontend/parse_statement.py:755
 msgid "Not confident about transaction type."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:763
+#: cdedb/frontend/parse_statement.py:764
 msgid "Not confident about event match."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:767
+#: cdedb/frontend/parse_statement.py:768
 msgid "Needs event match."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:776
+#: cdedb/frontend/parse_statement.py:777
 msgid "Not confident about member match."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:780
+#: cdedb/frontend/parse_statement.py:781
 msgid "Needs member match."
 msgstr ""
 
-#: cdedb/frontend/parse_statement.py:799
+#: cdedb/frontend/parse_statement.py:800
 msgid "Not a CdE-Account."
 msgstr ""
 
 #: cdedb/frontend/uncommon.py:73
 msgid "User created."
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:26
+#: cdedb/frontend/templates/web/assembly/base.tmpl:10
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:33
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:71
+#: cdedb/frontend/templates/web/event/stats.tmpl:25
+msgid "Participants"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:27
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:6
+#: cdedb/frontend/templates/web/event/change_course.tmpl:38
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:76
+msgid "Instructors"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:50
+#: cdedb/frontend/templates/tex/event/lodgement_lists.tmpl:24
+msgid "nobody"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_lists.tmpl:56
+msgid "Course room"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:8
+msgid "Minimum size/maximum size"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:10
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:13
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:44
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:62
+#: cdedb/frontend/templates/web/core/change_privileges.tmpl:39
+#: cdedb/frontend/templates/web/event/add_registration.tmpl:74
+#: cdedb/frontend/templates/web/event/amend_registration.tmpl:46
+#: cdedb/frontend/templates/web/event/change_course.tmpl:75
+#: cdedb/frontend/templates/web/event/change_lodgement.tmpl:33
+#: cdedb/frontend/templates/web/event/change_registration.tmpl:90
+#: cdedb/frontend/templates/web/event/change_registrations.tmpl:180
+#: cdedb/frontend/templates/web/event/create_lodgement.tmpl:32
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:63
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:79
+#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:85
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:42
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:164
+#: cdedb/frontend/templates/web/event/show_registration.tmpl:223
+#: cdedb/frontend/templates/web/generic.tmpl:67
+msgid "Notes"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:12
+msgid "First/second/third choice"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
+msgid "First choice"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
+msgid "Second choice"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/course_puzzle.tmpl:43
+msgid "Third choice"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:9
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:51
+msgid "Capacity"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:11
+msgid "Reserve"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:44
+msgid "guest"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:48
+msgid "separated"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:56
+msgid "camping mat"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:61
+msgid "Wish"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:65
+msgid "Reverse wish heuristic"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/nametags.tmpl:96
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:100
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:60
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:97
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:130
+msgid "Orga"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:22
+#, python-format
+msgid "Participant list %(title)s"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:25
+#, python-format
+msgid "Page %(curr_page)s of %(total_pages)s"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:46
+msgid "Given Name"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:47
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:54
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:28
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:30
+#: cdedb/frontend/templates/web/core/change_user.tmpl:30
+#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:24
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:31
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:54
+#: cdedb/frontend/templates/web/event/batch_fees.tmpl:38
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:90
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:144
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:53
+#: cdedb/frontend/templates/web/generic.tmpl:12
+#: cdedb/frontend/templates/web/generic.tmpl:111
+#: cdedb/frontend/templates/web/generic.tmpl:177
+msgid "Family Name"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:48
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:93
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:147
+msgid "Email Address"
+msgstr ""
+
+#: cdedb/frontend/templates/tex/event/participant_list.tmpl:49
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:96
+#: cdedb/frontend/templates/web/event/participant_list.tmpl:150
+msgid "Postal Code, City"
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:31
@@ -5834,16 +5985,16 @@ msgid ""
 "%(tab)s and confirm the selection with %(enter)s or %(space)s."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:220
+msgid "Space"
+msgstr ""
+
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:218
 msgid "TAB"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:219
 msgid "ENTER"
-msgstr ""
-
-#: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:220
-msgid "Space"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:229
@@ -6032,14 +6183,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/base.tmpl:55
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:179
 msgid "Overview"
-msgstr ""
-
-#: cdedb/frontend/templates/web/assembly/base.tmpl:10
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
-#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:33
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:71
-#: cdedb/frontend/templates/web/event/stats.tmpl:25
-msgid "Participants"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:18
@@ -6549,7 +6692,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:19
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:102
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:162
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:161
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:134
 #: cdedb/frontend/templates/web/event/partial_import.tmpl:64
 msgid "Validate"
@@ -6861,14 +7004,14 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/i25p_index.tmpl:23
-msgid "Deutsche SchülerAkademie"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:23
 #: cdedb/frontend/templates/web/cde/i25p_index.tmpl:46
 #: cdedb/frontend/templates/web/cde/index.tmpl:50
 #: cdedb/frontend/templates/web/cde/index.tmpl:68
 msgid "Idee SchülerAkademie"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/i25p_index.tmpl:23
+msgid "Deutsche SchülerAkademie"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/i25p_index.tmpl:31
@@ -7523,20 +7666,20 @@ msgstr ""
 msgid "Go to first Error."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:165
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:164
 msgid "GnuCash Download"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:169
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:168
 #, python-format
 msgid "Excel Download (%(account)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:174
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:173
 msgid "Download Membership Fees"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:179
+#: cdedb/frontend/templates/web/cde/parse_statement.tmpl:178
 #, python-format
 msgid "Download %(shortname)s"
 msgstr ""
@@ -7548,12 +7691,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:44
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:86
 msgid "ID of the new Participant"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:60
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:97
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:130
-msgid "Orga"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:89
@@ -9315,11 +9452,6 @@ msgstr ""
 msgid "Long Title"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/change_course.tmpl:38
-#: cdedb/frontend/templates/web/event/partial_import_check.tmpl:76
-msgid "Instructors"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/change_course.tmpl:39
 #: cdedb/frontend/templates/web/event/create_course.tmpl:36
 #: cdedb/frontend/templates/web/event/show_course.tmpl:47
@@ -9805,16 +9937,16 @@ msgid ""
 "Show only participants who %(select3)s the course %(select2)s %(select1)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:80
-msgid "Filter: Course"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:82
 msgid "— no Filter —"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:83
 msgid "Filter: Course Operator"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:80
+msgid "Filter: Course"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:90
@@ -9857,16 +9989,16 @@ msgstr ""
 msgid "%(assign)s %(participants)s %(course)s %(tracks)s %(submit)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:122
-msgid "Assign"
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:126
+msgid "Assignment Method"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:123
 msgid "selected participants"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/course_choices.tmpl:126
-msgid "Assignment Method"
+#: cdedb/frontend/templates/web/event/course_choices.tmpl:122
+msgid "Assign"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:152
@@ -10462,10 +10594,6 @@ msgstr ""
 msgid "Inhabitants"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:51
-msgid "Capacity"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:58
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:68
 msgid "Regular"
@@ -10866,16 +10994,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:60
 msgid "The Participant List is currently only visible to Orgas and Admins."
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:93
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:147
-msgid "Email Address"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:96
-#: cdedb/frontend/templates/web/event/participant_list.tmpl:150
-msgid "Postal Code, City"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:152
