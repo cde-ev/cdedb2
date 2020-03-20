@@ -102,7 +102,7 @@ class TestEventFrontend(FrontendTest):
     def test_user_search(self, user):
         self.traverse({'description': 'Veranstaltunge'},
                       {'description': 'Nutzer verwalten'})
-        self.assertTitle("Veranstaltungsnutzersuche")
+        self.assertTitle("Veranstaltungs-Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'a@'
@@ -110,7 +110,7 @@ class TestEventFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Veranstaltungsnutzersuche")
+        self.assertTitle("Veranstaltungs-Nutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
@@ -449,7 +449,7 @@ class TestEventFrontend(FrontendTest):
                             'notifications')
 
     def test_course_state_visibility(self):
-        self.login(USER_DICT['berta'])
+        self.login(USER_DICT['charly'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'})
@@ -476,7 +476,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Cancelled courses are only marked for orgas")
 
         self.logout()
-        self.login(USER_DICT['berta'])
+        self.login(USER_DICT['charly'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'})
@@ -1070,13 +1070,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertPresence("Outside")
 
-    @as_users("berta", "daniel", "nina")
+    @as_users("charly", "daniel", "nina")
     def test_register(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/register'})
         self.assertTitle("Anmeldung für Große Testakademie 2222")
-        if user["id"] == 2:
+        if user["id"] == 3:
             self.assertNonPresence("Da Du kein CdE-Mitglied bist, musst du "
                                    "einen zusätzlichen Beitrag")
             self.assertNonPresence("Du kannst auch stattdessen Deinen "
@@ -1205,10 +1205,10 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.logout()
 
-        # Berta tries registering and amending registraions. We do less checks
+        # Charly tries registering and amending registraions. We do less checks
         # than in test_register()
         # (the login checks the dashboard for Exceptions, by the way)
-        self.login(USER_DICT['berta'])
+        self.login(USER_DICT['charly'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/register'})
@@ -1284,7 +1284,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Kurs")
 
         self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
-        self.assertPresence("Es gibt in Summe 2 Teilnehmer.")
+        self.assertPresence("Es gibt in Summe 3 Teilnehmer.")
         self.assertNonPresence("Garcia")
         self.assertNonPresence("Kurs")
         self.assertNonPresence("Veranstaltungsteile")
@@ -1397,25 +1397,26 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Teilnehmerliste Große Testakademie 2222")
         akira = USER_DICT['akira']
         anton = USER_DICT['anton']
+        berta = USER_DICT['berta']
         emilia = USER_DICT['emilia']
 
         # default sort is by given names
-        self._sort_appearance([akira, anton, emilia])
+        self._sort_appearance([akira, anton, berta, emilia])
         # explicit sort by given names, ascending
         self.traverse({'description': "Vorname(n)*"})
-        self._sort_appearance([akira, anton, emilia])
+        self._sort_appearance([akira, anton, berta, emilia])
         # explicit sort by given names, descending
         self.traverse({'description': "Vorname(n)*"})
-        self._sort_appearance([emilia, anton, akira])
+        self._sort_appearance([emilia, berta, anton, akira])
         # ... and again, ascending
         self.traverse({'description': "Vorname(n)*"})
-        self._sort_appearance([akira, anton, emilia])
+        self._sort_appearance([akira, anton, berta, emilia])
         self.traverse({'description': "Nachname*"})
-        self._sort_appearance([akira, anton, emilia])
+        self._sort_appearance([akira, anton, berta, emilia])
         self.traverse({'description': "E-Mail-Adresse*"})
-        self._sort_appearance([akira, anton, emilia])
+        self._sort_appearance([akira, anton, berta, emilia])
         self.traverse({'description': "Postleitzahl, Stadt*"})
-        self._sort_appearance([akira, anton, emilia])
+        self._sort_appearance([akira, anton, berta, emilia])
 
         self.traverse({'description': "Zweite Hälfte"})
         self.traverse({'description': "Vorname(n)*"})
@@ -1551,7 +1552,8 @@ etc;anything else""", f['entries_2'].value)
         f['qord_primary'] = 'reg.id'
         self.submit(f)
         self.assertTitle("\nAnmeldungen (Große Testakademie 2222)")
-        self.assertPresence("Ergebnis [2]")
+        self.assertPresence("Ergebnis [3]")
+        self.assertPresence("Beispiel")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
@@ -1681,7 +1683,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/add'})
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms['addregistrationform']
-        f['persona.persona_id'] = "DB-2-7"
+        f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
         f['reg.mixed_lodging'].checked = False
         f['part1.status'] = 1
@@ -1691,7 +1693,7 @@ etc;anything else""", f['entries_2'].value)
         f['track1.course_id'] = 5
         f['track1.course_choice_0'] = 5
         self.submit(f)
-        self.assertTitle("\nAnmeldung von Bertålotta Beispiel (Große Testakademie 2222)\n")
+        self.assertTitle("\nAnmeldung von Charly C. Clown (Große Testakademie 2222)\n")
         self.assertPresence("Du entkommst uns nicht.")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changeregistrationform']
@@ -1709,7 +1711,7 @@ etc;anything else""", f['entries_2'].value)
         self.get("/event/event/1/registration/add")
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms["addregistrationform"]
-        f["persona.persona_id"] = "DB-2-7"
+        f["persona.persona_id"] = USER_DICT['charly']['DB-ID']
         f["part1.status"] = 1
         f["track1.course_choice_0"] = 5
         f["track1.course_choice_1"] = 5
@@ -1719,7 +1721,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms["addregistrationform"]
         f["track1.course_choice_1"] = 4
         self.submit(f)
-        self.assertTitle("\nAnmeldung von Bertålotta Beispiel (Große Testakademie 2222)\n")
+        self.assertTitle("\nAnmeldung von Charly C. Clown (Große Testakademie 2222)\n")
         self.assertEqual("5", f['track1.course_choice_0'].value)
         self.assertEqual("4", f['track1.course_choice_1'].value)
 
@@ -2556,7 +2558,7 @@ etc;anything else""", f['entries_2'].value)
                             "box-changed-registration-fields")
         self.assertNonPresence("Sitzung: Kursleiter", "box-changed-registration-fields")
         self.assertNonPresence("Inga", "box-changed-registrations")
-        self.assertPresence("Bertålotta", "box-new-registrations")
+        self.assertPresence("Charly", "box-new-registrations")
         self.assertPresence("Inga", "box-deleted-registrations")
         # Courses
         self.assertPresence("α.", "box-changed-courses")
@@ -2671,7 +2673,7 @@ etc;anything else""", f['entries_2'].value)
         f['phrase'] = "i a"
         self.submit(f)
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
-        self.assertPresence("Ergebnis [5]")
+        self.assertPresence("Ergebnis [6]")
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         f = self.response.forms['quickregistrationform']
@@ -2931,7 +2933,7 @@ etc;anything else""", f['entries_2'].value)
                                                 'is_member': False,
                                                 'is_orga': False,
                                                 'location': 'Wolkenkuckuksheim',
-                                                'mobile': None,
+                                                'mobile': "01577/314159",
                                                 'name_supplement': None,
                                                 'postal_code': '56767',
                                                 'telephone': '+49 (5432) 555666777',
@@ -3082,6 +3084,52 @@ etc;anything else""", f['entries_2'].value)
                                                      'course_instructor': None},
                                                '3': {'choices': [1, 4],
                                                      'course_id': 1,
+                                                     'course_instructor': None}}},
+                              '6': {'amount_paid': '0.00',
+                                    'checkin': None,
+                                    'fields': {'transportation': 'pedes'},
+                                    'list_consent': True,
+                                    'mixed_lodging': True,
+                                    'notes': None,
+                                    'orga_notes': None,
+                                    'parental_agreement': True,
+                                    'parts': {'1': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': 2},
+                                              '2': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': -1},
+                                              '3': {'is_reserve': False,
+                                                    'lodgement_id': None,
+                                                    'status': -1}},
+                                    'payment': None,
+                                    'persona': {
+                                                'address': 'Im Garten 77',
+                                                'address_supplement': 'bei Spielmanns',
+                                                'birthday': '1981-02-11',
+                                                'country': None,
+                                                'display_name': 'Bertå',
+                                                'family_name': 'Beispiel',
+                                                'gender': 1,
+                                                'given_names': 'Bertålotta',
+                                                'id': 2,
+                                                'is_member': True,
+                                                'is_orga': False,
+                                                'location': 'Utopia',
+                                                'mobile': '0163/123456789',
+                                                'name_supplement': 'MdB',
+                                                'postal_code': '34576',
+                                                'telephone': '+49 (5432) 987654321',
+                                                'title': 'Dr.',
+                                                'username': 'berta@example.cde'},
+                                    'tracks': {'1': {'choices': [],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '2': {'choices': [],
+                                                     'course_id': None,
+                                                     'course_instructor': None},
+                                               '3': {'choices': [],
+                                                     'course_id': None,
                                                      'course_instructor': None}}}
                               },
             'timestamp': result['timestamp'],  # nearly_now() won't do

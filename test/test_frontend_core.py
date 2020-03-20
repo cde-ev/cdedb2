@@ -196,8 +196,9 @@ class TestCoreFrontend(FrontendTest):
         # ml_admins are allowed to do this even if they are no orgas.
         self.get('/core/persona/select'
                  '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20')
-        expectation = (1, 5, 7)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
+        # TODO this is not functional
+        expectation = (1, 2, 5, 7, 9, 100)
+        reality = tuple(e for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select'
                  '?kind=mod_ml_user&phrase=inga&aux=9&variant=20')
@@ -636,7 +637,7 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
-        self.assertPresence("Ergebnis [12]", div='query-results')
+        self.assertPresence("Ergebnis [14]", div='query-results')
         self.assertPresence("Akira", div='query-result')
         self.assertPresence("Anton Armin A.", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
@@ -645,6 +646,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Generalis", div='query-result')
         self.assertPresence("Meister", div='query-result')
         self.assertPresence("Olaf", div='query-result')
+        self.assertPresence("Panther", div='query-result')
+        self.assertPresence("Quintus", div='query-result')
         self.assertPresence("Neubauer", div='query-result')
         self.assertPresence("Olafson", div='query-result')
         self.assertPresence("Vera", div='query-result')
@@ -950,7 +953,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Ergebnis [10]", div='query-results')
+        self.assertPresence("Ergebnis [12]", div='query-results')
         self.assertPresence("Jalapeño", div='query-result')
 
     @as_users("vera")

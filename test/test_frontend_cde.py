@@ -193,17 +193,18 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("Im Garten 77", div='address')
 
-        # by fulltext (this matches wordwise, here on a number in their address)
+        # by fulltext. This matchs only complete words, here on ...
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "1"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertPresence("3 Mitglieder gefunden", div='result-count')
-        self.assertPresence("Akira", div='result')
-        self.assertPresence("Ferdinand", div='result')
-        self.assertPresence("Inga", div='result')
+        self.assertPresence("4 Mitglieder gefunden", div='result-count')
+        self.assertPresence("Anton", div='result')  # ... ID
+        self.assertPresence("Akira", div='result')  # ... Address
+        self.assertPresence("Ferdinand", div='result')  # ... Address
+        self.assertPresence("Inga", div='result')  # ... Address
 
         # by zip: upper
         self.traverse({'description': 'CdE-Mitglied suchen'})
@@ -1323,6 +1324,7 @@ class TestCdEFrontend(FrontendTest):
                             div="cdelog_entry2")
         self.assertPresence("0 Probemitgliedschaften beendet",
                             div="cdelog_entry0")
+        # TODO the sum must be fixed
         self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry2")
         self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry0")
 
@@ -1889,7 +1891,7 @@ class TestCdEFrontend(FrontendTest):
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/core/changelog/view'})
-        self.assertTitle("Nutzerdaten-Log [0–20]")
+        self.assertTitle("Nutzerdaten-Log [0–22]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)

@@ -281,6 +281,7 @@ class TestMlBackend(BackendTest):
             4: SS.subscribed,
             5: SS.implicit,
             6: SS.subscribed,
+            9: SS.implicit,
            51: SS.implicit,
            52: SS.implicit,
            53: SS.subscribed,
@@ -677,6 +678,7 @@ class TestMlBackend(BackendTest):
 
         expectation = {
             1: SS.implicit,
+            2: SS.implicit,
             5: SS.unsubscribed,
             7: SS.subscribed,
             9: SS.implicit,
@@ -702,6 +704,7 @@ class TestMlBackend(BackendTest):
 
         expectation = {
             1: SS.subscribed,
+            2: SS.implicit,
             5: SS.unsubscribed,
             7: SS.subscribed,
             9: SS.implicit,
@@ -928,6 +931,7 @@ class TestMlBackend(BackendTest):
         # Initially sample-data.
         expectation = {
             1: SS.implicit,
+            2: SS.implicit,
             5: SS.unsubscribed,
             7: SS.subscribed,
             9: SS.implicit,
@@ -941,6 +945,7 @@ class TestMlBackend(BackendTest):
 
         expectation = {
             1: SS.implicit,
+            2: SS.implicit,
             5: SS.unsubscribed,
             7: SS.subscribed,
             9: SS.implicit,
@@ -1027,6 +1032,8 @@ class TestMlBackend(BackendTest):
             12: SS.implicit,
             13: SS.implicit,
             15: SS.implicit,
+            16: SS.implicit,
+            17: SS.implicit,
             22: SS.implicit,
             23: SS.implicit,
             27: SS.implicit,
@@ -1073,6 +1080,8 @@ class TestMlBackend(BackendTest):
             12: SS.pending,
             13: SS.implicit,
             15: SS.implicit,
+            16: SS.implicit,
+            17: SS.implicit,
             22: SS.implicit,
             23: SS.implicit,
             27: SS.implicit,
@@ -1100,6 +1109,8 @@ class TestMlBackend(BackendTest):
             12: SS.implicit,
             13: SS.implicit,
             15: SS.implicit,
+            16: SS.implicit,
+            17: SS.implicit,
             22: SS.implicit,
             23: SS.implicit,
             27: SS.implicit,
@@ -1196,12 +1207,13 @@ class TestMlBackend(BackendTest):
             12: None,
             13: 'martin@example.cde',
             15: 'olaf@example.cde',
+            16: 'paulchen@example.cde',
+            17: 'quintus@example.cde',
             22: 'vera@example.cde',
             23: 'werner@example.cde',
             27: 'annika@example.cde',
             32: 'farin@example.cde',
-            100: 'akira@example.cde'
-        ,
+            100: 'akira@example.cde',
         }
         self.assertEqual(expectation,
                          self.ml.get_subscription_addresses(self.key, 2))
@@ -1235,6 +1247,7 @@ class TestMlBackend(BackendTest):
             self.assertEqual(expectation,
                              self.ml.get_subscription_addresses(self.key, 8))
             expectation = {1: 'anton@example.cde',
+                           2: 'berta@example.cde',
                            7: 'garcia@example.cde',
                            9: 'inga@example.cde',
                            100: 'akira@example.cde'}
@@ -1682,6 +1695,8 @@ class TestMlBackend(BackendTest):
                             'inga@example.cde',
                             'martin@example.cde',
                             'olaf@example.cde',
+                            'paulchen@example.cde',
+                            'quintus@example.cde',
                             'vera@example.cde',
                             'werner@example.cde',
                             'annika@example.cde',
@@ -1817,6 +1832,8 @@ class TestMlBackend(BackendTest):
                                        'inga@example.cde',
                                        'martin@example.cde',
                                        'olaf@example.cde',
+                                       'paulchen@example.cde',
+                                       'quintus@example.cde',
                                        'vera@example.cde',
                                        'werner@example.cde',
                                        'annika@example.cde',
