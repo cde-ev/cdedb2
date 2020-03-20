@@ -64,7 +64,7 @@
             "username": "berta@example.cde",
             "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
             "is_active": true,
-            "notes": null,
+            "notes": "Beispielhaft, Besser, Baum.",
             "is_meta_admin": false,
             "is_core_admin": false,
             "is_cde_admin": false,
@@ -220,7 +220,7 @@
             "username": "emilia@example.cde",
             "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
             "is_active": true,
-            "notes": null,
+            "notes": "War früher mal berühmt, hat deswegen ihren Nachnamen geändert.",
             "is_meta_admin": false,
             "is_core_admin": false,
             "is_cde_admin": false,
@@ -243,7 +243,7 @@
             "gender": 1,
             "birthday": "2012-06-02",
             "telephone": "+49 (5432) 555666777",
-            "mobile": null,
+            "mobile": "01577/314159",
             "address_supplement": null,
             "address": "Hohle Gasse 13",
             "postal_code": "56767",
@@ -804,7 +804,7 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": false,
+            "is_member": true,
             "is_searchable": false,
             "is_archived": false,
             "display_name": "Paul",
@@ -833,7 +833,7 @@
             "timeline": "Pre movie 1963, Oscar 1964",
             "interests": "Well, pink.",
             "free_form": "Think Pink!",
-            "balance": "0.75",
+            "balance": "10.75",
             "decided_search": true,
             "trial_member": false,
             "bub_search": false,
@@ -1222,7 +1222,7 @@
             "persona_id": 2,
             "username": "berta@example.cde",
             "is_active": true,
-            "notes": null,
+            "notes": "Beispielhaft, Besser, Baum.",
             "is_meta_admin": false,
             "is_core_admin": false,
             "is_cde_admin": false,
@@ -1396,7 +1396,7 @@
             "persona_id": 5,
             "username": "emilia@example.cde",
             "is_active": true,
-            "notes": null,
+            "notes": "War früher mal berühmt, hat deswegen ihren Nachnamen geändert.",
             "is_meta_admin": false,
             "is_core_admin": false,
             "is_cde_admin": false,
@@ -1419,7 +1419,7 @@
             "gender": 1,
             "birthday": "2012-06-02",
             "telephone": "+49 (5432) 555666777",
-            "mobile": null,
+            "mobile": "01577/314159",
             "address_supplement": null,
             "address": "Hohle Gasse 13",
             "postal_code": "56767",
@@ -3295,6 +3295,21 @@
             "checkin": null,
             "list_consent": true,
             "fields": "{\"transportation\": \"pedes\"}"
+        },
+        {
+            "id": 6,
+            "persona_id": 2,
+            "real_persona_id": null,
+            "event_id": 1,
+            "notes": null,
+            "orga_notes": null,
+            "payment": null,
+            "amount_paid": "0.00",
+            "parental_agreement": true,
+            "mixed_lodging": true,
+            "checkin": null,
+            "list_consent": true,
+            "fields": "{\"transportation\": \"pedes\"}"
         }
     ],
     "event.registration_parts": [
@@ -3417,6 +3432,30 @@
             "status": 2,
             "lodgement_id": 1,
             "is_reserve": false
+        },
+        {
+            "id": 16,
+            "registration_id": 6,
+            "part_id": 1,
+            "status": 2,
+            "lodgement_id": null,
+            "is_reserve": false
+        },
+        {
+            "id": 17,
+            "registration_id": 6,
+            "part_id": 2,
+            "status": -1,
+            "lodgement_id": null,
+            "is_reserve": false
+        },
+        {
+            "id": 18,
+            "registration_id": 6,
+            "part_id": 3,
+            "status": -1,
+            "lodgement_id": null,
+            "is_reserve": false
         }
     ],
     "event.registration_tracks": [
@@ -3523,6 +3562,27 @@
             "registration_id": 5,
             "track_id": 3,
             "course_id": 1,
+            "course_instructor": null
+        },
+        {
+            "id": 16,
+            "registration_id": 6,
+            "track_id": 1,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "id": 17,
+            "registration_id": 6,
+            "track_id": 2,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "id": 18,
+            "registration_id": 6,
+            "track_id": 3,
+            "course_id": null,
             "course_instructor": null
         }
     ],
@@ -5907,6 +5967,60 @@
             "mailinglist_id": 65,
             "persona_id": 100,
             "subscription_state": 11
+        },
+        {
+            "id": 129,
+            "mailinglist_id": 52,
+            "persona_id": 17,
+            "subscription_state": 30
+        },
+        {
+            "id": 130,
+            "mailinglist_id": 51,
+            "persona_id": 17,
+            "subscription_state": 30
+        },
+        {
+            "id": 131,
+            "mailinglist_id": 2,
+            "persona_id": 17,
+            "subscription_state": 30
+        },
+        {
+            "id": 132,
+            "mailinglist_id": 1,
+            "persona_id": 17,
+            "subscription_state": 30
+        },
+        {
+            "id": 133,
+            "mailinglist_id": 9,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "id": 134,
+            "mailinglist_id": 1,
+            "persona_id": 16,
+            "subscription_state": 30
+        },
+        {
+            "id": 135,
+            "mailinglist_id": 2,
+            "persona_id": 16,
+            "subscription_state": 30
+        },
+        {
+            "id": 136,
+            "mailinglist_id": 51,
+            "persona_id": 16,
+            "subscription_state": 30
+        },
+        {
+            "id": 137,
+            "mailinglist_id": 52,
+            "persona_id": 16,
+            "subscription_state": 30
         }
     ],
     "ml.subscription_addresses": [

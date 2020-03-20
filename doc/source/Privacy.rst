@@ -169,6 +169,9 @@ Fangen wir von unten an, und gehen systematisch die Berechtigungen nach oben.
       * Orgas: "Veranstaltungsbezogen"
       * Moderatoren: Das Feld "E-Mail"
 
+    Veranstaltungs bzw Mailinglisten Admins gelten dabei als Orga bzw Moderator
+    von jeder Veranstatlung bzw Mailingliste.
+
 * relative Admins
     Jeder Benutzer darf von seinem relativen Admin(s) eingesehen werden. Diese
     haben dabei Zugriff auf die Kategorien "Administrativ" sowie

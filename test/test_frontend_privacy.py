@@ -2,14 +2,13 @@
 
 from test.common import as_users, USER_DICT, FrontendTest
 
-# TODO beef up Berta, Emilia, Janis, Kalif to fill all of their available fields
 # TODO how to tread "Mitgliedschaft"?
 
 
 class TestPrivacyFrontend(FrontendTest):
 
     ALL_FIELDS = {
-        "Name", "Geburstname", "Geburtsdatum", "Geschlecht", "CdEDB-ID",
+        "Name", "Geburtsname", "Geburtsdatum", "Geschlecht", "CdEDB-ID",
         "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
         "Guthaben", "Sichtbarkeit", "E-Mail", "Telefon", #missing: "Mitgliedschaft"
         "Mobiltelefon", "WWW", "Adresse", "Zweitadresse", "Fachgebiet",
@@ -96,7 +95,8 @@ class TestPrivacyFrontend(FrontendTest):
         checked.update(self._profile_assembly_admin_view(inspected))
         checked.update(self._profile_event_admin_view(inspected))
         checked.update(self._profile_cde_admin_view(inspected))
-        checked.update(self._profile_meta_admin_view(inspected))
+        # this does not work, since meta admins are not allowd to see the username
+        # checked.update(self._profile_meta_admin_view(inspected))
         return checked
 
     def _profile_meta_admin_view(self, inspected):
@@ -138,7 +138,7 @@ class TestPrivacyFrontend(FrontendTest):
         for field in expected:
             self.assertPresence(field)
         # username should have been deleted via archiving
-        self.assertNonPresence(inspected['username'])
+        self.assertEqual(None, inspected['username'])
         checked = self._profile_base_view(inspected)
         return expected | checked
 
@@ -205,12 +205,11 @@ class TestPrivacyFrontend(FrontendTest):
 
         # TODO should this also be functional if the inspected user is moderator
         #  and not subscriber of that mailinglist?
-        # ... unless they see them as mailinglist associated
+        # ... unless they see them as mailinglist associated. Then, they get the
+        # same view as a moderator of that mailinglist.
         inspected = USER_DICT['berta']
         self.get(inspected['url'] + "&ml_id=51")
-        found = self._profile_base_view(inspected)
-        # The username should be visible, although "Email" occurs as field
-        self.assertPresence(inspected['username'])
+        found = self._profile_moderator_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field)
 
@@ -249,28 +248,18 @@ class TestPrivacyFrontend(FrontendTest):
 
         # TODO should this also be functional if the inspected user is orga
         #  and not registered for that event?
-        # ... unless they see them as event associated
-        # TODO replace inga with berta
-        inspected = USER_DICT['inga']
+        # ... unless they see them as event associated. Then, they get the same
+        # view as an orga of this event.
         self.get(inspected['url'] + "&event_id=1")
-        found = self._profile_event_admin_view(inspected)
+        found = self._profile_orga_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field)
 
-    @as_users("anton")
+    @as_users("quintus")
     def test_profile_as_cde_admin(self, user):
-        # TODO replace anton with new cde only admin
-        # TODO correct olafs given and family name in sample data
-        self.admin_view_profile('olaf', check=False)
-        f = self.response.forms['activitytoggleform']
-        self.submit(f)
-        self.logout()
-        self.login(USER_DICT['olaf'])
-
-        self._disable_searchability('olaf')
+        # Quintus in not searchable.
 
         # on cde users, cde admins get full view ...
-        self.login(user)
         inspected = USER_DICT['berta']
         self.get(inspected['url'])
         found = self._profile_cde_admin_view(inspected)
@@ -286,10 +275,9 @@ class TestPrivacyFrontend(FrontendTest):
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field)
 
-    @as_users("vera")
+    @as_users("paul")
     def test_profile_as_core_admin(self, user):
-        # TODO replace vera with new core only admin
-        self._disable_searchability('vera')
+        self._disable_searchability('paul')
 
         # core admin gets full access to all users...
         self.login(user)
@@ -301,7 +289,7 @@ class TestPrivacyFrontend(FrontendTest):
         # ... especially also on archived users.
         inspected = USER_DICT['hades']
         self.get(inspected['url'])
-        found = self._profile_core_admin_view(inspected)
+        found = self._profile_of_archived(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field)
 
@@ -338,16 +326,13 @@ class TestPrivacyFrontend(FrontendTest):
     def test_profile_as_orga(self, user):
         # TODO should this also be true for "Mit-Orgas"?
         # orgas get a closer view on users associated to their event
-        # TODO replace inga with berta
-        inspected = USER_DICT['inga']
+        inspected = USER_DICT['berta']
         self.get(inspected['url'] + "&event_id=1")
         found = self._profile_orga_view(inspected)
         for field in self.ALL_FIELDS - found:
             self.assertNonPresence(field)
 
         # otherwise, they have no special privileges ...
-        # TODO replace inga with berta
-        inspected = USER_DICT['inga']
         self.get(inspected['url'])
         found = self._profile_base_view(inspected)
         # The username must not be visible, although "Email" occurs as field
@@ -393,55 +378,39 @@ class TestPrivacyFrontend(FrontendTest):
         # for field in self.ALL_FIELDS - found:
         #     self.assertNonPresence(field)
 
-    @as_users("annika", "berta", "emilia", "janis", "kalif", "nina", "olaf",
-              "vera", "werner")
+    @as_users("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
+              "paul", "werner")
     def test_profile_of_realm_user(self, user):
-        if user == USER_DICT['olaf']:
-            self.login(USER_DICT['anton'])
-            self.admin_view_profile('olaf')
-            f = self.response.forms['activitytoggleform']
-            self.submit(f)
-            self.logout()
-            self.login(USER_DICT['olaf'])
-
         # ... of a ml user
-        # TODO replace vera with new core only admin
         ml_access = [
-            USER_DICT['janis'], USER_DICT['nina'], USER_DICT['vera']
+            USER_DICT['janis'], USER_DICT['nina'], USER_DICT['paul']
         ]
-        # TODO replace olaf with new cde only admin
         ml_no_access = [
-            USER_DICT['annika'], USER_DICT['olaf'], USER_DICT['werner'],
+            USER_DICT['annika'], USER_DICT['quintus'], USER_DICT['werner'],
             USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['emilia']
         ]
 
         # ... of an assembly user
-        # TODO replace vera with new core only admin
         assembly_access = [
-            USER_DICT['kalif'], USER_DICT['vera'], USER_DICT['werner']
+            USER_DICT['kalif'], USER_DICT['paul'], USER_DICT['werner']
         ]
-        # TODO replace olaf with new cde only admin
         assembly_no_access = [
-            USER_DICT['annika'], USER_DICT['nina'], USER_DICT['olaf'],
+            USER_DICT['annika'], USER_DICT['nina'], USER_DICT['quintus'],
             USER_DICT['berta'], USER_DICT['janis'], USER_DICT['emilia']
         ]
 
         # ... of an event user
-        # TODO replace vera with new core only admin
         event_access = [
-            USER_DICT['emilia'], USER_DICT['annika'], USER_DICT['vera']
+            USER_DICT['emilia'], USER_DICT['annika'], USER_DICT['paul']
         ]
-        # TODO replace olaf with new cde only admin
         event_no_access = [
-            USER_DICT['olaf'], USER_DICT['nina'], USER_DICT['werner'],
+            USER_DICT['quintus'], USER_DICT['nina'], USER_DICT['werner'],
             USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['janis']
         ]
 
         # ... of a cde user
-        # TODO replace vera with new core only admin
-        # TODO replace olaf with new cde only admin
         cde_access = [
-            USER_DICT['berta'], USER_DICT['olaf'], USER_DICT['vera']
+            USER_DICT['berta'], USER_DICT['quintus'], USER_DICT['paul']
         ]
         cde_no_access = [
             USER_DICT['annika'], USER_DICT['nina'], USER_DICT['werner'],
@@ -485,31 +454,29 @@ class TestPrivacyFrontend(FrontendTest):
                 for field in self.ALL_FIELDS - found:
                     self.assertNonPresence(field)
 
-    @as_users("ferdinand", "martin", "vera")
+    @as_users("ferdinand", "martin", "paul")
     def test_profile_of_archived_user(self, user):
         inspected = USER_DICT['hades']
 
         # this should be visible to core admins only ...
-        if user == USER_DICT['vera']:
+        if user == USER_DICT['paul']:
             self.get(inspected['url'])
         # ... not for any other admin type
         elif user in [USER_DICT['ferdinand'], USER_DICT['martin']]:
             self.get(inspected['url'], status="403 FORBIDDEN")
 
-    @as_users("annika", "berta", "farin", "martin", "nina", "olaf", "vera",
+    @as_users("annika", "berta", "farin", "martin", "nina", "quintus", "paul",
               "werner")
     def test_user_search(self, user):
         # users who should have access to the specific user search
         core = [
-            USER_DICT['farin'], USER_DICT['vera']
+            USER_DICT['farin'], USER_DICT['paul']
         ]
         archive = [
-            USER_DICT['farin'], USER_DICT['vera']
+            USER_DICT['farin'], USER_DICT['paul']
         ]
-        # TODO replace vera with new core only admin
-        # TODO replace olaf with new cde only admin
         cde = [
-            USER_DICT['farin'], USER_DICT['olaf'], USER_DICT['vera']
+            USER_DICT['farin'], USER_DICT['quintus']
         ]
         event = [
             USER_DICT['farin'], USER_DICT['annika']
@@ -520,16 +487,6 @@ class TestPrivacyFrontend(FrontendTest):
         assembly = [
             USER_DICT['farin'], USER_DICT['werner']
         ]
-
-        # some preparation
-        # re-activate olaf, so he can login
-        if user == USER_DICT['olaf']:
-            self.login(USER_DICT['anton'])
-            self.admin_view_profile('olaf')
-            f = self.response.forms['activitytoggleform']
-            self.submit(f)
-            self.logout()
-            self.login(USER_DICT['olaf'])
 
         if user in core:
             self.get('/core/search/user')
