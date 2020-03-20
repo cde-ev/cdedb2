@@ -6,7 +6,7 @@ import json
 import re
 import datetime
 import webtest
-from test.common import as_users, USER_DICT, FrontendTest
+from test.common import as_users, USER_DICT, FrontendTest, prepsql
 
 from cdedb.query import QueryOperators
 from cdedb.common import now, CDEDB_EXPORT_EVENT_VERSION
@@ -1194,7 +1194,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
 
-    def test_register_no_registraion_end(self):
+    def test_register_no_registration_end(self):
         # Remove registration end (soft and hard) from Große Testakademie 2222
         self.login(USER_DICT['garcia'])
         self.traverse({'href': '/event/$'},
@@ -1230,6 +1230,30 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+
+    @as_users("anton", "berta")
+    @prepsql("UPDATE event.events SET is_visible = True, "
+             "registration_start = now() WHERE id = 2")
+    def test_register_with_fee_modifier(self, user):
+        self.traverse({'description': "Veranstaltungen"},
+                      {'description': "CdE-Party 2050"},
+                      {'description': "Anmelden"})
+        self.assertTitle("Anmeldung für CdE-Party 2050")
+        self.assertPresence("Ich bin unter 13 Jahre alt.")
+        f = self.response.forms["registerform"]
+        self.assertFalse(f['is_child'].checked)
+        f['is_child'].checked = True
+        self.submit(f)
+        self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
+        self.assertPresence("Betrag 8,00 €")
+        self.traverse({'description': "Ändern"})
+        self.assertTitle("Anmeldung für CdE-Party 2050 ändern")
+        f = self.response.forms["amendregistrationform"]
+        self.assertTrue(f['is_child'].checked == True)
+        f['is_child'].checked = False
+        self.submit(f)
+        self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
+        self.assertPresence("Betrag 15,00 €")
 
     @as_users("garcia")
     def test_questionnaire(self, user):
