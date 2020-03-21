@@ -1109,10 +1109,10 @@ class EventBackend(AbstractBackend):
 
         * If the key 'orgas' is present you have to pass the complete set
           of orga IDs, which will superseed the current list of orgas.
-        * If the keys 'parts' or 'fields' are present, the associated dict
-          mapping the part or field ids to the respective data sets can
-          contain an arbitrary number of entities, absent entities are not
-          modified.
+        * If the keys 'parts', 'fee_modifiers' or 'fields' are present,
+          the associated dict mapping the part, fee_mdoifier or field ids to
+          the respective data sets can contain an arbitrary number of entities,
+          absent entities are not modified.
 
           Any valid entity id that is present has to map to a (partial or
           complete) data set or ``None``. In the first case the entity is
@@ -1125,7 +1125,7 @@ class EventBackend(AbstractBackend):
 
           The same logic applies to the 'tracks' dicts inside the
           'parts'. Deletion of parts implicitly deletes the dependent
-          tracks.
+          tracks and fee modifiers.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
@@ -1255,6 +1255,9 @@ class EventBackend(AbstractBackend):
                         additional_info=titles[x])
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
+                        # Implicitly delete fee modifiers and course tracks.
+                        # In theory we also cascade registrations, but this
+                        # is actually prevented above.
                         cascade = ("fee_modifiers", "course_tracks",
                                    "registration_parts")
                         self._delete_event_part(rs, part_id=x, cascade=cascade)
