@@ -686,7 +686,8 @@ class EventBackend(AbstractBackend):
                              })
 
         ret = 1
-        # implicit atomizd context.
+        # implicit atomized context.
+        self.affirm_atomized_context(rs)
         if cascade:
             if "course_segments" in cascade:
                 ret *= self.sql_delete(rs, "event.course_segments",
@@ -736,6 +737,7 @@ class EventBackend(AbstractBackend):
         if not data:
             return ret
         # implicit Atomizer by caller
+        self.affirm_atomized_context(rs)
         current = self.sql_select(
             rs, "event.course_tracks", COURSE_TRACK_FIELDS, (part_id,),
             entity_key="part_id")
@@ -1038,6 +1040,7 @@ class EventBackend(AbstractBackend):
 
         ret = 1
         # implicit atomized context.
+        self.affirm_atomized_context(rs)
         if cascade:
             if "fee_modifiers" in cascade:
                 ret *= self.sql_delete(rs, "event.fee_modifiers",
