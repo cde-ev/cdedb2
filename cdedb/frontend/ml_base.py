@@ -151,16 +151,13 @@ class MlBaseFrontend(AbstractUserFrontend):
     def create_mailinglist_form(self, rs):
         """Render form."""
         mailinglists = self.mlproxy.list_mailinglists(rs)
-        sorted_mailinglists = sorted([(k, v) for k, v in mailinglists.items()],
-                                     key=lambda x: x[1])
-        events = self.eventproxy.list_db_events(rs)
+        events = self.eventproxy.list_db_events(rs, archived=False)
         sorted_events = sorted([(k, v) for k, v in events.items()],
                                key=lambda x: x[1])
         assemblies = self.assemblyproxy.list_assemblies(rs)
         sorted_assemblies = sorted([(k, v["title"]) for k, v in assemblies.items()],
                                    key=lambda x: x[1])
         return self.render(rs, "create_mailinglist", {
-            'sorted_mailinglists': sorted_mailinglists,
             'sorted_events': sorted_events,
             'sorted_assemblies': sorted_assemblies})
 
