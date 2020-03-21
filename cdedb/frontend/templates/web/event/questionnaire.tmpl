@@ -49,7 +49,7 @@
     {% endif %}
         {% for entry in questionnaire %}
             {# TODO maybe filter this in python? #}
-            {% if entry['usage'] == enums['QuestionnaireUsages'].questionnaire %}
+            {% if entry['kind'] == enums['QuestionnaireUsages'].questionnaire %}
                 {{ util.print_questionnaire_entry(entry) }}
             {% endif %}
         {% endfor %}

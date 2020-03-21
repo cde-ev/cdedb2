@@ -1854,6 +1854,11 @@ LODGEMENT_GROUP_FIELDS = ("id", "event_id", "moniker")
 LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
                     "group_id", "fields")
 
+# Fields of a row in a questionnaire.
+# (This can be displayed in different places according to `kind`).
+QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
+                            "input_size", "readonly", "default_value", "kind")
+
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
     "id", "title", "address", "local_part", "domain", "description",

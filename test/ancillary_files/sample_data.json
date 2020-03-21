@@ -2763,7 +2763,7 @@
             "input_size": null,
             "readonly": null,
             "default_value": null,
-            "usage": 2
+            "kind": 2
         },
         {
             "event_id": 1,
@@ -2774,7 +2774,7 @@
             "input_size": null,
             "readonly": false,
             "default_value": "True",
-            "usage": 2
+            "kind": 2
         },
         {
             "event_id": 1,
@@ -2785,7 +2785,7 @@
             "input_size": null,
             "readonly": null,
             "default_value": null,
-            "usage": 2
+            "kind": 2
         },
         {
             "event_id": 1,
@@ -2796,7 +2796,7 @@
             "input_size": null,
             "readonly": null,
             "default_value": null,
-            "usage": 2
+            "kind": 2
         },
         {
             "event_id": 1,
@@ -2807,7 +2807,7 @@
             "input_size": null,
             "readonly": false,
             "default_value": "etc",
-            "usage": 2
+            "kind": 2
         },
         {
             "event_id": 1,
@@ -2818,7 +2818,7 @@
             "input_size": 3,
             "readonly": false,
             "default_value": null,
-            "usage": 2
+            "kind": 2
         },
         {
             "event_id": 2,
@@ -2829,7 +2829,7 @@
             "input_size": null,
             "readonly": false,
             "default_value": false,
-            "usage": 1
+            "kind": 1
         }
     ],
     "event.courses": [

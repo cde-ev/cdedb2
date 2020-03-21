@@ -20,7 +20,7 @@ from cdedb.common import (
     PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
     COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
     json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter, FEE_MODIFIER_FIELDS)
+    mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -3087,20 +3087,27 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def get_questionnaire(self, rs, event_id):
+    def get_questionnaire(self, rs, event_id, kinds=None):
         """Retrieve the questionnaire rows for a specific event.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
+        :type kinds: [const.QuestionnaireUsages] or None
         :rtype: [{str: object}]
         :returns: list of questionnaire row entries
         """
         event_id = affirm("id", event_id)
-        data = self.sql_select(
-            rs, "event.questionnaire_rows",
-            ("field_id", "pos", "title", "info", "input_size", "readonly",
-             "default_value", "usage"),
-            (event_id,), entity_key="event_id")
+        kinds = kinds or []
+        affirm_set("enum_questionnaireusages", kinds)
+        query = "SELECT {fields} FROM event.questionnaire_rows".format(
+            fields=", ".join(QUESTIONNAIRE_ROW_FIELDS))
+        constraints = ["event_id = %s"]
+        params = [event_id]
+        if kinds:
+            constraints.append("kind = ANY(%s)")
+            params.append(kinds)
+        query += " WHERE " + " AND ".join(c for c in constraints)
+        data = self.query_all(rs, query, params)
         return sorted(data, key=lambda x: x['pos'])
 
     @access("event")
@@ -3207,7 +3214,7 @@ class EventBackend(AbstractBackend):
                     'id', 'registration_id', 'track_id', 'course_id', 'rank',)),
                 ('event.questionnaire_rows', "event_id", (
                     'id', 'event_id', 'field_id', 'pos', 'title', 'info',
-                    'input_size', 'readonly', 'usage')),
+                    'input_size', 'readonly', 'kind')),
                 ('event.log', "event_id", (
                     'id', 'ctime', 'code', 'submitted_by', 'event_id',
                     'persona_id', 'additional_info')),

@@ -839,7 +839,7 @@ CREATE TABLE event.questionnaire_rows (
         readonly                boolean,
         default_value           varchar,
         -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
-        usage                   integer NOT NULL
+        kind                    integer NOT NULL
 );
 CREATE INDEX idx_questionnaire_rows_event_id ON event.questionnaire_rows(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;

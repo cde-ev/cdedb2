@@ -2911,7 +2911,7 @@ def _questionnaire(val, field_definitions, argname=None, *, _convert=True,
                 'input_size': _int_or_None,
                 'readonly': _bool_or_None,
                 'default_value': _str_or_None,
-                'usage': _enum_questionnaireusages,
+                'kind': _enum_questionnaireusages,
             }
             value, e = _examine_dictionary_fields(
                 value, mandatory_fields, {}, _convert=_convert,
@@ -3094,7 +3094,7 @@ def _serialized_event(val, argname=None, *, _convert=True,
                           'field_id': _id_or_None, 'title': _str_or_None,
                           'info': _str_or_None, 'input_size': _int_or_None,
                           'readonly': _bool_or_None,
-                          'usage': _enum_questionnaireusages,
+                          'kind': _enum_questionnaireusages,
                           }),
         'event.fee_modifiers': _event_fee_modifier,
     }

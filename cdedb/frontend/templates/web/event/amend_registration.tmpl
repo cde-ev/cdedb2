@@ -28,7 +28,7 @@
 
         {% if questionnaire %}
             {% for entry in questionnaire %}
-                {% if entry['usage'] == enums['QuestionnaireUsages'].registration %}
+                {% if entry['kind'] == enums['QuestionnaireUsages'].registration %}
                     {{ util.print_questionnaire_entry(entry) }}
                 {% endif %}
             {% endfor %}

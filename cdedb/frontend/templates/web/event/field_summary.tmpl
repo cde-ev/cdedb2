@@ -102,7 +102,7 @@
                         {# Old items, already stored in the database #}
                         {% for field_id, entry in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
                             {% if entry['association'] == association %}
-                                {{ print_field(field_id, association, field_id not in is_referenced, field_id not in is_fee_modifier, 'drow-row') }}
+                                {{ print_field(field_id, association, field_id not in referenced, field_id not in fee_modifiers, 'drow-row') }}
                             {% endif %}
                         {% endfor %}
 

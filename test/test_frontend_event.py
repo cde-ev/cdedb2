@@ -815,7 +815,7 @@ etc;anything else""", f['entries_2'].value)
         f['title_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
-        f['usage_-1'] = const.QuestionnaireUsages.questionnaire.value
+        f['kind_-1'] = const.QuestionnaireUsages.questionnaire.value
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         f = self.response.forms['questionnaireform']
@@ -848,7 +848,7 @@ etc;anything else""", f['entries_2'].value)
         f['title_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
-        f['usage_-1'] = const.QuestionnaireUsages.questionnaire.value
+        f['kind_-1'] = const.QuestionnaireUsages.questionnaire.value
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
         f = self.response.forms['questionnaireform']
