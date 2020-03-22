@@ -2,9 +2,11 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}{{ error.code }}: {{ error.name }}{% endblock %}
 {% block content %}
-{% set maillink = '<a href="mailto:%s">cdedb@lists.cde-ev.de</a>'|format(
-                (gettext("CdE-Datenbank development team") + " <cdedb@lists.cde-ev.de>")|urlencode
-                )|safe %}
+{% set maillink = (
+    '<a href="'
+    + util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team"))
+    + '">cdedb@lists.cde-ev.de</a>'
+)%}
     <div class="alert alert-danger">
         {{ util.make_icon('remove-sign') }}
         {% if error.code == 403 %}

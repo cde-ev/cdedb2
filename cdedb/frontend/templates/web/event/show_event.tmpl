@@ -65,7 +65,7 @@
         {% if ambience['event']['orga_address'] %}
             <dt>{% trans %}Orga Address{% endtrans %}</dt>
             <dd id="orga-address">
-                <a href="mailto:{{ ambience['event']['orga_address'] }}">{{ ambience['event']['orga_address'] }}</a>
+                <a href="{{ util.mailto(ambience['event']['orga_address']) }}">{{ ambience['event']['orga_address'] }}</a>
             </dd>
         {% endif %}
         {% if "event" in user.roles %}

@@ -125,13 +125,6 @@
     {%- endif -%}
 {% endmacro %}
 
-{% macro username_mailto(persona, prefix="") %}
-    {{ href("mailto:%s %s <%s>"|s|format(persona.get("{}given_names".format(prefix), ""),
-                                        persona.get("{}family_name".format(prefix), ""),
-                                        persona.get("{}username".format(prefix), "")),
-            persona.get("{}username".format(prefix), "")) }}
-{% endmacro %}
-
 {% macro output_given_displayname(given_names, display_name) %}
     {%- if display_name in given_names %}
         {%- if not display_name or display_name == given_names -%}
@@ -609,3 +602,26 @@
 {% macro anti_csrf_token(target) %}
     {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, user.persona_id)) }}
 {% endmacro %}
+
+{#
+    Creates a HTML compliant mailto: link (though not neccessarily RFC compliant)
+    Additional header such as to, subject, body, cc, or bcc can be passed as kwargs
+#}
+{% macro mailto(address, name) -%}
+mailto:
+{%- if name is defined %}{{ "{}%3C{}%3E".format(name|urlencode, address) }}{% else %}{{ address }}{% endif %}
+{%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
+{%- endmacro %}
+
+{% macro username_mailto(persona, prefix="") -%}
+{{ href(
+    mailto(
+        address=persona.get("{}username".format(prefix), ""),
+        name="{} {}".format(
+            persona.get("{}given_names".format(prefix), ""),
+            persona.get("{}family_name".format(prefix), "")
+        )
+    ),
+    persona.get("{}username".format(prefix), "")
+) }}
+{%- endmacro %}

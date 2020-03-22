@@ -209,7 +209,7 @@
                 © <a href="https://www.cde-ev.de/">{% trans %}Club der Ehemaligen e.V.{% endtrans %}</a>
                 –
                 {% trans %}CdE-Datenbank development team{% endtrans %}
-                <a href="{{ "mailto:" + (gettext("CdE-Datenbank development team") + " <cdedb@lists.cde-ev.de>")|urlencode }}">
+                <a href="{{ util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team")) }}">
                     &lt;cdedb@lists.cde-ev.de&gt;
                 </a>
                 <br />
