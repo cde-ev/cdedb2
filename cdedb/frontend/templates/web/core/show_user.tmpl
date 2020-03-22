@@ -210,7 +210,7 @@
                     <dd id="searchability">
                         {{ util.deko_checkbox(checked=data['is_searchable']) }}
                         {% if data['is_searchable'] %}
-                            <td>{% trans %}Data is visible for other Members.{% endtrans %}</td>
+                            {% trans %}Data is visible for other Members.{% endtrans %}
                         {% else %}
                             {% if not data['decided_search'] %}
                                 {% trans %}Not yet decided. (Data is not visible){% endtrans %}

@@ -326,7 +326,8 @@
         placeholder='', arialabel='', attributes='') %}
     <input type="{{ type }}" {%- if aclass %} class="{{ aclass }}"{% endif %}
             {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
+            {%- if placeholder and type in
+            ("email", "number", "password", "search", "tel", "text", "url") %} placeholder="{{ placeholder }}"{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {# -#}
             name="{{ name }}"
@@ -339,7 +340,8 @@
                     value="{{ values.get(name, defaultvalue) }}"
                 {%- endif %}
             {%- endif %}
-            {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }} />
+            {%- if readonly %} disabled{% endif %} {{ attributes }} />
+            {# TODO use actual readonly and bootstrap styles #}
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
@@ -355,10 +357,10 @@
 
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
     <input type="file" {%- if aclass %} class="{{ aclass }}"{% endif %}
-            {%- if accept %} class="{{ accept }}"{% endif %}
+            {%- if accept %} accept="{{ accept }}"{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
-            {%- if anid %} id="{{ anid }}"{% endif %} value="{{ values.get(name, defaultvalue) }}"{#-#}
-            name="{{ name }}" {%- if readonly %} disabled="disabled"{% endif %} />
+            {%- if anid %} id="{{ anid }}"{% endif %} {# -#}
+            name="{{ name }}" {%- if readonly %} disabled{% endif %} />
 {%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
@@ -375,7 +377,7 @@
     <textarea {% if aclass %} class="{{ aclass }}"{% endif %} rows="{{ rows }}"
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {# -#}
             name="{{ name }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }}>
+            {%- if readonly %} disabled{% endif %} {{ attributes }}>
         {{- values.get(name, defaultvalue) -}}
     </textarea>
 {%- endmacro %}
@@ -408,7 +410,7 @@
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
         arialabeledby="") %}
     <div role="{% if radio %}radio{% endif %}group"
-            {%- if arialabeledby %} aria-labeledby="{{ arialabeledby }}"{% endif %}>
+            {%- if arialabeledby %} aria-labelledby="{{ arialabeledby }}"{% endif %}>
         {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {%- for entry_value, entry_label in entries %}
             {% if not inline -%}

@@ -97,11 +97,14 @@
                 {{ ambience['genesis_case']['country'] }}
             </dd>
         {% endif %}
+    </dl>
+
+    <div style="margin-bottom: 8px;">
         {% if ambience['genesis_case']['attachment'] %}
             {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment': ambience['genesis_case']['attachment']}),
                         gettext("Download Attachment"), aclass="btn btn-info", icon="download") }}
         {% endif %}
-    </dl>
+    </div>
 
     <div class="button-par">
         {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}
