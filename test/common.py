@@ -7,30 +7,30 @@ import email.policy
 import functools
 import gettext
 import inspect
-import os
 import pathlib
-import pytz
 import re
+import subprocess
+import tempfile
+import types
 import unittest
 import urllib.parse
-import subprocess
-import types
-import webtest
 
-from cdedb.config import BasicConfig, SecretsConfig
-from cdedb.frontend.application import Application
-from cdedb.frontend.cron import CronFrontend
-from cdedb.common import (
-    ProxyShim, RequestState, roles_to_db_role, PrivilegeError, glue)
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.session import SessionBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.event import EventBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
+import pytz
+import webtest
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.backend.session import SessionBackend
+from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
+                          roles_to_db_role)
+from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.frontend.application import Application
+from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
@@ -42,6 +42,7 @@ class NearlyNow(datetime.datetime):
     Since automatically generated timestamp are not totally predictible,
     we use this to avoid nasty work arounds.
     """
+
     def __eq__(self, other):
         if isinstance(other, datetime.datetime):
             delta = self - other
@@ -141,6 +142,7 @@ class BackendShim(ProxyShim):
 
 class MyTextTestResult(unittest.TextTestResult):
     """Subclasing the TestResult object to fix the CLI reporting."""
+
     def __init__(self, *args, **kwargs):
         super(MyTextTestResult, self).__init__(*args, **kwargs)
         self._subTestErrors = []
@@ -475,18 +477,14 @@ def execsql(sql):
 
 
 class FrontendTest(unittest.TestCase):
-    #: Set `do_scrap` to True to capture a snapshot of the HTML of all
-    #: visited pages
-    do_scrap = False
-    #: Folder where the snapshots are to be stored
-    scrap_root_path = pathlib.Path('/tmp/scrapped/')
+    # Set `do_scrap` to True to capture a snapshot of the HTML of all visited pages
+    do_scrap = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.maxDiff = None
-        self.scrap_path = self.scrap_root_path / str(os.getpid())
         if self.do_scrap:
-            self.scrap_path.mkdir(parents=True, exist_ok=True)
+            self.scrap_path = tempfile.mkdtemp()
 
     @classmethod
     def setUpClass(cls):
@@ -514,11 +512,9 @@ class FrontendTest(unittest.TestCase):
 
     def scrap(self):
         if self.do_scrap and self.response.status_int // 100 == 2:
-            count = len(tuple(self.scrap_path.iterdir()))
-            url = urllib.parse.quote_plus(self.response.request.url)
-            url = url[31:250]
-            path = self.scrap_path / '{:07}--{}.html'.format(count, url)
-            with open(path, 'wb') as f:
+            # path without host but with query string
+            url = urllib.parse.quote_plus(self.response.request.path_qs)
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url, delete=False) as f:
                 f.write(self.response.body)
 
     def log_generation_time(self, response=None):
