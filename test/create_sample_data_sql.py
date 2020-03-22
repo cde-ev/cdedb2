@@ -81,8 +81,8 @@ def build_commands(data, aux):
     commands = []
 
     # Start off by resetting the sequential ids to 1.
-    commands.extend("ALTER SEQUENCE {}_id_seq RESTART WITH 1;".format(table)
-                    for table in aux["seq_id_tables"])
+    commands.extend("ALTER SEQUENCE IF EXISTS {}_id_seq RESTART WITH 1;"
+                    .format(table) for table in aux["seq_id_tables"])
 
     # Prepare insert statements for the tables in the source file.
     for table, table_data in data.items():
