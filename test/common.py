@@ -7,10 +7,12 @@ import email.policy
 import functools
 import gettext
 import inspect
+import os
 import pathlib
 import pytz
 import re
 import unittest
+import urllib.parse
 import subprocess
 import types
 import webtest
@@ -473,9 +475,18 @@ def execsql(sql):
 
 
 class FrontendTest(unittest.TestCase):
+    #: Set `do_scrap` to True to capture a snapshot of the HTML of all
+    #: visited pages
+    do_scrap = False
+    #: Folder where the snapshots are to be stored
+    scrap_root_path = pathlib.Path('/tmp/scrapped/')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.maxDiff = None
+        self.scrap_path = self.scrap_root_path / str(os.getpid())
+        if self.do_scrap:
+            self.scrap_path.mkdir(parents=True, exist_ok=True)
 
     @classmethod
     def setUpClass(cls):
@@ -499,6 +510,16 @@ class FrontendTest(unittest.TestCase):
             self.assertNotEqual(0, len(texts))
             self.assertNotEqual('CdEDB – Fehler', texts[0])
         self.log_generation_time()
+        self.scrap()
+
+    def scrap(self):
+        if self.do_scrap and self.response.status_int // 100 == 2:
+            count = len(tuple(self.scrap_path.iterdir()))
+            url = urllib.parse.quote_plus(self.response.request.url)
+            url = url[31:250]
+            path = self.scrap_path / '{:07}--{}.html'.format(count, url)
+            with open(path, 'wb') as f:
+                f.write(self.response.body)
 
     def log_generation_time(self, response=None):
         if response is None:
