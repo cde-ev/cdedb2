@@ -496,6 +496,14 @@ class FrontendTest(unittest.TestCase):
             cls.scrap_path = tempfile.mkdtemp()
             print(cls.scrap_path)
 
+    @classmethod
+    def tearDownClass(cls):
+        if cls.do_scrap:
+            folder = pathlib.Path(cls.scrap_path)
+            folder.chmod(0o0755)  # 0755/drwxr-xr-x
+            for file in folder.iterdir():
+                file.chmod(0o0644)  # 0644/-rw-r--r--
+
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
                               stdout=subprocess.DEVNULL,
