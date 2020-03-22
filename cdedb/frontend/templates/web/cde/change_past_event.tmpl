@@ -35,7 +35,7 @@
                                     title=gettext("Short Markdown summary")))|s) }}
         {{ util.form_input_text(name="tempus", type="date", label=gettext("Cutoff date")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Photo gallery"), rows="3",
-            info=gettext("Supports %(infolink)s. Link to photo gallery (e. g. <https://user:pwd@example.cde>) "
+            info=gettext("Supports %(infolink)s. Link to photo gallery (e. g. %lt;https://user:pwd@example.cde&gt;) "
                          "with http authentification information encoded.")|format(
                          infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
                          title=gettext("Short Markdown summary")))|s) }}

@@ -204,7 +204,7 @@
                 </div>
             </div>
         </div>
-        <div id="footer" class="container">
+        <footer id="footer" class="container">
             {% block footer %}
                 © <a href="https://www.cde-ev.de/">{% trans %}Club der Ehemaligen e.V.{% endtrans %}</a>
                 –
@@ -219,7 +219,7 @@
                     <div style="word-wrap: break-word;">{{ debugstring }} ; time taken: {{ generation_time() }}</div>
                 {% endif %}
             {% endblock %}
-        </div>
+        </footer>
     </body>
     {% if errors %}
         <!-- error listing for debugging

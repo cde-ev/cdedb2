@@ -35,8 +35,10 @@
             <div class="col-md-6">
                 <ul>
                     {% for key in transaction_keys %}
-                        <li>{{ key }}: {{ data["{}{}".format(key, t_id)] }}</li>
-                        {{ util.input_hidden(name="{}{}".format(key, t_id)) }}
+                        <li>
+                            {{ key }}: {{ data["{}{}".format(key, t_id)] }}
+                            {{ util.input_hidden(name="{}{}".format(key, t_id)) }}
+                        </li>
                     {% endfor %}
                 </ul>
                 <ul class="list-unstyled">

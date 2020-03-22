@@ -120,7 +120,7 @@
                     </div>
                     {{ util.form_input_text(name="fee_{}".format(part_id), label=gettext("Event-Part Fee"),
                                             attributes=('data-basename="fee_"'|s if newrow else ''),
-                                            aclass='drow-input form-control', anid="input-text-fee_".format(part_id),
+                                            aclass='drow-input form-control', anid="input-text-fee_{}".format(part_id),
                                             addon='€') }}
 
                 </div>

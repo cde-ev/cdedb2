@@ -671,7 +671,7 @@
             {% endif %}
             {{ util.form_input_text("additional_info", label=gettext("Additional Info"), small=True) }}
             {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
-            {{ util.form_input_from_to('time_start', 'time_stop', label=gettext("Timestamp"), type='datetime', small=True) }}
+            {{ util.form_input_from_to('time_start', 'time_stop', label=gettext("Timestamp"), type='datetime-local', small=True) }}
             {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
         </form>
     {% endcall %}
