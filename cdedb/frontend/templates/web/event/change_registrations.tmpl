@@ -49,7 +49,7 @@
                 <label>
                     <input type="checkbox" name="enable_{{ name }}" value="True" class="enable-input"
                            {% if anid %}id="enable_{{ anid }}" data-input="{{ anid }}"{% endif %}
-                           {% if values.get("enable_{}".format(name), False) %}checked="checked"{% endif %} />
+                           {% if values.get("enable_{}".format(name), False) %}checked{% endif %} />
                     <span class="sr-only">
                         {% if label %}
                             {% trans label=label %}

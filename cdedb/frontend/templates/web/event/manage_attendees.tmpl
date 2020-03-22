@@ -51,7 +51,7 @@
                         <label for="input_new_{{ track_id }}">
                             {{ util.make_icon('plus') }} {% trans %}Add Attendee{% endtrans %}
                         </label>
-                        <select multiple="multiple" id="input_new_{{ track_id }}" class="form-control"
+                        <select multiple id="input_new_{{ track_id }}" class="form-control"
                                 name="new_{{ track_id }}">
                             <option value="">{% trans %}– none –{% endtrans %}</option>
                             {% for registration_id in without_course[track_id] %}

@@ -398,10 +398,10 @@
     <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
         <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name }}" value="{{ value }}"
             {%- if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %} {# -#}
-                checked="checked"
+                checked
             {%- endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
-            {%- if readonly %} disabled="disabled"{% endif %} {%- if anid %} id="{{ anid }}"{% endif %}
+            {%- if readonly %} disabled{% endif %} {%- if anid %} id="{{ anid }}"{% endif %}
             {%- if aclass %} class="{{ aclass }}"{% endif %} {{ attributes }} />
         {{ label -}}
     </label>
@@ -461,16 +461,16 @@
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
         nulloption=None, arialabel='', attributes="") %}
     <select name="{{ name }}" {%- if anid %} id="{{ anid }}"{% endif %}
-            {%- if aclass %} class="{{ aclass }}"{% endif %}{% if readonly %} disabled="disabled"{% endif %}
+            {%- if aclass %} class="{{ aclass }}"{% endif %}{% if readonly %} disabled{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %} {{ attributes }}>
         {%- if nulloption is not none %}
-            <option value=""{% if values.get(name, defaultvalue) == None %} selected="selected"{% endif %}>
+            <option value=""{% if values.get(name, defaultvalue) == None %} selected{% endif %}>
                 {{- nulloption -}}
             </option>
         {%- endif %}
         {%- for value, label in entries %}
             <option value="{{ value }}"
-              {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
+              {%- if values.get(name, defaultvalue)|string == value|string %} selected{% endif %}>
                 {{- label -}}
             </option>
         {%- endfor %}
@@ -504,7 +504,7 @@
 
 {% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="ok",
         readonly=False, title='', arialabel='') %}
-    <button type="submit" name="{{ name }}" {%- if readonly %} disabled="disabled"{% endif %}
+    <button type="submit" name="{{ name }}" {%- if readonly %} disabled{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
             {%- if title %} title="{{ title }}"{% endif %} value="True"
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}>
