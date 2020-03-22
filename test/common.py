@@ -491,8 +491,8 @@ class FrontendTest(unittest.TestCase):
             'SERVER_PROTOCOL': "HTTP/1.1",
             'wsgi.url_scheme': 'https'})
 
-        do_scrap = True
-        if do_scrap:
+        cls.do_scrap = True
+        if cls.do_scrap:
             cls.scrap_path = tempfile.mkdtemp()
 
     def setUp(self):
