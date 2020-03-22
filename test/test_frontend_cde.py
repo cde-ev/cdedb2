@@ -200,8 +200,9 @@ class TestCdEFrontend(FrontendTest):
         f['qval_fulltext'] = "1"
         self.submit(f)
         self.assertTitle("CdE-Mitglied suchen")
-        self.assertPresence("3 Mitglieder gefunden", div='result-count')
+        self.assertPresence("4 Mitglieder gefunden", div='result-count')
         self.assertPresence("Akira", div='result')
+        self.assertPresence("Anton", div='result')
         self.assertPresence("Ferdinand", div='result')
         self.assertPresence("Inga", div='result')
 
