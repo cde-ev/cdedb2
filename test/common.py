@@ -477,7 +477,6 @@ def execsql(sql):
 
 
 class FrontendTest(unittest.TestCase):
-    # Set `do_scrap` to True to capture a snapshot of the HTML of all visited pages
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.maxDiff = None
@@ -491,7 +490,8 @@ class FrontendTest(unittest.TestCase):
             'SERVER_PROTOCOL': "HTTP/1.1",
             'wsgi.url_scheme': 'https'})
 
-        cls.do_scrap = True
+        # Set `do_scrap` to True to capture a snapshot of the HTML of all visited pages
+        cls.do_scrap = False
         if cls.do_scrap:
             cls.scrap_path = tempfile.mkdtemp()
             print(cls.scrap_path)
