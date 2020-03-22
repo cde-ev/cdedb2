@@ -478,13 +478,9 @@ def execsql(sql):
 
 class FrontendTest(unittest.TestCase):
     # Set `do_scrap` to True to capture a snapshot of the HTML of all visited pages
-    do_scrap = True
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.maxDiff = None
-        if self.do_scrap:
-            self.scrap_path = tempfile.mkdtemp()
 
     @classmethod
     def setUpClass(cls):
@@ -494,6 +490,10 @@ class FrontendTest(unittest.TestCase):
             'REMOTE_ADDR': "127.0.0.0",
             'SERVER_PROTOCOL': "HTTP/1.1",
             'wsgi.url_scheme': 'https'})
+
+        do_scrap = True
+        if do_scrap:
+            cls.scrap_path = tempfile.mkdtemp()
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
@@ -507,8 +507,8 @@ class FrontendTest(unittest.TestCase):
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
             self.assertNotEqual('CdEDB – Fehler', texts[0])
+            self.scrap()
         self.log_generation_time()
-        self.scrap()
 
     def scrap(self):
         if self.do_scrap and self.response.status_int // 100 == 2:
