@@ -494,6 +494,7 @@ class FrontendTest(unittest.TestCase):
         cls.do_scrap = True
         if cls.do_scrap:
             cls.scrap_path = tempfile.mkdtemp()
+            print(cls.scrap_path)
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
@@ -512,8 +513,8 @@ class FrontendTest(unittest.TestCase):
 
     def scrap(self):
         if self.do_scrap and self.response.status_int // 100 == 2:
-            # path without host but with query string
-            url = urllib.parse.quote_plus(self.response.request.path_qs)
+            # path without host but with query string limited to 64 chars
+            url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
             with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url, delete=False) as f:
                 f.write(self.response.body)
 
