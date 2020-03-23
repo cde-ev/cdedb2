@@ -711,17 +711,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         else:
             condition = ""
 
-        # First query determines the absolute number of logs existing matching
-        # the given criteria
+        # The first query determines the absolute number of logs existing
+        # matching the given criteria
         query = "SELECT COUNT(*) AS count FROM {table} {condition}"
         query = query.format(entity=entity_name, table=table,
                              condition=condition)
         total = unwrap(self.query_one(rs, query, params))
         if offset and offset > total:
             # Why you do this
-            pass
+            return total, tuple()
         elif not offset and total > length:
-            offset = total - length
+            offset = length * (total // length) - 1
 
         # Now, query the actual information
         query = glue(

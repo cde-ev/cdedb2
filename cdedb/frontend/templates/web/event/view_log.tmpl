@@ -6,9 +6,15 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans -%}Events Log{%- endtrans %}
-    {% if log %}
-        [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
+    {% trans -%}Event Log{%- endtrans %}
+    {% if values['offset'] %}
+       [{{ values['offset']|int + 1 }}–{{ values['offset']|int + length }}/{{ total }}]
+    {% else %}
+        {% set start = length*(total // length)|int %}
+        {% if start < 0 %}
+            {% set start = 0 %}
+        {% endif %}
+        [{{ start }}–{{ total }}/{{ total }}]
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
@@ -73,5 +79,7 @@
         </tbody>
     </table>
 
-    {{ generic.log_filter(cdedblink('event/view_log'), enums['EventLogCodes'], 'event_admin_user', 'event_id') }}
+    {{ generic.log_filter(
+        cdedblink('event/view_log'), enums['EventLogCodes'], total, length, 'event_admin_user', 'event_id')
+     }}
 {% endblock %}
