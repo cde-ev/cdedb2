@@ -61,9 +61,9 @@
                                 {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                         attachment['title']) }}
                                 {% if is_admin %}
-                                    <form action="{{ cdedblink('assembly/remove_attachment',
-                                                               {'attachment_id': attachment_id}) }}"
-                                            method="POST" id="removeattachmentform{{ attachment_id }}",
+                                    <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id}) }}"
+                                            method="POST"
+                                            id="removeattachmentform{{ attachment_id }}"
                                             class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
@@ -120,8 +120,7 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST"
-                                      id="concludeassemblyform" style="display: inline;">
+                                <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST" id="concludeassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/conclude_assembly') }}
                                     {{ util.input_submit(value=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
                                             icon="folder-close", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
@@ -144,8 +143,7 @@
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
-                                <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST"
-                                      id="deleteassemblyform" style="display: inline;">
+                                <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST" id="deleteassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/delete_assembly') }}
                                     {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="trash") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}

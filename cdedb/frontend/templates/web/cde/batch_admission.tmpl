@@ -130,7 +130,7 @@
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
                                     {%- for key, value in dataset['doppelgangers']|dictsort %}
-                                        {%- with description = "%s %s (%s) %lt;%s%gt; (%s %s), %s%s"|s|format(
+                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}".format(
                                                 value['given_names'], value['family_name'],
                                                 value['birth_name'] or value['family_name'],
                                                 value['username'], gettext("born"),

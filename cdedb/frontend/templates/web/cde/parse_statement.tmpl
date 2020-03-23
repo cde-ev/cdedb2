@@ -42,24 +42,22 @@
                     {% endfor %}
                 </ul>
                 <ul class="list-unstyled">
-                    <div id="transaction{{ t_id }}_errors">
                         {% for key, problem in data["errors{}".format(t_id)] %}
-                            <li class="text-danger">
+                            <li id="transaction{{ t_id }}_errors" class="text-danger">
                                 {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
                                 <em>{{ key }}</em>:
                                 {{ util.format_error(problem) }}
                             </li>
                         {% endfor %}
-                    </div>
-                    <div id="transaction{{ t_id }}_warnings">
+                </ul>
+                <ul class="list-unstyled">
                         {% for key, problem in data["warnings{}".format(t_id)] %}
-                            <li class="text-warning">
+                            <li id="transaction{{ t_id }}_warnings" class="text-warning">
                                 {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
                                 <em>{{ key }}</em>:
                                 {{ util.format_error(problem) }}
                             </li>
                         {% endfor %}
-                    </div>
                 </ul>
             </div>
             <div class="col-md-6">
@@ -141,7 +139,7 @@
             {{ util.input_hidden(name="start") }}
             {{ util.input_hidden(name="end") }}
             {{ util.input_hidden(name="timestamp") }}
-            <p>
+            <div>
             {% if params["has_error"] %}
                 <div id="has_error_summary">
                     {% trans count=params["has_error"]|length %}{{ count }} Transactions with Errors{% endtrans %}
@@ -171,7 +169,7 @@
                     Go to submit buttons.
                 {% endtrans %}
             </a>
-            </p>
+            </div>
             {% for t_id in params["all"] %}
                 {{ print_transaction(t_id) }}
             {% endfor %}

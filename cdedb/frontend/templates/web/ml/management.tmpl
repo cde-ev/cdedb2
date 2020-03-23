@@ -99,7 +99,7 @@
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                            <span class="nowrap">
+                            <div class="nowrap">
                                 {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
                                 <form action="{{ cdedblink('ml/approve_request') }}"
                                       method="POST"
@@ -128,7 +128,7 @@
                                     {{ util.input_submit(icon="ban-circle", value=gettext("Block"),
                                         aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
-                            </span>
+                            </div>
                         </li>
                     {% endfor %}
                 </ul>

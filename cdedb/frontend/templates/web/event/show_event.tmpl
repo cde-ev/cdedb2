@@ -186,7 +186,7 @@
 
             <div class="col-md-6" id="minor-form">
                 {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}
-                    <p>
+                    <div>
                         {% if minor_form_present %}
                             {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("current Form"),
                                                     icon='file') -%}
@@ -209,7 +209,7 @@
                                 {% trans %}No Form present – Minors cannot register{% endtrans %}
                             </strong>
                         {% endif %}
-                    </p>
+                    </div>
                     <form action="{{ cdedblink('event/change_minor_form') }}" method="POST" enctype="multipart/form-data"
                      id="changeminorformform" {% if 'minor_form' in errors %}class="has-error"{% endif %}>
                         {{ util.anti_csrf_token('event/change_minor_form') }}

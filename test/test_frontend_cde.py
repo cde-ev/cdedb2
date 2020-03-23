@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 
+import csv
 import itertools
 import json
-import csv
 import re
-import unittest
 import time
-import webtest
+import unittest
+from test.common import USER_DICT, FrontendTest, as_users
 
-from test.common import as_users, USER_DICT, FrontendTest
+import cdedb.database.constants as const
+import webtest
 from cdedb.common import now
 from cdedb.query import QueryOperators
-import cdedb.database.constants as const
+
 
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")
@@ -477,7 +478,7 @@ class TestCdEFrontend(FrontendTest):
             "family_name": "Zeruda-Hime",
             "name_supplement": 'von und zu',
             "display_name": 'Zelda',
-            "birthday": "5.6.1987",
+            "birthday": "1987-06-05",
             "specialisation": "oehm",
             "affiliation": "Hogwarts",
             "timeline": "tja",

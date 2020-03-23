@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
 import copy
-import webtest
-
-from test.common import as_users, USER_DICT, FrontendTest
-from cdedb.query import QueryOperators
+from test.common import USER_DICT, FrontendTest, as_users
 
 import cdedb.database.constants as const
+import webtest
+from cdedb.query import QueryOperators
 
 
 class TestCoreFrontend(FrontendTest):
@@ -1302,7 +1301,7 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = "Gimme!"
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1434,7 +1433,7 @@ class TestCoreFrontend(FrontendTest):
         # f['notes'] = "Gimme!"  # Do not send this to test upload permanance.
         f['realm'] = "cde"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1585,7 +1584,7 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = "Gimme!"
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "Z-12345"
         f['location'] = "Marcuria"
@@ -1605,7 +1604,7 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = "Gimme!"
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.2222"
+        f['birthday'] = "2222-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1624,7 +1623,7 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = ""
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1662,7 +1661,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f['realm'] = "event"
         f['gender'] = "1"
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
@@ -1673,7 +1672,7 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']
-        f['birthday'] = "5.6.1987"
+        f['birthday'] = "1987-06-05"
         self.submit(f)
         self.assertTitle("Accountanfrage von Zelda Zeruda")
         f = self.response.forms['genesiseventapprovalform']
