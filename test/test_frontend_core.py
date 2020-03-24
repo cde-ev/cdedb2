@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import copy
+import urllib.parse
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
@@ -1507,6 +1508,17 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfrage von Zelda Zeruda")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
+
+    def test_resolve_api(self):
+        b = urllib.parse.quote_plus('Bertålotta')
+        self.get(
+            '/core/api/resolve?given_names={}&family_name=Beispiel'.format(b),
+            headers={'X-CdEDB-API-token': 'secret'})
+        self.assertEqual(self.response.json, ["berta@example.cde"])
+        self.get(
+            '/core/api/resolve?given_names=Anton&family_name=Administrator',
+            headers={'X-CdEDB-API-token': 'secret'})
+        self.assertEqual(self.response.json, ["anton@example.cde"])
 
     def test_log(self):
         # First: generate data

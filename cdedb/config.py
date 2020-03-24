@@ -506,6 +506,9 @@ _SECRECTS_DEFAULTS = {
 
     # password for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_PASSWORD": "secret",
+
+    # provisional API token for resolve API
+    "RESOLVE_API_TOKEN": "secret",
 }
 
 

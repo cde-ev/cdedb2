@@ -5,8 +5,10 @@
 import collections
 import copy
 import hashlib
+import json
 import pathlib
 import quopri
+import re
 import tempfile
 import datetime
 import operator
@@ -23,6 +25,7 @@ from cdedb.common import (
     n_, pairwise, extract_roles, unwrap, PrivilegeError,
     now, merge_dicts, ArchiveError, implied_realms, SubscriptionActions,
     REALM_INHERITANCE, EntitySorter, realm_specific_genesis_fields)
+from cdedb.config import SecretsConfig
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
@@ -46,6 +49,11 @@ class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
     anonymous access and personas. """
     realm = "core"
+
+    def __init__(self, configpath):
+        super().__init__(configpath)
+        secrets = SecretsConfig(configpath)
+        self.resolve_api_token_check = lambda x: x == secrets.RESOLVE_API_TOKEN
 
     @classmethod
     def is_admin(cls, rs):
@@ -2261,3 +2269,37 @@ class CoreFrontend(AbstractFrontend):
 
     def set_cron_store(self, rs, name, data):
         return self.coreproxy.set_cron_store(rs, name, data)
+
+    @access("anonymous")
+    @REQUESTdata(("given_names", "str"), ("family_name", "str"))
+    def api_resolve_name(self, rs, given_names, family_name):
+        """API to resolve member names to email addresses.
+
+        This is a quick and dirty hack and should be deleted as fast as
+        possible.
+        """
+        token = rs.request.headers['X-CdEDB-API-token']
+        if not self.resolve_api_token_check(token):
+            raise werkzeug.exceptions.Forbidden(n_("Not authorized."))
+        if rs.has_validation_errors():
+            raise werkzeug.exceptions.BadRequest(n_("Invalid parameters."))
+
+        spec = {
+            "given_names": "str",
+            "family_name": "str",
+            "is_member": "bool",
+        }
+        given_names_regex = '.*'.join('\m{}\M'.format(re.escape(part))
+                                      for part in given_names.split())
+        constraints = (
+            ('given_names', QueryOperators.regex, given_names_regex),
+            ('family_name', QueryOperators.equal, re.escape(family_name)),
+            ('is_member', QueryOperators.equal, True),
+        )
+        query = Query("qview_persona", spec, ("username",),
+                      constraints, (('id', True),))
+        result = self.coreproxy.submit_resolve_api_query(rs, query)
+        json_data = [entry['username'] for entry in result]
+        return self.send_file(rs, data=json.dumps(json_data),
+                              mimetype='text/json')
+
