@@ -1519,6 +1519,7 @@ class TestCoreFrontend(FrontendTest):
             '/core/api/resolve?given_names=Anton&family_name=Administrator',
             headers={'X-CdEDB-API-token': 'secret'})
         self.assertEqual(self.response.json, ["anton@example.cde"])
+        self.get('/core/api/resolve', status=403)
 
     def test_log(self):
         # First: generate data

@@ -2278,7 +2278,7 @@ class CoreFrontend(AbstractFrontend):
         This is a quick and dirty hack and should be deleted as fast as
         possible.
         """
-        token = rs.request.headers['X-CdEDB-API-token']
+        token = rs.request.headers.get('X-CdEDB-API-token')
         if not self.resolve_api_token_check(token):
             raise werkzeug.exceptions.Forbidden(n_("Not authorized."))
         if rs.has_validation_errors():
