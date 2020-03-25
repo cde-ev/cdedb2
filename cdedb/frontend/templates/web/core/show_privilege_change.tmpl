@@ -10,7 +10,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': ambience['privilege_change']['id']}),
-        "{} {}".format(persona['given_names'], persona['family_name']), icon="user", active="True") }}
+        "{} {}".format(persona['given_names'], persona['family_name']), icon="glyphicon-user", active="True") }}
 {% endblock %}
 
 {% block content %}
@@ -56,6 +56,6 @@
     <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="nackprivilegechangeform" style="display: inline;">
         {{ util.anti_csrf_token('core/decide_privilege_change') }}
         {{ util.input_hidden(name="ack", value="False") }}
-        {{ util.input_submit(value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban-circle") }}
+        {{ util.input_submit(value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="glyphicon-ban-circle") }}
     </form>
 {% endblock %}

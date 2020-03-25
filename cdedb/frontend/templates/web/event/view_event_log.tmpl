@@ -24,13 +24,13 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='blackboard') }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='glyphicon-blackboard') }}
     {{ util.breadcrumb_link(cdedblink("event/view_event_log"), gettext("Log"), active="True") }}
 {% endblock %}
 {% block content %}
     {% if log %}
         <div class="p">
-            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
+            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="glyphicon-arrow-down") }}
         </div>
     {% endif %}
     <table class="table table-condensed table-hover">

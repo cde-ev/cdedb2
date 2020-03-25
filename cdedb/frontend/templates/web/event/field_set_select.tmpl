@@ -16,7 +16,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
 {{ util.breadcrumb_link(cdedblink("event/field_set_select"), gettext("Set Field"), active=True) }}
 {% endblock %}
@@ -31,7 +31,7 @@
         {%- endfor %}
         {{ util.form_input_select("field_id", label=gettext("Field"), entries=myentries, small=True) }}
         {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
-        {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink('event/registration_query'), icon="pencil", small=True) }}
+        {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink('event/registration_query'), icon="glyphicon-pencil", small=True) }}
     </form>
 
     {% if reg_ids %}

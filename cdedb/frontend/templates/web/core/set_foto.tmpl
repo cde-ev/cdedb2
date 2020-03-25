@@ -12,7 +12,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
                                                                                   ambience['persona']['family_name']),
-        icon="user") }}
+        icon="glyphicon-user") }}
 {{ util.breadcrumb_link(cdedblink('core/set_foto_form'), gettext("Set Profile Picture"), active="True") }}
 {% endblock %}
 {% block content %}
@@ -33,7 +33,7 @@
                     {{ util.anti_csrf_token('core/set_foto') }}
                     {{ util.input_hidden(name="delete", value=True) }}
                     <div class="form-group">
-                        {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash") }}
+                        {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="glyphicon-trash") }}
                     </div>
                 </form>
             </div>
@@ -68,5 +68,5 @@
         </div>
     </div>
 
-    {{ util.href(show_user_link(ambience['persona']['id']), gettext("Go Back"), icon="arrow-left", aclass="btn btn-default") }}
+    {{ util.href(show_user_link(ambience['persona']['id']), gettext("Go Back"), icon="glyphicon-arrow-left", aclass="btn btn-default") }}
 {% endblock %}

@@ -6,7 +6,7 @@
 {% endblock %}
 {% block content %}
     {% if is_admin %}
-        {{ util.href(cdedblink("assembly/create_assembly_form"), gettext("Create Assembly"), icon="plus",
+        {{ util.href(cdedblink("assembly/create_assembly_form"), gettext("Create Assembly"), icon="glyphicon-plus",
                 aclass="btn btn-sm btn-success") }}
     {% else %}
         {% trans %}Here You can find the CdE’s general assemblies.{% endtrans %}

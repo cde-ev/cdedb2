@@ -8,7 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -96,7 +96,7 @@
     {% if age.is_minor() and not registration['parental_agreement'] %}
         <h3 class="heading-underline">{% trans %}Parental Consent{% endtrans %}</h3>
         <p>
-            {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("here"), icon='file') %}
+            {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("here"), icon='glyphicon-file') %}
                 You need to send the parental consent form to the Orgas. You can find the form {{ link }}.
             {% endtrans %}
         </p>
@@ -121,7 +121,7 @@
             ambience['event']['registration_soft_limit'] >= now() and not ambience['event']['is_archived'] %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), gettext("Change"), aclass="btn btn-sm btn-warning",
-                         icon='pencil') }}
+                         icon='glyphicon-pencil') }}
             {% if not ambience['event']['registration_soft_limit'] is none %}
                 {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
                     Changes can be made until the registration end({{ date }}).

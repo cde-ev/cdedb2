@@ -14,7 +14,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), gettext("Configure Questionnaire"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -89,9 +89,9 @@
 {% block content %}
     <div class="p">
         {{ util.href(cdedblink('event/reorder_questionnaire_form'), gettext("Reorder Questionnaire"), readonly=is_locked,
-                     aclass="btn btn-info btn-sm", icon='sort') }}
+                     aclass="btn btn-info btn-sm", icon='glyphicon-sort') }}
         {{ util.href(cdedblink('event/questionnaire', {"preview": True}), gettext("Preview Questionnaire"),
-                     aclass="btn btn-info btn-sm", icon='edit') }}
+                     aclass="btn btn-info btn-sm", icon='glyphicon-edit') }}
     </div>
     <form action="{{ cdedblink('event/questionnaire_summary') }}" method="POST" id="questionnairesummaryform">
         {{ util.anti_csrf_token('event/questionnaire_summary') }}

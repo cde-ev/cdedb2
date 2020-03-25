@@ -8,7 +8,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']),
-            ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
+            ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="glyphicon-user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_privileges_form"), gettext("Change Privileges"), active=True) }}
 {% endblock %}
 {% block content %}

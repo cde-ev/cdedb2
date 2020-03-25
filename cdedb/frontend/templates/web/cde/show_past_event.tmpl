@@ -12,14 +12,14 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title'], icon="calendar", active=True) }}
+        ambience['pevent']['title'], icon="glyphicon-calendar", active=True) }}
 {% endblock %}
 {% block content %}
     {% if is_admin %}
         <div class="p">
-        {{ util.href(cdedblink('cde/change_past_event_form'), gettext("Edit"), icon="pencil",
+        {{ util.href(cdedblink('cde/change_past_event_form'), gettext("Edit"), icon="glyphicon-pencil",
                 aclass="btn btn-warning btn-sm") }}
-        {{ util.href(cdedblink('cde/download_past_event_participantlist'), gettext("Dokuteam Addresslist"), aclass="btn btn-success btn-sm", icon="download") }}
+        {{ util.href(cdedblink('cde/download_past_event_participantlist'), gettext("Dokuteam Addresslist"), aclass="btn btn-success btn-sm", icon="glyphicon-download") }}
         </div>
     {% endif %}
     <dl class="dl-horizontal">
@@ -53,7 +53,7 @@
     {% endif %}
     {% if is_admin %}
         <div class="p">
-            {{ util.href(cdedblink('cde/create_past_course_form'), gettext("Add Course"), icon="plus",
+            {{ util.href(cdedblink('cde/create_past_course_form'), gettext("Add Course"), icon="glyphicon-plus",
                     aclass="btn btn-success btn-sm") }}
         </div>
     {% endif %}
@@ -137,7 +137,7 @@
                             {{ util.anti_csrf_token('cde/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
-                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
+                            {{ util.input_submit(title=gettext("Remove"), icon="glyphicon-minus", aclass="btn btn-xs btn-danger list-button-float",
                                     value="") }}
                         </form>
                     {% endif %}
@@ -169,14 +169,14 @@
         </p>
     {% endif %}
     {% if is_admin %}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="glyphicon-warning-sign", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('cde/delete_past_event') }}" method="POST"
                                 id="deletepasteventform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_event') }}
-                            {{ util.input_submit(value=gettext("Delete Event"), icon="trash", aclass="btn btn-danger") }}
+                            {{ util.input_submit(value=gettext("Delete Event"), icon="glyphicon-trash", aclass="btn btn-danger") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>
                     </div>

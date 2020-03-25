@@ -24,12 +24,12 @@
             {{ gettext( enums['MailinglistTypes'](ml['ml_type'])|string) -}}
             {% if ml['event_id'] -%}
                 {% trans link=util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
-                        events[ml['event_id']], icon='blackboard') -%}
+                        events[ml['event_id']], icon='glyphicon-blackboard') -%}
                     ; linked with {{ link }}
                 {% endtrans %}
             {%- elif ml['assembly_id'] -%}
                 {% trans link=util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
-                        assemblies[ml['assembly_id']]['title'], icon='bullhorn') -%}
+                        assemblies[ml['assembly_id']]['title'], icon='glyphicon-bullhorn') -%}
                     ; linked with {{ link }}
                 {% endtrans %}
             {%- endif %}
@@ -50,7 +50,7 @@
 {% endmacro %}
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
+        {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="glyphicon-plus",
                 aclass="btn btn-sm btn-success") }}
     </div>
      <p class="text-info">

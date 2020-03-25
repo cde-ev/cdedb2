@@ -51,7 +51,7 @@
                             id="downloadsepapainform{{ lastschrift_id }}" class="downloadsepapainform">
                         {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
                         {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='download', aclass='btn btn-xs btn-primary') }}
+                        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='glyphicon-download', aclass='btn btn-xs btn-primary') }}
                     </form>
                 </td>
                 <td>
@@ -59,7 +59,7 @@
                             id="generatetransactionform{{ lastschrift_id }}" class="generatetransactionform">
                         {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
                         {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                        {{ util.input_submit(gettext("Perform Direct Debit"), icon='play', aclass='btn btn-xs btn-primary') }}
+                        {{ util.input_submit(gettext("Perform Direct Debit"), icon='glyphicon-play', aclass='btn btn-xs btn-primary') }}
                     </form>
                 </td>
                 <td>
@@ -67,7 +67,7 @@
                             method="POST" id="skiptransactionform{{ lastschrift_id }}" class="skip-form">
                         {{ util.anti_csrf_token('cde/lastschrift_skip') }}
                         {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                        {{ util.input_submit(gettext("Skip Direct Debit"), icon='step-forward', aclass='btn btn-xs btn-warning') }}
+                        {{ util.input_submit(gettext("Skip Direct Debit"), icon='glyphicon-step-forward', aclass='btn btn-xs btn-warning') }}
                     </form>
                 </td>
             </tr>
@@ -80,12 +80,12 @@
     <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
       id="downloadsepapainform" style="display: inline;">
         {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
-        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='download', aclass='btn btn-primary') }}
+        {{ util.input_submit(gettext("Create SEPA-PAIN-file"), icon='glyphicon-download', aclass='btn btn-primary') }}
     </form>
     <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
       id="generatetransactionsform" style="display: inline;">
         {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
-        {{ util.input_submit(gettext("Perform all Direct Debits"), icon='play', aclass='btn btn-primary') }}
+        {{ util.input_submit(gettext("Perform all Direct Debits"), icon='glyphicon-play', aclass='btn btn-primary') }}
     </form>
     {% if errors %}
         <ul>
@@ -176,8 +176,8 @@
 
             {% trans %}All selected:{% endtrans %}
             {{ util.input_submit(value=gettext("Success"), name='success', aclass="btn btn-success") }}
-            {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-sign") }}
-            {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="remove",
+            {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="glyphicon-exclamation-sign") }}
+            {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="glyphicon-remove",
                     anid="finalization-cancel") }}
         </form>
     {% else %}
@@ -200,7 +200,7 @@
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                             {{ util.href(show_user_link(lastschrift['persona_id']),
-                                         gettext("Profile"), icon='user', aclass="btn btn-xs btn-default") }}
+                                         gettext("Profile"), icon='glyphicon-user', aclass="btn btn-xs btn-default") }}
                         </li>
                     {% endfor %}
                 </ul>

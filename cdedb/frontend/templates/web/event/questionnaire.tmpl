@@ -17,13 +17,13 @@
 {% block breadcrumb %}
 {{ super() }}
 {% if not preview %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard",
                             readonly=not (ambience['event']['is_visible']
                                           or ambience['event']['id'] in user.orga or is_admin)) }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
                             gettext("Questionnaire"), active=True) }}
 {% else %}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), gettext("Configure Questionnaire")) }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire", {"preview": True}),
                             gettext("Preview Questionnaire"), active=True) }}

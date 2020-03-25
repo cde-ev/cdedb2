@@ -7,7 +7,7 @@
 {% block title %}{{ gettext("Create Ballot") }}{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="glyphicon-bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
     {{ util.breadcrumb_link(cdedblink("assembly/create_ballot"), gettext("Create Ballot"), active=True) }}
 {% endblock %}
@@ -32,7 +32,7 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-        {{ util.form_input_static(aclass='text-info', icon='info-sign',
+        {{ util.form_input_static(aclass='text-info', icon='glyphicon-info-sign',
                                   value=gettext("Warning: The new Ballot will be immediately "
                                                 "visible to all CdE-Members and Assembly-Participants.")) }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('assembly/list_ballots')) }}

@@ -5,14 +5,14 @@
 {% block title %}{{ ambience['assembly']['title'] }}{% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn",
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="glyphicon-bullhorn",
             active=True) }}
 {% endblock %}
 {% block content %}
     <div class="p">
         {% if is_admin and ambience['assembly']['is_active'] %}
             {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
-                         icon="cog") }}
+                         icon="glyphicon-cog") }}
         {% endif %}
     </div>
 
@@ -34,7 +34,7 @@
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
                         {{ util.anti_csrf_token('assembly/signup') }}
-                        {{ util.input_submit(value=gettext("Participate"), icon="log-in") }}
+                        {{ util.input_submit(value=gettext("Participate"), icon="glyphicon-log-in") }}
                     </form>
                 {% endif %}
             {% endif %}
@@ -42,7 +42,7 @@
     </dl>
 
     {% if is_admin and ambience['assembly']['notes'] %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="glyphicon-tag", aclass="panel-default panel-condensed") %}
             <div id="notes">
                 {{ ambience['assembly']['notes']|md }}
             </div>
@@ -50,7 +50,7 @@
     {% endif %}
 
     {% if attachments or is_admin or has_ballot_attachments %}
-        {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
+        {% call util.bootstrap_panel(title=gettext("Files"), icon='glyphicon-file') %}
         <div class="row">
             {% if attachments or is_admin %}
                 <div class="col-sm-6">
@@ -67,7 +67,7 @@
                                             class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash",
+                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="glyphicon-trash",
                                                 title=gettext("Delete File")) }}
                                     </form>
                                     <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -81,7 +81,7 @@
                     {% if is_admin %}
                         <div class="p">
                             {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Attach File"),
-                                         aclass="btn btn-success btn-sm", icon="plus") }}
+                                         aclass="btn btn-success btn-sm", icon="glyphicon-plus") }}
                         </div>
                     {% endif %}
                 </div>
@@ -115,7 +115,7 @@
 
     {% if is_admin %}
         {% if ambience['assembly']['is_active'] or "vote_begin" not in delete_blockers %}
-            {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
+            {% call util.bootstrap_panel(title=gettext("Actions"), icon="glyphicon-warning-sign", aclass="panel-danger mosp") %}
                 {% if ambience['assembly']['is_active'] %}
                     <div class="row">
                         <div class="col-sm-4">
@@ -124,7 +124,7 @@
                                       id="concludeassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/conclude_assembly') }}
                                     {{ util.input_submit(value=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
-                                            icon="folder-close", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
+                                            icon="glyphicon-folder-close", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
                                     {{ util.input_checkbox(name="ack_conclude", label=gettext("Are you sure?")) }}
                                 </form>
                             </div>
@@ -147,7 +147,7 @@
                                 <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST"
                                       id="deleteassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/delete_assembly') }}
-                                    {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="trash") }}
+                                    {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="glyphicon-trash") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                 </form>
                             </div>

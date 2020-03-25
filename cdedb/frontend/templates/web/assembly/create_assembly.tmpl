@@ -22,7 +22,7 @@
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
-        {{ util.form_input_static(aclass='text-info', icon='info-sign',
+        {{ util.form_input_static(aclass='text-info', icon='glyphicon-info-sign',
                                   value=gettext("Warning: The Assembly will be immediately "
                                                 "visible to all CdE-Members.")) }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('assembly/index')) }}

@@ -41,9 +41,9 @@
 {% block content %}
     <div class="p">
         {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), aclass="btn btn-success btn-sm",
-                icon="plus") }}
+                icon="glyphicon-plus") }}
     </div>
-    
+
     <h3>{% trans %}Current Events{% endtrans %}</h3>
     <div class="list-group list-group-hover list-group-condensed" id="current-events">
         {% for event_id, entry in events|keydictsort(EntitySorter.event) %}

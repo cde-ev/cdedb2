@@ -11,7 +11,7 @@
         {{ util.deko_checkbox(mailinglist_id in subscriptions, titles=[gettext("not subscribed"), gettext("subscribed")]) }}
         {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
         {% if user.persona_id in mailinglist_infos[mailinglist_id]['moderators'] %}
-            {{ util.href(cdedblink('ml/management',{'mailinglist_id' : mailinglist_id}), gettext("Manage"), icon='list',
+            {{ util.href(cdedblink('ml/management',{'mailinglist_id' : mailinglist_id}), gettext("Manage"), icon='glyphicon-list',
                     aclass='btn btn-xs btn-info list-button-float hide-hover') }}
         {% endif %}
     </li>
@@ -19,7 +19,7 @@
 {% block content %}
     {% if is_admin %}
         <div class="p">
-            {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
+            {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="glyphicon-plus",
                     aclass="btn btn-sm btn-success") }}
         </div>
     {% endif %}

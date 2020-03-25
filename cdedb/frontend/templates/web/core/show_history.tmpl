@@ -11,7 +11,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(current['id']), current['given_names'] + " " + current['family_name'],
-            icon="user") }}
+            icon="glyphicon-user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_history"), gettext("Change History"), active=True) }}
 {% endblock %}
 {% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
@@ -83,7 +83,7 @@
     {% if pending|length > 0 %}
         <p>
             {{ util.href(cdedblink('core/inspect_change', {'persona_id': current['id']}), gettext("Review Changes"),
-                    icon="check", aclass="btn btn-sm btn-info") }}
+                    icon="glyphicon-check", aclass="btn btn-sm btn-info") }}
         </p>
     {% endif %}
     {% if not current['is_active'] %}

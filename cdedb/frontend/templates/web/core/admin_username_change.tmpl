@@ -7,7 +7,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(data['id']), data['given_names'] + " " + data['family_name'], icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(data['id']), data['given_names'] + " " + data['family_name'], icon="glyphicon-user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_username_change_form"), gettext("Edit Email Address"), active=True) }}
 {% endblock %}
 {% block content %}

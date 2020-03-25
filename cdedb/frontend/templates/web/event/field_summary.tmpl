@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields"), active=True) }}
 {% endblock %}
 {% block heading %}

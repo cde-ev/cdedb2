@@ -9,39 +9,39 @@
         <h3 class="heading-sidebar">{% trans %}Index{% endtrans %}</h3>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("core/index"), gettext("Overview"), aclass="list-group-item",
-                    icon="triangle-right", active=(sidenav_active=='core_index')) }}
+                    icon="glyphicon-triangle-right", active=(sidenav_active=='core_index')) }}
             {{ util.href(cdedblink("core/mydata"), gettext("My Data"), aclass="list-group-item",
-                    icon="user", active=(sidenav_active=='core_mydata')) }}
+                    icon="glyphicon-user", active=(sidenav_active=='core_mydata')) }}
             {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
-                    icon="wrench", active=(sidenav_active=='core_admins')) }}
+                    icon="glyphicon-wrench", active=(sidenav_active=='core_admins')) }}
         </div>
         {% if is_admin or "meta_admin" in user.roles or roles_allow_genesis_management(user.roles) %}
             <div class="list-group tear-down">
             {% if is_admin %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
-                        icon="user", active=(sidenav_active=='core_manage_users')) }}
+                        icon="glyphicon-user", active=(sidenav_active=='core_manage_users')) }}
                 {{ util.href(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
-                        icon="inbox", active=(sidenav_active=='core_manage_archive')) }}
+                        icon="glyphicon-inbox", active=(sidenav_active=='core_manage_archive')) }}
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
-                        icon="check", active=(sidenav_active=='core_pending_changes')) }}
+                        icon="glyphicon-check", active=(sidenav_active=='core_pending_changes')) }}
             {% endif %}
             {% if roles_allow_genesis_management(user.roles) %}
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), aclass="list-group-item",
-                        icon="flag", active=(sidenav_active=='core_genesis_list')) }}
+                        icon="glyphicon-flag", active=(sidenav_active=='core_genesis_list')) }}
             {% endif %}
             {% if "meta_admin" in user.roles %}
                 {{ util.href(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes"), aclass="list-group-item",
-                        icon="wrench", active=(sidenav_active=='core_privilege_changes')) }}
+                        icon="glyphicon-wrench", active=(sidenav_active=='core_privilege_changes')) }}
             {% endif %}
             {% if is_admin %}
                 {{ util.href(cdedblink("core/view_log"), gettext("Account Log"), aclass="list-group-item",
-                        icon="list-alt", active=(sidenav_active=='core_log')) }}
+                        icon="glyphicon-list-alt", active=(sidenav_active=='core_log')) }}
                 {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), aclass="list-group-item",
-                        icon="list-alt", active=(sidenav_active=='core_change_log')) }}
+                        icon="glyphicon-list-alt", active=(sidenav_active=='core_change_log')) }}
                 </div>
                 <div class="list-group tear-down">
                 {{ util.href(cdedblink("core/meta_info_form"), gettext("Metadata"), aclass="list-group-item",
-                        icon="tags", active=(sidenav_active=='core_meta')) }}
+                        icon="glyphicon-tags", active=(sidenav_active=='core_meta')) }}
             {% endif %}
             </div>
         {% endif %}

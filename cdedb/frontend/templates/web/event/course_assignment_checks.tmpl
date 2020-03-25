@@ -8,7 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Assignment")) }}
 {{ util.breadcrumb_link(cdedblink("event/course_assignment_checks"), gettext("Checks"), active=True) }}
 {% endblock %}

@@ -40,7 +40,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='', rel='') -%}
+{% macro href(ref, label, readonly=False, icon=None, aclass='', active=False, title='', rel='') -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {%- if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif -%}
@@ -81,7 +81,7 @@
  # Layout helpers #
  # ############## #}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon="", anid="") %}
+{% macro bootstrap_panel(title="", aclass="panel-default", icon=None, anid="") %}
     <div class="panel {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
         {%- if title or icon %}
             <div class="panel-heading">
@@ -187,7 +187,7 @@
    name/title. In this case the icon should represent the type of the named object. For a complex example, take a look
    at the event/change_course template.
   #}
-{% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
+{% macro breadcrumb_link(ref, label, icon=None, active=False, readonly=False) %}
     {%- if active or readonly -%}
         <li {% if active %}class="active" aria-current="location"{% endif %}>
             {%- if icon %}{{ make_glyphicon_icon(icon) }} {% endif %}{{ label -}}
@@ -494,7 +494,7 @@
     <div class="form-control-static"{% if anid %}id="{{ anid }}"{% endif %}>{{ value }}</div>
 {%- endmacro %}
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True, aclass='',
-        infolink='', icon='', differentiate_warnings=True) %}
+        infolink='', icon=None, differentiate_warnings=True) %}
     {%- if caller %}{% set value=caller() %}{% endif %}
     {%- call form_input_general(None, label, anid, small, info, False, horizontal, infolink=infolink,
                                 differentiate_warnings=differentiate_warnings) %}
@@ -505,7 +505,7 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="ok",
+{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="glyphicon-ok",
         readonly=False, title='', arialabel='') %}
     <button type="submit" name="{{ name }}" {%- if readonly %} disabled="disabled"{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
@@ -515,7 +515,7 @@
 {%- endmacro %}
 
 {% macro form_input_submit(value="Save", name="submitform", readonly=False, anid='',
-        aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue="Cancel",
+        aclass='btn btn-primary', icon="glyphicon-ok", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, differentiate_warnings=False) %}
     <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
@@ -525,7 +525,7 @@
                 {{ input_submit(gettext("Ignore Warnings"), name="ignore_warnings", anid=anid, aclass=aclass, icon=icon, readonly=readonly) }}
             {% endif %}
             {%- if cancellink %}
-                &emsp; {{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
+                &emsp; {{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}
             {%- endif %}
         </div>
     </div>

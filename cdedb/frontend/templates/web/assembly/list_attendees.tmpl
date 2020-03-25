@@ -15,13 +15,13 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="glyphicon-bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_attendees"), gettext("Participants"), active=True) }}
 {% endblock %}
 {% block content %}
     {% if is_admin and now() < ambience['assembly']['signup_end'] %}
         {% call util.bootstrap_panel(title=gettext("Add external participants"), aclass='panel-success panel-condensed',
-                icon='plus') %}
+                icon='glyphicon-plus') %}
             <p class="text-muted">
                 {{ util.make_icon('info-cirlce') }}
                 {{ gettext("Current CdE-Members must register for the assembly themselves. "
@@ -38,7 +38,7 @@
                         {{ util.output_errors('persona_id') }}
                     </div>
                     <div class="col-sm-3">
-                        {{ util.input_submit(value=gettext("Add"), icon="plus", aclass="btn btn-primary btn-sm") }}
+                        {{ util.input_submit(value=gettext("Add"), icon="glyphicon-plus", aclass="btn btn-primary btn-sm") }}
                     </div>
                 </div>
             </form>
@@ -71,11 +71,11 @@
     </div>
 
     {% if is_admin %}
-        {% call util.bootstrap_panel(title=gettext("Download"), icon="save-file", aclass="panel-default mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Download"), icon="glyphicon-save-file", aclass="panel-default mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
-                        {{ util.href(cdedblink('assembly/download_list_attendees'), gettext("TeX-List"), icon='download', aclass='btn btn-info') }}
+                        {{ util.href(cdedblink('assembly/download_list_attendees'), gettext("TeX-List"), icon='glyphicon-download', aclass='btn btn-info') }}
                     </div>
                 </div>
                 <div class="col-sm-8">

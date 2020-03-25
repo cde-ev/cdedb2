@@ -48,11 +48,11 @@
                         {%- if event['use_questionnaire'] %}
                             &bull;
                             {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
-                                         gettext("Questionnaire"), icon='edit') -}}
+                                         gettext("Questionnaire"), icon='glyphicon-edit') -}}
                         {% endif -%}
                     {% elif "event" in user.roles and event['is_open'] %}
                         {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
-                            gettext("Register"), icon='log-in') }}
+                            gettext("Register"), icon='glyphicon-log-in') }}
                         {% if not event['registration_soft_limit'] is none %}
                             {% if now() <= event['registration_soft_limit'] %}
                                 {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
@@ -93,14 +93,14 @@
                     <br />
                     <span class="small">
                         {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
-                                     gettext("Registrations"), icon='list') }}
+                                     gettext("Registrations"), icon='glyphicon-list') }}
                         &bull;
                         {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
-                                     gettext("Statistics"), icon='stats') }}
+                                     gettext("Statistics"), icon='glyphicon-stats') }}
                         {% if entry['tracks'] %}
                             &bull;
                             {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
-                                         gettext("Courses"), icon='book') }}
+                                         gettext("Courses"), icon='glyphicon-book') }}
                         {% endif %}
                     </span>
                 </li>

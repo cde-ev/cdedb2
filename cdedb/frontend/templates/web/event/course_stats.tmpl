@@ -8,7 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses"), active=not include_active) }}
     {% if include_active %}
         {{ util.breadcrumb_link(cdedblink("event/course_stats", {'include_active': True}), gettext("Include all active registrations"), active=True) }}
@@ -23,7 +23,7 @@
 
 {% block content %}
     <div class="p">
-        {{ util.href(cdedblink('event/create_course_form'), gettext("Add Course"), readonly=is_locked, icon='plus',
+        {{ util.href(cdedblink('event/create_course_form'), gettext("Add Course"), readonly=is_locked, icon='glyphicon-plus',
                      aclass='btn btn-success btn-sm') }}
     </div>
 
@@ -31,7 +31,7 @@
         <p class="pull-right">
             {{ util.href(cdedblink("event/course_stats", {'include_active': True}),
                          gettext('Include all active registrations'), aclass='btn btn-sm btn-info',
-                         icon='asterisk') }}
+                         icon='glyphicon-asterisk') }}
         </p>
         <p>
             {{ util.make_icon('info-cirlce') }}
@@ -53,7 +53,7 @@
             </p>
             <p>
                 {{ util.href(cdedblink("event/course_stats"), gettext('Only show participants'),
-                             aclass='btn btn-default btn-sm', icon='arrow-left') }}
+                             aclass='btn btn-default btn-sm', icon='glyphicon-arrow-left') }}
             </p>
         </div>
     {% endif %}
@@ -141,10 +141,10 @@
                     {% if ambience['event']['tracks']|length < 4 %}
                         <td class="b-left text-nowrap">
                             {{ util.href(cdedblink("event/change_course_form", {'course_id': course_id}),
-                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='glyphicon-pencil',
                                          title=gettext("Edit")) }}
                             {{ util.href(cdedblink("event/manage_attendees_form", {'course_id': course_id}),
-                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='glyphicon-user',
                                          title=gettext("Manage Attendees")) }}
                         </td>
                     {% endif %}

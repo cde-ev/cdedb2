@@ -14,7 +14,7 @@
 {{ util.breadcrumb_link(cdedblink("core/genesis_show_case"),
                         gettext("Details of %(given_names)s %(family_name)s")|format(
                             given_names=ambience['genesis_case']["given_names"], family_name=ambience['genesis_case']["family_name"]),
-                        active="True", icon="user") }}
+                        active="True", icon="glyphicon-user") }}
 {% endblock %}
 {% block content %}
     <h4 class="heading-underline">{% trans %}Case Meta-Information{% endtrans %}</h4>
@@ -99,7 +99,7 @@
         {% endif %}
         {% if ambience['genesis_case']['attachment'] %}
             {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment': ambience['genesis_case']['attachment']}),
-                        gettext("Download Attachment"), aclass="btn btn-info", icon="download") }}
+                        gettext("Download Attachment"), aclass="btn btn-info", icon="glyphicon-download") }}
         {% endif %}
     </dl>
 
@@ -115,14 +115,14 @@
              id="genesiseventrejectionform" class="rejection-form" style="display: inline;">
                 {{ util.anti_csrf_token('core/genesis_decide') }}
                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                {{ util.input_submit(icon="ban-circle", value=gettext("Reject"),
+                {{ util.input_submit(icon="glyphicon-ban-circle", value=gettext("Reject"),
                                      aclass="btn btn-danger") }}
             </form>
             {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit"),
-                aclass="btn btn-warning", icon="pencil") }}
+                aclass="btn btn-warning", icon="glyphicon-pencil") }}
             &emsp;
         {% endif %}
         {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
-                     aclass="btn btn btn-default", icon="remove") }}
+                     aclass="btn btn btn-default", icon="glyphicon-remove") }}
     </div>
 {% endblock %}
