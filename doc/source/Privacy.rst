@@ -95,19 +95,21 @@ Es gibt folgende Arten von Benutzern:
 Zudem müssen wir im Datenschutz Kontext folgende Kriterien an Benutzer
 unterscheiden:
 
-* Kriterien, die **den Benutzer** berechtigen, Daten einzusehen:
+* Kriterien, die **den Benutzer** berechtigen können, Daten einzusehen:
 
   * Bereiche, in denen der Benutzer Admin Rechte besitzt
-  * Orga einer Veranstaltung
-  * Moderator einer Mailingliste
+  * ist der Benutzer Orga einer Veranstaltung?
+  * ist der Benutzer Moderator einer Mailingliste?
   * ist der Benutzer Mitglied *und* Suchbar?
-  * ist der Benutzer deaktiviert?
+  * ist der Benutzer nicht deaktiviert?
 
-* Kriterien, die **andere Benutzer** berechtigen, Daten des Nutzers einzusehen:
+* Kriterien, die **andere Nutzer** berechtigen können, Daten des Benutzers einzusehen:
 
   * Bereiche, die dieser Benutzer besitzt
+  * ist der Benutzer Teilnehmer einer Veranstaltung?
+  * ist der Benutzer Abbonent einer Mailingliste?
   * ist der Benutzer Mitglied *und* Suchbar?
-  * ist der Benutzer archiviert?
+  * ist der Benutzer nicht archiviert?
 
 
 Welche Arten von Admins gibt es?
@@ -119,8 +121,8 @@ In der folgenden Betrachtung wird der Core Admin ausgeklammert, da dieser
 Jeder der Bereiche Mailinglisten, Versammlungen, Veranstaltungen und CdE besitzt
 eine Admin Rolle. Jedoch darf immer nur die "höchste" Admin Rolle (der sogn.
 "relative Admin") einen (nicht archivierten) Benutzer auch tatsächlich einsehen.
-Dies wird an der Gesamtmenge an Bereichen festgemacht, die ein Benutzer besitz
-(das maximale Element der Bereiche):
+Dieser wird an der Gesamtmenge an Bereichen festgemacht, die ein Benutzer
+besitzt (das maximale Element der Bereiche):
 
 * Mailinglisten:
     Besitzt ein Benutzer nur den Mailinglisten Bereich, ist dies der
@@ -140,7 +142,8 @@ Dies wird an der Gesamtmenge an Bereichen festgemacht, die ein Benutzer besitz
 Wer darf nun was sehen?
 -----------------------
 
-Fangen wir von unten an, und gehen systematisch die Berechtigungen nach oben.
+Wir gehen anhand der Eigenschaften eines Benutzers durch, welche Felder dieser
+auf den Profilen anderer Benutzer sehen darf.
 
 * Deaktivierte oder Archivierte Benutzer
     Diese haben beide nicht das Recht, sich in die Datenbank einzuloggen, können
