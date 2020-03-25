@@ -116,7 +116,7 @@
                                     </p>
                                     <button type="submit" name="submitlogout" value="{% trans %}Logout{% endtrans %}"
                                       class="btn navbar-button btn-default" title="{% trans %}Logout{% endtrans %}">
-                                        <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+                                        {{ util.make_icon("sign-out-alt") }}
                                         <span class="visible-xs-inline-block">{% trans %}Logout{% endtrans %}</span>
                                     </button>
                                 </form>
@@ -172,15 +172,15 @@
                     {% endif %}
 
                     <div id="notifications">
-                        {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign",
-                                             "warning" : "exclamation-sign", "error" : "remove-sign"},
+                        {% with icontypes = {"success" : "check-circle", "info" : "info-circle", "question" : "question-circle",
+                                             "warning" : "exclamation-circle", "error" : "times-circle"},
                                 alerttypes = {"success" : "success", "info" : "info", "question" : "info",
                                               "warning" : "warning", "error" : "danger"},
                                 messagetypes = {"success" : _("Success!"), "info" : _("Info!"), "question" : _("Question:"),
                                                 "warning" : _("Warning!"), "error" : _("Error!")} %}
                             {% for ntype, message, params in notifications %}
                                 <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
-                                    <span class="glyphicon glyphicon-{{ icontypes[ntype]|s }}" aria-hidden="true"></span>
+                                    {{ util.make_icon( icontypes[ntype] ) }}
                                     <strong>{{ messagetypes[ntype]|s }}</strong>
                                     <span class="notificationMessage">{{ gettext(message)|format(**params) }}</span>
                                 </div>

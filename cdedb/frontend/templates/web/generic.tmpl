@@ -483,7 +483,7 @@
                                           'title':'{% trans %}show in search mask{% endtrans %}',
                                           'aria-label':'{% trans %}show in search mask{% endtrans %}',
                                           'class': 'btn btn-default btn-xs'})
-                    .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open', 'aria-hidden':'true'}))
+                    .append($('<span></span>',{'class':'fas fa-eye', 'aria-hidden':'true'}))
                     .click(function(){
                         $('#queryform').data('cdedbQueryForm').queryFromURL(url);
                         return false;
