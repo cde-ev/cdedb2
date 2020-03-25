@@ -490,15 +490,17 @@ class FrontendTest(unittest.TestCase):
             'SERVER_PROTOCOL': "HTTP/1.1",
             'wsgi.url_scheme': 'https'})
 
-        # Set `do_scrap` to True to capture a snapshot of the HTML of all visited pages
+        # set `do_scrap` to True to capture a snapshot of all visited pages
         cls.do_scrap = False
         if cls.do_scrap:
+            # create a temporary directory and print it
             cls.scrap_path = tempfile.mkdtemp()
             print(cls.scrap_path)
 
     @classmethod
     def tearDownClass(cls):
         if cls.do_scrap:
+            # make scrap_path directory and content publicly readable
             folder = pathlib.Path(cls.scrap_path)
             folder.chmod(0o0755)  # 0755/drwxr-xr-x
             for file in folder.iterdir():
@@ -521,9 +523,11 @@ class FrontendTest(unittest.TestCase):
 
     def scrap(self):
         if self.do_scrap and self.response.status_int // 100 == 2:
-            # path without host but with query string limited to 64 chars
+            # path without host but with query string - capped at 64 chars
             url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
             with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url, delete=False) as f:
+                # create a temporary file in scrap_path with url as a suffix
+                # persisting after process completion and dump the response to it
                 f.write(self.response.body)
 
     def log_generation_time(self, response=None):
