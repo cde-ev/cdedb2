@@ -585,7 +585,7 @@
     {% set inner = _admin_views_toggle_inner(views) %}
     {% if inner %}
         <hr />
-        <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post">
+        <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" id="adminviewstoggleform">
             {% if original_request and original_request.url %}
                 {{ input_hidden("wants", encode_parameter("core/modify_active_admin_views", "wants",
                                                           original_request.url, timeout=None)) }}

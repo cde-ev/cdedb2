@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 import copy
+import re
+
 import webtest
 
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.query import QueryOperators
 
@@ -98,6 +101,36 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("{} {}".format(user['given_names'],
                                         user['family_name']))
         self.assertPresence(user['given_names'])
+
+    # @as_users("vera")
+    # def test_available_admin_views(self):
+
+    @as_users("vera")
+    def test_toggle_admin_views(self, user):
+        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.get('/')
+        self.assertNoLink("/core/meta")
+        f = self.response.forms['adminviewstoggleform']
+        # Search the right button for the "Index-Administration" view
+        button = self.response.html\
+            .find(id="adminviewstoggleform")\
+            .find(text=re.compile(r"Index-Administration"))\
+            .parent
+        self.assertNotIn("active", button['class'])
+        self.assertNotIn("aktiv", button.text)
+        # Submit the adminviewstoggleform with the right button
+        self.submit(f, 'view_specifier', False, value=button['value'])
+        self.traverse({'href': '/core/meta'},
+                      {'href': '/'})
+        button = self.response.html\
+            .find(id="adminviewstoggleform")\
+            .find(text=re.compile(r"Index-Administration"))\
+            .parent
+        self.assertIn("active", button['class'])
+        self.assertIn("aktiv", button.text)
+        f = self.response.forms['adminviewstoggleform']
+        self.submit(f, 'view_specifier', False, value=button['value'])
+        self.assertNoLink("/core/meta")
 
     @as_users("vera")
     def test_adminshowuser(self, user):

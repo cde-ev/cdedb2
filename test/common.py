@@ -468,9 +468,9 @@ class FrontendTest(unittest.TestCase):
         self.basic_validate(verbose=verbose)
 
     def submit(self, form, button="submitform", check_notification=True,
-               verbose=False):
+               verbose=False, value=None):
         method = form.method
-        self.response = form.submit(button)
+        self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
