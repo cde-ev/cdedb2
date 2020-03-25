@@ -56,7 +56,7 @@
             {% set course_entries = courses|keydictsort(EntitySorter.course)
                                     |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
             {% for i in range(track['num_choices']) %}
-                {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="",
+                {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption="&nbsp;",
                                           label=gettext("%s. Choice")|format(i + 1), entries=course_entries,
                                           readonly=readonly, info=(gettext("Optional choice") if i >= track['min_choices'] else "")) }}
             {% endfor %}

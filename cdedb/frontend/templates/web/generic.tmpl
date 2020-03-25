@@ -297,7 +297,7 @@
                                                         {%- do myentries.append((op.value,
                                                             gettext(op.value|enum(enums.QueryOperators)))) %}
                                                     {%- endfor %}
-                                                    {{ util.input_select(name, entries=myentries, nulloption="",
+                                                    {{ util.input_select(name, entries=myentries, nulloption="&nbsp;",
                                                             aclass='form-control input-sm filter-op', anid=theid,
                                                             arialabel=(gettext("filter operator for %s")
                                                                        |format(titles.get(field, field)))) }}
@@ -345,7 +345,7 @@
                                             {%- for field in spec if ',' not in field %}
                                                 {%- do myentries.append((field, titles.get(field,field))) %}
                                             {%- endfor %}
-                                            {{ util.input_select(name, entries=myentries, nulloption="",
+                                            {{ util.input_select(name, entries=myentries, nulloption="&nbsp;",
                                                                  aclass="form-control input-sm sort-field",
                                                                  arialabel=gettext("%s sort key")|format(title)) }}
                                         </td>
@@ -648,16 +648,16 @@
                 );
             </script>
             {% if filter_name == "assembly_id" %}
-                {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
+                {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;",
                         entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
             {% elif filter_name == "pevent_id" %}
-                {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="",
+                {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="&nbsp;",
                         entries=pevents|dictsort|dict_entries('id', 'title'), small=True) }}
             {% elif filter_name == "event_id" %}
-                {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
+                {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;",
                         entries=all_events|dictsort, small=True) }}
             {% elif filter_name == "mailinglist_id" %}
-                {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
+                {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="&nbsp;",
                         entries=all_mailinglists|dictsort, small=True) }}
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,

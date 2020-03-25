@@ -39,12 +39,12 @@
                 entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
         {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"),
                 entries=enums['MailinglistTypes']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=sorted_events,
+        {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;", entries=sorted_events,
                 info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
         {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"),
                 entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
                 info=gettext("No selection results in an orga-list.")) }}
-        {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
+        {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;",
                 entries=sorted_assemblies,
                 info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
 

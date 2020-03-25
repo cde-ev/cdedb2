@@ -78,7 +78,7 @@
                                 "You can configure every part of the questionnaire individually in the questionnaire configuration.")) }}
 
         <h4 class="heading-underline">{% trans %}Additional Information for Registration{% endtrans %}</h4>
-        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="",
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="&nbsp;",
                                 info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
         {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."), addon='€',
                                 info=gettext("Participants who are not currently members will have to pay this additional fee.")) }}
@@ -96,7 +96,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the participants’ "
+                                  nulloption="&nbsp;", info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the PDF lodgement puzzle "
                                   "download. Fieldtype: Text")) }}
         {#- jinja does not support list comprehension ... #}
@@ -106,7 +106,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="reserve_field", label=gettext("Field for Camping Mat"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the participants’ "
+                                  nulloption="&nbsp;", info=gettext("The custom field in which the participants’ "
                                   "willingness to sleep on a camping mat will be saved. It is used for the PDF "
                                   "lodgement puzzle download. Fieldtype: Yes/No")) }}
         {#- jinja does not support list comprehension ... #}
@@ -116,7 +116,7 @@
             {%- do myentries.append((field_id, field['field_name'])) %}
         {%- endfor %}
         {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=myentries,
-                                  nulloption="", info=gettext("The custom field in which the course’s "
+                                  nulloption="&nbsp;", info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. It is used for PDF participant lists and "
                                   "nametags. Fieldtype: Text")) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
