@@ -77,12 +77,12 @@
                     <noscript>
                         {% if jshint == 'strong' %}
                             <div class="jshint pull-right text-danger">
-                                {{ util.make_icon('warning-sign') }}
+                                {{ util.make_glyphicon_icon('warning-sign') }}
                                 {% trans %}This site provides additional functionality with JavaScript enabled.{% endtrans %}
                             </div>
                         {% else %}
                             <div class="jshint pull-right text-warning">
-                                {{ util.make_icon('warning-sign') }}
+                                {{ util.make_glyphicon_icon('warning-sign') }}
                                 {% trans %}This site can be used more easily with JavaScript enabled.{% endtrans %}
                             </div>
                         {% endif %}

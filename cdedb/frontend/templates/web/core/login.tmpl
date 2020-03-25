@@ -17,10 +17,10 @@
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
         <div class="alert alert-info">
             <p>
-                {{ util.make_icon('info-sign') }} <strong>{% trans %}Info{% endtrans %}</strong>
+                {{ util.make_glyphicon_icon('info-sign') }} <strong>{% trans %}Info{% endtrans %}</strong>
                 {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
             </p>
-            
+
             <p class=nosp>{# TODO Erklärtext #}</p>
         </div>
     {% endif %}

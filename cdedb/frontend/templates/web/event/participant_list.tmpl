@@ -15,7 +15,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Participant List{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -59,7 +59,7 @@
 {% block content %}
     {% if not ambience['event']['is_participant_list_visible'] %}
         <div class="alert alert-info" role="alert">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_glyphicon_icon('info-sign') }}
             <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
                 {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
@@ -185,7 +185,7 @@
 
     {% elif not list_consent %}
         <div class="alert alert-info" role="alert">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_glyphicon_icon('info-sign') }}
             <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
                 {% trans %}

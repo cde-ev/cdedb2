@@ -17,7 +17,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Edit Registrations{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -100,7 +100,7 @@
         <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
 
         <p class="text-info">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_glyphicon_icon('info-sign') }}
             {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
                 The registered people are able to see their current registration status, the payment status and – for
                 minors – the status of the parental consent at “{{ my_registration }}”.

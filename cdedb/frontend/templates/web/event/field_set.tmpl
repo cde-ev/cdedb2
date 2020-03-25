@@ -14,7 +14,7 @@
         {% trans field="<em>%s</em>"|s|format(ambience['event']['fields'][values['field_id']|int]['field_name']|e) %}
             Set {{ field }}
         {% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}

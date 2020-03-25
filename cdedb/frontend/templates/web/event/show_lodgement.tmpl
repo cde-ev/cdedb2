@@ -18,7 +18,7 @@
 {% block heading %}
     <h1 class="title">
         {{ ambience['lodgement']['moniker'] }}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -86,7 +86,7 @@
             </div>
         {% endif %}
     </div>
-    
+
     <h2>{% trans %}Inhabitants{% endtrans %}</h2>
     <div class="row">
         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
@@ -128,7 +128,7 @@
                                                  "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
                                                                 personas[registrations[registration_id]['persona_id']]['family_name'])) }}
                                     {% if registrations[registration_id]['parts'][part_id]['is_reserve'] %}
-                                        {{ util.make_icon('tent', title=gettext("Camping Mat")) }}
+                                        {{ util.make_glyphicon_icon('tent', title=gettext("Camping Mat")) }}
                                     {% endif %}
                                 </li>
                             {% endfor %}

@@ -17,7 +17,7 @@
                 {% set link = util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
                         icon='blackboard') %}
             {% else %}
-                {% set link = "%s %s"|s|format(util.make_icon('blackboard'), event['title']) %}
+                {% set link = "%s %s"|s|format(util.make_glyphicon_icon('blackboard'), event['title']) %}
             {% endif %}
             {% trans link=link %}
                 Mailinglist of Event {{ link }}
@@ -30,7 +30,7 @@
                 {% set link = util.href(cdedblink('assembly/show_assembly',{'assembly_id':assembly['id']}), assembly['title'],
                         icon='bullhorn') %}
             {% else %}
-                {% set link = "%s %s"|s|format(util.make_icon('bullhorn'), assembly['title']) %}
+                {% set link = "%s %s"|s|format(util.make_glyphicon_icon('bullhorn'), assembly['title']) %}
             {% endif %}
             {% trans link=link %}
                 Mailinglist of Assembly {{ link }}
@@ -94,10 +94,10 @@
                                                      icon="remove") }}
                             </form>
                         </div>
-                        
+
                         <h4 class="mosp">{% trans %}Change email address{% endtrans %}</h4>
                         <p class="text-muted">
-                            {{ util.make_icon('info-sign') }}
+                            {{ util.make_glyphicon_icon('info-sign') }}
                             {% trans %}
                                 To recieve mails from this mailinglist with a different email address,
                                 enter the new address in this form. You will recieve a confirmation mail.
@@ -120,7 +120,7 @@
                         </form>
                     {% else %}
                         <p class="text-muted">
-                            {{ util.make_icon('info-sign') }}
+                            {{ util.make_glyphicon_icon('info-sign') }}
                             {% trans link=util.href(cdedblink('core/change_username_form'),
                                                     gettext("corresponding site")) -%}
                                 This mailinglist is mandatory. Therefor you are always subscribed to this list

@@ -43,7 +43,7 @@
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary mosp">
             <div class="panel-heading">
-                <h2 class="panel-title">{{ util.make_icon('search') }} {% trans %}Search Mask{% endtrans %}</h2>
+                <h2 class="panel-title">{{ util.make_glyphicon_icon('search') }} {% trans %}Search Mask{% endtrans %}</h2>
             </div>
             <div class="panel-body">
                 <div class="row">
@@ -64,7 +64,7 @@
                                                       defaultvalue='') }}
                         {% else %}
                             <div class="help-block text-muted">
-                                {{ util.make_icon("info-sign") }}
+                                {{ util.make_glyphicon_icon("info-sign") }}
                                 {% trans %}Course choices will be displayed after first search.{% endtrans %}
                             </div>
                         {% endif %}

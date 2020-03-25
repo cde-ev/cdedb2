@@ -38,7 +38,7 @@
         {{ util.form_input_textarea(name="accounts", label=gettext("Data"), horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
-            {{ util.make_icon('info-sign') }} {% trans %}Enter one dataset per line.{% endtrans %}
+            {{ util.make_glyphicon_icon('info-sign') }} {% trans %}Enter one dataset per line.{% endtrans %}
             {% trans %}Use the following format:{% endtrans %}
         </p>
         <pre>{{   "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
@@ -81,7 +81,7 @@
                         <ul class="list-unstyled">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
-                                    {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
+                                    {{ util.make_glyphicon_icon('exclamation-sign', title=gettext("Error")) }}
                                     {% if key %}
                                         <em class="row-col-key" data-row="{{ dataset['lineno'] }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
@@ -93,7 +93,7 @@
                             {% endfor %}
                             {% for key, warning in dataset['warnings'] %}
                                 <li class="text-warning">
-                                    {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
+                                    {{ util.make_glyphicon_icon('warning-sign', title=gettext("Warning")) }}
                                     {% if key %}
                                         <em class="row-col-key" data-row="{{ dataset['lineno'] }}"
                                           data-col="{{ csvfields.get(key, -1) }}">

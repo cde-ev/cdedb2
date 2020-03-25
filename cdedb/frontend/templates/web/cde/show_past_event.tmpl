@@ -39,7 +39,7 @@
     {% endif %}
     {% if ambience['pevent']['notes'] and (is_admin or is_participant) %}
         {% if is_admin and not is_participant %}
-            <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-sign') }}
+            <p class="text-info" id="gallery-admin-info">{{ util.make_glyphicon_icon('info-sign') }}
                 {% trans %}
                     As you are no participant of this past event, you can only
                     see this link because you are admin.
@@ -72,7 +72,7 @@
     {% if is_admin %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">
-                <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
+                <h4 class="panel-title">{{util.make_glyphicon_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
             </div>
             <div class="panel-body">
                 <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">

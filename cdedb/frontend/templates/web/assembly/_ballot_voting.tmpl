@@ -56,7 +56,7 @@
         {% endif %}
         $('#voteform').cdedbProtectChanges();
     </script>
-    
+
     <div class="form-horizontal">
         <div class="form-group">
             <div class="col-sm-2 control-label">
@@ -253,13 +253,13 @@
         <li role="presentation" class="active">
             <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab"
                id="tablink-textform">
-                {{ util.make_icon('console') }} {% trans %}Text-based Voting{% endtrans %}
+                {{ util.make_glyphicon_icon('console') }} {% trans %}Text-based Voting{% endtrans %}
             </a>
         </li>
         <li role="presentation">
             <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
                     id="tablink-jsform">
-                {{ util.make_icon('flash') }} {% trans %}Interactive Voting{% endtrans %}
+                {{ util.make_glyphicon_icon('flash') }} {% trans %}Interactive Voting{% endtrans %}
             </a>
         </li>
     </ul>
@@ -295,7 +295,7 @@
             </div>
             <div class="p clearfix">
                 <button class="btn btn-primary" id="button-jsvote">
-                    {{ util.make_icon('ok') }} {% trans %}Vote{% endtrans %}
+                    {{ util.make_glyphicon_icon('ok') }} {% trans %}Vote{% endtrans %}
                 </button>
             </div>
             <script type="text/javascript" nonce="{{ csp_nonce }}">

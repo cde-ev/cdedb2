@@ -14,7 +14,7 @@
         <div class="col-sm-3">
             {{ util.href(cdedblink("ml/management", {'mailinglist_id': mailinglist_id}), title) }}
             {% if mailinglist_id in subscriptions %}
-                {{ util.make_icon('ok-sign', title=gettext("subscribed")) }}
+                {{ util.make_glyphicon_icon('ok-sign', title=gettext("subscribed")) }}
             {% endif %}<br />
             {% if not ml['is_active'] %}
                 <span class="small">{% trans %}inactive{% endtrans %}</span>
@@ -54,7 +54,7 @@
                 aclass="btn btn-sm btn-success") }}
     </div>
      <p class="text-info">
-         {{ util.make_icon('info-sign') }}
+         {{ util.make_glyphicon_icon('info-sign') }}
          {% trans documentation=util.href(docurl('Architecture_Mailinglists'), gettext('documentation')) %}
             Mailinglist types effect who can view, administer, or join a mailinglist. Furthermore, some add implicit
             subscribers. For more information, see the {{ documentation }}.

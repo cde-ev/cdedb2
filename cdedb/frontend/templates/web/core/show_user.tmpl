@@ -18,12 +18,12 @@
     {% if is_relative_admin %}
         {% if not ambience['persona']['is_active'] %}
             <div class="alert alert-info" id="deactivated">
-                {{ util.make_icon('info-sign') }} {% trans %}The User is deactivated.{% endtrans %}
+                {{ util.make_glyphicon_icon('info-sign') }} {% trans %}The User is deactivated.{% endtrans %}
             </div>
         {% endif %}
         {% if ambience['persona']['is_archived'] %}
             <div class="alert alert-info" id="archived">
-                {{ util.make_icon('info-sign') }} {% trans %}The User is archived.{% endtrans %}
+                {{ util.make_glyphicon_icon('info-sign') }} {% trans %}The User is archived.{% endtrans %}
             </div>
         {% endif %}
     {% endif %}
@@ -127,7 +127,7 @@
                                                ("is_ml_realm", gettext("Mailinglists"), "envelope"),
                                                ("is_assembly_realm", gettext("Assemblies"), "bullhorn"),)%}
                         {% if data[bit] %}
-                            {{ util.make_icon(icon, title=desc) }}
+                            {{ util.make_glyphicon_icon(icon, title=desc) }}
                         {% else %}
                             {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_realm_not': True}) %}
@@ -152,7 +152,7 @@
                                               ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
                                               ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
                         {% if data[bit] %}
-                            {{ util.make_icon(icon, title=desc) }}
+                            {{ util.make_glyphicon_icon(icon, title=desc) }}
                             {% do vars.update({'any_privilege': True}) %}
                         {% endif %}
                     {% endfor %}

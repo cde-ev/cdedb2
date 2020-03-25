@@ -21,12 +21,12 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Manage Mailinglist{% endtrans %}
-        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
+        <small>{{ util.make_glyphicon_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     <p class="text-info">
-        {{ util.make_icon('info-sign') }}
+        {{ util.make_glyphicon_icon('info-sign') }}
         {% trans %}
             Note that every change can take up to 15 minutes to take effect.
         {% endtrans %}
@@ -36,7 +36,7 @@
         <div class="col-md-6">
             <h2>{% trans %}Moderators{% endtrans %} [{{ ambience['mailinglist']['moderators']|length }}]</h2>
                 <p class="text-muted">
-                {{ util.make_icon('info-sign') }}
+                {{ util.make_glyphicon_icon('info-sign') }}
                     {% trans %}
                         Only users can be moderators.
                     {% endtrans %}
@@ -45,7 +45,7 @@
                   id="addmoderatorform" class="p">
                 {{ util.anti_csrf_token('ml/add_moderators') }}
                 <div class="input-group has-success">
-                    <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                    <span class="input-group-addon">{{ util.make_glyphicon_icon('plus') }}</span>
                     {{ util.input_text(name="moderator_ids", anid="input-add-moderator",
                                        placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                        arialabel=gettext("IDs of the new moderators")) }}
@@ -88,7 +88,7 @@
         <div class="col-md-6">
             <h2>{% trans %}Subscription Requests{% endtrans %}</h2>
                 <p class="text-muted">
-                    {{ util.make_icon('info-sign') }}
+                    {{ util.make_glyphicon_icon('info-sign') }}
                     {% trans %}
                         Subscription Requests of other users to this mailinglist.
                     {% endtrans %}
@@ -142,7 +142,7 @@
 
     <h2>{% trans %}Subscribers{% endtrans %} [{{ subscribers|length }}]</h2>
         <p class="text-muted">
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_glyphicon_icon('info-sign') }}
             {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) %}
                 Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here.
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
@@ -152,7 +152,7 @@
           id="addsubscriberform" class="p">
         {{ util.anti_csrf_token('ml/add_subscriber') }}
         <div class="input-group has-success">
-            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+            <span class="input-group-addon">{{ util.make_glyphicon_icon('plus') }}</span>
             {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
                                arialabel=gettext("ID of the new Subscriber")) }}
             <script type="text/javascript" nonce="{{ csp_nonce }}">

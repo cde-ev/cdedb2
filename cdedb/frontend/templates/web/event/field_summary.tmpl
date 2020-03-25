@@ -17,7 +17,7 @@
     {{ util.doclink('Handbuch_Orga_Hinweise') }}
     <h1 class="title">
         {% trans %}Configure Custom Fields{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -89,7 +89,7 @@
             {% for association in enums['FieldAssociations'] -%}
                 <li role="presentation"{% if loop.first %} class="active"{% endif %}>
                     <a href="#tab_{{ association.name }}" data-toggle="tab" aria-controls="tab_{{ association.name }}"
-                            role="tab">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</a>
+                            role="tab">{{ util.make_glyphicon_icon(association.get_icon()) }} {{ gettext(association|string) }}</a>
                 </li>
             {%- endfor %}
         </ul>
@@ -97,7 +97,7 @@
             {% for association in enums['FieldAssociations'] %}
                 <div class="tab-pane active" role="tabpanel" id="tab_{{ association.name }}"
                         data-association-id="{{ association.value }}">
-                    <h3 class="heading-underline">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
+                    <h3 class="heading-underline">{{ util.make_glyphicon_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
                     <div class="row">
                         {# Old items, already stored in the database #}
                         {% for field_id, entry in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
@@ -126,7 +126,7 @@
         {{ util.input_hidden("active_tab", anid="input_active_tab") }}
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_icon('plus') }} {% trans %}Add Field{% endtrans %}
+                {{ util.make_glyphicon_icon('plus') }} {% trans %}Add Field{% endtrans %}
             </button>
             {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
         </p>
@@ -180,7 +180,7 @@
     </script>
 
     <hr />
-    <p class="text-warning">{{ util.make_icon('warning-sign') }}
+    <p class="text-warning">{{ util.make_glyphicon_icon('warning-sign') }}
         {% trans %}
             Deleting a field includes deletion of all data, which is stored
             in this field in any registration/course/lodgement. Changing
@@ -188,7 +188,7 @@
             to the new type, upon saving.
         {% endtrans %}</p>
     <p class="help-block">
-        {{ util.make_icon('info-sign') }}
+        {{ util.make_glyphicon_icon('info-sign') }}
         {% trans format="<br /><code style='padding: 2px 0;'>%(value_one)s1;%(desc_one)s<br />%(value_two)s2;%(desc_two)s<br />…</code><br />"|s|format(
                 value_one=gettext("Value"), desc_one=gettext("Description Text"), value_two=gettext("Value"), desc_two=gettext("Description Text")) -%}
         	Enter Options in the following format:

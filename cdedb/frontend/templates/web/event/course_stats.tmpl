@@ -17,7 +17,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Manage Courses{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -34,7 +34,7 @@
                          icon='asterisk') }}
         </p>
         <p>
-            {{ util.make_icon('info-sign') }}
+            {{ util.make_glyphicon_icon('info-sign') }}
             {% trans %}
                 The course statistics, shown below, include only approved
                 participants.
@@ -44,7 +44,7 @@
     {% else %}
         <div class="alert alert-info">
             <p>
-                {{ util.make_icon('info-sign') }}
+                {{ util.make_glyphicon_icon('info-sign') }}
                 {% trans %}
                     The course attendee and choice statistics include all active
                     registrations (registration status “Participant”, “Guest”,
@@ -58,7 +58,7 @@
         </div>
     {% endif %}
     <p>
-        {{ util.make_icon('info-sign') }}
+        {{ util.make_glyphicon_icon('info-sign') }}
         {% trans %}Numbers of course choices include course instructors of other courses. Limits do not include course
             instructors.{% endtrans %}
     </p>
@@ -85,7 +85,7 @@
             <tr>
                 {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                     <th class="b-left"></th>
-                    <th class="text-right">{{ util.make_icon('screenshot', title=gettext("Assigned")) }}</th>
+                    <th class="text-right">{{ util.make_glyphicon_icon('screenshot', title=gettext("Assigned")) }}</th>
                     {% for i in range(track['num_choices']) %}
                         <th class="text-right">{{ (i + 1) }}</th>
                     {% endfor %}
@@ -110,7 +110,7 @@
                                               ('course-fewp' if course['min_size'] and attendees < course['min_size'] else ''))) %}
                             <td class="b-left course-primary {{ aclass }}">
                                 {% if track_id not in course['active_segments'] %}
-                                    {{ util.make_icon('ban-circle', title=gettext("Course cancelled")) }}
+                                    {{ util.make_glyphicon_icon('ban-circle', title=gettext("Course cancelled")) }}
                                 {% endif %}
                             </td>
                             <td class="text-right course-primary {{ aclass }}">

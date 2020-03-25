@@ -16,7 +16,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Log{% endtrans %}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
         {% if log %}
         [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
     {% endif %}
