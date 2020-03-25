@@ -454,11 +454,16 @@ class TestPrivacyFrontend(FrontendTest):
                 for field in self.ALL_FIELDS - found:
                     self.assertNonPresence(field)
 
+    def test_profile_of_disabled_user(self):
+        # a disabled user should be viewable as an equal non-disabled user
+        # TODO maybe add all above tests as subtests?
+        pass
+
     @as_users("ferdinand", "martin", "paul")
     def test_profile_of_archived_user(self, user):
         inspected = USER_DICT['hades']
 
-        # this should be visible to core admins only ...
+        # they should be visible to core admins only ...
         if user == USER_DICT['paul']:
             self.get(inspected['url'])
         # ... not for any other admin type
@@ -532,14 +537,14 @@ class TestPrivacyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_member_search_result(self, user):
-        # first, test berta is accessible
+        # test berta is accessible
         self.traverse({'description': "Mitglieder"})
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "Berta"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
 
-        # first, make berta not-searchable
+        # first case: make berta not-searchable
         self.traverse({'href': '/core/persona/2/adminchange'})
         f = self.response.forms['changedataform']
         f['is_searchable'].checked = False
@@ -552,7 +557,7 @@ class TestPrivacyFrontend(FrontendTest):
         self.assertTitle("CdE-Mitglied suchen")
         self.assertNonPresence("Ergebnis")
 
-        # second, make berta searchable again ...
+        # second case: make berta searchable again ...
         self.admin_view_profile('berta')
         self.traverse({'href': '/core/persona/2/adminchange'})
         f = self.response.forms['changedataform']
@@ -579,3 +584,78 @@ class TestPrivacyFrontend(FrontendTest):
 
         # ... nor the member search page itself
         self.get('/cde/search/member', status="403 FORBIDDEN")
+
+    @as_users("annika", "charly", "daniel", "garcia")
+    def test_show_past_event(self, user):
+        akira = "Akira Abukara"
+        berta = "Bertålotta Beispie"
+        charly = "Charly C. Clown"
+        emilia = "Emilia E. Eventis"
+        ferdinand = "Ferdinand F. Findus"
+        # non-members should not have access if they are no cde admin
+        if user == USER_DICT['daniel']:
+            self.get('/cde/past/event/list', status="403 FORBIDDEN")
+        else:
+            self.traverse({'description': 'Mitglieder'},
+                          {'description': 'Verg. Veranstaltungen'},
+                          {'description': 'PfingstAkademie 2014'})
+
+        # non-searchable users which did not participate should not see any user
+        if user == USER_DICT['garcia']:
+            invisible = [akira, berta, charly, emilia, ferdinand]
+            for participant in invisible:
+                self.assertNonPresence(participant)
+
+        # non-cde admin who doesnt participate should see searchable members only
+        elif user == USER_DICT['annika']:
+            visible = [akira, berta, ferdinand]
+            invisible = [charly, emilia]
+            for participant in visible:
+                self.assertPresence(participant, div='list-participants')
+            for participant in invisible:
+                self.assertNonPresence(participant)
+
+        # ... and every participant can see every participant. But if they are
+        # not searchable, they should not see any profile links.
+        elif user == USER_DICT['charly']:
+            visible = [akira, berta, charly, emilia, ferdinand]
+            for participant in visible:
+                self.assertPresence(participant, div='list-participants')
+                self.assertNoLink(participant)
+
+    @as_users("annika", "charly", "daniel", "garcia")
+    def test_show_past_course(self, user):
+        akira = "Akira Abukara"
+        emilia = "Emilia E. Eventis"
+        ferdinand = "Ferdinand F. Findus"
+        # non-members should not have access if they are no cde admin
+        if user == USER_DICT['daniel']:
+            self.get('/cde/past/event/1/course/2/show', status="403 FORBIDDEN")
+        else:
+            self.traverse({'description': 'Mitglieder'},
+                          {'description': 'Verg. Veranstaltungen'},
+                          {'description': 'PfingstAkademie 2014'},
+                          {'description': 'Goethe zum Anfassen'})
+
+        # non-searchable users which did not participate should not see any user
+        if user == USER_DICT['garcia']:
+            invisible = [akira, emilia, ferdinand]
+            for participant in invisible:
+                self.assertNonPresence(participant)
+
+        # non-cde admin who doesnt participate should see searchable members only
+        elif user == USER_DICT['annika']:
+            visible = [akira, ferdinand]
+            invisible = [emilia]
+            for participant in visible:
+                self.assertPresence(participant, div='list-participants')
+            for participant in invisible:
+                self.assertNonPresence(participant)
+
+        # ... and every participant can see every participant. But if they are
+        # not searchable, they should not see any profile links.
+        elif user == USER_DICT['charly']:
+            visible = [akira, emilia, ferdinand]
+            for participant in visible:
+                self.assertPresence(participant, div='list-participants')
+                self.assertNoLink(participant)
