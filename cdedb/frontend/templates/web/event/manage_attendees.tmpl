@@ -20,7 +20,7 @@
         {% trans course=ambience['course']['shortname'] %}
             Attendees of {{ course }}
         {% endtrans %}
-        <small>{{ util.make_glyphicon_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -49,7 +49,7 @@
                         </ul>
 
                         <label for="input_new_{{ track_id }}">
-                            {{ util.make_glyphicon_icon('plus') }} {% trans %}Add Attendee{% endtrans %}
+                            {{ util.make_icon('plus') }} {% trans %}Add Attendee{% endtrans %}
                         </label>
                         <select multiple="multiple" id="input_new_{{ track_id }}" class="form-control"
                                 name="new_{{ track_id }}">

@@ -84,7 +84,7 @@
             {{ util.href(cdedblink("event/index"), gettext("Event-Overview"), icon="circle-arrow-up") }}
         </p>
 
-        <h3 class="heading-sidebar">{{ util.make_glyphicon_icon('blackboard', arialabel=gettext("Event")) }}
+        <h3 class="heading-sidebar">{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }}
             {{ ambience['event']['title'] }}</h3>
         {{ one_event_links(ambience['event']) }}
     {% else %}

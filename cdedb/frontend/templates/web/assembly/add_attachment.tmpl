@@ -19,11 +19,11 @@
         {% endtrans %}
         {% if ambience['ballot'] %}
             <small>
-                {{- util.make_glyphicon_icon('thumbs-up', arialabel=gettext("Ballot")) }} {{ ambience['ballot']['title'] -}}
+                {{- util.make_icon('thumbs-up', arialabel=gettext("Ballot")) }} {{ ambience['ballot']['title'] -}}
             </small>
         {% else %}
             <small>
-                {{- util.make_glyphicon_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
+                {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
             </small>
         {% endif %}
     </h1>

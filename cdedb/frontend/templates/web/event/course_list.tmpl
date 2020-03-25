@@ -15,13 +15,13 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Courselist{% endtrans %}
-        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     {% if not ambience['event']['is_course_list_visible'] %}
         <div class="alert alert-info" role="alert" id="course-not-visible">
-            {{ util.make_glyphicon_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
                 {% trans %}The Courselist is currently only visible to Orgas and Admins.{% endtrans %}
@@ -29,7 +29,7 @@
         </div>
     {% elif not ambience['event']['is_course_state_visible'] and ambience['event']['id'] in user.orga %}
         <div class="alert alert-info" role="alert" id="cancelled-not-visible">
-            {{ util.make_glyphicon_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             <strong>{% trans %}Caution!{% endtrans %}</strong>
             {% if ambience['event']['tracks']|length > 1 %}
                 {% trans %}
@@ -46,7 +46,7 @@
     {% if courses %}
         {% if "event" not in user.roles %}
             <div class="alert alert-info" role="alert" id="instructors-not-visible">
-                {{ util.make_glyphicon_icon('info-sign') }}
+                {{ util.make_icon('info-cirlce') }}
                 {% trans %}The instructors for each course are only visible to logged in users.{% endtrans %}
             </div>
         {% endif %}

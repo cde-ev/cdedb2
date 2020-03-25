@@ -85,7 +85,7 @@
                         icon="plus", aclass="btn btn-success btn-sm") }}
             </div>
             {% if info %}
-                <p class="text-muted">{{ util.make_glyphicon_icon('info-sign') }} {{ info }}</p>
+                <p class="text-muted">{{ util.make_icon('info-cirlce') }} {{ info }}</p>
             {% endif %}
         </div>
         <div class="col-md-8">
@@ -208,16 +208,16 @@
         "notes": gettext("Admin-Notes"),
         'is_member': gettext("CdE-Member"),
         'is_searchable': gettext("Searchable"),
-        'is_ml_realm': util.make_glyphicon_icon('envelope', title=gettext("Realm") + ": " + gettext("Mailinglists")),
-        'is_event_realm': util.make_glyphicon_icon('blackboard', title=gettext("Realm") + ": " + gettext("Events")),
-        'is_assembly_realm': util.make_glyphicon_icon('bullhorn', title=gettext("Realm") + ": " + gettext("Assemblies")),
-        'is_cde_realm': util.make_glyphicon_icon('education', title=gettext("Realm") + ": " + gettext("cde_realm")),
-        'is_ml_admin': "Admin " + util.make_glyphicon_icon('envelope', title=gettext("Admin") + ": " + gettext("Mailinglists")),
-        'is_event_admin': "Admin " + util.make_glyphicon_icon('blackboard', title=gettext("Admin") + ": " + gettext("Events")),
-        'is_assembly_admin': "Admin " + util.make_glyphicon_icon('bullhorn', title=gettext("Admin") + ": " + gettext("Assemblies")),
-        'is_cde_admin': "Admin " + util.make_glyphicon_icon('education', title=gettext("Admin") + ": " + gettext("cde_realm")),
-        'is_core_admin': "Admin " + util.make_glyphicon_icon('user', title=gettext("Admin") + ": " + gettext("Core")),
-        'is_meta_admin': "Admin " + util.make_glyphicon_icon('wrench', title=gettext("Admin") + ": " + gettext("Meta")),
+        'is_ml_realm': util.make_icon('envelope', title=gettext("Realm") + ": " + gettext("Mailinglists")),
+        'is_event_realm': util.make_icon('chalkboard-teacher', title=gettext("Realm") + ": " + gettext("Events")),
+        'is_assembly_realm': util.make_icon('bullhorn', title=gettext("Realm") + ": " + gettext("Assemblies")),
+        'is_cde_realm': util.make_icon('graduation-cap', title=gettext("Realm") + ": " + gettext("cde_realm")),
+        'is_ml_admin': "Admin " + util.make_icon('envelope', title=gettext("Admin") + ": " + gettext("Mailinglists")),
+        'is_event_admin': "Admin " + util.make_icon('chalkboard-teacher', title=gettext("Admin") + ": " + gettext("Events")),
+        'is_assembly_admin': "Admin " + util.make_icon('bullhorn', title=gettext("Admin") + ": " + gettext("Assemblies")),
+        'is_cde_admin': "Admin " + util.make_icon('graduation-cap', title=gettext("Admin") + ": " + gettext("cde_realm")),
+        'is_core_admin': "Admin " + util.make_icon('user', title=gettext("Admin") + ": " + gettext("Core")),
+        'is_meta_admin': "Admin " + util.make_icon('wrench', title=gettext("Admin") + ": " + gettext("Meta")),
     } %}
 
         {{ display_query_result(result, query, TITLES, choices) }}
@@ -233,18 +233,18 @@
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary">
             <div class="panel-heading">
-                <h3 class="panel-title" id="qf_title">{{ util.make_glyphicon_icon('search') }} {% trans %}Search Mask{% endtrans %}</h3>
+                <h3 class="panel-title" id="qf_title">{{ util.make_icon('search') }} {% trans %}Search Mask{% endtrans %}</h3>
 
                 <!-- Tabs to chose between NonJS- and JS-form -->
                 <ul class="nav nav-tabs softhide" role="tablist" id="qf_tablist">
                     <li role="presentation" class="active">
                         <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab" id="tab_link_qf_nojs">
-                            {{ util.make_glyphicon_icon('list') }} {% trans %}Tabular{% endtrans %}
+                            {{ util.make_icon('list') }} {% trans %}Tabular{% endtrans %}
                         </a>
                     </li>
                     <li role="presentation">
                         <a href="#tab_qf_js" data-toggle="tab" aria-controls="tab_qf_js" role="tab" id="tab_link_qf_js">
-                            {{ util.make_glyphicon_icon('flash') }} {% trans %}Magic{% endtrans %}
+                            {{ util.make_icon('magic') }} {% trans %}Magic{% endtrans %}
                         </a>
                     </li>
                 </ul>
@@ -258,7 +258,7 @@
                             <table class="query-form-cols table table-superdense">
                             <thead>
                                 <tr>
-                                    <th>{{ util.make_glyphicon_icon('eye-open', title=gettext("show field")) }}</th>
+                                    <th>{{ util.make_icon('eye', title=gettext("show field")) }}</th>
                                     <th>{% trans %}Fields{% endtrans %}</th>
                                     <th colspan="2">{% trans %}Filter{% endtrans %}</th>
                                 </tr>
@@ -365,21 +365,21 @@
 
                     <!-- JS Form -->
                     <div class="tab-pane" role="tabpanel" id="tab_qf_js">
-                        <h4 class="filter-title nosp">{{ util.make_glyphicon_icon('filter') }} {% trans %}Filter{% endtrans %}</h4>
+                        <h4 class="filter-title nosp">{{ util.make_icon('filter') }} {% trans %}Filter{% endtrans %}</h4>
                         <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
                         <div class="input-group has-success queryform-add">
-                            <span class="input-group-addon">{{ util.make_glyphicon_icon('plus', title=gettext("add filter")) }}</span>
+                            <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("add filter")) }}</span>
                             <select class="form-control input-sm addfilter"
                                     aria-label="{% trans %}field to filter on{% endtrans %}"></select>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
                                 <h4 class="filter-title">
-                                    {{ util.make_glyphicon_icon('eye-open') }} {% trans %}Displayed Fields{% endtrans %}</h4>
+                                    {{ util.make_icon('eye') }} {% trans %}Displayed Fields{% endtrans %}</h4>
                                 <p class="viewfield-list"></p>
                                 <div class="input-group has-success">
                                     <span class="input-group-addon">
-                                        {{ util.make_glyphicon_icon('plus', title=gettext("add displayed field")) }}
+                                        {{ util.make_icon('plus', title=gettext("add displayed field")) }}
                                     </span>
                                     <select class="form-control input-sm addviewfield"
                                             aria-label="{% trans %}field to add{% endtrans %}"></select>
@@ -387,11 +387,11 @@
                             </div>
                             <div class="col-sm-6">
                                 <h4 class="filter-title">
-                                    {{ util.make_glyphicon_icon('sort-by-alphabet') }} {% trans %}Sorting{% endtrans %}</h4>
+                                    {{ util.make_icon('sort-alpha-down') }} {% trans %}Sorting{% endtrans %}</h4>
                                 <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
                                 <div class="input-group has-success queryform-add">
                                     <span class="input-group-addon">
-                                        {{ util.make_glyphicon_icon('plus', title=gettext("add sort key")) }}
+                                        {{ util.make_icon('plus', title=gettext("add sort key")) }}
                                     </span>
                                     <select class="form-control input-sm addsortfield"
                                             aria-label="{% trans %}sort key to add{% endtrans %}"></select>
@@ -403,13 +403,13 @@
 
                 <p class="pull-right nosp">
                     <button type="submit" class="btn btn-primary">
-                        {{ util.make_glyphicon_icon('search') }} {% trans %}Search{% endtrans %}</button>
+                        {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</button>
                     <span class="btn-group">
                         <button type="submit" class="btn btn-default" name="download" value="csv">
-                            {{ util.make_glyphicon_icon('download') }} {% trans %}CSV file{% endtrans %}
+                            {{ util.make_icon('download') }} {% trans %}CSV file{% endtrans %}
                         </button>
                         <button type="submit" class="btn btn-default" name="download" value="json">
-                            {{ util.make_glyphicon_icon('download') }} {% trans %}JSON file{% endtrans %}
+                            {{ util.make_icon('download') }} {% trans %}JSON file{% endtrans %}
                         </button>
                     </span>
                 </p>
@@ -532,21 +532,21 @@
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}select all{% endtrans %}" id="btn-select-all">
-                    {{ util.make_glyphicon_icon('check') }} <span class="hidden-xs">{% trans %}all{% endtrans %}</span>
+                    {{ util.make_icon('check-square') }} <span class="hidden-xs">{% trans %}all{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}select none{% endtrans %}" id="btn-select-none">
-                    {{ util.make_glyphicon_icon('unchecked') }} <span class="hidden-xs">{% trans %}none{% endtrans %}</span>
+                    {{ util.make_icon('square') }} <span class="hidden-xs">{% trans %}none{% endtrans %}</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-info" title="{% trans %}invert selection{% endtrans %}" id="btn-select-swap">
-                    {{ util.make_glyphicon_icon('expand') }} <span class="hidden-xs">{% trans %}invert{% endtrans %}</span>
+                    {{ util.make_icon('caret-square-right') }} <span class="hidden-xs">{% trans %}invert{% endtrans %}</span>
                 </button>
             </div>
             <button type="button" class="btn btn-sm btn-info" title="{% trans %}filter for selected rows{% endtrans %}"
                     id="btn-select-filter">
-                {{ util.make_glyphicon_icon('share') }} <span class="hidden-xs">{% trans %}selected only{% endtrans %}</span>
+                {{ util.make_icon('share-square') }} <span class="hidden-xs">{% trans %}selected only{% endtrans %}</span>
             </button>
             <button type="button" class="btn btn-sm btn-trigger-wide" title="{% trans %}widen results table{% endtrans %}">
-                {{ util.make_glyphicon_icon('resize-horizontal', arialabel=gettext("widen results table")) }}
+                {{ util.make_icon('arrows-alt-h', arialabel=gettext("widen results table")) }}
             </button>
         </div>
         <div class="table-container" id="result-container">
@@ -561,14 +561,14 @@
                                 {{ titles.get(field, field) }}
                                 {% if values.get("qop_{}".format(field)) %}
                                     <span class="label label-default" title="{% trans %}filtered column{% endtrans %}">
-                                        {{ util.make_glyphicon_icon('filter') }}
+                                        {{ util.make_icon('filter') }}
                                     </span>
                                 {% endif %}
                                 {% if values.get("qord_primary") == field or
                                         values.get("qord_secondary") == field or
                                         values.get("qord_tertiary") == field %}
                                     <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
-                                        {{ util.make_glyphicon_icon('sort-by-alphabet') }}
+                                        {{ util.make_icon('sort-alpha-down') }}
                                     </span>
                                 {% endif %}
                             </th>

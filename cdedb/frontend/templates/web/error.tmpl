@@ -3,7 +3,7 @@
 {% block title %}{{ error.code }}: {{ error.name }}{% endblock %}
 {% block content %}
     <div class="alert alert-danger">
-        {{ util.make_glyphicon_icon('remove-sign') }}
+        {{ util.make_icon('times-circle') }}
         {% if error.code == 403 %}
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
             {{ error.description }}

@@ -14,13 +14,13 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Your Registration{% endtrans %}
-        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     {% if ambience['event']['use_questionnaire'] %}
         <div class="alert alert-info">
-             {{ util.make_glyphicon_icon('info-sign') }}
+             {{ util.make_icon('info-cirlce') }}
              {% trans link=util.href(cdedblink('event/questionnaire_form'), gettext("questionnaire")) %}
             	Please fill in the {{ link }} now.
             {% endtrans %}

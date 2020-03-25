@@ -18,7 +18,7 @@
 {% block heading %}
     <h1 class="title">
         {{ ambience['lodgement']['moniker'] }}
-        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -128,7 +128,7 @@
                                                  "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
                                                                 personas[registrations[registration_id]['persona_id']]['family_name'])) }}
                                     {% if registrations[registration_id]['parts'][part_id]['is_reserve'] %}
-                                        {{ util.make_glyphicon_icon('tent', title=gettext("Camping Mat")) }}
+                                        {{ util.make_icon('campground', title=gettext("Camping Mat")) }}
                                     {% endif %}
                                 </li>
                             {% endfor %}

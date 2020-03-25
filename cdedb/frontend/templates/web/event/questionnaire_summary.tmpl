@@ -20,7 +20,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Configure Questionnaire{% endtrans %}
-        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 
@@ -109,7 +109,7 @@
         </div>
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_glyphicon_icon('plus') }} {% trans %}Add Part{% endtrans %}
+                {{ util.make_icon('plus') }} {% trans %}Add Part{% endtrans %}
             </button>
         </p>
         {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}

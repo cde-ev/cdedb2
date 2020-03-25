@@ -16,7 +16,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Registration{% endtrans %}
-        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -175,7 +175,7 @@
         {% call util.form_input_general(displayerrors=False) %}
             {% if ambience['event']['use_questionnaire'] %}
                 <p class="text-info nosp">
-                    {{ util.make_glyphicon_icon('info-sign') }}
+                    {{ util.make_icon('info-cirlce') }}
                     {% trans %}
                         After registration, you will find the ‘Questionnaire’ with further questions of the orga team in
                         the navigation. There you can give more detailed information.
@@ -183,7 +183,7 @@
                 </p>
             {% else %}
                 <p class="text-info nosp">
-                    {{ util.make_glyphicon_icon('info-sign') }}
+                    {{ util.make_icon('info-cirlce') }}
                     {% trans %}
                         The orga team of this event may ask you for further data later, using the ‘Questionaire’.
                     {% endtrans %}

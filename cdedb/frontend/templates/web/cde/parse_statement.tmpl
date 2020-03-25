@@ -43,7 +43,7 @@
                     <div id="transaction{{ t_id }}_errors">
                         {% for key, problem in data["errors{}".format(t_id)] %}
                             <li class="text-danger">
-                                {{ util.make_glyphicon_icon('exclamation-sign', title=gettext("Error")) }}
+                                {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
                                 <em>{{ key }}</em>:
                                 {{ util.format_error(problem) }}
                             </li>
@@ -52,7 +52,7 @@
                     <div id="transaction{{ t_id }}_warnings">
                         {% for key, problem in data["warnings{}".format(t_id)] %}
                             <li class="text-warning">
-                                {{ util.make_glyphicon_icon('warning-sign', title=gettext("Warning")) }}
+                                {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
                                 <em>{{ key }}</em>:
                                 {{ util.format_error(problem) }}
                             </li>

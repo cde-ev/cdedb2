@@ -20,7 +20,7 @@
         {% trans lodgement=ambience['lodgement']['moniker']%}
         	Inhabitants of {{ lodgement }}
         {% endtrans %}
-        <small>{{ util.make_glyphicon_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -55,7 +55,7 @@
                         </table>
 
                         <label for="input_new_{{ part_id }}">
-                            {{ util.make_glyphicon_icon('plus') }} {% trans %}Add Inhabitant{% endtrans %}
+                            {{ util.make_icon('plus') }} {% trans %}Add Inhabitant{% endtrans %}
                         </label>
                         <select multiple="multiple" id="input_new_{{ part_id }}" class="form-control"
                                 name="new_{{ part_id }}">

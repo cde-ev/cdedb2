@@ -15,7 +15,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Enter Money Transfers{% endtrans %}
-        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -30,7 +30,7 @@
                                     anid="input-data") }}
 
         <p class="help-block">
-            {{ util.make_glyphicon_icon('info-sign') }}
+            {{ util.make_icon('info-cirlce') }}
             {% trans %}Enter one dataset per line.{% endtrans %}
             {% trans %}Use the following format:{% endtrans %}
         </p>
@@ -63,7 +63,7 @@
                         <div id="line{{ dataset['lineno'] }}_problems">
                         {% for key, problem in dataset['problems'] %}
                             <li class="text-danger">
-                                {{ util.make_glyphicon_icon('exclamation-sign', title=gettext("Error")) }}
+                                {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
                                 {% if key %}
                                     <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
                                         data-col="{{ csvfields.get(key, -1) }}">
@@ -77,7 +77,7 @@
                         <div id="line{{ dataset['lineno'] }}_warnings">
                         {% for key, warning in dataset['warnings'] %}
                             <li class="text-warning">
-                                {{ util.make_glyphicon_icon('warning-sign', title=gettext("Warning")) }}
+                                {{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
                                 {% if key %}
                                     <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
                                         data-col="{{ csvfields.get(key, -1) }}">
@@ -91,7 +91,7 @@
                         <div id="line{{ dataset['lineno'] }}_infos">
                         {% for key, info in dataset['infos'] %}
                             <li class="text-info">
-                                {{ util.make_glyphicon_icon('info-sign', title=gettext("Info")) }}
+                                {{ util.make_icon('info-circle', title=gettext("Info")) }}
                                 {% if key %}
                                     <em class="row-col-key clickable" data-row="{{ dataset['lineno'] }}"
                                         data-col="{{ csvfields.get(key, -1) }}">
@@ -126,7 +126,7 @@
 
         {% if values['checksum'] %}
             <p class="help-block">
-                {{ util.make_glyphicon_icon('info-sign') }}
+                {{ util.make_icon('info-cirlce') }}
                 {% trans %}If the input changed, the validation results will be displayed again.{% endtrans %}
             </p>
             {{ util.form_input_submit(value=gettext("Confirm"), horizontal=False) }}

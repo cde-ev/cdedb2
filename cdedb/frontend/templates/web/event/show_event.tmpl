@@ -163,7 +163,7 @@
                     <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
                         {{ util.anti_csrf_token('event/add_orga') }}
                         <div class="input-group has-success">
-                            <span class="input-group-addon">{{ util.make_glyphicon_icon('plus', title=gettext("Add Orga")) }}</span>
+                            <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
                             {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
                                                arialabel=gettext("ID of the new Orga")) }}
                             <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -205,7 +205,7 @@
                                 $('#removeminorformform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
                             </script>
                         {% else %}
-                            <strong>{{ util.make_glyphicon_icon('warning-sign') }}
+                            <strong>{{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}No Form present – Minors cannot register{% endtrans %}
                             </strong>
                         {% endif %}
@@ -285,7 +285,7 @@
                             </form>
                         </div>
                         <p class="text-muted">
-                            {{ util.make_glyphicon_icon('info-sign') }}
+                            {{ util.make_icon('info-cirlce') }}
                             {% trans %}By locking the event, all changes are prevented.{% endtrans %}
                             {% if CDEDB_OFFLINE_DEPLOYMENT %}
                                 {% trans %}

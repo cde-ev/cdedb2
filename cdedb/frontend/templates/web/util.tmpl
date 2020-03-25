@@ -203,7 +203,7 @@
    docurl(). #}
 {% macro doclink(topic, anchor=None) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info btn-lg pull-right" target="_blank">
-        {{ make_glyphicon_icon('question-sign') }}
+        {{ make_icon('question-circle') }}
     {% trans %}
         Help
     {% endtrans %}
@@ -235,7 +235,7 @@
 {% macro output_info(info, link='') %}
     {%- if info %}
         <p class="help-block no-color">
-	    {{ make_glyphicon_icon('info-sign') }} {{ info }}
+	    {{ make_icon('info-cirlce') }} {{ info }}
 	    {% if link %}
 	        {{ link }}
 	    {% endif %}
@@ -255,7 +255,7 @@
         {%- for error in errors.get(name, []) if error %}
             {% if error.args %}
                 <div class="help-block">
-                    {{ make_glyphicon_icon('exclamation-sign') }}
+                    {{ make_icon('exclamation-circle') }}
                     {{ format_error(error) }}
                 </div>
             {% endif %}

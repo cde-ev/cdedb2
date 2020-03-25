@@ -108,13 +108,13 @@
             {% else %}
                 {% if not secret %}
                     <p>
-                        {{ util.make_glyphicon_icon('info-sign') }}
+                        {{ util.make_icon('info-cirlce') }}
                         {% trans %}The assembly concluded and the votes got encrypted.{% endtrans %}
                         {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>
                 {% else %}
                     <p>
-                        {{ util.make_glyphicon_icon('info-sign') }}
+                        {{ util.make_icon('info-cirlce') }}
                         {% trans %}You entered an invalid secret.{% endtrans %}
                         {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>

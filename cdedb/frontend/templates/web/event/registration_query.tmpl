@@ -12,7 +12,7 @@
 {% block heading %}
     <h1 class="title">
         {% trans %}Registrations{% endtrans %}
-        <small>{{ util.make_glyphicon_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -95,13 +95,13 @@
 
         <div class="p pull-right">
             <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
-                {{ util.make_glyphicon_icon('screenshot') }} {% trans %}Course Assignment{% endtrans %}
+                {{ util.make_icon('crosshairs') }} {% trans %}Course Assignment{% endtrans %}
             </button>
             <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
-                {{ util.make_glyphicon_icon('edit') }} {% trans %}Set Field{% endtrans %}
+                {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
             </button>
             <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
-                {{ util.make_glyphicon_icon('pencil') }} {% trans %}Edit{% endtrans %}
+                {{ util.make_icon('pencil-alt') }} {% trans %}Edit{% endtrans %}
             </button>
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#btn-course-choices').click(function(){
