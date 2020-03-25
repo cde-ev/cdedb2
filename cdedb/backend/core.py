@@ -2638,4 +2638,28 @@ class CoreBackend(AbstractBackend):
         :rtype: [{str: object}]
 
         """
+        query = affirm("query", query)
         return self.submit_general_query(rs, query)
+
+    @access("anonymous")
+    def submit_resolve_api_query(self, rs, query):
+        """Quick hack only designed to enable the API to resolve names.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type query: :py:class:`cdedb.query.Query`
+        :rtype: [{str: object}]
+        """
+        query = affirm("query", query)
+        # escalate db privilege role
+        orig_conn = None
+        try:
+            if rs.conn.is_contaminated:
+                raise RuntimeError(
+                    n_("Atomized – impossible to escalate."))
+            orig_conn = rs.conn
+            rs.conn = self.connpool['cdb_persona']
+            return self.general_query(rs, query)
+        finally:
+            # deescalate
+            if orig_conn:
+                rs.conn = orig_conn

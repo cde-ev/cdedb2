@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import copy
+import urllib.parse
 from test.common import USER_DICT, FrontendTest, as_users
 
 import cdedb.database.constants as const
@@ -1677,6 +1678,18 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfrage von Zelda Zeruda")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
+
+    def test_resolve_api(self):
+        b = urllib.parse.quote_plus('Bertålotta')
+        self.get(
+            '/core/api/resolve?given_names={}&family_name=Beispiel'.format(b),
+            headers={'X-CdEDB-API-token': 'secret'})
+        self.assertEqual(self.response.json, ["berta@example.cde"])
+        self.get(
+            '/core/api/resolve?given_names=Anton&family_name=Administrator',
+            headers={'X-CdEDB-API-token': 'secret'})
+        self.assertEqual(self.response.json, ["anton@example.cde"])
+        self.get('/core/api/resolve', status=403)
 
     def test_log(self):
         # First: generate data

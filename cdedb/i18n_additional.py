@@ -47,7 +47,7 @@ I18N_STRINGS = (
     n_("CoreLogCodes.password_change"),
     n_("CoreLogCodes.password_reset_cookie"),
     n_("CoreLogCodes.password_reset"),
-    n_("CoreLogCodes.password_invalidated"),
+    n_("CoreLogCodes.password_generated"),
     n_("CoreLogCodes.genesis_request"),
     n_("CoreLogCodes.genesis_approved"),
     n_("CoreLogCodes.genesis_rejected"),
