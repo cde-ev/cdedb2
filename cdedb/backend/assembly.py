@@ -1015,9 +1015,9 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm("id", ballot_id)
 
-        query = glue("SELECT has_voted FROM assembly.voter_register",
+        query = glue("SELECT COUNT(*) AS count FROM assembly.voter_register",
                      "WHERE ballot_id = %s and has_voted = True")
-        count_votes = len(self.query_all(rs, query, (ballot_id,)))
+        count_votes = unwrap(self.query_one(rs, query, (ballot_id,)))
         return count_votes
 
     @access("assembly")

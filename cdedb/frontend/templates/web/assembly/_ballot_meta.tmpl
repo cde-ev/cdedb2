@@ -96,7 +96,7 @@
         {% if ambience['ballot']['vote_begin'] < now() %}
             <dt>{% trans %}Already voted{% endtrans %}</dt>
             <dd id="already-voted">
-                {% trans count=ambience['ballot']['count_votes'] %}
+                {% trans count=ambience['ballot']['vote_count'] %}
                     Until now, {{ count }} attendes had given their vote for this ballot.
                 {% endtrans %}
             </dd>
