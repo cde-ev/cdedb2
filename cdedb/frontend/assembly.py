@@ -595,7 +595,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
 
-        If a secret is provided, this will fetch the vote beloging to that
+        If a secret is provided, this will fetch the vote belonging to that
         secret.
         """
         if not self.may_assemble(rs, assembly_id=assembly_id):
@@ -705,7 +705,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # Currently we don't distinguish between current and extended ballots
         current.update(extended)
         ballot_list = sum((sorted(bdict, key=lambda key: bdict[key]["title"])
-                           for bdict in (done, current, future)), [])
+                           for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)
         l = len(ballot_list)
