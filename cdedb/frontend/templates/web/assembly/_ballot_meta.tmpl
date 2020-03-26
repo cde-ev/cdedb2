@@ -9,7 +9,7 @@
                          {{ util.input_submit(value=gettext("Delete"), icon="trash", aclass="btn btn-danger") }}
                          {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                      </form>
-                     <script type="text/javascript" nonce="{{ csp_nonce }}">
+                     <script nonce="{{ csp_nonce }}">
                          $(function() {
                              $('#deleteballotform').cdedbProtectAction(
                                  "{{ gettext("This ballot and all its data will be permanently deleted.") }}");
@@ -120,7 +120,7 @@
                                 {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash",
                                         title=gettext("Delete File")) }}
                             </form>
-                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            <script nonce="{{ csp_nonce }}">
                                 $('#removeattachmentform{{ attachment_id }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
                                 $('#removeattachmentform{{ attachment_id }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
                             </script>

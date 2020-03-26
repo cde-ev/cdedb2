@@ -127,7 +127,7 @@ class TestEventFrontend(FrontendTest):
             "family_name": "Zeruda-Hime",
             "name_supplement": 'von und zu',
             "display_name": 'Zelda',
-            "birthday": "5.6.1987",
+            "birthday": "1987-06-05",
             "gender": "1",
             "telephone": "030456790",
             # "mobile"

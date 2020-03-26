@@ -129,7 +129,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
 
     {% if summary['changed_registrations'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}
         <h3>{% trans %}Registrations{% endtrans %}</h3>
-        <!-- ---------------------- Changed registrations ---------------------- -->
+        <!-- Changed registrations -->
         {% if summary['changed_registrations'] %}
             <div class="row">
                 <div class="col-md-8">
@@ -164,7 +164,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% endif %}
 
         <div class="row">
-            <!-- ---------------------- New registrations ---------------------- -->
+            <!-- New registrations -->
             {% if summary['new_registration_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel panel-success',
@@ -181,7 +181,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
             {% endif %}
 
-            <!-- ---------------------- Deleted registrations ---------------------- -->
+            <!-- Deleted registrations -->
             {% if summary['real_deleted_registration_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel panel-danger',
@@ -201,7 +201,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
     {% endif %}
     {% if summary['changed_courses'] or summary['new_course_ids'] or summary['deleted_course_ids'] %}
         <h3>{% trans %}Courses{% endtrans %}</h3>
-        <!-- ---------------------- Changed Courses ---------------------- -->
+        <!-- Changed Courses -->
         {% if summary['changed_courses'] %}
             <div class="row">
                 <div class="col-md-8">
@@ -238,7 +238,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% endif %}
 
         <div class="row">
-            <!-- ---------------------- New Courses---------------------- -->
+            <!-- New Courses-->
             {% if summary['new_course_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='book',
@@ -254,7 +254,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
             {% endif %}
 
-            <!-- ---------------------- Deleted Courses ---------------------- -->
+            <!-- Deleted Courses -->
             {% if summary['real_deleted_course_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='book',
@@ -274,7 +274,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
 
     {% if summary['changed_lodgements'] or summary['new_lodgement_ids'] or summary['deleted_lodgement_ids'] %}
         <h3>{% trans %}Lodgements{% endtrans %}</h3>
-        <!-- ---------------------- Changed Lodgements ---------------------- -->
+        <!-- Changed Lodgements -->
         {% if summary['changed_lodgements'] %}
             <div class="row">
                 <div class="col-md-8">
@@ -309,7 +309,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% endif %}
 
         <div class="row">
-            <!-- ---------------------- New Lodgements ---------------------- -->
+            <!-- New Lodgements -->
             {% if summary['new_lodgement_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='home',
@@ -325,7 +325,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
             {% endif %}
 
-            <!-- ---------------------- Deleted Lodgements ---------------------- -->
+            <!-- Deleted Lodgements -->
             {% if summary['real_deleted_lodgement_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel panel-danger',

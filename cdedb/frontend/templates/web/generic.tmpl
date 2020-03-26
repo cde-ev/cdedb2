@@ -72,7 +72,7 @@
 
         {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#newuserform').cdedbProtectChanges();
     </script>
 {% endmacro %}
@@ -297,7 +297,7 @@
                                                         {%- do myentries.append((op.value,
                                                             gettext(op.value|enum(enums.QueryOperators)))) %}
                                                     {%- endfor %}
-                                                    {{ util.input_select(name, entries=myentries, nulloption="",
+                                                    {{ util.input_select(name, entries=myentries, nulloption="&nbsp;",
                                                             aclass='form-control input-sm filter-op', anid=theid,
                                                             arialabel=(gettext("filter operator for %s")
                                                                        |format(titles.get(field, field)))) }}
@@ -345,7 +345,7 @@
                                             {%- for field in spec if ',' not in field %}
                                                 {%- do myentries.append((field, titles.get(field,field))) %}
                                             {%- endfor %}
-                                            {{ util.input_select(name, entries=myentries, nulloption="",
+                                            {{ util.input_select(name, entries=myentries, nulloption="&nbsp;",
                                                                  aclass="form-control input-sm sort-field",
                                                                  arialabel=gettext("%s sort key")|format(title)) }}
                                         </td>
@@ -414,7 +414,7 @@
                     </span>
                 </p>
                 {{ util.output_errors('query', wrapper=True) }}
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                <script nonce="{{ csp_nonce }}">
                     {
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
@@ -476,7 +476,7 @@
                 {% endfor %}
             </div>
         {% endcall %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $('.default-query').each(function(){
                 var url = $(this).attr('href');
                 var $link = $('<a></a>', {'href':'#',
@@ -498,7 +498,7 @@
     {% if not result|length %}
         {% trans %}No search results!{% endtrans %}
     {% else %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $(function(){
                 $('.ls-list').cdedbListSelect({
                     'callback': function () {
@@ -637,7 +637,7 @@
                         anid="input-submitted_by") }}
             {{ util.form_input_text(name="persona_id", label=gettext("Affected"), small=True,
                         anid="input-persona_id") }}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#input-submitted_by').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
@@ -648,21 +648,21 @@
                 );
             </script>
             {% if filter_name == "assembly_id" %}
-                {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
+                {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;",
                         entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
             {% elif filter_name == "pevent_id" %}
-                {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="",
+                {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="&nbsp;",
                         entries=pevents|dictsort|dict_entries('id', 'title'), small=True) }}
             {% elif filter_name == "event_id" %}
-                {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
+                {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;",
                         entries=all_events|dictsort, small=True) }}
             {% elif filter_name == "mailinglist_id" %}
-                {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
+                {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="&nbsp;",
                         entries=all_mailinglists|dictsort, small=True) }}
             {% elif filter_name == "changelog" %}
                 {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                <script nonce="{{ csp_nonce }}">
                     $('#input-reviewed_by').cdedbSearchPerson(
                         '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
                                              false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
@@ -671,7 +671,7 @@
             {% endif %}
             {{ util.form_input_text("additional_info", label=gettext("Additional Info"), small=True) }}
             {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
-            {{ util.form_input_from_to('time_start', 'time_stop', label=gettext("Timestamp"), type='datetime', small=True) }}
+            {{ util.form_input_from_to('time_start', 'time_stop', label=gettext("Timestamp"), type='datetime-local', small=True) }}
             {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
         </form>
     {% endcall %}

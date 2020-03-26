@@ -12,7 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), active="True") }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('.rejection-form').cdedbProtectAction("{{ gettext("The Account Request will be permanently deleted.") }}");
         });
@@ -28,7 +28,7 @@
                     <div class="col-sm-3">
                         <p>
                             {{ entry['given_names'] }} {{ entry['family_name'] }}
-                            &lt;{{ util.href('mailto:%s'|format(entry['username']), entry['username']) }}&gt;
+                            &lt;{{ util.href(util.mailto(entry['username']), entry['username']) }}&gt;
                         </p>
                     </div>
                     <div class="col-sm-5">

@@ -42,7 +42,7 @@
     {{ util.href(show_user_link(pending['id']), gettext("Show Profile"), icon="share-alt", aclass="btn btn-sm btn-info") }}
     {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), gettext("Change History"),
                  aclass="btn btn-info btn-sm", icon="time") }}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#diff-view').cdedbHideUnimportant($('#unhide-button'));
         });

@@ -25,7 +25,7 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changelistform').cdedbProtectChanges().cdedbChangeMailinglist();
         });
@@ -57,13 +57,13 @@
                     entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), readonly=not is_admin,
                     entries=enums['MailinglistTypes']|enum_entries(processing=gettext)) }}
-            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="", entries=sorted_events,
+            {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="&nbsp;", entries=sorted_events,
                     readonly=not is_admin,
                     info=gettext("The participants of this event will be subscribers of this mailinglist. (Opt-Out)")) }}
             {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=not is_admin,
                     entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
                     info=gettext("No selection results in an orga-list.")) }}
-            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="", readonly=not is_admin,
+            {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="&nbsp;", readonly=not is_admin,
                     entries=sorted_assemblies,
                     info=gettext("The participants of this assembly will be subscribers of this mailinglist. (Opt-Out)")) }}
 

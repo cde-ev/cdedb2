@@ -98,7 +98,7 @@
 
 {% macro show_own_vote() -%}
     <h3>{% trans %}Your Vote{% endtrans %}</h3>
-    <p id="own-vote">
+    <div id="own-vote">
         {% set is_active = ambience["assembly"]["is_active"] %}
         {% if not attends %}
             {% trans %}You are not participating in this assembly.{% endtrans %}
@@ -157,5 +157,5 @@
                 You voted {{ vote }}.
             {% endtrans -%}
         {% endif %}
-    </p>
+    </div>
 {%- endmacro %}

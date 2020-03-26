@@ -110,7 +110,7 @@
                         <tr>
                             <th>{{ HEADINGS.get(key, key) }}</th>
                                 {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                                <td id="track_{{ key }}_{{ track_id }}">
+                                <td id="track_{{ key|replace(' ', '_') }}_{{ track_id }}">
                                     {% set query = get_query(key, track['part_id'], track_id) %}
                                     {% if query %}
                                         {{ util.href(cdedblink('event/registration_query', query|querytoparams),

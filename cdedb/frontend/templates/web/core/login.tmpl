@@ -20,27 +20,25 @@
                 {{ util.make_icon('info-sign') }} <strong>{% trans %}Info{% endtrans %}</strong>
                 {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
             </p>
-            
+
             <p class=nosp>{# TODO Erklärtext #}</p>
         </div>
     {% endif %}
 
     <form action="{{ cdedblink('core/login') }}" method="POST" id="loginform" class="form-horizontal">
-        <p>
-            {{ util.form_input_text(name="username", label=gettext("E-Mail"), type="email", small=True,
-                                    anid="login_name") }}
-            {{ util.form_input_text(name="password", label=gettext("Password"), small=True, anid="login_password",
-                                    type="password") }}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
-                $(function() {
-                    $('#login_name').focus();
-                });
-            </script>
+        {{ util.form_input_text(name="username", label=gettext("E-Mail"), type="email", small=True,
+                                anid="login_name") }}
+        {{ util.form_input_text(name="password", label=gettext("Password"), small=True, anid="login_password",
+                                type="password") }}
+        <script nonce="{{ csp_nonce }}">
+            $(function() {
+                $('#login_name').focus();
+            });
+        </script>
 
-            {{ util.input_hidden(name="wants") }}
+        {{ util.input_hidden(name="wants") }}
 
-            {{ util.form_input_submit(value=gettext("Login"), small=True) }}
-        </p>
+        {{ util.form_input_submit(value=gettext("Login"), small=True) }}
     </form>
     {% if not CDEDB_OFFLINE_DEPLOYMENT %}
         <p>

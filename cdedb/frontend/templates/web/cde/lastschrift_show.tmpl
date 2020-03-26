@@ -23,7 +23,7 @@
     <div id="active-permit">
     {% if active_permit %}
         {% if is_admin %}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
             $(function() {
                 $('#revokeform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('#skiptransactionform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");

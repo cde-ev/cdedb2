@@ -210,7 +210,7 @@
                     <dd id="searchability">
                         {{ util.deko_checkbox(checked=data['is_searchable']) }}
                         {% if data['is_searchable'] %}
-                            <td>{% trans %}Data is visible for other Members.{% endtrans %}</td>
+                            {% trans %}Data is visible for other Members.{% endtrans %}
                         {% else %}
                             {% if not data['decided_search'] %}
                                 {% trans %}Not yet decided. (Data is not visible){% endtrans %}
@@ -460,7 +460,7 @@ Mitglied.</pre>
                                     </div>
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
-                                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                <script nonce="{{ csp_nonce }}">
                                     $('#archivepersonaform').cdedbProtectAction(
                                         "{{ gettext("The Account will be archived.") }}");
                                     $('#archivepersonaform').find('[name="ack_delete"]').prop('checked', true)
@@ -542,7 +542,7 @@ Mitglied.</pre>
                                             aclass="btn btn-danger btn-sm") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                 </form>
-                                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                                <script nonce="{{ csp_nonce }}">
                                     $('#purgepersonaform').cdedbProtectAction(
                                         "{{ gettext("The Account will be deleted.") }}");
                                     $('#purgepersonaform').find('[name="ack_delete"]').prop('checked', true)

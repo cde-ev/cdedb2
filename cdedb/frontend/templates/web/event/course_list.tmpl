@@ -50,8 +50,9 @@
                 {% trans %}The instructors for each course are only visible to logged in users.{% endtrans %}
             </div>
         {% endif %}
+        <div id="list-courses">
         {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'] %}
-            <div class="hide-hover-container" id="list-courses">
+            <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
                 {% if ambience['event']['id'] in user.orga or is_admin %}
                     <div class="pull-right">
@@ -99,6 +100,7 @@
                 {{ entry['description']|md }}
             </div>
         {% endfor %}
+        </div>
     {% elif ambience['event']['tracks'] %}
         <p>{% trans %}This event does not yet have any courses.{% endtrans %}</p>
     {% else %}

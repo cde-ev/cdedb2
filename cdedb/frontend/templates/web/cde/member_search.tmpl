@@ -57,10 +57,10 @@
                                 name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
                                 label=gettext("Interests"), aclass="input-sm") }}
                         {{ util.form_input_select(name="qval_pevent_id", entries=choices['pevent_id']|dictsort(by='value'),
-                                                  nulloption="", label=gettext("Academy"), aclass="input-sm") }}
+                                                  nulloption="&nbsp;", label=gettext("Academy"), aclass="input-sm") }}
                         {% if values.get('qval_pevent_id') %}
                             {{ util.form_input_select(name="qval_pcourse_id", entries=choices['pcourse_id']|dictsort(by='value'),
-                                                      nulloption="", label=gettext("Course"), aclass="input-sm",
+                                                      nulloption="&nbsp;", label=gettext("Course"), aclass="input-sm",
                                                       defaultvalue='') }}
                         {% else %}
                             <div class="help-block text-muted">

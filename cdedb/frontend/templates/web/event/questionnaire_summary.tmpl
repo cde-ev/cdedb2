@@ -114,7 +114,7 @@
         </p>
         {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         (function() {
             var field_list = {{ registration_fields|json|s }};
             var translations = {

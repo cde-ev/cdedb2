@@ -42,7 +42,7 @@
                     </div>
                 </div>
             </form>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#addattendeeform').cdedbProtectAction(
                     "{{ gettext("The user will be added as a participant. This cannot be undone.") }}");
                 $('#input-add-attendee').cdedbSearchPerson(

@@ -34,7 +34,7 @@
                      aclass="btn btn-sm btn-warning", icon="pencil") }}
         {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="user") }}
-        {{ util.href("mailto:?to=%s"|s|format("; ".join(instructor_emails)), gettext("Email to course instructors"),
+        {{ util.href(util.mailto(to="; ".join(instructor_emails)), gettext("Email to course instructors"),
                             icon="envelope", aclass="btn btn-sm btn-default", readonly=instructor_emails,
                             title=gettext("Send Mail to all course instructors.")) }}
     </div>
@@ -179,7 +179,7 @@
             </div>
         </div>
     {% endcall %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#deletecourseform').cdedbProtectAction("{{ gettext("The course will be permanently deleted.") }}");
         $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
     </script>

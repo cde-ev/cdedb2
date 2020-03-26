@@ -8,27 +8,29 @@ import functools
 import gettext
 import inspect
 import pathlib
-import pytz
 import re
-import unittest
 import subprocess
+import tempfile
 import types
-import webtest
+import unittest
+import urllib.parse
 
-from cdedb.config import BasicConfig, SecretsConfig
-from cdedb.frontend.application import Application
-from cdedb.frontend.cron import CronFrontend
-from cdedb.common import (
-    ProxyShim, RequestState, roles_to_db_role, PrivilegeError, glue)
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.session import SessionBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.event import EventBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
+import pytz
+import webtest
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.backend.session import SessionBackend
+from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
+                          roles_to_db_role)
+from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.frontend.application import Application
+from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
@@ -40,6 +42,7 @@ class NearlyNow(datetime.datetime):
     Since automatically generated timestamp are not totally predictible,
     we use this to avoid nasty work arounds.
     """
+
     def __eq__(self, other):
         if isinstance(other, datetime.datetime):
             delta = self - other
@@ -139,6 +142,7 @@ class BackendShim(ProxyShim):
 
 class MyTextTestResult(unittest.TextTestResult):
     """Subclasing the TestResult object to fix the CLI reporting."""
+
     def __init__(self, *args, **kwargs):
         super(MyTextTestResult, self).__init__(*args, **kwargs)
         self._subTestErrors = []
@@ -486,6 +490,22 @@ class FrontendTest(unittest.TestCase):
             'SERVER_PROTOCOL': "HTTP/1.1",
             'wsgi.url_scheme': 'https'})
 
+        # set `do_scrap` to True to capture a snapshot of all visited pages
+        cls.do_scrap = False
+        if cls.do_scrap:
+            # create a temporary directory and print it
+            cls.scrap_path = tempfile.mkdtemp()
+            print(cls.scrap_path)
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.do_scrap:
+            # make scrap_path directory and content publicly readable
+            folder = pathlib.Path(cls.scrap_path)
+            folder.chmod(0o0755)  # 0755/drwxr-xr-x
+            for file in folder.iterdir():
+                file.chmod(0o0644)  # 0644/-rw-r--r--
+
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
                               stdout=subprocess.DEVNULL,
@@ -498,7 +518,17 @@ class FrontendTest(unittest.TestCase):
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
             self.assertNotEqual('CdEDB – Fehler', texts[0])
+            self.scrap()
         self.log_generation_time()
+
+    def scrap(self):
+        if self.do_scrap and self.response.status_int // 100 == 2:
+            # path without host but with query string - capped at 64 chars
+            url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url, delete=False) as f:
+                # create a temporary file in scrap_path with url as a suffix
+                # persisting after process completion and dump the response to it
+                f.write(self.response.body)
 
     def log_generation_time(self, response=None):
         if response is None:

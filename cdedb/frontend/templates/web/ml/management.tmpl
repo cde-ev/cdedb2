@@ -49,7 +49,7 @@
                     {{ util.input_text(name="moderator_ids", anid="input-add-moderator",
                                        placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                        arialabel=gettext("IDs of the new moderators")) }}
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    <script nonce="{{ csp_nonce }}">
                         $('#input-add-moderator').cdedbSearchPerson(
                             '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                                 (ambience['mailinglist']['id']|string|e) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
@@ -99,7 +99,7 @@
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                            <span class="nowrap">
+                            <div class="nowrap">
                                 {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
                                 <form action="{{ cdedblink('ml/approve_request') }}"
                                       method="POST"
@@ -128,7 +128,7 @@
                                     {{ util.input_submit(icon="ban-circle", value=gettext("Block"),
                                         aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
-                            </span>
+                            </div>
                         </li>
                     {% endfor %}
                 </ul>
@@ -155,7 +155,7 @@
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
             {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
                                arialabel=gettext("ID of the new Subscriber")) }}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#input-add-subscriber').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
                         (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
@@ -218,7 +218,7 @@
                 </div>
             </div>
         {% endcall %}
-        <script type="text/javascript" nonce="{{ csp_nonce }}">
+        <script nonce="{{ csp_nonce }}">
             $('#deletemlform').cdedbProtectAction("{{ gettext("The mailinglist will be permanently deleted.") }}");
             $('#deletemlform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
         </script>

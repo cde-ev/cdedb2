@@ -65,7 +65,7 @@
         {% if ambience['event']['orga_address'] %}
             <dt>{% trans %}Orga Address{% endtrans %}</dt>
             <dd id="orga-address">
-                <a href="mailto:{{ ambience['event']['orga_address'] }}">{{ ambience['event']['orga_address'] }}</a>
+                <a href="{{ util.mailto(ambience['event']['orga_address']) }}">{{ ambience['event']['orga_address'] }}</a>
             </dd>
         {% endif %}
         {% if "event" in user.roles %}
@@ -127,7 +127,7 @@
                             </span>
                         </div>
                     </form>
-                    <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    <script nonce="{{ csp_nonce }}">
                         var $i = $('#input-showregistration-id');
                         $i.cdedbSearchRegistration('{{ (cdedblink('event/select_registration')|e)
                                                        + ('?kind=orga_registration&aux='|s)
@@ -166,7 +166,7 @@
                             <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
                             {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
                                                arialabel=gettext("ID of the new Orga")) }}
-                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            <script nonce="{{ csp_nonce }}">
                                 $('#input-add-orga').cdedbSearchPerson(
                                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=orga_event_user&phrase=%s&aux='|s) +
                                         (ambience['event']['id']|string|e) }}',
@@ -186,7 +186,7 @@
 
             <div class="col-md-6" id="minor-form">
                 {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}
-                    <p>
+                    <div>
                         {% if minor_form_present %}
                             {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("current Form"),
                                                     icon='file') -%}
@@ -200,7 +200,7 @@
                                                      icon="trash", aclass='btn btn-danger') }}
                                 {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                             </form>
-                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            <script nonce="{{ csp_nonce }}">
                                 $('#removeminorformform').cdedbProtectAction("{{ gettext("The minor form will be permanently deleted.") }}");
                                 $('#removeminorformform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
                             </script>
@@ -209,7 +209,7 @@
                                 {% trans %}No Form present – Minors cannot register{% endtrans %}
                             </strong>
                         {% endif %}
-                    </p>
+                    </div>
                     <form action="{{ cdedblink('event/change_minor_form') }}" method="POST" enctype="multipart/form-data"
                      id="changeminorformform" {% if 'minor_form' in errors %}class="has-error"{% endif %}>
                         {{ util.anti_csrf_token('event/change_minor_form') }}
@@ -382,7 +382,7 @@
                         </p>
                     </div>
                 </div>
-                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                <script nonce="{{ csp_nonce }}">
                     $('#archiveeventform').cdedbProtectAction("{{ gettext("The event will be permanently archived.") }}");
                     $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
                 </script>
@@ -409,11 +409,11 @@
                     </div>
                 </div>
             </div>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
                 $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
             </script>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#fullexportform').cdedbProtectAction("{{ gettext("Are you sure to download a full export before locking?") }}");
                 $('#fullexportform').find('[name="agree_unlocked_download"]').prop('checked', true).parent().hide();
             </script>
