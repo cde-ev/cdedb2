@@ -1006,6 +1006,21 @@ class AssemblyBackend(AbstractBackend):
         return has_voted
 
     @access("assembly")
+    def count_votes(self, rs, ballot_id):
+        """Look up how many attendees had already voted in a ballot.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ballot_id: int
+        :rtype: int
+        """
+        ballot_id = affirm("id", ballot_id)
+
+        query = glue("SELECT has_voted FROM assembly.voter_register",
+                     "WHERE ballot_id = %s and has_voted = True")
+        count_votes = len(self.query_all(rs, query, (ballot_id,)))
+        return count_votes
+
+    @access("assembly")
     def get_vote(self, rs, ballot_id, secret):
         """Look up a vote.
 
