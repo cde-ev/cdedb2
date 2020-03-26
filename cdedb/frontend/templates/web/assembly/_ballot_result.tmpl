@@ -1,18 +1,18 @@
-{% macro show_result() -%}
+{% macro show_result(ballot, result) -%}
     <h3>{% trans %}Result{% endtrans %}</h3>
     {% if result['winners'] %}
         <ol id="winners">
             {% for candidate_ids in result['winners'] %}
                 <li value="{{ loop.index }}">
                     {% for candidate_id in candidate_ids %}
-                        {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
-                        {% if not ambience['ballot']['votes'] %}
+                        {{ ballot['candidates'][candidate_id]['description'] }}
+                        {% if not ballot['votes'] %}
                             <span class="label label-primary">
-                                {{- ambience['ballot']['candidates'][candidate_id]['moniker'] -}}
+                                {{- ballot['candidates'][candidate_id]['moniker'] -}}
                             </span>
                         {% endif %}
                         {% if result['counts'] %}
-                            {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
+                            {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
                             {% trans count=result['counts'][candidate_moniker] %}
                                 ({{ count }} votes)
                             {% endtrans %}
@@ -26,9 +26,9 @@
         </ol>
     {% endif %}
 
-    {% if ambience['ballot']['use_bar'] and result['losers'] %}
+    {% if ballot['use_bar'] and result['losers'] %}
         <p class="text-info">
-            {% if ambience['ballot']['votes'] %}
+            {% if ballot['votes'] %}
                 {% trans against_all=gettext("Against all Candidates") %}
                     The following candidates have less votes than the {{ against_all }} choice.
                 {% endtrans %}
@@ -41,14 +41,14 @@
             {% for candidate_ids in result['losers'] %}
                 <li value="{{ (loop.index + result['winners']|length) }}">
                     {% for candidate_id in candidate_ids %}
-                        {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
-                        {% if not ambience['ballot']['votes'] %}
+                        {{ ballot['candidates'][candidate_id]['description'] }}
+                        {% if not ballot['votes'] %}
                             <span class="label label-primary">
-                                {{- ambience['ballot']['candidates'][candidate_id]['moniker'] -}}
+                                {{- ballot['candidates'][candidate_id]['moniker'] -}}
                             </span>
                         {% endif %}
                         {% if result['counts'] %}
-                            {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
+                            {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
                             {% trans count=result['counts'][candidate_moniker] %}
                                 ({{ count }} votes)
                             {% endtrans %}

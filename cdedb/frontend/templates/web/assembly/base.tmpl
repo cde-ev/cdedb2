@@ -13,6 +13,9 @@
             {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), gettext("Ballots"),
                          aclass="list-group-item", icon="thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
 
+            {{ util.href(cdedblink("assembly/summary_ballots", {'assembly_id': data['id']}), gettext("Summary"),
+                        aclass="list-group-item", icon="thumbs-up", active=(sidenav_active == 'assembly_summary')) }}
+
             {% if "assembly_mgmt" in user.admin_views %}
                 {% if ambience['assembly']['is_active'] %}
                     {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),

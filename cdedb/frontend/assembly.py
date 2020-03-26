@@ -641,27 +641,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         # initial checks done, present the ballot
         ballot['is_voting'] = self.is_ballot_voting(ballot)
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
-        result = None
-        if ballot['is_tallied']:
-            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
-            with open(path) as f:
-                result = json.load(f)
-            tiers = tuple(x.split('=') for x in result['result'].split('>'))
-            winners = []
-            losers = []
-            tmp = winners
-            lookup = {e['moniker']: e['id']
-                      for e in ballot['candidates'].values()}
-            for tier in tiers:
-                # Remove bar if present
-                ntier = tuple(lookup[x] for x in tier if x in lookup)
-                if ntier:
-                    tmp.append(ntier)
-                if ASSEMBLY_BAR_MONIKER in tier:
-                    tmp = losers
-            result['winners'] = winners
-            result['losers'] = losers
-            result['counts'] = None  # Will be used for classical voting
+        result = self.get_online_result(ballot)
+
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
         has_voted = False
         own_vote = None
@@ -677,25 +658,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         split_vote = None
         if own_vote:
             split_vote = tuple(x.split('=') for x in own_vote.split('>'))
-        if ballot['votes']:
-            if split_vote:
-                if len(split_vote) == 1:
-                    # abstention
-                    rs.values['vote'] = MAGIC_ABSTAIN
-                else:
-                    # select voted options
-                    rs.values.setlist('vote', split_vote[0])
-            if result:
-                counts = {e['moniker']: 0
-                          for e in ballot['candidates'].values()}
-                for v in result['votes']:
-                    raw = v['vote']
-                    if '>' in raw:
-                        selected = raw.split('>')[0].split('=')
-                        for s in selected:
-                            if s in counts:
-                                counts[s] += 1
-                result['counts'] = counts
+        if ballot['votes'] and split_vote:
+            if len(split_vote) == 1:
+                # abstention
+                rs.values['vote'] = MAGIC_ABSTAIN
+            else:
+                # select voted options
+                rs.values.setlist('vote', split_vote[0])
+
         candidates = {e['moniker']: e
                       for e in ballot['candidates'].values()}
         if ballot['use_bar']:
@@ -723,6 +693,58 @@ class AssemblyFrontend(AbstractUserFrontend):
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
             'secret': secret, 'has_voted': has_voted,
         })
+
+    def get_online_result(self, ballot):
+        """Helper to get the result information of a tallied ballot."""
+        result = None
+        if ballot['is_tallied']:
+            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot['id'])
+            with open(path) as f:
+                result = json.load(f)
+            tiers = tuple(x.split('=') for x in result['result'].split('>'))
+            winners = []
+            losers = []
+            tmp = winners
+            lookup = {e['moniker']: e['id']
+                      for e in ballot['candidates'].values()}
+            for tier in tiers:
+                # Remove bar if present
+                ntier = tuple(lookup[x] for x in tier if x in lookup)
+                if ntier:
+                    tmp.append(ntier)
+                if ASSEMBLY_BAR_MONIKER in tier:
+                    tmp = losers
+            result['winners'] = winners
+            result['losers'] = losers
+            result['counts'] = None  # Will be used for classical voting
+
+        if ballot['votes'] and result:
+            counts = {e['moniker']: 0
+                      for e in ballot['candidates'].values()}
+            for v in result['votes']:
+                raw = v['vote']
+                if '>' in raw:
+                    selected = raw.split('>')[0].split('=')
+                    for s in selected:
+                        if s in counts:
+                            counts[s] += 1
+            result['counts'] = counts
+        return result
+
+    @access("assembly")
+    def summary_ballots(self, rs, assembly_id):
+        """Give an online summary of all tallied ballots of an assembly."""
+
+        blubs = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballot_ids = [k for k, v in blubs.items()]
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        done, extended, current, future = self.group_ballots(ballots)
+
+        result = {k: self.get_online_result(v) for k, v in done.items()}
+
+        return self.render(rs, "summary_ballots", {
+            'ballots': done, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
+            'result': result})
 
     @access("assembly_admin")
     def change_ballot_form(self, rs, assembly_id, ballot_id):
