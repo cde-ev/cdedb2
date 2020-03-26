@@ -17,10 +17,25 @@
 {% endblock %}
 {% block content %}
 
-    {% for ballot_id, ballot in ballots.items() %}
-         <h3>{{ ballot['title'] }}</h3>
-        {{ ballot['description']|md }}
-        {{ ballot_result.show_result(ballot, result[ballot_id]) }}
-    {% endfor %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{% trans %}Ballot{% endtrans %}</th>
+                <th>{% trans %}Result{% endtrans %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ballot_id, ballot in ballots.items() %}
+            <tr>
+                <td>
+                    <h4>{{ ballot['title'] }}</h4>
+                    {{ ballot['description']|md }}
+                </td>
+                <td>{{ ballot_result.show_result(ballot, result[ballot_id]) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 
 {% endblock %}

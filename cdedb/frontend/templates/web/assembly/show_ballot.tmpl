@@ -45,6 +45,7 @@
 
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
+        <h3>{% trans %}Result{% endtrans %}</h3>
         {{ ballot_result.show_result(ambience['ballot'], result) }}
         
         <h4>{% trans %}Summary{% endtrans %}</h4>

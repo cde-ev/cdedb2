@@ -1,5 +1,4 @@
 {% macro show_result(ballot, result) -%}
-    <h3>{% trans %}Result{% endtrans %}</h3>
     {% if result['winners'] %}
         <ol id="winners">
             {% for candidate_ids in result['winners'] %}
