@@ -2228,7 +2228,7 @@ def _event(val, argname=None, *, creation=False, _convert=True,
                  " field in one event part.")
         for e1, e2 in itertools.combinations(
                 filter(None, val['fee_modifiers'].values()), 2):
-            if e1['field_id'] == e2['field_id']:
+            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
                 if e1['part_id'] == e2['part_id']:
                     errs.append(('fee_modifiers', ValueError(msg)))
     return val, errs
@@ -2948,7 +2948,7 @@ def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
                     errs.append(('kind', ValueError(msg)))
             ret.append(value)
     for e1, e2 in itertools.combinations(val, 2):
-        if e1['field_id'] == e2['field_id']:
+        if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
             msg = n_("Must not duplicate field.")
             errs.append(('field_id', ValueError(msg)))
     return ret, errs
