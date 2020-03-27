@@ -196,9 +196,8 @@ class TestCoreFrontend(FrontendTest):
         # ml_admins are allowed to do this even if they are no orgas.
         self.get('/core/persona/select'
                  '?kind=mod_ml_user&phrase=@exam&aux=9&variant=20')
-        # TODO this is not functional
-        expectation = (1, 2, 5, 7, 9, 100)
-        reality = tuple(e for e in self.response.json['personas'])
+        expectation = (1, 2, 5)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select'
                  '?kind=mod_ml_user&phrase=inga&aux=9&variant=20')
