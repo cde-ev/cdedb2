@@ -154,6 +154,14 @@ class RequestState:
         self.validation_appraised = False
         self._errors.append(error)
 
+    def add_validation_error(self, error):
+        for k, e in self._errors:
+            if k == error[0]:
+                if e.args == error[1].args:
+                    break
+        else:
+            self.append_validation_error(error)
+
     def extend_validation_errors(self, errors):
         """Register a new (maybe empty) set of errors.
 
