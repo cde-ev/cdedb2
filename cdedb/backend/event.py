@@ -1323,6 +1323,8 @@ class EventBackend(AbstractBackend):
                     rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
                     (data['id'],), entity_key="event_id")}
                 for fee_modifier in fee_modifiers.values():
+                    if fee_modifier is None:
+                        continue
                     if 'field_id' in fee_modifier:
                         field = event_fields.get(fee_modifier['field_id'])
                         if not field:
