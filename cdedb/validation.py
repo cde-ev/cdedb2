@@ -2224,6 +2224,13 @@ def _event(val, argname=None, *, creation=False, _convert=True,
                     errs.extend(ee)
                 else:
                     new_modifiers[anid] = fee_modifier
+        msg = n_("Must not have multiple fee modifiers linked to the same"
+                 " field in one event part.")
+        for e1, e2 in itertools.combinations(
+                filter(None, val['fee_modifiers'].values()), 2):
+            if e1['field_id'] == e2['field_id']:
+                if e1['part_id'] == e2['part_id']:
+                    errs.append(('fee_modifiers', ValueError(msg)))
     return val, errs
 
 
@@ -2882,8 +2889,8 @@ def _by_field_datatype(val, argname=None, *, kind=None, _convert=True,
 
 
 @_addvalidator
-def _questionnaire(val, field_definitions, argname=None, *, _convert=True,
-                   _ignore_warnings=False):
+def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
+                   _convert=True, _ignore_warnings=False):
     """
     :type val: object
     :type argname: str or None
@@ -2922,15 +2929,28 @@ def _questionnaire(val, field_definitions, argname=None, *, _convert=True,
             if value['field_id'] and value['default_value']:
                 field = field_definitions.get(value['field_id'], None)
                 if not field:
-                    errs.extend(('default_value',
-                                 KeyError("Referenced field does not exist.")))
+                    msg = n_("Referenced field does not exist.")
+                    errs.append(('default_value',
+                                 KeyError(msg)))
                     continue
                 value['default_value'], e = _by_field_datatype(
                     value['default_value'], "default_value",
                     kind=field.get('kind', FieldDatatypes.str),
                     _convert=_convert, _ignore_warnings=_ignore_warnings)
                 errs.extend(e)
+            fee_modifier_fields = {
+                e['field_id'] for e in fee_modifiers.values()}
+            field_id = value['field_id']
+            if field_id and field_id in fee_modifier_fields:
+                if not value['kind'].allow_fee_modifier():
+                    msg = n_("Inappropriate questionnaire usage for fee"
+                             " modifier field.")
+                    errs.append(('kind', ValueError(msg)))
             ret.append(value)
+    for e1, e2 in itertools.combinations(val, 2):
+        if e1['field_id'] == e2['field_id']:
+            msg = n_("Must not duplicate field.")
+            errs.append(('field_id', ValueError(msg)))
     return ret, errs
 
 

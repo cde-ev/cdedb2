@@ -99,6 +99,21 @@ class QuestionnaireUsages(enum.IntEnum):
     registration = 1
     questionnaire = 2
 
+    def allow_readonly(self):
+        """Whether or not rows with this usage are allowed to be readonly."""
+        return self == QuestionnaireUsages.questionnaire
+
+    def allow_fee_modifier(self):
+        """Whether or not rows with this usage may use fee modifier fields."""
+        return self == QuestionnaireUsages.registration
+
+    def get_icon(self):
+        icons = {
+            QuestionnaireUsages.registration: "log-in",
+            QuestionnaireUsages.questionnaire: "edit",
+        }
+        return icons.get(self, repr(self))
+
 
 @enum.unique
 class GenesisStati(enum.IntEnum):

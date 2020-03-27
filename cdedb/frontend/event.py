@@ -783,8 +783,25 @@ class EventFrontend(AbstractUserFrontend):
         ret_fee_modifiers = {
             mod['id']: (fee_modifier_excavator(data, mod['part_id'], mod['id'])
                         if mod['part_id'] not in deletes
-                        and mod['id'] not in track_deletes else None)
+                        and mod['id'] not in fee_modifier_deletes else None)
             for mod in fee_modifiers.values()}
+
+        # Check for duplicate fields in the same part.
+        msg = n_("Must not have multiple fee modifiers linked to the same"
+                 " field in one event part.")
+        used_fields = {}
+        for e1, e2 in itertools.combinations(
+                filter(None, ret_fee_modifiers.values()), 2):
+            used_fields.setdefault(e1['part_id'], set()).add(e1['field_id'])
+            used_fields.setdefault(e2['part_id'], set()).add(e2['field_id'])
+            if e1['field_id'] == e2['field_id']:
+                if e1['part_id'] == e2['part_id']:
+                    base_key = "fee_modifier_field_id_{}_{}"
+                    key1 = base_key.format(e1['part_id'], e1['id'])
+                    rs.add_validation_error((key1, ValueError(msg)))
+                    key2 = base_key.format(e2['part_id'], e2['id'])
+                    rs.add_validation_error((key2, ValueError(msg)))
+
         for part_id in parts:
             marker = 1
             while marker < 2 ** 5:
@@ -801,6 +818,14 @@ class EventFrontend(AbstractUserFrontend):
                         request_extractor(rs, params, constraints),
                         part_id, -marker)
                     ret_fee_modifiers[-marker] = new_fee_modifier
+                    if new_fee_modifier['field_id'] in used_fields.get(
+                            part_id, set()):
+                        rs.add_validation_error(
+                            ("fee_modifier_field_id_{}_{}".format(
+                                part_id, -marker),
+                             ValueError(msg)))
+                    used_fields.setdefault(part_id, set()).add(
+                        new_fee_modifier['field_id'])
                 else:
                     break
                 marker += 1
@@ -3370,10 +3395,26 @@ class EventFrontend(AbstractUserFrontend):
              key = "field_id_{}".format(idx)
              return (lambda d: not d[key] or d[key] in reg_fields,
                      (key, ValueError(n_("Invalid field."))))
+
+        def fee_modifier_kind_constraint(idx):
+            field_key = "field_id_{}".format(idx)
+            kind_key = "kind_{}".format(idx)
+            msg = n_("Fee modifier field may only be used in"
+                     " registration questionnaire.")
+            fee_modifier_fields = {
+                e['field_id'] for
+                e in rs.ambience['event']['fee_modifiers'].values()}
+            valid_usages = {const.QuestionnaireUsages.registration.value}
+            return (lambda d: not (d[field_key] in fee_modifier_fields
+                                   and d[kind_key] not in valid_usages),
+                    (kind_key, ValueError(msg)))
+
         constraints = tuple(filter(
             None, (duplicate_constraint(idx1, idx2)
                    for idx1 in indices for idx2 in indices)))
-        constraints += tuple(valid_field_constraint(idx) for idx in indices)
+        constraints += tuple(itertools.chain.from_iterable(
+            (valid_field_constraint(idx), fee_modifier_kind_constraint(idx))
+            for idx in indices))
 
         params = tuple(("{}_{}".format(key, i), value)
                        for i in indices for key, value in spec.items())

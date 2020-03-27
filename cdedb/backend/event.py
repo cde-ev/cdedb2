@@ -3126,7 +3126,8 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         event = self.get_event(rs, event_id)
-        data = affirm("questionnaire", data, field_definitions=event['fields'])
+        data = affirm("questionnaire", data, field_definitions=event['fields'],
+                      fee_modifiers=event['fee_modifiers'])
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)

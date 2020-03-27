@@ -463,6 +463,67 @@ class TestEventBackend(BackendTest):
         expectation -= {track_id}
         self.assertEqual(expectation, event["tracks"].keys())
 
+    @as_users("anton")
+    def test_event_field_double_link(self, user):
+        questionnaire = [
+            {
+                'kind': const.QuestionnaireUsages.questionnaire,
+                'field_id': 1,
+                'title': None,
+                'info': None,
+                'input_size': None,
+                'readonly': False,
+                'default_value': None,
+            },
+            {
+                'kind': const.QuestionnaireUsages.questionnaire,
+                'field_id': 1,
+                'title': None,
+                'info': None,
+                'input_size': None,
+                'readonly': False,
+                'default_value': None,
+            },
+        ]
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_questionnaire(self.key, 1, questionnaire)
+        self.assertIn("Must not duplicate field. (field_id)", cm.exception.args)
+
+        old_event = self.event.get_event(self.key, 2)
+        self.event.set_questionnaire(self.key, old_event['id'], [])
+        data = {
+            'id': old_event['id'],
+            'fee_modifiers':
+                {
+                    anid: None
+                    for anid in old_event['fee_modifiers']
+                }
+        }
+        self.event.set_event(self.key, data)
+
+        data = {
+            'id': old_event['id'],
+            'fee_modifiers': {
+                -1: {
+                    'field_id': list(old_event['fields'])[0],
+                    'modifier_name': "is_child",
+                    'amount': decimal.Decimal("-8.00"),
+                    'part_id': list(old_event['parts'])[0],
+                },
+                -2: {
+                    'field_id': list(old_event['fields'])[0],
+                    'modifier_name': "is_child2",
+                    'amount': decimal.Decimal("-7.00"),
+                    'part_id': list(old_event['parts'])[0],
+                },
+            },
+        }
+        with self.assertRaises(ValueError) as cm:
+            self.event.set_event(self.key, data)
+        msg = "Must not have multiple fee modifiers linked to the same" \
+              " field in one event part."
+        self.assertIn(msg + " (fee_modifiers)", cm.exception.args)
+
     @as_users("annika", "garcia")
     def test_json_fields_with_dates(self, user):
         event_id = 1
