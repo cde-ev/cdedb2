@@ -178,7 +178,7 @@
                         {{ print_fee_modifier(part_id, -i, aclass='drow-new1', newrow=True) }}
                     {% endfor %}
                     {% if not has_registrations %}
-                        {{ print_fee_modifier(part_id, values.get('fee_modifier_create_last_index', {}).get(part_id, 0) - 1,
+                        {{ print_fee_modifier(part_id, -values.get('fee_modifier_create_last_index', {}).get(part_id, 0) - 1,
                                               aclass='drow-prototype1', newrow=True) }}
                     {% endif %}
                 </tbody>
