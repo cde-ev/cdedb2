@@ -458,12 +458,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Check for extensions before grouping ballots.
-        ref = now()
         update = False
         for ballot_id, ballot in ballots.items():
-            if ballot['extended'] is None and ref > ballot['vote_end']:
-                self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
-                update = True
+            update = self._update_ballot_state(rs, ballot) or update
         if update:
             return self.redirect(rs, "assembly/list_ballots")
 
@@ -607,42 +604,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        timestamp = now()
-        # check whether we need to initiate extension
-        if (ballot['extended'] is None
-                and timestamp > ballot['vote_end']):
-            self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
+        update = self._update_ballot_state(rs, ballot)
+        if update:
             return self.redirect(rs, "assembly/show_ballot")
-        finished = (
-                timestamp > ballot['vote_end']
-                and (not ballot['extended']
-                     or timestamp > ballot['vote_extension_end']))
-        # check whether we need to initiate tallying
-        if finished and not ballot['is_tallied']:
-            did_tally = self.assemblyproxy.tally_ballot(rs, ballot_id)
-            if did_tally:
-                path = self.conf.STORAGE_DIR / "ballot_result" / str(ballot_id)
-                attachment_result = {
-                    'path': path,
-                    'filename': 'result.json',
-                    'mimetype': 'application/json'}
-                to = [self.conf.BALLOT_TALLY_ADDRESS]
-                if rs.ambience['assembly']['mail_address']:
-                    to.append(rs.ambience['assembly']['mail_address'])
-                subject = "Abstimmung '{}' ausgezählt".format(ballot['title'])
-                hasher = hashlib.sha512()
-                with open(path, 'rb') as resultfile:
-                    hasher.update(resultfile.read())
-                self.do_mail(
-                    rs, "ballot_tallied", {'To': to, 'Subject': subject},
-                    attachments=(attachment_result,),
-                    params={'sha': hasher.hexdigest()})
-            return self.redirect(rs, "assembly/show_ballot")
+
         # initial checks done, present the ballot
         ballot['is_voting'] = self.is_ballot_voting(ballot)
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = self.get_online_result(ballot)
-
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
         has_voted = False
         own_vote = None
@@ -694,6 +663,49 @@ class AssemblyFrontend(AbstractUserFrontend):
             'secret': secret, 'has_voted': has_voted,
         })
 
+    def _update_ballot_state(self, rs, ballot):
+        """Helper to check if the current state of a ballot should be changed
+        and, if necessary, update it. If an update occur, the calling function
+        should redirect to the calling page.
+        This includes check for extension and tallying.
+        """
+
+        timestamp = now()
+        update = False
+
+        # check for extension
+        if (ballot['extended'] is None
+                and timestamp > ballot['vote_end']):
+            self.assemblyproxy.check_voting_priod_extension(rs, ballot['id'])
+            update = True
+
+        finished = (
+                timestamp > ballot['vote_end']
+                and (not ballot['extended']
+                     or timestamp > ballot['vote_extension_end']))
+        # check whether we need to initiate tallying
+        if finished and not ballot['is_tallied'] and not update:
+            did_tally = self.assemblyproxy.tally_ballot(rs, ballot['id'])
+            if did_tally:
+                path = self.conf.STORAGE_DIR / "ballot_result" / str(ballot['id'])
+                attachment_result = {
+                    'path': path,
+                    'filename': 'result.json',
+                    'mimetype': 'application/json'}
+                to = [self.conf.BALLOT_TALLY_ADDRESS]
+                if rs.ambience['assembly']['mail_address']:
+                    to.append(rs.ambience['assembly']['mail_address'])
+                subject = "Abstimmung '{}' ausgezählt".format(ballot['title'])
+                hasher = hashlib.sha512()
+                with open(path, 'rb') as resultfile:
+                    hasher.update(resultfile.read())
+                self.do_mail(
+                    rs, "ballot_tallied", {'To': to, 'Subject': subject},
+                    attachments=(attachment_result,),
+                    params={'sha': hasher.hexdigest(), 'title': ballot['title']})
+                update = True
+        return update
+
     def get_online_result(self, ballot):
         """Helper to get the result information of a tallied ballot."""
         result = None
@@ -734,10 +746,19 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def summary_ballots(self, rs, assembly_id):
         """Give an online summary of all tallied ballots of an assembly."""
-
-        blubs = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballot_ids = [k for k, v in blubs.items()]
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        assembly_ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballot_ids = [k for k, v in assembly_ballots.items()]
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+
+        # Check for extensions before grouping ballots.
+        update = False
+        for ballot_id, ballot in ballots.items():
+            update = self._update_ballot_state(rs, ballot) or update
+        if update:
+            return self.redirect(rs, "assembly/summary_ballots")
+
         done, extended, current, future = self.group_ballots(ballots)
 
         result = {k: self.get_online_result(v) for k, v in done.items()}
