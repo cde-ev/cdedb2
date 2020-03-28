@@ -423,15 +423,18 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         :type ballots: {int: str}
         :rtype: tuple({int: str})
-        :returns: Four dicts mapping ballot ids to ballots grouped by status 
+        :returns: Four dicts mapping ballot ids to ballots grouped by status
           in the order done, extended, current, future.
         """
         ref = now()
 
         future = {k: v for k, v in ballots.items()
                   if v['vote_begin'] > ref}
+        # `current` also contains ballots which wait for
+        # check_voting_priod_extension() being called on them
         current = {k: v for k, v in ballots.items()
-                   if v['vote_begin'] <= ref < v['vote_end']}
+                   if (v['vote_begin'] <= ref < v['vote_end']
+                       or (v['vote_end'] <= ref and v['extended'] is None))}
         extended = {k: v for k, v in ballots.items()
                     if (v['extended']
                         and v['vote_end'] <= ref < v['vote_extension_end'])}
