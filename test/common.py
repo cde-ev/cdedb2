@@ -421,7 +421,17 @@ USER_DICT = {
         'display_name': "Quintus",
         'given_names': "Quintus",
         'family_name': "da Quirm",
-        'url': '/core/persona/17/show?confirm_id=251bf5e54f8c188eb4ad6397ce45f4d0ccedad0e3df8fc5a303df7e4f2da0ac68d00b40c688fda4dc6d8785515af66661baa1c51529a6664b5e2e2c90b3fd379--........................--17,',
+        'url': '/core/persona/17/show?confirm_id=251bf5e54f8c188eb4ad6397ce45f4d0ccedad0e3df8fc5a303df7e4f2da0ac68d00b40c688fda4dc6d8785515af66661baa1c51529a6664b5e2e2c90b3fd379--........................--17',
+    },
+    "rowena": {
+        'id': 18,
+        'DB-ID': "DB-18-3",
+        'username': "rowena@example.cde",
+        'password': "secret",
+        'display_name': "Rowena",
+        'given_names': "Rowena",
+        'family_name': "Ravenclaw",
+        'url': '/core/persona/18/show?confirm_id=b3f4087f9de6a856126280429844518e4199d37426e6dfdcd01f2c3d19d7dd92ac4506148a7467ccabdac29bc3aef38f260c861868c41eab1f4bacd2f67f8b3a--........................--18',
     },
     "vera": {
         'id': 22,

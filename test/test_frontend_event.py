@@ -111,7 +111,7 @@ class TestEventFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungs-Nutzerverwaltung")
-        self.assertPresence("Ergebnis [2]", div='query-results')
+        self.assertPresence("Ergebnis [3]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
     @as_users("annika", "ferdinand")
