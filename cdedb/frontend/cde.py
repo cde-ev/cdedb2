@@ -16,6 +16,7 @@ import sys
 import tempfile
 import operator
 import datetime
+import time
 import dateutil.easter
 
 import psycopg2.extensions
@@ -1908,6 +1909,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -1962,6 +1964,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started ejection."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2024,6 +2027,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         worker = Worker(self.conf, task, rs)
         worker.start()
+        time.sleep(1)
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2106,6 +2110,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             worker = Worker(self.conf, task, rs)
             worker.start()
+            time.sleep(1)
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
