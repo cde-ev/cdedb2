@@ -15,7 +15,7 @@
     {% if is_admin %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="glyphicon-envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
     {{ util.breadcrumb_link(cdedblink("ml/show_subscription_details"), gettext("Advanced Management"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -68,7 +68,7 @@
                               class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_subscription_override') }}
                             {{ util.input_hidden(name="modsubscriber_id", value=subscription_override) }}
-                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="glyphicon-minus",
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                     title=gettext("Remove %(given_names)s %(family_name)s as forced subscriber")|format(
                                         given_names=persona['given_names'],
                                         family_name=persona['family_name'])) }}
@@ -120,7 +120,7 @@
                               class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                             {{ util.input_hidden(name="modunsubscriber_id", value=unsubscription_override) }}
-                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="glyphicon-minus",
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                     title=gettext("Remove %(given_names)s %(family_name)s as blocked subscriber")|format(
                                         given_names=persona['given_names'],
                                         family_name=persona['family_name'])) }}
@@ -163,7 +163,7 @@
                             class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/remove_whitelist') }}
                             {{ util.input_hidden(name="email", value=email) }}
-                            {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="glyphicon-minus",
+                            {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                     title=gettext("Remove %s from Whitelist")|format(email)) }}
                         </form>
                     </li>
@@ -176,7 +176,7 @@
         <div class="row">
             <div class="col-sm-4">
                 <div class="p">
-                    {{ util.href(cdedblink('ml/download_csv_subscription_states'), gettext("Overview"), icon='glyphicon-download', aclass='btn btn-info') }}
+                    {{ util.href(cdedblink('ml/download_csv_subscription_states'), gettext("Overview"), icon='download', aclass='btn btn-info') }}
                 </div>
             </div>
             <div class="col-sm-8">

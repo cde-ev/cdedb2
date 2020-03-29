@@ -12,10 +12,10 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], active=True,
-            icon='glyphicon-book') }}
+            icon='book') }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -31,11 +31,11 @@
 {% block content %}
     <div class="p">
         {{ util.href(cdedblink('event/change_course_form'), gettext("Edit"), readonly=is_locked,
-                     aclass="btn btn-sm btn-warning", icon="glyphicon-pencil") }}
+                     aclass="btn btn-sm btn-warning", icon="pen") }}
         {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
-                     aclass="btn btn-sm btn-warning", icon="glyphicon-user") }}
+                     aclass="btn btn-sm btn-warning", icon="user") }}
         {{ util.href("mailto:?to=%s"|s|format("; ".join(instructor_emails)), gettext("Email to course instructors"),
-                            icon="glyphicon-envelope", aclass="btn btn-sm btn-default", readonly=instructor_emails,
+                            icon="envelope", aclass="btn btn-sm btn-default", readonly=instructor_emails,
                             title=gettext("Send Mail to all course instructors.")) }}
     </div>
 
@@ -80,7 +80,7 @@
 
         {% if ambience['course']['notes'] %}
             <div class="col-md-6">
-                {% call util.bootstrap_panel(gettext("Orga-Notes"), icon='glyphicon-tag',
+                {% call util.bootstrap_panel(gettext("Orga-Notes"), icon='tag',
                                              aclass='panel panel-default panel-condensed') %}
                     {{ ambience['course']['notes']|md }}
                 {% endcall %}
@@ -159,7 +159,7 @@
     {% call util.bootstrap_panel(title=gettext("Description"), icon="glyphicon-pushpin", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
-    {% call util.bootstrap_panel(title=gettext("Actions"), icon="glyphicon-warning-sign", aclass="panel-danger mosp") %}
+    {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">
                 <div class="p">
@@ -167,7 +167,7 @@
                             style="display: inline;">
                         {{ util.anti_csrf_token('event/delete_course') }}
                         {{ util.input_submit(value=gettext("Delete"), readonly=is_locked or blockers,
-                                             aclass="btn btn-danger", icon="glyphicon-trash", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
+                                             aclass="btn btn-danger", icon="trash-alt", title=gettext("Course still has attendees.") if "attendees" in blockers else "" ) }}
                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                     </form>
                 </div>

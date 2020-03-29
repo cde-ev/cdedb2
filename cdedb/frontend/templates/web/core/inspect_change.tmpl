@@ -12,7 +12,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), gettext("Inspect Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/inspect_change', {'persona_id': pending['id']}),
-        "{} {}".format(current['given_names'], current['family_name']), icon="glyphicon-user", active="True") }}
+        "{} {}".format(current['given_names'], current['family_name']), icon="user", active="True") }}
 {% endblock %}
 
 {% macro show_diff(name, title, important=False) %}
@@ -110,7 +110,7 @@
             {{ util.input_hidden(name="generation", value=pending['generation']) }}
             {{ util.input_submit(value=gettext("Reject Changes"), aclass="btn btn-danger", icon="glyphicon-ban-circle") }}
         </form>
-        {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit Changes"), icon="glyphicon-pencil", aclass="btn btn-warning") }}
-        &emsp; {{ util.href(cdedblink('core/list_pending_changes'), gettext("Cancel"), icon="glyphicon-remove", aclass="btn btn-default") }}
+        {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit Changes"), icon="pen", aclass="btn btn-warning") }}
+        &emsp; {{ util.href(cdedblink('core/list_pending_changes'), gettext("Cancel"), icon="times-circle", aclass="btn btn-default") }}
     </div>
 {% endblock %}

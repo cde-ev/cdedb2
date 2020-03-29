@@ -9,14 +9,14 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="glyphicon-bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots"), active=True) }}
 {% endblock %}
 {% block content %}
     {% if is_admin and ambience['assembly']['is_active'] %}
         <div class="p">
             {{ util.href(cdedblink("assembly/create_ballot"), gettext("Create Ballot"), aclass="btn btn-success btn-sm",
-                    icon="glyphicon-plus") }}
+                    icon="plus") }}
         </div>
     {% endif %}
     {% for heading, sample, show_state in ((gettext("Future Ballots"), future, False),
@@ -43,7 +43,7 @@
                             {% endif %}
                             {% if is_admin and now() < ballot['vote_begin'] %}
                                 {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
-                                            aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="glyphicon-pencil") }}
+                                            aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="pen") }}
                             {% endif %}
                         </li>
                     {% endfor %}

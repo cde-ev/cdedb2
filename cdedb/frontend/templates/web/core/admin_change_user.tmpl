@@ -11,7 +11,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(values['id']), values['given_names'] + " " + values['family_name'],
-            icon="glyphicon-user") }}
+            icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
 {% endblock %}
 {% block content %}

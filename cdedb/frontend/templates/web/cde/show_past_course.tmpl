@@ -16,14 +16,14 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title'], icon="glyphicon-calendar") }}
+        ambience['pevent']['title'], icon="calendar-alt") }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
-        ambience['pcourse']['title'], icon="glyphicon-book", active=True) }}
+        ambience['pcourse']['title'], icon="book", active=True) }}
 {% endblock %}
 {% block content %}
     {% if is_admin %}
         <div class="p">
-            {{ util.href(cdedblink('cde/change_past_course_form'), gettext("Edit"), icon="glyphicon-pencil",
+            {{ util.href(cdedblink('cde/change_past_course_form'), gettext("Edit"), icon="pen",
                     aclass="btn btn-warning btn-sm") }}
         </div>
     {% endif %}
@@ -33,7 +33,7 @@
     <h2>{% trans %}Participants{% endtrans %}</h2>
     {% if is_admin %}
         {% call util.bootstrap_panel(title=gettext("Add Participant to this Course"),
-                aclass="panel-success panel-condensed", icon='glyphicon-plus') %}
+                aclass="panel-success panel-condensed", icon='plus') %}
                 <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
                     {{ util.anti_csrf_token('cde/add_participant') }}
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
@@ -86,7 +86,7 @@
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
-                            {{ util.input_submit(title=gettext("Remove"), icon="glyphicon-minus", aclass="btn btn-xs btn-danger list-button-float",
+                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                     value="") }}
                         </form>
                     {% endif %}
@@ -120,14 +120,14 @@
 
 
     {% if is_admin %}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="glyphicon-warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('cde/delete_past_course') }}" method="POST"
                                 id="deletecourseform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_course') }}
-                            {{ util.input_submit(value=gettext("Delete Course"), icon="glyphicon-trash", aclass="btn btn-danger") }}
+                            {{ util.input_submit(value=gettext("Delete Course"), icon="trash-alt", aclass="btn btn-danger") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>
                     </div>

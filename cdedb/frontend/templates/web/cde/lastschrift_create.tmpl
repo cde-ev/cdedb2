@@ -24,7 +24,7 @@
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
                                 "{} {}".format(ambience['persona']['given_names'],
                                                ambience['persona']['family_name']),
-                                icon="glyphicon-euro") }}
+                                icon="euro-sign") }}
     {% else %}
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
                                 gettext("existing Direct Debit Authorization")) }}

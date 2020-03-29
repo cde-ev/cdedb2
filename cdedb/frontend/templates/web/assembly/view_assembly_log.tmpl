@@ -15,13 +15,13 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="glyphicon-bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/view_assembly_log"), gettext("Log"), active=True) }}
 {% endblock %}
 {% block content %}
     {% if log %}
         <div class="p">
-            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="glyphicon-arrow-down") }}
+            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
         </div>
     {% endif %}
     <table class="table table-condensed table-hover">

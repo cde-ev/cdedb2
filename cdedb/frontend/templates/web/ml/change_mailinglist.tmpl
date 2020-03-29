@@ -13,7 +13,7 @@
     {% if is_admin %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="glyphicon-envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
     {{ util.breadcrumb_link(cdedblink("ml/change_mailinglist"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}

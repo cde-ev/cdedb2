@@ -16,7 +16,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher", active=True) }}
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
@@ -94,7 +94,7 @@
 
     {% if values['event_id'] in user.orga or is_admin %}
         {% if ambience['event']['notes'] %}
-            {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="glyphicon-tag",
+            {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
                                          aclass="panel-default panel-condensed") %}
                 <div id="orga-notes">{{ ambience['event']['notes']|md }}</div>
             {% endcall %}
@@ -108,7 +108,7 @@
         {% endif %}
 
         {% if ambience['event']['mail_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Registration mail free text"), icon="glyphicon-envelope",
+            {% call util.bootstrap_panel(title=gettext("Registration mail free text"), icon="envelope",
                                          aclass="panel-default panel-condensed") %}
                 <div id="mail-text">{{ ambience['event']['mail_text']|linebreaks }}</div>
             {% endcall %}
@@ -123,7 +123,7 @@
                             <input type="text" name="phrase" class="form-control" id="input-showregistration-id"
                                    aria-label="{% trans %}ID, name or email{% endtrans %}"/>
                             <span class="input-group-btn">
-                                {{ util.input_submit("", icon='glyphicon-search', title=gettext("Search")) }}
+                                {{ util.input_submit("", icon='search', title=gettext("Search")) }}
                             </span>
                         </div>
                     </form>
@@ -145,7 +145,7 @@
 
             {% if is_admin %}
                 <div class="col-md-6" id="manage-orgas">
-                    {% call util.bootstrap_panel(title="Orgas", icon='glyphicon-user') %}
+                    {% call util.bootstrap_panel(title="Orgas", icon='user') %}
                     <ul>
                         {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                             <li class="hide-hover-container clearfix-after">
@@ -155,7 +155,7 @@
                                     {{ util.anti_csrf_token('event/remove_orga') }}
                                     {{ util.input_hidden(name="orga_id", value=anid) }}
                                     {{ util.input_submit(value="", readonly=is_locked, title=gettext("Remove Orga"),
-                                                         icon='glyphicon-minus', aclass='btn btn-xs btn-danger list-button-float') }}
+                                                         icon='minus', aclass='btn btn-xs btn-danger list-button-float') }}
                                 </form>
                             </li>
                         {% endfor %}
@@ -185,11 +185,11 @@
             {% endif %}
 
             <div class="col-md-6" id="minor-form">
-                {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='glyphicon-file', aclass='panel-warning') %}
+                {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}
                     <p>
                         {% if minor_form_present %}
                             {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("current Form"),
-                                                    icon='glyphicon-file') -%}
+                                                    icon='file') -%}
                             	Form present: {{ link }}
                             {% endtrans %}
                             <form action="{{ cdedblink("event/change_minor_form") }}" method="POST"
@@ -197,7 +197,7 @@
                                 {{ util.anti_csrf_token("event/change_minor_form") }}
                                 {{ util.input_hidden(name="delete", value=True) }}
                                 {{ util.input_submit(value=gettext("Remove Minor Form"), readonly=is_locked,
-                                                     icon="glyphicon-trash", aclass='btn btn-danger') }}
+                                                     icon="trash-alt", aclass='btn btn-danger') }}
                                 {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                             </form>
                             <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -234,10 +234,10 @@
                     </p>
                     <div class="p">
                         {% if ambience['event']['offline_lock'] %}
-                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='glyphicon-download', aclass='btn btn-primary') }}
+                            {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-primary') }}
                         {% else %}
                             <form action="{{ cdedblink('event/download_export') }}" method="GET" id="fullexportform" class="display-inline">
-                                {{ util.input_submit(value=gettext("JSON file"), icon='glyphicon-download') }}
+                                {{ util.input_submit(value=gettext("JSON file"), icon='download') }}
                                 {{ util.input_checkbox(name="agree_unlocked_download", label=gettext("Are you sure to download a full export before locking?")) }}
                             </form>
                         {% endif %}
@@ -312,7 +312,7 @@
             and ("cde_admin" in user.roles and not ambience['event']['is_archived']
                  or "ml_admin" in user.roles and (not ambience['event']['orga_address']
                                                   or not participant_list)) %}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="glyphicon-warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if "ml_admin" in user.roles %}
                 {% if not ambience['event']['orga_address'] %}
                     <div class="row" id="create-orga-list">
@@ -323,7 +323,7 @@
                                     {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                     {{ util.input_hidden("orgalist", value=True) }}
                                     {{ util.input_submit(value=gettext("Create Orga-Mailinglist"),
-                                                         aclass="btn btn-success", icon="glyphicon-plus") }}
+                                                         aclass="btn btn-success", icon="plus") }}
                                 </form>
                             </div>
                         </div>
@@ -345,7 +345,7 @@
                                     {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                     {{ util.input_hidden("orgalist", value=False) }}
                                     {{ util.input_submit(value=gettext("Create Participant-Mailinglist"),
-                                                         aclass="btn btn-success", icon="glyphicon-plus") }}
+                                                         aclass="btn btn-success", icon="plus") }}
                                 </form>
                             </div>
                         </div>
@@ -394,7 +394,7 @@
                               style="display: inline;">
                             {{ util.anti_csrf_token('event/delete_event') }}
                             {{ util.input_submit(value=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
-                                                 aclass="btn btn-danger", icon="glyphicon-trash",
+                                                 aclass="btn btn-danger", icon="trash-alt",
                                                  title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                         </form>

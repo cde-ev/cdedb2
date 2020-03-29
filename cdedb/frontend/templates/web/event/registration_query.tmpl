@@ -17,7 +17,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations"), active=True) }}
 {% endblock %}
 {% block content %}
@@ -25,7 +25,7 @@
         <div class="col-md-4">
             <div class="p button-par">
                 {{ util.href(cdedblink("event/add_registration_form"), gettext("Add Participant"),
-                             readonly=is_locked, icon='glyphicon-plus', aclass='btn btn-sm btn-success') }}
+                             readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
                 {% if ambience['event']['fields'] and has_registrations %}
                     {{ util.href(cdedblink("event/field_set_select"), gettext("Set Field"),
                                   readonly=is_locked, icon='glyphicon-edit', aclass='btn btn-sm btn-warning') }}
@@ -84,11 +84,11 @@
                             entry["persona.username"])) %}
                 {% endfor %}
                 {{ util.href("mailto:?bcc=%s"|s|format("; ".join(usernames)), gettext("bcc email to all"),
-                             icon="glyphicon-envelope", aclass="btn btn-sm btn-default",
+                             icon="envelope", aclass="btn btn-sm btn-default",
                              title=gettext("Send Mail to all registrations listed below as BCC.")) }}
             {% else %}
                 {{ util.href("#", gettext("bcc email to all"), readonly=True,
-                             icon="glyphicon-envelope", aclass="btn btn-sm btn-default",
+                             icon="envelope", aclass="btn btn-sm btn-default",
                              title=gettext("Email button is only available, if the email field is shown.")) }}
             {% endif %}
         </div>
@@ -101,7 +101,7 @@
                 {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
             </button>
             <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
-                {{ util.make_icon('pencil-alt') }} {% trans %}Edit{% endtrans %}
+                {{ util.make_icon('pen') }} {% trans %}Edit{% endtrans %}
             </button>
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#btn-course-choices').click(function(){

@@ -9,7 +9,7 @@
 {% block content %}
     {% if values['is_search'] and result %}
         <div class="p">
-            {{ util.href("#membersearchform", gettext("Go to Search."), aclass="btn btn-default btn-sm", icon="glyphicon-arrow-down") }}
+            {{ util.href("#membersearchform", gettext("Go to Search."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
         </div>
         <h2 id="result-count">
             {% trans %}Result{% endtrans %}
@@ -90,11 +90,11 @@
             {%- endif %}
             </div>
             <div class="panel-footer text-right">
-                {{ util.input_submit(gettext("Search"), icon='glyphicon-search') }}
+                {{ util.input_submit(gettext("Search"), icon='search') }}
             </div>
         </div>
     </form>
-    {% call util.bootstrap_panel(title=gettext("Properties of the search"), aclass='panel-default mosp', icon='glyphicon-info-sign') %}
+    {% call util.bootstrap_panel(title=gettext("Properties of the search"), aclass='panel-default mosp', icon='info-circle') %}
         <ul class="slim">
             <li>
                 {% trans %}

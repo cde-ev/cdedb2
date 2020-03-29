@@ -11,7 +11,7 @@
 {% block content %}
     <div class="row">
         <div class="col-md-6" id="member-quick-search">
-            {% call util.bootstrap_panel(title=gettext("CdE-Member Quick-Search"), icon='glyphicon-search', aclass="panel-primary") %}
+            {% call util.bootstrap_panel(title=gettext("CdE-Member Quick-Search"), icon='search', aclass="panel-primary") %}
                 {% if "searchable" in user.roles %}
                     <form action="{{ cdedblink('cde/member_search') }}" method="GET" id="membersearchform"
                             class="form-horizontal">
@@ -20,7 +20,7 @@
                             {{ util.input_text(name="qval_fulltext", arialabel=gettext("Search item")) }}
                         </p>
                         <div class="text-right">
-                            {{ util.input_submit(gettext("Search"), icon='glyphicon-search') }}
+                            {{ util.input_submit(gettext("Search"), icon='search') }}
                         </div>
                     </form>
                 {% else %}
@@ -43,7 +43,7 @@
             {% endcall %}
         </div>
         <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Initiative 25+"), icon='glyphicon-euro') %}
+            {% call util.bootstrap_panel(title=gettext("Initiative 25+"), icon='euro-sign') %}
                 {% if has_lastschrift %}
                     <p>
                         {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
@@ -59,7 +59,7 @@
                             {% endtrans %}
                         </strong>.
                         {% trans link=util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
-                                 gettext("existing Direct Debit Authorization"), icon='glyphicon-euro')-%}
+                                 gettext("existing Direct Debit Authorization"), icon='euro-sign')-%}
                             View Your {{ link }}.
                         {% endtrans %}
                     </p>
@@ -82,7 +82,7 @@
         </div>
     </div>
     {% if not has_lastschrift %}
-        {% call util.bootstrap_panel(title=gettext("Membership-Fee"), icon='glyphicon-euro') %}
+        {% call util.bootstrap_panel(title=gettext("Membership-Fee"), icon='euro-sign') %}
             {% if "member" in user.roles %}
                 <p>
                     {% trans amount=data['balance']|money(lang=lang) %}

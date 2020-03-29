@@ -17,13 +17,13 @@
 {% macro print_transaction(t_id) %}
     {% if data["errors{}".format(t_id)] %}
         {% set aclass="panel-danger" %}
-        {% set anicon="glyphicon-exclamation-sign" %}
+        {% set anicon="exclamation-circle" %}
     {% elif data["warnings{}".format(t_id)] %}
         {% set aclass="panel-warning" %}
-        {% set anicon="glyphicon-warning-sign" %}
+        {% set anicon="exclamation-triangle" %}
     {% else %}
         {% set aclass="panel-default" %}
-        {% set anicon="glyphicon-info-sign" %}
+        {% set anicon="info-circle" %}
     {% endif %}
     {% call util.bootstrap_panel(title=gettext("Line %(lineno)s")|format(lineno=t_id), aclass=aclass,
                                  icon=anicon, anid="transaction-container{}".format(t_id)) %}

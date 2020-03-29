@@ -48,7 +48,7 @@
             </div>
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
-                        icon="glyphicon-user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
+                        icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
                 {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="glyphicon-list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'ml_log')) }}
             {% else %}

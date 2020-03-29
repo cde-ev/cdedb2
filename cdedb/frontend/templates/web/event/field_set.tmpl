@@ -19,11 +19,11 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
 {{ util.breadcrumb_link(cdedblink("event/field_set_select"), gettext("Set Field")) }}
 {{ util.breadcrumb_link(cdedblink("event/field_set_form"),
-                        ambience['event']['fields'][values['field_id']|int]['field_name'], active=True, icon="glyphicon-tag") }}
+                        ambience['event']['fields'][values['field_id']|int]['field_name'], active=True, icon="tag") }}
 {% endblock %}
 {% block content %}
     {% if ordered %}

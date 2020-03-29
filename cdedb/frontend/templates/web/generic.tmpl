@@ -82,7 +82,7 @@
         <div class="col-md-4">
             <div class="p button-par">
                 {{ util.href(cdedblink("{}/create_user".format(realm)), gettext("Create User"),
-                        icon="glyphicon-plus", aclass="btn btn-success btn-sm") }}
+                        icon="plus", aclass="btn btn-success btn-sm") }}
             </div>
             {% if info %}
                 <p class="text-muted">{{ util.make_icon('info-cirlce') }} {{ info }}</p>
@@ -588,10 +588,10 @@
                     <td>
                         {%- if query.scope == 'qview_registration' -%}
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
-                                         gettext('Details'), icon='glyphicon-user', aclass='btn btn-xs btn-info', rel='noreferrer') }}
+                                         gettext('Details'), icon='user', aclass='btn btn-xs btn-info', rel='noreferrer') }}
                         {%- else -%}
                             {{ util.href(show_user_link(row[primary_field]),
-                                         gettext('Profile'), icon='glyphicon-user', aclass='btn btn-xs btn-info') }}
+                                         gettext('Profile'), icon='user', aclass='btn btn-xs btn-info') }}
                         {%- endif -%}
                     </td>
                     {% for csvfield in query.fields_of_interest %}
@@ -629,7 +629,7 @@
 {% endmacro %}
 
 {% macro log_filter(endpoint, enum, kind, filter_name=None, aux=None) %}
-    {% call util.bootstrap_panel(title=gettext("Filter"), icon="glyphicon-search", aclass="panel-primary") %}
+    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ endpoint }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
                     entries=enum|enum_entries(processing=gettext), small=True) }}

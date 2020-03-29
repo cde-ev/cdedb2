@@ -9,7 +9,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -134,7 +134,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
             <div class="row">
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed registrations"), aclass='panel panel-info',
-                                                 icon='glyphicon-user', anid='box-changed-registrations') %}
+                                                 icon='user', anid='box-changed-registrations') %}
                         <ul class="slim details-list">
                             {% for reg_id, reg_diff in summary['changed_registrations'].items() %}
                                 <li>
@@ -152,7 +152,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
                 <div class="col-md-4">
                     {% call util.bootstrap_panel(gettext("Changed registration attributes"), aclass='panel panel-info',
-                                                 icon='glyphicon-user', anid='box-changed-registration-fields') %}
+                                                 icon='user', anid='box-changed-registration-fields') %}
                         <ul class="slim">
                             {% for field in summary['changed_registration_fields'] %}
                                 <li>{{ reg_titles.get(field, field) }}</li>
@@ -168,7 +168,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
             {% if summary['new_registration_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel panel-success',
-                                                 icon='glyphicon-user', anid='box-new-registrations') %}
+                                                 icon='user', anid='box-new-registrations') %}
                         <ul class="slim">
                             {% for reg_id in summary['new_registration_ids'] %}
                                 <li>
@@ -185,7 +185,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
             {% if summary['real_deleted_registration_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel panel-danger',
-                                                 icon='glyphicon-user', anid='box-deleted-registrations') %}
+                                                 icon='user', anid='box-deleted-registrations') %}
                         <ul class="slim">
                             {% for reg_id in summary['real_deleted_registration_ids'] %}
                                 <li>
@@ -205,7 +205,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% if summary['changed_courses'] %}
             <div class="row">
                 <div class="col-md-8">
-                    {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='glyphicon-book',
+                    {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel panel-info', icon='book',
                                                  anid='box-changed-courses') %}
                         <ul class="slim details-list">
                             {% for course_id, course_diff in summary['changed_courses'].items() %}
@@ -226,7 +226,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
                 <div class="col-md-4">
                     {% call util.bootstrap_panel(gettext("Changed course attributes"), aclass='panel panel-info',
-                                                 icon='glyphicon-book', anid='box-changed-course-fields') %}
+                                                 icon='book', anid='box-changed-course-fields') %}
                         <ul class="slim">
                             {% for field in summary['changed_course_fields'] %}
                                 <li>{{ course_titles.get(field, field) }}</li>
@@ -241,7 +241,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
             <!-- ---------------------- New Courses---------------------- -->
             {% if summary['new_course_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='glyphicon-book',
+                    {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='book',
                                                  anid='box-new-courses') %}
                         <ul class="slim">
                             {% for course_id in summary['new_course_ids'] %}
@@ -257,7 +257,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
             <!-- ---------------------- Deleted Courses ---------------------- -->
             {% if summary['real_deleted_course_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='glyphicon-book',
+                    {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='book',
                                                  anid='box-deleted-courses') %}
                         <ul class="slim">
                             {% for course_id in summary['real_deleted_course_ids'] %}
@@ -278,7 +278,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
         {% if summary['changed_lodgements'] %}
             <div class="row">
                 <div class="col-md-8">
-                    {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='glyphicon-home',
+                    {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel panel-info', icon='home',
                                                  anid='box-changed-lodgements') %}
                         <ul class="slim details-list">
                             {% for lodgement_id, lodgement_diff in summary['changed_lodgements'].items() %}
@@ -297,7 +297,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
                 </div>
                 <div class="col-md-4">
                     {% call util.bootstrap_panel(gettext("Changed lodgement attributes"), aclass='panel panel-info',
-                                                 icon='glyphicon-home', anid='box-changed-lodgement-fields') %}
+                                                 icon='home', anid='box-changed-lodgement-fields') %}
                         <ul class="slim">
                             {% for field in summary['changed_lodgement_fields'] %}
                                 <li>{{ lodgement_titles.get(field, field) }}</li>
@@ -312,7 +312,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
             <!-- ---------------------- New Lodgements ---------------------- -->
             {% if summary['new_lodgement_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='glyphicon-home',
+                    {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='home',
                                                  anid='box-new-lodgements') %}
                         <ul class="slim">
                             {% for lodgement_id in summary['new_lodgement_ids'] %}
@@ -329,7 +329,7 @@ diff of the item and shows a table with all changed attributes, old and new valu
             {% if summary['real_deleted_lodgement_ids'] %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel panel-danger',
-                                                 icon='glyphicon-home', anid='box-deleted-lodgements') %}
+                                                 icon='home', anid='box-deleted-lodgements') %}
                         <ul class="slim">
                             {% for lodgement_id in summary['real_deleted_lodgement_ids'] %}
                                 <li>

@@ -16,11 +16,11 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/checkin"), gettext("Checkin"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% call util.bootstrap_panel(gettext("Search Name"), icon='glyphicon-search', aclass='panel-primary panel-condensed softhide',
+    {% call util.bootstrap_panel(gettext("Search Name"), icon='search', aclass='panel-primary panel-condensed softhide',
                                  anid='searchpanel') %}
         <input type="text" id="selector" class="form-control" value=""
                aria-label="{% trans %}Name to Search{% endtrans %}" />
@@ -72,10 +72,10 @@
                     <div class="col-sm-2">
                         {{ util.href(cdedblink('event/change_registration',
                                                {'registration_id': registration_id, 'skip': 'reg.checkin'}),
-                                     title=gettext("Edit"), icon='glyphicon-pencil', aclass="btn btn-sm btn-warning") }}
+                                     title=gettext("Edit"), icon='pen', aclass="btn btn-sm btn-warning") }}
                         {{ util.href(cdedblink('event/show_registration',
                                                {'registration_id': registration_id}),
-                                     title=gettext("Details"), icon='glyphicon-user', aclass="btn btn-sm btn-info") }}
+                                     title=gettext("Details"), icon='user', aclass="btn btn-sm btn-info") }}
 
                     </div>
                     <div class="col-sm-2">

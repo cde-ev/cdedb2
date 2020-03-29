@@ -8,14 +8,14 @@
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'],
-                            icon="glyphicon-envelope", active=True) }}
+                            icon="envelope", active=True) }}
 {% endblock %}
 {% block content %}
     {% if ambience['mailinglist']['event_id'] %}
         <div class="subtitle">
             {% if event['is_visible'] %}
                 {% set link = util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
-                        icon='glyphicon-blackboard') %}
+                        icon='chalkboard-teacher') %}
             {% else %}
                 {% set link = "%s %s"|s|format(util.make_icon('chalkboard-teacher'), event['title']) %}
             {% endif %}
@@ -28,7 +28,7 @@
         <div class="subtitle">
             {% if assembly['is_visible'] %}
                 {% set link = util.href(cdedblink('assembly/show_assembly',{'assembly_id':assembly['id']}), assembly['title'],
-                        icon='glyphicon-bullhorn') %}
+                        icon='bullhorn') %}
             {% else %}
                 {% set link = "%s %s"|s|format(util.make_icon('bullhorn'), assembly['title']) %}
             {% endif %}
@@ -52,7 +52,7 @@
     {{ ambience['mailinglist']['description']|md }}
 
     {% if is_admin and ambience['mailinglist']['notes'] %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="glyphicon-tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['mailinglist']['notes']|md }}
         {% endcall %}
     {% endif %}
@@ -91,7 +91,7 @@
                                   id="unsubscribeform" style="display: inline;">
                                 {{ util.anti_csrf_token('ml/unsubscribe') }}
                                 {{ util.input_submit(value=gettext("Unsubscribe"), aclass="btn btn-danger btn-sm",
-                                                     icon="glyphicon-remove") }}
+                                                     icon="times-circle") }}
                             </form>
                         </div>
 
@@ -140,7 +140,7 @@
                                 id="cancel-request-form">
                             {{ util.anti_csrf_token('ml/cancel_subscription') }}
                             {{ util.input_submit(value=gettext("Cancel request"), aclass="btn btn-sm btn-danger",
-                                    icon="glyphicon-remove") }}
+                                    icon="times-circle") }}
                         </form>
                     {% elif state != enums['SubscriptionStates'].unsubscription_override %}
                         <p><strong>

@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), gettext("Configure Questionnaire")) }}
     {{ util.breadcrumb_link(cdedblink("event/reorder_questionnaire"), gettext("Reorder Questionnaire"), active=True) }}
 {% endblock %}

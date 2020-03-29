@@ -8,7 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -20,7 +20,7 @@
 {% block content %}
     {% if errors %}
         {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel panel-warning',
-                                     icon='glyphicon-exclamation-sign') %}
+                                     icon='exclamation-circle') %}
             <p class="text-warning">
                 {% trans %}
                     Your upload contained errors and was not processed.

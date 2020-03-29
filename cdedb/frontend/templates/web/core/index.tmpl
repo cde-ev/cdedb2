@@ -32,7 +32,7 @@
     <div class="row">
         {% if 'core_admin' in user.roles %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='glyphicon-user',
+            {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='user',
                                          aclass="panel-warning", anid="adminshowuser-box") %}
                 <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
                     <div class="sr-only">{% trans %}Search for Users by ID or Name{% endtrans %}</div>
@@ -40,7 +40,7 @@
                         <input type="text" name="phrase" class="form-control" id="input-showuser-id"
                                aria-label="{% trans %}CdEDB-ID, Name or E-Mail{% endtrans %}"/>
                         <span class="input-group-btn">
-                            {{ util.input_submit("", icon='glyphicon-search', title=gettext("Search")) }}
+                            {{ util.input_submit("", icon='search', title=gettext("Search")) }}
                         </span>
                     </div>
                 </form>
@@ -108,13 +108,13 @@
 
         {% if dashboard['orga'] %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='glyphicon-blackboard',
+            {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='chalkboard-teacher',
                                          aclass='panel-warning', anid="orga-box") %}
                 <ul class="slim spaced">
                     {% for event_id, event in dashboard['orga']|xdictsort('begin') %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
-                                    icon='glyphicon-blackboard') }}
+                                    icon='chalkboard-teacher') }}
                             {% if event['registration_start'] %}
                                 <br />
                                 {% if event['registration_start'] <= dashboard['present'] %}
@@ -160,7 +160,7 @@
                                 {% if event['tracks'] %}
                                     &bull;
                                     {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
-                                                 gettext("Courses"), icon='glyphicon-book') }}
+                                                 gettext("Courses"), icon='book') }}
                                 {% endif %}
                             </span>
                         </li>
@@ -172,13 +172,13 @@
 
         {% if 'moderator' in dashboard %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='glyphicon-envelope',
+            {% call util.bootstrap_panel(title=gettext("Moderated Mailinglists"), icon='envelope',
                                          aclass='panel-warning', anid='moderator-box') %}
                 <ul class="slim spaced">
                     {% for mailinglist_id, mailinglist in dashboard['moderator']|xdictsort('title') %}
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
-                                         mailinglist['title'], icon='glyphicon-envelope') }}
+                                         mailinglist['title'], icon='envelope') }}
                             {% if mailinglist['requests'] %}
                                 <br />
                                 {{ util.href(cdedblink('ml/management', {'mailinglist_id' : mailinglist_id}),
@@ -195,13 +195,13 @@
 
         {% if 'events' in dashboard %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Current Events"), icon='glyphicon-blackboard',
+            {% call util.bootstrap_panel(title=gettext("Current Events"), icon='chalkboard-teacher',
                                          aclass='panel-success', anid='event-box') %}
                 <ul class="slim spaced">
                     {% for event_id, event in dashboard['events']|xdictsort('begin') %}
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
-                                         icon='glyphicon-blackboard') }}
+                                         icon='chalkboard-teacher') }}
                             <br />
                             {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
                             <br />
@@ -247,13 +247,13 @@
 
         {% if 'assemblies' in dashboard %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Current Assemblies"), icon='glyphicon-bullhorn',
+            {% call util.bootstrap_panel(title=gettext("Current Assemblies"), icon='bullhorn',
                                          aclass='panel-success', anid='assembly-box') %}
                 <ul class="slim spaced">
                     {% for assembly_id, assembly in dashboard['assemblies']|xdictsort('signup_end') %}
                         <li>
                             {{ util.href(cdedblink('assembly/show_assembly', {'assembly_id': assembly_id}),
-                                         assembly['title'], icon='glyphicon-bullhorn') }}
+                                         assembly['title'], icon='bullhorn') }}
                             <br />
                             {% if assembly['does_attend'] %}
                                 {% trans %}

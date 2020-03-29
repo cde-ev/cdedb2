@@ -111,7 +111,7 @@
                                     <p class="navbar-text">
                                         <span class="sr-only">{% trans %}Logged-In as{% endtrans %}</span>
                                         <span id="displayname">
-                                            {{ util.href(cdedblink("core/mydata"), user.display_name, icon="glyphicon-user") }}
+                                            {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
                                         </span>
                                     </p>
                                     <button type="submit" name="submitlogout" value="{% trans %}Logout{% endtrans %}"
@@ -130,7 +130,7 @@
 
                     <ul class="nav navbar-nav">
                         <li {% if mainnav_active == 'core' %}class="active" aria-current="page"{% endif %}>
-                            {{ util.href(cdedblink("core/index"), gettext("Index"), icon="glyphicon-home") }}
+                            {{ util.href(cdedblink("core/index"), gettext("Index"), icon="home") }}
                             </li>
                         {% if "cde" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'cde' %}class="active" aria-current="page"{% endif %}>
@@ -138,16 +138,16 @@
                                 </li>
                         {% endif %}
                         <li {% if mainnav_active == 'event' %}class="active" aria-current="page"{% endif %}>
-                            {{ util.href(cdedblink("event/index"), gettext("Events"), icon="glyphicon-blackboard") }}
+                            {{ util.href(cdedblink("event/index"), gettext("Events"), icon="chalkboard-teacher") }}
                         </li>
                         {% if "ml" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'ml' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("ml/index"), gettext("Mailinglists"), icon="glyphicon-envelope") }}
+                                {{ util.href(cdedblink("ml/index"), gettext("Mailinglists"), icon="envelope") }}
                             </li>
                         {% endif %}
                         {% if "assembly" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'assembly' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("assembly/index"), gettext("Assemblies"), icon="glyphicon-bullhorn") }}
+                                {{ util.href(cdedblink("assembly/index"), gettext("Assemblies"), icon="bullhorn") }}
                             </li>
                         {% endif %}
                     </ul>

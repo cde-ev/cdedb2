@@ -67,7 +67,7 @@
     <pre style="max-width: 500px;">{{ result['result'] }}</pre>
 
     {# info box for preferential votes #}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='glyphicon-info-sign', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
                 This vote was a preferential vote. Voters arranged the candidates according to their preference.

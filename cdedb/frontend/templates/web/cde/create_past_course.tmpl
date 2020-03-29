@@ -12,7 +12,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title'], icon="glyphicon-calendar") }}
+        ambience['pevent']['title'], icon="calendar-alt") }}
 {{ util.breadcrumb_link(cdedblink("cde/create_past_course", {"pevent_id": ambience['pevent']['id']}),
         gettext("Create Course"), active=True) }}
 {% endblock %}
@@ -30,7 +30,7 @@
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-        {{ util.form_input_static(aclass='text-info', icon='glyphicon-info-sign',
+        {{ util.form_input_static(aclass='text-info', icon='info-circle',
                           value=gettext("Warning: The new Course will be immediately visible to all CdE members "
                                         "viewing this past event.")) }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("cde/show_past_event")) }}

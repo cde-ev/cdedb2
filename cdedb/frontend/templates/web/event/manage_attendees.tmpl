@@ -10,9 +10,9 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='glyphicon-book') }}
+    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}
     {{ util.breadcrumb_link(cdedblink("event/manage_attendees"), gettext("Manage Attendees"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -74,6 +74,6 @@
             </script>
         </div>
         {{ util.input_submit(value=gettext("Save")) }}&emsp;
-        {{ util.href(cdedblink('event/show_course'), gettext("Cancel"), icon='glyphicon-remove', aclass="btn btn-default") }}
+        {{ util.href(cdedblink('event/show_course'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>
 {% endblock %}

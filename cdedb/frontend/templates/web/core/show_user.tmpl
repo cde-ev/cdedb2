@@ -12,7 +12,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
                                                                                   ambience['persona']['family_name']),
-        icon="glyphicon-user", active=True) }}
+        icon="user", active=True) }}
 {% endblock %}
 {% block content %}
     {% if is_relative_admin %}
@@ -38,16 +38,16 @@
                 {% if is_relative_admin %}
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_user_form'), gettext("Edit (normal)"),
-                                aclass="btn btn-warning btn-sm", icon="glyphicon-pencil") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit (as Admin)"),
-                                aclass="btn btn-warning btn-sm", icon="glyphicon-pencil") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                     {% else %}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit"),
-                                aclass="btn btn-warning btn-sm", icon="glyphicon-pencil") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                     {% endif %}
                 {% else %}
                     {{ util.href(cdedblink('core/change_user_form'), gettext("Edit"),
-                            aclass="btn btn-warning btn-sm", icon="glyphicon-pencil") }}
+                            aclass="btn btn-warning btn-sm", icon="pen") }}
                 {% endif %}
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink("core/change_password_form"), gettext("Change Password"),
@@ -74,7 +74,7 @@
             {% if data['id'] == user.persona_id or is_relative_admin -%}
                 <br />
                 {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
-                        aclass="btn btn-xs btn-warning", icon="glyphicon-pencil") }}
+                        aclass="btn btn-xs btn-warning", icon="pen") }}
             {% endif %}
         </div>
     {% endif %}
@@ -136,7 +136,7 @@
                     {% if 'core_admin' in user.roles
                             and vars['any_realm_not']
                             and not ambience['persona']['is_archived'] %}
-                        {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="glyphicon-pencil",
+                        {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pen",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
                 </dd>
@@ -160,7 +160,7 @@
                         <i>{% trans %}None{% endtrans %}</i>
                     {% endif %}
                     {% if 'meta_admin' in user.roles and not ambience['persona']['is_archived'] %}
-                        {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="glyphicon-pencil",
+                        {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
                 </dd>
@@ -182,7 +182,7 @@
                         {% trans %}(Trialmembership){% endtrans %}
                     {% endif %}
                     {% if is_relative_admin %}
-                        {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="glyphicon-pencil",
+                        {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pen",
                                      aclass="btn btn-xs btn-warning") }}
                     {% endif %}
                 </dd>
@@ -191,17 +191,17 @@
                     <dd id="balance">
                         {{ data['balance']|money(lang=lang) }}
                         {% if "finance_admin" in user.roles %}
-                            {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="glyphicon-pencil",
+                            {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
                         {% if data['has_lastschrift'] %}
                             {% trans %}and{% endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                    gettext("Direct Debit Authorization"), icon="glyphicon-euro",
+                                    gettext("Direct Debit Authorization"), icon="euro-sign",
                                     readonly=(data['id'] != user.persona_id and "finance_admin" not in user.roles)) }}
                         {% elif "finance_admin" in user.roles %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                    gettext("New Direct Debit Authorization …"), icon="glyphicon-euro") }}
+                                    gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
                         {% endif %}
                     </dd>
 
@@ -238,10 +238,10 @@
                 {% endif %}
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink('core/change_username_form'), gettext("Edit"),
-                                 aclass="btn btn-xs btn-warning", icon="glyphicon-pencil") }}
+                                 aclass="btn btn-xs btn-warning", icon="pen") }}
                 {% elif is_relative_admin and not ambience['persona']['is_archived'] %}
                     {{ util.href(cdedblink('core/admin_username_change_form'), gettext("Edit"),
-                                 aclass="btn btn-xs btn-warning", icon="glyphicon-pencil") }}
+                                 aclass="btn btn-xs btn-warning", icon="pen") }}
                 {% endif %}
             </dd>
             {% if data['telephone'] %}
@@ -374,7 +374,7 @@ Mitglied.</pre>
     </div>
 
     {% if data['id'] != user.persona_id and (is_relative_admin or "core_admin" in user.roles) %}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="glyphicon-warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
                 {% if data['id'] != user.persona_id %}
                     <div class="row">
@@ -418,7 +418,7 @@ Mitglied.</pre>
                                     <form action="{{ cdedblink('core/toggle_activity', {'activity': True}) }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
                                         {{ util.anti_csrf_token('core/toggle_activity') }}
-                                        {{ util.input_submit(value=gettext("Reactivate Account"), icon="glyphicon-ok-circle",
+                                        {{ util.input_submit(value=gettext("Reactivate Account"), icon="check-circle",
                                                 aclass="btn btn-success btn-sm") }}
                                     </form>
                                 {% endif %}

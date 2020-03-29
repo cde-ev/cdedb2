@@ -10,7 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Assignment"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -61,7 +61,7 @@
                      aclass='btn btn-sm btn-info') }}
     </div>
 
-    {% call util.bootstrap_panel(title=gettext("Filter"), icon="glyphicon-search", aclass='panel-primary') %}
+    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form') }}" method="GET" id="choicefilterform"
               aria-label="{% trans %}Filter{% endtrans %}">
             <div class="p">
@@ -93,8 +93,8 @@
                 {% endtrans %}
             </div>
             <p class="nosp">
-                {{ util.input_submit(value=gettext("Go!"), icon="glyphicon-search") }}
-                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show all participants"), icon="glyphicon-remove",
+                {{ util.input_submit(value=gettext("Go!"), icon="search") }}
+                {{ util.href(cdedblink("event/course_choices",{}), gettext("Show all participants"), icon="times-circle",
                              aclass="btn btn-default") }}
             </p>
         </form>

@@ -8,7 +8,7 @@
                     aclass="list-group-item", icon="glyphicon-triangle-right", active=(sidenav_active == 'assembly_show')) }}
 
                 {{ util.href(cdedblink("assembly/list_attendees", {'assembly_id': data['id']}), gettext("Participants"),
-                        aclass="list-group-item", icon="glyphicon-user", active=(sidenav_active == 'assembly_attendees')) }}
+                        aclass="list-group-item", icon="user", active=(sidenav_active == 'assembly_attendees')) }}
 
                 {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), gettext("Ballots"),
                         aclass="list-group-item", icon="glyphicon-thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
@@ -44,7 +44,7 @@
         </div>
         {% if is_admin %}
             <div class="list-group tear-down">
-                {{ util.href(cdedblink("assembly/user_search"), gettext("Manage Users"), icon="glyphicon-user",
+                {{ util.href(cdedblink("assembly/user_search"), gettext("Manage Users"), icon="user",
                         aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
                 {{ util.href(cdedblink("assembly/view_log"), gettext("Log"), icon="glyphicon-list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'assembly_log')) }}

@@ -8,7 +8,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']),
-            ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="glyphicon-user") }}
+            ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Add Realm"),
             active=(values['target_realm'] == '')) }}
     {% if values['target_realm'] %}

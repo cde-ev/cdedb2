@@ -18,13 +18,13 @@
     {% if is_admin %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="glyphicon-envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
     {{ util.breadcrumb_link(cdedblink("ml/view_ml_log"), gettext("Log"), active=True) }}
 {% endblock %}
 {% block content %}
     {% if log %}
         <div class="p">
-            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="glyphicon-arrow-down") }}
+            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
         </div>
     {% endif %}
     <table class="table table-condensed table-hover">

@@ -10,7 +10,7 @@
         {% endif %}
         {% if data['tracks'] and (data['is_course_list_visible'] or data['id'] in user.orga or is_admin) %}
             {{ util.href(cdedblink("event/course_list", {"event_id": data['id']}), gettext("Courselist"),
-                         aclass="list-group-item", icon="glyphicon-book", active=(sidenav_active == 'event_course_list')) }}
+                         aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_list')) }}
         {% endif %}
         {% if is_registered %}
             {{ util.href(cdedblink("event/registration_status", {"event_id": data['id']}), gettext("My Registration"),
@@ -26,7 +26,7 @@
         {% endif %}
         {% if (data['is_participant_list_visible'] and is_participant) or data['id'] in user.orga or is_admin %}
             {{ util.href(cdedblink("event/participant_list", {"event_id": data['id']}), gettext("Participant list"),
-                         aclass="list-group-item", icon="glyphicon-user", active=(sidenav_active == 'event_participant_list')) }}
+                         aclass="list-group-item", icon="user", active=(sidenav_active == 'event_participant_list')) }}
         {% endif %}
     </div>
 
@@ -39,18 +39,18 @@
 
             {% if data['tracks'] %}
                 {{ util.href(cdedblink("event/course_stats", {"event_id": data['id']}), gettext("Courses"),
-                             aclass="list-group-item", icon="glyphicon-book", active=(sidenav_active == 'event_course_stats')) }}
+                             aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_stats')) }}
                 {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), gettext("Course Assignment"),
                         aclass="list-group-item", icon="glyphicon-screenshot", active=(sidenav_active == 'event_course_choices')) }}
             {% endif %}
             {{ util.href(cdedblink("event/lodgements", {"event_id": data['id']}), gettext("Lodgements"),
-                    aclass="list-group-item", icon="glyphicon-home", active=(sidenav_active == 'event_lodgements')) }}
+                    aclass="list-group-item", icon="home", active=(sidenav_active == 'event_lodgements')) }}
             {{ util.href(cdedblink("event/downloads", {"event_id": data['id']}), gettext("Downloads"), aclass="list-group-item",
                     icon="glyphicon-save-file", active=(sidenav_active == 'event_downloads')) }}
             {{ util.href(cdedblink("event/partial_import_form", {"event_id": data['id']}), gettext("Partial Import"), aclass="list-group-item",
                     icon="glyphicon-cloud-upload ", active=(sidenav_active == 'partial_import')) }}
             {{ util.href(cdedblink("event/batch_fees_form", {"event_id": data['id']}), gettext("Enter Money Transfers"),
-                         aclass="list-group-item", icon="glyphicon-euro", readonly=is_locked,
+                         aclass="list-group-item", icon="euro-sign", readonly=is_locked,
                          active=(sidenav_active == 'event_batch_fees')) }}
         </div>
         <div class="list-group tear-down">
@@ -59,7 +59,7 @@
             {{ util.href(cdedblink("event/part_summary", {"event_id": data['id']}), gettext("Event-Parts"),
                          icon='glyphicon-time', aclass="list-group-item", active=(sidenav_active == 'event_parts')) }}
             {{ util.href(cdedblink("event/field_summary", {"event_id": data['id']}), gettext("Configure Custom Fields"),
-                         icon='glyphicon-tag', aclass="list-group-item", active=(sidenav_active == 'event_field_summary') ) }}
+                         icon='tag', aclass="list-group-item", active=(sidenav_active == 'event_field_summary') ) }}
             {{ util.href(cdedblink("event/questionnaire_summary", {"event_id": data['id']}),
                          gettext("Configure Questionnaire"), aclass="list-group-item",
                          active=(sidenav_active == 'event_quest_summary'), icon='glyphicon-unchecked') }}
@@ -98,7 +98,7 @@
             </div>
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
-                             aclass="list-group-item", icon="glyphicon-user", active=(sidenav_active == 'event_users')) }}
+                             aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
                 {{ util.href(cdedblink("event/view_log"), gettext("Log"), aclass="list-group-item", icon="glyphicon-list-alt",
                              active=(sidenav_active == 'event_log')) }}
             {% else %}

@@ -1,12 +1,12 @@
 {% macro ballot_action_panel() -%}
-    {% call util.bootstrap_panel(title=gettext("Actions"), icon="glyphicon-warning-sign", aclass="panel-danger mosp") %}
+    {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
             <div class="col-sm-4">
                 <div class="p">
                      <form action="{{ cdedblink('assembly/delete_ballot') }}" method="POST" id="deleteballotform"
                            style="display: inline;">
                          {{ util.anti_csrf_token('assembly/delete_ballot') }}
-                         {{ util.input_submit(value=gettext("Delete"), icon="glyphicon-trash", aclass="btn btn-danger") }}
+                         {{ util.input_submit(value=gettext("Delete"), icon="trash-alt", aclass="btn btn-danger") }}
                          {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                      </form>
                      <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -96,14 +96,14 @@
     </dl>
 
     {% if is_admin and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="glyphicon-tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['ballot']['notes']|md }}
         {% endcall %}
     {% endif %}
 {%- endmacro %}
 
 {% macro show_attachments(edit_mode) -%}
-    {% call util.bootstrap_panel(title=gettext("Files"), icon='glyphicon-file') %}
+    {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         {% if attachments %}
             <ul id="attachments">
                 {% for attachment_id, attachment in attachments|xdictsort("title") %}
@@ -117,7 +117,7 @@
                                     class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('assembly/remove_attachment') }}
                                 {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                                {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="glyphicon-trash",
+                                {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
                                         title=gettext("Delete File")) }}
                             </form>
                             <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -131,7 +131,7 @@
         {% endif %}
         {% if edit_mode %}
             {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Attach File"),
-                         aclass="btn btn-success btn-sm", icon="glyphicon-plus") }}
+                         aclass="btn btn-success btn-sm", icon="plus") }}
         {% endif %}
     {% endcall %}
 {%- endmacro %}

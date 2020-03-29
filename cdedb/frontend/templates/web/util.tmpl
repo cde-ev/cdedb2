@@ -56,7 +56,7 @@
 
    icon       The icon's name. See https://getbootstrap.com/docs/3.3/components/#glyphicons for a list of available
               icons. Only the distinguishing part of the icon's CSS class is required. E.g. "ok" instead of
-              "glyphicon glyphicon-ok"
+              "glyphicon check"
    aclass     An additonal HTML/CSS class to add to the icon. Useful if you want to access the icon via JavaScript
    title      A HTML `title` attribute (hover text) to add to the icon. This is also used as arialabel, if you don't
               provide one explicitly.
@@ -505,7 +505,7 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="glyphicon-ok",
+{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="check",
         readonly=False, title='', arialabel='') %}
     <button type="submit" name="{{ name }}" {%- if readonly %} disabled="disabled"{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {%- if aclass %} class="{{ aclass }}"{% endif %}
@@ -515,7 +515,7 @@
 {%- endmacro %}
 
 {% macro form_input_submit(value="Save", name="submitform", readonly=False, anid='',
-        aclass='btn btn-primary', icon="glyphicon-ok", cancellink='', cancelvalue="Cancel",
+        aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, differentiate_warnings=False) %}
     <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}

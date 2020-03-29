@@ -14,7 +14,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="glyphicon-bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="glyphicon-thumbs-up",
                             active=True) }}
@@ -25,7 +25,7 @@
     {# Admin modification options (delete and edit) #}
     {% if edit_mode %}
         <div class="p">
-            {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="glyphicon-pencil",
+            {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="pen",
                     aclass="btn btn-sm btn-warning") }}
             {% if CDEDB_DEV %}
                 <form action="{{ cdedblink("assembly/ballot_start_voting") }}" method="POST"
@@ -51,7 +51,7 @@
         {% if not ambience['ballot']['votes'] %}
             {{ ballot_result.show_summary() }}
         {% endif %}
-        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="glyphicon-download") }}</p>
+        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
 
         {{ ballot_result.show_own_vote() }}
     {% else %}

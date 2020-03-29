@@ -11,7 +11,7 @@
             {{ util.href(cdedblink("core/index"), gettext("Overview"), aclass="list-group-item",
                     icon="glyphicon-triangle-right", active=(sidenav_active=='core_index')) }}
             {{ util.href(cdedblink("core/mydata"), gettext("My Data"), aclass="list-group-item",
-                    icon="glyphicon-user", active=(sidenav_active=='core_mydata')) }}
+                    icon="user", active=(sidenav_active=='core_mydata')) }}
             {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
                     icon="glyphicon-wrench", active=(sidenav_active=='core_admins')) }}
         </div>
@@ -19,7 +19,7 @@
             <div class="list-group tear-down">
             {% if is_admin %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
-                        icon="glyphicon-user", active=(sidenav_active=='core_manage_users')) }}
+                        icon="user", active=(sidenav_active=='core_manage_users')) }}
                 {{ util.href(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
                         icon="glyphicon-inbox", active=(sidenav_active=='core_manage_archive')) }}
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
@@ -41,7 +41,7 @@
                 </div>
                 <div class="list-group tear-down">
                 {{ util.href(cdedblink("core/meta_info_form"), gettext("Metadata"), aclass="list-group-item",
-                        icon="glyphicon-tags", active=(sidenav_active=='core_meta')) }}
+                        icon="tags", active=(sidenav_active=='core_meta')) }}
             {% endif %}
             </div>
         {% endif %}

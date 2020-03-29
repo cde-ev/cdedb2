@@ -8,7 +8,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/downloads"), gettext("Downloads"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -22,34 +22,34 @@
         <tbody>
             <tr>
                 <td>{% trans %}Nametags{% endtrans %}</td>
-                <td>{{ util.href(cdedblink('event/download_nametags', {'runs': 0}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink('event/download_nametags', {'runs': 2}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink('event/download_nametags', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_nametags', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Course Attendee Lists{% endtrans %}</td>
-                <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 0}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 2}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_course_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Lodgement Inhabitant Lists{% endtrans %}</td>
-                <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 0}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 2}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_lodgement_lists', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
                 <td>
                     {% trans %}Course Puzzle{% endtrans %}
                     <small>({% trans %}cut out and sort into a course assignment{% endtrans %})</small>
                 </td>
-                <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 0}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 2}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_course_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
                 <td>
                     {% trans %}Lodgement Puzzle{% endtrans %}
                     <small>({% trans %}cut out and sort into a lodgement assignment{% endtrans %})</small>
                 </td>
-                <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 0}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 2}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_lodgement_puzzle', {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
         </tbody>
     </table>
@@ -66,35 +66,35 @@
             {% set endpoint = 'event/download_participant_list' %}
             <tr>
                 <td>{% trans %}Public List{% endtrans %}</td>
-                <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink(endpoint, {'runs': 2}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Public List (Landscape){% endtrans %}</td>
-                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'landscape': True}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'landscape': True}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'landscape': True}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'landscape': True}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Orga List{% endtrans %}</td>
-                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'orgas_only': True}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'orgas_only': True}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'orgas_only': True}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'orgas_only': True}), gettext("PDF"), icon='file') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Orga List (Landscape){% endtrans %}</td>
-                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'orgas_only': True, 'landscape': True}), gettext("LaTeX"), icon='glyphicon-download') }}</td>
-                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'orgas_only': True, 'landscape': True}), gettext("PDF"), icon='glyphicon-file') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 0, 'orgas_only': True, 'landscape': True}), gettext("LaTeX"), icon='download') }}</td>
+                <td>{{ util.href(cdedblink(endpoint, {'runs': 2, 'orgas_only': True, 'landscape': True}), gettext("PDF"), icon='file') }}</td>
             </tr>
             {% if ambience['event']['parts']|length > 1 %}
                 <tr>
                     <td>{% trans %}Public Lists by part{% endtrans %}</td>
                     <td>
                         {% for part_id, part in ambience['event']['parts'].items() %}
-                            {{ util.href(cdedblink(endpoint, {'runs': 0, 'part_ids': [part_id]}), "{}.tex".format(part['shortname']), icon='glyphicon-download') }}<br/>
+                            {{ util.href(cdedblink(endpoint, {'runs': 0, 'part_ids': [part_id]}), "{}.tex".format(part['shortname']), icon='download') }}<br/>
                         {% endfor %}
                     </td>
                     <td>
                         {% for part_id, part in ambience['event']['parts'].items() %}
-                            {{ util.href(cdedblink(endpoint, {'runs': 2, 'part_ids': [part_id]}), "{}.pdf".format(part['shortname']), icon='glyphicon-file') }}<br/>
+                            {{ util.href(cdedblink(endpoint, {'runs': 2, 'part_ids': [part_id]}), "{}.pdf".format(part['shortname']), icon='file') }}<br/>
                         {% endfor %}
                     </td>
                 </tr>
@@ -102,12 +102,12 @@
                     <td>{% trans %}Orga Lists by part{% endtrans %}</td>
                     <td>
                         {% for part_id, part in ambience['event']['parts'].items() %}
-                            {{ util.href(cdedblink(endpoint, {'runs': 0, 'part_ids': [part_id], 'orgas_only': True}), "{}.tex".format(part['shortname']), icon='glyphicon-download') }}<br/>
+                            {{ util.href(cdedblink(endpoint, {'runs': 0, 'part_ids': [part_id], 'orgas_only': True}), "{}.tex".format(part['shortname']), icon='download') }}<br/>
                         {% endfor %}
                     </td>
                     <td>
                         {% for part_id, part in ambience['event']['parts'].items() %}
-                            {{ util.href(cdedblink(endpoint, {'runs': 2, 'part_ids': [part_id], 'orgas_only': True}), "{}.pdf".format(part['shortname']), icon='glyphicon-file') }}<br/>
+                            {{ util.href(cdedblink(endpoint, {'runs': 2, 'part_ids': [part_id], 'orgas_only': True}), "{}.pdf".format(part['shortname']), icon='file') }}<br/>
                         {% endfor %}
                     </td>
                 </tr>
@@ -132,23 +132,23 @@
                     {% trans %}Partial Event Export{% endtrans %}<br />
                     <small>({% trans %}for consumption by external tools{% endtrans %})</small>
                 </td>
-                <td>{{ util.href(cdedblink('event/download_partial_export'), gettext("JSON file"), icon='glyphicon-download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_partial_export'), gettext("JSON file"), icon='download') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Registrations{% endtrans %}</td>
-                <td>{{ util.href(cdedblink('event/download_csv_registrations'), gettext("CSV-File"), icon='glyphicon-download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_csv_registrations'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Courselist{% endtrans %}</td>
-                <td>{{ util.href(cdedblink('event/download_csv_courses'), gettext("CSV-File"), icon='glyphicon-download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_csv_courses'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Lodgementlist{% endtrans %}</td>
-                <td>{{ util.href(cdedblink('event/download_csv_lodgements'), gettext("CSV-File"), icon='glyphicon-download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_csv_lodgements'), gettext("CSV-File"), icon='download') }}</td>
             </tr>
             <tr>
                 <td>{% trans %}Courselist for exPuls{% endtrans %}</td>
-                <td>{{ util.href(cdedblink('event/download_expuls'), gettext("TeX-Code"), icon='glyphicon-download') }}</td>
+                <td>{{ util.href(cdedblink('event/download_expuls'), gettext("TeX-Code"), icon='download') }}</td>
             </tr>
         </tbody>
     </table>

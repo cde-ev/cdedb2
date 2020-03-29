@@ -9,7 +9,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="glyphicon-blackboard",
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
                         readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
 {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
 {% endblock %}
@@ -40,7 +40,7 @@
         {{ util.anti_csrf_token('event/register') }}
 
         {% if ambience['event']['registration_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="glyphicon-info-sign", aclass="panel-info") %}
+            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
                 {{ ambience['event']['registration_text']|md }}
             {% endcall %}
         {% endif %}

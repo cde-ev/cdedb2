@@ -10,7 +10,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': ambience['privilege_change']['id']}),
-        "{} {}".format(persona['given_names'], persona['family_name']), icon="glyphicon-user", active="True") }}
+        "{} {}".format(persona['given_names'], persona['family_name']), icon="user", active="True") }}
 {% endblock %}
 
 {% block content %}
