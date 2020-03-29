@@ -1324,9 +1324,8 @@ class TestCdEFrontend(FrontendTest):
                             div="cdelog_entry2")
         self.assertPresence("0 Probemitgliedschaften beendet",
                             div="cdelog_entry0")
-        # TODO the sum must be fixed
-        self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry2")
-        self.assertPresence("27.50 € Guthaben abgebucht.", div="cdelog_entry0")
+        self.assertPresence("32.50 € Guthaben abgebucht.", div="cdelog_entry2")
+        self.assertPresence("30.00 € Guthaben abgebucht.", div="cdelog_entry0")
 
     @as_users("farin")
     def test_expuls(self, user):
