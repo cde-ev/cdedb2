@@ -26,6 +26,7 @@ import json
 import logging
 import pathlib
 import re
+import shutil
 import smtplib
 import subprocess
 import tempfile
@@ -1322,6 +1323,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Deleting corrupted file {}".format(pdf_path))
                 pdf_path.unlink()
             self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            if self.conf.CDEDB_DEV:
+                tstamp = round(now().timestamp())
+                backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
+                self.logger.info("Copying source file to {}".format(
+                    backup_path))
+                shutil.copy2(target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
                 "source files and compiling them manually.")
