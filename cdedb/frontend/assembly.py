@@ -458,10 +458,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Check for extensions before grouping ballots.
-        update = False
-        for ballot_id, ballot in ballots.items():
-            update = self._update_ballot_state(rs, ballot) or update
-        if update:
+        if any([self._update_ballot_state(rs, ballot)
+                for id, ballot in ballots.items()]):
             return self.redirect(rs, "assembly/list_ballots")
 
         done, extended, current, future = self.group_ballots(ballots)
@@ -604,8 +602,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        update = self._update_ballot_state(rs, ballot)
-        if update:
+        if self._update_ballot_state(rs, ballot):
             return self.redirect(rs, "assembly/show_ballot")
 
         # initial checks done, present the ballot
@@ -664,10 +661,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         })
 
     def _update_ballot_state(self, rs, ballot):
-        """Helper to check if the current state of a ballot should be changed
-        and, if necessary, update it. If an update occur, the calling function
-        should redirect to the calling page.
-        This includes check for extension and tallying.
+        """Helper to automatically update a ballots state.
+
+        State updates are necessary for extending and tallying a ballot.
+        If this function performs a state update, the calling function should
+        redirect to the calling page.
         """
 
         timestamp = now()
@@ -735,6 +733,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                       for e in ballot['candidates'].values()}
             for v in result['votes']:
                 raw = v['vote']
+                # TODO this looks dangerous and could result in loosing votes
                 if '>' in raw:
                     selected = raw.split('>')[0].split('=')
                     for s in selected:
@@ -753,10 +752,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Check for extensions before grouping ballots.
-        update = False
-        for ballot_id, ballot in ballots.items():
-            update = self._update_ballot_state(rs, ballot) or update
-        if update:
+        if any([self._update_ballot_state(rs, ballot)
+                for id, ballot in ballots.items()]):
             return self.redirect(rs, "assembly/summary_ballots")
 
         done, extended, current, future = self.group_ballots(ballots)
