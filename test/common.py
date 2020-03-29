@@ -681,12 +681,18 @@ class FrontendTest(unittest.TestCase):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s, div="content"):
+    def assertNonPresence(self, s, div="content", check_div=True):
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
-            content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
-            self.assertNotIn(s.strip(), content.text_content())
+            try:
+                content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
+                self.assertNotIn(s.strip(), content.text_content())
+            except IndexError as e:
+                if check_div:
+                    raise
+                else:
+                    pass
 
     def assertLogin(self, name):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
