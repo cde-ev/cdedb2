@@ -2905,6 +2905,8 @@ def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
     if errs:
         return val, errs
     ret = []
+    fee_modifier_fields = {
+        e['field_id'] for e in fee_modifiers.values()}
     for value in val:
         value, e = _mapping(value, argname, _convert=_convert,
                             _ignore_warnings=_ignore_warnings)
@@ -2938,14 +2940,15 @@ def _questionnaire(val, field_definitions, fee_modifiers, argname=None, *,
                     kind=field.get('kind', FieldDatatypes.str),
                     _convert=_convert, _ignore_warnings=_ignore_warnings)
                 errs.extend(e)
-            fee_modifier_fields = {
-                e['field_id'] for e in fee_modifiers.values()}
             field_id = value['field_id']
             if field_id and field_id in fee_modifier_fields:
                 if not value['kind'].allow_fee_modifier():
                     msg = n_("Inappropriate questionnaire usage for fee"
                              " modifier field.")
                     errs.append(('kind', ValueError(msg)))
+            if value['readonly'] and not value['kind'].allow_readonly():
+                msg = n_("Registration questionnaire rows may not be readonly.")
+                errs.append(('readonly', ValueError(msg)))
             ret.append(value)
     for e1, e2 in itertools.combinations(val, 2):
         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:

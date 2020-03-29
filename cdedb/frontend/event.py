@@ -3409,11 +3409,22 @@ class EventFrontend(AbstractUserFrontend):
                                    and d[kind_key] not in valid_usages),
                     (kind_key, ValueError(msg)))
 
+        def readonly_kind_constraint(idx):
+            kind_key = "kind_{}".format(idx)
+            readonly_key = "readonly_{}".format(idx)
+            msg = n_("Registration questionnaire rows may not be readonly.")
+            usages = const.QuestionnaireUsages
+            return (lambda d: (not d[readonly_key]
+                               or usages(d[kind_key]).allow_readonly()),
+                    (readonly_key, ValueError(msg)))
+
         constraints = tuple(filter(
             None, (duplicate_constraint(idx1, idx2)
                    for idx1 in indices for idx2 in indices)))
         constraints += tuple(itertools.chain.from_iterable(
-            (valid_field_constraint(idx), fee_modifier_kind_constraint(idx))
+            (valid_field_constraint(idx),
+             fee_modifier_kind_constraint(idx),
+             readonly_kind_constraint(idx))
             for idx in indices))
 
         params = tuple(("{}_{}".format(key, i), value)

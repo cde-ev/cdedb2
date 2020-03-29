@@ -2428,6 +2428,7 @@ etc;anything else""", f['entries_2'].value)
         f['create_-1'].checked = True
         f['field_id_-1'] = 4
         f['title_-1'] = "Input"
+        f['kind_-1'] = const.QuestionnaireUsages.questionnaire.value
         f['readonly_-1'].checked = True
         f['input_size_-1'] = 2
         self.submit(f)
@@ -2436,6 +2437,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertIn("field_id_5", f.fields)
         self.assertEqual("4", f['field_id_5'].value)
         self.assertEqual("Input", f['title_5'].value)
+        self.assertEqual(str(const.QuestionnaireUsages.questionnaire.value),
+                         f['kind_5'].value)
 
     @as_users("garcia")
     def test_questionnaire_reorder(self, user):

@@ -65,13 +65,14 @@
                         aclass='input-usage drow-input', horizontal=False, defaultvalue=kind.value) }}
                     <div class="form-group row">
                         <div class="col-sm-8">
-                            {% if kind.allow_readonly() %}
-                                <div class="checkbox">
-                                    {{ util.input_checkbox("readonly_{}".format(part_id), label=gettext("read-only"),
-                                                           attributes=('data-basename="readonly_"'|s if newrow else ''),
-                                                           aclass='input-readonly drow-input') }}
-                                </div>
-                            {% endif %}
+                            <div class="checkbox">
+                                {{ util.input_checkbox("readonly_{}".format(part_id), label=gettext("read-only"),
+                                                       attributes=('data-basename="readonly_"'|s if newrow else ''),
+                                                       aclass='input-readonly drow-input',
+                                                       readonly=(not values["readonly_{}".format(part_id)]
+                                                                 and (kind and not kind.allow_readonly()))) }}
+                                {{ util.output_errors("readonly_{}".format(part_id), wrapper=True) }}
+                            </div>
                         </div>
                         <div class="col-sm-4 text-right">
                             <span class="drow-buttonspace">
@@ -101,6 +102,7 @@
     </div>
     <form action="{{ cdedblink('event/questionnaire_summary') }}" method="POST" id="questionnairesummaryform">
         {{ util.anti_csrf_token('event/questionnaire_summary') }}
+        <div id="drow-container">
         <div class="tab-content" id="usages_tabcontent">
             {% for kind in enums['QuestionnaireUsages'] %}
                 <div class="tab-pane active" role="tabpanel" id="tab_{{ kind.name }}"
@@ -119,16 +121,18 @@
                             {{ print_part(-i, kind, aclass='drow-new', newrow=True) }}
                         {% endif %}
                     {% endfor %}
-                    {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-                    {{ print_part(-values.get('create_last_index', 0) - 1, kind, aclass='drow-prototype', newrow=True) }}
-                    <p>
-                        <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton-{{ kind.name }}">
-                            {{ util.make_icon('plus') }} {% trans %}Add Part{% endtrans %}
-                        </button>
-                    </p>
                 </div>
             {% endfor %}
         </div>
+        <h3 class="heading-underline">{% trans %}New Rows{% endtrans %}</h3>
+        {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+        {{ print_part(-values.get('create_last_index', 0) - 1, kind=None, aclass='drow-prototype', newrow=True) }}
+        </div>
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} {% trans %}Add Part{% endtrans %}
+            </button>
+        </p>
         {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
@@ -137,16 +141,14 @@
             var translations = {
                 'true': "{{ gettext("true") }}",
                 'false': "{{ gettext("false") }}"};
-            {% for kind in enums['QuestionnaireUsages'] %}
-                $('#tab_{{ kind.name }}').cdedbDynamicRow(
-                    {
-                        addButton: $('#drow-addbutton-{{ kind.name }}'),
-                        callback: function () {
-                            $(this).cdedbQuestionnaireConfig(field_list, translations);
-                        },
-                        delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
-                    });
-            {% endfor %}
+            $('#drow-container').cdedbDynamicRow(
+                {
+                    addButton: $('#drow-addbutton'),
+                    callback: function () {
+                        $(this).cdedbQuestionnaireConfig(field_list, translations);
+                    },
+                    delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
+                });
             $('#questionnairesummaryform').cdedbProtectChanges();
             $('.drow-row').cdedbQuestionnaireConfig(field_list, translations);
         })()
