@@ -77,6 +77,10 @@ möglich):
     * Guthaben,
     * Sichtbarkeit
 
+Darüber hinaus gibt es die sogenannte ```Änderungshistorie``` eines Benutzers.
+In dieser werden die Änderungen an einem Benutzerprofil gespeichert.
+Diese ist lediglich Core-Admins zugänglich.
+
 
 Welche Arten von Benutzern gibt es?
 -----------------------------------
@@ -89,7 +93,10 @@ Es gibt folgende Arten von Benutzern:
     Haben das Recht entzogen bekommen, sich in die Datenbank einzuloggen.
     Ansonsten verhalten sie sich äquivalent zu Benutzern.
 * Archivierte Benutzer:
-    Haben das Recht entzogen bekommen, sich einzuloggen, *und* können nicht
+    Haben keine Rechte mehr in der Datenbank. Beim Archivieren eines Accounts
+    werden weitestgehend alle Daten dieses Benutzers gelöscht.
+    Erhalten bleiben Name, Geburstdatum und Verg. Veranstaltungen (soweit
+    vorhanden). Sie können sich nicht mehr einloggen *und* können nicht
     mehr von anderen Benutzern (ausgenommen Core Admins) aufgerufen werden.
 
 Zudem müssen wir im Datenschutz Kontext folgende Kriterien an Benutzer
@@ -107,7 +114,7 @@ unterscheiden:
 
   * Bereiche, die dieser Benutzer besitzt
   * ist der Benutzer Teilnehmer einer Veranstaltung?
-  * ist der Benutzer Abbonent einer Mailingliste?
+  * ist der Benutzer Abonent einer Mailingliste?
   * ist der Benutzer Mitglied *und* Suchbar?
   * ist der Benutzer nicht archiviert?
 
@@ -128,7 +135,7 @@ besitzt (das maximale Element der Bereiche):
     Besitzt ein Benutzer nur den Mailinglisten Bereich, ist dies der
     Mailinglisten Admin
 * Veranstaltungen und Versammlungen:
-    Hier sind Veranstaltungen und Versammlungen beide maximal: Besitz ein
+    Hier sind Veranstaltungen und Versammlungen beide maximal: Besitzt ein
     Benutzer also Mailinglisten und (Veranstaltungen oder / und Versammlungs)
     Bereich, dürfen Veranstaltungs oder Versammlungsadmin bzw beide diesen
     Benutzer einsehen.
@@ -167,7 +174,7 @@ auf den Profilen anderer Benutzer sehen darf.
 * Orgas und Moderatoren
     Ist der Benutzer bei einer Veranstaltung registriert bzw auf einer
     Mailingliste eingeschrieben, haben die jeweiligen Orgas bzw Moderatoren
-    Zugriff auf folgenden Kategorien:
+    Zugriff auf folgende Kategorien:
 
       * Orgas: "Veranstaltungsbezogen"
       * Moderatoren: Das Feld "E-Mail"
@@ -201,11 +208,12 @@ auf den Profilen anderer Benutzer sehen darf.
       * Mitglied *und* Suchbar: "Mitglieder"
 
 * Man selbst
-    Jeder aktive Benutzer hat vollen Zugriff auf sein eigenes Profil.
-    Deaktivierte und archivierte Benutzer sind hiervon natürlich ausgenommen,
+    Jeder aktive Benutzer hat fast vollständigen Zugriff auf sein eigenes Profil.
+    Außgenommen hiervon sind die Admin Admin-Notizen und die Änderungshistorie.
+    Deaktivierte und archivierte Benutzer können Ihr eigenes Profil nicht sehen,
     da sie sich nicht einloggen können.
 
-      * Man selbst: Alle Felder auf dem eigenen Profil
+      * Man selbst: Alle Felder des eigenen Profils, ausgenommen Admin-Notizen
 
 * Core Admins
     Der Core Admin hat **vollen** Zugriff auf **alle** (aktiven, deaktiverten
