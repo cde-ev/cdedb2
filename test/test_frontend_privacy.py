@@ -409,7 +409,7 @@ class TestPrivacyFrontend(FrontendTest):
         #                                        check_div=False)
 
     @as_users("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
-              "paul", "werner")
+              "paul", "rowena", "werner")
     def test_profile_of_realm_user(self, user):
         # ... of a ml user
         ml_access = [
@@ -417,7 +417,8 @@ class TestPrivacyFrontend(FrontendTest):
         ]
         ml_no_access = [
             USER_DICT['annika'], USER_DICT['quintus'], USER_DICT['werner'],
-            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['emilia']
+            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['emilia'],
+            USER_DICT['rowena']
         ]
 
         # ... of an assembly user
@@ -426,7 +427,8 @@ class TestPrivacyFrontend(FrontendTest):
         ]
         assembly_no_access = [
             USER_DICT['annika'], USER_DICT['nina'], USER_DICT['quintus'],
-            USER_DICT['berta'], USER_DICT['janis'], USER_DICT['emilia']
+            USER_DICT['berta'], USER_DICT['janis'], USER_DICT['emilia'],
+            USER_DICT['rowena']
         ]
 
         # ... of an event user
@@ -435,7 +437,18 @@ class TestPrivacyFrontend(FrontendTest):
         ]
         event_no_access = [
             USER_DICT['quintus'], USER_DICT['nina'], USER_DICT['werner'],
-            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['janis']
+            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['janis'],
+            USER_DICT['rowena']
+        ]
+
+        # ... of an assembly and event user
+        a_e_access = [
+            USER_DICT['rowena'], USER_DICT['annika'], USER_DICT['werner'],
+            USER_DICT['paul']
+        ]
+        a_e_no_access = [
+            USER_DICT['quintus'], USER_DICT['nina'], USER_DICT['janis'],
+            USER_DICT['berta'], USER_DICT['kalif'], USER_DICT['emilia']
         ]
 
         # ... of a cde user
@@ -444,7 +457,8 @@ class TestPrivacyFrontend(FrontendTest):
         ]
         cde_no_access = [
             USER_DICT['annika'], USER_DICT['nina'], USER_DICT['werner'],
-            USER_DICT['emilia'], USER_DICT['kalif'], USER_DICT['janis']
+            USER_DICT['emilia'], USER_DICT['kalif'], USER_DICT['janis'],
+            USER_DICT['rowena']
         ]
 
         cases = {
@@ -463,6 +477,11 @@ class TestPrivacyFrontend(FrontendTest):
                 'access': event_access,
                 'no_access': event_no_access,
             },
+            'a_e': {
+                'inspected': USER_DICT['rowena'],
+                'access': a_e_access,
+                'no_access': a_e_no_access,
+            },
             'cde': {
                 'inspected': USER_DICT['berta'],
                 'access': cde_access,
@@ -479,11 +498,14 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertPresence(inspected['username'], div='contact-email')
             elif user in case['no_access']:
                 found = self._profile_base_view(inspected)
-                # username must not be visble on base profiles
+                # username must not be visible on base profiles
                 self.assertNonPresence(inspected['username'])
                 for field in self.ALL_FIELDS - found:
                     self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                            check_div=False)
+            else:
+                msg = "Forget {} in case {}.".format(user['given_names'], realm)
+                raise RuntimeError(msg)
 
     def test_profile_of_disabled_user(self):
         # a disabled user should be viewable as an equal non-disabled user
