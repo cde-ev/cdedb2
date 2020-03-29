@@ -29,7 +29,7 @@ from cdedb.frontend.common import (
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     xdictsort_filter, enum_entries_filter, safe_filter, cdedburl,
-    CustomCSVDialect, keydictsort_filter)
+    CustomCSVDialect, keydictsort_filter, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -5391,18 +5391,31 @@ class EventFrontend(AbstractUserFrontend):
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("offset", "non_negative_int_or_None"),
-                 ("length", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
     def view_log(self, rs, codes, event_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities concerning events organized via DB."""
         length = length or 50
+        # Beware magic: Modifying length and offset modifies them
+        # in the RequestState as well. We want to pass modified values
+        # for the backend, but keep the raw ones for the template.
+        # length is the requested length, length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset = offset
+        _length = length
+        if _offset and _offset < 0:
+            # Avoid non-positive lengths
+            if -offset < length:
+                _length = _length + _offset
+            _offset = 0
+
         # no validation since the input stays valid, even if some options
         # are lost
         total, log = self.eventproxy.retrieve_log(
-            rs, codes, event_id, offset, length, persona_id=persona_id,
+            rs, codes, event_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -5414,9 +5427,11 @@ class EventFrontend(AbstractUserFrontend):
         registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         events = self.eventproxy.get_events(rs, event_ids)
         all_events = self.eventproxy.list_db_events(rs)
+        loglinks = calculate_loglinks(rs, total, _offset, length)
+
         return self.render(rs, "view_log", {
-            'total': total, 'log': log, 'length': length, 'personas': personas, 'events': events,
-            'all_events': all_events, 'registration_map': registration_map})
+            'total': total, 'log': log, 'length': _length, 'personas': personas, 'events': events,
+            'all_events': all_events, 'registration_map': registration_map, 'loglinks': loglinks})
 
     @access("event")
     @event_guard()

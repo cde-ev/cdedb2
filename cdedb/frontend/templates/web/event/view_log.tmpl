@@ -7,10 +7,12 @@
 {% endblock %}
 {% block title %}
     {% trans -%}Event Log{%- endtrans %}
-    {% if values['offset'] %}
-       [{{ values['offset']|int + 1 }}–{{ values['offset']|int + length }}/{{ total }}]
+    {% if values['offset']|int > 0 %}
+        [{{ values['offset']|int + 1 }}–{{ values['offset']|int + length }}/{{ total }}]
+    {% elif values['offset'] %}
+        [1–{{ length }}/{{ total }}]
     {% else %}
-        {% set start = length*(total // length)|int %}
+        {% set start = length*((total - 1) // length)|int + 1 %}
         {% if start < 0 %}
             {% set start = 0 %}
         {% endif %}
@@ -80,6 +82,6 @@
     </table>
 
     {{ generic.log_filter(
-        cdedblink('event/view_log'), enums['EventLogCodes'], total, length, 'event_admin_user', 'event_id')
+        cdedblink('event/view_log'), enums['EventLogCodes'], total, length, loglinks, 'event_admin_user', 'event_id')
      }}
 {% endblock %}

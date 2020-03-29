@@ -2191,3 +2191,38 @@ def query_result_to_json(data, fields, substitutions=None):
             row[field] = value
         json_data.append(row)
     return json_serialize(json_data)
+
+
+def calculate_loglinks(rs, total, offset, length):
+    """Calculate the target parameters for the links in the log pagination bar
+
+    :type rs: :py:class:`cdedb.common.RequestState`
+    :type total: int
+    :param total: The total count of log entries
+    :type offset: int
+    :param offset: The offset, preprocessed for negative offset values
+    :type length: int
+    :param length: The requested length (not necessarily the shown length)
+    :rtype: {str: werkzeug.datastructures.MultiDict}
+    """
+    # The true offset does represent the acutal count of log entries before
+    # the first shown entry. This is done magically, if no offset has been
+    # given.
+    if offset != 0 and not offset:
+        trueoffset = length * ((total - 1) // length)
+    else:
+        trueoffset = offset
+    loglinks = {
+        "first": rs.values.copy(),
+        "previous": rs.values.copy(),
+        "current": rs.values.copy(),
+        "next": rs.values.copy(),
+        "last": rs.values.copy(),
+    }
+    loglinks["first"]["offset"] = "0"
+    loglinks["last"]["offset"] = ""
+    loglinks["previous"]["offset"] = trueoffset - length
+    loglinks["next"]["offset"] = trueoffset + length
+    loglinks["current"]["offset"] = trueoffset
+
+    return loglinks

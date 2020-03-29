@@ -628,7 +628,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro log_filter(endpoint, enum, total, length, kind, filter_name=None, aux=None) %}
+{% macro log_filter(endpoint, enum, total, length, loglinks, kind, filter_name=None, aux=None) %}
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ endpoint }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
@@ -677,46 +677,44 @@
         </form>
     {% endcall %}
 
+    <nav class="text-center" aria-label="{% trans %}Log page navigation{% endtrans %}">
     <ul class="pagination pagination-lg">
         {# How can I properly automate the target? #}
-        {% set count = (total/length)|int %}
-        {% set trueoffset = values['offset']|int or length*count %}
-        {% set page  = (values["offset"]|int or total)/length|int + 1 %}
-        {# 0 is false #}
-        {% if values["offset"]|int == 0 %}
-            {% set trueoffset = 0 %}
-            {% set page = 1 %}
+        {% if loglinks["current"]["offset"] < 0 %}
+            {% set page = 0 %}
+        {% else %}
+            {% set page = loglinks["current"]["offset"]/length|int + 1 %}
         {% endif %}
-        {% set newvalues = values.copy() %}
 
-        {% do newvalues.update({"offset": 0}) %}
         <li class="page-item">
-            <a class="page-link" href="{{ cdedblink('event/view_log', newvalues) }}" aria-label=gettext("First")>
-                <span aria-hidden="true">{{ newvalues['offset']|int }}&laquo;</span>
+            <a class="page-link" href="{{ cdedblink('event/view_log', loglinks['first']) }}"
+                    aria-label="{% trans %}First{% endtrans %}">
+                <span aria-hidden="true">&laquo;</span>
             </a>
         </li>
-        {% do newvalues.update({"offset": trueoffset - length}) %}
-        <li class="page-item {% if newvalues['offset']|int <= 0 %}disabled{% endif %}">
-            <a class="page-link" href="{{ cdedblink('event/view_log', newvalues) }}" aria-label=gettext("Previous")>
-                <span aria-hidden="true">{{ newvalues['offset']|int }}&lsaquo;</span>
+        <li class="page-item {% if loglinks['previous']['offset']|int + length <= 0 %}disabled{% endif %}">
+            <a class="page-link" {% if loglinks['previous']['offset']|int + length > 0 %}
+                    href="{{ cdedblink('event/view_log', loglinks['previous']) }}"{% endif %}
+                    aria-label="{% trans %}Previous{% endtrans %}">
+                <span aria-hidden="true">&lsaquo;</span>
             </a>
         </li>
-        {% do newvalues.update(values) %}
-        <li class="page-item active">
-            <a class="page-link" href="{{ cdedblink('event/view_log', newvalues) }}">{{ newvalues['offset']|int }}{{ page|int }}</a>
+        <li class="page-item {% if values["offset"] %}active" aria-current="page{% endif %}">
+            <a class="page-link" href="{{ cdedblink('event/view_log', loglinks['current']) }}">{{ page|int }}</a>
         </li>
-        {% do newvalues.update({"offset": trueoffset + length}) %}
-        <li class="page-item {% if newvalues['offset']|int >= total %}disabled{% endif %}">
-            <a class="page-link" href="{{ cdedblink('event/view_log', newvalues) }}" aria-label=gettext("Next")>
-                <span aria-hidden="true">{{ newvalues['offset']|int }}&rsaquo;</span>
+        <li class="page-item {% if loglinks['next']['offset']|int >= total %}disabled{% endif %}">
+            <a class="page-link" {% if loglinks['next']['offset']|int < total %}
+                    href="{{ cdedblink('event/view_log', loglinks['next']) }}"{% endif %}
+                    aria-label="{% trans %}Next{% endtrans %}">
+                <span aria-hidden="true">&rsaquo;</span>
             </a>
         </li>
-        {% do newvalues.update({"offset": ""}) %}
-        <li class="page-item {% if not values["offset"] %}active{% endif %}">
-            <a class="page-link" href="{{ cdedblink('event/view_log', newvalues) }}" aria-label=gettext("Last")>
-                <span aria-hidden="true">{{ newvalues['offset']|int }}&raquo;</span>
+        <li class="page-item {% if not values["offset"] %}active" aria-current="page{% endif %}">
+            <a class="page-link" href="{{ cdedblink('event/view_log', loglinks['last']) }}"
+                    aria-label="{% trans %}Last{% endtrans %}">
+                <span aria-hidden="true">&raquo;</span>
             </a>
         </li>
     </ul>
-</nav>
+    </nav>
 {% endmacro %}
