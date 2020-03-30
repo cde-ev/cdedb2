@@ -66,7 +66,7 @@
         {{ util.form_input_text(name="subject_prefix", label=gettext("Subject Prefix")) }}
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
                 entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)", type="number")) }}
+        {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number") }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('ml/index')) }}
     </form>
 {% endblock %}
