@@ -12194,7 +12194,7 @@ msgid ""
 "registrations are present yet. Course tracks can only be deleted, if there "
 "are no courses associated with them."
 msgstr ""
-"Veranstaltungsteile und Kursschienen können nur erstelltoder gelöscht "
+"Veranstaltungsteile und Kursschienen können nur erstellt oder gelöscht "
 "werden, falls noch keine Anmeldungen vorliegen. Kursschienen können nur "
 "gelöscht werden, falls ihnen keine Kurse zugeordnet sind."
 
