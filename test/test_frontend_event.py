@@ -2778,6 +2778,7 @@ etc;anything else""", f['entries_2'].value)
                       'is_archived': False,
                       'is_participant_list_visible': False,
                       'courses_in_participant_list': False,
+                      'is_cancelled': False,
                       'is_course_list_visible': True,
                       'is_course_state_visible': False,
                       'is_visible': True,

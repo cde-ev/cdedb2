@@ -1789,8 +1789,8 @@ EVENT_FIELDS = (
     "iban", "nonmember_surcharge", "orga_address", "registration_text",
     "mail_text", "use_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list", "is_archived",
-    "lodge_field", "reserve_field", "course_room_field")
+    "is_participant_list_visible", "courses_in_participant_list", "is_cancelled",
+    "is_archived", "lodge_field", "reserve_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
