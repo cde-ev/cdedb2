@@ -5,21 +5,21 @@
 {% macro assembly_inner_navigation(data) %}
         <div class="list-group tear-down">
             {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), gettext("Overview"),
-                    aclass="list-group-item", icon="glyphicon-triangle-right", active=(sidenav_active == 'assembly_show')) }}
+                    aclass="list-group-item", icon="caret-right", active=(sidenav_active == 'assembly_show')) }}
 
                 {{ util.href(cdedblink("assembly/list_attendees", {'assembly_id': data['id']}), gettext("Participants"),
                         aclass="list-group-item", icon="user", active=(sidenav_active == 'assembly_attendees')) }}
 
                 {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), gettext("Ballots"),
-                        aclass="list-group-item", icon="glyphicon-thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
+                        aclass="list-group-item", icon="thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
 
             {% if is_admin %}
                 {% if ambience['assembly']['is_active'] %}
                     {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), gettext("Configuration"),
-                            aclass="list-group-item", icon="glyphicon-cog", active=(sidenav_active == 'assembly_config')) }}
+                            aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
                 {% endif %}
                     {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
-                            aclass="list-group-item", icon="glyphicon-list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
+                            aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'assembly_assembly_log')) }}
             {% endif %}
         </div>
 {% endmacro %}
@@ -30,7 +30,7 @@
 {% block navigation %}
     {% if ambience['assembly'] %}
         <p>
-            {{ util.href(cdedblink("assembly/index"), gettext("Assembly-Overview"), icon="glyphicon-circle-arrow-up") }}
+            {{ util.href(cdedblink("assembly/index"), gettext("Assembly-Overview"), icon="arrow-circle-up") }}
         </p>
 
         <h3 class="heading-sidebar">{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }}
@@ -39,14 +39,14 @@
     {% else %}
         <h3 class="heading-sidebar">{{ gettext("Assemblies") }}</h3>
         <div class="list-group tear-down">
-            {{ util.href(cdedblink("assembly/index"), gettext("Overview"), icon="glyphicon-triangle-right",
+            {{ util.href(cdedblink("assembly/index"), gettext("Overview"), icon="caret-right",
                     aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}
         </div>
         {% if is_admin %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("assembly/user_search"), gettext("Manage Users"), icon="user",
                         aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
-                {{ util.href(cdedblink("assembly/view_log"), gettext("Log"), icon="glyphicon-list-alt", aclass="list-group-item",
+                {{ util.href(cdedblink("assembly/view_log"), gettext("Log"), icon="list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'assembly_log')) }}
             </div>
         {% endif %}

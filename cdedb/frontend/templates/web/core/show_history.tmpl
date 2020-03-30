@@ -83,7 +83,7 @@
     {% if pending|length > 0 %}
         <p>
             {{ util.href(cdedblink('core/inspect_change', {'persona_id': current['id']}), gettext("Review Changes"),
-                    icon="glyphicon-check", aclass="btn btn-sm btn-info") }}
+                    icon="check-square", aclass="btn btn-sm btn-info") }}
         </p>
     {% endif %}
     {% if not current['is_active'] %}

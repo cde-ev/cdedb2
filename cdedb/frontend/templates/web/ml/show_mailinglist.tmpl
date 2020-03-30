@@ -83,7 +83,7 @@
                                       id="resetaddressform" style="display: inline;">
                                     {{ util.anti_csrf_token('ml/change_address') }}
                                     {{ util.input_hidden(name="email", value="") }}
-                                    {{ util.input_submit(value=gettext("Reset email address"), icon="glyphicon-share-alt",
+                                    {{ util.input_submit(value=gettext("Reset email address"), icon="share-square",
                                         aclass="btn btn-warning btn-sm") }}
                                 </form>
                             {% endif %}

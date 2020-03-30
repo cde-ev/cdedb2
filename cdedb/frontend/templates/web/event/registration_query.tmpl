@@ -28,7 +28,7 @@
                              readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
                 {% if ambience['event']['fields'] and has_registrations %}
                     {{ util.href(cdedblink("event/field_set_select"), gettext("Set Field"),
-                                  readonly=is_locked, icon='glyphicon-edit', aclass='btn btn-sm btn-warning') }}
+                                  readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
                 {% endif %}
             </div>
         </div>

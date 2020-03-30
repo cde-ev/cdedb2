@@ -101,7 +101,7 @@
         {% endif %}
 
         {% if ambience['event']['registration_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Registration page free text"), icon="glyphicon-log-in",
+            {% call util.bootstrap_panel(title=gettext("Registration page free text"), icon="sign-in-alt",
                                          aclass="panel-default panel-condensed") %}
                 <div id="registration-text">{{ ambience['event']['registration_text']|md }}</div>
             {% endcall %}
@@ -116,7 +116,7 @@
 
         <div class="row">
             <div class="col-md-6">
-                {% call util.bootstrap_panel(title=gettext("Registration Quick-Access"), aclass="panel-warning", icon='glyphicon-list') %}
+                {% call util.bootstrap_panel(title=gettext("Registration Quick-Access"), aclass="panel-warning", icon='list') %}
                     <form action="{{ cdedblink('event/quick_show_registration') }}" method="GET" id="quickregistrationform">
                         <div class="sr-only">{% trans %}Search for registration by ID or name{% endtrans %}</div>
                         <div class="input-group">
@@ -281,7 +281,7 @@
                         <div class="p">
                             <form action="{{ cdedblink('event/lock_event') }}" method="POST" id="lockform">
                                 {{ util.anti_csrf_token('event/lock_event') }}
-                                {{ util.input_submit(value=gettext("Lock"), icon='glyphicon-lock', aclass="btn btn-danger") }}
+                                {{ util.input_submit(value=gettext("Lock"), icon='lock', aclass="btn btn-danger") }}
                             </form>
                         </div>
                         <p class="text-muted">

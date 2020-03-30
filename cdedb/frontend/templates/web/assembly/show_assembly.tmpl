@@ -12,7 +12,7 @@
     <div class="p">
         {% if is_admin and ambience['assembly']['is_active'] %}
             {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
-                         icon="glyphicon-cog") }}
+                         icon="cog") }}
         {% endif %}
     </div>
 
@@ -34,7 +34,7 @@
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
                         {{ util.anti_csrf_token('assembly/signup') }}
-                        {{ util.input_submit(value=gettext("Participate"), icon="glyphicon-log-in") }}
+                        {{ util.input_submit(value=gettext("Participate"), icon="sign-in-alt") }}
                     </form>
                 {% endif %}
             {% endif %}
@@ -124,7 +124,7 @@
                                       id="concludeassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/conclude_assembly') }}
                                     {{ util.input_submit(value=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
-                                            icon="glyphicon-folder-close", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
+                                            icon="folder", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
                                     {{ util.input_checkbox(name="ack_conclude", label=gettext("Are you sure?")) }}
                                 </form>
                             </div>

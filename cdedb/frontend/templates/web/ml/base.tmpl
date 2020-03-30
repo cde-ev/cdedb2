@@ -5,17 +5,17 @@
 {% macro ml_inner_navigation(data) %}
         <div class="list-group tear-down">
             {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), gettext("Overview"),
-                    icon="glyphicon-triangle-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
+                    icon="caret-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
             {% if data['id'] in user.moderator or is_admin %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Management"),
-                        aclass="list-group-item", icon="glyphicon-list", active=(sidenav_active == 'ml_manage')) }}
+                        aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
                 {{ util.href(cdedblink("ml/show_subscription_details", {'mailinglist_id': data['id']}), gettext("Advanced Management"),
-                        aclass="list-group-item", icon="glyphicon-wrench", active=(sidenav_active == 'ml_details')) }}
+                        aclass="list-group-item", icon="wrench", active=(sidenav_active == 'ml_details')) }}
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
-                        gettext("Configuration"), aclass="list-group-item", icon="glyphicon-cog",
+                        gettext("Configuration"), aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
                 {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), gettext("Log"),
-                             aclass="list-group-item", icon="glyphicon-list-alt", active=(sidenav_active == 'ml_ml_log')) }}
+                             aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}
         </div>
 {% endmacro %}
@@ -41,18 +41,18 @@
         <h3 class="heading-sidebar">Mailinglisten</h3>
         <div class="list-group tear-down">
             {% if is_admin %}
-                {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="glyphicon-triangle-right",
+                {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="caret-right",
                         aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
-                {{ util.href(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists"), icon="glyphicon-cog",
+                {{ util.href(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists"), icon="cog",
                         aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
             </div>
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                         icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
-                {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="glyphicon-list-alt", aclass="list-group-item",
+                {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'ml_log')) }}
             {% else %}
-                {{ util.href(cdedblink("ml/index"), gettext("Overview"), icon="glyphicon-triangle-right", aclass="list-group-item",
+                {{ util.href(cdedblink("ml/index"), gettext("Overview"), icon="caret-right", aclass="list-group-item",
                         active=(sidenav_active == 'ml_index')) }}
             {% endif %}
         </div>

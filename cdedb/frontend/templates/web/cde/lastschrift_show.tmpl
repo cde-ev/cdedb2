@@ -105,14 +105,14 @@
                     id="generatetransactionform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
                     {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
-                    {{ util.input_submit(value=gettext("Perform Direct Debit"), icon="glyphicon-play",
+                    {{ util.input_submit(value=gettext("Perform Direct Debit"), icon="play",
                                          aclass="btn btn-sm btn-primary") }}
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': active_permit}) }}"
                     method="POST" id="skiptransactionform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_skip') }}
                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
-                    {{ util.input_submit(value=gettext("Skip Direct Debit"), icon="glyphicon-step-forward",
+                    {{ util.input_submit(value=gettext("Skip Direct Debit"), icon="step-forward",
                                          aclass="btn btn-sm btn-warning") }}
                 </form>
             </div>
@@ -193,7 +193,7 @@
                                     {{ util.anti_csrf_token('cde/lastschrift_rollback_transaction') }}
                                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
                                     {{ util.input_submit(value=gettext("Reverse"), aclass="btn btn-xs btn-warning",
-                                                         icon='glyphicon-transfer') }}
+                                                         icon='exchange-alt') }}
                                 </form>
                             {% endif %}
                         {% endif %}

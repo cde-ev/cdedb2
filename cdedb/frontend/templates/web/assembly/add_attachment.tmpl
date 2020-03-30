@@ -33,7 +33,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {% if ambience['ballot'] %}
         {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
-        {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="glyphicon-thumbs-up") }}
+        {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Attach File"), active=True) }}
 {% endblock %}

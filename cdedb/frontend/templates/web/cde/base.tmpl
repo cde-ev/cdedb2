@@ -9,13 +9,13 @@
         <h3 class="heading-sidebar">{% trans %}Members{% endtrans %}</h3>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("cde/index"), gettext("Overview"), aclass="list-group-item",
-                    icon="glyphicon-triangle-right", active=(sidenav_active=='cde_index')) }}
+                    icon="caret-right", active=(sidenav_active=='cde_index')) }}
             {% if "searchable" in user.roles %}
                 {{ util.href(cdedblink("cde/member_search"), gettext("CdE-Member Search"), aclass="list-group-item", icon="search",
                         active=(sidenav_active=='cde_member_search')) }}
             {% elif 'member' in user.roles %}
                 {{ util.href(cdedblink("cde/consent_decision_form"), gettext("Privacy Policy"),
-                             aclass="list-group-item", icon="glyphicon-check", active=(sidenav_active=='cde_consent_decision')) }}
+                             aclass="list-group-item", icon="check-square", active=(sidenav_active=='cde_consent_decision')) }}
             {% endif %}
         </div>
 
@@ -31,10 +31,10 @@
                     {{ util.href(cdedblink("cde/money_transfers_form"), gettext("Enter Bank Transfers"), aclass="list-group-item",
                             icon="euro-sign", active=(sidenav_active=='cde_transfers')) }}
                     {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
-                            icon="glyphicon-hourglass", active=(sidenav_active=='cde_semester')) }}
-                    {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon="glyphicon-list-alt",
+                            icon="hourglass-half", active=(sidenav_active=='cde_semester')) }}
+                    {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon="list-alt",
                             active=(sidenav_active=='cde_log')) }}
-                    {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon="glyphicon-list-alt",
+                    {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon="list-alt",
                             active=(sidenav_active=='cde_finance_log')) }}
                 {% endif %}
             </div>
@@ -45,14 +45,14 @@
                 {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar-alt",
                         aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
                 {% if is_admin %}
-                    {{ util.href(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), icon="glyphicon-briefcase",
+                    {{ util.href(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), icon="briefcase",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
-                    {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="glyphicon-list-alt",
+                    {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="list-alt",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
                     </div>
                     <div class="list-group tear-down">
                 {% endif %}
-                {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="glyphicon-random",
+                {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="random",
                         aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
             </div>
         {% endif %}

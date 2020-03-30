@@ -48,11 +48,11 @@
                         {%- if event['use_questionnaire'] %}
                             &bull;
                             {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
-                                         gettext("Questionnaire"), icon='glyphicon-edit') -}}
+                                         gettext("Questionnaire"), icon='edit') -}}
                         {% endif -%}
                     {% elif "event" in user.roles and event['is_open'] %}
                         {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
-                            gettext("Register"), icon='glyphicon-log-in') }}
+                            gettext("Register"), icon='sign-in-alt') }}
                         {% if not event['registration_soft_limit'] is none %}
                             {% if now() <= event['registration_soft_limit'] %}
                                 {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
@@ -93,7 +93,7 @@
                     <br />
                     <span class="small">
                         {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
-                                     gettext("Registrations"), icon='glyphicon-list') }}
+                                     gettext("Registrations"), icon='list') }}
                         &bull;
                         {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
                                      gettext("Statistics"), icon='glyphicon-stats') }}

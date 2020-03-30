@@ -38,7 +38,7 @@
     {% endif %}
 
     {% if not decided_search %}
-        <p>{{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="glyphicon-time", aclass="btn btn-default") }}</p>
+        <p>{{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="clock", aclass="btn btn-default") }}</p>
     {% endif %}
 
     <h1>{% trans %}Consent{% endtrans %}</h1>
@@ -91,9 +91,9 @@
             {{ util.input_submit(value=gettext("Refuse consent"), icon="times-circle", aclass="btn btn-danger") }}
         </form>
 
-        {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="glyphicon-time", aclass="btn btn-default") }}
+        {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="clock", aclass="btn btn-default") }}
     {% else %}
-        {{ util.href(cdedblink("cde/index"), gettext("Don’t change anything"), icon="glyphicon-asterisk", aclass="btn btn-default") }}
+        {{ util.href(cdedblink("cde/index"), gettext("Don’t change anything"), icon="asterisk", aclass="btn btn-default") }}
     {% endif %}
 
 {% endblock %}

@@ -16,7 +16,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="glyphicon-thumbs-up",
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up",
                             active=True) }}
 {% endblock %}
 {% block content %}
@@ -32,7 +32,7 @@
                       id="startvotingform" style="display: inline;">
                     {{ util.anti_csrf_token("assembly/ballot_start_voting") }}
                     {{ util.input_submit(value=gettext("Start Voting"), aclass="btn btn-sm btn-success",
-                            icon="glyphicon-check") }}
+                            icon="check-square") }}
                 </form>
             {% endif %}
         </div>

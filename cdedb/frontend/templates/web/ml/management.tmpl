@@ -125,7 +125,7 @@
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/block_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="glyphicon-ban-circle", value=gettext("Block"),
+                                    {{ util.input_submit(icon="ban", value=gettext("Block"),
                                         aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
                             </span>

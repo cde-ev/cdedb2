@@ -57,7 +57,7 @@
     {% set course_entries = courses|keydictsort(EntitySorter.course)|xdict_entries('{id}', '{nr}. {shortname}') %}
 
     <div class="p">
-        {{ util.href(cdedblink("event/course_assignment_checks"), gettext("Checks"), icon='glyphicon-check',
+        {{ util.href(cdedblink("event/course_assignment_checks"), gettext("Checks"), icon='check-square',
                      aclass='btn btn-sm btn-info') }}
     </div>
 
@@ -149,7 +149,7 @@
 
         <div class="pull-right">
             {{ util.href(cdedblink('event/registration_query', corresponding_query|querytoparams),
-                         gettext("View Registrations"), icon='glyphicon-list', aclass='btn btn-sm btn-default') }}
+                         gettext("View Registrations"), icon='list', aclass='btn btn-sm btn-default') }}
         </div>
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">

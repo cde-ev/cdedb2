@@ -39,9 +39,9 @@
     <button type="button" class="btn btn-default btn-sm softhide" id="unhide-button">
         {{ util.make_icon('eye-slash') }} {% trans %}Show all Fields{% endtrans %}
     </button>
-    {{ util.href(show_user_link(pending['id']), gettext("Show Profile"), icon="glyphicon-share-alt", aclass="btn btn-sm btn-info") }}
+    {{ util.href(show_user_link(pending['id']), gettext("Show Profile"), icon="share", aclass="btn btn-sm btn-info") }}
     {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), gettext("Change History"),
-                 aclass="btn btn-info btn-sm", icon="glyphicon-time") }}
+                 aclass="btn btn-info btn-sm", icon="clock") }}
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         $(function() {
             $('#diff-view').cdedbHideUnimportant($('#unhide-button'));
@@ -108,7 +108,7 @@
             {{ util.anti_csrf_token('core/resolve_change') }}
             {{ util.input_hidden(name="ack", value="False") }}
             {{ util.input_hidden(name="generation", value=pending['generation']) }}
-            {{ util.input_submit(value=gettext("Reject Changes"), aclass="btn btn-danger", icon="glyphicon-ban-circle") }}
+            {{ util.input_submit(value=gettext("Reject Changes"), aclass="btn btn-danger", icon="ban") }}
         </form>
         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit Changes"), icon="pen", aclass="btn btn-warning") }}
         &emsp; {{ util.href(cdedblink('core/list_pending_changes'), gettext("Cancel"), icon="times-circle", aclass="btn btn-default") }}

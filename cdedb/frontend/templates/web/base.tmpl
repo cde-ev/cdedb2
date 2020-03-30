@@ -123,7 +123,7 @@
                             {% elif not login_form and original_request %}
                                 {{ util.href(cdedblink('core/index', {'wants': encode_parameter("core/index", "wants",
                                                                                                 original_request.url)}),
-                                             gettext("Login"), aclass='btn navbar-button btn-default', icon='glyphicon-off') }}
+                                             gettext("Login"), aclass='btn navbar-button btn-default', icon='power-off') }}
                             {% endif %}
                         </li>
                     </ul>
@@ -134,7 +134,7 @@
                             </li>
                         {% if "cde" in user.roles and not CDEDB_OFFLINE_DEPLOYMENT %}
                             <li {% if mainnav_active == 'cde' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("cde/index"), gettext("Members"), icon="glyphicon-education") }}
+                                {{ util.href(cdedblink("cde/index"), gettext("Members"), icon="graduation-cap") }}
                                 </li>
                         {% endif %}
                         <li {% if mainnav_active == 'event' %}class="active" aria-current="page"{% endif %}>
