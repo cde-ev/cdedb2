@@ -13919,6 +13919,9 @@ msgstr "Allgemeine Nutzerverwaltung"
 msgid "Event-User Management"
 msgstr "Veranstaltungs-Nutzerverwaltung"
 
+msgid "Until now, %(count)s attendes had given their vote for this ballot."
+msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 

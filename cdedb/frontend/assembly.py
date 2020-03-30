@@ -640,6 +640,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_ballot")
         # initial checks done, present the ballot
         ballot['is_voting'] = self.is_ballot_voting(ballot)
+        ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = None
         if ballot['is_tallied']:
             path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
