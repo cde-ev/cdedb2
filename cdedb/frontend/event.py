@@ -5402,7 +5402,7 @@ class EventFrontend(AbstractUserFrontend):
         # Beware magic: Modifying length and offset modifies them
         # in the RequestState as well. We want to pass modified values
         # for the backend, but keep the raw ones for the template.
-        # length is the requested length, length the theoretically
+        # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
         _offset = offset
         _length = length
@@ -5427,7 +5427,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         events = self.eventproxy.get_events(rs, event_ids)
         all_events = self.eventproxy.list_db_events(rs)
-        loglinks = calculate_loglinks(rs, total, _offset, length)
+        loglinks = calculate_loglinks(rs, total, offset, length)
 
         return self.render(rs, "view_log", {
             'total': total, 'log': log, 'length': _length, 'personas': personas, 'events': events,
