@@ -1,4 +1,4 @@
-{% macro show_result(ballot, result) -%}
+{% macro show_result(ballot, result, inline=False) -%}
     {% if result['winners'] %}
         <ol id="winners">
             {% for candidate_ids in result['winners'] %}
@@ -27,15 +27,24 @@
 
     {% if ballot['use_bar'] and result['losers'] %}
         <p class="text-info">
-            {% if ballot['votes'] %}
-                {% trans against_all=gettext("Against all Candidates") %}
-                    The following candidates have less votes than the {{ against_all }} choice.
-                {% endtrans %}
+            {% if not inline %}
+                {% if ballot['votes'] %}
+                    {% trans against_all=gettext("Against all Candidates") %}
+                        The following candidates have less votes than the {{ against_all }} choice.
+                    {% endtrans %}
+                {% else %}
+                    {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                        The following candidates lost against the bar ({{ abm }}).
+                    {% endtrans %}
+                {% endif %}
             {% else %}
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
-                    The following candidates lost against the bar ({{ abm }}).
-                {% endtrans %}
+                <ol class="text-info">
+                    {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                        The bar option {{ abm }}.
+                    {% endtrans %}
+                </ol>
             {% endif %}
+        </p>
         <ol id="loosers">
             {% for candidate_ids in result['losers'] %}
                 <li value="{{ (loop.index + result['winners']|length) }}">

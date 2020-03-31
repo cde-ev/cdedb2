@@ -31,7 +31,7 @@
                     <h4>{{ ballot['title'] }}</h4>
                     {{ ballot['description']|md }}
                 </td>
-                <td>{{ ballot_result.show_result(ballot, result[ballot_id]) }}</td>
+                <td>{{ ballot_result.show_result(ballot, result[ballot_id], inline=True) }}</td>
             </tr>
             {% endfor %}
         </tbody>

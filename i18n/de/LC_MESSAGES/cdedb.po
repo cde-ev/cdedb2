@@ -15553,6 +15553,9 @@ msgid ""
 "pwd@example.cde&gt;) with http authentification information encoded."
 msgstr ""
 
+msgid "The bar option %(abm)s."
+msgstr "Die Ablehnungsgrenze %(abm)s."
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 
