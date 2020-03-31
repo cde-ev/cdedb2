@@ -9,6 +9,9 @@
                 <li class="hide-hover-container clearfix-after">
                     {{ candidate['description'] }}
                     {% if edit_mode %}
+                        <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
+                            {{ candidate['moniker'] }}
+                        </span>
                         <form action="{{ cdedblink('assembly/remove_candidate',
                                                 {'candidate_id': candidate_id}) }}"
                                 method="POST" id="removecandidateform{{ candidate_id }}"
@@ -344,17 +347,18 @@
             icon='plus') %}
         <form action="{{ cdedblink('assembly/add_candidate') }}" method="POST" id="addcandidateform" class="row">
             {{ util.anti_csrf_token('assembly/add_candidate') }}
-            <div class="col-md-3 {% if 'moniker' in errors %}has-error{% endif %}">
+            <div class="col-md-4 {% if 'moniker' in errors %}has-error{% endif %}">
                 {{ util.input_text(name="moniker", placeholder=gettext("Shortname"), aclass="form-control input-sm",
                                    arialabel=gettext("Shortname")) }}
                 {{ util.output_errors("moniker") }}
+                {{ util.output_info(gettext("For sorting and preferential vote.")) }}
             </div>
             <div class="col-md-6 {% if 'description' in errors %}has-error{% endif %}">
                 {{ util.input_text(name="description", placeholder=gettext("Description"),
                                    aclass="form-control input-sm", arialabel=gettext("Description")) }}
                 {{ util.output_errors("description") }}
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 {{ util.input_submit(value=gettext("Add"), aclass="btn btn-primary btn-sm") }}
             </div>
         </form>
