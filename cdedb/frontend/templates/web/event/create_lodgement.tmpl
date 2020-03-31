@@ -28,7 +28,7 @@
         {{ util.form_input_text(name="moniker", label=gettext("Moniker")) }}
         {{ util.form_input_text(name="capacity", label=gettext("Regular Capacity"), type="number") }}
         {{ util.form_input_text(name="reserve", label=gettext("Camping Mat Capacity"), type="number") }}
-        {{ util.form_input_select(name="group_id", entries=groups, label=gettext("Lodgement Group"), nulloption="&nbsp;") }}
+        {{ util.form_input_select(name="group_id", entries=groups, label=gettext("Lodgement Group"), nulloption="&nbsp;"|s) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5") }}
 
         <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>

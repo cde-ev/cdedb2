@@ -37,7 +37,7 @@
                                                 "page.")) }}
 
         <h4 class="heading-underline">{% trans %}Financial{% endtrans %}</h4>
-        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="&nbsp;") }}
+        {{ util.form_input_select(name="iban", label=gettext("CdE-Account IBAN"), entries=accounts, nulloption="&nbsp;"|s) }}
         {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants.")) }}
 
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>
