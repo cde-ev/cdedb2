@@ -4625,6 +4625,34 @@
             "vote": "Lo>Li=St=Fi=Bu=Go=_bar_",
             "salt": "lkn/4kvj9",
             "hash": "314776ac07ffdd56a53112ae5f5113fb356b82b19f3a43754695aa41bf8e120c0346b45e43d0a0114e2bbc7756e7f34ce41f784000c010570d71e90a5c2ab1f1"
+        },
+        {
+            "id": 6,
+            "ballot_id": 7,
+            "vote": "Nein>Ja=_bar_",
+            "salt": "le4sk502j",
+            "hash": "1b92235ea46875b7fa0c902377f642f80a07646e8ef7528c058e246aa74a9ee34b24b5dcbc52340d04c643b89e035e556b43a84a0332785954b310a30ae49981"
+        },
+        {
+            "id": 7,
+            "ballot_id": 8,
+            "vote": "Wappen>_bar_=Gluehbirne>Baum",
+            "salt": "ikejsoe8p",
+            "hash": "5e74605a867d1bb46cfcdff8901bb42ef2b21b513280efa2dd93a0251d4f3506a1ff1e28c0b3c00d10e6c81d847024280d9312fd76f9abd271829ee729157aa2"
+        },
+        {
+            "id": 8,
+            "ballot_id": 9,
+            "vote": "Farin=Inga>_bar_=Olaf",
+            "salt": "l9tmeid73",
+            "hash": "24a751056614ea223b1af4099d228ee943a3d33507c13fe746a3e6811b78188495ab6015bc9deda17ecb79ced8189ca6bb91e96d17d263bd713997fb4ecb9a88"
+        },
+        {
+            "id": 9,
+            "ballot_id": 10,
+            "vote": "Eisenberg>Akademien>Aktien",
+            "salt": "8ci4wof73",
+            "hash": "ec21445bdd06f5a62a59add324b1f7743a00e9e60f9d546f45199e96a3706af603b114069f3dbbecdd53ab4765522f1eea1bca410a3a91aec48ac97a2b2baddc"
         }
     ],
     "assembly.voter_register": [
