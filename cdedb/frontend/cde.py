@@ -33,7 +33,8 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject, query_result_to_json,
-    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect)
+    enum_entries_filter, money_filter, REQUESTfile, CustomCSVDialect,
+    calculate_db_logparams, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators, Query
 from cdedb.frontend.parse_statement import (
@@ -2547,19 +2548,22 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_cde_log(self, rs, codes, start, stop, persona_id, submitted_by,
+    def view_cde_log(self, rs, codes, offset, length, persona_id, submitted_by,
                      additional_info, time_start, time_stop):
         """View general activity."""
-        start = start or 0
-        stop = stop or 50
+        length = length or 50
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.cdeproxy.retrieve_cde_log(
-            rs, codes, start, stop, persona_id=persona_id,
+        total, log = self.cdeproxy.retrieve_cde_log(
+            rs, codes, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -2567,26 +2571,31 @@ class CdEFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_cde_log", {
-            'log': log, 'personas': personas})
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_finance_log(self, rs, codes, start, stop, persona_id, submitted_by,
+    def view_finance_log(self, rs, codes, offset, length, persona_id, submitted_by,
                          additional_info, time_start, time_stop):
         """View financial activity."""
-        start = start or 0
-        stop = stop or 50
+        length = length or 50
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.cdeproxy.retrieve_finance_log(
-            rs, codes, start, stop, persona_id=persona_id,
+        total, log = self.cdeproxy.retrieve_finance_log(
+            rs, codes, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -2594,27 +2603,32 @@ class CdEFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_finance_log", {
-            'log': log, 'personas': personas})
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_past_log(self, rs, codes, pevent_id, start, stop, persona_id,
+    def view_past_log(self, rs, codes, pevent_id, offset, length, persona_id,
                       submitted_by, additional_info, time_start, time_stop):
         """View activities concerning concluded events."""
-        start = start or 0
-        stop = stop or 50
+        length = length or 50
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.pasteventproxy.retrieve_past_log(
-            rs, codes, pevent_id, start, stop, persona_id=persona_id,
+        total, log = self.pasteventproxy.retrieve_past_log(
+            rs, codes, pevent_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -2624,5 +2638,7 @@ class CdEFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_past_log", {
-            'log': log, 'personas': personas, 'pevents': pevents})
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'pevents': pevents, 'loglinks': loglinks})

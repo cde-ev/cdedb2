@@ -1,28 +1,20 @@
 {% set sidenav_active='cde_finance_log' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/generic.tmpl" as generic with context %}
+{% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans -%}
-        Finance Log
-    {%- endtrans %}
-    {% if log %}
-        [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
-    {% endif %}
+    {% trans -%}Finance Log{%- endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/view_finance_log"), gettext("Finance Log"), active="True") }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/view_finance_log"), gettext("Finance Log"), active="True") }}
 {% endblock %}
 {% block content %}
-    {% if log %}
-        <div class="p">
-            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
-        </div>
-    {% endif %}
+    {{ logging.filterlink() }}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
@@ -66,5 +58,6 @@
         </tbody>
     </table>
 
-    {{ generic.log_filter(cdedblink('cde/view_finance_log'), enums['FinanceLogCodes'], 'admin_persona') }}
+    {{ logging.filter('cde/view_finance_log', enums['FinanceLogCodes'], 'admin_persona') }}
+    {{ logging.navigation('cde/view_finance_log', total, length, loglinks) }}
 {% endblock %}

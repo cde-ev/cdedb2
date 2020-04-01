@@ -1,62 +1,25 @@
 {% set sidenav_active='core_log' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/generic.tmpl" as generic with context %}
+{% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans -%}
-    	Account Log
-    {%- endtrans %}
-    {% if log %}
-        [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
-    {% endif %}
+    {% trans -%}Account Log{%- endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/view_log"), gettext("Account Log"), active="True") }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/view_log"), gettext("Account Log"), active="True") }}
 {% endblock %}
 {% block content %}
-    {%  if log %}
-        <div class="p">
-            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
-        </div>
-    {% endif %}
-    <table class="table table-condensed table-hover">
-        <thead>
-            <tr>
-                <th>{% trans -%}Timestamp{%- endtrans %}</th>
-                <th>{% trans -%}Code{%- endtrans %}</th>
-                <th>{% trans -%}Submitted By{%- endtrans %}</th>
-                <th>{% trans -%}Affected{%- endtrans %}</th>
-                <th>{% trans -%}Additional Info{%- endtrans %}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for entry in log %}
-                <tr>
-                    <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
-                    <td>{{ gettext(enums['CoreLogCodes'](entry['code'])|string) }}</td>
-                    <td>
-                        {% if entry['submitted_by'] %}
-                            {{ util.persona_anchor(personas[entry['submitted_by']]) }}
-                        {% else %}
-                            –
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if entry['persona_id'] %}
-                            {{ util.persona_anchor(personas[entry['persona_id']]) }}
-                        {% else %}
-                            –
-                        {% endif %}
-                    </td>
-                    <td>{{ entry['additional_info'] }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% call logging.table(log) %}
+        {% for entry in log %}
+            {{ logging.row(entry, enums['CoreLogCodes']) }}
+        {% endfor %}
+    {% endcall %}
 
-    {{ generic.log_filter(cdedblink('core/view_log'), enums['CoreLogCodes'], 'admin_persona') }}
+    {{ logging.filter('core/view_log', enums['CoreLogCodes'], 'admin_persona') }}
+    {{ logging.navigation('core/view_log', total, length, loglinks) }}
 {% endblock %}

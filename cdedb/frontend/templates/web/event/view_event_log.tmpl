@@ -1,25 +1,19 @@
 {% set sidenav_active='event_event_log' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/generic.tmpl" as generic with context %}
+{% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
-    	{{ title }} Log
-    {%- endtrans %}
-    {% if log %}
-        [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
-    {% endif %}
+    {% trans title=ambience['event']['title'] -%}{{ title }} Log{%- endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans -%}Log{%- endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
-        {% if log %}
-        [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
-    {% endif %}
+        {{ logging.counter(total, values['offset'] or '', length) }}
     </h1>
 {% endblock %}
 {% block breadcrumb %}
@@ -28,23 +22,9 @@
     {{ util.breadcrumb_link(cdedblink("event/view_event_log"), gettext("Log"), active="True") }}
 {% endblock %}
 {% block content %}
-    {% if log %}
-        <div class="p">
-            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
-        </div>
-    {% endif %}
-    <table class="table table-condensed table-hover">
-        <thead>
-            <tr>
-                <th>{% trans -%}Timestamp{%- endtrans %}</th>
-                <th>{% trans -%}Code{%- endtrans %}</th>
-                <th>{% trans -%}Submitted By{%- endtrans %}</th>
-                <th>{% trans -%}Affected{%- endtrans %}</th>
-                <th>{% trans -%}Additional Info{%- endtrans %}</th>
-            </tr>
-        </thead>
-        <tbody>
+    {% call logging.table(log) %}
         {% for entry in log %}
+            {# The event_id parameter makes this complicated, so we can not use logging.row() here. #}
             <tr>
                 <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
                 <td>{{ gettext(enums['EventLogCodes'](entry['code'])|string) }}</td>
@@ -73,8 +53,8 @@
                 <td>{{ entry['additional_info'] }}</td>
             </tr>
         {% endfor %}
-        </tbody>
-    </table>
+    {% endcall %}
 
-    {{ generic.log_filter(cdedblink('event/view_event_log'), enums['EventLogCodes'], 'orga_event_user', aux=ambience['event']['id']) }}
+    {{ logging.filter('event/view_event_log', enums['EventLogCodes'], 'orga_event_user', aux=ambience['event']['id']) }}
+    {{ logging.navigation('event/view_event_log', total, length, loglinks) }}
 {% endblock %}

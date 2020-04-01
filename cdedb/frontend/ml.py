@@ -11,7 +11,8 @@ import werkzeug
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output, periodic,
     check_validation as check, mailinglist_guard, query_result_to_json,
-    cdedbid_filter as cdedbid)
+    cdedbid_filter as cdedbid, calculate_db_logparams,
+    calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
@@ -195,19 +196,22 @@ class MlFrontend(AbstractUserFrontend):
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_log(self, rs, codes, mailinglist_id, start, stop, persona_id,
+    def view_log(self, rs, codes, mailinglist_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        start = start or 0
-        stop = stop or 50
+        length = length or 50
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.mlproxy.retrieve_log(
-            rs, codes, mailinglist_id, start, stop, persona_id=persona_id,
+        total, log = self.mlproxy.retrieve_log(
+            rs, codes, mailinglist_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -219,9 +223,11 @@ class MlFrontend(AbstractUserFrontend):
                            for entry in log if entry['mailinglist_id']}
         mailinglists = self.mlproxy.get_mailinglists(rs, mailinglist_ids)
         all_mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
-            'log': log, 'personas': personas,
-            'mailinglists': mailinglists, 'all_mailinglists': all_mailinglists})
+            'log': log, 'total': total, 'length': _length, 'personas': personas,
+            'mailinglists': mailinglists, 'all_mailinglists': all_mailinglists,
+            'loglinks': loglinks})
 
     @access("ml")
     def show_mailinglist(self, rs, mailinglist_id):
@@ -315,23 +321,26 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/list_mailinglists")
 
     @access("ml")
-    @REQUESTdata(("codes", "[int]"), ("start", "non_negative_int_or_None"),
-                 ("persona_id", "cdedbid_or_None"),
+    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
     @mailinglist_guard()
-    def view_ml_log(self, rs, mailinglist_id, codes, start, stop, persona_id,
+    def view_ml_log(self, rs, mailinglist_id, codes, offset, length, persona_id,
                     submitted_by, additional_info, time_start, time_stop):
         """View activities pertaining to one list."""
-        start = start or 0
-        stop = stop or 50
+        length = length or 50
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.mlproxy.retrieve_log(
-            rs, codes, mailinglist_id, start, stop, persona_id=persona_id,
+        total, log = self.mlproxy.retrieve_log(
+            rs, codes, mailinglist_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -339,8 +348,10 @@ class MlFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_ml_log", {
-            'log': log, 'personas': personas,
+            'log': log, 'total': total, 'length': _length, 'personas': personas,
+            'loglinks': loglinks
         })
 
     @access("ml")

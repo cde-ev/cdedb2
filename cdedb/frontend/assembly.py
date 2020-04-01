@@ -14,7 +14,8 @@ import werkzeug.exceptions
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
-    check_validation as check, request_extractor, query_result_to_json)
+    check_validation as check, request_extractor, query_result_to_json,
+    calculate_db_logparams, calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
@@ -145,19 +146,22 @@ class AssemblyFrontend(AbstractUserFrontend):
                  ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_log(self, rs, codes, assembly_id, start, stop, persona_id,
+    def view_log(self, rs, codes, assembly_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        start = start or 0
-        stop = stop or 50
+        length = length or 50
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.assemblyproxy.retrieve_log(
-            rs, codes, assembly_id, start, stop, persona_id=persona_id,
+        total, log = self.assemblyproxy.retrieve_log(
+            rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         personas = (
@@ -169,27 +173,32 @@ class AssemblyFrontend(AbstractUserFrontend):
                       for entry in log if entry['assembly_id']}
         assemblies = self.assemblyproxy.get_assemblies(rs, assemblies)
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
-            'log': log, 'personas': personas,
-            'assemblies': assemblies, 'all_assemblies': all_assemblies})
+            'log': log, 'total': total, 'length': _length, 'personas': personas,
+            'assemblies': assemblies, 'all_assemblies': all_assemblies,
+            'loglinks': loglinks})
 
     @access("assembly_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("start", "non_negative_int_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_assembly_log(self, rs, codes, assembly_id, start, stop, persona_id,
+    def view_assembly_log(self, rs, codes, assembly_id, offset, length, persona_id,
                  submitted_by, additional_info, time_start, time_stop):
         """View activities."""
-        start = start or 0
-        stop = stop or 50
+        length = length or 50
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.assemblyproxy.retrieve_log(
-            rs, codes, assembly_id, start, stop, persona_id=persona_id,
+        total, log = self.assemblyproxy.retrieve_log(
+            rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         personas = (
@@ -197,8 +206,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, personas)
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_assembly_log", {
-            'log': log, 'personas': personas})
+            'log': log, 'total': total, 'length': _length, 'personas': personas,
+            'loglinks': loglinks})
 
     @access("assembly")
     def show_assembly(self, rs, assembly_id):

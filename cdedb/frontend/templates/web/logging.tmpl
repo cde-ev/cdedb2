@@ -1,0 +1,170 @@
+{% import "web/util.tmpl" as util with context %}
+
+{% macro counter(total, offset, length) %}
+    {% if offset|int > 0 %}
+        [{{ offset|int + 1 }}–{{ offset|int + length }}/{{ total }}]
+    {% elif offset %}
+        [1–{{ length }}/{{ total }}]
+    {% else %}
+        {% set start = length*((total - 1) // length)|int + 1 %}
+        {% if start < 0 %}
+            {% set start = 0 %}
+        {% endif %}
+        [{{ start }}–{{ total }}/{{ total }}]
+    {% endif %}
+{% endmacro %}
+
+{% macro filterlink() %}
+    <div class="p">
+        {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
+    </div>
+{% endmacro %}
+
+{% macro table(log, keytitle='') %}
+    {{ filterlink() }}
+    <table class="table table-condensed table-hover">
+        <thead>
+        <tr>
+            <th>{% trans -%}Timestamp{%- endtrans %}</th>
+            <th>{% trans -%}Code{%- endtrans %}</th>
+            <th>{% trans -%}Submitted By{%- endtrans %}</th>
+            {% if keytitle %}
+            <th>{{ gettext(keytitle) }}</th>
+            {% endif %}
+            <th>{% trans -%}Affected{%- endtrans %}</th>
+            <th>{% trans -%}Additional Info{%- endtrans %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{ caller() }}
+        </tbod<>
+    </table>
+{% endmacro %}
+
+{% macro row(entry, enum, key='', link=None, personalink=None) %}
+    <tr>
+        <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
+        <td>{{ gettext(enum(entry['code'])|string) }}</td>
+        <td>
+            {% if entry['submitted_by'] %}
+                {{ util.persona_anchor(personas[entry['submitted_by']]) }}
+            {% else %}
+                –
+            {% endif %}
+        </td>
+        {% if key %}
+        <td>
+            {% if entry[key] %}
+                {{ link }}
+            {% else %}
+                –
+            {% endif %}
+        </td>
+        {% endif %}
+        <td>
+            {% if entry['persona_id'] %}
+                {% if personalink %}
+                    {{ personalink }}
+                {% else %}
+                    {{ util.persona_anchor(personas[entry['persona_id']]) }}
+                {% endif %}
+            {% else %}
+                –
+            {% endif %}
+        </td>
+        <td>{{ entry['additional_info'] }}</td>
+    </tr>
+{% endmacro %}
+
+{% macro filter(endpoint, enum, kind, filter_name=None, aux=None) %}
+    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
+        <form action="{{ cdedblink(endpoint) }}" method="GET" id="logshowform" class="form-horizontal">
+            {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
+                    entries=enum|enum_entries(processing=gettext), small=True) }}
+            {{ util.form_input_text(name="submitted_by", label=gettext("Submitted By"), small=True,
+                        anid="input-submitted_by") }}
+            {{ util.form_input_text(name="persona_id", label=gettext("Affected"), small=True,
+                        anid="input-persona_id") }}
+            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                $('#input-submitted_by').cdedbSearchPerson(
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
+                    false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                );
+                $('#input-persona_id').cdedbSearchPerson(
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
+                    false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                );
+            </script>
+            {% if filter_name == "assembly_id" %}
+                {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
+                        entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
+            {% elif filter_name == "pevent_id" %}
+                {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="",
+                        entries=pevents|dictsort|dict_entries('id', 'title'), small=True) }}
+            {% elif filter_name == "event_id" %}
+                {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption="",
+                        entries=all_events|dictsort, small=True) }}
+            {% elif filter_name == "mailinglist_id" %}
+                {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
+                        entries=all_mailinglists|dictsort, small=True) }}
+            {% elif filter_name == "changelog" %}
+                {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
+                        anid="input-reviewed_by") }}
+                <script type="text/javascript" nonce="{{ csp_nonce }}">
+                    $('#input-reviewed_by').cdedbSearchPerson(
+                        '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona&phrase=%s'|s) }}', [],
+                                             false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                    );
+                </script>
+            {% endif %}
+            {{ util.form_input_text("additional_info", label=gettext("Additional Info"), small=True) }}
+            {{ util.form_input_text('length', label=gettext("Length"), type='number', small=True) }}
+            {{ util.form_input_text('offset', label=gettext("Offset"), type='number', small=True) }}
+            {{ util.form_input_from_to('time_start', 'time_stop', label=gettext("Timestamp"), type='datetime', small=True) }}
+            {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
+        </form>
+    {% endcall %}
+{% endmacro %}
+
+{% macro navigation(endpoint, total, length, loglinks) %}
+    <nav class="text-center" aria-label="{% trans %}Log page navigation{% endtrans %}">
+    <ul class="pagination pagination-lg">
+        {# How can I properly automate the target? #}
+        {% if loglinks["current"]["offset"] < 0 %}
+            {% set page = 0 %}
+        {% else %}
+            {% set page = loglinks["current"]["offset"]/length|int + 1 %}
+        {% endif %}
+
+        <li class="page-item">
+            <a class="page-link" href="{{ cdedblink(endpoint, loglinks['first']) }}"
+                    aria-label="{% trans %}First{% endtrans %}">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item {% if loglinks['previous']['offset']|int + length <= 0 %}disabled{% endif %}">
+            <a class="page-link" {% if loglinks['previous']['offset']|int + length > 0 %}
+                    href="{{ cdedblink(endpoint, loglinks['previous']) }}"{% endif %}
+                    aria-label="{% trans %}Previous{% endtrans %}">
+                <span aria-hidden="true">&lsaquo;</span>
+            </a>
+        </li>
+        <li class="page-item {% if values["offset"] %}active" aria-current="page{% endif %}">
+            <a class="page-link" href="{{ cdedblink(endpoint, loglinks['current']) }}">{{ page|int }}</a>
+        </li>
+        <li class="page-item {% if loglinks['next']['offset']|int >= total %}disabled{% endif %}">
+            <a class="page-link" {% if loglinks['next']['offset']|int < total %}
+                    href="{{ cdedblink(endpoint, loglinks['next']) }}"{% endif %}
+                    aria-label="{% trans %}Next{% endtrans %}">
+                <span aria-hidden="true">&rsaquo;</span>
+            </a>
+        </li>
+        <li class="page-item {% if not values["offset"] %}active" aria-current="page{% endif %}">
+            <a class="page-link" href="{{ cdedblink(endpoint, loglinks['last']) }}"
+                    aria-label="{% trans %}Last{% endtrans %}">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+    </nav>
+{% endmacro %}

@@ -1,71 +1,30 @@
 {% set sidenav_active='cde_past_events_log' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/generic.tmpl" as generic with context %}
+{% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans -%}
-        Past Events Log
-    {%- endtrans %}
-    {% if log %}
-        [{{ values['start']|int }}–{{ (values['start']|int + log|length -1) }}]
-    {% endif %}
+    {% trans -%}Past Events Log{%- endtrans %}
+    {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/view_past_log"), gettext("Past Events Log"), active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/view_past_log"), gettext("Past Events Log"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% if log %}
-        <div class="p">
-            {{ util.href("#logshowform", gettext("Go to Filter."), aclass="btn btn-default btn-sm", icon="arrow-down") }}
-        </div>
-    {% endif %}
-    <table class="table table-condensed table-hover">
-        <thead>
-            <tr>
-                <th>{% trans -%}Timestamp{%- endtrans %}</th>
-                <th>{% trans -%}Code{%- endtrans %}</th>
-                <th>{% trans -%}Submitted By{%- endtrans %}</th>
-                <th>{% trans -%}Event{%- endtrans %}</th>
-                <th>{% trans -%}Affected{%- endtrans %}</th>
-                <th>{% trans -%}Additional Info{%- endtrans %}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for entry in log %}
-                <tr>
-                    <td>{{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}</td>
-                    <td>{{ gettext(enums['PastEventLogCodes'](entry['code'])|string) }}</td>
-                    <td>
-                        {% if entry['submitted_by'] %}
-                            {{ util.persona_anchor(personas[entry['submitted_by']]) }}
-                        {% else %}
-                            –
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if entry['pevent_id'] %}
-                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": entry['pevent_id']}),
-                                    pevents[entry['pevent_id']]['title']) }}
-                        {% else %}
-                            –
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if entry['persona_id'] %}
-                            {{ util.persona_anchor(personas[entry['persona_id']]) }}
-                        {% else %}
-                            –
-                        {% endif %}
-                    </td>
-                    <td>{{ entry['additional_info'] }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% call logging.table(log, 'Event') %}
+        {% for entry in log %}
+            {% set link = None %}
+            {% if entry['pevent_id'] %}
+                {% set link = util.href(cdedblink("cde/show_past_event", {"pevent_id": entry['pevent_id']}),
+                                    pevents[entry['pevent_id']]['title']) %}
+            {% endif %}
+            {{ logging.row(entry, enums['PastEventLogCodes'], link) }}
+        {% endfor %}
+    {% endcall %}
 
-    {{ generic.log_filter(cdedblink('cde/view_past_log'), enums['PastEventLogCodes'], 'admin_persona', 'pevent_id') }}
+    {{ logging.filter('cde/view_past_log', enums['PastEventLogCodes'], 'admin_persona', 'pevent_id') }}
+    {{ logging.navigation('cde/view_past_log', total, length, loglinks) }}
 {% endblock %}

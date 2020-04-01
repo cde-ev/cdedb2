@@ -29,7 +29,8 @@ from cdedb.frontend.common import (
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     xdictsort_filter, enum_entries_filter, safe_filter, cdedburl,
-    CustomCSVDialect, keydictsort_filter, calculate_loglinks)
+    CustomCSVDialect, keydictsort_filter, calculate_db_logparams,
+    calculate_loglinks)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -5399,18 +5400,9 @@ class EventFrontend(AbstractUserFrontend):
                  submitted_by, additional_info, time_start, time_stop):
         """View activities concerning events organized via DB."""
         length = length or 50
-        # Beware magic: Modifying length and offset modifies them
-        # in the RequestState as well. We want to pass modified values
-        # for the backend, but keep the raw ones for the template.
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
-        _offset = offset
-        _length = length
-        if _offset and _offset < 0:
-            # Avoid non-positive lengths
-            if -offset < length:
-                _length = _length + _offset
-            _offset = 0
+        _offset, _length = calculate_db_logparams(offset, length)
 
         # no validation since the input stays valid, even if some options
         # are lost
@@ -5428,29 +5420,32 @@ class EventFrontend(AbstractUserFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
         all_events = self.eventproxy.list_db_events(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)
-
         return self.render(rs, "view_log", {
-            'total': total, 'log': log, 'length': _length, 'personas': personas, 'events': events,
-            'all_events': all_events, 'registration_map': registration_map, 'loglinks': loglinks})
+            'log': log, 'total': total, 'length': _length,
+            'personas': personas, 'events': events,'all_events': all_events,
+            'registration_map': registration_map, 'loglinks': loglinks})
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("codes", "[int]"), ("start", "non_negative_int_or_None"),
-                 ("persona_id", "cdedbid_or_None"),
+    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("submitted_by", "cdedbid_or_None"),
                  ("additional_info", "str_or_None"),
-                 ("stop", "non_negative_int_or_None"),
+                 ("offset", "int_or_None"),
+                 ("length", "positive_int_or_None"),
                  ("time_start", "datetime_or_None"),
                  ("time_stop", "datetime_or_None"))
-    def view_event_log(self, rs, codes, event_id, start, stop, persona_id,
+    def view_event_log(self, rs, codes, event_id, offset, length, persona_id,
                        submitted_by, additional_info, time_start, time_stop):
         """View activities concerning one event organized via DB."""
-        start = start or 0
-        stop = stop or 50
+        length = length or 50
+        # length is the requested length, _length the theoretically
+        # shown length for an infinite amount of log entries.
+        _offset, _length = calculate_db_logparams(offset, length)
+
         # no validation since the input stays valid, even if some options
         # are lost
-        log = self.eventproxy.retrieve_log(
-            rs, codes, event_id, start, stop, persona_id=persona_id,
+        total, log = self.eventproxy.retrieve_log(
+            rs, codes, event_id, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, additional_info=additional_info,
             time_start=time_start, time_stop=time_stop)
         persona_ids = (
@@ -5459,7 +5454,7 @@ class EventFrontend(AbstractUserFrontend):
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
+        loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_event_log", {
-            'log': log, 'personas': personas,
-            'registration_map': registration_map,
-        })
+            'log': log, 'total': total, 'length': _length, 'personas': personas,
+            'registration_map': registration_map, 'loglinks': loglinks})

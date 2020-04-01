@@ -2192,9 +2192,25 @@ def query_result_to_json(data, fields, substitutions=None):
         json_data.append(row)
     return json_serialize(json_data)
 
+def calculate_db_logparams(offset, length):
+    """Modify the offset and length values used in the frontend to
+    allow for guaranteed valid sql queries.
+
+    :type offset: int
+    :type length: int
+    :rtype (int, int)"""
+    _offset = offset
+    _length = length
+    if _offset and _offset < 0:
+        # Avoid non-positive lengths
+        if -offset < length:
+            _length = _length + _offset
+        _offset = 0
+
+    return _offset, _length
 
 def calculate_loglinks(rs, total, offset, length):
-    """Calculate the target parameters for the links in the log pagination bar
+    """Calculate the target parameters for the links in the log pagination bar.
 
     :type rs: :py:class:`cdedb.common.RequestState`
     :type total: int
