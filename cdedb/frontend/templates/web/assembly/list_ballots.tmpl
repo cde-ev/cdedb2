@@ -21,8 +21,8 @@
     {% endif %}
     {% for heading, sample, show_state in ((gettext("Future Ballots"), future, False),
                                            (gettext("Current Ballots"), current, True),
-                                           (gettext("Past Ballots"), done, False)) %}
-        {% if sample %}
+                                           (gettext("Past Ballots"), done, False))
+                                       if sample %}
         <h3>{{ heading }}</h3>
         <div class="row">
             <div class="col-md-8">
@@ -50,6 +50,9 @@
                 </ul>
             </div>
         </div>
-        {% endif %}
+    {% else %}
+        <p class="text-muted">
+            {% trans %}No ballots have been created yet.{% endtrans %}
+        </p>
     {% endfor %}
 {% endblock %}

@@ -202,6 +202,8 @@ class TestAssemblyFrontend(FrontendTest):
         self._create_assembly()
         self.assertPresence("Häretiker", div='description')
         self.assertPresence("Aprilscherz", div='notes')
+        self.traverse({'description': 'Abstimmungen'})
+        self.assertPresence("Es wurden noch keine Abstimmungen angelegt.")
 
     @as_users("werner")
     def test_delete_assembly(self, user):
@@ -322,6 +324,7 @@ class TestAssemblyFrontend(FrontendTest):
                       {'description': 'Abstimmungen'},)
         self.assertTitle("Internationaler Kongress – Abstimmungen")
         self.assertNonPresence("Maximale Länge der Satzung")
+        self.assertNonPresence("Es wurden noch keine Abstimmungen angelegt")
         bdata = {
             'title': 'Maximale Länge der Satzung',
             'description': "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will.",
