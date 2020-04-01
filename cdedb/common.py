@@ -803,8 +803,10 @@ def schulze_evaluate(votes, candidates):
     :param candidates: We require that the candidates be explicitly
       passed. This allows for more flexibility (like returning a useful
       result for zero votes).
-    :rtype: str
-    :returns: The aggregated preference list.
+    :rtype: (str, [{}])
+    :returns: The first Element is the aggregated result,
+    the second is an more extended list, containing every level (descending) as
+    dict with some extended information.
     """
     if not votes:
         return '='.join(candidates)
@@ -879,9 +881,21 @@ def schulze_evaluate(votes, candidates):
             break
         winners = _schulze_winners(d, remaining)
         result.append(winners)
-    # Return the aggregate preference list in the same format as the input
+
+    # Return the aggregated preference list in the same format as the input
     # votes are.
-    return ">".join("=".join(level) for level in result)
+    condensed = ">".join("=".join(level) for level in result)
+    detailed = []
+    for lead, follow in zip(result, result[1:]):
+        level = {
+            'winner': lead,
+            'looser': follow,
+            'pro_votes': counts[(lead[0], follow[0])],
+            'contra_votes': counts[(follow[0], lead[0])]
+        }
+        detailed.append(level)
+
+    return condensed, detailed
 
 
 #: Magic value of moniker of the ballot candidate representing the bar.
