@@ -18,7 +18,8 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter)
+    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
+    schulze_evaluate)
 from cdedb.database.connection import Atomizer
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -672,8 +673,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         update = False
 
         # check for extension
-        if (ballot['extended'] is None
-                and timestamp > ballot['vote_end']):
+        if ballot['extended'] is None and timestamp > ballot['vote_end']:
             self.assemblyproxy.check_voting_priod_extension(rs, ballot['id'])
             update = True
 
@@ -726,20 +726,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                     tmp = losers
             result['winners'] = winners
             result['losers'] = losers
-            result['counts'] = None  # Will be used for classical voting
 
-        if ballot['votes'] and result:
-            counts = {e['moniker']: 0
-                      for e in ballot['candidates'].values()}
-            for v in result['votes']:
-                raw = v['vote']
-                # TODO this looks dangerous and could result in loosing votes
-                if '>' in raw:
-                    selected = raw.split('>')[0].split('=')
-                    for s in selected:
-                        if s in counts:
-                            counts[s] += 1
-            result['counts'] = counts
+            votes = [e['vote'] for e in result['votes']]
+            candidates = [k for k, v in result['candidates'].items()]
+            if ballot['use_bar'] or ballot['votes']:
+                candidates += (ASSEMBLY_BAR_MONIKER,)
+            condensed, detailed = schulze_evaluate(votes, candidates)
+            result['counts'] = detailed
+
         return result
 
     @access("assembly")

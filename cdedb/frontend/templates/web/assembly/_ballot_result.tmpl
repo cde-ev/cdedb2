@@ -10,12 +10,15 @@
                                 {{- ballot['candidates'][candidate_id]['moniker'] -}}
                             </span>
                         {% endif %}
-                        {% if result['counts'] %}
-                            {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
-                            {% trans count=result['counts'][candidate_moniker] %}
-                                ({{ count }} votes)
-                            {% endtrans %}
-                        {% endif %}
+                        {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
+                        {% set first_candidate = loop.first %}
+                        {% for level in result['counts'] %}
+                            {% if candidate_moniker in level['winner'] and first_candidate %}
+                                {% trans pro=level['pro_votes'], contra=level['contra_votes'] %}
+                                    mit {{ pro }} pro und {{ contra }} contra Stimmen
+                                {% endtrans %}
+                            {% endif %}
+                        {% endfor %}
                         {% if not loop.last %}
                             <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
@@ -44,6 +47,13 @@
                     {% endtrans %}
                 </ol>
             {% endif %}
+            {% for level in result['counts'] %}
+                {% if ASSEMBLY_BAR_MONIKER in level['winner'] %}
+                    {% trans pro=level['pro_votes'], contra=level['contra_votes'] %}
+                        mit {{ pro }} pro und {{ contra }} contra Stimmen
+                    {% endtrans %}
+                {% endif %}
+            {% endfor %}
         </p>
         <ol id="loosers">
             {% for candidate_ids in result['losers'] %}
@@ -55,12 +65,15 @@
                                 {{- ballot['candidates'][candidate_id]['moniker'] -}}
                             </span>
                         {% endif %}
-                        {% if result['counts'] %}
-                            {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
-                            {% trans count=result['counts'][candidate_moniker] %}
-                                ({{ count }} votes)
-                            {% endtrans %}
-                        {% endif %}
+                        {% set candidate_moniker = ballot['candidates'][candidate_id]['moniker'] %}
+                        {% set first_candidate = loop.first %}
+                        {% for level in result['counts'] %}
+                            {% if candidate_moniker in level['winner'] and first_candidate %}
+                                {% trans pro=level['pro_votes'], contra=level['contra_votes'] %}
+                                    mit {{ pro }} pro und {{ contra }} contra Stimmen
+                                {% endtrans %}
+                            {% endif %}
+                        {% endfor %}
                         {% if not loop.last %}
                             <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
