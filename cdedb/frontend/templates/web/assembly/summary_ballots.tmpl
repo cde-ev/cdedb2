@@ -20,15 +20,15 @@
     <table class="table">
         <thead>
             <tr>
-                <th>{% trans %}Ballot{% endtrans %}</th>
-                <th>{% trans %}Result{% endtrans %}</th>
+                <th class="col-md-5">{% trans %}Ballot{% endtrans %}</th>
+                <th class="col-md-5">{% trans %}Result{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>
             {% for ballot_id, ballot in ballots.items() %}
             <tr>
                 <td>
-                    <h4>{{ ballot['title'] }}</h4>
+                    <b>{{ ballot['title'] }}</b>
                     {{ ballot['description']|md }}
                 </td>
                 <td>{{ ballot_result.show_result(ballot, result[ballot_id], inline=True) }}</td>

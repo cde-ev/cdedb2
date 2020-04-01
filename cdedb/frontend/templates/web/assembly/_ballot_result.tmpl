@@ -28,7 +28,7 @@
         </ol>
     {% endif %}
 
-    {% if ballot['use_bar'] and result['losers'] %}
+    {% if ballot['use_bar'] %}
         <p class="text-info">
             {% if not inline %}
                 {% if ballot['votes'] %}
@@ -55,6 +55,9 @@
                 {% endif %}
             {% endfor %}
         </p>
+    {% endif %}
+
+    {% if result['losers'] %}
         <ol id="loosers">
             {% for candidate_ids in result['losers'] %}
                 <li value="{{ (loop.index + result['winners']|length) }}">
