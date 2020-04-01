@@ -71,9 +71,9 @@ class EventFrontend(AbstractUserFrontend):
                     rs.ambience['event'].get('is_cancelled')):
                 rs.notify("info",
                     n_("This event was cancelled and has been archived."))
-            if rs.ambience['event'].get('is_archived'):
+            elif rs.ambience['event'].get('is_archived'):
                 rs.notify("info", n_("This event has been archived."))
-            if rs.ambience['event'].get('is_cancelled'):
+            elif rs.ambience['event'].get('is_cancelled'):
                 rs.notify("info", n_("This event has been cancelled."))
         return super().render(rs, templatename, params=params)
 
@@ -115,8 +115,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("anonymous")
     def index(self, rs):
         """Render start page."""
-        open_event_list = self.eventproxy.list_db_events(rs,
-            visible=True, current=True, archived=False)
+        open_event_list = self.eventproxy.list_db_events(
+            rs, visible=True, current=True, archived=False)
         other_event_list = self.eventproxy.list_db_events(
             rs, visible=True, current=False, archived=False)
         open_events = self.eventproxy.get_events(rs, open_event_list)
