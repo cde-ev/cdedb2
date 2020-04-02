@@ -284,8 +284,9 @@
                 $(this).find('.fee-modifiers-container').each(initialize_fee_modifier_dynrow);
             }
         });
-        /* Initialize DynamicRow for course-tracks-containers of existing parts */
+        /* Initialize DynamicRow for course-tracks-containers and initialize_fee_modifier_dynrow of existing parts */
         $('.course-tracks-container').each(initialize_track_dynrow);
+        $('.fee-modifiers-container').each(initialize_fee_modifier_dynrow);
         /* Update maximum number of required choices with total number of choices */
         function update_min_choices_max() {
             var $input_min_choices = $(this).closest('tr').find('.input-min-choices');
