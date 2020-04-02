@@ -16,10 +16,10 @@
 {% block content %}
     {% call logging.table(log) %}
         {% for entry in log %}
-            {{ logging.row(entry, enums['CdELogCodes']) }}
+            {{ logging.row(entry, enums['CdeLogCodes']) }}
         {% endfor %}
     {% endcall %}
 
-    {{ logging.filter('cde/view_cde_log', enums['CdELogCodes'], 'admin_persona') }}
+    {{ logging.filter('cde/view_cde_log', enums['CdeLogCodes'], 'admin_persona') }}
     {{ logging.navigation('cde/view_cde_log', total, length, loglinks) }}
 {% endblock %}
