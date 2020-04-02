@@ -3,8 +3,8 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}{{ ambience['mailinglist']['title'] }}{% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-    {% if not ambience['is_active'] %}
+    {{ super() }}
+    {% if is_admin %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'],
@@ -19,9 +19,9 @@
             {% else %}
                 {% set link = "%s %s"|s|format(util.make_icon('blackboard'), event['title']) %}
             {% endif %}
-            {% trans link=link -%}
+            {% trans link=link %}
                 Mailinglist of Event {{ link }}
-            {%- endtrans %}
+            {% endtrans %}
         </div>
     {% endif %}
     {% if ambience['mailinglist']['assembly_id'] %}
@@ -32,16 +32,16 @@
             {% else %}
                 {% set link = "%s %s"|s|format(util.make_icon('bullhorn'), assembly['title']) %}
             {% endif %}
-            {% trans link=link -%}
+            {% trans link=link %}
                 Mailinglist of Assembly {{ link }}
-            {%- endtrans %}
+            {% endtrans %}
         </div>
     {% endif %}
 
     <dl class="dl-horizontal">
-        <dt>{% trans -%}Mailinglist Address{%- endtrans %}</dt>
-        <dd>{{ util.href('mailto:' + ambience['mailinglist']['address'], ambience['mailinglist']['address']) }}</dd>
-        <dt>{% trans -%}Moderators{%- endtrans %}</dt>
+        <dt>{% trans %}Mailinglist Address{% endtrans %}</dt>
+        <dd>{{ util.href(util.mailto(ambience['mailinglist']['address']), ambience['mailinglist']['address']) }}</dd>
+        <dt>{% trans %}Moderators{% endtrans %}</dt>
         <dd>
             {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                 {{ util.persona_anchor(persona) }}{% if not loop.last %},{% endif %}
@@ -58,16 +58,16 @@
     {% endif %}
 
     {% if not ambience['mailinglist']['is_active'] %}
-        <p class="text-warning"><strong>{% trans -%}This mailinglist is inactive.{%- endtrans %}</strong></p>
+        <p class="text-warning"><strong>{% trans %}This mailinglist is inactive.{% endtrans %}</strong></p>
     {% else %}
         {% call util.bootstrap_panel(title=gettext("Your Subscription"),
                                      aclass=("panel-success" if state and state.is_subscribed() else "panel-default")) %}
                 {% if state and state.is_subscribed() %}
                     <p class="text-success"><strong>
-                        {% trans -%}You are subscribed to this mailinglist.{%- endtrans %}
+                        {% trans %}You are subscribed to this mailinglist.{% endtrans %}
                     </strong></p>
                     <dl class="dl-horizontal">
-                        <dt>{% trans -%}Your email address{%- endtrans %}</dt>
+                        <dt>{% trans %}Your email address{% endtrans %}</dt>
                         <dd>
                             {% if sub_address %}
                                 {{ sub_address }}
@@ -94,20 +94,20 @@
                                                      icon="remove") }}
                             </form>
                         </div>
-                        
-                        <h4 class="mosp">{% trans -%}Change email address{%- endtrans %}</h4>
+
+                        <h4 class="mosp">{% trans %}Change email address{% endtrans %}</h4>
                         <p class="text-muted">
                             {{ util.make_icon('info-sign') }}
-                            {% trans -%}
+                            {% trans %}
                                 To recieve mails from this mailinglist with a different email address,
                                 enter the new address in this form. You will recieve a confirmation mail.
-                            {%- endtrans %}
+                            {% endtrans %}
                         </p>
                         <form action="{{ cdedblink('ml/change_address') }}" method="POST" id="changeaddressform"
                               {% if 'email' in errors %}class="has-error"{% endif %}>
                             {{ util.anti_csrf_token('ml/change_address') }}
                             <label for="input-new-adress" class="sr-only">
-                                {% trans -%}New Subsciption Address{%- endtrans %}
+                                {% trans %}New Subsciption Address{% endtrans %}
                             </label>
                             <div class="input-group">
                                 {{ util.input_text(name="email", type="email", placeholder="new-address@example.com",
@@ -126,15 +126,15 @@
                                 This mailinglist is mandatory. Therefor you are always subscribed to this list
                                 with your primary email address. To change this address go to the
                                 {{ link }} in your Account-Settings.
-                            {%- endtrans %}
+                            {% endtrans %}
                         </p>
                     {% endif %}
                 {% else %}
                     {% if state == enums['SubscriptionStates'].pending %}
                         <p><strong>
-                            {% trans -%}
+                            {% trans %}
                                 Your subscription request is currently pending review by a moderator.
-                            {%- endtrans %}
+                            {% endtrans %}
                         </strong></p>
                         <form action="{{ cdedblink('ml/cancel_subscription') }}" method="POST"
                                 id="cancel-request-form">
@@ -144,7 +144,7 @@
                         </form>
                     {% elif state != enums['SubscriptionStates'].unsubscription_override %}
                         <p><strong>
-                            {% trans -%}You are not currently subscribed to this mailinglist.{%- endtrans %}
+                            {% trans %}You are not currently subscribed to this mailinglist.{% endtrans %}
                         </strong></p>
                         {% if interaction_policy == enums['MailinglistInteractionPolicy'].moderated_opt_in %}
                             <form action="{{ cdedblink('ml/request_subscription') }}" method="POST" id="subscribe-mod-form">
@@ -163,9 +163,9 @@
                         {% endif %}
                     {% else %}
                         <p>
-                            {% trans -%}
+                            {% trans %}
                                 You cannot subscribe to this mailinglist, because you have been blocked by the moderators.
-                            {%- endtrans %}
+                            {% endtrans %}
                         </p>
                     {% endif %}
                 {% endif %}

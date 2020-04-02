@@ -6,7 +6,7 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans title=ambience['assembly']['title'] -%}{{ title }}: Log{%- endtrans %}
+    {% trans title=ambience['assembly']['title'] %}{{ title }}: Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}

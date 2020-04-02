@@ -250,6 +250,8 @@ _DEFAULTS = {
     # host to use for sending emails
     "MAIL_HOST": "localhost",
 
+    # email for cde account requests
+    "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
     # email for event account requests
     "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
     # email for ml account requests
@@ -313,7 +315,7 @@ _DEFAULTS = {
     # maximal number of data sets a normal user is allowed to view per day
     "QUOTA_VIEWS_PER_DAY": 42,
     # maximal number of results for a member search
-    "MAX_MEMBER_SEARCH_RESULTS": 42,
+    "MAX_MEMBER_SEARCH_RESULTS": 200,
     # amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
     # probably always 1 or 2
@@ -506,6 +508,9 @@ _SECRECTS_DEFAULTS = {
 
     # password for mailman to retrieve templates
     "MAILMAN_BASIC_AUTH_PASSWORD": "secret",
+
+    # provisional API token for resolve API
+    "RESOLVE_API_TOKEN": "secret",
 }
 
 

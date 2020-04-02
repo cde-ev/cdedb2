@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans pcourse=ambience['pcourse']['title'], pevent=ambience['pevent']['title'] -%}
+    {% trans pcourse=ambience['pcourse']['title'], pevent=ambience['pevent']['title'] %}
         Edit {{ pcourse }} ({{ pevent }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -19,7 +19,7 @@
         gettext("Edit"), active=True) }}
 {% endblock %}
 {% block content %}
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changecourseform').cdedbProtectChanges();
         });

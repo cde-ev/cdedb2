@@ -5,13 +5,13 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Registrations ({{ title }})
-    {%- endtrans %}    
+    {% endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Registrations{%- endtrans %}
+        {% trans %}Registrations{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -71,7 +71,7 @@
                             selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
     {% if values['is_search'] %}
-        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         <!-- Additional buttons for the registration_query -->
 
         <div class="p">
@@ -83,7 +83,7 @@
                             entry.get("persona.family_name", ""),
                             entry["persona.username"])) %}
                 {% endfor %}
-                {{ util.href("mailto:?bcc=%s"|s|format("; ".join(usernames)), gettext("bcc email to all"),
+                {{ util.href(util.mailto(bcc="; ".join(usernames)), gettext("bcc email to all"),
                              icon="envelope", aclass="btn btn-sm btn-default",
                              title=gettext("Send Mail to all registrations listed below as BCC.")) }}
             {% else %}
@@ -95,15 +95,15 @@
 
         <div class="p pull-right">
             <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
-                {{ util.make_icon('screenshot') }} {% trans -%}Course Assignment{%- endtrans %}
+                {{ util.make_icon('screenshot') }} {% trans %}Course Assignment{% endtrans %}
             </button>
             <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
-                {{ util.make_icon('edit') }} {% trans -%}Set Field{%- endtrans %}
+                {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
             </button>
             <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
-                {{ util.make_icon('pencil') }} {% trans -%}Edit{%- endtrans %}
+                {{ util.make_icon('pencil') }} {% trans %}Edit{% endtrans %}
             </button>
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 $('#btn-course-choices').click(function(){
                     var list = [];
                     $('#query-result').find('.ls-selected').each(function(){

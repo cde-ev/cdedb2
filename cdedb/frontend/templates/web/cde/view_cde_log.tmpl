@@ -6,7 +6,7 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans -%}CdE Log{%- endtrans %}
+    {% trans %}CdE Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}

@@ -8,27 +8,29 @@ import functools
 import gettext
 import inspect
 import pathlib
-import pytz
 import re
-import unittest
 import subprocess
+import tempfile
 import types
-import webtest
+import unittest
+import urllib.parse
 
-from cdedb.config import BasicConfig, SecretsConfig
-from cdedb.frontend.application import Application
-from cdedb.frontend.cron import CronFrontend
-from cdedb.common import (
-    ProxyShim, RequestState, roles_to_db_role, PrivilegeError, glue)
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.session import SessionBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.event import EventBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
+import pytz
+import webtest
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.backend.session import SessionBackend
+from cdedb.common import (PrivilegeError, ProxyShim, RequestState, glue,
+                          roles_to_db_role)
+from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.frontend.application import Application
+from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
@@ -40,6 +42,7 @@ class NearlyNow(datetime.datetime):
     Since automatically generated timestamp are not totally predictible,
     we use this to avoid nasty work arounds.
     """
+
     def __eq__(self, other):
         if isinstance(other, datetime.datetime):
             delta = self - other
@@ -137,6 +140,68 @@ class BackendShim(ProxyShim):
         return new_fun
 
 
+class MyTextTestResult(unittest.TextTestResult):
+    """Subclasing the TestResult object to fix the CLI reporting."""
+
+    def __init__(self, *args, **kwargs):
+        super(MyTextTestResult, self).__init__(*args, **kwargs)
+        self._subTestErrors = []
+        self._subTestFailures = []
+        self._subTestSkips = []
+
+    def startTest(self, test):
+        super(MyTextTestResult, self).startTest(test)
+        self._subTestErrors = []
+        self._subTestFailures = []
+        self._subTestSkips = []
+
+    def addSubTest(self, test, subtest, err):
+        super(MyTextTestResult, self).addSubTest(test, subtest, err)
+        if err is not None:
+            if issubclass(err[0], subtest.failureException):
+                errors = self._subTestFailures
+            else:
+                errors = self._subTestErrors
+            errors.append(err)
+
+    def stopTest(self, test):
+        super(MyTextTestResult, self).stopTest(test)
+        # Print a comprehensive list of failures and errors in subTests.
+        output = []
+        if self._subTestErrors:
+            l = len(self._subTestErrors)
+            if self.showAll:
+                s = "ERROR" + ("({})".format(l) if l > 1 else "")
+            else:
+                s = "E" * l
+            output.append(s)
+        if self._subTestFailures:
+            l = len(self._subTestFailures)
+            if self.showAll:
+                s = "FAIL" + ("({})".format(l) if l > 1 else "")
+            else:
+                s = "F" * l
+            output.append(s)
+        if self._subTestSkips:
+            if self.showAll:
+                s = "skipped {}".format(", ".join(
+                    "{0!r}".format(r) for r in self._subTestSkips))
+            else:
+                s = "s" * len(self._subTestSkips)
+            output.append(s)
+        if output:
+            if self.showAll:
+                self.stream.writeln(", ".join(output))
+            else:
+                self.stream.write("".join(output))
+                self.stream.flush()
+
+    def addSkip(self, test, reason):
+        # Purposely override the parents method, to not print the skip here.
+        super(unittest.TextTestResult, self).addSkip(test, reason)
+        self._subTestSkips.append(reason)
+
+
 class BackendUsingTest(unittest.TestCase):
     used_backends = None
 
@@ -200,6 +265,7 @@ USER_DICT = {
         'display_name': "Anton",
         'given_names': "Anton Armin A.",
         'family_name': "Administrator",
+        'url': '/core/persona/1/show?confirm_id=e473ed4768eb86ca72d2f25b4c39820f955333998ebab46ae7515d605aad99337165bca54b79ddbac55c969fa29e7c864f40b5925ab0828242dd460a5ad9296e--........................--1',
     },
     "berta": {
         'id': 2,
@@ -209,6 +275,7 @@ USER_DICT = {
         'display_name': "Bertå",
         'given_names': "Bertålotta",
         'family_name': "Beispiel",
+        'url': '/core/persona/2/show?confirm_id=3e95048cf6ddb0e7f52c3763e8d526c8aa0a40fe76e6e25119c0d151f280e43aef945a7fe1c639e4bc8cee5bb2e1bb8d31b5fb143593452c8799d3888da42ab4--........................--2',
     },
     "charly": {
         'id': 3,
@@ -218,6 +285,7 @@ USER_DICT = {
         'display_name': "Charly",
         'given_names': "Charly C.",
         'family_name': "Clown",
+        'url': '/core/persona/3/show?confirm_id=68a0f06c859a7043918078d335e4c30de57e443bd0df7e4db4f00146b826a8a5a5b41d90a76fb1796a4ce27853351f67677b33ac5abd10fb6aa0e3ec43fb3522--........................--3',
     },
     "daniel": {
         'id': 4,
@@ -227,6 +295,7 @@ USER_DICT = {
         'display_name': "Daniel",
         'given_names': "Daniel D.",
         'family_name': "Dino",
+        'url': '/core/persona/4/show?confirm_id=eb44903b67e6d24ab7b83d4894a936e69d901b0d2ff422316df0389fbdd2b172779eef5e73c763fe087653736e9ef259c25c3282eb01a63ee47b034da6d5deb9--........................--4',
     },
     "emilia": {
         'id': 5,
@@ -236,6 +305,7 @@ USER_DICT = {
         'display_name': "Emilia",
         'given_names': "Emilia E.",
         'family_name': "Eventis",
+        'url': '/core/persona/5/show?confirm_id=2dca2e7caff601a6ff6fcfb416bb0e858b9a5b2fb163d06c3896848d9da767e214d53783c851a22dfacebe96f1092b40b3073291c9bb4698ca12131a807d3b12--........................--5',
     },
     "ferdinand": {
         'id': 6,
@@ -245,6 +315,7 @@ USER_DICT = {
         'display_name': "Ferdinand",
         'given_names': "Ferdinand F.",
         'family_name': "Findus",
+        'url': '/core/persona/6/show?confirm_id=e1c873304f28662bfbb4cca239e46afa4345f531c4b1de5254bea21459f9214d186656d051644f011c86605d2cd56c41b9a4b3cd1e94a1f75bb03b15b079575a--........................--6',
     },
     "garcia": {
         'id': 7,
@@ -254,6 +325,7 @@ USER_DICT = {
         'display_name': "Garcia",
         'given_names': "Garcia G.",
         'family_name': "Generalis",
+        'url': '/core/persona/7/show?confirm_id=0dc9fd23f3680f7da0dd58637f36aa464c778174dc3b429c62efa357ea3dc238492377b370e95e9a9cbb2a9d594ab86cf5384d75dfb1828d33d3c38f2b337526--........................--7',
     },
     "hades": {
         'id': 8,
@@ -263,6 +335,7 @@ USER_DICT = {
         'display_name': None,
         'given_names': "Hades",
         'family_name': "Hell",
+        'url': '/core/persona/8/show?confirm_id=d8a2fe52388652f2f6567668d8bbd53d3a502c4246dcbfe21476093e70c389d812c0c794e76ac77ebec36b98eafe957d533595708c8ac3ff5bd08f551c08d613--........................--8',
     },
     "inga": {
         'id': 9,
@@ -272,6 +345,7 @@ USER_DICT = {
         'display_name': "Inga",
         'given_names': "Inga",
         'family_name': "Iota",
+        'url': '/core/persona/9/show?confirm_id=c6fdba0e5972459120e7a6959b66500cf6cdddeb98d6cc4d32e008de598f9b7259b60d6c837ec6f437f5d0e1e66f4ae5c0d6b77c6d54257c858200b0aaf2b827--........................--9',
     },
     "janis": {
         'id': 10,
@@ -281,6 +355,7 @@ USER_DICT = {
         'display_name': "Janis",
         'given_names': "Janis",
         'family_name': "Jalapeño",
+        'url': '/core/persona/10/show?confirm_id=a83fda0f360d7c721d691f5de0756847de2b978215e640030b0d4a9fff81731ecce5bdb592b08010845805233f6ab1c19c8428ce0f115dfc52a33a4898d2651d--........................--10',
     },
     "kalif": {
         'id': 11,
@@ -290,6 +365,7 @@ USER_DICT = {
         'display_name': "Kalif",
         'given_names': "Kalif ibn al-Ḥasan",
         'family_name': "Karabatschi",
+        'url': '/core/persona/11/show?confirm_id=63659c73d3726ca05f2921e4cbf653b93f7d64c257bed6a7ff1a3c7e0ab316255ae1ab2b43cc0f8d4d1ebb34f93d687ec35c6e6a0255a32ba3f05bcd22c51836--........................--11',
     },
     "lisa": {
         'id': 12,
@@ -299,6 +375,7 @@ USER_DICT = {
         'display_name': "Lisa",
         'given_names': "Lisa",
         'family_name': "Lost",
+        'url': '/core/persona/12/show?confirm_id=6f79cd8bd417975952b50e1f76818f028e181f0f27e4ba02f521d28084370c14adbb9648aac73d1c3fd39aad7e261f9ea3db6ef6aac3cc2d6843541dc8ed3dd7--........................--12',
     },
     "martin": {
         'id': 13,
@@ -308,6 +385,7 @@ USER_DICT = {
         'display_name': "Martin",
         'given_names': "Martin",
         'family_name': "Meister",
+        'url': '/core/persona/13/show?confirm_id=92997c0b746b3b1af469ffe2e66d46fec3be496f5837fafc36585068a0ea88a6ad698611b7e90352f5fbad24e50266ba22daf2b89f041e6b29058a49b0c6d5a0--........................--13',
     },
     "nina": {
         'id': 14,
@@ -317,6 +395,7 @@ USER_DICT = {
         'display_name': "Nina",
         'given_names': "Nina",
         'family_name': "Neubauer",
+        'url': '/core/persona/14/show?confirm_id=ecb8159a33dfbbece4739f19d54e82730fea0c05310c7420340cd1a1700d27811f8593952099e15c8ffffd049892fe2b88428dc99f14b5f34ba2610d81d5ba58--........................--14',
     },
     "olaf": {
         'id': 15,
@@ -326,6 +405,37 @@ USER_DICT = {
         'display_name': "Olaf",
         'given_names': "Olaf",
         'family_name': "Olafson",
+        'url': '/core/persona/15/show?confirm_id=eafa312e68323aed7f782c56213a1d16bca7db362d7114d78f1f248246d2c1c052bda0caf2cce7c713b372ee5ad769acac977da3d0b9781a2ce44686233422d8--........................--15',
+    },
+    "paul": {
+        'id': 16,
+        'DB-ID': "DB-16-7",
+        'username': "paulchen@example.cde",
+        'password': "secret",
+        'display_name': "Paul",
+        'given_names': "Paulchen",
+        'family_name': "Panther",
+        'url': '/core/persona/16/show?confirm_id=c8ecaaddad592ce35885688fc04f2a2528a37f7f11c70004367747f3d2c717a559b56596f3a2133354cebe5f28aaaec6d314d54b2f111a3e66146965456518fb--........................--16',
+    },
+    "quintus": {
+        'id': 17,
+        'DB-ID': "DB-17-5",
+        'username': "quintus@example.cde",
+        'password': "secret",
+        'display_name': "Quintus",
+        'given_names': "Quintus",
+        'family_name': "da Quirm",
+        'url': '/core/persona/17/show?confirm_id=251bf5e54f8c188eb4ad6397ce45f4d0ccedad0e3df8fc5a303df7e4f2da0ac68d00b40c688fda4dc6d8785515af66661baa1c51529a6664b5e2e2c90b3fd379--........................--17',
+    },
+    "rowena": {
+        'id': 18,
+        'DB-ID': "DB-18-3",
+        'username': "rowena@example.cde",
+        'password': "secret",
+        'display_name': "Rowena",
+        'given_names': "Rowena",
+        'family_name': "Ravenclaw",
+        'url': '/core/persona/18/show?confirm_id=b3f4087f9de6a856126280429844518e4199d37426e6dfdcd01f2c3d19d7dd92ac4506148a7467ccabdac29bc3aef38f260c861868c41eab1f4bacd2f67f8b3a--........................--18',
     },
     "vera": {
         'id': 22,
@@ -335,6 +445,7 @@ USER_DICT = {
         'display_name': "Vera",
         'given_names': "Vera",
         'family_name': "Verwaltung",
+        'url': '/core/persona/22/show?confirm_id=e5f45f87cc90d3b757759a5338cfff429073cc9c764e476ede103f46e6566165d0d37fb9502f11008ff6be704fc2d470bfe99ef82d64556f2826246ab90a3b7a--........................--22',
     },
     "werner": {
         'id': 23,
@@ -344,6 +455,7 @@ USER_DICT = {
         'display_name': "Werner",
         'given_names': "Werner",
         'family_name': "Wahlleitung",
+        'url': '/core/persona/23/show?confirm_id=eddec5b8de0e99312c0703c4e79974e25ef7736f2da7d7f5d750258543022eb0bc2f56801108c9db77bd2797f4820981f84d882001823391abc408f78b7b6cd4--........................--23',
     },
     "annika": {
         'id': 27,
@@ -353,6 +465,7 @@ USER_DICT = {
         'display_name': "Annika",
         'given_names': "Annika",
         'family_name': "Akademieteam",
+        'url': '/core/persona/27/show?confirm_id=a901d4e174592bee3de675413c5a10e578f04205ec2fe9a4527238f2502a2ea3f4202237eddd06dfc10dd05b17338a9afd4afec2735f1e888b36df5352c19c3b--........................--27',
     },
     "farin": {
         'id': 32,
@@ -362,6 +475,7 @@ USER_DICT = {
         'display_name': "Farin",
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
+        'url': '/core/persona/32/show?confirm_id=fded21fb67399bdf3d7d091ade52be13663d8be45f444fc3a94488fccf8fc3980a1f5a5a83dc2a4967563f8d733cd740939b544e7c1042880429a7109a21343e--........................--32',
     },
     "akira": {
         'id': 100,
@@ -371,6 +485,7 @@ USER_DICT = {
         'display_name': "Akira",
         'given_names': "Akira",
         'family_name': "Abukara",
+        'url': '/core/persona/100/show?confirm_id=4d5235e5867d9d5fc4e0e472609ca4b7417c5c9b80b0e5de0c2aa976e09a0eab3e82f10eac65615ea4678dcc2f0853af4f45df1699814ff07fecb3305ec22c0d--........................--100',
     },
 }
 
@@ -425,6 +540,22 @@ class FrontendTest(unittest.TestCase):
             'SERVER_PROTOCOL': "HTTP/1.1",
             'wsgi.url_scheme': 'https'})
 
+        # set `do_scrap` to True to capture a snapshot of all visited pages
+        cls.do_scrap = False
+        if cls.do_scrap:
+            # create a temporary directory and print it
+            cls.scrap_path = tempfile.mkdtemp()
+            print(cls.scrap_path)
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.do_scrap:
+            # make scrap_path directory and content publicly readable
+            folder = pathlib.Path(cls.scrap_path)
+            folder.chmod(0o0755)  # 0755/drwxr-xr-x
+            for file in folder.iterdir():
+                file.chmod(0o0644)  # 0644/-rw-r--r--
+
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"),
                               stdout=subprocess.DEVNULL,
@@ -437,7 +568,17 @@ class FrontendTest(unittest.TestCase):
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
             self.assertNotEqual('CdEDB – Fehler', texts[0])
+            self.scrap()
         self.log_generation_time()
+
+    def scrap(self):
+        if self.do_scrap and self.response.status_int // 100 == 2:
+            # path without host but with query string - capped at 64 chars
+            url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url, delete=False) as f:
+                # create a temporary file in scrap_path with url as a suffix
+                # persisting after process completion and dump the response to it
+                f.write(self.response.body)
 
     def log_generation_time(self, response=None):
         if response is None:
@@ -466,21 +607,27 @@ class FrontendTest(unittest.TestCase):
         self.basic_validate(verbose=verbose)
 
     def submit(self, form, button="submitform", check_notification=True,
-               verbose=False):
+               verbose=False, value=None):
         method = form.method
-        self.response = form.submit(button)
+        self.response = form.submit(button, value=value)
         self.follow()
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
-            self.assertIn("alert alert-success", self.response.text)
+            success_str = "alert alert-success"
+            target = self.response.text
+            if verbose:
+                self.assertIn(success_str, target)
+            elif success_str not in target:
+                raise AssertionError(
+                    "Post request did not produce success notification.")
 
     def traverse(self, *links, verbose=False):
         for link in links:
             if 'index' not in link:
                 link['index'] = 0
             try:
-                self.response = self.response.click(**link)
+                self.response = self.response.click(**link, verbose=verbose)
             except IndexError as e:
                 e.args += ('Error during traversal of {}'.format(link),)
                 raise
@@ -555,24 +702,37 @@ class FrontendTest(unittest.TestCase):
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
         self.assertEqual(title.strip(), normalized)
 
-    def assertPresence(self, s, div="content", regex=False):
+    def get_content(self, div="content"):
         if self.response.content_type == "text/plain":
-            target = self.response.text
-        else:
-            content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
-            target = content.text_content()
+            return self.response.text
+        tmp = self.response.lxml.xpath("//*[@id='{}']".format(div))
+        if not tmp:
+            raise AssertionError("Div not found.", div)
+        content = tmp[0]
+        return content.text_content()
+
+    def assertPresence(self, s, div="content", regex=False, exact=False):
+        target = self.get_content(div)
         normalized = re.sub(r'\s+', ' ', target)
         if regex:
             self.assertTrue(re.search(s.strip(), normalized))
+        elif exact:
+            self.assertEqual(s.strip(), normalized.strip())
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s, div="content"):
+    def assertNonPresence(self, s, div="content", check_div=True):
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
-            content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
-            self.assertNotIn(s.strip(), content.text_content())
+            try:
+                content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
+                self.assertNotIn(s.strip(), content.text_content())
+            except IndexError as e:
+                if check_div:
+                    raise
+                else:
+                    pass
 
     def assertLogin(self, name):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]

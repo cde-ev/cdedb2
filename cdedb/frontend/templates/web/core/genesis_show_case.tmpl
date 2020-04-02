@@ -4,45 +4,46 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=case["given_names"], family_name=case["family_name"] -%}
+    {% trans given_names=ambience['genesis_case']["given_names"], family_name=ambience['genesis_case']["family_name"] %}
         Account Request of {{ given_names }} {{ family_name }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_show_case"),
                         gettext("Details of %(given_names)s %(family_name)s")|format(
-                            given_names=case["given_names"], family_name=case["family_name"]),
+                            given_names=ambience['genesis_case']["given_names"], family_name=ambience['genesis_case']["family_name"]),
                         active="True", icon="user") }}
 {% endblock %}
 {% block content %}
-    <h4 class="heading-underline">{% trans -%}Case Meta-Information{%- endtrans %}</h4>
+    <h4 class="heading-underline">{% trans %}Case Meta-Information{% endtrans %}</h4>
     <dl class="dl-horizontal">
         <dt>{% trans %}Status{% endtrans %}</dt>
-        <dd>
-            {{ gettext(enums['GenesisStati'](case['case_status'])|string) }}
+        <dd id="status">
+            {{ gettext(enums['GenesisStati'](ambience['genesis_case']['case_status'])|string) }}
         </dd>
         <dt>{% trans %}Realm{% endtrans %}</dt>
-        <dd>
-            {% if case['realm'] == 'ml' %}
-                {{ util.make_icon("envelope", title=gettext("Mailinglists")) }} {{ gettext("Mailinglists") }}
-            {% elif case['realm'] == 'event' %}
-                {{ util.make_icon("blackboard", title=gettext("Events")) }} {{ gettext("Events") }}
-            {% else %}
-                Impossible!
-            {% endif %}
+        <dd id="realm">
+            {% with (icon, caption) = {
+                        'ml': ('envelope', gettext("Mailinglists")),
+                        'event': ('blackboard', gettext("Events")),
+                        'cde': ('education', gettext("Members")),
+                        'bullhorn': ('education', gettext("Assemblies"))
+                    }.get(ambience['genesis_case']['realm']) %}
+                {{ util.make_icon(icon) }} {{ caption }}
+            {% endwith %}
         </dd>
         <dt>{% trans %}Creation Time{% endtrans %}</dt>
         <dd>
-            {{ case['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}
+            {{ ambience['genesis_case']['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}
         </dd>
         <dt>{% trans %}Rationale{% endtrans %}</dt>
-        <dd>
-            {{ case['notes'] }}
+        <dd id="notes">
+            {{ ambience['genesis_case']['notes'] }}
         </dd>
         <dt>{% trans %}Reviewer{% endtrans %}</dt>
-        <dd>
+        <dd id="reviewer">
             {% if reviewer %}
                 {{ util.persona_anchor(reviewer) }}
             {% else %}
@@ -51,61 +52,71 @@
         </dd>
     </dl>
 
-    <h4 class="heading-underline">{% trans -%}Persona Information{%- endtrans %}</h4>
+    <h4 class="heading-underline">{% trans %}Persona Information{% endtrans %}</h4>
     <dl class="dl-horizontal">
-        <dt>{% trans -%}Name{%- endtrans %}</dt>
-        <dd>
-            {{ case['given_names'] }} {{ case['family_name'] }}
+        <dt>{% trans %}Name{% endtrans %}</dt>
+        <dd id="given-names">
+            {{ ambience['genesis_case']['given_names'] }} {{ ambience['genesis_case']['family_name'] }}
         </dd>
-        {% if case['birthday'] %}
-            <dt>{% trans -%}Birthday{%- endtrans %}</dt>
-            <dd>{{ case['birthday']|date(lang=lang) }}</dd>
+        {% if ambience['genesis_case']['birth_name'] %}
+            <dt>{% trans %}Birth Name{% endtrans %}</dt>
+            <dd>{{ ambience['genesis_case']['birth_name'] }}</dd>
         {% endif %}
-        {% if case['gender'] %}
-            <dt>{% trans -%}Gender{%- endtrans %}</dt>
-            <dd>{{ gettext(enums['Genders'](case['gender'])|string) }}</dd>
+        {% if ambience['genesis_case']['birthday'] %}
+            <dt>{% trans %}Birthday{% endtrans %}</dt>
+            <dd id="birthday">{{ ambience['genesis_case']['birthday']|date(lang=lang) }}</dd>
         {% endif %}
-        <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
-        <dd>
-            {% if case['username'] %}
-                {{ util.username_mailto(case) }}
+        {% if ambience['genesis_case']['gender'] %}
+            <dt>{% trans %}Gender{% endtrans %}</dt>
+            <dd id="gender">{{ gettext(enums['Genders'](ambience['genesis_case']['gender'])|string) }}</dd>
+        {% endif %}
+        <dt>{% trans %}E-Mail{% endtrans %}</dt>
+        <dd id="username">
+            {% if ambience['genesis_case']['username'] %}
+                {{ util.username_mailto(ambience['genesis_case']) }}
             {% else %}
                 —
             {% endif %}
         </dd>
-        {% if case['telephone'] %}
-            <dt>{% trans -%}Phone{%- endtrans %}</dt>
-            <dd>{{ util.tel_link(case['telephone']) }}</dd>
+        {% if ambience['genesis_case']['telephone'] %}
+            <dt>{% trans %}Phone{% endtrans %}</dt>
+            <dd id="telephone">{{ util.tel_link(ambience['genesis_case']['telephone']) }}</dd>
         {% endif %}
-        {% if case['mobile'] %}
-            <dt>{% trans -%}Mobile Phone{%- endtrans %}</dt>
-            <dd>{{ util.tel_link(case['mobile']) }}</dd>
+        {% if ambience['genesis_case']['mobile'] %}
+            <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
+            <dd id="mobile">{{ util.tel_link(ambience['genesis_case']['mobile']) }}</dd>
         {% endif %}
-        {% if (case['address'] or case['address_supplement'] or case['postal_code']
-                    or case['location'] or case['country']) %}
-            <dt>{% trans -%}Address{%- endtrans %}</dt>
-            <dd>
-                {{ case['address'] }}{% if case['address'] %}<br />{% endif %}
-                {{ case['address_supplement'] }}{% if case['address_supplement'] %}<br />{% endif %}
-                {{ case['postal_code'] }} {{ case['location'] }}{% if case['location'] %}<br />{% endif %}
-                {{ case['country'] }}
+        {% if (ambience['genesis_case']['address'] or ambience['genesis_case']['address_supplement']
+                    or ambience['genesis_case']['postal_code'] or ambience['genesis_case']['location']
+                    or ambience['genesis_case']['country']) %}
+            <dt>{% trans %}Address{% endtrans %}</dt>
+            <dd id="address">
+                {{ ambience['genesis_case']['address'] }}{% if ambience['genesis_case']['address'] %}<br />{% endif %}
+                {{ ambience['genesis_case']['address_supplement'] }}{% if ambience['genesis_case']['address_supplement'] %}<br />{% endif %}
+                {{ ambience['genesis_case']['postal_code'] }} {{ ambience['genesis_case']['location'] }}{% if ambience['genesis_case']['location'] %}<br />{% endif %}
+                {{ ambience['genesis_case']['country'] }}
             </dd>
         {% endif %}
     </dl>
 
+    <div style="margin-bottom: 8px;">
+        {% if ambience['genesis_case']['attachment'] %}
+            {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment': ambience['genesis_case']['attachment']}),
+                        gettext("Download Attachment"), aclass="btn btn-info", icon="download") }}
+        {% endif %}
+    </div>
+
     <div class="button-par">
-        {% if case['case_status'] == enums['GenesisStati'].to_review %}
+        {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}
             <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
              id="genesiseventapprovalform" style="display: inline;">
                 {{ util.anti_csrf_token('core/genesis_decide') }}
-                {{ util.input_hidden(name="case_id", value=case_id) }}
                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
                 {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-success") }}
             </form>
             <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
              id="genesiseventrejectionform" class="rejection-form" style="display: inline;">
                 {{ util.anti_csrf_token('core/genesis_decide') }}
-                {{ util.input_hidden(name="case_id", value=case_id) }}
                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
                 {{ util.input_submit(icon="ban-circle", value=gettext("Reject"),
                                      aclass="btn btn-danger") }}

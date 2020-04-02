@@ -463,29 +463,30 @@ class TestAssemblyBackend(BackendTest):
             "filename": "beschluss.pdf",
         }
         self.assertLess(0, self.assembly.add_attachment(self.key, data, b'123'))
-        expectation = {1: 'Rechenschaftsbericht', 2: 'Verfassung des Staates der CdEler'}
+        expectation = {1001: 'Rechenschaftsbericht',
+                       1002: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
-        expectation = {3: 'Beschlussvorlage'}
+        expectation = {1003: 'Beschlussvorlage'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))
         expectation = {
-            1: {'assembly_id': 1,
-                'ballot_id': None,
-                'filename': 'rechen.pdf',
-                'id': 1,
-                'title': 'Rechenschaftsbericht'},
-            2: {'assembly_id': 1,
-                'ballot_id': None,
-                'filename': 'verf.pdf',
-                'id': 2,
-                'title': 'Verfassung des Staates der CdEler'},
-            3: {'assembly_id': None,
-                'ballot_id': 2,
-                'filename': 'beschluss.pdf',
-                'id': 3,
-                'title': 'Beschlussvorlage'}}
-        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1, 2, 3)))
-        self.assertLess(0, self.assembly.remove_attachment(self.key, 1))
-        expectation = {2: 'Verfassung des Staates der CdEler'}
+            1001: {'assembly_id': 1,
+                   'ballot_id': None,
+                   'filename': 'rechen.pdf',
+                   'id': 1001,
+                   'title': 'Rechenschaftsbericht'},
+            1002: {'assembly_id': 1,
+                   'ballot_id': None,
+                   'filename': 'verf.pdf',
+                   'id': 1002,
+                   'title': 'Verfassung des Staates der CdEler'},
+            1003: {'assembly_id': None,
+                   'ballot_id': 2,
+                   'filename': 'beschluss.pdf',
+                   'id': 1003,
+                   'title': 'Beschlussvorlage'}}
+        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
+        self.assertLess(0, self.assembly.remove_attachment(self.key, 1001))
+        expectation = {1002: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
 
     @as_users("werner")

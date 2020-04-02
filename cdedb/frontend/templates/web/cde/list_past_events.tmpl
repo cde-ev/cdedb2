@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{% trans -%}Past Events (long){%- endtrans %}{% endblock %}
+{% block title %}{% trans %}Past Events (long){% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active="True") }}
@@ -14,20 +14,22 @@
         </div>
     {% endif %}
 
-    <ul class="nav nav-tabs mosp" role="navigation">
-        <li role="presentation" {% if institution_id is none %}class="active" aria-current="page" {% endif %}>
-            {{ util.href(cdedblink('cde/list_past_events', {'institution_id': None}), gettext("Overview")) }}
-        </li>
-        {% for i_id, i in institutions.items() %}
-            <li role="presentation" {% if i_id == institution_id %}class="active" aria-current="page" {% endif %}>
-                {{ util.href(cdedblink('cde/list_past_events', {'institution_id': i_id}), i['moniker']) }}
+    <nav>
+        <ul class="nav nav-tabs mosp" id="navigation">
+            <li role="presentation" {% if institution_id is none %}class="active" aria-current="page" {% endif %}>
+                {{ util.href(cdedblink('cde/list_past_events', {'institution_id': None}), gettext("Overview")) }}
             </li>
-        {% endfor %}
-    </ul>
+            {% for i_id, i in institutions.items() %}
+                <li role="presentation" {% if i_id == institution_id %}class="active" aria-current="page" {% endif %}>
+                    {{ util.href(cdedblink('cde/list_past_events', {'institution_id': i_id}), i['moniker']) }}
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
 
     {% for year, year_events in years|dictsort|reverse %}
         <h4 class="heading-underline">{{ year }}</h4>
-        <ul>
+        <ul id="events-{{ year }}">
             {% for pevent_id in year_events %}
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
@@ -35,16 +37,16 @@
                     {% if not institution_id %}({{ stats[pevent_id]['institution_moniker'] }}){% endif %}
                     {% if is_admin %}
                         <small class="text-muted nowrap">
-                            {% trans count=stats[pevent_id]['courses'] -%}
+                            {% trans count=stats[pevent_id]['courses'] %}
                                 {{ count }} Course
                             {%- pluralize count -%}
                                 {{ count }} Courses
-                            {%- endtrans %},
-                            {% trans count=stats[pevent_id]['participants'] -%}
+                            {% endtrans %},
+                            {% trans count=stats[pevent_id]['participants'] %}
                                 {{ count }} Participant
                             {%- pluralize count -%}
                                 {{ count }} Participants
-                            {%- endtrans %}
+                            {% endtrans %}
                         </small>
                     {% endif %}
                 </li>

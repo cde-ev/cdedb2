@@ -6,7 +6,7 @@
 {% endblock %}
 {% block navigation %}
     {% if "cde" in user.roles %}
-        <h4>{% trans %}Members{% endtrans %}</h4>
+        <h3 class="heading-sidebar">{% trans %}Members{% endtrans %}</h3>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("cde/index"), gettext("Overview"), aclass="list-group-item",
                     icon="triangle-right", active=(sidenav_active=='cde_index')) }}

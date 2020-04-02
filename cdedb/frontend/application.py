@@ -33,6 +33,7 @@ from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
+import cdedb.validation as validate
 
 
 class Application(BaseApp):
@@ -228,8 +229,8 @@ class Application(BaseApp):
                     okay, error = check_anti_csrf(rs, component, action)
                     if not okay:
                         rs.csrf_alert = True
-                        rs.errors.append((ANTI_CSRF_TOKEN_NAME,
-                                          ValueError(error)))
+                        rs.extend_validation_errors(
+                            ((ANTI_CSRF_TOKEN_NAME, ValueError(error)),))
                         rs.notify('error', error)
 
                 # Store database connection as private attribute.
@@ -248,7 +249,10 @@ class Application(BaseApp):
                 user.moderator = moderator
 
                 try:
-                    return handler(rs, **args)
+                    ret = handler(rs, **args)
+                    if rs.validation_appraised is False:
+                        raise RuntimeError("Input validation forgotten.")
+                    return ret
                 finally:
                     rs._conn.commit()
                     rs._conn.close()
@@ -353,9 +357,13 @@ def check_anti_csrf(rs, component, action):
             return False, n_("Anti CSRF token expired. Please try again.")
         else:
             return False, n_("Anti CSRF token is forged.")
-    val = check_validation(rs, 'id', val, ANTI_CSRF_TOKEN_NAME)
+    val, errs = validate.check_id(val, ANTI_CSRF_TOKEN_NAME)
     if not val:
         return False, n_("Anti CSRF token is no valid user id.")
     if val != rs.user.persona_id:
         return False, n_("Anti CSRF token is forged.")
+    # do not trigger validation checking if no errors exist
+    if errs:
+        # this is just defense in depth; this should not be necessary
+        rs.extend_validation_errors(errs)
     return True, None

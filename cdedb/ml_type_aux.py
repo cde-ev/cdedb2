@@ -5,7 +5,7 @@ from cdedb.common import extract_roles, PrivilegeError, n_, unwrap
 from cdedb.query import Query, QueryOperators, QUERY_SPECS
 import cdedb.database.constants as const
 from cdedb.database.constants import (
-    MailinglistTypes, MailinglistInteractionPolicy)
+    MailinglistTypes, MailinglistDomain, MailinglistInteractionPolicy)
 
 
 class BackendContainer:
@@ -15,21 +15,21 @@ class BackendContainer:
         self.assembly = assembly
 
 
-class Domain(enum.IntEnum):
-    lists = 1
-    aka = 2
+def get_type(val):
+    if isinstance(val, str):
+        val = int(val)
+    if isinstance(val, int):
+        val = MailinglistTypes(val)
+    if isinstance(val, MailinglistTypes):
+        return TYPE_MAP[val]
+    raise ValueError(n_("Cannot determine ml_type from {}".format(val)))
 
-    def __str__(self):
-        if self not in _DOMAIN_STR_MAP:
-            raise NotImplementedError(n_("This domain is not supported."))
-        return domain_map[self]
 
-
-# Instead of importing this, call str() on a Domain.
-_DOMAIN_STR_MAP = {
-    Domain.lists: "lists.cde-ev.de",
-    Domain.aka: "aka.cde-ev.de",
-}
+def full_address(val):
+    if isinstance(val, dict):
+        return val['local_part'] + '@' + str(val['domain'])
+    else:
+        raise ValueError(n_("Cannot determine full address for %s."), val)
 
 
 class MailinglistGroup(enum.IntEnum):
@@ -74,6 +74,8 @@ class TeamMeta:
     """Metaclass for all team lists."""
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
+    domains = (MailinglistDomain.lists,
+               MailinglistDomain.dokuforge)
 
 
 class GeneralMailinglist:
@@ -100,7 +102,7 @@ class GeneralMailinglist:
 
     sortkey = MailinglistGroup.other
 
-    domain = Domain.lists
+    domains = (MailinglistDomain.lists,)
 
     allow_unsub = True
 
@@ -223,7 +225,7 @@ class EventMailinglist(GeneralMailinglist):
     """Base class for Event-Mailinglists."""
 
     sortkey = MailinglistGroup.event
-    domain = Domain.aka
+    domains = (MailinglistDomain.aka,)
     viewer_roles = {"event"}
     relevant_admins = {"event_admin"}
 
@@ -294,7 +296,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         # Make event-lists without event link static.
         if mailinglist["event_id"] is None:
-            return MailinglistInteractionPolicy.invitation_only
+            return {anid: MailinglistInteractionPolicy.invitation_only
+                    for anid in persona_ids}
 
         ret = {}
         for persona_id in persona_ids:
@@ -333,8 +336,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             scope="qview_registration",
             spec=spec,
             fields_of_interest=("persona.id",),
-            constraints=((status_column, QueryOperators.oneof,
-                          mailinglist["registration_stati"]),),
+            constraints=[(status_column, QueryOperators.oneof,
+                          mailinglist["registration_stati"]),],
             order=tuple())
         data = bc.event.submit_general_query(rs, query, event_id=event["id"])
 
@@ -354,7 +357,8 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
         # Make event-lists without event link static.
         if mailinglist["event_id"] is None:
-            return const.MailinglistInteractionPolicy.invitation_only
+            return {anid: MailinglistInteractionPolicy.invitation_only
+                    for anid in persona_ids}
 
         ret = {}
         event = bc.event.get_event(rs, mailinglist["event_id"])
@@ -446,6 +450,8 @@ class SemiPublicMailinglist(GeneralMailinglist):
 
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
+    domains = (MailinglistDomain.cdelokal,
+               MailinglistDomain.cdemuenchen)
 
 
 TYPE_MAP = {

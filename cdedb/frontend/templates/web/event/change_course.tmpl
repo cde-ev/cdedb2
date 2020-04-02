@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans course=ambience['course']['shortname'], event=ambience['event']['title'] -%}
+    {% trans course=ambience['course']['shortname'], event=ambience['event']['title'] %}
         Edit {{ course }} ({{ event }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -17,9 +17,9 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans course=ambience['course']['shortname'] -%}
+        {% trans course=ambience['course']['shortname'] %}
             Edit course {{ course }}
-        {%- endtrans %}
+        {% endtrans %}
         <small>{{ util.make_icon('blackboard', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -27,14 +27,14 @@
 {% block content %}
     <form action="{{ cdedblink('event/change_course') }}" method="POST" id="changecourseform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_course') }}
-        <h4 class="heading-underline">{% trans -%}Meta{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
         {{ util.form_input_text(name="nr", label=gettext("Coursenumber")) }}
         {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-        <h4 class="heading-underline">{% trans -%}Course{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Course{% endtrans %}</h4>
         {{ util.form_input_text(name="instructors", label=gettext("Instructors")) }}
         {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (excl. instr.)")) }}
         {{ util.form_input_text(name="max_size", label=gettext("Maximum Size (excl. instr.)")) }}
@@ -48,7 +48,7 @@
                                           info=gettext("Course tracks, in which the Course was originally offered.")) }}
         {% endif %}
 
-        <h4 class="heading-underline">{% trans -%}Status{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Status{% endtrans %}</h4>
         {% if ambience['event']['tracks']|length == 1 %}
             {# show only single checkbox if event has only one course track #}
             {{ util.form_input_checkbox("active_segments", label=gettext("Takes place"),
@@ -76,12 +76,12 @@
                                     info=gettext("Supports %(infolink)s.")|format(
                                     infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
 
-        <h4 class="heading-underline">{% trans -%}Fields{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
         {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
                 if field['association'] == enums['FieldAssociations'].course %}
             {{ util.form_event_field_input(field) }}
         {% else %}
-            <p class="text-muted">{% trans -%}No custom fields for courses available.{%- endtrans %}</p>
+            <p class="text-muted">{% trans %}No custom fields for courses available.{% endtrans %}</p>
         {% endfor %}
 
         {{ util.form_input_static(aclass='text-info', icon='info-sign',
@@ -90,7 +90,7 @@
                                         "event users.")) }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_course")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $('#changecourseform').cdedbProtectChanges();
         $(function(){
             function updateCheckbox($checkbox, enabled) {

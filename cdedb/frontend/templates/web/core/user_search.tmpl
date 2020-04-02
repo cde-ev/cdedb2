@@ -9,9 +9,9 @@
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% block title %}
-    {% trans -%}
-    	core_usermanagement
-    {%- endtrans %}
+    {% trans %}
+        General-User Management
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -23,7 +23,7 @@
     {{ generic.user_search_mask("core", ("pevent_id",)) }}
 
     {% if values['is_search'] %}
-        <h3 id="query-results">{% trans -%}Result{%- endtrans %} [{{ result|length }}]</h3>
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
         {{ generic.user_search_result(result, "core") }}
     {% endif %}
 {% endblock %}

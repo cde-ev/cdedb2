@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Edit Registrations ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -16,7 +16,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Edit Registrations{%- endtrans %}
+        {% trans %}Edit Registrations{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -37,28 +37,28 @@
         <div class="col-sm-1 text-center {% if not label %}col-sm-offset-4{% endif %}">
             <div class="checkbox" title="
                 {%- if label -%}
-                    {% trans label=label -%}
+                    {% trans label=label %}
                         Overwrite “{{ label }}”
-                    {%- endtrans %}
+                    {% endtrans %}
                 {%- else -%}
-                    {% trans -%}
+                    {% trans %}
                         Overwrite this field
-                    {%- endtrans %}
+                    {% endtrans %}
                 {%- endif -%}
             ">
                 <label>
                     <input type="checkbox" name="enable_{{ name }}" value="True" class="enable-input"
                            {% if anid %}id="enable_{{ anid }}" data-input="{{ anid }}"{% endif %}
-                           {% if values.get("enable_{}".format(name), False) %}checked="checked"{% endif %} />
+                           {% if values.get("enable_{}".format(name), False) %}checked{% endif %} />
                     <span class="sr-only">
                         {% if label %}
-                            {% trans label=label -%}
+                            {% trans label=label %}
                                 Overwrite ”{{ label }}”
-                            {%- endtrans %}
+                            {% endtrans %}
                         {% else %}
-                            {% trans -%}
+                            {% trans %}
                                 Overwrite this field
-                            {%- endtrans %}
+                            {% endtrans %}
                         {% endif %}
                     </span>
                 </label>
@@ -81,7 +81,7 @@
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_registrations') }}
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
-        <h3 class="heading-underline">{% trans -%}Registrations{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Registrations{% endtrans %}</h3>
         {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}
             {% for reg_id, reg in registrations.items() %}
                 {{ util.input_static(value=output_name(personas[reg['persona_id']])) }}
@@ -97,14 +97,14 @@
             {{ util.input_textarea("reg.orga_notes", rows=5, anid="input_reg_orga_notes") }}
         {% endcall %}
 
-        <h3 class="heading-underline">{% trans -%}Status{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
 
         <p class="text-info">
             {{ util.make_icon('info-sign') }}
-            {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) -%}
+            {% trans my_registration=util.href(cdedblink('event/registration_status'), gettext("My Registration")) %}
                 The registered people are able to see their current registration status, the payment status and – for
                 minors – the status of the parental consent at “{{ my_registration }}”.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
 
         {% call form_input_optional('reg.payment', label=gettext("Fee paid"), anid="input_reg_payment") %}
@@ -140,7 +140,7 @@
             {% call form_input_optional("part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
                                         anid="part{}_lodgement_id".format(part_id)) %}
                 {{ util.input_select(name="part{}.lodgement_id".format(part_id),
-                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="",
+                                     entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption="&nbsp;"|s,
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
             {% call form_input_optional("part{}.is_reserve".format(part_id),
@@ -159,12 +159,12 @@
                                                   if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                             anid="track{}_course_id".format(track_id)) %}
                     {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
-                                         nulloption="", anid="track{}_course_id".format(track_id)) }}
+                                         nulloption="&nbsp;"|s, anid="track{}_course_id".format(track_id)) }}
                 {% endcall %}
             {% endfor %}
         {% endfor %}
 
-        <h3 class="heading-underline">{% trans -%}Registration Data{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         {% call form_input_optional("reg.mixed_lodging", anid="input_reg_mixed_lodging") %}
             <div class="checkbox">
                 {{ util.input_checkbox(name="reg.mixed_lodging", label=gettext("Mixed Lodging"),
@@ -188,13 +188,13 @@
                                               if ambience['event']['tracks']|length > 1  else gettext("Instructor of"),
                                         anid="input_track{}_course_instructor".format(track_id)) %}
                 {{ util.input_select(name="track{}.course_instructor".format(track_id),
-                                     entries=course_entries, nulloption="",
+                                     entries=course_entries, nulloption="&nbsp;"|s,
                                      anid="input_track{}_course_instructor".format(track_id)) }}
             {% endcall %}
         {% endfor %}
 
         {% if ambience['event']['fields']|length > 0 %}
-            <h3 class="heading-underline">{% trans -%}Custom Fields{%- endtrans %}</h3>
+            <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
             {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
                    if field['association'] == enums['FieldAssociations'].registration %}
                 {% call form_input_optional("fields.{}".format(field['field_name']),
@@ -207,7 +207,7 @@
 
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/registration_query")) }}
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         /**
          * Update disabled state of an input field based on the value of the associated enable-checkbox.
          *

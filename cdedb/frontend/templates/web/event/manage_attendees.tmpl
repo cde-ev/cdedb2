@@ -4,9 +4,9 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_manage_participants.js') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% trans course=ambience['course']['title'], title=ambience['event']['title'] -%}
+    {% trans course=ambience['course']['title'], title=ambience['event']['title'] %}
     	Manage Attendees of Course {{ course }} ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -17,9 +17,9 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans course=ambience['course']['shortname'] -%}
+        {% trans course=ambience['course']['shortname'] %}
             Attendees of {{ course }}
-        {%- endtrans %}
+        {% endtrans %}
         <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -43,17 +43,17 @@
                                 </li>
                             {% else %}
                                 <li class="text-muted">
-                                    {% trans -%}There are currently no attendees assigned.{%- endtrans %}
+                                    {% trans %}There are currently no attendees assigned.{% endtrans %}
                                 </li>
                             {% endfor %}
                         </ul>
 
                         <label for="input_new_{{ track_id }}">
-                            {{ util.make_icon('plus') }} {% trans -%}Add Attendee{%- endtrans %}
+                            {{ util.make_icon('plus') }} {% trans %}Add Attendee{% endtrans %}
                         </label>
-                        <select multiple="multiple" id="input_new_{{ track_id }}" class="form-control"
+                        <select multiple id="input_new_{{ track_id }}" class="form-control"
                                 name="new_{{ track_id }}">
-                            <option value="">{% trans -%}– none –{%- endtrans %}</option>
+                            <option value="">{% trans %}– none –{% endtrans %}</option>
                             {% for registration_id in without_course[track_id] %}
                                 <option id="{{ registration_id }}_{{ track_id }}" value="{{ registration_id }}">
                                     {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
@@ -64,7 +64,7 @@
                     {% endcall %}
                 </div>
             {% endfor %}
-            <script type="text/javascript" nonce="{{ csp_nonce }}">
+            <script nonce="{{ csp_nonce }}">
                 var course_names = {{ course_names|json|s }};
                 {% for track_id in ambience['event']['tracks'] %}
                     $('#input_new_{{ track_id }}').cdedbSearchParticipant(

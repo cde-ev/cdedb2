@@ -4,9 +4,9 @@
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{{ util.cdedb_script('cdedb_dynamicrow.js') }}{% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
     	Configure Custom Fields ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -16,7 +16,7 @@
 {% block heading %}
     {{ util.doclink('Handbuch_Orga_Hinweise') }}
     <h1 class="title">
-        {% trans -%}Configure Custom Fields{%- endtrans %}
+        {% trans %}Configure Custom Fields{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -39,7 +39,7 @@
             <div class="panel-body">
                 <div class="form-group">
                     <label class="col-sm-4 control-label" for="{{ "input-select-kind_{}".format(field_id) }}">
-                        {% trans -%}Datatype{%- endtrans %}
+                        {% trans %}Datatype{% endtrans %}
                     </label>
                     <div class="col-sm-5 {% if "kind_{}".format(field_id) in errors %}has-error{% endif %}">
                         {{ util.input_select(name="kind_{}".format(field_id), entries=enums['FieldDatatypes']|enum_entries(processing=gettext),
@@ -117,7 +117,7 @@
             {% endfor %}
         </div>
 
-        <h3 class="heading-underline">{% trans -%}New Field{%- endtrans %}</h3>
+        <h3 class="heading-underline">{% trans %}New Field{% endtrans %}</h3>
         {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
         <div class="row">
             {{ print_field(-values.get('create_last_index', 0) - 1, None, False, 'drow-prototype', newrow=True) }}
@@ -126,12 +126,12 @@
         {{ util.input_hidden("active_tab", anid="input_active_tab") }}
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_icon('plus') }} {% trans -%}Add Field{%- endtrans %}
+                {{ util.make_icon('plus') }} {% trans %}Add Field{% endtrans %}
             </button>
             {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
         </p>
     </form>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         /* Hide tabs except first one and headings and enable tab switching */
         $('#associations_tabcontent').children('.tab-pane').not(':eq(0)').removeClass('active');
         $('#fieldsummaryform').find('h3').hide();
@@ -181,12 +181,12 @@
 
     <hr />
     <p class="text-warning">{{ util.make_icon('warning-sign') }}
-        {% trans -%}
+        {% trans %}
             Deleting a field includes deletion of all data, which is stored
             in this field in any registration/course/lodgement. Changing
             the datatype of a field deletes all data that cannot be casted
             to the new type, upon saving.
-        {%- endtrans %}</p>
+        {% endtrans %}</p>
     <p class="help-block">
         {{ util.make_icon('info-sign') }}
         {% trans format="<br /><code style='padding: 2px 0;'>%(value_one)s1;%(desc_one)s<br />%(value_two)s2;%(desc_two)s<br />…</code><br />"|s|format(
@@ -198,6 +198,6 @@
             the value will be saved to the database upon selection.
             The value must be compatible to the selected datatype.
             Empty Options will be displayed as a free text/number/date field.
-        {%- endtrans %}
+        {% endtrans %}
     </p>
 {% endblock %}

@@ -33,11 +33,11 @@
             {{ util.href(cdedblink("assembly/index"), gettext("Assembly-Overview"), icon="circle-arrow-up") }}
         </p>
 
-        <h4>{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }}
-            {{ ambience['assembly']['title'] }}</h4>
+        <h3 class="heading-sidebar">{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }}
+            {{ ambience['assembly']['title'] }}</h3>
         {{ assembly_inner_navigation(ambience['assembly']) }}
     {% else %}
-        <h4>{{ gettext("Assemblies") }}</h4>
+        <h3 class="heading-sidebar">{{ gettext("Assemblies") }}</h3>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("assembly/index"), gettext("Overview"), icon="triangle-right",
                     aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}

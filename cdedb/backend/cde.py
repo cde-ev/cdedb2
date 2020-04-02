@@ -162,12 +162,12 @@ class CdEBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
-        if ("finance_admin" not in rs.user.roles
+        if ("cde_admin" not in rs.user.roles
                 and any(e['persona_id'] != rs.user.persona_id for e in data)):
             raise PrivilegeError(n_("Not privileged."))
         return {e['id']: e for e in data}
 
-    @access("finance_admin")
+    @access("cde_admin")
     def set_lastschrift(self, rs, data):
         """Modify a direct debit permit.
 
@@ -192,7 +192,7 @@ class CdEBackend(AbstractBackend):
             self.core.finance_log(rs, log_code, persona_id, None, None)
         return ret
 
-    @access("finance_admin")
+    @access("cde_admin")
     def create_lastschrift(self, rs, data):
         """Make a new direct debit permit.
 
@@ -231,7 +231,7 @@ class CdEBackend(AbstractBackend):
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
         lastschrift_ids = affirm_set("id", lastschrift_ids, allow_None=True)
-        if "finance_admin" not in rs.user.roles:
+        if "cde_admin" not in rs.user.roles:
             # Don't allow None for non admins.
             if lastschrift_ids is None:
                 raise PrivilegeError(n_("Not privileged."))

@@ -1,10 +1,13 @@
 /* *********** *
  * Page layout *
  * *********** */
+html, body {
+    height: 100%;
+}
+
 body{
-    margin: 0;
     background-color: #7c868e;
-    background-image: url(bg-pattern.png);
+    background-image: repeating-linear-gradient(135deg, rgba(136,143,150,.4), rgba(126,133,140,.4) 5px, rgba(136,143,150,.4) 10px);
 }
 
 #footer {
@@ -74,6 +77,9 @@ body{
 .table-slim {
     width: auto;
 }
+.table-layout-fixed {
+    table-layout: fixed;
+}
 .input-slim, .input-group>.input-slim {
     width: auto;
 }
@@ -90,6 +96,12 @@ body{
 }
 ul.slim {
     padding-left: 15px;
+}
+.details-list {
+    list-style-type: none;
+}
+.details-list > li > details >  summary {
+    margin-left: -15px;
 }
 .list-group-item {
     padding: 7px 8px;
@@ -433,6 +445,11 @@ body.development {
 .heading-underline {
     padding-bottom: 2px;
     border-bottom: solid 1px #ddd;
+}
+.heading-sidebar {
+    font-weight: normal;
+    font-size: 18px;
+    margin: 9px 0;
 }
 .subtitle {
     font-size: 1.3em;

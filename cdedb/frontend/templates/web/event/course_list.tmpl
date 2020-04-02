@@ -2,9 +2,9 @@
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Courselist {{ title }}
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -14,42 +14,43 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Courselist{%- endtrans %}
+        {% trans %}Courselist{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
     {% if not ambience['event']['is_course_list_visible'] %}
-        <div class="alert alert-info" role="alert">
+        <div class="alert alert-info" role="alert" id="course-not-visible">
             {{ util.make_icon('info-sign') }}
-            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            <strong>{% trans %}Caution!{% endtrans %}</strong>
             <span class="notificationMessage">
-                {% trans -%}The Courselist is currently only visible to Orgas and Admins.{%- endtrans %}
+                {% trans %}The Courselist is currently only visible to Orgas and Admins.{% endtrans %}
             </span>
         </div>
     {% elif not ambience['event']['is_course_state_visible'] and ambience['event']['id'] in user.orga %}
-        <div class="alert alert-info" role="alert">
+        <div class="alert alert-info" role="alert" id="cancelled-not-visible">
             {{ util.make_icon('info-sign') }}
-            <strong>{% trans -%}Caution!{%- endtrans %}</strong>
+            <strong>{% trans %}Caution!{% endtrans %}</strong>
             {% if ambience['event']['tracks']|length > 1 %}
-                {% trans -%}
+                {% trans %}
                     Cancelled courses are only marked for orgas. Other users can currently only see in which course
                     tracks the course was originally offered.
-                {%- endtrans %}
+                {% endtrans %}
             {% else %}
-                {% trans -%}
+                {% trans %}
                     Cancelled courses are only marked for orgas. Other users cannot see courses' state currently.
-                {%- endtrans %}
+                {% endtrans %}
             {% endif %}
         </div>
     {% endif %}
     {% if courses %}
         {% if "event" not in user.roles %}
-            <div class="alert alert-info" role="alert">
+            <div class="alert alert-info" role="alert" id="instructors-not-visible">
                 {{ util.make_icon('info-sign') }}
-                {% trans -%}The instructors for each course are only visible to logged in users.{%- endtrans %}
+                {% trans %}The instructors for each course are only visible to logged in users.{% endtrans %}
             </div>
         {% endif %}
+        <div id="list-courses">
         {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'] %}
             <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
@@ -66,9 +67,9 @@
                         <span class="label label-primary">{{ entry['shortname'] }}</span>
                     {% endif %}
                     {% if "event" in user.roles and entry['instructors'] %}
-                        {% trans instructors=entry['instructors'] -%}
+                        {% trans instructors=entry['instructors'] %}
                             by {{ instructors }}
-                        {%- endtrans %}
+                        {% endtrans %}
                     {% endif %}
                     {% if ambience['event']['tracks']|length > 1 %}
                         – <span class="text-info">
@@ -76,7 +77,7 @@
                                 if track_id in entry['segments'] -%}
                             {% if not loop.first %}
                                 {%- if loop.last %}
-                                    {% trans -%}and{%- endtrans %}
+                                    {% trans %}and{% endtrans %}
                                 {% else -%}
                                     ,
                                 {% endif %}
@@ -85,7 +86,7 @@
                                     (ambience['event']['is_course_state_visible']
                                         or ambience['event']['id'] in user.orga) %}
                                 <i><s>{{ track['title'] }}</s></i>{# -#}
-                                <span class="sr-only"> ({% trans -%}cancelled{%- endtrans %})</span>
+                                <span class="sr-only"> ({% trans %}cancelled{% endtrans %})</span>
                             {%- else %}
                                 <i>{{ track['title'] }}</i>
                             {%- endif %}
@@ -93,15 +94,16 @@
                     {% elif (ambience['event']['tracks'].keys()|list)[0] not in entry['active_segments'] and
                             (ambience['event']['is_course_state_visible']
                                 or ambience['event']['id'] in user.orga) %}
-                        – <span class="text-info">{% trans -%}cancelled{%- endtrans %}</span>
+                        – <span class="text-info">{% trans %}cancelled{% endtrans %}</span>
                     {% endif %}
                 </p>
                 {{ entry['description']|md }}
             </div>
         {% endfor %}
+        </div>
     {% elif ambience['event']['tracks'] %}
-        <p>{% trans -%}This event does not yet have any courses.{%- endtrans %}</p>
+        <p>{% trans %}This event does not yet have any courses.{% endtrans %}</p>
     {% else %}
-        <p>{% trans -%}This event does not have Courses.{%- endtrans %}</p>
+        <p>{% trans %}This event does not have Courses.{% endtrans %}</p>
     {% endif %}
 {% endblock %}

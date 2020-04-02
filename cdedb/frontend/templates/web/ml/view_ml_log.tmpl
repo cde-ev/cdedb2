@@ -6,12 +6,12 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} Log{%- endtrans %}
+    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {% if not ambience['is_active'] %}
+    {% if is_admin %}
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}

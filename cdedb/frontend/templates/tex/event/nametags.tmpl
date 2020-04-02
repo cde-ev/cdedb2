@@ -93,7 +93,7 @@
                                 <<%- endif -%>>
                             <<%- endfor -%>>
                         <<%- elif registration['persona_id'] in ambience['event']['orgas'] -%>>
-                            \emph{Orga}
+                            \emph{<<% trans %>> Orga <<% endtrans %>>}
                         <<%- endif -%>>
                     }{
                         <<%- if registration['parts'][part_id]['lodgement_id'] -%>>

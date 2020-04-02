@@ -6,7 +6,7 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans -%}Finance Log{%- endtrans %}
+    {% trans %}Finance Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
@@ -18,15 +18,15 @@
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th>{% trans -%}Timestamp{%- endtrans %}</th>
-                <th>{% trans -%}Code{%- endtrans %}</th>
-                <th>{% trans -%}Submitted By{%- endtrans %}</th>
-                <th>{% trans -%}Affected{%- endtrans %}</th>
-                <th>{% trans -%}Amount{%- endtrans %}</th>
-                <th>{% trans -%}Balance{%- endtrans %}</th>
-                <th>{% trans -%}Additional Info{%- endtrans %}</th>
-                <th>{% trans -%}Members{%- endtrans %}</th>
-                <th>{% trans -%}Overall Balance{%- endtrans %}</th>
+                <th>{% trans %}Timestamp{% endtrans %}</th>
+                <th>{% trans %}Code{% endtrans %}</th>
+                <th>{% trans %}Submitted By{% endtrans %}</th>
+                <th>{% trans %}Affected{% endtrans %}</th>
+                <th>{% trans %}Amount{% endtrans %}</th>
+                <th>{% trans %}Balance{% endtrans %}</th>
+                <th>{% trans %}Additional Info{% endtrans %}</th>
+                <th>{% trans %}Members{% endtrans %}</th>
+                <th>{% trans %}Overall Balance{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>

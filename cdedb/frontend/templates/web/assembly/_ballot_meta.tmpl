@@ -9,7 +9,7 @@
                          {{ util.input_submit(value=gettext("Delete"), icon="trash", aclass="btn btn-danger") }}
                          {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                      </form>
-                     <script type="text/javascript" nonce="{{ csp_nonce }}">
+                     <script nonce="{{ csp_nonce }}">
                          $(function() {
                              $('#deleteballotform').cdedbProtectAction(
                                  "{{ gettext("This ballot and all its data will be permanently deleted.") }}");
@@ -21,7 +21,7 @@
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans -%}Deletes the ballot and all associated settings and candidates.{%- endtrans %}
+                    {% trans %}Deletes the ballot and all associated settings and candidates.{% endtrans %}
                 </p>
             </div>
         </div>
@@ -30,19 +30,19 @@
 
 {% macro show_status() -%}
 <dl class="dl-horizontal">
-    <dt>{% trans -%}Voting Period{%- endtrans %}</dt>
-        <dd>
+    <dt>{% trans %}Voting Period{% endtrans %}</dt>
+        <dd id="voting-period">
             {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
                      end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
             From {{ begin }} until {{ end }}.
-            {%- endtrans %}
+            {% endtrans %}
             {% if ambience['ballot']['extended'] is none %}
                 {% if ambience['ballot']['quorum'] %}
                     <br />
                     {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
                              quorum=ambience['ballot']['quorum'] -%}
                     Extension until {{ extension }} if {{ quorum }} votes are not reached.
-                    {%- endtrans %}
+                    {% endtrans %}
                 {% endif %}
             {% else %}
                 {% if ambience['ballot']['extended'] %}
@@ -50,49 +50,57 @@
                     {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
                              quorum=ambience['ballot']['quorum'] -%}
                     Extended until {{ extension }} because {{ quorum }} votes were not reached.
-                    {%- endtrans %}
+                    {% endtrans %}
                 {% elif ambience['ballot']['quorum'] %}
                     <br />
-                    {% trans quorum=anbience['ballot']['quorum'] -%}
+                    {% trans quorum=anbience['ballot']['quorum'] %}
                     No extension neccessary, because {{ quorum }} votes were reached.
-                    {%- endtrans %}
+                    {% endtrans %}
                 {% endif %}
             {% endif %}
         </dd>
-        <dt>{% trans -%}Status{%- endtrans %}</dt>
-        <dd>
+        <dt>{% trans %}Status{% endtrans %}</dt>
+        <dd id="status">
             {% if now() < ambience['ballot']['vote_begin'] %}
-                <strong>{% trans -%}This ballot has not yet begun.{%- endtrans %}</strong><br />
-                {% trans -%}Admins can still make changes to description, files and candidates.{%- endtrans %}
+                <strong>{% trans %}This ballot has not yet begun.{% endtrans %}</strong><br />
+                {% trans %}Admins can still make changes to description, files and candidates.{% endtrans %}
                 {% if is_admin %}
-                    {% trans -%}
+                    {% trans %}
                         All CdE-Members and external assembly participants can already
                         see this ballot and all associated information.
-                    {%- endtrans %}
+                    {% endtrans %}
                 {% endif %}
             {% elif ambience['ballot']['is_tallied'] %}
-                <strong>{% trans -%}This ballot has been concluded.{%- endtrans %}</strong><br />
-                {% trans -%}You can see the results below.{%- endtrans %}
+                <strong>{% trans %}This ballot has been concluded.{% endtrans %}</strong><br />
+                {% trans %}You can see the results below.{% endtrans %}
             {% elif not attends %}
-                {% trans -%}
+                {% trans %}
                     You are not participating in this assembly, therefore you cannot vote in this ballot.
-                {%- endtrans %}
+                {% endtrans %}
             {% elif ambience['ballot']['is_voting'] %}
-                <strong>{% trans -%}This ballot is currently open for voting.{%- endtrans %}</strong><br />
+                <strong>{% trans %}This ballot is currently open for voting.{% endtrans %}</strong><br />
                 {% if own_vote %}
                     {% if split_vote|length == 1 %}
-                        <span class='text-warning'>{% trans -%}You have abstained.{%- endtrans %}</span>
-                        {% trans -%}You can make your choice below, during the voting period.{%- endtrans %}
+                        <span class='text-warning'>{% trans %}You have abstained.{% endtrans %}</span>
+                        {% trans %}You can make your choice below, during the voting period.{% endtrans %}
                     {% else %}
-                        <span class='text-success'>{% trans -%}You already voted.{%- endtrans %}</span>
-                        {% trans -%}
+                        <span class='text-success'>{% trans %}You already voted.{% endtrans %}</span>
+                        {% trans %}
                             You can check your vote below and change it
                             before the end of the voting period.
-                        {%- endtrans %}
+                        {% endtrans %}
                     {% endif %}
                 {% endif %}
             {% endif %}
         </dd>
+        {% if ambience['ballot']['vote_begin'] < now() %}
+            <dt>{% trans %}Already voted{% endtrans %}</dt>
+            <dd id="already-voted">
+                {% trans count=ambience['ballot']['vote_count'] %}
+                    Until now, {{ count }} attendes had given their vote for this ballot.
+                {% endtrans %}
+            </dd>
+        {% endif %}
     </dl>
 
     {% if is_admin and ambience['ballot']['notes'] %}
@@ -105,7 +113,7 @@
 {% macro show_attachments(edit_mode) -%}
     {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         {% if attachments %}
-            <ul>
+            <ul id="attachments">
                 {% for attachment_id, attachment in attachments|xdictsort("title") %}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
@@ -120,7 +128,7 @@
                                 {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="trash",
                                         title=gettext("Delete File")) }}
                             </form>
-                            <script type="text/javascript" nonce="{{ csp_nonce }}">
+                            <script nonce="{{ csp_nonce }}">
                                 $('#removeattachmentform{{ attachment_id }}').cdedbProtectAction("{{ gettext("The attachment will be permanently deleted.") }}");
                                 $('#removeattachmentform{{ attachment_id }}').find('[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
                             </script>

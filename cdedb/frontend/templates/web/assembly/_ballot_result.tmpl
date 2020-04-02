@@ -1,7 +1,7 @@
 {% macro show_result() -%}
-    <h3>{% trans -%}Result{%- endtrans %}</h3>
+    <h3>{% trans %}Result{% endtrans %}</h3>
     {% if result['winners'] %}
-        <ol>
+        <ol id="winners">
             {% for candidate_ids in result['winners'] %}
                 <li value="{{ loop.index }}">
                     {% for candidate_id in candidate_ids %}
@@ -13,12 +13,12 @@
                         {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
                         {% if result['counts'] %}
                             {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
-                            {% trans count=result['counts'][candidate_moniker] -%}
+                            {% trans count=result['counts'][candidate_moniker] %}
                                 ({{ count }} votes)
-                            {%- endtrans %}
+                            {% endtrans %}
                         {% endif %}
                         {% if not loop.last %}
-                            <br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>
+                            <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
                     {% endfor %}
                 </li>
@@ -29,15 +29,15 @@
     {% if ambience['ballot']['use_bar'] and result['losers'] %}
         <p class="text-info">
             {% if ambience['ballot']['votes'] %}
-                {% trans against_all=gettext("Against all Candidates") -%}
+                {% trans against_all=gettext("Against all Candidates") %}
                     The following candidates have less votes than the {{ against_all }} choice.
-                {%- endtrans %}
+                {% endtrans %}
             {% else %}
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
+                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
                     The following candidates lost against the bar ({{ abm }}).
-                {%- endtrans %}
+                {% endtrans %}
             {% endif %}
-        <ol>
+        <ol id="loosers">
             {% for candidate_ids in result['losers'] %}
                 <li value="{{ (loop.index + result['winners']|length) }}">
                     {% for candidate_id in candidate_ids %}
@@ -49,12 +49,12 @@
                         {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
                         {% if result['counts'] %}
                             {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
-                            {% trans count=result['counts'][candidate_moniker] -%}
+                            {% trans count=result['counts'][candidate_moniker] %}
                                 ({{ count }} votes)
-                            {%- endtrans %}
+                            {% endtrans %}
                         {% endif %}
                         {% if not loop.last %}
-                            <br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>
+                            <br /><span class="sr-only">{% trans %}and{% endtrans %}</span>
                         {% endif %}
                     {% endfor %}
                 </li>
@@ -69,54 +69,54 @@
     {# info box for preferential votes #}
     {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
         <p>
-            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s -%}
+            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
                 This vote was a preferential vote. Voters arranged the candidates according to their preference.
                 The preferences of all participants were evaluated using the {{ link }},
                 to determine the winner.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         <p>
-            {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s -%}
+            {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
                 The summary shows the combined preference list of all participant.
                 The greater-than character {{ gt }} means that the candidate, represented by their
                 shortname, on the left has higher overall preference than the one on the right.
                 The equals character {{ eq }} means that two or more candidates have the same overall
                 preference across all participants.
-            {%- endtrans %}
+            {% endtrans %}
         </p>
         {% if ambience['ballot']['use_bar'] %}
             <p>
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) -%}
+                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
                     Additionally the moniker {{ abm }} shows where in the rejection bar was ranked in the
                     overall preference list.
                     Should no candidate have won against the bar, the board may take additional measures.
-                {%- endtrans %}
+                {% endtrans %}
             </p>
         {% endif %}
     {% endcall %}
 {%- endmacro %}
 
 {% macro show_own_vote() -%}
-    <h3>{% trans -%}Your Vote{%- endtrans %}</h3>
-    <p>
+    <h3>{% trans %}Your Vote{% endtrans %}</h3>
+    <div id="own-vote">
         {% set is_active = ambience["assembly"]["is_active"] %}
         {% if not attends %}
-            {% trans -%}You are not participating in this assembly.{%- endtrans %}
+            {% trans %}You are not participating in this assembly.{% endtrans %}
         {% elif not is_active and not own_vote %}
             {% if not has_voted %}
-                {% trans -%}You did not vote.{%- endtrans %}
+                {% trans %}You did not vote.{% endtrans %}
             {% else %}
                 {% if not secret %}
                     <p>
                         {{ util.make_icon('info-sign') }}
-                        {% trans -%}The assembly concluded and the votes got encrypted.{%- endtrans %}
-                        {% trans -%}To show your vote, enter the secret you were sent when registering for the assembly.{%- endtrans %}
+                        {% trans %}The assembly concluded and the votes got encrypted.{% endtrans %}
+                        {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>
                 {% else %}
                     <p>
                         {{ util.make_icon('info-sign') }}
-                        {% trans -%}You entered an invalid secret.{%- endtrans %}
-                        {% trans -%}To show your vote, enter the secret you were sent when registering for the assembly.{%- endtrans %}
+                        {% trans %}You entered an invalid secret.{% endtrans %}
+                        {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
                     </p>
                 {% endif %}
                 <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
@@ -135,27 +135,27 @@
             {% endif %}
         {% elif not own_vote %}
             {% if ambience['ballot']['is_voting'] %}
-                {% trans -%}You have not voted yet.{%- endtrans %}
+                {% trans %}You have not voted yet.{% endtrans %}
             {% else %}
-                {% trans -%}You did not vote.{%- endtrans %}
+                {% trans %}You did not vote.{% endtrans %}
             {% endif %}
         {% elif ambience['ballot']['votes'] %}
             {# Show own vote under result: Classical vote #}
             {% if split_vote|length == 1 %}
-                {% trans -%}You abstained.{%- endtrans %}
+                {% trans %}You abstained.{% endtrans %}
             {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
-                {% trans -%}You voted against all candidates.{%- endtrans %}
+                {% trans %}You voted against all candidates.{% endtrans %}
             {% else %}
-                {% trans -%}You voted for the following candidates:{%- endtrans %}<br />
+                {% trans %}You voted for the following candidates:{% endtrans %}<br />
                 {% for vote in split_vote[0] %}
                     {{ candidates[vote]['description'] }}{% if not loop.last %},{% endif %}
                 {% endfor %}
             {% endif %}
         {% else %}
             {# Show own vote under result: Preferential vote #}
-            {%- trans vote="<code>%(vote)s</code>"|s|format(vote=own_vote) -%}
+            {%- trans vote="<code>%(vote)s</code>"|s|format(vote=own_vote) %}
                 You voted {{ vote }}.
-            {%- endtrans -%}
+            {% endtrans -%}
         {% endif %}
-    </p>
+    </div>
 {%- endmacro %}

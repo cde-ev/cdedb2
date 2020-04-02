@@ -6,7 +6,7 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans -%}Userdata Log{%- endtrans %}
+    {% trans %}Userdata Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
@@ -18,13 +18,13 @@
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th>{% trans -%}Timestamp{%- endtrans %}</th>
-                <th>{% trans -%}Status{%- endtrans %}</th>
-                <th>{% trans -%}Submitted By{%- endtrans %}</th>
-                <th>{% trans -%}Reviewed By{%- endtrans %}</th>
-                <th>{% trans -%}Affected{%- endtrans %}</th>
-                <th>{% trans -%}Generation{%- endtrans %}</th>
-                <th>{% trans -%}Additional Info{%- endtrans %}</th>
+                <th>{% trans %}Timestamp{% endtrans %}</th>
+                <th>{% trans %}Status{% endtrans %}</th>
+                <th>{% trans %}Submitted By{% endtrans %}</th>
+                <th>{% trans %}Reviewed By{% endtrans %}</th>
+                <th>{% trans %}Affected{% endtrans %}</th>
+                <th>{% trans %}Generation{% endtrans %}</th>
+                <th>{% trans %}Additional Info{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>

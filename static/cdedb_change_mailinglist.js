@@ -1,6 +1,6 @@
 (function($){
     $.fn.cdedbChangeMailinglist = function() {
-        var names = ['audience_policy','event_id','assembly_id'];
+        var names = ['ml_type','event_id','assembly_id'];
         var fields = {};
         for (var i = 0; i < names.length; i++) {
             fields[names[i]] = $(this).find('[name="'+ names[i] +'"]');
@@ -13,11 +13,11 @@
          */
         function update_view() {
             // Calculate visibility of event/assembly select boxes
+            // numeric values from cdedb.database.constants.MailinglistTypes
+            // 20 = participant list; 21 = orga list; 30 = participant list
             var visible = {
-                'event_id':     (fields['audience_policy'].val() == 1 && fields['assembly_id'].val() == ''
-                                    || fields['audience_policy'].val() == 3),
-                'assembly_id':  (fields['audience_policy'].val() == 1 && fields['event_id'].val() == ''
-                                    || fields['audience_policy'].val() == 2)
+                'event_id':     (fields['ml_type'].val() == 20 || fields['ml_type'].val() == 21),
+                'assembly_id':  (fields['ml_type'].val() == 30) // TODO: why 31 not listed here?
             };
 
             // Change visibility of event/assembly select boxes and clear boxes

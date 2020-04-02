@@ -4,13 +4,13 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}
+    {% trans title=ambience['event']['title'] %}
         Checkin ({{ title }})
-    {%- endtrans %}
+    {% endtrans %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans -%}Checkin{%- endtrans %}
+        {% trans %}Checkin{% endtrans %}
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -23,7 +23,7 @@
     {% call util.bootstrap_panel(gettext("Search Name"), icon='search', aclass='panel-primary panel-condensed softhide',
                                  anid='searchpanel') %}
         <input type="text" id="selector" class="form-control" value=""
-               aria-label="{% trans -%}Name to Search{%- endtrans %}" />
+               aria-label="{% trans %}Name to Search{% endtrans %}" />
     {% endcall %}
 
     <div class="list-group list-group-hover">
@@ -57,7 +57,7 @@
                     </div>
                     <div class="col-sm-4 hide-xs">
                         <small class="text-info">
-                            {% trans -%}Lodgement{%- endtrans %}:
+                            {% trans %}Lodgement{% endtrans %}:
                             {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                    if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
                                 {% if registration['parts'][part_id]['lodgement_id'] %}
@@ -69,7 +69,16 @@
                             {% endfor %}
                         </small>
                     </div>
-                    <div class="col-sm-4">
+                    <div class="col-sm-2">
+                        {{ util.href(cdedblink('event/change_registration',
+                                               {'registration_id': registration_id, 'skip': 'reg.checkin'}),
+                                     title=gettext("Edit"), icon='pencil', aclass="btn btn-sm btn-warning") }}
+                        {{ util.href(cdedblink('event/show_registration',
+                                               {'registration_id': registration_id}),
+                                     title=gettext("Details"), icon='user', aclass="btn btn-sm btn-info") }}
+
+                    </div>
+                    <div class="col-sm-2">
                         <form action="{{ cdedblink('event/checkin') }}" method="POST" id="checkinform{{ registration_id }}"
                               style="display: inline;" class="checkinform">
                             {{ util.anti_csrf_token('event/checkin') }}
@@ -77,14 +86,11 @@
                             {{ util.input_submit(value=gettext("Checkin"), aclass="btn btn-primary btn-sm",
                                                  readonly=is_locked) }}
                         </form>
-                        {{ util.href(cdedblink('event/change_registration',
-                                               {'registration_id': registration_id, 'skip': 'reg.checkin'}),
-                                     gettext("Edit"), icon='pencil', aclass="btn btn-sm btn-warning") }}
-                        </div>
-                </div>
+                    </div>
+            </div>
         {% endfor %}
     </div>
-    <script type="text/javascript" nonce="{{ csp_nonce }}">
+    <script nonce="{{ csp_nonce }}">
         $("#searchpanel").show();
         $("#selector").focus()
             .on('keydown paste input', function(){

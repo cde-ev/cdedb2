@@ -99,7 +99,7 @@ class RequestState:
         self.notifications = notifications
         self.urls = mapadapter
         self.requestargs = requestargs
-        self.errors = errors
+        self._errors = errors
         if not isinstance(values, werkzeug.datastructures.MultiDict):
             values = werkzeug.datastructures.MultiDict(values)
         self.values = values
@@ -119,6 +119,10 @@ class RequestState:
         self.is_quiet = False
         # Is true, if the application detected an invalid (or no) CSRF token
         self.csrf_alert = False
+        # Used for validation enforcement, set to False if a validator
+        # is executed and then to True with the corresponding methods
+        # of this class
+        self.validation_appraised = None
 
     def notify(self, ntype, message, params=None):
         """Store a notification for later delivery to the user.
@@ -133,6 +137,65 @@ class RequestState:
                              {'t': ntype})
         params = params or {}
         self.notifications.append((ntype, message, params))
+
+    def append_validation_error(self, error):
+        """Register a new  error.
+
+        The important side-effect is the activation of the validation
+        tracking, that causes the application to throw an error if the
+        validation result is not checked.
+
+        However in general the method extend_validation_errors()
+        should be preferred since it activates the validation tracking
+        even if no errors are present.
+
+        :type error: (str, Exception)
+        """
+        self.validation_appraised = False
+        self._errors.append(error)
+
+    def extend_validation_errors(self, errors):
+        """Register a new (maybe empty) set of errors.
+
+        The important side-effect is the activation of the validation
+        tracking, that causes the application to throw an error if the
+        validation result is not checked.
+
+        :type errors: [(str, Exception)]
+        """
+        self.validation_appraised = False
+        self._errors.extend(errors)
+
+    def has_validation_errors(self):
+        """Check whether validation errors exists.
+
+        This (or its companion function) must be called in the
+        lifetime of a request. Otherwise the application will throw an
+        error.
+
+        :rtype: bool
+        """
+        self.validation_appraised = True
+        return bool(self._errors)
+
+    def ignore_validation_errors(self):
+        """Explicitly mark validation errors as irrelevant.
+
+        This (or its companion function) must be called in the
+        lifetime of a request. Otherwise the application will throw an
+        error.
+        """
+        self.validation_appraised = True
+
+    def retrieve_validation_errors(self):
+        """Take a look at the queued validation errors.
+
+        This does not cause the validation tracking to register a
+        successful check.
+
+        :rtype: [(str, Exception)]
+        """
+        return self._errors
 
 
 class User:
@@ -427,6 +490,11 @@ class PartialImportError(RuntimeError):
     pass
 
 
+class ValidationWarning(Exception):
+    """Exception which should be suppressable by the user."""
+    pass
+
+
 def pad(value):
     """Pad strings to sort numerically.
 
@@ -455,6 +523,25 @@ class EntitySorter:
         :rtype: str
         """
         return (entry['family_name'] + " " + entry['given_names']).lower()
+
+    @staticmethod
+    def given_names(persona):
+        return persona['given_names']
+
+    @staticmethod
+    def family_name(persona):
+        return persona['family_name']
+
+    @staticmethod
+    def email(persona):
+        return persona['username']
+
+    @staticmethod
+    def address(persona):
+        postal_code = persona.get('postal_code', "") or ""
+        location = persona.get('location', "") or ""
+        address = persona.get('address', "") or ""
+        return (postal_code, location, address)
 
     @staticmethod
     def event(event):
@@ -816,6 +903,29 @@ def unwrap(single_element_list, keys=False):
 
 
 @enum.unique
+class LodgementsSortkeys(enum.Enum):
+    """Sortkeys for lodgement overview."""
+    #: default sortkey (currently equal to EntitySorter.lodgement)
+    moniker = 1
+    #: (capacity - reserve) which are used in this part
+    used_regular = 10
+    #: reserve which is used in this part
+    used_reserve = 11
+    #: (capacity - reserve) of this lodgement
+    total_regular = 20
+    #: reserve of this lodgement
+    total_reserve = 21
+
+    def is_used_sorting(self):
+        return self in (LodgementsSortkeys.used_regular,
+                        LodgementsSortkeys.used_reserve)
+
+    def is_total_sorting(self):
+        return self in (LodgementsSortkeys.total_regular,
+                        LodgementsSortkeys.total_reserve)
+
+
+@enum.unique
 class AgeClasses(enum.IntEnum):
     """Abstraction for encapsulating properties like legal status changing with
     age.
@@ -850,9 +960,9 @@ def deduct_years(date, years):
     Dates are nasty, in theory this should be a simple subtraction, but
     leap years create problems.
 
-    :type date: datetime.datetime
+    :type date: datetime.date
     :type years: int
-    :rtype: datetime.datetime
+    :rtype: datetime.date
     """
     try:
         return date.replace(year=date.year - years)
@@ -1011,6 +1121,105 @@ class CourseChoiceToolActions(enum.IntEnum):
     specific_rank = INFINITE_ENUM_MAGIC_NUMBER
     assign_fixed = -4  #: the course is specified separately
     assign_auto = -5  #: somewhat intelligent algorithm
+
+
+@enum.unique
+class Accounts(enum.Enum):
+    """Store the existing CdE Accounts."""
+    Account0 = 8068900
+    Account1 = 8068901
+    Account2 = 8068902
+    # Fallback if Account is none of the above
+    Unknown = 0
+
+    def __str__(self):
+        return str(self.value)
+
+
+@enum.unique
+class TransactionType(enum.IntEnum):
+    """Store the type of a Transactions."""
+    MembershipFee = 1
+    EventFee = 2
+    Donation = 3
+    I25p = 4
+    Other = 5
+
+    EventFeeRefund = 10
+    InstructorRefund = 11
+    EventExpenses = 12
+    Expenses = 13
+    AccountFee = 14
+    OtherPayment = 15
+
+    Unknown = 1000
+
+    @property
+    def has_event(self):
+        return self in {TransactionType.EventFee,
+                        TransactionType.EventFeeRefund,
+                        TransactionType.InstructorRefund,
+                        TransactionType.EventExpenses,
+                        }
+
+    @property
+    def has_member(self):
+        return self in {TransactionType.MembershipFee,
+                        TransactionType.EventFee,
+                        TransactionType.I25p,
+                        }
+
+    @property
+    def is_unknown(self):
+        return self in {TransactionType.Unknown,
+                        TransactionType.Other,
+                        TransactionType.OtherPayment
+                        }
+
+    def old(self):
+        """
+        Return a string representation compatible with the old excel style.
+
+        :rtype: str
+        """
+        if self == TransactionType.MembershipFee:
+            return "Mitgliedsbeitrag"
+        if self in {TransactionType.EventFee,
+                    TransactionType.EventExpenses,
+                    TransactionType.EventFeeRefund,
+                    TransactionType.InstructorRefund}:
+            return "Teilnehmerbeitrag"
+        if self == TransactionType.I25p:
+            return "Initiative 25+"
+        if self == TransactionType.Donation:
+            return "Spende"
+        else:
+            return "Sonstiges"
+
+    def __str__(self):
+        """
+        Return a string represantation for the TransactionType.
+
+        These are _not_ translated on purpose, so that the generated download
+        is the same regardless of locale.
+        """
+        to_string = {TransactionType.MembershipFee.name: "Mitgliedsbeitrag",
+                     TransactionType.EventFee.name: "Teilnehmerbeitrag",
+                     TransactionType.Donation.name: "Spende",
+                     TransactionType.I25p.name: "Initiative25+",
+                     TransactionType.Other.name: "Sonstiges",
+                     TransactionType.EventFeeRefund.name: "Teilnehmererstattung",
+                     TransactionType.InstructorRefund.name: "KL-Erstattung",
+                     TransactionType.EventExpenses.name: "Veranstaltungsausgabe",
+                     TransactionType.Expenses.name: "Ausgabe",
+                     TransactionType.AccountFee.name: "Kontogebühr",
+                     TransactionType.OtherPayment.name: "Andere Zahlung",
+                     TransactionType.Unknown.name: "Unbekannt",
+                     }
+        if self.name in to_string:
+            return to_string[self.name]
+        else:
+            return repr(self)
 
 
 def mixed_existence_sorter(iterable):
@@ -1465,7 +1674,7 @@ def roles_to_db_role(roles):
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
-CDEDB_EXPORT_EVENT_VERSION = 8
+CDEDB_EXPORT_EVENT_VERSION = 9
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1513,14 +1722,50 @@ PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country",
+    "address", "postal_code", "location", "country", "birth_name", "attachment",
     "realm", "notes", "case_status", "reviewer")
 
+# The following dict defines, which additional fields are required for genesis
+# request for distinct realms. Additionally, it is used to define for which
+# realms genesis requrests are allowed
 realm_specific_genesis_fields = {
     "ml": tuple(),
     "event": ("gender", "birthday", "telephone", "mobile",
               "address_supplement", "address", "postal_code", "location",
               "country"),
+    "cde": ("gender", "birthday", "telephone", "mobile",
+            "address_supplement", "address", "postal_code", "location",
+            "country", "birth_name", "attachment"),
+}
+
+genesis_realm_access_bits = {
+    'event': {
+        'is_cde_realm': False,
+        'is_event_realm': True,
+        'is_assembly_realm': False,
+        'is_ml_realm': True,
+        'is_member': False,
+        'is_searchable': False,
+    },
+    'ml': {
+        'is_cde_realm': False,
+        'is_event_realm': False,
+        'is_assembly_realm': False,
+        'is_ml_realm': True,
+        'is_member': False,
+        'is_searchable': False,
+    },
+    'cde': {
+        'is_cde_realm': True,
+        'is_event_realm': True,
+        'is_assembly_realm': True,
+        'is_ml_realm': True,
+        'is_member': True,
+        'is_searchable': False,
+        'trial_member': True,
+        'decided_search': False,
+        'bub_search': False,
+    }
 }
 
 #: Fields of a pending privilege change.
@@ -1541,8 +1786,8 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname",
     "registration_start", "registration_soft_limit", "registration_hard_limit",
-    "iban", "orga_address", "registration_text", "mail_text",
-    "use_questionnaire", "notes", "offline_lock", "is_visible",
+    "iban", "nonmember_surcharge", "orga_address", "registration_text",
+    "mail_text", "use_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
     "is_participant_list_visible", "courses_in_participant_list", "is_archived",
     "lodge_field", "reserve_field", "course_room_field")
@@ -1592,8 +1837,8 @@ LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
 
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
-    "id", "title", "address", "description", "mod_policy",
-    "notes", "attachment_policy", "ml_type",
+    "id", "title", "address", "local_part", "domain", "description",
+    "mod_policy", "notes", "attachment_policy", "ml_type",
     "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
 

@@ -219,7 +219,7 @@
 			"payment": null,
 			"amount_paid": "0.00",
 			"list_consent": true,
-			"persona_id": 2,
+			"persona_id": 3,
 			"notes": null,
 			"parental_agreement": true,
 			"tracks": {
@@ -251,5 +251,5 @@
 			}
 		}
 	},
-	"CDEDB_EXPORT_EVENT_VERSION": 8
+	"CDEDB_EXPORT_EVENT_VERSION": 9
 }

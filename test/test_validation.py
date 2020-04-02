@@ -3,6 +3,7 @@
 import unittest
 import cdedb.validation as validate
 import cdedb.database.constants as const
+from cdedb.common import ValidationWarning
 import decimal
 import copy
 import datetime
@@ -306,12 +307,6 @@ class TestValidation(unittest.TestCase):
             ("+210 (12390) 12345", None, ValueError, False),
             ))
 
-    def test_germane_postal_code(self):
-        self.do_validator_test("_german_postal_code", (
-            ("07743", "07743", None, True),
-            ("07742", None, ValueError, False),
-            ))
-
     def test_member_data(self):
         base_example = {
             "id": 42,
@@ -362,7 +357,7 @@ class TestValidation(unittest.TestCase):
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
             (key_example, key_example, KeyError, False),
-            (value_example, value_example, ValueError, False),
+            (value_example, value_example, ValidationWarning, False),
             ))
 
     def test_event_user_data(self):
@@ -400,7 +395,7 @@ class TestValidation(unittest.TestCase):
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
             (key_example, None, KeyError, False),
-            (value_example, None, ValueError, False),
+            (value_example, None, ValidationWarning, False),
             ))
 
     def test_enum_validators(self):
@@ -495,3 +490,69 @@ class TestValidation(unittest.TestCase):
                     self.assertFalse(errs)
                 else:
                     self.assertTrue(all(isinstance(e, error) for _, e in errs))
+
+    def test_german_postal_code(self):
+        for assertion in ("_persona", "_genesis_case"):
+            spec = (
+                ({'id': 1, 'postal_code': "ABC", 'country': ""},
+                 None,
+                 ValidationWarning, False),
+                ({'id': 1, 'postal_code': "ABC", 'country': None},
+                 None,
+                 ValidationWarning, False),
+                ({'id': 1, 'postal_code': "ABC", 'country': "Deutschland"},
+                 None,
+                 ValidationWarning, False),
+                ({'id': 1, 'postal_code': "ABC"}, None,
+                 ValidationWarning, False),
+                ({'id': 1, 'postal_code': "47239", 'country': ""},
+                 {'id': 1, 'postal_code': "47239", 'country': None},
+                 None, False),
+                ({'id': 1, 'postal_code': "47239", 'country': None},
+                 {'id': 1, 'postal_code': "47239", 'country': None},
+                 None, True),
+                ({'id': 1, 'postal_code': "47239", 'country': "Deutschland"},
+                 {'id': 1, 'postal_code': "47239", 'country': "Deutschland"},
+                 None, True),
+                ({'id': 1, 'postal_code': "47239"},
+                 {'id': 1, 'postal_code': "47239"},
+                 None, True),
+            )
+            if assertion == "_genesis_case":
+                for inv, outv, _, _ in spec:
+                    inv['realm'] = "event"
+                    if outv is not None:
+                        outv['realm'] = "event"
+            self.do_validator_test(assertion, spec, None)
+            spec = (
+                ({'id': 1, 'postal_code': "ABC", 'country': ""},
+                 {'id': 1, 'postal_code': "ABC", 'country': None},
+                 None, False),
+                ({'id': 1, 'postal_code': "ABC", 'country': None},
+                 {'id': 1, 'postal_code': "ABC", 'country': None},
+                 None, True),
+                ({'id': 1, 'postal_code': "ABC", 'country': "Deutschland"},
+                 {'id': 1, 'postal_code': "ABC", 'country': "Deutschland"},
+                 None, True),
+                ({'id': 1, 'postal_code': "ABC"},
+                 {'id': 1, 'postal_code': "ABC"},
+                 None, True),
+                ({'id': 1, 'postal_code': "47239", 'country': None},
+                 {'id': 1, 'postal_code': "47239", 'country': None},
+                 None, True),
+                ({'id': 1, 'postal_code': "47239", 'country': ""},
+                 {'id': 1, 'postal_code': "47239", 'country': None},
+                 None, False),
+                ({'id': 1, 'postal_code': "47239", 'country': "Deutschland"},
+                 {'id': 1, 'postal_code': "47239", 'country': "Deutschland"},
+                 None, True),
+                ({'id': 1, 'postal_code': "47239"},
+                 {'id': 1, 'postal_code': "47239"},
+                 None, True),
+            )
+            if assertion == "_genesis_case":
+                for inv, outv, _, _ in spec:
+                    inv['realm'] = "event"
+                    if outv is not None:
+                        outv['realm'] = "event"
+            self.do_validator_test(assertion, spec, {'_ignore_warnings': True})
