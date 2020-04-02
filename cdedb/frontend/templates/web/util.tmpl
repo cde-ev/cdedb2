@@ -319,8 +319,7 @@
         placeholder='', arialabel='', attributes='') %}
     <input type="{{ type }}" {%- if aclass %} class="{{ aclass }}"{% endif %}
             {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {%- if placeholder and type in
-            ("email", "number", "password", "search", "tel", "text", "url") %} placeholder="{{ placeholder }}"{% endif %}
+            {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel }}"{% endif %}
             {%- if anid %} id="{{ anid }}"{% endif %} {# -#}
             name="{{ name }}"
