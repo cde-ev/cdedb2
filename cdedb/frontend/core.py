@@ -2368,7 +2368,7 @@ class CoreFrontend(AbstractFrontend):
                                       for part in given_names.split())
         constraints = (
             ('given_names', QueryOperators.regex, given_names_regex),
-            ('family_name', QueryOperators.equal, re.escape(family_name)),
+            ('family_name', QueryOperators.equal, family_name),
             ('is_member', QueryOperators.equal, True),
         )
         query = Query("qview_persona", spec, ("username",),
