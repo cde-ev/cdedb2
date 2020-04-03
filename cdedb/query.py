@@ -340,6 +340,17 @@ QUERY_SPECS = {
             ("course.notes", "str"),
             # This will be augmented with additional fields in the fly.
         ]),
+    "qview_event_lodgement":
+        collections.OrderedDict([
+            ("lodgement.id", "id"),
+            ("lodgement.moniker", "str"),
+            ("lodgement.capacity", "int"),
+            ("lodgement.reserve", "int"),
+            ("lodgement.notes", "str"),
+            ("lodgement.group_id", "int"),
+            ("group.moniker", "int"),
+            # This will be augmented with additional fields in the fly.
+        ]),
     "qview_core_user":  # query for a general user including past event infos
         collections.OrderedDict([
             ("personas.id", "id"),
@@ -438,6 +449,7 @@ QUERY_PRIMARIES = {
     "qview_registration": "reg.id",
     "qview_quick_registration": "registrations.id",
     "qview_event_course": "course.id",
+    "qview_event_lodgement": "lodgement.id",
     "qview_core_user": "personas.id",
     "qview_persona": "id",
     "qview_archived_persona": "personas.id",
