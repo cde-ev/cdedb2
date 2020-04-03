@@ -15489,11 +15489,11 @@ msgstr "Maximalgröße"
 
 #: cdedb/frontend/event.py:5062
 msgid "attendees"
-msgstr "Anzahl Teilnehmer"
+msgstr "Teilnehmer"
 
 #: cdedb/frontend/event.py:5064
 msgid "instructors"
-msgstr "Anzal Kursleiter"
+msgstr "Kursleiter"
 
 #: cdedb/frontend/event.py:5069
 msgid "number of {}. choices"
@@ -15513,6 +15513,10 @@ msgstr "wird angeboten"
 
 msgid "Course Query (%(title)s)"
 msgstr "Kurssuche (%(title)s)"
+
+#: cdedb/frontend/event.py:5069
+msgid "{}. choices"
+msgstr "{}. Wahlen"
 
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"

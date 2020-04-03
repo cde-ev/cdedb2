@@ -5034,7 +5034,7 @@ class EventFrontend(AbstractUserFrontend):
             for rank in range(track['num_choices']):
                 titles.update({
                     "track{0}.num_choices{1}".format(track_id, rank):
-                        prefix + gettext("number of {}. choices").format(
+                        prefix + gettext("{}. choices").format(
                             rank+1),
                 })
 
