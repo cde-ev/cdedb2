@@ -20,22 +20,26 @@
     <table class="table">
         <thead>
             <tr>
-                <th class="col-md-5">{% trans %}Ballot{% endtrans %}</th>
-                <th class="col-md-5">{% trans %}Result{% endtrans %}</th>
+                <th class="col-md-4">{% trans %}Ballot{% endtrans %}</th>
+                <th class="col-md-6">{% trans %}Result{% endtrans %}</th>
             </tr>
         </thead>
         <tbody>
             {% for ballot_id, ballot in ballots.items() %}
             <tr>
                 <td>
-                    <b>{{ ballot['title'] }}</b>
+                    <b>
+                        {{ util.href(cdedblink("assembly/show_ballot", {'assembly_id': ambience['assembly']['id'], 'ballot_id': ballot_id}),
+                                     ballot['title']) }}
+                    </b>
                     {{ ballot['description']|md }}
                 </td>
-                <td>{{ ballot_result.show_result(ballot, result[ballot_id], inline=True) }}</td>
+                <td>{{ ballot_result.show_result(ballot, result[ballot_id], short=True) }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
+    {{ ballot_result.explain_result() }}
 
 {% endblock %}
