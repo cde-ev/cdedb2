@@ -56,7 +56,7 @@
             </thead>
             <tbody>
                 {# Old items, already stored in the database #}
-                {% for institution_id, institution in institutions|xdictsort('title') %}
+                {% for institution_id, institution in institutions|keydictsort(EntitySorter.institution) %}
                     {{ print_row(institution_id, institution_id not in is_referenced, 'drow-row') }}
                 {% endfor %}
                 {# Items that were added by the user but failed validation. They are still new and have no official id.
