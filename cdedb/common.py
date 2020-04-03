@@ -41,12 +41,13 @@ class RequestState:
     enough to not be non-nice).
     """
 
-    def __init__(self, sessionkey, user, request, response, notifications,
-                 mapadapter, requestargs, errors, values, lang, gettext,
-                 ngettext, coders, begin, default_gettext=None,
+    def __init__(self, sessionkey, apitoken, user, request, response,
+                 notifications, mapadapter, requestargs, errors, values, lang,
+                 gettext, ngettext, coders, begin, default_gettext=None,
                  default_ngettext=None):
         """
         :type sessionkey: str or None
+        :type apitoken: str or None
         :type user: :py:class:`User`
         :type request: :py:class:`werkzeug.wrappers.Request`
         :type response: :py:class:`werkzeug.wrappers.Response` or None
@@ -93,6 +94,7 @@ class RequestState:
         """
         self.ambience = {}
         self.sessionkey = sessionkey
+        self.apitoken = apitoken
         self.user = user
         self.request = request
         self.response = response
@@ -1481,6 +1483,26 @@ def extract_roles(session, introspection_only=False):
     return ret
 
 
+# The following droids are exempt from lockdown to keep our infrastructure
+# working
+INFRASTRUCTURE_DROIDS = {'droid_rklist', 'droid_resolve'}
+
+
+def droid_roles(identity):
+    """Resolve droid identity to a complete set of roles.
+
+    Currently this is rather trivial, but could be more involved in the
+    future if more API capabilities are added to the DB.
+
+    :type identity: str
+    :rtype: {str}
+    """
+    ret = {'anonymous', 'droid', f'droid_{identity}'}
+    if identity in INFRASTRUCTURE_DROIDS:
+        ret.add('droid_infra')
+    return ret
+
+
 # The following dict defines the hierarchy of realms. This has direct impact on
 # the admin privileges: An admin of a specific realm can only query and edit
 # members of that realm, who are not member of another realm implying that
@@ -1659,8 +1681,10 @@ DB_ROLE_MAPPING = collections.OrderedDict((
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
-    ("ml_script", "cdb_persona"),
+    ("droid_rklist", "cdb_persona"),
+    ("droid_resolve", "cdb_persona"),
 
+    ("droid", "cdb_anonymous"),
     ("anonymous", "cdb_anonymous"),
 ))
 

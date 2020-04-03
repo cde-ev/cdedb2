@@ -2,10 +2,6 @@
 
 """The ml backend provides mailing lists. This provides services to the
 event and assembly realm in the form of specific mailing lists.
-
-This has an additional user role ml_script which is intended to be
-filled by a mailing list software and not a usual persona. This acts as
-if it has moderator privileges for all lists.
 """
 
 from cdedb.backend.common import (
@@ -73,6 +69,8 @@ class MlBackend(AbstractBackend):
         """Check for moderator privileges as specified in the ml.moderators
         table.
 
+        This exceptionally promotes droid_rklist to moderator.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ml_id: int
         :rtype: bool
@@ -80,7 +78,7 @@ class MlBackend(AbstractBackend):
         ml_id = affirm("id_or_None", ml_id)
 
         return ml_id is not None and (ml_id in rs.user.moderator
-                                      or "ml_script" in rs.user.roles)
+                                      or "droid_rklist" in rs.user.roles)
 
     @access("ml")
     def may_manage(self, rs, mailinglist_id):
@@ -884,7 +882,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "ml_script")
+    @access("ml", "droid")
     @singularize("get_subscription_states", "mailinglist_ids", "mailinglist_id")
     def get_many_subscription_states(self, rs, mailinglist_ids, states=None):
         """Get all users related to a given mailinglist and their sub state.
@@ -997,7 +995,7 @@ class MlBackend(AbstractBackend):
         return unwrap(self.get_user_subscriptions(
             rs, persona_id, states=states, mailinglist_ids=(mailinglist_id,)))
 
-    @access("ml", "ml_script")
+    @access("ml", "droid")
     def get_subscription_addresses(self, rs, mailinglist_id, persona_ids=None,
                                    explicits_only=False):
         """Retrieve email addresses of the given personas for the mailinglist.
@@ -1064,7 +1062,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "ml_script")
+    @access("ml", "droid")
     def get_subscription_address(self, rs, mailinglist_id, persona_id,
                                  explicits_only=False):
         """Return the subscription address for one persona and one mailinglist.
@@ -1243,7 +1241,7 @@ class MlBackend(AbstractBackend):
 
     # Everythin beyond this point is for communication with the mailinglist
     # software, and should normally not be used otherwise.
-    @access("ml_script")
+    @access("droid_rklist")
     def export_overview(self, rs):
         """Get a summary of all existing mailing lists.
 
@@ -1256,7 +1254,7 @@ class MlBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         return data
 
-    @access("ml_script")
+    @access("droid_rklist")
     def export_one(self, rs, address):
         """Retrieve data about a specific mailinglist.
 
@@ -1305,7 +1303,7 @@ class MlBackend(AbstractBackend):
                 "whitelist": mailinglist['whitelist'],
             }
 
-    @access("ml_script")
+    @access("droid_rklist")
     def oldstyle_mailinglist_config_export(self, rs):
         """
         mailinglist_config_export() - get config information about all lists
@@ -1329,7 +1327,7 @@ class MlBackend(AbstractBackend):
             entry['mime'] = COMPAT_MAP[entry['mime']]
         return data
 
-    @access("ml_script")
+    @access("droid_rklist")
     def oldstyle_mailinglist_export(self, rs, address):
         """
         mailinglist_export() - get export information about a list
@@ -1389,7 +1387,7 @@ class MlBackend(AbstractBackend):
                 'list-owner': u"https://db.cde-ev.de/",
             }
 
-    @access("ml_script")
+    @access("droid_rklist")
     def oldstyle_modlist_export(self, rs, address):
         """
         mod_export() - get export information for moderators' list
@@ -1434,7 +1432,7 @@ class MlBackend(AbstractBackend):
                 'list-owner': u"https://db.cde-ev.de/",
             }
 
-    @access("ml_script")
+    @access("droid_rklist")
     def oldstyle_bounce(self, rs, address, error):
         address = affirm("email", address)
         error = affirm("int", error)

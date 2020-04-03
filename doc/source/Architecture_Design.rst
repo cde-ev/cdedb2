@@ -18,3 +18,7 @@ and only allow one active session per user or per IP.
 The basic account is referred to as persona. Each persona has access to a
 subset of the realms. Some attributes of an account are only meaningful in
 some realms.
+
+Additionally there are API access accounts which are referred to as
+droids. These do not have an associated session but instead authenticate
+with a token send via header.

@@ -1623,7 +1623,9 @@ def access(*roles, modi=None, check_anti_csrf=None):
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
-                if rs.user.roles == {"anonymous"}:
+                expects_persona = any('droid' not in role
+                                      for role in access_list)
+                if rs.user.roles == {"anonymous"} and expects_persona:
                     params = {
                         'wants': rs._coders['encode_parameter'](
                             "core/index", "wants", rs.request.url,
