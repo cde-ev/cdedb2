@@ -15556,6 +15556,12 @@ msgstr ""
 msgid "The bar option %(abm)s."
 msgstr "Die Ablehnungsgrenze %(abm)s."
 
+msgid "Pro-Votes"
+msgstr "Pro-Stimmen"
+
+msgid "Contra-Votes"
+msgstr "Kontra-Stimmen"
+
 #~ msgid "SubscriptionPolicy.mandatory"
 #~ msgstr "Alternativlos"
 
