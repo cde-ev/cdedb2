@@ -62,7 +62,7 @@
     {% endif %}
     {% if courses %}
         <ul id="list-courses">
-            {% for anid, acourse in courses|xdictsort('nr', pad=True) %}
+            {% for anid, acourse in courses|keydictsort(EntitySorter.past_course) %}
                 <li>
                     {{ acourse['nr'] }}.
                     {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), acourse['title']) }}
@@ -120,7 +120,7 @@
                     {% endif %}
                     {% if participant['pcourses'] %}
                         (
-                        {%- for pcourse_id, pcourse in participant['pcourses']|xdictsort('nr', pad=True) %}
+                        {%- for pcourse_id, pcourse in participant['pcourses']|keydictsort(EntitySorter.past_course) %}
                             {%- if pcourse_id -%}
                                 {{ pcourse['nr'] }}.
                                 {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),

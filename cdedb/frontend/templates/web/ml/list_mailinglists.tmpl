@@ -64,8 +64,8 @@
         {% if mailinglists[group] %}
             <h3>{{ gettext(group|string) }}</h3>
             <div class="list-group list-group-hover list-group-condensed">
-            {% for mailinglist_id, title in mailinglists[group]|dictsort(False, 'value') %}
-                {{ format_entry(mailinglist_id, title) }}
+            {% for mailinglist_id, ml in mailinglists[group]|keydictsort(EntitySorter.mailinglist) %}
+                {{ format_entry(mailinglist_id, ml['title']) }}
             {% endfor %}
             </div>
         {% endif %}
