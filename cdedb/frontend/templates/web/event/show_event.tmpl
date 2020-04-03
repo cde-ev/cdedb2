@@ -186,7 +186,7 @@
 
             <div class="col-md-6" id="minor-form">
                 {% call util.bootstrap_panel(title=gettext("Minor Form"), icon='file', aclass='panel-warning') %}
-                    <div>
+                    <div class="p">
                         {% if minor_form_present %}
                             {% trans link=util.href(cdedblink('event/get_minor_form'), gettext("current Form"),
                                                     icon='file') -%}
