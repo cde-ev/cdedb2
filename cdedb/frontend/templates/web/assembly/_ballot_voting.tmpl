@@ -5,7 +5,7 @@
     <h3>{% trans %}Candidates{% endtrans %}</h3>
     <div class="row">
         <ul class="col-md-8" id="classical-candidates">
-            {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('moniker') %}
+            {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
                 <li class="hide-hover-container clearfix-after">
                     {{ candidate['description'] }}
                     {% if edit_mode %}
@@ -42,7 +42,7 @@
                                             format(votes=ambience['ballot']['votes']), small=True) }}
         {% endif %}
         {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
-                                      entries=ambience['ballot']['candidates']|xdictsort('moniker')|dict_entries('moniker', 'description'),
+                                      entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('moniker', 'description'),
                                       radio=(ambience['ballot']['votes'] == 1), small=True) }}
         {% if ambience['ballot']['use_bar'] %}
             {{ util.form_input_checkboxes(
@@ -82,7 +82,7 @@
     <h3>{% trans %}Candidates{% endtrans %}</h3>
     <div class="row" id="preferential-candidates">
         <ul class="col-md-8">
-            {% for candidate_id, candidate in ambience['ballot']['candidates']|xdictsort('moniker') %}
+            {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
                 <li class="hide-hover-container clearfix-after">
                     {{ candidate['description'] }}
                     {% if attends or edit_mode %}
@@ -306,7 +306,7 @@
                 $('#tablist-formselect').show();
                 /* Initialize JS Fancy form */
                 $('#prefvote_container').cdedbPrefVote(
-                    {{ ambience['ballot']['candidates']|xdictsort('moniker')|json|s }},
+                    {{ ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|json|s }},
                     {{ "'"|s+ASSEMBLY_BAR_MONIKER+"'"|s if ambience['ballot']['use_bar'] else "null" }},
                     $('#input-preferencelist'),
                     {{ {'bar_name': gettext('neutral'),

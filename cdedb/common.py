@@ -567,6 +567,10 @@ class EntitySorter:
     def event_field(event_field):
         return (event_field['field_name'], event_field['id'])
 
+    @staticmethod
+    def candidates(candidates):
+        return (candidates['moniker'], candidates['id'])
+
 
 def compute_checkdigit(value):
     """Map an integer to the checksum used for UI purposes.
