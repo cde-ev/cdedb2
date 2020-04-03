@@ -5,12 +5,12 @@
             {% for candidate_ids in result['winners'] %}
                 <li value="{{ loop.index }}">
                     {% for candidate_id in candidate_ids %}
+                        {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
                         {% if not ambience['ballot']['votes'] %}
                             <span class="label label-primary">
                                 {{- ambience['ballot']['candidates'][candidate_id]['moniker'] -}}
                             </span>
                         {% endif %}
-                        {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
                         {% if result['counts'] %}
                             {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
                             {% trans count=result['counts'][candidate_moniker] %}
@@ -41,12 +41,12 @@
             {% for candidate_ids in result['losers'] %}
                 <li value="{{ (loop.index + result['winners']|length) }}">
                     {% for candidate_id in candidate_ids %}
+                        {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
                         {% if not ambience['ballot']['votes'] %}
                             <span class="label label-primary">
                                 {{- ambience['ballot']['candidates'][candidate_id]['moniker'] -}}
                             </span>
                         {% endif %}
-                        {{ ambience['ballot']['candidates'][candidate_id]['description'] }}
                         {% if result['counts'] %}
                             {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
                             {% trans count=result['counts'][candidate_moniker] %}

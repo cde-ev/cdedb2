@@ -495,7 +495,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
-        tmp = {f.get('vote', index=1).value, f.get('vote', index=4).value}
+        tmp = {f.get('vote', index=3).value, f.get('vote', index=4).value}
         self.assertEqual({"W", "S"}, tmp)
         self.assertEqual(None, f.get('vote', index=2).value)
         f['vote'] = [ASSEMBLY_BAR_MONIKER]
