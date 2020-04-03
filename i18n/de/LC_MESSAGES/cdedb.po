@@ -85,6 +85,9 @@ msgstr "Warteliste"
 msgid "20_query_event_registration_non_members"
 msgstr "Nicht-Mitglieder"
 
+msgid "Who can see my data?"
+msgstr "Wer sieht meine Daten?"
+
 #: cdedb/config.py:131
 msgid "30_query_event_registration_orga_notes"
 msgstr "Orga-Notizen"

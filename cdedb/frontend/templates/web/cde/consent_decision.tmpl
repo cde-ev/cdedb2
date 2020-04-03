@@ -37,9 +37,12 @@
         </p>
     {% endif %}
 
-    {% if not decided_search %}
-        <p>{{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="time", aclass="btn btn-default") }}</p>
-    {% endif %}
+    <p>
+        {% if not decided_search %}
+            {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="time", aclass="btn btn-default") }}
+        {% endif %}
+        {{ util.href(docurl('Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-default", icon="question-sign") }}
+    </p>
 
     <h1>{% trans %}Consent{% endtrans %}</h1>
 
